@@ -129,7 +129,7 @@ export function useFasting(): UseFastingReturn {
                 .limit(1)
                 .maybeSingle();
 
-            const activeProfile = profileData as FastingProfile | null;
+            const activeProfile = profileData as unknown as FastingProfile | null;
             setProfile(activeProfile);
 
             if (!activeProfile) {
@@ -146,16 +146,16 @@ export function useFasting(): UseFastingReturn {
                 supabase.from("fasting_partner_shares" as any).select("*").eq("user_id", user.id).maybeSingle(),
             ]);
 
-            setAbstentions((abstRes.data ?? []) as Abstention[]);
-            setTemplates((tplRes.data ?? []) as ChecklistTemplate[]);
+            setAbstentions((abstRes.data ?? []) as unknown as Abstention[]);
+            setTemplates((tplRes.data ?? []) as unknown as ChecklistTemplate[]);
 
             const logsMap: Record<string, DayLog> = {};
-            for (const l of (logsRes.data ?? []) as DayLog[]) {
+            for (const l of (logsRes.data ?? []) as unknown as DayLog[]) {
                 logsMap[l.day_key] = l;
             }
             setDayLogs(logsMap);
-            setReminders(remRes.data as FastingReminders | null);
-            setPartnerShare(shareRes.data as PartnerShare | null);
+            setReminders(remRes.data as unknown as FastingReminders | null);
+            setPartnerShare(shareRes.data as unknown as PartnerShare | null);
 
             // Today's item logs
             const tLog = logsMap[todayKey];
@@ -165,7 +165,7 @@ export function useFasting(): UseFastingReturn {
                     .select("*")
                     .eq("day_log_id", tLog.id)
                     .order("section").order("created_at");
-                setTodayItems((itemsData ?? []) as DayItemLog[]);
+                setTodayItems((itemsData ?? []) as unknown as DayItemLog[]);
             } else {
                 setTodayItems([]);
             }
@@ -206,7 +206,7 @@ export function useFasting(): UseFastingReturn {
 
         if (error || !newProfile) { console.error(error); return; }
 
-        const prof = newProfile as FastingProfile;
+        const prof = newProfile as unknown as FastingProfile;
 
         // Insert default checklist templates
         const doRows = (input.doItems ?? DEFAULT_DO_ITEMS).map((label, i) => ({
@@ -250,7 +250,7 @@ export function useFasting(): UseFastingReturn {
             .single();
 
         if (error || !data) { console.error(error); return null; }
-        const newLog = data as DayLog;
+        const newLog = data as unknown as DayLog;
         setDayLogs(prev => ({ ...prev, [dayKey]: newLog }));
         return newLog;
     }, [user, profile, dayLogs]);
@@ -272,7 +272,7 @@ export function useFasting(): UseFastingReturn {
             .single();
 
         if (error || !data) { console.error(error); return null; }
-        const updated = data as DayLog;
+        const updated = data as unknown as DayLog;
         setDayLogs(prev => ({ ...prev, [dayKey]: updated }));
         return updated;
     }, [user, profile, dayLogs, ensureDayLog]);
@@ -308,7 +308,7 @@ export function useFasting(): UseFastingReturn {
         if (todayLog?.id === dayLogId) {
             const { data } = await supabase.from("fasting_day_item_logs" as any)
                 .select("*").eq("day_log_id", dayLogId).order("section").order("created_at");
-            setTodayItems((data ?? []) as DayItemLog[]);
+            setTodayItems((data ?? []) as unknown as DayItemLog[]);
         }
     }, [user, todayLog]);
 
