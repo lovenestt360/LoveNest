@@ -58,7 +58,7 @@ serve(async (req: Request) => {
     }
 
     // 1) Validar o token com o client público (compatível com ES256)
-    const authClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const authClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
 

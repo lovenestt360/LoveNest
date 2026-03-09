@@ -19,12 +19,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const ensureProfileRow = async (u: User) => {
+      // Cria o profile apenas se não existir (não sobrescreve edits do utilizador)
+      const displayName =
+        (u.user_metadata as any)?.display_name ??
+        (u.user_metadata as any)?.displayName ??
+        u.email ??
+        null;
+
+      await supabase
+        .from("profiles")
+        .upsert({ user_id: u.id, display_name: displayName }, { onConflict: "user_id", ignoreDuplicates: true });
+    };
+
     // Setup listener FIRST (antes de getSession)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        ensureProfileRow(session.user).catch(() => {});
+      }
       setLoading(false);
     });
 
@@ -32,6 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        ensureProfileRow(session.user).catch(() => {});
+      }
       setLoading(false);
     });
 
