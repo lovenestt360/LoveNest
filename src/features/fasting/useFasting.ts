@@ -272,7 +272,7 @@ export function useFasting(): UseFastingReturn {
             .single();
 
         if (error || !data) { console.error(error); return null; }
-        const updated = data as DayLog;
+        const updated = data as unknown as DayLog;
         setDayLogs(prev => ({ ...prev, [dayKey]: updated }));
         return updated;
     }, [user, profile, dayLogs, ensureDayLog]);
