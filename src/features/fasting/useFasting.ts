@@ -308,7 +308,7 @@ export function useFasting(): UseFastingReturn {
         if (todayLog?.id === dayLogId) {
             const { data } = await supabase.from("fasting_day_item_logs" as any)
                 .select("*").eq("day_log_id", dayLogId).order("section").order("created_at");
-            setTodayItems((data ?? []) as DayItemLog[]);
+            setTodayItems((data ?? []) as unknown as DayItemLog[]);
         }
     }, [user, todayLog]);
 
