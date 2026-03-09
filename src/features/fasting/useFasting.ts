@@ -206,7 +206,7 @@ export function useFasting(): UseFastingReturn {
 
         if (error || !newProfile) { console.error(error); return; }
 
-        const prof = newProfile as FastingProfile;
+        const prof = newProfile as unknown as FastingProfile;
 
         // Insert default checklist templates
         const doRows = (input.doItems ?? DEFAULT_DO_ITEMS).map((label, i) => ({
