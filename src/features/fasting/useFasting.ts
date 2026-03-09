@@ -250,7 +250,7 @@ export function useFasting(): UseFastingReturn {
             .single();
 
         if (error || !data) { console.error(error); return null; }
-        const newLog = data as DayLog;
+        const newLog = data as unknown as DayLog;
         setDayLogs(prev => ({ ...prev, [dayKey]: newLog }));
         return newLog;
     }, [user, profile, dayLogs]);
