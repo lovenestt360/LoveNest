@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
 
     // Use web-push npm package
-    const webpush = await import("npm:web-push@3.6.7");
+    const webpush = await import("https://esm.sh/web-push@3.6.7");
     webpush.setVapidDetails(
       "mailto:app@dkayy.lovable.app",
       vapidPublicKey,

@@ -129,7 +129,7 @@ export function useFasting(): UseFastingReturn {
                 .limit(1)
                 .maybeSingle();
 
-            const activeProfile = profileData as FastingProfile | null;
+            const activeProfile = profileData as unknown as FastingProfile | null;
             setProfile(activeProfile);
 
             if (!activeProfile) {

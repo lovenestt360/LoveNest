@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Loader2, Droplets, Calendar, StopCircle, PlayCircle, AlertTriangle, Info } from "lucide-react";
+import { Loader2, Droplets, Calendar, StopCircle, PlayCircle, AlertTriangle, Info, Flower2 } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { CyclePartnerSummary } from "./CyclePartnerSummary";
 import { format, differenceInDays } from "date-fns";
