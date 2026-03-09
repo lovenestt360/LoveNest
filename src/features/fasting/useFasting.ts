@@ -146,16 +146,16 @@ export function useFasting(): UseFastingReturn {
                 supabase.from("fasting_partner_shares" as any).select("*").eq("user_id", user.id).maybeSingle(),
             ]);
 
-            setAbstentions((abstRes.data ?? []) as Abstention[]);
-            setTemplates((tplRes.data ?? []) as ChecklistTemplate[]);
+            setAbstentions((abstRes.data ?? []) as unknown as Abstention[]);
+            setTemplates((tplRes.data ?? []) as unknown as ChecklistTemplate[]);
 
             const logsMap: Record<string, DayLog> = {};
-            for (const l of (logsRes.data ?? []) as DayLog[]) {
+            for (const l of (logsRes.data ?? []) as unknown as DayLog[]) {
                 logsMap[l.day_key] = l;
             }
             setDayLogs(logsMap);
-            setReminders(remRes.data as FastingReminders | null);
-            setPartnerShare(shareRes.data as PartnerShare | null);
+            setReminders(remRes.data as unknown as FastingReminders | null);
+            setPartnerShare(shareRes.data as unknown as PartnerShare | null);
 
             // Today's item logs
             const tLog = logsMap[todayKey];
@@ -165,7 +165,7 @@ export function useFasting(): UseFastingReturn {
                     .select("*")
                     .eq("day_log_id", tLog.id)
                     .order("section").order("created_at");
-                setTodayItems((itemsData ?? []) as DayItemLog[]);
+                setTodayItems((itemsData ?? []) as unknown as DayItemLog[]);
             } else {
                 setTodayItems([]);
             }
