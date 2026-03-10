@@ -12,12 +12,11 @@ DELETE FROM public.subscription_plans
 WHERE name != 'LoveNest Premium';
 
 -- Insert or Update default plan
-INSERT INTO public.subscription_plans (id, name, price, description, features, billing_type, is_active)
+INSERT INTO public.subscription_plans (id, name, price, features, billing_type, is_active)
 VALUES (
     extensions.uuid_generate_v4(),
     'LoveNest Premium',
     '399 MZN',
-    'Acesso ilimitado e vitalício ao espaço de casal.',
     ARRAY['Gestão de Tarefas', 'Agenda e Oração', 'Memórias', 'Desafios Exclusivos', 'Cápsulas do Tempo'],
     'one_time',
     true
