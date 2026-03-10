@@ -8,6 +8,17 @@ import { Input } from "@/components/ui/input";
 
 // Simple SHA-256 string hash for basic frontend matching (not bank-grade, but fine for this simple implementation)
 async function hashText(message: string) {
+    if (!crypto || !crypto.subtle) {
+        // Fallback for non-HTTPS (like local IP dev) where crypto.subtle is undefined
+        console.warn("crypto.subtle está indisponível. Usando fallback básico.");
+        let hash = 0;
+        for (let i = 0; i < message.length; i++) {
+            const char = message.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash.toString();
+    }
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -48,7 +59,8 @@ export default function AdminLogin() {
             }
 
         } catch (error: any) {
-            toast({ title: "Erro de Autenticação", description: error.message, variant: "destructive" });
+            console.error("Login Error:", error);
+            toast({ title: "Erro de Autenticação", description: error.message || "Erro desconhecido", variant: "destructive" });
         } finally {
             setLoading(false);
         }
