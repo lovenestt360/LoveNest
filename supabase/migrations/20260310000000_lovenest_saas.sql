@@ -38,6 +38,7 @@ ALTER TABLE public.house_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Houses
+DROP POLICY IF EXISTS "Users can view their own houses based on membership" ON public.houses;
 CREATE POLICY "Users can view their own houses based on membership"
     ON public.houses FOR SELECT
     USING (
@@ -46,10 +47,12 @@ CREATE POLICY "Users can view their own houses based on membership"
         )
     );
 
+DROP POLICY IF EXISTS "Users can insert their own houses" ON public.houses;
 CREATE POLICY "Users can insert their own houses"
     ON public.houses FOR INSERT
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can update their own houses" ON public.houses;
 CREATE POLICY "Users can update their own houses"
     ON public.houses FOR UPDATE
     USING (
@@ -59,6 +62,7 @@ CREATE POLICY "Users can update their own houses"
     );
 
 -- Policies for House Members
+DROP POLICY IF EXISTS "Users can view members of their houses" ON public.house_members;
 CREATE POLICY "Users can view members of their houses"
     ON public.house_members FOR SELECT
     USING (
@@ -67,6 +71,7 @@ CREATE POLICY "Users can view members of their houses"
         )
     );
 
+DROP POLICY IF EXISTS "Users can insert house_members" ON public.house_members;
 CREATE POLICY "Users can insert house_members"
     ON public.house_members FOR INSERT
     WITH CHECK (
@@ -74,6 +79,7 @@ CREATE POLICY "Users can insert house_members"
     );
 
 -- Policies for Subscriptions
+DROP POLICY IF EXISTS "Users can view their house subscription" ON public.subscriptions;
 CREATE POLICY "Users can view their house subscription"
     ON public.subscriptions FOR SELECT
     USING (
@@ -82,6 +88,7 @@ CREATE POLICY "Users can view their house subscription"
         )
     );
 
+DROP POLICY IF EXISTS "Users can insert their house subscription" ON public.subscriptions;
 CREATE POLICY "Users can insert their house subscription"
     ON public.subscriptions FOR INSERT
     WITH CHECK (
@@ -90,6 +97,7 @@ CREATE POLICY "Users can insert their house subscription"
         )
     );
 
+DROP POLICY IF EXISTS "Users can update their house subscription" ON public.subscriptions;
 CREATE POLICY "Users can update their house subscription"
     ON public.subscriptions FOR UPDATE
     USING (

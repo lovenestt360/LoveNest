@@ -16,12 +16,14 @@ CREATE TABLE IF NOT EXISTS public.admin_announcements (
 -- and everyone can SELECT where active=true. For this SaaS demo, we'll keep SELECT open.
 ALTER TABLE public.admin_announcements ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Everyone can view active announcements" ON public.admin_announcements;
 CREATE POLICY "Everyone can view active announcements"
     ON public.admin_announcements FOR SELECT
     USING (active = true);
 
 -- Allowing insert/update broadly for demo Admin functionality. 
 -- In production, tie this to user role or specific UUID.
+DROP POLICY IF EXISTS "Admins can manage announcements" ON public.admin_announcements;
 CREATE POLICY "Admins can manage announcements"
     ON public.admin_announcements FOR ALL
     USING (true)
