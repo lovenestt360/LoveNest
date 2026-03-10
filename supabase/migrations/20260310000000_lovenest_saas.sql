@@ -10,9 +10,34 @@ CREATE TABLE IF NOT EXISTS public.houses (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Enable RLS on Houses
-ALTER TABLE public.houses ENABLE ROW LEVEL SECURITY;
+-- 2. Create House Members table
+CREATE TABLE IF NOT EXISTS public.house_members (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    house_id UUID NOT NULL REFERENCES public.houses(id) ON DELETE CASCADE,
+    role TEXT DEFAULT 'member', -- e.g., 'owner', 'member'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, house_id)
+);
 
+-- 3. Create Subscriptions table
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    house_id UUID NOT NULL REFERENCES public.houses(id) ON DELETE CASCADE,
+    plan TEXT NOT NULL DEFAULT 'LoveNest Lifetime',
+    paid BOOLEAN DEFAULT false,
+    payment_method TEXT, -- e.g., 'M-Pesa', 'e-Mola', 'mKesh'
+    payment_proof_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(house_id)
+);
+
+-- Enable RLS
+ALTER TABLE public.houses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.house_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Policies for Houses
 CREATE POLICY "Users can view their own houses based on membership"
     ON public.houses FOR SELECT
     USING (
@@ -33,18 +58,7 @@ CREATE POLICY "Users can update their own houses"
         )
     );
 
--- 2. Create House Members table (max 2 members per house logic usually enforced at application layer, but relationship is here)
-CREATE TABLE IF NOT EXISTS public.house_members (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    house_id UUID NOT NULL REFERENCES public.houses(id) ON DELETE CASCADE,
-    role TEXT DEFAULT 'member', -- e.g., 'owner', 'member'
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    UNIQUE(user_id, house_id)
-);
-
-ALTER TABLE public.house_members ENABLE ROW LEVEL SECURITY;
-
+-- Policies for House Members
 CREATE POLICY "Users can view members of their houses"
     ON public.house_members FOR SELECT
     USING (
@@ -59,20 +73,7 @@ CREATE POLICY "Users can insert house_members"
         user_id = auth.uid()
     );
 
--- 3. Create Subscriptions table
-CREATE TABLE IF NOT EXISTS public.subscriptions (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    house_id UUID NOT NULL REFERENCES public.houses(id) ON DELETE CASCADE,
-    plan TEXT NOT NULL DEFAULT 'LoveNest Lifetime',
-    paid BOOLEAN DEFAULT false,
-    payment_method TEXT, -- e.g., 'M-Pesa', 'e-Mola', 'mKesh'
-    payment_proof_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    UNIQUE(house_id)
-);
-
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-
+-- Policies for Subscriptions
 CREATE POLICY "Users can view their house subscription"
     ON public.subscriptions FOR SELECT
     USING (
