@@ -23,6 +23,7 @@ export default function Subscription() {
     const [uploading, setUploading] = useState(false);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [userEmail, setUserEmail] = useState("");
+    const [userName, setUserName] = useState("");
 
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -37,6 +38,9 @@ export default function Subscription() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             setUserEmail(user.email || "");
+
+            const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+            setUserName(profile?.display_name || user.user_metadata?.full_name || "Utilizador");
 
             // Fetch Active Plans
             const { data: activePlans } = await supabase
@@ -147,7 +151,7 @@ export default function Subscription() {
 
     const handleWhatsApp = () => {
         if (!pendingPayment || !house) return;
-        const msg = `Olá, acabei de enviar um pagamento para o LoveNest.\n\nEmail: ${userEmail}\nCasa: ${house.house_name || 'Sem Nome'}\nPlano: ${pendingPayment.plan_name}\nValor: ${pendingPayment.amount}\n\nPor favor, confirmem e ativem!`;
+        const msg = `Olá, acabei de pagar o plano LoveNest.\n\nNome: ${userName}\nEmail: ${userEmail}\nCasa: ${house.house_name || 'Sem Nome'}\nPlano: ${pendingPayment.plan_name}\nValor: ${pendingPayment.amount}\n\nSegue o comprovativo para activação.`;
         const encodedMsg = encodeURIComponent(msg);
         window.open(`https://wa.me/258841234567?text=${encodedMsg}`, "_blank");
     };

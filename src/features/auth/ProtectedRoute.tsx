@@ -11,6 +11,8 @@ export function ProtectedRoute() {
   const [checking, setChecking] = useState(true);
   const [checkError, setCheckError] = useState<string | null>(null);
   const [isSuspended, setIsSuspended] = useState(false);
+  const [houseData, setHouseData] = useState<any>(null);
+  const [savingTrial, setSavingTrial] = useState(false);
 
   const runCheck = async () => {
     if (!user) {
@@ -37,12 +39,15 @@ export function ProtectedRoute() {
 
       setHasCoupleSpace(!!data?.couple_space_id);
 
-      // Check Suspension Status
+      // Check Suspension & Trial Status
       const { data: houseMember } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
       if (houseMember) {
-        const { data: house } = await supabase.from("houses").select("is_suspended").eq("id", houseMember.house_id).maybeSingle();
-        if (house?.is_suspended) {
-          setIsSuspended(true);
+        const { data: house } = await supabase.from("houses").select("*").eq("id", houseMember.house_id).maybeSingle();
+        if (house) {
+          setHouseData(house);
+          if (house.is_suspended) {
+            setIsSuspended(true);
+          }
         }
       }
 
@@ -59,6 +64,32 @@ export function ProtectedRoute() {
     runCheck();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, location.pathname]);
+
+  const handleActivateTrial = async () => {
+    if (!houseData?.id) return;
+    try {
+      setSavingTrial(true);
+
+      // 5 days from now
+      const endsAt = new Date();
+      endsAt.setDate(endsAt.getDate() + 5);
+
+      const { error } = await supabase.from("houses").update({
+        trial_started_at: new Date().toISOString(),
+        trial_ends_at: endsAt.toISOString(),
+        trial_used: true
+      }).eq("id", houseData.id);
+
+      if (error) throw error;
+
+      // refresh status
+      await runCheck();
+    } catch (e) {
+      console.error("Failed to activate trial", e);
+    } finally {
+      setSavingTrial(false);
+    }
+  };
 
   if (loading || checking) {
     return (
@@ -113,6 +144,47 @@ export function ProtectedRoute() {
 
   if (hasCoupleSpace === false) {
     return <Navigate to="/casa-dk" replace />;
+  }
+
+  // Check Trial Flow if they have a house but never started a trial and are not active
+  if (houseData && houseData.trial_used === false && houseData.subscription_status !== 'active') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background/95 p-4 backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-card p-8 text-center space-y-6 shadow-2xl animate-in zoom-in-95 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-orange-500"></div>
+
+          <div className="w-20 h-20 bg-gradient-to-tr from-primary/20 to-orange-500/20 text-primary rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-black text-foreground mb-2 tracking-tight">Bem-vindo(a) ao LoveNest Premium</h1>
+            <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+              A sua casa foi criada com sucesso! Para começar, oferecemos <strong className="text-primary">5 dias totalmente gratuitos</strong> para explorar todas as funcionalidades do aplicativo com o seu parceiro.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button
+              variant="default"
+              className="w-full h-14 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform bg-primary hover:bg-primary/90"
+              onClick={handleActivateTrial}
+              disabled={savingTrial}
+            >
+              {savingTrial ? "A ativar..." : "Começar 5 dias grátis"}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-xl font-bold text-muted-foreground border-2 hover:bg-muted"
+              onClick={() => window.location.assign("/subscricao")}
+            >
+              Ativar plano definitivo agora
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return <Outlet />;

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus
+    CreditCard, Tag, Plus, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,6 +191,18 @@ export default function Admin() {
             const { error } = await supabase.from("subscription_plans").update({ is_active: !activeStatus }).eq("id", id);
             if (error) throw error;
             toast({ title: "Sucesso", description: `Plano ${!activeStatus ? 'ativado' : 'desativado'}.` });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
+
+    const handleDeletePlan = async (id: string) => {
+        if (!confirm("Tens a certeza que queres eliminar este plano? Esta ação não pode ser desfeita.")) return;
+        try {
+            const { error } = await supabase.from("subscription_plans").delete().eq("id", id);
+            if (error) throw error;
+            toast({ title: "Eliminado", description: "Plano eliminado com sucesso." });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -444,9 +456,14 @@ export default function Admin() {
                                             <li key={i} className="flex items-center gap-2"><Check className="w-4 h-4 text-primary shrink-0" /> {f}</li>
                                         ))}
                                     </ul>
-                                    <Button variant={p.is_active ? "outline" : "default"} className="w-full" onClick={() => handleTogglePlan(p.id, p.is_active)}>
-                                        {p.is_active ? "Desativar Plano" : "Ativar Plano"}
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button variant={p.is_active ? "outline" : "default"} className="w-full" onClick={() => handleTogglePlan(p.id, p.is_active)}>
+                                            {p.is_active ? "Desativar" : "Ativar"}
+                                        </Button>
+                                        <Button variant="destructive" size="icon" onClick={() => handleDeletePlan(p.id)}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

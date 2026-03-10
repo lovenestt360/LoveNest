@@ -16,9 +16,16 @@ export function PremiumGuard() {
                 const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
                 if (!member) return;
 
-                const { data: house } = await supabase.from("houses").select("subscription_status").eq("id", member.house_id).maybeSingle();
-                if (house?.subscription_status === 'active') {
-                    setIsPremium(true);
+                const { data: house } = await supabase.from("houses").select("subscription_status, trial_used, trial_ends_at").eq("id", member.house_id).maybeSingle();
+                if (house) {
+                    if (house.subscription_status === 'active') {
+                        setIsPremium(true);
+                    } else if (house.trial_used && house.trial_ends_at) {
+                        const endsAt = new Date(house.trial_ends_at);
+                        if (endsAt > new Date()) {
+                            setIsPremium(true);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error(error);
