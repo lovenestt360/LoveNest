@@ -38,6 +38,30 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          role: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          role?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          role?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       albums: {
         Row: {
           couple_space_id: string
@@ -1479,6 +1503,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          features: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: string
+        }
+        Insert: {
+          created_at?: string
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: string
+        }
+        Update: {
+          created_at?: string
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: string
+        }
+        Relationships: []
       }
     }
     Views: {

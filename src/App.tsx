@@ -7,6 +7,7 @@ import { AppShell } from "@/app/layout/AppShell";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { AuthOnlyRoute } from "@/features/auth/AuthOnlyRoute";
+import { AdminRoute } from "@/features/auth/AdminRoute";
 import { AppNotifProvider } from "@/features/notifications/AppNotifContext";
 import { SplashGate } from "@/features/splash/SplashScreen";
 
@@ -31,6 +32,8 @@ const RoutineDay = lazy(() => import("./pages/RoutineDay"));
 const RoutineManage = lazy(() => import("./pages/RoutineManage"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminRegister = lazy(() => import("./pages/admin/AdminRegister"));
 
 function PageLoader() {
   return (
@@ -78,8 +81,16 @@ const App = () => (
                     <Route path="rotina/dia/:date" element={<RoutineDay />} />
                     <Route path="rotina/gerir" element={<RoutineManage />} />
                     <Route path="subscricao" element={<Subscription />} />
-                    <Route path="admin" element={<Admin />} />
                   </Route>
+                </Route>
+
+                {/* Admin Auth */}
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-setup-secret" element={<AdminRegister />} />
+
+                {/* Protected Admin routes */}
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin" element={<Admin />} />
                 </Route>
 
                 {/* 404 */}
