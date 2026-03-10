@@ -1,13 +1,37 @@
 import { useEffect, useState, useCallback } from "react";
 import { Heart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 function SplashOverlay({ onDone }: { onDone: () => void }) {
   const [fadeOut, setFadeOut] = useState(false);
+  const [initials, setInitials] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
+    async function fetchInitials() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", session.user.id).maybeSingle();
+        if (member?.house_id) {
+          const { data: house } = await supabase.from("houses").select("initials").eq("id", member.house_id).maybeSingle();
+          if (house?.initials && mounted) {
+            setInitials(house.initials);
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    fetchInitials();
+
     const t1 = setTimeout(() => setFadeOut(true), 2500);
     const t2 = setTimeout(onDone, 3000);
     return () => {
+      mounted = false;
       clearTimeout(t1);
       clearTimeout(t2);
     };
@@ -15,9 +39,8 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background transition-opacity duration-500 ${
-        fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"
-      }`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background transition-opacity duration-500 ${fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
     >
       <div className="relative flex items-center justify-center">
         <div className="absolute h-32 w-32 rounded-full bg-primary/20 animate-ping" />
@@ -28,8 +51,10 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
           <Heart className="h-10 w-10 text-primary-foreground fill-primary-foreground" />
         </div>
       </div>
-      <h1 className="mt-6 text-4xl font-extrabold tracking-tight gradient-text">D & K</h1>
-      <p className="mt-2 text-sm text-muted-foreground">O nosso espaço 💕</p>
+      <h1 className="mt-6 text-4xl font-extrabold tracking-tight gradient-text">
+        {initials || "LoveNest"}
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">The couple space</p>
     </div>
   );
 }

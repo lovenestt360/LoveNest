@@ -77,7 +77,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/chat") {
             setChatUnread((c) => c + 1);
             if (getNotifPrefs().chat) {
-              toast({ title: "💬 Dkay Zap", description: msg.content.length > 60 ? msg.content.slice(0, 60) + "…" : msg.content });
+              toast({ title: "💬 Chat", description: msg.content.length > 60 ? msg.content.slice(0, 60) + "…" : msg.content });
             }
           }
         }

@@ -18,6 +18,7 @@ import {
   Flower2,
   Flame,
   ClipboardList,
+  CreditCard,
 } from "lucide-react";
 import {
   Sheet,
@@ -28,10 +29,10 @@ import {
 } from "@/components/ui/sheet";
 
 const mainTabs = [
-  { to: "/", label: "Início", Icon: Home },
-  { to: "/chat", label: "Dkay Zap", Icon: MessageCircle },
-  { to: "/humor", label: "Humor", Icon: Smile },
-  { to: "/tarefas", label: "Tarefas", Icon: CheckSquare },
+  { to: "/", label: "Home", Icon: Home },
+  { to: "/chat", label: "Chat", Icon: MessageCircle },
+  { to: "/humor", label: "Mood", Icon: Smile },
+  { to: "/tarefas", label: "Tasks", Icon: CheckSquare },
 ] as const;
 
 const moreItems = [
@@ -43,6 +44,7 @@ const moreItems = [
   { to: "/oracao", label: "Oração", Icon: BookOpen },
   { to: "/conflitos", label: "Conflitos", Icon: HeartHandshake },
   { to: "/configuracoes", label: "Definições", Icon: Settings },
+  { to: "/subscricao", label: "Subscrição", Icon: CreditCard },
 ] as const;
 
 const MORE_PATHS = moreItems.map((i) => i.to);
@@ -116,13 +118,13 @@ export function BottomTabs() {
                   <MoreHorizontal className="h-5 w-5" />
                   {moreBadge > 0 && <Badge count={moreBadge} />}
                 </span>
-                <span className="leading-none">Mais</span>
+                <span className="leading-none">More</span>
                 {isMoreActive && <ActiveDot />}
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-3xl border-t border-border/50 pb-[max(env(safe-area-inset-bottom),1rem)]">
               <SheetHeader>
-                <SheetTitle className="text-left text-lg font-bold">Mais</SheetTitle>
+                <SheetTitle className="text-left text-lg font-bold">More</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-3 gap-3 pt-4">
                 {moreItems.map(({ to, label, Icon }) => {

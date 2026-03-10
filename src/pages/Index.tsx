@@ -347,7 +347,7 @@ const Index = () => {
 
           <div className="flex items-center gap-1.5">
             <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
-            <h1 className="text-2xl font-extrabold tracking-tight gradient-text">D & K</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight gradient-text">LoveNest</h1>
             <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
           </div>
 
@@ -499,7 +499,7 @@ const Index = () => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-foreground">Dkay Zap</span>
+            <span className="text-sm font-bold text-foreground">Chat</span>
             <NotifBadge count={chatUnread} />
           </div>
           <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">

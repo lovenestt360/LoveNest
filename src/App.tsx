@@ -29,6 +29,8 @@ const Fasting = lazy(() => import("./pages/Fasting"));
 const Routine = lazy(() => import("./pages/Routine"));
 const RoutineDay = lazy(() => import("./pages/RoutineDay"));
 const RoutineManage = lazy(() => import("./pages/RoutineManage"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 function PageLoader() {
   return (
@@ -75,6 +77,8 @@ const App = () => (
                     <Route path="rotina" element={<Routine />} />
                     <Route path="rotina/dia/:date" element={<RoutineDay />} />
                     <Route path="rotina/gerir" element={<RoutineManage />} />
+                    <Route path="subscricao" element={<Subscription />} />
+                    <Route path="admin" element={<Admin />} />
                   </Route>
                 </Route>
 

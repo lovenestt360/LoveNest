@@ -31,6 +31,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { generateInitials } from "@/utils/initials";
 
 interface Profile {
   display_name: string | null;
@@ -86,8 +87,14 @@ export default function Settings() {
   const [displayName, setDisplayName] = useState("");
   const [birthday, setBirthday] = useState("");
   const [gender, setGender] = useState<"male" | "female" | null>(null);
-  const [relationshipDate, setRelationshipDate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // House State
+  const [houseId, setHouseId] = useState<string | null>(null);
+  const [houseName, setHouseName] = useState("");
+  const [partner1Name, setPartner1Name] = useState("");
+  const [partner2Name, setPartner2Name] = useState("");
+  const [relationshipDate, setRelationshipDate] = useState("");
 
   const [notifPrefs, setNotifPrefs] = useState(loadPrefs);
 
@@ -142,6 +149,19 @@ export default function Settings() {
           setRelationshipDate((spaceData as any).relationship_start_date ?? "");
         }
       }
+
+      // Load House Data
+      const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
+      if (member?.house_id) {
+        setHouseId(member.house_id);
+        const { data: house } = await supabase.from("houses").select("*").eq("id", member.house_id).maybeSingle();
+        if (house) {
+          setHouseName(house.house_name || "");
+          setPartner1Name(house.partner1_name || "");
+          setPartner2Name(house.partner2_name || "");
+        }
+      }
+
       setLoading(false);
     };
     loadProfile();
@@ -166,6 +186,28 @@ export default function Settings() {
         .from("couple_spaces")
         .update({ relationship_start_date: relationshipDate || null } as any)
         .eq("id", spaceId);
+    }
+
+    // Save House Data
+    if (houseId) {
+      await supabase.from("houses").update({
+        house_name: houseName,
+        partner1_name: partner1Name,
+        partner2_name: partner2Name,
+        initials: generateInitials(partner1Name, partner2Name)
+      }).eq("id", houseId);
+    } else {
+      const { data: newHouse } = await supabase.from("houses").insert({
+        house_name: houseName,
+        partner1_name: partner1Name,
+        partner2_name: partner2Name,
+        initials: generateInitials(partner1Name, partner2Name)
+      }).select().single();
+
+      if (newHouse) {
+        setHouseId(newHouse.id);
+        await supabase.from("house_members").insert({ user_id: user.id, house_id: newHouse.id, role: "owner" });
+      }
     }
 
     setSaving(false);
@@ -519,6 +561,34 @@ export default function Settings() {
 
       <Separator />
 
+      {/* House section */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Dados da Casa</h2>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="house-name">Nome da Casa</Label>
+            <Input id="house-name" value={houseName} onChange={(e) => setHouseName(e.target.value)} placeholder="A Nossa Casa" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="partner1">Teu Nome (Iniciais)</Label>
+              <Input id="partner1" value={partner1Name} onChange={(e) => setPartner1Name(e.target.value)} placeholder="Ex: João" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="partner2">Nome do Par</Label>
+              <Input id="partner2" value={partner2Name} onChange={(e) => setPartner2Name(e.target.value)} placeholder="Ex: Maria" />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">Usado para gerar as iniciais no Splash Screen (ex: J & M).</p>
+          <Button onClick={handleSaveProfile} disabled={saving} variant="secondary" className="w-full">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Guardar Dados da Casa
+          </Button>
+        </div>
+      </div>
+
+      <Separator />
+
       {/* Push notifications */}
       <div className="space-y-3">
         <h2 className="text-lg font-medium">Notificações push</h2>
@@ -563,7 +633,7 @@ export default function Settings() {
       <div className="space-y-3">
         <h2 className="text-lg font-medium">Notificações in-app</h2>
         {[
-          { key: "chat", label: "Dkay Zap" },
+          { key: "chat", label: "Chat" },
           { key: "humor", label: "Humor" },
           { key: "tarefas", label: "Tarefas" },
           { key: "memorias", label: "Memórias" },
@@ -585,7 +655,7 @@ export default function Settings() {
 
       {/* Dkay Zap wallpaper */}
       <div className="space-y-3">
-        <h2 className="text-lg font-medium">Dkay Zap — Wallpaper</h2>
+        <h2 className="text-lg font-medium">Chat — Wallpaper</h2>
 
         {/* Preview */}
         {wallpaperUrl && (

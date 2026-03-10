@@ -464,7 +464,7 @@ export default function Chat() {
       if (!body && audioUrl) body = "🎤 Enviou um áudio";
       notifyPartner({
         couple_space_id: spaceId,
-        title: "💬 Nova mensagem no Dkay Zap",
+        title: "💬 Nova mensagem no Chat",
         body: body.length > 100 ? body.slice(0, 100) + "…" : body,
         url: "/chat",
         type: "chat",
@@ -568,7 +568,7 @@ export default function Chat() {
           <span className="text-base">💬</span>
         </div>
         <div className="flex-1 min-w-0 pointer-events-auto">
-          <h1 className="text-base font-bold tracking-tight text-foreground drop-shadow-sm">Dkay Zap</h1>
+          <h1 className="text-base font-bold tracking-tight text-foreground drop-shadow-sm">Chat</h1>
         </div>
       </header>
 
