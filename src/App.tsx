@@ -9,6 +9,7 @@ import { AuthProvider } from "@/features/auth/AuthContext";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { AuthOnlyRoute } from "@/features/auth/AuthOnlyRoute";
 import { AdminRoute } from "@/features/auth/AdminRoute";
+import { PremiumGuard } from "@/features/auth/PremiumGuard";
 import { AppNotifProvider } from "@/features/notifications/AppNotifContext";
 import { SplashGate } from "@/features/splash/SplashScreen";
 
@@ -32,6 +33,8 @@ const Routine = lazy(() => import("./pages/Routine"));
 const RoutineDay = lazy(() => import("./pages/RoutineDay"));
 const RoutineManage = lazy(() => import("./pages/RoutineManage"));
 const Subscription = lazy(() => import("./pages/Subscription"));
+const Challenges = lazy(() => import("./pages/Challenges"));
+const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminRegister = lazy(() => import("./pages/admin/AdminRegister"));
@@ -71,18 +74,24 @@ const App = () => (
                     <Route index element={<Index />} />
                     <Route path="chat" element={<Chat />} />
                     <Route path="humor" element={<Mood />} />
-                    <Route path="tarefas" element={<Tasks />} />
-                    <Route path="oracao" element={<Prayer />} />
-                    <Route path="agenda" element={<Schedule />} />
-                    <Route path="conflitos" element={<Complaints />} />
-                    <Route path="memorias" element={<Memories />} />
                     <Route path="configuracoes" element={<Settings />} />
-                    <Route path="ciclo" element={<Cycle />} />
-                    <Route path="jejum" element={<Fasting />} />
-                    <Route path="rotina" element={<Routine />} />
-                    <Route path="rotina/dia/:date" element={<RoutineDay />} />
-                    <Route path="rotina/gerir" element={<RoutineManage />} />
                     <Route path="subscricao" element={<Subscription />} />
+
+                    {/* Paywalled Premium Routes */}
+                    <Route element={<PremiumGuard />}>
+                      <Route path="tarefas" element={<Tasks />} />
+                      <Route path="oracao" element={<Prayer />} />
+                      <Route path="agenda" element={<Schedule />} />
+                      <Route path="conflitos" element={<Complaints />} />
+                      <Route path="memorias" element={<Memories />} />
+                      <Route path="ciclo" element={<Cycle />} />
+                      <Route path="jejum" element={<Fasting />} />
+                      <Route path="rotina" element={<Routine />} />
+                      <Route path="rotina/dia/:date" element={<RoutineDay />} />
+                      <Route path="rotina/gerir" element={<RoutineManage />} />
+                      <Route path="desafios" element={<Challenges />} />
+                      <Route path="capsula" element={<TimeCapsule />} />
+                    </Route>
                   </Route>
                 </Route>
 

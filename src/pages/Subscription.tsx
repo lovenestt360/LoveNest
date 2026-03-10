@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, Tag } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, Tag, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 
 const METHODS = [
     { id: "M-Pesa", name: "M-Pesa", instructions: "Envia o valor para: 84 123 4567 (Nome: LoveNest)" },
@@ -13,7 +13,8 @@ const METHODS = [
 
 export default function Subscription() {
     const [loading, setLoading] = useState(true);
-    const [sub, setSub] = useState<any>(null);
+    const [house, setHouse] = useState<any>(null);
+    const [pendingPayment, setPendingPayment] = useState<any>(null);
     const [plans, setPlans] = useState<any[]>([]);
 
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
@@ -21,6 +22,7 @@ export default function Subscription() {
 
     const [uploading, setUploading] = useState(false);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [userEmail, setUserEmail] = useState("");
 
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -34,6 +36,7 @@ export default function Subscription() {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
+            setUserEmail(user.email || "");
 
             // Fetch Active Plans
             const { data: activePlans } = await supabase
@@ -47,7 +50,7 @@ export default function Subscription() {
                 setSelectedPlan(activePlans[0]);
             }
 
-            // Get house_id & existing sub
+            // Get house details
             const { data: members } = await supabase
                 .from("house_members")
                 .select("house_id")
@@ -55,14 +58,28 @@ export default function Subscription() {
                 .single();
 
             if (members) {
-                const { data: subscription } = await supabase
-                    .from("subscriptions")
+                const { data: houseData } = await supabase
+                    .from("houses")
                     .select("*")
-                    .eq("house_id", members.house_id)
-                    .maybeSingle();
+                    .eq("id", members.house_id)
+                    .single();
 
-                if (subscription) {
-                    setSub(subscription);
+                setHouse(houseData);
+
+                if (houseData?.subscription_status !== 'active') {
+                    // Check if there is a pending payment
+                    const { data: paymentData } = await supabase
+                        .from("payments")
+                        .select("*")
+                        .eq("house_id", members.house_id)
+                        .eq("status", "pending")
+                        .order("created_at", { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+
+                    if (paymentData) {
+                        setPendingPayment(paymentData);
+                    }
                 }
             }
         } catch (error) {
@@ -88,17 +105,11 @@ export default function Subscription() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const { data: members } = await supabase
-                .from("house_members")
-                .select("house_id")
-                .eq("user_id", user.id)
-                .single();
-
-            if (!members) throw new Error("Sem casa associada.");
+            if (!house) throw new Error("Sem casa associada.");
 
             // Upload receipt
             const fileExt = receiptFile.name.split('.').pop();
-            const fileName = `${members.house_id}_${Date.now()}.${fileExt}`;
+            const fileName = `${house.id}_${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
 
             const { error: uploadError } = await supabase.storage
@@ -111,18 +122,19 @@ export default function Subscription() {
                 .from("receipts")
                 .getPublicUrl(filePath);
 
-            // Save subscription
-            const { error: subError } = await supabase
-                .from("subscriptions")
+            // Create Payment record
+            const { error: paymentError } = await supabase
+                .from("payments")
                 .insert({
-                    house_id: members.house_id,
-                    plan: selectedPlan.name,
-                    payment_method: selectedMethod.name,
-                    payment_proof_url: publicUrlData.publicUrl,
-                    paid: false
+                    house_id: house.id,
+                    plan_name: selectedPlan.name,
+                    amount: selectedPlan.price,
+                    method: selectedMethod.name,
+                    proof_url: publicUrlData.publicUrl,
+                    status: 'pending'
                 });
 
-            if (subError) throw subError;
+            if (paymentError) throw paymentError;
 
             toast({ title: "Sucesso!", description: "Comprovativo enviado. Aguarda a aprovação do admin." });
             loadData();
@@ -131,6 +143,13 @@ export default function Subscription() {
         } finally {
             setUploading(false);
         }
+    };
+
+    const handleWhatsApp = () => {
+        if (!pendingPayment || !house) return;
+        const msg = `Olá, acabei de enviar um pagamento para o LoveNest.\n\nEmail: ${userEmail}\nCasa: ${house.house_name || 'Sem Nome'}\nPlano: ${pendingPayment.plan_name}\nValor: ${pendingPayment.amount}\n\nPor favor, confirmem e ativem!`;
+        const encodedMsg = encodeURIComponent(msg);
+        window.open(`https://wa.me/258841234567?text=${encodedMsg}`, "_blank");
     };
 
     if (loading) {
@@ -147,26 +166,31 @@ export default function Subscription() {
             </header>
 
             <main className="p-4 space-y-6 max-w-md mx-auto">
-                {sub ? (
+                {house?.subscription_status === 'active' ? (
                     <div className="bg-card border rounded-3xl p-8 shadow-md text-center animate-in zoom-in-95">
-                        {sub.paid ? (
-                            <>
-                                <div className="mx-auto w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-inner">
-                                    <CheckCircle className="w-10 h-10" />
-                                </div>
-                                <h2 className="text-3xl font-black mb-2 tracking-tight">Plano Ativo!</h2>
-                                <p className="text-foreground/80 leading-relaxed font-medium">A tua subscrição ao plano <strong className="text-primary">{sub.plan}</strong> está ativa. Aproveita a LoveNest com o teu par.</p>
-                            </>
-                        ) : (
-                            <>
-                                <div className="mx-auto w-20 h-20 bg-yellow-500/10 text-yellow-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                                    <UploadCloud className="w-10 h-10" />
-                                </div>
-                                <h2 className="text-3xl font-black mb-2 tracking-tight">Em Análise</h2>
-                                <p className="text-foreground/80 leading-relaxed font-medium">Recebemos o teu comprovativo. A nossa equipa está a verificar o pagamento e a ativação será feita em breve.</p>
-                                <p className="mt-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted p-2 rounded-lg">Plano Selecionado: {sub.plan}</p>
-                            </>
-                        )}
+                        <div className="mx-auto w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-inner">
+                            <CheckCircle className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-black mb-2 tracking-tight">Estatuto Premium!</h2>
+                        <p className="text-foreground/80 leading-relaxed font-medium">A tua casa <strong className="text-primary">{house.house_name}</strong> tem subscrição ativa. Explora todas as features sem limites!</p>
+                    </div>
+                ) : pendingPayment ? (
+                    <div className="bg-card border rounded-3xl p-8 shadow-md text-center animate-in zoom-in-95">
+                        <div className="mx-auto w-20 h-20 bg-yellow-500/10 text-yellow-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                            <UploadCloud className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-black mb-2 tracking-tight">Em Análise</h2>
+                        <p className="text-foreground/80 leading-relaxed font-medium">Recebemos o teu comprovativo. A nossa equipa está a verificar o pagamento e a ativação será feita em breve.</p>
+
+                        <div className="mt-4 mb-6 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted p-3 rounded-xl border flex flex-col items-center">
+                            <span>Plano: <span className="text-primary">{pendingPayment.plan_name}</span></span>
+                            <span>Valor: {pendingPayment.amount}</span>
+                        </div>
+
+                        <Button onClick={handleWhatsApp} className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 h-14 font-bold text-md rounded-2xl shadow-lg">
+                            <MessageCircle className="w-5 h-5" /> Acelerar Ativação via WhatsApp
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-3">Clica acima para enviares mensagem ao suporte avisando que já efetuaste o pagamento, para não precisares de esperar.</p>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in slide-in-from-bottom-4">
@@ -188,7 +212,8 @@ export default function Subscription() {
                                                 <h4 className="text-xl font-bold">{p.name}</h4>
                                                 {selectedPlan?.id === p.id && <CheckCircle className="w-5 h-5 text-primary" />}
                                             </div>
-                                            <p className="text-2xl font-black text-primary mb-3">{p.price}</p>
+                                            <p className="text-2xl font-black text-primary mb-1">{p.price}</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-3">{p.billing_type === 'one_time' ? 'Pagamento Único' : p.billing_type}</p>
                                             <ul className="space-y-1">
                                                 {p.features?.map((feat: string, i: number) => (
                                                     <li key={i} className="flex gap-2 items-start text-xs text-muted-foreground font-medium">
@@ -247,7 +272,7 @@ export default function Subscription() {
                             onClick={handleSubscribe}
                             disabled={uploading || !plans.length}
                         >
-                            {uploading ? "A enviar e processar..." : "Confirmar Subscrição"}
+                            {uploading ? "A enviar e processar..." : "Confirmar e Enviar"}
                         </Button>
                     </div>
                 )}

@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 export default function Admin() {
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users">("overview");
-    const [subscriptions, setSubscriptions] = useState<any[]>([]);
+    const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -43,20 +43,21 @@ export default function Admin() {
         try {
             setLoading(true);
 
-            // 1. Subscriptions
-            const { data: subsData } = await supabase
-                .from("subscriptions")
+            // 1. Payments
+            const { data: paymentsData } = await supabase
+                .from("payments")
                 .select(`
                     *,
                     houses (
                         house_name,
                         partner1_name,
                         partner2_name,
-                        is_suspended
+                        is_suspended,
+                        subscription_status
                     )
                 `)
                 .order("created_at", { ascending: false });
-            setSubscriptions(subsData || []);
+            setPayments(paymentsData || []);
 
             // 2. Houses
             const { data: housesData } = await supabase
@@ -98,11 +99,20 @@ export default function Admin() {
         navigate("/admin-login");
     };
 
-    const handleApproveSub = async (id: string) => {
+    const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
         try {
-            const { error } = await supabase.from("subscriptions").update({ paid: true }).eq("id", id);
-            if (error) throw error;
-            toast({ title: "Sucesso", description: "Subscrição aprovada!" });
+            // Update payment status
+            const { error: pErr } = await supabase.from("payments").update({ status: 'approved' }).eq("id", paymentId);
+            if (pErr) throw pErr;
+
+            // Update house subscription
+            const { error: hErr } = await supabase.from("houses").update({ subscription_status: 'active' }).eq("id", houseId);
+            if (hErr) throw hErr;
+
+            // Upsert backwards compatible subscription
+            await supabase.from("subscriptions").upsert({ house_id: houseId, plan: planName, paid: true }, { onConflict: 'house_id' });
+
+            toast({ title: "Sucesso", description: "Pagamento aprovado e plano ativo!" });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -187,12 +197,12 @@ export default function Admin() {
         }
     };
 
-    if (loading && subscriptions.length === 0) {
+    if (loading && payments.length === 0) {
         return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
     }
 
-    const pendingSubs = subscriptions.filter(s => !s.paid);
-    const activeSubs = subscriptions.filter(s => s.paid);
+    const pendingPayments = payments.filter(p => p.status === 'pending');
+    const activeHouses = houses.filter(h => h.subscription_status === 'active');
 
     return (
         <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-muted/30">
@@ -265,12 +275,12 @@ export default function Admin() {
                             </div>
                             <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-green-500/20">
                                 <Activity className="w-6 h-6 text-green-500 mb-4" />
-                                <span className="text-3xl font-black">{activeSubs.length}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Planos Ativos</span>
+                                <span className="text-3xl font-black">{activeHouses.length}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Casas Ativas</span>
                             </div>
                             <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-yellow-500/20 bg-yellow-500/5">
                                 <FileText className="w-6 h-6 text-yellow-500 mb-4" />
-                                <span className="text-3xl font-black">{pendingSubs.length}</span>
+                                <span className="text-3xl font-black">{pendingPayments.length}</span>
                                 <span className="text-sm text-yellow-600/70 font-bold uppercase tracking-wider mt-1">Pendentes</span>
                             </div>
                         </div>
@@ -279,30 +289,30 @@ export default function Admin() {
                         <div className="mt-8">
                             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                                 Aguardam Pagamento
-                                {pendingSubs.length > 0 && <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{pendingSubs.length}</span>}
+                                {pendingPayments.length > 0 && <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{pendingPayments.length}</span>}
                             </h3>
                             <div className="space-y-3">
-                                {pendingSubs.length === 0 && <p className="text-sm text-muted-foreground bg-card p-4 rounded-xl border border-dashed">Nenhuma subscrição pendente de aprovação.</p>}
-                                {pendingSubs.map((sub) => (
-                                    <div key={sub.id} className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                {pendingPayments.length === 0 && <p className="text-sm text-muted-foreground bg-card p-4 rounded-xl border border-dashed">Nenhuma subscrição pendente de aprovação.</p>}
+                                {pendingPayments.map((payment) => (
+                                    <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-lg">{sub.houses?.house_name || "Casa sem nome"}</h4>
+                                                <h4 className="font-bold text-lg">{payment.houses?.house_name || "Casa sem nome"}</h4>
                                                 <span className="text-[10px] font-bold uppercase bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded-md">Pendente</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">Casal: {sub.houses?.partner1_name} & {sub.houses?.partner2_name}</p>
-                                            <p className="text-sm font-medium mt-1">Plano Solicitado: <span className="text-primary">{sub.plan}</span></p>
-                                            <p className="text-xs text-muted-foreground mt-0.5">Método de Pagamento: {sub.payment_method}</p>
+                                            <p className="text-sm text-muted-foreground">Casal: {payment.houses?.partner1_name} & {payment.houses?.partner2_name}</p>
+                                            <p className="text-sm font-medium mt-1">Plano Solicitado: <span className="text-primary">{payment.plan_name}</span></p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Método de Pagamento: {payment.method}</p>
                                         </div>
                                         <div className="flex w-full md:w-auto gap-2">
-                                            {sub.payment_proof_url ? (
-                                                <Button size="sm" variant="outline" className="flex-1 md:flex-none" onClick={() => setSelectedImage(sub.payment_proof_url)}>
+                                            {payment.proof_url ? (
+                                                <Button size="sm" variant="outline" className="flex-1 md:flex-none" onClick={() => setSelectedImage(payment.proof_url)}>
                                                     <ImageIcon className="w-4 h-4 mr-2" /> Comprovativo
                                                 </Button>
                                             ) : (
                                                 <Button size="sm" variant="outline" disabled className="flex-1 md:flex-none">Sem Anexo</Button>
                                             )}
-                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApproveSub(sub.id)}>
+                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprovePayment(payment.id, payment.house_id, payment.plan_name)}>
                                                 <Check className="w-4 h-4 mr-1" /> Aprovar
                                             </Button>
                                         </div>
@@ -319,7 +329,7 @@ export default function Admin() {
                         <h2 className="text-2xl font-bold flex items-center gap-2"><Home className="w-6 h-6 text-primary" /> Gestão de Casas</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {houses.map((house) => {
-                                const sub = subscriptions.find(s => s.house_id === house.id);
+                                const activePayment = payments.find(p => p.house_id === house.id && p.status === 'approved');
                                 return (
                                     <div key={house.id} className="bg-card border rounded-2xl p-5 relative shadow-sm hover:shadow-md transition-shadow">
                                         {house.is_suspended && (
@@ -337,12 +347,12 @@ export default function Admin() {
 
                                         <div className="bg-muted/50 p-3 rounded-lg mb-4 text-sm">
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-muted-foreground">Plano:</span>
-                                                <span className="font-bold truncate max-w-[120px]">{sub?.plan || "Sem plano"}</span>
+                                                <span className="text-muted-foreground">Plano Atual:</span>
+                                                <span className="font-bold truncate max-w-[120px]">{activePayment?.plan_name || "Trial / Sem Plano"}</span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-muted-foreground">Estado:</span>
-                                                <span className={sub?.paid ? "text-green-500 font-bold" : "text-yellow-500 font-bold"}>{sub?.paid ? "Ativo" : "Pendente"}</span>
+                                                <span className={house.subscription_status === 'active' ? "text-green-500 font-bold uppercase text-[10px]" : "text-yellow-500 font-bold uppercase text-[10px]"}>{house.subscription_status}</span>
                                             </div>
                                         </div>
 

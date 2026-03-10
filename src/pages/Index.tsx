@@ -12,13 +12,12 @@ import { computeCycleInfo, useCycleTarget, type CycleProfile, type PeriodEntry }
 import { getEasterDate, dayResultLabel } from "@/features/fasting/types";
 import { Progress } from "@/components/ui/progress";
 import {
-  CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight, Megaphone,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  ArrowRight, Megaphone, Trophy, Clock,
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useRelationshipStreak } from "@/hooks/useRelationshipStreak";
+import { cn } from "@/lib/utils";
 
 /* ── data hooks ── */
 
@@ -315,6 +314,7 @@ const Index = () => {
   const time = useTimeTogether();
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
+  const { streak } = useRelationshipStreak();
 
   const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
 
@@ -376,9 +376,14 @@ const Index = () => {
 
         {time.startDate ? (
           <div className="glass-card rounded-2xl p-4 space-y-2">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              💕 Tempo juntos
-            </p>
+            <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              <span>💕 Tempo juntos</span>
+              {streak > 0 && (
+                <span className="flex items-center gap-1 text-orange-500 font-bold bg-orange-500/10 px-2 py-0.5 rounded-full">
+                  <Flame className="w-3 h-3" /> {streak} D{streak !== 1 ? "ias" : "ia"}
+                </span>
+              )}
+            </div>
             <div className="flex items-center justify-center gap-3">
               <TimeUnit value={time.days} label="dias" />
               <span className="text-lg font-bold text-muted-foreground/40">:</span>
@@ -532,6 +537,28 @@ const Index = () => {
 
       {/* ── 2-col grid ── */}
       <div className="grid grid-cols-2 gap-3">
+        <DashCard
+          icon={<Trophy className="h-4.5 w-4.5" />}
+          title="Desafios"
+          lines={[
+            "Concluir Desafios",
+            "Criar Novos Jogos 🎯",
+          ]}
+          to="/desafios"
+          accent="bg-orange-500/10 text-orange-600"
+        />
+
+        <DashCard
+          icon={<Clock className="h-4.5 w-4.5" />}
+          title="Cápsula"
+          lines={[
+            "Mensagens ocultas",
+            "Guardar memórias 🔒",
+          ]}
+          to="/capsula"
+          accent="bg-indigo-500/10 text-indigo-600"
+        />
+
         <DashCard
           icon={<CheckSquare className="h-4.5 w-4.5" />}
           title="Tarefas"

@@ -1531,6 +1531,268 @@ export type Database = {
           },
         ]
       }
+<<<<<<< HEAD
+=======
+      house_members: {
+        Row: {
+          created_at: string
+          house_id: string
+          id: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          house_id: string
+          id?: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          house_id?: string
+          id?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "house_members_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      houses: {
+        Row: {
+          created_at: string
+          house_name: string | null
+          id: string
+          initials: string | null
+          is_suspended: boolean | null
+          last_streak_date: string | null
+          partner1_name: string | null
+          partner2_name: string | null
+          streak_count: number | null
+          subscription_status: string | null
+        }
+        Insert: {
+          created_at?: string
+          house_name?: string | null
+          id?: string
+          initials?: string | null
+          is_suspended?: boolean | null
+          last_streak_date?: string | null
+          partner1_name?: string | null
+          partner2_name?: string | null
+          streak_count?: number | null
+          subscription_status?: string | null
+        }
+        Update: {
+          created_at?: string
+          house_name?: string | null
+          id?: string
+          initials?: string | null
+          is_suspended?: boolean | null
+          last_streak_date?: string | null
+          partner1_name?: string | null
+          partner2_name?: string | null
+          streak_count?: number | null
+          subscription_status?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          house_id: string
+          id: string
+          paid: boolean | null
+          payment_method: string | null
+          payment_proof_url: string | null
+          plan: string
+        }
+        Insert: {
+          created_at?: string
+          house_id: string
+          id?: string
+          paid?: boolean | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          plan?: string
+        }
+        Update: {
+          created_at?: string
+          house_id?: string
+          id?: string
+          paid?: boolean | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          plan?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: true
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          billing_type: string | null
+          created_at: string
+          features: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: string
+        }
+        Insert: {
+          billing_type?: string | null
+          created_at?: string
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: string
+        }
+        Update: {
+          billing_type?: string | null
+          created_at?: string
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: string
+          created_at: string
+          house_id: string
+          id: string
+          method: string
+          plan_name: string
+          proof_url: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: string
+          created_at?: string
+          house_id: string
+          id?: string
+          method: string
+          plan_name: string
+          proof_url?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: string
+          created_at?: string
+          house_id?: string
+          id?: string
+          method?: string
+          plan_name?: string
+          proof_url?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      couple_challenges: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          house_id: string
+          id: string
+          is_completed: boolean | null
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          house_id: string
+          id?: string
+          is_completed?: boolean | null
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          house_id?: string
+          id?: string
+          is_completed?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_challenges_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      time_capsule_messages: {
+        Row: {
+          created_at: string
+          creator_id: string
+          house_id: string
+          id: string
+          image_url: string | null
+          is_unlocked: boolean | null
+          message: string
+          unlock_date: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          house_id: string
+          id?: string
+          image_url?: string | null
+          is_unlocked?: boolean | null
+          message: string
+          unlock_date: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          house_id?: string
+          id?: string
+          image_url?: string | null
+          is_unlocked?: boolean | null
+          message?: string
+          unlock_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_capsule_messages_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+>>>>>>> 1fb7eb1 (feat: complete saas billing, paywall, streaks, challenges, and time capsules)
     }
     Views: {
       [_ in never]: never
