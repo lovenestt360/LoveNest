@@ -6,6 +6,14 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    // Fallback: guarantee env vars are always available even if .env fails to load
+    ...(process.env.VITE_SUPABASE_URL ? {} : {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify("https://jxwvvbqitdcczlwnptxj.supabase.co"),
+      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4d3Z2YnFpdGRjY3psd25wdHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTQ5NDQsImV4cCI6MjA4ODU5MDk0NH0.aCJK8f5qZXizm4LxBA4Esa6Ve9QnPNYzAnAzN2rvJFo"),
+      'import.meta.env.VITE_SUPABASE_PROJECT_ID': JSON.stringify("jxwvvbqitdcczlwnptxj"),
+    }),
+  },
   optimizeDeps: {
     force: true,
     include: [
