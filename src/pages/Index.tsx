@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight,
+  ArrowRight, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
@@ -227,6 +227,17 @@ function useCycleHome() {
   return { profile, info, isMale };
 }
 
+/* ── Global Announcements ── */
+function useGlobalAnnouncements() {
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from("admin_announcements").select("*")
+      .eq("active", true).order("created_at", { ascending: false })
+      .then(({ data }) => setAnnouncements(data || []));
+  }, []);
+  return announcements;
+}
+
 /* ── Time digit ── */
 
 function TimeUnit({ value, label }: { value: number; label: string }) {
@@ -317,6 +328,7 @@ const Index = () => {
   const chatPreview = useMessagePreview();
   const fasting = useFastingHome();
   const cycle = useCycleHome();
+  const announcements = useGlobalAnnouncements();
 
   // Easter countdown
   const easterStr = getEasterDate();
@@ -386,6 +398,16 @@ const Index = () => {
           </button>
         )}
       </header>
+
+      {/* ── Global Announcements ── */}
+      {announcements.map((ann) => (
+        <div key={ann.id} className="bg-primary/10 border border-primary/20 text-primary p-4 rounded-2xl animate-in slide-in-from-top-4 relative shadow-sm">
+          <h3 className="font-bold flex items-center gap-2 mb-1">
+            <Megaphone className="w-4 h-4" /> {ann.title}
+          </h3>
+          <p className="text-sm font-medium">{ann.content}</p>
+        </div>
+      ))}
 
       <InstallBanner />
 

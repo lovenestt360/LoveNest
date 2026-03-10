@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_announcements: {
+        Row: {
+          active: boolean | null
+          content: string
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          active?: boolean | null
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          active?: boolean | null
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       albums: {
         Row: {
           couple_space_id: string
@@ -1394,6 +1418,7 @@ export type Database = {
           house_name: string | null
           id: string
           initials: string | null
+          is_suspended: boolean | null
           partner1_name: string | null
           partner2_name: string | null
         }
@@ -1402,6 +1427,7 @@ export type Database = {
           house_name?: string | null
           id?: string
           initials?: string | null
+          is_suspended?: boolean | null
           partner1_name?: string | null
           partner2_name?: string | null
         }
@@ -1410,6 +1436,7 @@ export type Database = {
           house_name?: string | null
           id?: string
           initials?: string | null
+          is_suspended?: boolean | null
           partner1_name?: string | null
           partner2_name?: string | null
         }
