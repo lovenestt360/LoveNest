@@ -12,8 +12,10 @@ import { computeCycleInfo, useCycleTarget, type CycleProfile, type PeriodEntry }
 import { getEasterDate, dayResultLabel } from "@/features/fasting/types";
 import { Progress } from "@/components/ui/progress";
 import {
+  CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
   ArrowRight, Megaphone, Trophy, Clock,
+} from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRelationshipStreak } from "@/hooks/useRelationshipStreak";
