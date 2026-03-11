@@ -1070,6 +1070,42 @@ export type Database = {
           },
         ]
       }
+      payment_settings: {
+        Row: {
+          account_name: string | null
+          created_at: string
+          emola_number: string | null
+          id: string
+          mkesh_number: string | null
+          mpesa_number: string | null
+          updated_at: string
+          whatsapp_message_template: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          created_at?: string
+          emola_number?: string | null
+          id?: string
+          mkesh_number?: string | null
+          mpesa_number?: string | null
+          updated_at?: string
+          whatsapp_message_template?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          created_at?: string
+          emola_number?: string | null
+          id?: string
+          mkesh_number?: string | null
+          mpesa_number?: string | null
+          updated_at?: string
+          whatsapp_message_template?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: string
