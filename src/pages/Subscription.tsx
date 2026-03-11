@@ -5,11 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 
-const METHODS = [
-    { id: "M-Pesa", name: "M-Pesa", instructions: "Envia o valor para: 84 123 4567 (Nome: LoveNest)" },
-    { id: "e-Mola", name: "e-Mola", instructions: "Envia o valor para: 86 123 4567 (Nome: LoveNest)" },
-    { id: "mKesh", name: "mKesh", instructions: "Envia o valor para: 82 123 4567 (Nome: LoveNest)" }
-];
+// Removed static METHODS array, it will be generated dynamically
 
 export default function Subscription() {
     const [loading, setLoading] = useState(true);
@@ -18,7 +14,10 @@ export default function Subscription() {
     const [plans, setPlans] = useState<any[]>([]);
 
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
-    const [selectedMethod, setSelectedMethod] = useState(METHODS[0]);
+    const [selectedMethod, setSelectedMethod] = useState<any>(null);
+
+    const [paymentSettings, setPaymentSettings] = useState<any>(null);
+    const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 
     const [uploading, setUploading] = useState(false);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -52,6 +51,26 @@ export default function Subscription() {
             if (activePlans && activePlans.length > 0) {
                 setPlans(activePlans);
                 setSelectedPlan(activePlans[0]);
+            }
+
+            // Fetch Payment Settings
+            const { data: psData } = await supabase.from("payment_settings").select("*").limit(1).maybeSingle();
+            if (psData) {
+                setPaymentSettings(psData);
+                const methods = [];
+                const accountName = psData.account_name || "LoveNest";
+
+                if (psData.mpesa_number) {
+                    methods.push({ id: "M-Pesa", name: "M-Pesa", instructions: `Envia o valor para: ${psData.mpesa_number} (Nome: ${accountName})` });
+                }
+                if (psData.emola_number) {
+                    methods.push({ id: "e-Mola", name: "e-Mola", instructions: `Envia o valor para: ${psData.emola_number} (Nome: ${accountName})` });
+                }
+                if (psData.mkesh_number) {
+                    methods.push({ id: "mKesh", name: "mKesh", instructions: `Envia o valor para: ${psData.mkesh_number} (Nome: ${accountName})` });
+                }
+                setPaymentMethods(methods);
+                if (methods.length > 0) setSelectedMethod(methods[0]);
             }
 
             // Get house details
@@ -150,10 +169,18 @@ export default function Subscription() {
     };
 
     const handleWhatsApp = () => {
-        if (!pendingPayment || !house) return;
-        const msg = `Olá, acabei de pagar o plano LoveNest.\n\nNome: ${userName}\nEmail: ${userEmail}\nCasa: ${house.house_name || 'Sem Nome'}\nPlano: ${pendingPayment.plan_name}\nValor: ${pendingPayment.amount}\n\nSegue o comprovativo para activação.`;
+        if (!pendingPayment || !house || !paymentSettings) return;
+
+        let msg = paymentSettings.whatsapp_message_template || "Olá, acabei de pagar o plano LoveNest. Segue o comprovativo.";
+        msg = msg.replace("{user_name}", userName);
+        msg = msg.replace("{user_email}", userEmail);
+        msg = msg.replace("{house_name}", house.house_name || 'Sem Nome');
+        msg = msg.replace("{plan_name}", pendingPayment.plan_name);
+        msg = msg.replace("{plan_price}", pendingPayment.amount);
+
+        const number = paymentSettings.whatsapp_number || "258841234567";
         const encodedMsg = encodeURIComponent(msg);
-        window.open(`https://wa.me/258841234567?text=${encodedMsg}`, "_blank");
+        window.open(`https://wa.me/${number.replace(/\D/g, '')}?text=${encodedMsg}`, "_blank");
     };
 
     if (loading) {
@@ -234,23 +261,32 @@ export default function Subscription() {
                         {/* Payment Method */}
                         <div className="space-y-3">
                             <h3 className="font-bold text-lg">Método de Pagamento</h3>
-                            <div className="grid grid-cols-3 gap-2">
-                                {METHODS.map((m) => (
-                                    <button
-                                        key={m.id}
-                                        onClick={() => setSelectedMethod(m)}
-                                        className={`p-3 rounded-xl border text-center transition-all ${selectedMethod.id === m.id ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-card text-card-foreground border-border hover:border-primary/50'}`}
-                                    >
-                                        <span className="font-bold text-sm">{m.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="bg-muted border rounded-xl p-4 flex items-start gap-3">
-                                <CreditCard className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                                <p className="text-sm font-medium text-foreground">
-                                    {selectedMethod.instructions}
-                                </p>
-                            </div>
+
+                            {paymentMethods.length === 0 ? (
+                                <p className="text-muted-foreground text-sm italic">Nenhum método configurado.</p>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {paymentMethods.map((m) => (
+                                            <button
+                                                key={m.id}
+                                                onClick={() => setSelectedMethod(m)}
+                                                className={`p-3 rounded-xl border text-center transition-all ${selectedMethod?.id === m.id ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-card text-card-foreground border-border hover:border-primary/50'}`}
+                                            >
+                                                <span className="font-bold text-sm">{m.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {selectedMethod && (
+                                        <div className="bg-muted border rounded-xl p-4 flex items-start gap-3">
+                                            <CreditCard className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                                            <p className="text-sm font-medium text-foreground">
+                                                {selectedMethod.instructions}
+                                            </p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Upload Proof */}

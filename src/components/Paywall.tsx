@@ -2,7 +2,7 @@ import { Lock, Star, HeartHandshake, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-export default function Paywall() {
+export default function Paywall({ title, description }: { title?: string, description?: string }) {
     const navigate = useNavigate();
 
     return (
@@ -16,9 +16,9 @@ export default function Paywall() {
                     <Lock className="w-10 h-10 text-primary" />
                 </div>
 
-                <h2 className="text-3xl font-black mb-2 tracking-tight">Conteúdo Premium</h2>
+                <h2 className="text-3xl font-black mb-2 tracking-tight">{title || "Conteúdo Premium"}</h2>
                 <p className="text-muted-foreground font-medium mb-8 leading-relaxed">
-                    Esta funcionalidade é exclusiva para casais LoveNest. Desbloqueia <strong className="text-primary">todas as ferramentas avançadas</strong> para elevar a vossa relação.
+                    {description || "Esta funcionalidade é exclusiva para casais LoveNest. Desbloqueia todas as ferramentas avançadas para elevar a vossa relação."}
                 </p>
 
                 <div className="bg-card border rounded-3xl p-6 shadow-sm flex flex-col gap-4 text-left mb-8">

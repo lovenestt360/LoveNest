@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus, Trash2
+    CreditCard, Tag, Plus, Trash2, Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings">("overview");
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [plans, setPlans] = useState<any[]>([]);
+    const [paymentSettings, setPaymentSettings] = useState<any>(null);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     // Announcement form
@@ -29,8 +30,44 @@ export default function Admin() {
     // Plan form
     const [newPlanName, setNewPlanName] = useState("");
     const [newPlanPrice, setNewPlanPrice] = useState("");
-    const [newPlanFeatures, setNewPlanFeatures] = useState("");
+    const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
     const [creatingPlan, setCreatingPlan] = useState(false);
+
+    // Settings form
+    const [savingSettings, setSavingSettings] = useState(false);
+    const [settingsForm, setSettingsForm] = useState({
+        mpesa_number: "",
+        emola_number: "",
+        mkesh_number: "",
+        account_name: "",
+        whatsapp_number: "",
+        whatsapp_message_template: ""
+    });
+
+    // Manual Plan Assignment
+    const [assignModalOpen, setAssignModalOpen] = useState(false);
+    const [selectedHouse, setSelectedHouse] = useState<any>(null);
+    const [selectedPlanForAssign, setSelectedPlanForAssign] = useState("");
+    const [assignTrialDays, setAssignTrialDays] = useState("0");
+    const [assigningPlan, setAssigningPlan] = useState(false);
+
+    const ALL_FEATURES = [
+        { id: "home", label: "Home" },
+        { id: "chat", label: "Chat" },
+        { id: "tasks", label: "Tarefas" },
+        { id: "mood", label: "Humor" },
+        { id: "memories", label: "Memórias" },
+        { id: "agenda", label: "Agenda" },
+        { id: "prayer", label: "Oração" },
+        { id: "fasting", label: "Jejum" },
+        { id: "cycle", label: "Ciclo" },
+        { id: "conflicts", label: "Conflitos" },
+        { id: "routine", label: "Rotinas" },
+        { id: "wallpapers", label: "Wallpapers" },
+        { id: "stats", label: "Estatísticas" },
+        { id: "time_capsules", label: "Cápsulas" },
+        { id: "challenges", label: "Desafios" }
+    ];
 
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -87,6 +124,25 @@ export default function Admin() {
                 .order("created_at", { ascending: false });
             setPlans(plansData || []);
 
+            // 6. Payment Settings
+            const { data: psData } = await supabase
+                .from("payment_settings")
+                .select("*")
+                .limit(1)
+                .maybeSingle();
+
+            if (psData) {
+                setPaymentSettings(psData);
+                setSettingsForm({
+                    mpesa_number: psData.mpesa_number || "",
+                    emola_number: psData.emola_number || "",
+                    mkesh_number: psData.mkesh_number || "",
+                    account_name: psData.account_name || "",
+                    whatsapp_number: psData.whatsapp_number || "",
+                    whatsapp_message_template: psData.whatsapp_message_template || ""
+                });
+            }
+
         } catch (error: any) {
             toast({ title: "Erro de Gestão", description: error.message, variant: "destructive" });
         } finally {
@@ -130,6 +186,52 @@ export default function Admin() {
         }
     };
 
+    const handleAssignPlan = async () => {
+        if (!selectedHouse || !selectedPlanForAssign) return;
+        try {
+            setAssigningPlan(true);
+            const planDetails = plans.find(p => p.name === selectedPlanForAssign);
+
+            // 1. Update House Status
+            const updates: any = {
+                subscription_status: 'active'
+            };
+
+            const trialDays = parseInt(assignTrialDays);
+            if (trialDays > 0) {
+                const now = new Date();
+                const future = new Date();
+                future.setDate(now.getDate() + trialDays);
+                updates.trial_started_at = now.toISOString();
+                updates.trial_ends_at = future.toISOString();
+                updates.trial_used = true;
+            }
+
+            const { error: hErr } = await supabase.from("houses").update(updates).eq("id", selectedHouse.id);
+            if (hErr) throw hErr;
+
+            // 2. Upsert Subscription Record
+            const { error: sErr } = await supabase.from("subscriptions").upsert({
+                house_id: selectedHouse.id,
+                plan_id: planDetails?.id || null, // V3 schema
+                plan: selectedPlanForAssign, // V2 schema fallback
+                paid: true
+            }, { onConflict: 'house_id' });
+            if (sErr) throw sErr;
+
+            toast({ title: "Plano Atribuído!", description: `A casa agora tem acesso ao plano ${selectedPlanForAssign}.` });
+            setAssignModalOpen(false);
+            setSelectedHouse(null);
+            setSelectedPlanForAssign("");
+            setAssignTrialDays("0");
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setAssigningPlan(false);
+        }
+    };
+
     const handleCreateAnnouncement = async () => {
         if (!newTitle.trim() || !newContent.trim()) return;
         try {
@@ -166,23 +268,41 @@ export default function Admin() {
         e.preventDefault();
         try {
             setCreatingPlan(true);
-            const featureArray = newPlanFeatures.split(",").map(f => f.trim()).filter(f => f.length > 0);
             const { error } = await supabase.from("subscription_plans").insert({
                 name: newPlanName,
                 price: newPlanPrice,
-                features: featureArray,
+                features: selectedFeatures,
                 is_active: true
             });
             if (error) throw error;
             toast({ title: "Plano Criado", description: "Novo plano de subscrição adicionado." });
             setNewPlanName("");
             setNewPlanPrice("");
-            setNewPlanFeatures("");
+            setSelectedFeatures([]);
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
             setCreatingPlan(false);
+        }
+    };
+
+    const handleSaveSettings = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            setSavingSettings(true);
+            const { error } = await supabase.from("payment_settings").upsert({
+                id: paymentSettings?.id || 'd16ba2d0-0f2c-497d-acf6-c6bd2a8d5469', // Upsert using explicit ID or fallback
+                ...settingsForm,
+                updated_at: new Date().toISOString()
+            });
+            if (error) throw error;
+            toast({ title: "Configurações Guardadas", description: "As configurações foram atualizadas com sucesso." });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setSavingSettings(false);
         }
     };
 
@@ -220,10 +340,54 @@ export default function Admin() {
         <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-muted/30">
             {/* Image Modal */}
             {selectedImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setSelectedImage(null)}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setSelectedImage(null)}>
                     <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
                         <img src={selectedImage} alt="Comprovativo" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" />
                         <Button variant="secondary" className="mt-4" onClick={() => setSelectedImage(null)}>Fechar Visualização</Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Manual Assignment Modal */}
+            {assignModalOpen && selectedHouse && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+                    <div className="bg-card w-full max-w-md rounded-2xl shadow-xl overflow-hidden border">
+                        <div className="p-6 border-b flex justify-between items-center bg-muted/30">
+                            <h3 className="font-bold text-lg">Atribuir Plano Manualmente</h3>
+                            <Button variant="ghost" size="icon" onClick={() => setAssignModalOpen(false)}><X className="w-5 h-5" /></Button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <p className="text-sm font-bold text-muted-foreground mb-1">Casa Selecionada:</p>
+                                <p className="font-bold">{selectedHouse.house_name} ({selectedHouse.partner1_name} & {selectedHouse.partner2_name})</p>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-bold text-muted-foreground mb-1 block">Escolher Plano</label>
+                                <select
+                                    className="w-full h-10 px-3 py-2 rounded-md border bg-background text-sm"
+                                    value={selectedPlanForAssign}
+                                    onChange={(e) => setSelectedPlanForAssign(e.target.value)}
+                                >
+                                    <option value="">-- Selecione --</option>
+                                    {plans.map(p => (
+                                        <option key={p.id} value={p.name}>{p.name} ({p.price})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-bold text-muted-foreground mb-1 block">Renovar Trial (Opcional, em dias)</label>
+                                <Input type="number" min="0" value={assignTrialDays} onChange={(e) => setAssignTrialDays(e.target.value)} />
+                                <p className="text-xs text-muted-foreground mt-1">Coloca 0 para não alterar o período de Trial atual.</p>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-muted/30 border-t flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancelar</Button>
+                            <Button className="font-bold" disabled={!selectedPlanForAssign || assigningPlan} onClick={handleAssignPlan}>
+                                {assigningPlan ? "A atribuir..." : "Confirmar Atribuição"}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -255,6 +419,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "announcements" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("announcements")}>
                         <Megaphone className="w-4 h-4" /> <span className="hidden md:inline">Avisos</span>
+                    </Button>
+                    <Button variant={tab === "settings" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("settings")}>
+                        <Settings className="w-4 h-4" /> <span className="hidden md:inline">Configurações</span>
                     </Button>
                 </nav>
 
@@ -362,19 +529,45 @@ export default function Admin() {
                                                 <span className="text-muted-foreground">Plano Atual:</span>
                                                 <span className="font-bold truncate max-w-[120px]">{activePayment?.plan_name || "Trial / Sem Plano"}</span>
                                             </div>
-                                            <div className="flex justify-between items-center">
+                                            <div className="flex justify-between items-center mb-2">
                                                 <span className="text-muted-foreground">Estado:</span>
                                                 <span className={house.subscription_status === 'active' ? "text-green-500 font-bold uppercase text-[10px]" : "text-yellow-500 font-bold uppercase text-[10px]"}>{house.subscription_status}</span>
                                             </div>
+                                            {house.trial_started_at && (
+                                                <div className="border-t pt-2 mt-2">
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-muted-foreground">Trial:</span>
+                                                        <span className={new Date(house.trial_ends_at) > new Date() ? "text-green-500 font-bold" : "text-destructive font-bold"}>
+                                                            {new Date(house.trial_ends_at) > new Date() ? "Ativo" : "Expirado"}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-[10px] text-muted-foreground mt-1 text-right">
+                                                        Termina: {new Date(house.trial_ends_at).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        <Button
-                                            variant={house.is_suspended ? "default" : "destructive"}
-                                            className="w-full text-xs font-bold"
-                                            onClick={() => handleToggleSuspension(house.id, house.is_suspended)}
-                                        >
-                                            {house.is_suspended ? "ATIVAR CASA" : "SUSPENDER CONTA"}
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                className="w-full text-xs font-bold bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+                                                onClick={() => {
+                                                    setSelectedHouse(house);
+                                                    setAssignModalOpen(true);
+                                                }}
+                                            >
+                                                EDITAR PLANO
+                                            </Button>
+                                            <Button
+                                                variant={house.is_suspended ? "default" : "destructive"}
+                                                size="icon"
+                                                className="shrink-0"
+                                                onClick={() => handleToggleSuspension(house.id, house.is_suspended)}
+                                            >
+                                                {house.is_suspended ? <Check className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                                            </Button>
+                                        </div>
                                     </div>
                                 )
                             })}
@@ -430,9 +623,29 @@ export default function Admin() {
                                     <Input value={newPlanPrice} onChange={e => setNewPlanPrice(e.target.value)} placeholder="Ex: 5000 MZN / Ano" required className="bg-background" />
                                 </div>
                             </div>
-                            <div className="mb-4">
-                                <label className="text-sm font-bold text-muted-foreground mb-1 block">Funcionalidades (separadas por vírgula)</label>
-                                <Textarea value={newPlanFeatures} onChange={e => setNewPlanFeatures(e.target.value)} placeholder="Ex: Rotinas, Chat Ilimitado, Suporte 24h" required className="bg-background" />
+                            <div className="mb-6">
+                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Funcionalidades do Plano</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    {ALL_FEATURES.map(feature => {
+                                        const isSelected = selectedFeatures.includes(feature.id);
+                                        return (
+                                            <div
+                                                key={feature.id}
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setSelectedFeatures(prev => prev.filter(f => f !== feature.id));
+                                                    } else {
+                                                        setSelectedFeatures(prev => [...prev, feature.id]);
+                                                    }
+                                                }}
+                                                className={`cursor-pointer rounded-xl border p-2 flex items-center justify-between text-xs font-bold transition-all ${isSelected ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted'}`}
+                                            >
+                                                <span>{feature.label}</span>
+                                                {isSelected && <Check className="w-3 h-3" />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                             <Button type="submit" disabled={creatingPlan} className="w-full md:w-auto">
                                 {creatingPlan ? "A criar..." : "Adicionar Plano"}
@@ -523,6 +736,67 @@ export default function Admin() {
                                 {announcements.length === 0 && <p className="text-sm text-muted-foreground italic bg-card p-4 rounded-xl border border-dashed">Nenhum aviso emitido ainda.</p>}
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* SETTINGS TAB */}
+                {tab === "settings" && (
+                    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6 text-primary" /> Configurações de Pagamento</h2>
+
+                        <form onSubmit={handleSaveSettings} className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
+
+                            <h3 className="font-bold mb-4 text-primary">Contas de Recebimento</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número M-Pesa</label>
+                                    <Input value={settingsForm.mpesa_number} onChange={e => setSettingsForm({ ...settingsForm, mpesa_number: e.target.value })} placeholder="Ex: 841234567" className="bg-background" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número e-Mola</label>
+                                    <Input value={settingsForm.emola_number} onChange={e => setSettingsForm({ ...settingsForm, emola_number: e.target.value })} placeholder="Ex: 861234567" className="bg-background" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número mKesh</label>
+                                    <Input value={settingsForm.mkesh_number} onChange={e => setSettingsForm({ ...settingsForm, mkesh_number: e.target.value })} placeholder="Ex: 821234567" className="bg-background" />
+                                </div>
+                                <div className="md:col-span-3">
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Nome Presente nas Contas</label>
+                                    <Input value={settingsForm.account_name} onChange={e => setSettingsForm({ ...settingsForm, account_name: e.target.value })} placeholder="Ex: João Silva" required className="bg-background" />
+                                </div>
+                            </div>
+
+                            <div className="h-px w-full bg-border mb-8"></div>
+
+                            <h3 className="font-bold mb-4 text-green-600">Configurações WhatsApp</h3>
+                            <div className="space-y-6 mb-8">
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número de WhatsApp (com indicativo)</label>
+                                    <Input value={settingsForm.whatsapp_number} onChange={e => setSettingsForm({ ...settingsForm, whatsapp_number: e.target.value })} placeholder="Ex: 258841234567" required className="bg-background" />
+                                    <p className="text-xs text-muted-foreground mt-1">O número para onde os casais enviam o comprovativo.</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Mensagem Automática</label>
+                                    <Textarea
+                                        value={settingsForm.whatsapp_message_template}
+                                        onChange={e => setSettingsForm({ ...settingsForm, whatsapp_message_template: e.target.value })}
+                                        className="bg-background min-h-[150px] font-mono text-sm"
+                                    />
+                                    <div className="mt-2 text-xs text-muted-foreground bg-muted p-3 rounded-lg">
+                                        <strong>Variavéis dinâmicas disponíveis:</strong><br />
+                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;user_name&#125;</code>
+                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;user_email&#125;</code>
+                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;house_name&#125;</code>
+                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;plan_name&#125;</code>
+                                        <code className="bg-background px-1 py-0.5 rounded">&#123;plan_price&#125;</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Button type="submit" className="w-full md:w-auto h-12 text-md font-bold" disabled={savingSettings}>
+                                {savingSettings ? "A Guardar..." : "Salvar Configurações"}
+                            </Button>
+                        </form>
                     </div>
                 )}
 

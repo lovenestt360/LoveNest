@@ -3,9 +3,10 @@ import { Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Paywall from "@/components/Paywall";
 
-export function PremiumGuard() {
+export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) {
     const [loading, setLoading] = useState(true);
     const [isPremium, setIsPremium] = useState(false);
+    const [missingFeature, setMissingFeature] = useState(false);
 
     useEffect(() => {
         const checkPremium = async () => {
@@ -18,14 +19,36 @@ export function PremiumGuard() {
 
                 const { data: house } = await supabase.from("houses").select("subscription_status, trial_used, trial_ends_at").eq("id", member.house_id).maybeSingle();
                 if (house) {
-                    if (house.subscription_status === 'active') {
-                        setIsPremium(true);
-                    } else if (house.trial_used && house.trial_ends_at) {
+                    let hasAccess = false;
+                    let featureMissing = false;
+
+                    if (house.trial_used && house.trial_ends_at) {
                         const endsAt = new Date(house.trial_ends_at);
                         if (endsAt > new Date()) {
-                            setIsPremium(true);
+                            // Free trial gives access to all features
+                            hasAccess = true;
                         }
                     }
+
+                    if (!hasAccess && house.subscription_status === 'active') {
+                        if (requiredFeature) {
+                            // Find active payment
+                            const { data: payment } = await supabase.from("payments").select("plan_name").eq("house_id", member.house_id).eq("status", "approved").order("created_at", { ascending: false }).limit(1).maybeSingle();
+                            if (payment) {
+                                const { data: plan } = await supabase.from("subscription_plans").select("features").eq("name", payment.plan_name).maybeSingle();
+                                if (plan && plan.features && plan.features.includes(requiredFeature)) {
+                                    hasAccess = true;
+                                } else {
+                                    featureMissing = true;
+                                }
+                            }
+                        } else {
+                            hasAccess = true;
+                        }
+                    }
+
+                    setIsPremium(hasAccess);
+                    setMissingFeature(featureMissing);
                 }
             } catch (error) {
                 console.error(error);
@@ -48,6 +71,22 @@ export function PremiumGuard() {
     }
 
     if (!isPremium) {
+        if (missingFeature) {
+            return (
+                <div className="flex flex-col items-center justify-center min-h-[80vh] bg-background p-6 text-center animate-in fade-in">
+                    <div className="bg-card w-full max-w-sm rounded-3xl p-8 border shadow-sm">
+                        <div className="mx-auto w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-4">
+                            <span className="font-bold text-2xl">!</span>
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">Funcionalidade Bloqueada</h2>
+                        <p className="text-muted-foreground text-sm mb-6">O teu plano atual não inclui o acesso a esta funcionalidade. Faz upgrade para abrires o cadeado!</p>
+                        <button onClick={() => window.location.href = '/subscricao'} className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-95 transition-transform">
+                            Ver Planos LoveNest
+                        </button>
+                    </div>
+                </div>
+            );
+        }
         return <Paywall />;
     }
 
