@@ -511,7 +511,7 @@ export default function Admin() {
                         <h2 className="text-2xl font-bold flex items-center gap-2"><Home className="w-6 h-6 text-primary" /> Gestão de Casas</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {houses.map((house) => {
-                                const activePayment = payments.find(p => p.house_id === house.id && p.status === 'approved');
+                                const activePayment = payments.find(p => p.couple_space_id === house.id && p.status === 'approved');
                                 return (
                                     <div key={house.id} className="bg-card border rounded-2xl p-5 relative shadow-sm hover:shadow-md transition-shadow">
                                         {house.is_suspended && (
