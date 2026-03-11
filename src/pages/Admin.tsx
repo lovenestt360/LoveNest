@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -72,20 +73,34 @@ export default function Admin() {
     const { toast } = useToast();
     const navigate = useNavigate();
 
+    const adminToken = localStorage.getItem("lovenest_admin_token");
+    const adminClient = useMemo(() => {
+        if (!adminToken) return supabase;
+        return createClient(
+            import.meta.env.VITE_SUPABASE_URL,
+            import.meta.env.VITE_SUPABASE_ANON_KEY,
+            {
+                global: {
+                    headers: { 'x-admin-id': adminToken }
+                }
+            }
+        );
+    }, [adminToken]);
+
     useEffect(() => {
         fetchAllData();
-    }, []);
+    }, [adminClient]);
 
     const fetchAllData = async () => {
         try {
             setLoading(true);
 
             // 1. Payments
-            const { data: paymentsData } = await supabase
+            const { data: paymentsData } = await adminClient
                 .from("payments")
                 .select(`
                     *,
-                    houses (
+                    couple_spaces (
                         house_name,
                         partner1_name,
                         partner2_name,
@@ -97,35 +112,35 @@ export default function Admin() {
             setPayments(paymentsData || []);
 
             // 2. Houses
-            const { data: housesData } = await supabase
+            const { data: housesData } = await adminClient
                 .from("couple_spaces")
                 .select(`*`)
                 .order("created_at", { ascending: false });
             setHouses(housesData || []);
 
             // 3. Users profiles
-            const { data: usersData } = await supabase
+            const { data: usersData } = await adminClient
                 .from("profiles")
                 .select("*")
                 .order("created_at", { ascending: false });
             setUsers(usersData || []);
 
             // 4. Announcements
-            const { data: annData } = await supabase
+            const { data: annData } = await adminClient
                 .from("admin_announcements")
                 .select("*")
                 .order("created_at", { ascending: false });
             setAnnouncements(annData || []);
 
             // 5. Plans
-            const { data: plansData } = await supabase
+            const { data: plansData } = await adminClient
                 .from("subscription_plans")
                 .select("*")
                 .order("created_at", { ascending: false });
             setPlans(plansData || []);
 
             // 6. Payment Settings
-            const { data: psData } = await supabase
+            const { data: psData } = await adminClient
                 .from("payment_settings")
                 .select("*")
                 .limit(1)
@@ -158,11 +173,11 @@ export default function Admin() {
     const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
         try {
             // Update payment status
-            const { error: pErr } = await supabase.from("payments").update({ status: 'approved' }).eq("id", paymentId);
+            const { error: pErr } = await adminClient.from("payments").update({ status: 'approved' }).eq("id", paymentId);
             if (pErr) throw pErr;
 
             // Update house subscription
-            const { error: hErr } = await supabase.from("couple_spaces").update({ subscription_status: 'active' }).eq("id", houseId);
+            const { error: hErr } = await adminClient.from("couple_spaces").update({ subscription_status: 'active' }).eq("id", houseId);
             if (hErr) throw hErr;
 
             toast({ title: "Sucesso", description: "Pagamento aprovado e plano ativo!" });
@@ -174,7 +189,7 @@ export default function Admin() {
 
     const handleToggleSuspension = async (houseId: string, currentStatus: boolean) => {
         try {
-            const { error } = await supabase.from("couple_spaces").update({ is_suspended: !currentStatus }).eq("id", houseId);
+            const { error } = await adminClient.from("couple_spaces").update({ is_suspended: !currentStatus }).eq("id", houseId);
             if (error) throw error;
             toast({ title: "Sucesso", description: `Casa ${!currentStatus ? 'suspensa' : 'ativada'} com sucesso.` });
             fetchAllData();
@@ -204,7 +219,7 @@ export default function Admin() {
                 updates.trial_used = true;
             }
 
-            const { error: hErr } = await supabase.from("couple_spaces").update(updates).eq("id", selectedHouse.id);
+            const { error: hErr } = await adminClient.from("couple_spaces").update(updates).eq("id", selectedHouse.id);
             if (hErr) throw hErr;
 
             toast({ title: "Plano Atribuído!", description: `A casa agora tem acesso ao plano ${selectedPlanForAssign}.` });
@@ -224,7 +239,7 @@ export default function Admin() {
         if (!newTitle.trim() || !newContent.trim()) return;
         try {
             setSendingMsg(true);
-            const { error } = await supabase.from("admin_announcements").insert({
+            const { error } = await adminClient.from("admin_announcements").insert({
                 title: newTitle,
                 content: newContent,
                 active: true
@@ -243,7 +258,7 @@ export default function Admin() {
 
     const handleToggleAnnouncement = async (id: string, activeStatus: boolean) => {
         try {
-            const { error } = await supabase.from("admin_announcements").update({ active: !activeStatus }).eq("id", id);
+            const { error } = await adminClient.from("admin_announcements").update({ active: !activeStatus }).eq("id", id);
             if (error) throw error;
             toast({ title: "Atualizado", description: "O estado do anúncio foi alterado." });
             fetchAllData();
@@ -256,7 +271,7 @@ export default function Admin() {
         e.preventDefault();
         try {
             setCreatingPlan(true);
-            const { error } = await supabase.from("subscription_plans").insert({
+            const { error } = await adminClient.from("subscription_plans").insert({
                 name: newPlanName,
                 price: newPlanPrice,
                 features: selectedFeatures,
@@ -279,7 +294,7 @@ export default function Admin() {
         e.preventDefault();
         try {
             setSavingSettings(true);
-            const { error } = await supabase.from("payment_settings").upsert({
+            const { error } = await adminClient.from("payment_settings").upsert({
                 id: paymentSettings?.id || 'd16ba2d0-0f2c-497d-acf6-c6bd2a8d5469', // Upsert using explicit ID or fallback
                 ...settingsForm,
                 updated_at: new Date().toISOString()
@@ -296,7 +311,7 @@ export default function Admin() {
 
     const handleTogglePlan = async (id: string, activeStatus: boolean) => {
         try {
-            const { error } = await supabase.from("subscription_plans").update({ is_active: !activeStatus }).eq("id", id);
+            const { error } = await adminClient.from("subscription_plans").update({ is_active: !activeStatus }).eq("id", id);
             if (error) throw error;
             toast({ title: "Sucesso", description: `Plano ${!activeStatus ? 'ativado' : 'desativado'}.` });
             fetchAllData();
@@ -308,7 +323,7 @@ export default function Admin() {
     const handleDeletePlan = async (id: string) => {
         if (!confirm("Tens a certeza que queres eliminar este plano? Esta ação não pode ser desfeita.")) return;
         try {
-            const { error } = await supabase.from("subscription_plans").delete().eq("id", id);
+            const { error } = await adminClient.from("subscription_plans").delete().eq("id", id);
             if (error) throw error;
             toast({ title: "Eliminado", description: "Plano eliminado com sucesso." });
             fetchAllData();
