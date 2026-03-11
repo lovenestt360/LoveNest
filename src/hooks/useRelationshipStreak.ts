@@ -13,7 +13,7 @@ export function useRelationshipStreak() {
 
         const checkStreak = async () => {
             try {
-                // Get house_id
+                // Get couple_space_id
                 const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
                 if (!member) return;
 
