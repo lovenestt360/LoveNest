@@ -54,7 +54,7 @@ export default function Subscription() {
             }
 
             // Fetch Payment Settings
-            const { data: psData } = await supabase.from("payment_settings").select("*").limit(1).maybeSingle();
+            const { data: psData } = await (supabase as any).from("payment_settings").select("*").limit(1).maybeSingle();
             if (psData) {
                 setPaymentSettings(psData);
                 const methods = [];
