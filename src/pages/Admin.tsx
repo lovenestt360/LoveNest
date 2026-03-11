@@ -482,7 +482,7 @@ export default function Admin() {
                                                 <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
                                                 <span className="text-[10px] font-bold uppercase bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded-md">Pendente</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">Casal: {payment.houses?.partner1_name} & {payment.houses?.partner2_name}</p>
+                                            <p className="text-sm text-muted-foreground">Casal: {payment.couple_spaces?.partner1_name} & {payment.couple_spaces?.partner2_name}</p>
                                             <p className="text-sm font-medium mt-1">Plano Solicitado: <span className="text-primary">{payment.plan_name}</span></p>
                                             <p className="text-xs text-muted-foreground mt-0.5">Método de Pagamento: {payment.method}</p>
                                         </div>
