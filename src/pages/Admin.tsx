@@ -479,10 +479,10 @@ export default function Admin() {
                                     <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-lg">{payment.houses?.house_name || "Casa sem nome"}</h4>
+                                                <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
                                                 <span className="text-[10px] font-bold uppercase bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded-md">Pendente</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">Casal: {payment.houses?.partner1_name} & {payment.houses?.partner2_name}</p>
+                                            <p className="text-sm text-muted-foreground">Casal: {payment.couple_spaces?.partner1_name} & {payment.couple_spaces?.partner2_name}</p>
                                             <p className="text-sm font-medium mt-1">Plano Solicitado: <span className="text-primary">{payment.plan_name}</span></p>
                                             <p className="text-xs text-muted-foreground mt-0.5">Método de Pagamento: {payment.method}</p>
                                         </div>
@@ -494,7 +494,7 @@ export default function Admin() {
                                             ) : (
                                                 <Button size="sm" variant="outline" disabled className="flex-1 md:flex-none">Sem Anexo</Button>
                                             )}
-                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprovePayment(payment.id, payment.house_id, payment.plan_name)}>
+                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprovePayment(payment.id, payment.couple_space_id, payment.plan_name)}>
                                                 <Check className="w-4 h-4 mr-1" /> Aprovar
                                             </Button>
                                         </div>
@@ -511,7 +511,7 @@ export default function Admin() {
                         <h2 className="text-2xl font-bold flex items-center gap-2"><Home className="w-6 h-6 text-primary" /> Gestão de Casas</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {houses.map((house) => {
-                                const activePayment = payments.find(p => p.house_id === house.id && p.status === 'approved');
+                                const activePayment = payments.find(p => p.couple_space_id === house.id && p.status === 'approved');
                                 return (
                                     <div key={house.id} className="bg-card border rounded-2xl p-5 relative shadow-sm hover:shadow-md transition-shadow">
                                         {house.is_suspended && (
