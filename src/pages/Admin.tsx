@@ -494,7 +494,7 @@ export default function Admin() {
                                             ) : (
                                                 <Button size="sm" variant="outline" disabled className="flex-1 md:flex-none">Sem Anexo</Button>
                                             )}
-                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprovePayment(payment.id, payment.house_id, payment.plan_name)}>
+                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprovePayment(payment.id, payment.couple_space_id, payment.plan_name)}>
                                                 <Check className="w-4 h-4 mr-1" /> Aprovar
                                             </Button>
                                         </div>
