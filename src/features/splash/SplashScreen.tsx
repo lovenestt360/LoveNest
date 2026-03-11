@@ -14,9 +14,9 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", session.user.id).maybeSingle();
-        if (member?.house_id) {
-          const { data: house } = await supabase.from("houses").select("initials").eq("id", member.house_id).maybeSingle();
+        const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", session.user.id).maybeSingle();
+        if (member?.couple_space_id) {
+          const { data: house } = await supabase.from("couple_spaces").select("initials").eq("id", member.couple_space_id).maybeSingle();
           if (house?.initials && mounted) {
             setInitials(house.initials);
           }

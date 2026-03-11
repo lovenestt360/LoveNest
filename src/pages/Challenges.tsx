@@ -31,14 +31,14 @@ export default function Challenges() {
         if (!user) return;
         try {
             setLoading(true);
-            const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
+            const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
             if (!member) return;
-            setHouseId(member.house_id);
+            setHouseId(member.couple_space_id);
 
             const { data: chData } = await supabase
                 .from("couple_challenges")
                 .select("*")
-                .eq("house_id", member.house_id)
+                .eq("couple_space_id", member.couple_space_id)
                 .order("is_completed", { ascending: true })
                 .order("created_at", { ascending: false });
 
@@ -56,7 +56,7 @@ export default function Challenges() {
 
         try {
             const { error } = await supabase.from("couple_challenges").insert({
-                house_id: houseId,
+                couple_space_id: houseId,
                 title: newTitle,
                 description: newDesc,
                 is_completed: false

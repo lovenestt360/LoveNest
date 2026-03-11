@@ -75,16 +75,16 @@ export default function Subscription() {
 
             // Get house details
             const { data: members } = await supabase
-                .from("house_members")
-                .select("house_id")
+                .from("members")
+                .select("couple_space_id")
                 .eq("user_id", user.id)
                 .single();
 
             if (members) {
                 const { data: houseData } = await supabase
-                    .from("houses")
+                    .from("couple_spaces")
                     .select("*")
-                    .eq("id", members.house_id)
+                    .eq("id", members.couple_space_id)
                     .single();
 
                 setHouse(houseData);
@@ -94,7 +94,7 @@ export default function Subscription() {
                     const { data: paymentData } = await supabase
                         .from("payments")
                         .select("*")
-                        .eq("house_id", members.house_id)
+                        .eq("couple_space_id", members.couple_space_id)
                         .eq("status", "pending")
                         .order("created_at", { ascending: false })
                         .limit(1)
@@ -149,7 +149,7 @@ export default function Subscription() {
             const { error: paymentError } = await supabase
                 .from("payments")
                 .insert({
-                    house_id: house.id,
+                    couple_space_id: house.id,
                     plan_name: selectedPlan.name,
                     amount: selectedPlan.price,
                     method: selectedMethod.name,

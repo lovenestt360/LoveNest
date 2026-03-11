@@ -14,10 +14,10 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
 
-                const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
+                const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
                 if (!member) return;
 
-                const { data: house } = await supabase.from("houses").select("subscription_status, trial_used, trial_ends_at").eq("id", member.house_id).maybeSingle();
+                const { data: house } = await supabase.from("couple_spaces").select("subscription_status, trial_used, trial_ends_at").eq("id", member.couple_space_id).maybeSingle();
                 if (house) {
                     let hasAccess = false;
                     let featureMissing = false;
@@ -33,7 +33,7 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
                     if (!hasAccess && house.subscription_status === 'active') {
                         if (requiredFeature) {
                             // Find active payment
-                            const { data: payment } = await supabase.from("payments").select("plan_name").eq("house_id", member.house_id).eq("status", "approved").order("created_at", { ascending: false }).limit(1).maybeSingle();
+                            const { data: payment } = await supabase.from("payments").select("plan_name").eq("couple_space_id", member.couple_space_id).eq("status", "approved").order("created_at", { ascending: false }).limit(1).maybeSingle();
                             if (payment) {
                                 const { data: plan } = await supabase.from("subscription_plans").select("features").eq("name", payment.plan_name).maybeSingle();
                                 if (plan && plan.features && plan.features.includes(requiredFeature)) {

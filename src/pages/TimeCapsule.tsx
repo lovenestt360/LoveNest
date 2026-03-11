@@ -33,14 +33,14 @@ export default function TimeCapsule() {
         if (!user) return;
         try {
             setLoading(true);
-            const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
+            const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
             if (!member) return;
-            setHouseId(member.house_id);
+            setHouseId(member.couple_space_id);
 
             const { data: capsData } = await supabase
                 .from("time_capsule_messages")
                 .select("*")
-                .eq("house_id", member.house_id)
+                .eq("couple_space_id", member.couple_space_id)
                 .order("unlock_date", { ascending: true });
 
             setCapsules(capsData || []);
@@ -76,7 +76,7 @@ export default function TimeCapsule() {
             }
 
             const { error } = await supabase.from("time_capsule_messages").insert({
-                house_id: houseId,
+                couple_space_id: houseId,
                 creator_id: user.id,
                 message: newMessage,
                 image_url: publicUrl,

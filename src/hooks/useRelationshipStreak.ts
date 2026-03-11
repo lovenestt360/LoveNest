@@ -14,13 +14,13 @@ export function useRelationshipStreak() {
         const checkStreak = async () => {
             try {
                 // Get house_id
-                const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
+                const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
                 if (!member) return;
 
-                const houseId = member.house_id;
+                const houseId = member.couple_space_id;
 
                 // Get House
-                const { data: house } = await supabase.from("houses").select("streak_count, last_streak_date").eq("id", houseId).maybeSingle();
+                const { data: house } = await supabase.from("couple_spaces").select("streak_count, last_streak_date").eq("id", houseId).maybeSingle();
                 if (!house) return;
 
                 const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -30,7 +30,7 @@ export function useRelationshipStreak() {
                 if (!lastDateStr) {
                     // First time ever opening
                     currentStreak = 1;
-                    await supabase.from("houses").update({ streak_count: currentStreak, last_streak_date: todayStr }).eq("id", houseId);
+                    await supabase.from("couple_spaces").update({ streak_count: currentStreak, last_streak_date: todayStr }).eq("id", houseId);
                 } else if (lastDateStr !== todayStr) {
                     // It's a new day, check if it was yesterday
                     const diff = differenceInDays(new Date(todayStr + "T00:00:00"), new Date(lastDateStr + "T00:00:00"));
@@ -44,7 +44,7 @@ export function useRelationshipStreak() {
                     }
 
                     // Update DB with recent streak
-                    await supabase.from("houses").update({ streak_count: currentStreak, last_streak_date: todayStr }).eq("id", houseId);
+                    await supabase.from("couple_spaces").update({ streak_count: currentStreak, last_streak_date: todayStr }).eq("id", houseId);
                 }
 
                 setStreak(currentStreak);

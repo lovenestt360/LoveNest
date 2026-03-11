@@ -98,7 +98,7 @@ export default function Admin() {
 
             // 2. Houses
             const { data: housesData } = await supabase
-                .from("houses")
+                .from("couple_spaces")
                 .select(`*`)
                 .order("created_at", { ascending: false });
             setHouses(housesData || []);
@@ -162,11 +162,8 @@ export default function Admin() {
             if (pErr) throw pErr;
 
             // Update house subscription
-            const { error: hErr } = await supabase.from("houses").update({ subscription_status: 'active' }).eq("id", houseId);
+            const { error: hErr } = await supabase.from("couple_spaces").update({ subscription_status: 'active' }).eq("id", houseId);
             if (hErr) throw hErr;
-
-            // Upsert backwards compatible subscription
-            await supabase.from("subscriptions").upsert({ house_id: houseId, plan: planName, paid: true }, { onConflict: 'house_id' });
 
             toast({ title: "Sucesso", description: "Pagamento aprovado e plano ativo!" });
             fetchAllData();
@@ -177,7 +174,7 @@ export default function Admin() {
 
     const handleToggleSuspension = async (houseId: string, currentStatus: boolean) => {
         try {
-            const { error } = await supabase.from("houses").update({ is_suspended: !currentStatus }).eq("id", houseId);
+            const { error } = await supabase.from("couple_spaces").update({ is_suspended: !currentStatus }).eq("id", houseId);
             if (error) throw error;
             toast({ title: "Sucesso", description: `Casa ${!currentStatus ? 'suspensa' : 'ativada'} com sucesso.` });
             fetchAllData();
@@ -207,17 +204,8 @@ export default function Admin() {
                 updates.trial_used = true;
             }
 
-            const { error: hErr } = await supabase.from("houses").update(updates).eq("id", selectedHouse.id);
+            const { error: hErr } = await supabase.from("couple_spaces").update(updates).eq("id", selectedHouse.id);
             if (hErr) throw hErr;
-
-            // 2. Upsert Subscription Record
-            const { error: sErr } = await supabase.from("subscriptions").upsert({
-                house_id: selectedHouse.id,
-                plan_id: planDetails?.id || null, // V3 schema
-                plan: selectedPlanForAssign, // V2 schema fallback
-                paid: true
-            }, { onConflict: 'house_id' });
-            if (sErr) throw sErr;
 
             toast({ title: "Plano Atribuído!", description: `A casa agora tem acesso ao plano ${selectedPlanForAssign}.` });
             setAssignModalOpen(false);

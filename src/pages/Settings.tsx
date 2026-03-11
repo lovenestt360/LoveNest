@@ -151,10 +151,10 @@ export default function Settings() {
       }
 
       // Load House Data
-      const { data: member } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
-      if (member?.house_id) {
-        setHouseId(member.house_id);
-        const { data: house } = await supabase.from("houses").select("*").eq("id", member.house_id).maybeSingle();
+      const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
+      if (member?.couple_space_id) {
+        setHouseId(member.couple_space_id);
+        const { data: house } = await supabase.from("couple_spaces").select("*").eq("id", member.couple_space_id).maybeSingle();
         if (house) {
           setHouseName(house.house_name || "");
           setPartner1Name(house.partner1_name || "");
@@ -190,14 +190,15 @@ export default function Settings() {
 
     // Save House Data
     if (houseId) {
-      await supabase.from("houses").update({
+      await supabase.from("couple_spaces").update({
         house_name: houseName,
         partner1_name: partner1Name,
         partner2_name: partner2Name,
         initials: generateInitials(partner1Name, partner2Name)
       }).eq("id", houseId);
     } else {
-      const { data: newHouse } = await supabase.from("houses").insert({
+      const { data: newHouse } = await supabase.from("couple_spaces").insert({
+        invite_code: "LN" + Math.random().toString(36).substring(2, 6).toUpperCase(),
         house_name: houseName,
         partner1_name: partner1Name,
         partner2_name: partner2Name,
@@ -206,7 +207,7 @@ export default function Settings() {
 
       if (newHouse) {
         setHouseId(newHouse.id);
-        await supabase.from("house_members").insert({ user_id: user.id, house_id: newHouse.id, role: "owner" });
+        await supabase.from("members").insert({ user_id: user.id, couple_space_id: newHouse.id });
       }
     }
 

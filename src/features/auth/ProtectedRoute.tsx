@@ -40,9 +40,9 @@ export function ProtectedRoute() {
       setHasCoupleSpace(!!data?.couple_space_id);
 
       // Check Suspension & Trial Status
-      const { data: houseMember } = await supabase.from("house_members").select("house_id").eq("user_id", user.id).maybeSingle();
+      const { data: houseMember } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
       if (houseMember) {
-        const { data: house } = await supabase.from("houses").select("*").eq("id", houseMember.house_id).maybeSingle();
+        const { data: house } = await supabase.from("couple_spaces").select("*").eq("id", houseMember.couple_space_id).maybeSingle();
         if (house) {
           setHouseData(house);
           if (house.is_suspended) {
@@ -74,7 +74,7 @@ export function ProtectedRoute() {
       const endsAt = new Date();
       endsAt.setDate(endsAt.getDate() + 5);
 
-      const { error } = await supabase.from("houses").update({
+      const { error } = await supabase.from("couple_spaces").update({
         trial_started_at: new Date().toISOString(),
         trial_ends_at: endsAt.toISOString(),
         trial_used: true
