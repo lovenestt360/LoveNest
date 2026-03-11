@@ -479,7 +479,7 @@ export default function Admin() {
                                     <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-lg">{payment.houses?.house_name || "Casa sem nome"}</h4>
+                                                <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
                                                 <span className="text-[10px] font-bold uppercase bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded-md">Pendente</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground">Casal: {payment.houses?.partner1_name} & {payment.houses?.partner2_name}</p>
