@@ -78,7 +78,7 @@ export default function Admin() {
         if (!adminToken) return supabase;
         return createClient(
             import.meta.env.VITE_SUPABASE_URL,
-            import.meta.env.VITE_SUPABASE_ANON_KEY,
+            import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             {
                 global: {
                     headers: { 'x-admin-id': adminToken }

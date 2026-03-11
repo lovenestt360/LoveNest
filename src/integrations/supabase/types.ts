@@ -189,35 +189,109 @@ export type Database = {
           },
         ]
       }
+      couple_challenges: {
+        Row: {
+          completed_at: string | null
+          couple_space_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_completed: boolean | null
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          couple_space_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_completed?: boolean | null
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          couple_space_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_completed?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_challenges_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couple_spaces: {
         Row: {
           chat_wallpaper_opacity: number
           chat_wallpaper_url: string | null
           created_at: string
+          house_name: string | null
           id: string
+          initials: string | null
           invite_code: string
+          is_suspended: boolean | null
+          last_streak_date: string | null
+          partner1_name: string | null
+          partner2_name: string | null
+          plan_id: string | null
           relationship_start_date: string | null
           status: string
+          streak_count: number | null
+          subscription_status: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          trial_used: boolean | null
           updated_at: string
         }
         Insert: {
           chat_wallpaper_opacity?: number
           chat_wallpaper_url?: string | null
           created_at?: string
+          house_name?: string | null
           id?: string
+          initials?: string | null
           invite_code: string
+          is_suspended?: boolean | null
+          last_streak_date?: string | null
+          partner1_name?: string | null
+          partner2_name?: string | null
+          plan_id?: string | null
           relationship_start_date?: string | null
           status?: string
+          streak_count?: number | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          trial_used?: boolean | null
           updated_at?: string
         }
         Update: {
           chat_wallpaper_opacity?: number
           chat_wallpaper_url?: string | null
           created_at?: string
+          house_name?: string | null
           id?: string
+          initials?: string | null
           invite_code?: string
+          is_suspended?: boolean | null
+          last_streak_date?: string | null
+          partner1_name?: string | null
+          partner2_name?: string | null
+          plan_id?: string | null
           relationship_start_date?: string | null
           status?: string
+          streak_count?: number | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          trial_used?: boolean | null
           updated_at?: string
         }
         Relationships: []
@@ -857,68 +931,6 @@ export type Database = {
         }
         Relationships: []
       }
-      house_members: {
-        Row: {
-          created_at: string
-          house_id: string
-          id: string
-          role: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          house_id: string
-          id?: string
-          role?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          house_id?: string
-          id?: string
-          role?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "house_members_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      houses: {
-        Row: {
-          created_at: string
-          house_name: string | null
-          id: string
-          initials: string | null
-          is_suspended: boolean | null
-          partner1_name: string | null
-          partner2_name: string | null
-        }
-        Insert: {
-          created_at?: string
-          house_name?: string | null
-          id?: string
-          initials?: string | null
-          is_suspended?: boolean | null
-          partner1_name?: string | null
-          partner2_name?: string | null
-        }
-        Update: {
-          created_at?: string
-          house_name?: string | null
-          id?: string
-          initials?: string | null
-          is_suspended?: boolean | null
-          partner1_name?: string | null
-          partner2_name?: string | null
-        }
-        Relationships: []
-      }
       members: {
         Row: {
           couple_space_id: string
@@ -1051,6 +1063,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "mood_checkins_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: string
+          couple_space_id: string
+          created_at: string | null
+          id: string
+          method: string
+          plan_name: string
+          proof_url: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: string
+          couple_space_id: string
+          created_at?: string | null
+          id?: string
+          method: string
+          plan_name: string
+          proof_url?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: string
+          couple_space_id?: string
+          created_at?: string | null
+          id?: string
+          method?: string
+          plan_name?: string
+          proof_url?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_couple_space_id_fkey"
             columns: ["couple_space_id"]
             isOneToOne: false
             referencedRelation: "couple_spaces"
@@ -1418,6 +1471,7 @@ export type Database = {
       }
       subscription_plans: {
         Row: {
+          billing_type: string | null
           created_at: string
           features: string[] | null
           id: string
@@ -1426,6 +1480,7 @@ export type Database = {
           price: string
         }
         Insert: {
+          billing_type?: string | null
           created_at?: string
           features?: string[] | null
           id?: string
@@ -1434,6 +1489,7 @@ export type Database = {
           price: string
         }
         Update: {
+          billing_type?: string | null
           created_at?: string
           features?: string[] | null
           id?: string
@@ -1471,15 +1527,7 @@ export type Database = {
           payment_proof_url?: string | null
           plan?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: true
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       tasks: {
         Row: {
@@ -1531,231 +1579,11 @@ export type Database = {
           },
         ]
       }
-<<<<<<< HEAD
-=======
-      house_members: {
-        Row: {
-          created_at: string
-          house_id: string
-          id: string
-          role: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          house_id: string
-          id?: string
-          role?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          house_id?: string
-          id?: string
-          role?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "house_members_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      houses: {
-        Row: {
-          created_at: string
-          house_name: string | null
-          id: string
-          initials: string | null
-          is_suspended: boolean | null
-          last_streak_date: string | null
-          partner1_name: string | null
-          partner2_name: string | null
-          streak_count: number | null
-          subscription_status: string | null
-        }
-        Insert: {
-          created_at?: string
-          house_name?: string | null
-          id?: string
-          initials?: string | null
-          is_suspended?: boolean | null
-          last_streak_date?: string | null
-          partner1_name?: string | null
-          partner2_name?: string | null
-          streak_count?: number | null
-          subscription_status?: string | null
-        }
-        Update: {
-          created_at?: string
-          house_name?: string | null
-          id?: string
-          initials?: string | null
-          is_suspended?: boolean | null
-          last_streak_date?: string | null
-          partner1_name?: string | null
-          partner2_name?: string | null
-          streak_count?: number | null
-          subscription_status?: string | null
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          created_at: string
-          house_id: string
-          id: string
-          paid: boolean | null
-          payment_method: string | null
-          payment_proof_url: string | null
-          plan: string
-        }
-        Insert: {
-          created_at?: string
-          house_id: string
-          id?: string
-          paid?: boolean | null
-          payment_method?: string | null
-          payment_proof_url?: string | null
-          plan?: string
-        }
-        Update: {
-          created_at?: string
-          house_id?: string
-          id?: string
-          paid?: boolean | null
-          payment_method?: string | null
-          payment_proof_url?: string | null
-          plan?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: true
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscription_plans: {
-        Row: {
-          billing_type: string | null
-          created_at: string
-          features: string[] | null
-          id: string
-          is_active: boolean | null
-          name: string
-          price: string
-        }
-        Insert: {
-          billing_type?: string | null
-          created_at?: string
-          features?: string[] | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          price: string
-        }
-        Update: {
-          billing_type?: string | null
-          created_at?: string
-          features?: string[] | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          price?: string
-        }
-        Relationships: []
-      }
-      payments: {
-        Row: {
-          amount: string
-          created_at: string
-          house_id: string
-          id: string
-          method: string
-          plan_name: string
-          proof_url: string | null
-          status: string | null
-        }
-        Insert: {
-          amount: string
-          created_at?: string
-          house_id: string
-          id?: string
-          method: string
-          plan_name: string
-          proof_url?: string | null
-          status?: string | null
-        }
-        Update: {
-          amount?: string
-          created_at?: string
-          house_id?: string
-          id?: string
-          method?: string
-          plan_name?: string
-          proof_url?: string | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      couple_challenges: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          description: string | null
-          house_id: string
-          id: string
-          is_completed: boolean | null
-          title: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          house_id: string
-          id?: string
-          is_completed?: boolean | null
-          title: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          house_id?: string
-          id?: string
-          is_completed?: boolean | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "couple_challenges_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       time_capsule_messages: {
         Row: {
-          created_at: string
+          couple_space_id: string
+          created_at: string | null
           creator_id: string
-          house_id: string
           id: string
           image_url: string | null
           is_unlocked: boolean | null
@@ -1763,9 +1591,9 @@ export type Database = {
           unlock_date: string
         }
         Insert: {
-          created_at?: string
+          couple_space_id: string
+          created_at?: string | null
           creator_id: string
-          house_id: string
           id?: string
           image_url?: string | null
           is_unlocked?: boolean | null
@@ -1773,9 +1601,9 @@ export type Database = {
           unlock_date: string
         }
         Update: {
-          created_at?: string
+          couple_space_id?: string
+          created_at?: string | null
           creator_id?: string
-          house_id?: string
           id?: string
           image_url?: string | null
           is_unlocked?: boolean | null
@@ -1784,15 +1612,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "time_capsule_messages_house_id_fkey"
-            columns: ["house_id"]
+            foreignKeyName: "time_capsule_messages_couple_space_id_fkey"
+            columns: ["couple_space_id"]
             isOneToOne: false
-            referencedRelation: "houses"
+            referencedRelation: "couple_spaces"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
->>>>>>> 1fb7eb1 (feat: complete saas billing, paywall, streaks, challenges, and time capsules)
     }
     Views: {
       [_ in never]: never
@@ -1808,6 +1635,7 @@ export type Database = {
         Returns: Json
       }
       get_user_couple_space_id: { Args: never; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       is_member_of_couple_space: {
         Args: { _couple_space_id: string }
         Returns: boolean
