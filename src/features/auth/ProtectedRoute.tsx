@@ -143,7 +143,7 @@ export function ProtectedRoute() {
   }
 
   if (hasCoupleSpace === false) {
-    return <Navigate to="/casa-dk" replace />;
+    return <Navigate to="/casa" replace />;
   }
 
   // Check Trial Flow if they have a house but never started a trial and are not active

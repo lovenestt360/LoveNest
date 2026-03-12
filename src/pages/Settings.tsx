@@ -654,7 +654,7 @@ export default function Settings() {
 
       <Separator />
 
-      {/* Dkay Zap wallpaper */}
+      {/* Chat wallpaper */}
       <div className="space-y-3">
         <h2 className="text-lg font-medium">Chat — Wallpaper</h2>
 

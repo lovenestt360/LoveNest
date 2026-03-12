@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     );
 
     const payload = JSON.stringify({
-      title: title || "DK",
+      title: title || "LoveNest",
       body: body || "",
       icon: "/icon-192.png",
       badge: "/icon-192.png",

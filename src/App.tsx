@@ -65,7 +65,7 @@ const App = () => (
 
                 {/* Auth-only routes (login required, sem pareamento obrigatório) */}
                 <Route element={<AuthOnlyRoute />}>
-                  <Route path="/casa-dk" element={<CoupleSpace />} />
+                  <Route path="/casa" element={<CoupleSpace />} />
                 </Route>
 
                 {/* Protected routes (login + pareamento) */}
