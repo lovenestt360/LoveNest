@@ -54,7 +54,7 @@ export function ProtectedRoute() {
     } catch (err) {
       console.error("Exception checking couple space:", err);
       setHasCoupleSpace(null);
-      setCheckError("Não foi possível verificar sua Casa DK. Tente novamente.");
+      setCheckError("Não foi possível verificar seu LoveNest. Tente novamente.");
     } finally {
       setChecking(false);
     }
