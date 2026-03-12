@@ -181,9 +181,9 @@ export default function CoupleSpace() {
           (error as any)?.context?.body?.error ||
           (error as any)?.context?.body ||
           (error as any)?.message ||
-          "Não foi possível criar sua Casa DK.";
+          "Não foi possível criar seu LoveNest.";
 
-        const msg = typeof message === "string" ? message : "Não foi possível criar sua Casa DK.";
+        const msg = typeof message === "string" ? message : "Não foi possível criar seu LoveNest.";
 
         toast({
           variant: "destructive",
