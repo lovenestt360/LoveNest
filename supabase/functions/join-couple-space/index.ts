@@ -137,7 +137,7 @@ serve(async (req: Request) => {
     }
 
     if (members && members.length >= 2) {
-      return json(400, { error: "Esta Casa DK já está completa (máximo 2 membros)" });
+      return json(400, { error: "Este LoveNest já está completo (máximo 2 membros)" });
     }
 
     // Adicionar como segundo membro

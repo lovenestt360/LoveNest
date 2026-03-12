@@ -86,7 +86,7 @@ serve(async (req: Request) => {
     if (existingMember) {
       return json(200, {
         already_member: true,
-        message: "Você já está numa Casa DK",
+        message: "Você já está num LoveNest",
         couple_space_id: existingMember.couple_space_id,
       });
     }

@@ -410,7 +410,7 @@ export default function CoupleSpace() {
                 <div className="rounded-lg border bg-card p-3 text-card-foreground">
                   <p className="text-sm font-medium">Aguardando o teu par entrar</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Envie o código acima — esta Casa DK aceita no máximo 2 membros.
+                    Este LoveNest aceita no máximo 2 membros.
                   </p>
                 </div>
               ) : (
