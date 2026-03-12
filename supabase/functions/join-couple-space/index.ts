@@ -38,7 +38,7 @@ function safeErrorMessage(error: any): string {
   if (code === "23505") return "Este registo já existe.";
   if (code === "23503") return "Referência inválida.";
   if (code === "P0001" && message.includes("couple_space_full")) {
-    return "Esta Casa DK já está completa (máximo 2 membros).";
+    return "Este LoveNest já está completo (máximo 2 membros).";
   }
 
   return "Ocorreu um erro. Tente novamente.";
