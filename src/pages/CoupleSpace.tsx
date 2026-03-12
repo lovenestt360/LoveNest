@@ -195,8 +195,8 @@ export default function CoupleSpace() {
 
       if ((data as any)?.already_member) {
         toast({
-          title: "Você já está numa Casa DK",
-          description: "Abrindo sua Casa DK...",
+          title: "Você já está num LoveNest",
+          description: "Abrindo seu LoveNest...",
         });
         await refresh();
         return;
