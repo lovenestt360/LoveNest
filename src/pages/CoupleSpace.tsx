@@ -211,8 +211,8 @@ export default function CoupleSpace() {
     } catch {
       toast({
         variant: "destructive",
-        title: "Erro ao criar Casa DK",
-        description: "Não foi possível criar sua Casa DK.",
+        title: "Erro ao criar LoveNest",
+        description: "Não foi possível criar seu LoveNest.",
       });
     } finally {
       setLoadingAction(false);
