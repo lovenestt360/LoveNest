@@ -339,6 +339,33 @@ export default function Admin() {
         }
     };
 
+    const openEditPlan = (plan: any) => {
+        setEditingPlan(plan);
+        setEditPlanName(plan.name);
+        setEditPlanPrice(plan.price);
+        setEditPlanFeatures(plan.features || []);
+    };
+
+    const handleSavePlanEdit = async () => {
+        if (!editingPlan || !editPlanName.trim() || !editPlanPrice.trim()) return;
+        try {
+            setSavingPlanEdit(true);
+            const { error } = await adminClient.from("subscription_plans").update({
+                name: editPlanName,
+                price: editPlanPrice,
+                features: editPlanFeatures
+            }).eq("id", editingPlan.id);
+            if (error) throw error;
+            toast({ title: "Plano Atualizado", description: "As alterações foram guardadas." });
+            setEditingPlan(null);
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setSavingPlanEdit(false);
+        }
+    };
+
     if (loading && payments.length === 0) {
         return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
     }
