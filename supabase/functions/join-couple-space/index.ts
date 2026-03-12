@@ -91,7 +91,7 @@ serve(async (req: Request) => {
 
     const { invite_code }: JoinBody = parsed.data;
 
-    // Verificar se o utilizador já está numa Casa DK
+    // Verificar se o utilizador já está num LoveNest
     const { data: existingMember, error: memberCheckError } = await supabase
       .from("members")
       .select("couple_space_id")
