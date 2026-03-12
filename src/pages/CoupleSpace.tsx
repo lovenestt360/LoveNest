@@ -332,8 +332,8 @@ export default function CoupleSpace() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">Casa DK</CardTitle>
-          <CardDescription>Crie ou entre na sua casa privada de casal</CardDescription>
+          <CardTitle className="text-3xl font-bold">LoveNest</CardTitle>
+          <CardDescription>Crie ou entre no seu espaço privado de casal</CardDescription>
         </CardHeader>
         <CardContent>
           {state.status === "loading" ? (
