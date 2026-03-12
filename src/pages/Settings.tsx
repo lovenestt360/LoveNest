@@ -40,7 +40,7 @@ interface Profile {
   gender: "male" | "female" | null;
 }
 
-const NOTIF_KEY = "dk_notif_prefs";
+const NOTIF_KEY = "lovenest_notif_prefs";
 const defaultPrefs = {
   chat: true,
   humor: true,
