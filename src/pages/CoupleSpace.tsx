@@ -66,7 +66,7 @@ export default function CoupleSpace() {
       console.error("Error loading membership:", memberErr);
       toast({
         variant: "destructive",
-        title: "Erro ao carregar sua Casa DK",
+        title: "Erro ao carregar seu LoveNest",
         description: "Não foi possível verificar seu pareamento. Tente novamente.",
       });
       setState({ status: "no_house" });
@@ -100,7 +100,7 @@ export default function CoupleSpace() {
       toast({
         variant: "destructive",
         title: "Erro ao carregar membros",
-        description: "Não foi possível carregar os membros da sua Casa DK.",
+        description: "Não foi possível carregar os membros do seu LoveNest.",
       });
       setState({
         status: "has_house",
@@ -163,7 +163,7 @@ export default function CoupleSpace() {
         toast({
           variant: "destructive",
           title: "Você precisa entrar",
-          description: "Faça login para criar sua Casa DK.",
+          description: "Faça login para criar seu LoveNest.",
         });
         navigate("/entrar");
         return;
@@ -181,13 +181,13 @@ export default function CoupleSpace() {
           (error as any)?.context?.body?.error ||
           (error as any)?.context?.body ||
           (error as any)?.message ||
-          "Não foi possível criar sua Casa DK.";
+          "Não foi possível criar seu LoveNest.";
 
-        const msg = typeof message === "string" ? message : "Não foi possível criar sua Casa DK.";
+        const msg = typeof message === "string" ? message : "Não foi possível criar seu LoveNest.";
 
         toast({
           variant: "destructive",
-          title: "Erro ao criar Casa DK",
+          title: "Erro ao criar LoveNest",
           description: msg,
         });
         return;
@@ -195,15 +195,15 @@ export default function CoupleSpace() {
 
       if ((data as any)?.already_member) {
         toast({
-          title: "Você já está numa Casa DK",
-          description: "Abrindo sua Casa DK...",
+          title: "Você já está num LoveNest",
+          description: "Abrindo seu LoveNest...",
         });
         await refresh();
         return;
       }
 
       toast({
-        title: "Casa DK criada!",
+        title: "LoveNest criado!",
         description: "Agora copie o código e envie para o seu par.",
       });
 
@@ -211,8 +211,8 @@ export default function CoupleSpace() {
     } catch {
       toast({
         variant: "destructive",
-        title: "Erro ao criar Casa DK",
-        description: "Não foi possível criar sua Casa DK.",
+        title: "Erro ao criar LoveNest",
+        description: "Não foi possível criar seu LoveNest.",
       });
     } finally {
       setLoadingAction(false);
@@ -232,7 +232,7 @@ export default function CoupleSpace() {
         toast({
           variant: "destructive",
           title: "Você precisa entrar",
-          description: "Faça login para entrar em uma Casa DK.",
+          description: "Faça login para entrar num LoveNest.",
         });
         navigate("/entrar");
         return;
@@ -259,7 +259,7 @@ export default function CoupleSpace() {
 
         toast({
           variant: "destructive",
-          title: "Erro ao entrar na Casa DK",
+          title: "Erro ao entrar no LoveNest",
           description: msg,
         });
         return;
@@ -267,15 +267,15 @@ export default function CoupleSpace() {
 
       if ((data as any)?.already_member) {
         toast({
-          title: "Você já está numa Casa DK",
-          description: "Abrindo sua Casa DK...",
+          title: "Você já está num LoveNest",
+          description: "Abrindo seu LoveNest...",
         });
         await refresh();
         return;
       }
 
       toast({
-        title: "Bem-vindo à Casa DK!",
+        title: "Bem-vindo ao LoveNest!",
         description: "Você entrou com sucesso.",
       });
 
@@ -284,7 +284,7 @@ export default function CoupleSpace() {
     } catch {
       toast({
         variant: "destructive",
-        title: "Erro ao entrar na Casa DK",
+        title: "Erro ao entrar no LoveNest",
         description: "Código inválido ou Casa completa.",
       });
     } finally {
@@ -332,8 +332,8 @@ export default function CoupleSpace() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">Casa DK</CardTitle>
-          <CardDescription>Crie ou entre na sua casa privada de casal</CardDescription>
+          <CardTitle className="text-3xl font-bold">LoveNest</CardTitle>
+          <CardDescription>Crie ou entre no seu espaço privado de casal</CardDescription>
         </CardHeader>
         <CardContent>
           {state.status === "loading" ? (
@@ -344,17 +344,17 @@ export default function CoupleSpace() {
           ) : state.status === "no_house" ? (
             <Tabs defaultValue="create" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="create">Criar Casa</TabsTrigger>
+                <TabsTrigger value="create">Criar Ninho</TabsTrigger>
                 <TabsTrigger value="join">Entrar com Código</TabsTrigger>
               </TabsList>
 
               <TabsContent value="create">
                 <div className="space-y-4 pt-4 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Crie uma nova Casa DK e gere um código de convite para seu par.
+                    Crie um novo LoveNest e gere um código de convite para seu par.
                   </p>
                   <Button onClick={handleCreateSpace} className="w-full" disabled={loadingAction}>
-                    {loadingAction ? "Criando..." : "Criar Casa DK"}
+                    {loadingAction ? "Criando..." : "Criar LoveNest"}
                   </Button>
                 </div>
               </TabsContent>
@@ -373,11 +373,11 @@ export default function CoupleSpace() {
                       className="text-center text-lg font-bold tracking-wider uppercase"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Apenas 2 membros podem estar numa Casa DK.
+                      Apenas 2 membros podem estar num LoveNest.
                     </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loadingAction}>
-                    {loadingAction ? "Entrando..." : "Entrar na Casa"}
+                    {loadingAction ? "Entrando..." : "Entrar no Ninho"}
                   </Button>
                 </form>
               </TabsContent>
@@ -385,7 +385,7 @@ export default function CoupleSpace() {
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">Seu código da Casa</p>
+                <p className="text-sm font-medium">Seu código do LoveNest</p>
                 <div className="flex items-center gap-2">
                   <Input
                     value={state.inviteCode ?? "—"}
@@ -410,7 +410,7 @@ export default function CoupleSpace() {
                 <div className="rounded-lg border bg-card p-3 text-card-foreground">
                   <p className="text-sm font-medium">Aguardando o teu par entrar</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Envie o código acima — esta Casa DK aceita no máximo 2 membros.
+                    Este LoveNest aceita no máximo 2 membros.
                   </p>
                 </div>
               ) : (

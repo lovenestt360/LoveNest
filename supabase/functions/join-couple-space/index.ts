@@ -38,7 +38,7 @@ function safeErrorMessage(error: any): string {
   if (code === "23505") return "Este registo já existe.";
   if (code === "23503") return "Referência inválida.";
   if (code === "P0001" && message.includes("couple_space_full")) {
-    return "Esta Casa DK já está completa (máximo 2 membros).";
+    return "Este LoveNest já está completo (máximo 2 membros).";
   }
 
   return "Ocorreu um erro. Tente novamente.";
@@ -91,7 +91,7 @@ serve(async (req: Request) => {
 
     const { invite_code }: JoinBody = parsed.data;
 
-    // Verificar se o utilizador já está numa Casa DK
+    // Verificar se o utilizador já está num LoveNest
     const { data: existingMember, error: memberCheckError } = await supabase
       .from("members")
       .select("couple_space_id")
@@ -105,7 +105,7 @@ serve(async (req: Request) => {
     if (existingMember) {
       return json(200, {
         already_member: true,
-        message: "Você já está numa Casa DK",
+        message: "Você já está num LoveNest",
         couple_space_id: existingMember.couple_space_id,
       });
     }
@@ -137,7 +137,7 @@ serve(async (req: Request) => {
     }
 
     if (members && members.length >= 2) {
-      return json(400, { error: "Esta Casa DK já está completa (máximo 2 membros)" });
+      return json(400, { error: "Este LoveNest já está completo (máximo 2 membros)" });
     }
 
     // Adicionar como segundo membro

@@ -28,7 +28,7 @@ export default function Login() {
 
       if (error) throw error;
 
-      navigate("/casa-dk");
+      navigate("/casa");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -48,7 +48,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin + "/casa-dk",
+          emailRedirectTo: window.location.origin + "/casa",
         },
       });
 
@@ -74,7 +74,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">DK</CardTitle>
+          <CardTitle className="text-3xl font-bold">LoveNest</CardTitle>
           <CardDescription>Seu hub privado de casal</CardDescription>
         </CardHeader>
         <CardContent>

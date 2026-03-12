@@ -78,13 +78,13 @@ Deno.serve(async (req) => {
     // Use web-push npm package
     const webpush = await import("https://esm.sh/web-push@3.6.7");
     webpush.setVapidDetails(
-      "mailto:app@dkayy.lovable.app",
+      "mailto:app@lovenestt.lovable.app",
       vapidPublicKey,
       vapidPrivateKey
     );
 
     const payload = JSON.stringify({
-      title: title || "DK",
+      title: title || "LoveNest",
       body: body || "",
       icon: "/icon-192.png",
       badge: "/icon-192.png",

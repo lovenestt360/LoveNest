@@ -40,7 +40,7 @@ interface Profile {
   gender: "male" | "female" | null;
 }
 
-const NOTIF_KEY = "dk_notif_prefs";
+const NOTIF_KEY = "lovenest_notif_prefs";
 const defaultPrefs = {
   chat: true,
   humor: true,
@@ -456,7 +456,7 @@ export default function Settings() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `dk-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `lovenest-export-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: "Dados exportados" });
@@ -479,7 +479,7 @@ export default function Settings() {
       toast({ title: "Erro ao sair", description: error.message, variant: "destructive" });
       return;
     }
-    window.location.assign("/casa-dk");
+    window.location.assign("/casa");
   };
 
   if (loading) {
@@ -654,7 +654,7 @@ export default function Settings() {
 
       <Separator />
 
-      {/* Dkay Zap wallpaper */}
+      {/* Chat wallpaper */}
       <div className="space-y-3">
         <h2 className="text-lg font-medium">Chat — Wallpaper</h2>
 

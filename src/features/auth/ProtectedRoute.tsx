@@ -33,7 +33,7 @@ export function ProtectedRoute() {
       if (error) {
         console.error("Error checking couple space:", error);
         setHasCoupleSpace(null);
-        setCheckError("Não foi possível verificar sua Casa DK. Tente novamente.");
+        setCheckError("Não foi possível verificar seu LoveNest. Tente novamente.");
         return;
       }
 
@@ -54,7 +54,7 @@ export function ProtectedRoute() {
     } catch (err) {
       console.error("Exception checking couple space:", err);
       setHasCoupleSpace(null);
-      setCheckError("Não foi possível verificar sua Casa DK. Tente novamente.");
+      setCheckError("Não foi possível verificar seu LoveNest. Tente novamente.");
     } finally {
       setChecking(false);
     }
@@ -114,8 +114,8 @@ export function ProtectedRoute() {
           <p className="mt-1 text-sm text-muted-foreground">{checkError}</p>
           <div className="mt-4 flex gap-2">
             <Button onClick={runCheck}>Tentar novamente</Button>
-            <Button variant="outline" onClick={() => window.location.assign("/casa-dk")}
-            >Ir para Casa DK</Button
+            <Button variant="outline" onClick={() => window.location.assign("/casa")}
+            >Ir para LoveNest</Button
             >
           </div>
         </div>
@@ -143,7 +143,7 @@ export function ProtectedRoute() {
   }
 
   if (hasCoupleSpace === false) {
-    return <Navigate to="/casa-dk" replace />;
+    return <Navigate to="/casa" replace />;
   }
 
   // Check Trial Flow if they have a house but never started a trial and are not active
