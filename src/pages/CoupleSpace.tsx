@@ -351,7 +351,7 @@ export default function CoupleSpace() {
               <TabsContent value="create">
                 <div className="space-y-4 pt-4 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Crie uma nova Casa DK e gere um código de convite para seu par.
+                    Crie um novo LoveNest e gere um código de convite para seu par.
                   </p>
                   <Button onClick={handleCreateSpace} className="w-full" disabled={loadingAction}>
                     {loadingAction ? "Criando..." : "Criar Casa DK"}
