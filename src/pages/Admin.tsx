@@ -689,6 +689,58 @@ export default function Admin() {
                             </Button>
                         </form>
 
+                        {/* Edit Plan Modal */}
+                        {editingPlan && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+                                <div className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
+                                    <div className="p-6 border-b flex justify-between items-center bg-muted/30">
+                                        <h3 className="font-bold text-lg">Editar Plano</h3>
+                                        <Button variant="ghost" size="icon" onClick={() => setEditingPlan(null)}><X className="w-5 h-5" /></Button>
+                                    </div>
+                                    <div className="p-6 space-y-4">
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Nome do Plano</label>
+                                            <Input value={editPlanName} onChange={e => setEditPlanName(e.target.value)} className="bg-background" />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
+                                            <Input value={editPlanPrice} onChange={e => setEditPlanPrice(e.target.value)} className="bg-background" />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-2 block">Funcionalidades</label>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                {ALL_FEATURES.map(feature => {
+                                                    const isSelected = editPlanFeatures.includes(feature.id);
+                                                    return (
+                                                        <div
+                                                            key={feature.id}
+                                                            onClick={() => {
+                                                                if (isSelected) {
+                                                                    setEditPlanFeatures(prev => prev.filter(f => f !== feature.id));
+                                                                } else {
+                                                                    setEditPlanFeatures(prev => [...prev, feature.id]);
+                                                                }
+                                                            }}
+                                                            className={`cursor-pointer rounded-xl border p-2 flex items-center justify-between text-xs font-bold transition-all ${isSelected ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted'}`}
+                                                        >
+                                                            <span>{feature.label}</span>
+                                                            {isSelected && <Check className="w-3 h-3" />}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 bg-muted/30 border-t flex justify-end gap-2">
+                                        <Button variant="outline" onClick={() => setEditingPlan(null)}>Cancelar</Button>
+                                        <Button className="font-bold" disabled={savingPlanEdit || !editPlanName.trim() || !editPlanPrice.trim()} onClick={handleSavePlanEdit}>
+                                            {savingPlanEdit ? "A guardar..." : "Guardar Alterações"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {plans.map((p) => (
                                 <div key={p.id} className="bg-card border rounded-2xl p-5 shadow-sm relative">
@@ -707,7 +759,10 @@ export default function Admin() {
                                         ))}
                                     </ul>
                                     <div className="flex gap-2">
-                                        <Button variant={p.is_active ? "outline" : "default"} className="w-full" onClick={() => handleTogglePlan(p.id, p.is_active)}>
+                                        <Button variant="outline" className="flex-1" onClick={() => openEditPlan(p)}>
+                                            ✏️ Editar
+                                        </Button>
+                                        <Button variant={p.is_active ? "outline" : "default"} className="flex-1" onClick={() => handleTogglePlan(p.id, p.is_active)}>
                                             {p.is_active ? "Desativar" : "Ativar"}
                                         </Button>
                                         <Button variant="destructive" size="icon" onClick={() => handleDeletePlan(p.id)}>
