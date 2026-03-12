@@ -66,7 +66,7 @@ export default function CoupleSpace() {
       console.error("Error loading membership:", memberErr);
       toast({
         variant: "destructive",
-        title: "Erro ao carregar sua Casa DK",
+        title: "Erro ao carregar seu LoveNest",
         description: "Não foi possível verificar seu pareamento. Tente novamente.",
       });
       setState({ status: "no_house" });
