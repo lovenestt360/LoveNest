@@ -373,7 +373,7 @@ export default function CoupleSpace() {
                       className="text-center text-lg font-bold tracking-wider uppercase"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Apenas 2 membros podem estar numa Casa DK.
+                      Apenas 2 membros podem estar num LoveNest.
                     </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loadingAction}>
