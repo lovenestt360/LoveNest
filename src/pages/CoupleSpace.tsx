@@ -259,7 +259,7 @@ export default function CoupleSpace() {
 
         toast({
           variant: "destructive",
-          title: "Erro ao entrar na Casa DK",
+          title: "Erro ao entrar no LoveNest",
           description: msg,
         });
         return;
