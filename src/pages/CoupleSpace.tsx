@@ -385,7 +385,7 @@ export default function CoupleSpace() {
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">Seu código da Casa</p>
+                <p className="text-sm font-medium">Seu código do LoveNest</p>
                 <div className="flex items-center gap-2">
                   <Input
                     value={state.inviteCode ?? "—"}
