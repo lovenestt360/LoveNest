@@ -34,6 +34,13 @@ export default function Admin() {
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
     const [creatingPlan, setCreatingPlan] = useState(false);
 
+    // Plan editing
+    const [editingPlan, setEditingPlan] = useState<any>(null);
+    const [editPlanName, setEditPlanName] = useState("");
+    const [editPlanPrice, setEditPlanPrice] = useState("");
+    const [editPlanFeatures, setEditPlanFeatures] = useState<string[]>([]);
+    const [savingPlanEdit, setSavingPlanEdit] = useState(false);
+
     // Settings form
     const [savingSettings, setSavingSettings] = useState(false);
     const [settingsForm, setSettingsForm] = useState({
