@@ -18,6 +18,16 @@ body {
   user-select: none;
 }
 
+/* Hide scrollbars globally for a native app feel */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* Allow text selection only in inputs and textareas */
 input, textarea, [contenteditable="true"] {
   -webkit-user-select: text;
