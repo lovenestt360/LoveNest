@@ -28,7 +28,7 @@ export default function Login() {
 
       if (error) throw error;
 
-      navigate("/casa-dk");
+      navigate("/casa");
     } catch (error: any) {
       toast({
         variant: "destructive",
