@@ -203,7 +203,7 @@ export default function CoupleSpace() {
       }
 
       toast({
-        title: "Casa DK criada!",
+        title: "LoveNest criado!",
         description: "Agora copie o código e envie para o seu par.",
       });
 
