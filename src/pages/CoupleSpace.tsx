@@ -354,7 +354,7 @@ export default function CoupleSpace() {
                     Crie um novo LoveNest e gere um código de convite para seu par.
                   </p>
                   <Button onClick={handleCreateSpace} className="w-full" disabled={loadingAction}>
-                    {loadingAction ? "Criando..." : "Criar Casa DK"}
+                    {loadingAction ? "Criando..." : "Criar LoveNest"}
                   </Button>
                 </div>
               </TabsContent>
