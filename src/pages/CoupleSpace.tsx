@@ -344,7 +344,7 @@ export default function CoupleSpace() {
           ) : state.status === "no_house" ? (
             <Tabs defaultValue="create" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="create">Criar Casa</TabsTrigger>
+                <TabsTrigger value="create">Criar Ninho</TabsTrigger>
                 <TabsTrigger value="join">Entrar com Código</TabsTrigger>
               </TabsList>
 
