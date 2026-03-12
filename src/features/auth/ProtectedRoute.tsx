@@ -114,8 +114,8 @@ export function ProtectedRoute() {
           <p className="mt-1 text-sm text-muted-foreground">{checkError}</p>
           <div className="mt-4 flex gap-2">
             <Button onClick={runCheck}>Tentar novamente</Button>
-            <Button variant="outline" onClick={() => window.location.assign("/casa-dk")}
-            >Ir para Casa DK</Button
+            <Button variant="outline" onClick={() => window.location.assign("/casa")}
+            >Ir para LoveNest</Button
             >
           </div>
         </div>
