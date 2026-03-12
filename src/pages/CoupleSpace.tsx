@@ -187,7 +187,7 @@ export default function CoupleSpace() {
 
         toast({
           variant: "destructive",
-          title: "Erro ao criar Casa DK",
+          title: "Erro ao criar LoveNest",
           description: msg,
         });
         return;
