@@ -275,7 +275,7 @@ export default function CoupleSpace() {
       }
 
       toast({
-        title: "Bem-vindo à Casa DK!",
+        title: "Bem-vindo ao LoveNest!",
         description: "Você entrou com sucesso.",
       });
 
