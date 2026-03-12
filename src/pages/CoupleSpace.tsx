@@ -284,7 +284,7 @@ export default function CoupleSpace() {
     } catch {
       toast({
         variant: "destructive",
-        title: "Erro ao entrar na Casa DK",
+        title: "Erro ao entrar no LoveNest",
         description: "Código inválido ou Casa completa.",
       });
     } finally {
