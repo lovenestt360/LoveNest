@@ -100,7 +100,7 @@ export default function CoupleSpace() {
       toast({
         variant: "destructive",
         title: "Erro ao carregar membros",
-        description: "Não foi possível carregar os membros da sua Casa DK.",
+        description: "Não foi possível carregar os membros do seu LoveNest.",
       });
       setState({
         status: "has_house",
