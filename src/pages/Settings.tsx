@@ -479,7 +479,7 @@ export default function Settings() {
       toast({ title: "Erro ao sair", description: error.message, variant: "destructive" });
       return;
     }
-    window.location.assign("/casa-dk");
+    window.location.assign("/casa");
   };
 
   if (loading) {
