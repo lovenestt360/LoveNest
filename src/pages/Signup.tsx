@@ -27,7 +27,7 @@ export default function Signup() {
           data: {
             display_name: displayName,
           },
-          emailRedirectTo: window.location.origin + "/casa-dk",
+          emailRedirectTo: window.location.origin + "/casa",
         },
       });
 
