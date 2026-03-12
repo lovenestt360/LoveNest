@@ -163,7 +163,7 @@ export default function CoupleSpace() {
         toast({
           variant: "destructive",
           title: "Você precisa entrar",
-          description: "Faça login para criar sua Casa DK.",
+          description: "Faça login para criar seu LoveNest.",
         });
         navigate("/entrar");
         return;
