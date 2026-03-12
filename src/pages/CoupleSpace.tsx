@@ -377,7 +377,7 @@ export default function CoupleSpace() {
                     </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loadingAction}>
-                    {loadingAction ? "Entrando..." : "Entrar na Casa"}
+                    {loadingAction ? "Entrando..." : "Entrar no Ninho"}
                   </Button>
                 </form>
               </TabsContent>
