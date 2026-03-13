@@ -5,6 +5,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useSharedWallpaper } from "@/hooks/useSharedWallpaper";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
