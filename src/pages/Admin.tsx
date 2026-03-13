@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks">("overview");
+    const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
