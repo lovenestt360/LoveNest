@@ -903,6 +903,78 @@ export default function Admin() {
                     </div>
                 )}
 
+                {/* STREAKS TAB */}
+                {tab === "streaks" && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Flame className="w-6 h-6 text-orange-500" /> LoveStreak - Ranking Global</h2>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Flame className="w-6 h-6 text-orange-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.filter(s => s.current_streak > 0).length}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Streaks Ativos</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Trophy className="w-6 h-6 text-amber-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.length > 0 ? Math.max(...streaks.map(s => s.current_streak)) : 0}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Maior Streak</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Trophy className="w-6 h-6 text-primary mb-4" />
+                                <span className="text-3xl font-black">{streaks.length > 0 ? Math.max(...streaks.map(s => s.best_streak)) : 0}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Recorde Absoluto</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Users className="w-6 h-6 text-blue-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.length}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Total Casais</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-muted/50 border-b">
+                                        <tr>
+                                            <th className="p-4 font-bold text-muted-foreground">#</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Casa</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Streak Atual</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Melhor Streak</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Nível</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Shields</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {streaks.map((s, i) => {
+                                            const house = houses.find(h => h.id === s.couple_space_id);
+                                            const medals = ["🥇", "🥈", "🥉"];
+                                            return (
+                                                <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                                                    <td className="p-4 font-bold">{i < 3 ? medals[i] : i + 1}</td>
+                                                    <td className="p-4 font-medium">{house?.house_name || "LoveNest"}</td>
+                                                    <td className="p-4">
+                                                        <span className="font-bold text-orange-500 flex items-center gap-1">
+                                                            <Flame className="w-4 h-4" /> {s.current_streak}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 font-medium">{s.best_streak}</td>
+                                                    <td className="p-4 text-xs font-bold">{s.level_title}</td>
+                                                    <td className="p-4 text-xs">{s.shield_remaining}/3 🛡️</td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {streaks.length === 0 && (
+                                            <tr>
+                                                <td colSpan={6} className="p-4 text-center text-muted-foreground">Nenhum streak registado ainda.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </main>
         </div>
     );
