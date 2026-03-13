@@ -108,6 +108,7 @@ const App = () => (
                     <Route element={<PremiumGuard requiredFeature="challenges" />}>
                       <Route path="desafios" element={<Challenges />} />
                     </Route>
+                    <Route path="ranking" element={<Ranking />} />
                     <Route element={<PremiumGuard requiredFeature="time_capsules" />}>
                       <Route path="capsula" element={<TimeCapsule />} />
                     </Route>
