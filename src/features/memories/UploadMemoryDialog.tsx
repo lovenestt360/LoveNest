@@ -24,6 +24,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
   const [caption, setCaption] = useState("");
   const [takenOn, setTakenOn] = useState("");
   const [uploading, setUploading] = useState(false);
+  const { recordInteraction } = useLoveStreak();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
