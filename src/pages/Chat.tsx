@@ -301,6 +301,7 @@ export default function Chat() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetChatUnread } = useAppNotifContext();
+  const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateWallpaper } = useSharedWallpaper();
   const [openSettings, setOpenSettings] = useState(false);

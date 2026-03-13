@@ -19,6 +19,7 @@ export default function Mood() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
+  const { recordInteraction } = useLoveStreak();
 
   const [moodKey, setMoodKey] = useState("feliz");
   const [moodPercent, setMoodPercent] = useState(50);
