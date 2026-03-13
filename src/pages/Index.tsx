@@ -19,6 +19,7 @@ import {
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRelationshipStreak } from "@/hooks/useRelationshipStreak";
+import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
 import { cn } from "@/lib/utils";
 
 /* ── data hooks ── */
