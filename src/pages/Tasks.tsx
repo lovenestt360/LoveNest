@@ -129,6 +129,11 @@ export default function Tasks() {
       done_at: newStatus === "done" ? new Date().toISOString() : null,
     }).eq("id", task.id);
 
+    // Record interaction for LoveStreak
+    if (newStatus === "done") {
+      recordInteraction("task_complete");
+    }
+
     // Notify partner when task completed
     if (newStatus === "done" && spaceId) {
       notifyPartner({
