@@ -67,6 +67,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
       if (insertErr) throw insertErr;
 
       toast({ title: "📸 Memória guardada!" });
+      recordInteraction("memory_upload");
       if (spaceId) {
         notifyPartner({
           couple_space_id: spaceId,
