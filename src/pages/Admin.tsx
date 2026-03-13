@@ -468,6 +468,9 @@ export default function Admin() {
                     <Button variant={tab === "settings" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("settings")}>
                         <Settings className="w-4 h-4" /> <span className="hidden md:inline">Configurações</span>
                     </Button>
+                    <Button variant={tab === "streaks" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("streaks")}>
+                        <Flame className="w-4 h-4" /> <span className="hidden md:inline">Streaks</span>
+                    </Button>
                 </nav>
 
                 <div className="p-4 border-t">
