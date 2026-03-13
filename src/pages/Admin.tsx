@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus, Trash2, Settings
+    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
