@@ -122,6 +122,9 @@ export default function Mood() {
       if (data) setExistingId(data.id);
     }
 
+    // Record interaction for LoveStreak
+    recordInteraction("mood_update");
+
     setSaving(false);
     loadData();
 

@@ -459,6 +459,12 @@ export default function Chat() {
         audio_url: audioUrl,
       });
 
+      // Record interaction for LoveStreak (anti-spam: >3 chars or has emoji)
+      const hasEmoji = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(text);
+      if (text.length > 3 || hasEmoji || imageUrl || audioUrl) {
+        recordInteraction("chat_message");
+      }
+
       // Notify partner
       let body = text;
       if (!body && imageUrl) body = "📷 Enviou uma foto";
