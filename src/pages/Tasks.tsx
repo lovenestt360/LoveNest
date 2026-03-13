@@ -32,6 +32,7 @@ interface Task {
 export default function Tasks() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
+  const { recordInteraction } = useLoveStreak();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
