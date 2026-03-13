@@ -34,6 +34,7 @@ const RoutineDay = lazy(() => import("./pages/RoutineDay"));
 const RoutineManage = lazy(() => import("./pages/RoutineManage"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Challenges = lazy(() => import("./pages/Challenges"));
+const Ranking = lazy(() => import("./pages/Ranking"));
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
