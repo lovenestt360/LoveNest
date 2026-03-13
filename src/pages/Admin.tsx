@@ -27,6 +27,14 @@ export default function Admin() {
     const [newTitle, setNewTitle] = useState("");
     const [newContent, setNewContent] = useState("");
     const [sendingMsg, setSendingMsg] = useState(false);
+    const [sendAsBanner, setSendAsBanner] = useState(true);
+    const [sendAsPush, setSendAsPush] = useState(false);
+
+    // Announcement editing
+    const [editingAnn, setEditingAnn] = useState<any>(null);
+    const [editAnnTitle, setEditAnnTitle] = useState("");
+    const [editAnnContent, setEditAnnContent] = useState("");
+    const [savingAnnEdit, setSavingAnnEdit] = useState(false);
 
     // Plan form
     const [newPlanName, setNewPlanName] = useState("");
@@ -249,12 +257,25 @@ export default function Admin() {
             const { error } = await adminClient.from("admin_announcements").insert({
                 title: newTitle,
                 content: newContent,
-                active: true
+                active: sendAsBanner
             });
             if (error) throw error;
-            toast({ title: "Anúncio enviado!", description: "Todos os utilizadores verão esta mensagem." });
+
+            if (sendAsPush) {
+                const { error: pushError } = await adminClient.functions.invoke("send-push-admin", {
+                    body: { title: newTitle, body: newContent }
+                });
+                if (pushError) {
+                    console.error("Push Error: ", pushError);
+                    toast({ title: "Aviso Parcial", description: "O aviso foi salvo, mas houve erro ao enviar a notificação Push.", variant: "destructive" });
+                }
+            }
+
+            toast({ title: "Aviso enviado!", description: "Operação concluída com sucesso." });
             setNewTitle("");
             setNewContent("");
+            setSendAsBanner(true);
+            setSendAsPush(false);
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -267,12 +288,43 @@ export default function Admin() {
         try {
             const { error } = await adminClient.from("admin_announcements").update({ active: !activeStatus }).eq("id", id);
             if (error) throw error;
-            toast({ title: "Atualizado", description: "O estado do anúncio foi alterado." });
+            toast({ title: "Atualizado", description: "O estado do aviso foi alterado." });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
-    }
+    };
+
+    const handleSaveAnnEdit = async () => {
+        if (!editingAnn || !editAnnTitle.trim() || !editAnnContent.trim()) return;
+        try {
+            setSavingAnnEdit(true);
+            const { error } = await adminClient.from("admin_announcements").update({
+                title: editAnnTitle,
+                content: editAnnContent
+            }).eq("id", editingAnn.id);
+            if (error) throw error;
+            toast({ title: "Aviso Atualizado", description: "O aviso foi modificado com sucesso." });
+            setEditingAnn(null);
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setSavingAnnEdit(false);
+        }
+    };
+
+    const handleDeleteAnn = async (id: string) => {
+        if (!confirm("Tens a certeza que queres eliminar este aviso permanentemente?")) return;
+        try {
+            const { error } = await adminClient.from("admin_announcements").delete().eq("id", id);
+            if (error) throw error;
+            toast({ title: "Eliminado", description: "O aviso foi removido do sistema." });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
 
     const handleCreatePlan = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -799,7 +851,29 @@ export default function Admin() {
                                     onChange={(e) => setNewContent(e.target.value)}
                                     className="bg-background/80 min-h-[100px] border-primary/20"
                                 />
-                                <Button className="w-full md:w-auto h-12 text-md font-bold" onClick={handleCreateAnnouncement} disabled={sendingMsg || !newTitle || !newContent}>
+
+                                <div className="flex flex-col sm:flex-row gap-4 py-2">
+                                    <div 
+                                        onClick={() => setSendAsBanner(!sendAsBanner)}
+                                        className={`cursor-pointer flex-1 rounded-xl border p-3 flex items-center gap-3 transition-all ${sendAsBanner ? 'bg-primary/10 border-primary text-primary font-bold' : 'bg-background hover:bg-muted text-foreground'}`}
+                                    >
+                                        <div className={`w-5 h-5 rounded flex items-center justify-center border ${sendAsBanner ? 'bg-primary border-primary text-white' : 'border-muted-foreground'}`}>
+                                            {sendAsBanner && <Check className="w-3 h-3" />}
+                                        </div>
+                                        <span>Exibir como Banner no App</span>
+                                    </div>
+                                    <div 
+                                        onClick={() => setSendAsPush(!sendAsPush)}
+                                        className={`cursor-pointer flex-1 rounded-xl border p-3 flex items-center gap-3 transition-all ${sendAsPush ? 'bg-primary/10 border-primary text-primary font-bold' : 'bg-background hover:bg-muted text-foreground'}`}
+                                    >
+                                        <div className={`w-5 h-5 rounded flex items-center justify-center border ${sendAsPush ? 'bg-primary border-primary text-white' : 'border-muted-foreground'}`}>
+                                            {sendAsPush && <Check className="w-3 h-3" />}
+                                        </div>
+                                        <span>Enviar Notificação Push (Celular)</span>
+                                    </div>
+                                </div>
+
+                                <Button className="w-full md:w-auto h-12 text-md font-bold" onClick={handleCreateAnnouncement} disabled={sendingMsg || !newTitle || !newContent || (!sendAsBanner && !sendAsPush)}>
                                     {sendingMsg ? "A enviar..." : <><Send className="w-4 h-4 mr-2" /> Disparar Mensagem Global</>}
                                 </Button>
                             </div>
@@ -817,17 +891,57 @@ export default function Admin() {
                                             </span>
                                         </div>
                                         <p className="text-sm text-foreground mb-4 whitespace-pre-wrap">{ann.content}</p>
-                                        <div className="flex justify-between items-center text-xs">
+                                        <div className="flex justify-between items-center text-xs mt-4 pt-4 border-t border-border/50">
                                             <span className="text-muted-foreground">{new Date(ann.created_at).toLocaleString()}</span>
-                                            <Button size="sm" variant={ann.active ? "outline" : "secondary"} onClick={() => handleToggleAnnouncement(ann.id, ann.active)}>
-                                                {ann.active ? "Remover do Ecrã" : "Voltar a Exibir"}
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                <Button size="sm" variant="outline" className="h-8" onClick={() => {
+                                                    setEditingAnn(ann);
+                                                    setEditAnnTitle(ann.title);
+                                                    setEditAnnContent(ann.content);
+                                                }}>
+                                                    ✏️ Editar
+                                                </Button>
+                                                <Button size="sm" variant={ann.active ? "outline" : "secondary"} className="h-8" onClick={() => handleToggleAnnouncement(ann.id, ann.active)}>
+                                                    {ann.active ? "Remover do Ecrã" : "Voltar a Exibir"}
+                                                </Button>
+                                                <Button size="sm" variant="destructive" className="h-8" onClick={() => handleDeleteAnn(ann.id)}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                                 {announcements.length === 0 && <p className="text-sm text-muted-foreground italic bg-card p-4 rounded-xl border border-dashed">Nenhum aviso emitido ainda.</p>}
                             </div>
                         </div>
+
+                        {/* Edit Announcement Modal */}
+                        {editingAnn && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+                                <div className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
+                                    <div className="p-6 border-b flex justify-between items-center bg-muted/30">
+                                        <h3 className="font-bold text-lg">Editar Aviso</h3>
+                                        <Button variant="ghost" size="icon" onClick={() => setEditingAnn(null)}><X className="w-5 h-5" /></Button>
+                                    </div>
+                                    <div className="p-6 space-y-4">
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Título</label>
+                                            <Input value={editAnnTitle} onChange={e => setEditAnnTitle(e.target.value)} className="bg-background" />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Mensagem</label>
+                                            <Textarea value={editAnnContent} onChange={e => setEditAnnContent(e.target.value)} className="bg-background min-h-[100px]" />
+                                        </div>
+                                    </div>
+                                    <div className="p-4 bg-muted/30 border-t flex justify-end gap-2">
+                                        <Button variant="outline" onClick={() => setEditingAnn(null)}>Cancelar</Button>
+                                        <Button className="font-bold" disabled={savingAnnEdit || !editAnnTitle.trim() || !editAnnContent.trim()} onClick={handleSaveAnnEdit}>
+                                            {savingAnnEdit ? "A guardar..." : "Guardar Alterações"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
