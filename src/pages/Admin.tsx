@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus, Trash2, Settings
+    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks">("overview");
+    const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
@@ -27,14 +28,6 @@ export default function Admin() {
     const [newTitle, setNewTitle] = useState("");
     const [newContent, setNewContent] = useState("");
     const [sendingMsg, setSendingMsg] = useState(false);
-    const [sendAsBanner, setSendAsBanner] = useState(true);
-    const [sendAsPush, setSendAsPush] = useState(false);
-
-    // Announcement editing
-    const [editingAnn, setEditingAnn] = useState<any>(null);
-    const [editAnnTitle, setEditAnnTitle] = useState("");
-    const [editAnnContent, setEditAnnContent] = useState("");
-    const [savingAnnEdit, setSavingAnnEdit] = useState(false);
 
     // Plan form
     const [newPlanName, setNewPlanName] = useState("");
@@ -173,6 +166,13 @@ export default function Admin() {
                 });
             }
 
+            // 7. Streaks
+            const { data: streaksData } = await adminClient
+                .from("love_streaks")
+                .select("*")
+                .order("current_streak", { ascending: false });
+            setStreaks(streaksData || []);
+
         } catch (error: any) {
             toast({ title: "Erro de Gestão", description: error.message, variant: "destructive" });
         } finally {
@@ -257,25 +257,12 @@ export default function Admin() {
             const { error } = await adminClient.from("admin_announcements").insert({
                 title: newTitle,
                 content: newContent,
-                active: sendAsBanner
+                active: true
             });
             if (error) throw error;
-
-            if (sendAsPush) {
-                const { error: pushError } = await adminClient.functions.invoke("send-push-admin", {
-                    body: { title: newTitle, body: newContent }
-                });
-                if (pushError) {
-                    console.error("Push Error: ", pushError);
-                    toast({ title: "Aviso Parcial", description: "O aviso foi salvo, mas houve erro ao enviar a notificação Push.", variant: "destructive" });
-                }
-            }
-
-            toast({ title: "Aviso enviado!", description: "Operação concluída com sucesso." });
+            toast({ title: "Anúncio enviado!", description: "Todos os utilizadores verão esta mensagem." });
             setNewTitle("");
             setNewContent("");
-            setSendAsBanner(true);
-            setSendAsPush(false);
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -288,43 +275,12 @@ export default function Admin() {
         try {
             const { error } = await adminClient.from("admin_announcements").update({ active: !activeStatus }).eq("id", id);
             if (error) throw error;
-            toast({ title: "Atualizado", description: "O estado do aviso foi alterado." });
+            toast({ title: "Atualizado", description: "O estado do anúncio foi alterado." });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
-    };
-
-    const handleSaveAnnEdit = async () => {
-        if (!editingAnn || !editAnnTitle.trim() || !editAnnContent.trim()) return;
-        try {
-            setSavingAnnEdit(true);
-            const { error } = await adminClient.from("admin_announcements").update({
-                title: editAnnTitle,
-                content: editAnnContent
-            }).eq("id", editingAnn.id);
-            if (error) throw error;
-            toast({ title: "Aviso Atualizado", description: "O aviso foi modificado com sucesso." });
-            setEditingAnn(null);
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setSavingAnnEdit(false);
-        }
-    };
-
-    const handleDeleteAnn = async (id: string) => {
-        if (!confirm("Tens a certeza que queres eliminar este aviso permanentemente?")) return;
-        try {
-            const { error } = await adminClient.from("admin_announcements").delete().eq("id", id);
-            if (error) throw error;
-            toast({ title: "Eliminado", description: "O aviso foi removido do sistema." });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
+    }
 
     const handleCreatePlan = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -511,6 +467,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "settings" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("settings")}>
                         <Settings className="w-4 h-4" /> <span className="hidden md:inline">Configurações</span>
+                    </Button>
+                    <Button variant={tab === "streaks" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("streaks")}>
+                        <Flame className="w-4 h-4" /> <span className="hidden md:inline">Streaks</span>
                     </Button>
                 </nav>
 
@@ -851,29 +810,7 @@ export default function Admin() {
                                     onChange={(e) => setNewContent(e.target.value)}
                                     className="bg-background/80 min-h-[100px] border-primary/20"
                                 />
-
-                                <div className="flex flex-col sm:flex-row gap-4 py-2">
-                                    <div 
-                                        onClick={() => setSendAsBanner(!sendAsBanner)}
-                                        className={`cursor-pointer flex-1 rounded-xl border p-3 flex items-center gap-3 transition-all ${sendAsBanner ? 'bg-primary/10 border-primary text-primary font-bold' : 'bg-background hover:bg-muted text-foreground'}`}
-                                    >
-                                        <div className={`w-5 h-5 rounded flex items-center justify-center border ${sendAsBanner ? 'bg-primary border-primary text-white' : 'border-muted-foreground'}`}>
-                                            {sendAsBanner && <Check className="w-3 h-3" />}
-                                        </div>
-                                        <span>Exibir como Banner no App</span>
-                                    </div>
-                                    <div 
-                                        onClick={() => setSendAsPush(!sendAsPush)}
-                                        className={`cursor-pointer flex-1 rounded-xl border p-3 flex items-center gap-3 transition-all ${sendAsPush ? 'bg-primary/10 border-primary text-primary font-bold' : 'bg-background hover:bg-muted text-foreground'}`}
-                                    >
-                                        <div className={`w-5 h-5 rounded flex items-center justify-center border ${sendAsPush ? 'bg-primary border-primary text-white' : 'border-muted-foreground'}`}>
-                                            {sendAsPush && <Check className="w-3 h-3" />}
-                                        </div>
-                                        <span>Enviar Notificação Push (Celular)</span>
-                                    </div>
-                                </div>
-
-                                <Button className="w-full md:w-auto h-12 text-md font-bold" onClick={handleCreateAnnouncement} disabled={sendingMsg || !newTitle || !newContent || (!sendAsBanner && !sendAsPush)}>
+                                <Button className="w-full md:w-auto h-12 text-md font-bold" onClick={handleCreateAnnouncement} disabled={sendingMsg || !newTitle || !newContent}>
                                     {sendingMsg ? "A enviar..." : <><Send className="w-4 h-4 mr-2" /> Disparar Mensagem Global</>}
                                 </Button>
                             </div>
@@ -891,57 +828,17 @@ export default function Admin() {
                                             </span>
                                         </div>
                                         <p className="text-sm text-foreground mb-4 whitespace-pre-wrap">{ann.content}</p>
-                                        <div className="flex justify-between items-center text-xs mt-4 pt-4 border-t border-border/50">
+                                        <div className="flex justify-between items-center text-xs">
                                             <span className="text-muted-foreground">{new Date(ann.created_at).toLocaleString()}</span>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="outline" className="h-8" onClick={() => {
-                                                    setEditingAnn(ann);
-                                                    setEditAnnTitle(ann.title);
-                                                    setEditAnnContent(ann.content);
-                                                }}>
-                                                    ✏️ Editar
-                                                </Button>
-                                                <Button size="sm" variant={ann.active ? "outline" : "secondary"} className="h-8" onClick={() => handleToggleAnnouncement(ann.id, ann.active)}>
-                                                    {ann.active ? "Remover do Ecrã" : "Voltar a Exibir"}
-                                                </Button>
-                                                <Button size="sm" variant="destructive" className="h-8" onClick={() => handleDeleteAnn(ann.id)}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                            <Button size="sm" variant={ann.active ? "outline" : "secondary"} onClick={() => handleToggleAnnouncement(ann.id, ann.active)}>
+                                                {ann.active ? "Remover do Ecrã" : "Voltar a Exibir"}
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
                                 {announcements.length === 0 && <p className="text-sm text-muted-foreground italic bg-card p-4 rounded-xl border border-dashed">Nenhum aviso emitido ainda.</p>}
                             </div>
                         </div>
-
-                        {/* Edit Announcement Modal */}
-                        {editingAnn && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-                                <div className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
-                                    <div className="p-6 border-b flex justify-between items-center bg-muted/30">
-                                        <h3 className="font-bold text-lg">Editar Aviso</h3>
-                                        <Button variant="ghost" size="icon" onClick={() => setEditingAnn(null)}><X className="w-5 h-5" /></Button>
-                                    </div>
-                                    <div className="p-6 space-y-4">
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Título</label>
-                                            <Input value={editAnnTitle} onChange={e => setEditAnnTitle(e.target.value)} className="bg-background" />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Mensagem</label>
-                                            <Textarea value={editAnnContent} onChange={e => setEditAnnContent(e.target.value)} className="bg-background min-h-[100px]" />
-                                        </div>
-                                    </div>
-                                    <div className="p-4 bg-muted/30 border-t flex justify-end gap-2">
-                                        <Button variant="outline" onClick={() => setEditingAnn(null)}>Cancelar</Button>
-                                        <Button className="font-bold" disabled={savingAnnEdit || !editAnnTitle.trim() || !editAnnContent.trim()} onClick={handleSaveAnnEdit}>
-                                            {savingAnnEdit ? "A guardar..." : "Guardar Alterações"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
 
@@ -1003,6 +900,78 @@ export default function Admin() {
                                 {savingSettings ? "A Guardar..." : "Salvar Configurações"}
                             </Button>
                         </form>
+                    </div>
+                )}
+
+                {/* STREAKS TAB */}
+                {tab === "streaks" && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Flame className="w-6 h-6 text-orange-500" /> LoveStreak - Ranking Global</h2>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Flame className="w-6 h-6 text-orange-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.filter(s => s.current_streak > 0).length}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Streaks Ativos</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Trophy className="w-6 h-6 text-amber-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.length > 0 ? Math.max(...streaks.map(s => s.current_streak)) : 0}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Maior Streak</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Trophy className="w-6 h-6 text-primary mb-4" />
+                                <span className="text-3xl font-black">{streaks.length > 0 ? Math.max(...streaks.map(s => s.best_streak)) : 0}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Recorde Absoluto</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Users className="w-6 h-6 text-blue-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.length}</span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Total Casais</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-muted/50 border-b">
+                                        <tr>
+                                            <th className="p-4 font-bold text-muted-foreground">#</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Casa</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Streak Atual</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Melhor Streak</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Nível</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Shields</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {streaks.map((s, i) => {
+                                            const house = houses.find(h => h.id === s.couple_space_id);
+                                            const medals = ["🥇", "🥈", "🥉"];
+                                            return (
+                                                <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                                                    <td className="p-4 font-bold">{i < 3 ? medals[i] : i + 1}</td>
+                                                    <td className="p-4 font-medium">{house?.house_name || "LoveNest"}</td>
+                                                    <td className="p-4">
+                                                        <span className="font-bold text-orange-500 flex items-center gap-1">
+                                                            <Flame className="w-4 h-4" /> {s.current_streak}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 font-medium">{s.best_streak}</td>
+                                                    <td className="p-4 text-xs font-bold">{s.level_title}</td>
+                                                    <td className="p-4 text-xs">{s.shield_remaining}/3 🛡️</td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {streaks.length === 0 && (
+                                            <tr>
+                                                <td colSpan={6} className="p-4 text-center text-muted-foreground">Nenhum streak registado ainda.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 )}
 

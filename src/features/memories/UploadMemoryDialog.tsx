@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
   const [caption, setCaption] = useState("");
   const [takenOn, setTakenOn] = useState("");
   const [uploading, setUploading] = useState(false);
+  const { recordInteraction } = useLoveStreak();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +67,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
       if (insertErr) throw insertErr;
 
       toast({ title: "📸 Memória guardada!" });
+      recordInteraction("memory_upload");
       if (spaceId) {
         notifyPartner({
           couple_space_id: spaceId,

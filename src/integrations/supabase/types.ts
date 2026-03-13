@@ -343,6 +343,41 @@ export type Database = {
           },
         ]
       }
+      daily_interactions: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          day_key: string
+          id: string
+          interaction_type: string
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          day_key?: string
+          id?: string
+          interaction_type: string
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          day_key?: string
+          id?: string
+          interaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_interactions_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_prayers: {
         Row: {
           couple_space_id: string
@@ -931,6 +966,62 @@ export type Database = {
         }
         Relationships: []
       }
+      love_streaks: {
+        Row: {
+          best_streak: number
+          couple_space_id: string
+          created_at: string
+          current_streak: number
+          id: string
+          interaction_date: string | null
+          last_streak_date: string | null
+          level_title: string
+          partner1_interacted_today: boolean
+          partner2_interacted_today: boolean
+          shield_monthly_reset: string
+          shield_remaining: number
+          updated_at: string
+        }
+        Insert: {
+          best_streak?: number
+          couple_space_id: string
+          created_at?: string
+          current_streak?: number
+          id?: string
+          interaction_date?: string | null
+          last_streak_date?: string | null
+          level_title?: string
+          partner1_interacted_today?: boolean
+          partner2_interacted_today?: boolean
+          shield_monthly_reset?: string
+          shield_remaining?: number
+          updated_at?: string
+        }
+        Update: {
+          best_streak?: number
+          couple_space_id?: string
+          created_at?: string
+          current_streak?: number
+          id?: string
+          interaction_date?: string | null
+          last_streak_date?: string | null
+          level_title?: string
+          partner1_interacted_today?: boolean
+          partner2_interacted_today?: boolean
+          shield_monthly_reset?: string
+          shield_remaining?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "love_streaks_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: true
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           couple_space_id: string
@@ -1019,6 +1110,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      micro_challenge_completions: {
+        Row: {
+          challenge_id: string
+          completed: boolean
+          couple_space_id: string
+          created_at: string
+          day_key: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean
+          couple_space_id: string
+          created_at?: string
+          day_key?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean
+          couple_space_id?: string
+          created_at?: string
+          day_key?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "micro_challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "micro_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "micro_challenge_completions_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      micro_challenges: {
+        Row: {
+          challenge_text: string
+          challenge_type: string
+          created_at: string
+          emoji: string | null
+          id: string
+          points: number
+        }
+        Insert: {
+          challenge_text: string
+          challenge_type?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          points?: number
+        }
+        Update: {
+          challenge_text?: string
+          challenge_type?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          points?: number
+        }
+        Relationships: []
       }
       mood_checkins: {
         Row: {

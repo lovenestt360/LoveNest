@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ interface Task {
 export default function Tasks() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
+  const { recordInteraction } = useLoveStreak();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -126,6 +128,11 @@ export default function Tasks() {
       status: newStatus,
       done_at: newStatus === "done" ? new Date().toISOString() : null,
     }).eq("id", task.id);
+
+    // Record interaction for LoveStreak
+    if (newStatus === "done") {
+      recordInteraction("task_complete");
+    }
 
     // Notify partner when task completed
     if (newStatus === "done" && spaceId) {

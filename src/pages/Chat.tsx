@@ -5,6 +5,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useSharedWallpaper } from "@/hooks/useSharedWallpaper";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -300,6 +301,7 @@ export default function Chat() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetChatUnread } = useAppNotifContext();
+  const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateWallpaper } = useSharedWallpaper();
   const [openSettings, setOpenSettings] = useState(false);
@@ -457,6 +459,12 @@ export default function Chat() {
         image_url: imageUrl,
         audio_url: audioUrl,
       });
+
+      // Record interaction for LoveStreak (anti-spam: >3 chars or has emoji)
+      const hasEmoji = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(text);
+      if (text.length > 3 || hasEmoji || imageUrl || audioUrl) {
+        recordInteraction("chat_message");
+      }
 
       // Notify partner
       let body = text;

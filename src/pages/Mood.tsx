@@ -4,6 +4,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MoodCheckin } from "@/features/mood/types";
 import { MoodForm } from "@/features/mood/MoodForm";
@@ -18,6 +19,7 @@ export default function Mood() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
+  const { recordInteraction } = useLoveStreak();
 
   const [moodKey, setMoodKey] = useState("feliz");
   const [moodPercent, setMoodPercent] = useState(50);
@@ -120,6 +122,9 @@ export default function Mood() {
         .maybeSingle();
       if (data) setExistingId(data.id);
     }
+
+    // Record interaction for LoveStreak
+    recordInteraction("mood_update");
 
     setSaving(false);
     loadData();
