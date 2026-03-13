@@ -166,6 +166,13 @@ export default function Admin() {
                 });
             }
 
+            // 7. Streaks
+            const { data: streaksData } = await adminClient
+                .from("love_streaks")
+                .select("*")
+                .order("current_streak", { ascending: false });
+            setStreaks(streaksData || []);
+
         } catch (error: any) {
             toast({ title: "Erro de Gestão", description: error.message, variant: "destructive" });
         } finally {
