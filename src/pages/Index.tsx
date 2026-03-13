@@ -419,6 +419,9 @@ const Index = () => {
 
       <InstallBanner />
 
+      {/* ── LoveStreak ── */}
+      <LoveStreakHomeCard />
+
       {/* ── Jejum (Páscoa) Featured Card ── */}
       <button
         onClick={() => navigate("/jejum")}
