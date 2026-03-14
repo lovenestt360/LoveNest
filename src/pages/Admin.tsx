@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight
+    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
+    Sparkles, Calendar
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "wrapped">("overview");
     const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -122,6 +123,11 @@ export default function Admin() {
     const [selectedPlanForAssign, setSelectedPlanForAssign] = useState("");
     const [assignTrialDays, setAssignTrialDays] = useState("0");
     const [assigningPlan, setAssigningPlan] = useState(false);
+
+    // LoveWrapped generation
+    const [generatingWrapped, setGeneratingWrapped] = useState(false);
+    const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth() || 12);
+    const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
 
     const ALL_FEATURES = [
         { id: "home", label: "Home" },
@@ -437,6 +443,26 @@ export default function Admin() {
         }
     };
 
+    const handleGenerateWrapped = async () => {
+        try {
+            setGeneratingWrapped(true);
+            const { data, error } = await supabase.functions.invoke('generate-love-wrapped', {
+                body: { month: wrappedMonth, year: wrappedYear }
+            });
+
+            if (error) throw error;
+            
+            toast({
+                title: "Sucesso!",
+                description: `LoveWrapped gerado para ${data.generated} casais (${data.month}/${data.year}).`
+            });
+        } catch (error: any) {
+            toast({ title: "Erro na Geração", description: error.message, variant: "destructive" });
+        } finally {
+            setGeneratingWrapped(false);
+        }
+    };
+
     if (loading && payments.length === 0) {
         return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
     }
@@ -533,6 +559,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "streaks" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("streaks")}>
                         <Flame className="w-4 h-4" /> <span className="hidden md:inline">Streaks</span>
+                    </Button>
+                    <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
+                        <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
                     </Button>
                 </nav>
 
@@ -1037,6 +1066,120 @@ export default function Admin() {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* LOVEWRAPPED TAB */}
+                {tab === "wrapped" && (
+                    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    <Sparkles className="w-6 h-6 text-primary" /> Gestão LoveWrapped
+                                </h2>
+                                <p className="text-sm text-muted-foreground mt-1">Gera e gere os resumos mensais de atividade dos casais.</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 border border-primary/20 rounded-3xl p-8 shadow-sm">
+                            <div className="max-w-md mx-auto text-center space-y-6">
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-bold">Gerar Resumo Mensal</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Esta ação irá processar as estatísticas (mensagens, memórias, desafios, etc.) de todos os casais para o mês selecionado.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2 text-left">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Mês</label>
+                                        <div className="relative">
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <select 
+                                                className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none"
+                                                value={wrappedMonth}
+                                                onChange={(e) => setWrappedMonth(parseInt(e.target.value))}
+                                            >
+                                                {Array.from({ length: 12 }, (_, i) => (
+                                                    <option key={i + 1} value={i + 1}>
+                                                        {new Intl.DateTimeFormat('pt-PT', { month: 'long' }).format(new Date(2024, i))}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 text-left">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Ano</label>
+                                        <Input 
+                                            type="number" 
+                                            value={wrappedYear}
+                                            onChange={(e) => setWrappedYear(parseInt(e.target.value))}
+                                            className="h-11 rounded-xl bg-background font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <Button 
+                                    className="w-full h-12 text-md font-bold rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    onClick={handleGenerateWrapped}
+                                    disabled={generatingWrapped}
+                                >
+                                    {generatingWrapped ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            A Processar...
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            <Sparkles className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+                                            Disparar Geração Global
+                                        </span>
+                                    )}
+                                </Button>
+
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                                    Atenção: A geração pode demorar dependendo do número de casais ativos.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Recent Generations Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="glass-card rounded-2xl p-6 border-blue-500/10">
+                                <h4 className="font-bold flex items-center gap-2 mb-4">
+                                    <Activity className="w-4 h-4 text-blue-500" /> Como Funciona
+                                </h4>
+                                <ul className="space-y-3 text-sm text-muted-foreground">
+                                    <li className="flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                                        Calcula o total de mensagens e fotos enviadas no período.
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                                        Verifica os desafios concluídos e o streak atual do casal.
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                                        Os dados ficam disponíveis imediatamente na página /wrapped dos utilizadores.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 border-amber-500/10">
+                                <h4 className="font-bold flex items-center gap-2 mb-4">
+                                    <ShieldCheck className="w-4 h-4 text-amber-500" /> Notas de Segurança
+                                </h4>
+                                <ul className="space-y-3 text-sm text-muted-foreground">
+                                    <li className="flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                        A função é idempotente (não gera duplicados para o mesmo par mês/ano/casal).
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                        Podes regerar um mês se os dados estiverem desatualizados.
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
