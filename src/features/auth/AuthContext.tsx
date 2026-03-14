@@ -19,6 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Track referrals on signup
+  useReferralTracking(user?.id);
+
   useEffect(() => {
     const ensureProfileRow = async (u: User) => {
       // Cria o profile apenas se não existir (não sobrescreve edits do utilizador)
