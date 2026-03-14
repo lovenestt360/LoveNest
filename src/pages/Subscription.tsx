@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, Tag, MessageCircle } f
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { useFreeMode } from "@/hooks/useFreeMode";
 
 // Removed static METHODS array, it will be generated dynamically
 
