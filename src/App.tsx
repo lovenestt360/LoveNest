@@ -36,6 +36,7 @@ const Subscription = lazy(() => import("./pages/Subscription"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const Ranking = lazy(() => import("./pages/Ranking"));
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
+const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminRegister = lazy(() => import("./pages/admin/AdminRegister"));
