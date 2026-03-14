@@ -113,6 +113,8 @@ const App = () => (
                     <Route element={<PremiumGuard requiredFeature="time_capsules" />}>
                       <Route path="capsula" element={<TimeCapsule />} />
                     </Route>
+                    <Route path="wrapped" element={<LoveWrapped />} />
+                    </Route>
                   </Route>
                 </Route>
 
