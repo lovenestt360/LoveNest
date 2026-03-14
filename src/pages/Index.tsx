@@ -422,6 +422,21 @@ const Index = () => {
       {/* ── LoveStreak ── */}
       <LoveStreakHomeCard />
 
+      {/* ── LoveWrapped ── */}
+      <button
+        onClick={() => navigate("/wrapped")}
+        className="glass-card glass-card-hover relative flex w-full items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.97] transition-transform duration-150"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-foreground">✨ LoveWrapped</p>
+          <p className="text-xs text-muted-foreground">O resumo mensal do vosso amor</p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+      </button>
+
       {/* ── Jejum (Páscoa) Featured Card ── */}
       <button
         onClick={() => navigate("/jejum")}
