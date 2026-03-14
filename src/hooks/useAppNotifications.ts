@@ -5,7 +5,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
 
-const NOTIF_KEY = "dk_notif_prefs";
+const NOTIF_KEY = "lovenest_notif_prefs";
 const defaultPrefs = {
   chat: true,
   humor: true,

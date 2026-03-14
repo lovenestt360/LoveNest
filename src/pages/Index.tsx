@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight, Megaphone, Trophy, Clock,
+  ArrowRight, Megaphone, Trophy, Clock, Sparkles
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -356,7 +356,7 @@ const Index = () => {
               <AvatarImage src={avatars.me.avatarUrl} alt="Eu" />
             ) : null}
             <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
-              {avatars.me?.displayName?.charAt(0)?.toUpperCase() ?? "D"}
+              {avatars.me?.displayName?.charAt(0)?.toUpperCase() ?? "L"}
             </AvatarFallback>
           </Avatar>
 
@@ -371,7 +371,7 @@ const Index = () => {
               <AvatarImage src={avatars.partner.avatarUrl} alt="Par" />
             ) : null}
             <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
-              {avatars.partner?.displayName?.charAt(0)?.toUpperCase() ?? "K"}
+              {avatars.partner?.displayName?.charAt(0)?.toUpperCase() ?? "N"}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -527,7 +527,7 @@ const Index = () => {
               {cycle.info.cycleDay > 0 && (
                 <span className="text-[10px] text-muted-foreground">Dia {cycle.info.cycleDay}</span>
               )}
-              {cycle.info.nextPeriod && (
+              {cycle.info.nextPeriod && !isNaN(new Date(cycle.info.nextPeriod).getTime()) && (
                 <span className="text-[10px] text-muted-foreground">
                   Próx: {format(new Date(cycle.info.nextPeriod + "T12:00:00"), "d MMM", { locale: pt })}
                 </span>

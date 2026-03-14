@@ -52,7 +52,7 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         </div>
       </div>
       <h1 className="mt-6 text-4xl font-extrabold tracking-tight gradient-text">
-        {initials || "LoveNest"}
+        LoveNest
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">Seu espaço de casal</p>
     </div>
