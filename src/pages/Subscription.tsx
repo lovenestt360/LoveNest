@@ -184,8 +184,32 @@ export default function Subscription() {
         window.open(`https://wa.me/${number.replace(/\D/g, '')}?text=${encodedMsg}`, "_blank");
     };
 
+    const { freeMode } = useFreeMode();
+
     if (loading) {
         return <div className="flex justify-center items-center h-screen animate-pulse font-bold tracking-widest text-muted-foreground">A carregar planos...</div>;
+    }
+
+    if (freeMode) {
+        return (
+            <div className="min-h-screen bg-background pb-20">
+                <header className="px-4 py-4 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b flex items-center gap-3">
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
+                        <ArrowLeft className="h-5 w-5" />
+                    </button>
+                    <h1 className="text-xl font-bold tracking-tight text-foreground">Subscrição LoveNest</h1>
+                </header>
+                <main className="p-4 max-w-md mx-auto">
+                    <div className="bg-card border rounded-3xl p-8 shadow-md text-center animate-in zoom-in-95">
+                        <div className="mx-auto w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-inner">
+                            <CheckCircle className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-black mb-2 tracking-tight">Tudo Desbloqueado! 🎉</h2>
+                        <p className="text-foreground/80 leading-relaxed font-medium">O LoveNest está em modo gratuito. Todas as funcionalidades estão disponíveis sem necessidade de subscrição.</p>
+                    </div>
+                </main>
+            </div>
+        );
     }
 
     return (
