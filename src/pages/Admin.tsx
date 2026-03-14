@@ -845,8 +845,12 @@ export default function Admin() {
                 {/* SETTINGS TAB */}
                 {tab === "settings" && (
                     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6 text-primary" /> Configurações de Pagamento</h2>
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6 text-primary" /> Configurações</h2>
 
+                        {/* FREE MODE TOGGLE */}
+                        <FreeModeToggle adminClient={adminClient} adminToken={adminToken} />
+
+                        <h3 className="text-xl font-bold text-muted-foreground">Configurações de Pagamento</h3>
                         <form onSubmit={handleSaveSettings} className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
 
                             <h3 className="font-bold mb-4 text-primary">Contas de Recebimento</h3>
