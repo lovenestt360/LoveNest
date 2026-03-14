@@ -115,7 +115,6 @@ const App = () => (
                     </Route>
                     <Route path="wrapped" element={<LoveWrapped />} />
                   </Route>
-                  </Route>
                 </Route>
 
                 {/* Admin Auth */}
