@@ -32,12 +32,12 @@ export function useReferralTracking(userId: string | undefined) {
     sessionStorage.removeItem("lovenest_ref");
 
     // Find referrer by code
-    supabase
+    (supabase as any)
       .from("profiles")
       .select("user_id")
-      .eq("referral_code" as any, refCode)
+      .eq("referral_code", refCode)
       .maybeSingle()
-      .then(({ data: referrer }) => {
+      .then(({ data: referrer }: any) => {
         if (!referrer || referrer.user_id === userId) return;
 
         // Insert referral
@@ -49,12 +49,6 @@ export function useReferralTracking(userId: string | undefined) {
           })
           .then(({ error }: any) => {
             if (error) console.warn("Referral insert error:", error.message);
-            else {
-              // Give reward: +2 streak bonus to referrer's couple
-              supabase.rpc("get_user_couple_space_id").then(() => {
-                // The reward is granted via the streak system
-              });
-            }
           });
       });
   }, [userId]);

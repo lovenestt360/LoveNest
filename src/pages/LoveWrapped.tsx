@@ -159,10 +159,10 @@ export default function LoveWrapped() {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <StatBox icon={<Flame className="w-5 h-5 text-orange-500" />} value={current.streak_days} label="Dias de Streak" />
-                <StatBox icon={<MessageCircle className="w-5 h-5 text-blue-500" />} value={current.messages_count} label="Mensagens" />
-                <StatBox icon={<Camera className="w-5 h-5 text-pink-500" />} value={current.memories_count} label="Memórias" />
-                <StatBox icon={<Trophy className="w-5 h-5 text-yellow-500" />} value={current.challenges_completed} label="Desafios" />
+                <StatBox icon={<Flame className="w-5 h-5 text-destructive" />} value={current.streak_days} label="Dias de Streak" />
+                <StatBox icon={<MessageCircle className="w-5 h-5 text-primary" />} value={current.messages_count} label="Mensagens" />
+                <StatBox icon={<Camera className="w-5 h-5 text-accent-foreground" />} value={current.memories_count} label="Memórias" />
+                <StatBox icon={<Trophy className="w-5 h-5 text-primary" />} value={current.challenges_completed} label="Desafios" />
               </div>
 
               {current.mood_checkins > 0 && (
