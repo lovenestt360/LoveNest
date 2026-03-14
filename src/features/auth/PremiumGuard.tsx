@@ -1,14 +1,24 @@
 import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useFreeMode } from "@/hooks/useFreeMode";
 import Paywall from "@/components/Paywall";
 
 export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) {
+    const { freeMode, loading: freeModeLoading } = useFreeMode();
     const [loading, setLoading] = useState(true);
     const [isPremium, setIsPremium] = useState(false);
     const [missingFeature, setMissingFeature] = useState(false);
 
     useEffect(() => {
+        // If free mode is active, skip all premium checks
+        if (freeModeLoading) return;
+        if (freeMode) {
+            setIsPremium(true);
+            setLoading(false);
+            return;
+        }
+
         const checkPremium = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
@@ -25,14 +35,12 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
                     if (house.trial_used && house.trial_ends_at) {
                         const endsAt = new Date(house.trial_ends_at);
                         if (endsAt > new Date()) {
-                            // Free trial gives access to all features
                             hasAccess = true;
                         }
                     }
 
                     if (!hasAccess && house.subscription_status === 'active') {
                         if (requiredFeature) {
-                            // Find active payment
                             const { data: payment } = await supabase.from("payments").select("plan_name").eq("couple_space_id", member.couple_space_id).eq("status", "approved").order("created_at", { ascending: false }).limit(1).maybeSingle();
                             if (payment) {
                                 const { data: plan } = await supabase.from("subscription_plans").select("features").eq("name", payment.plan_name).maybeSingle();
@@ -57,14 +65,14 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
             }
         };
         checkPremium();
-    }, []);
+    }, [freeMode, freeModeLoading]);
 
-    if (loading) {
+    if (loading || freeModeLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="text-center">
                     <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                    <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mt-4">A verificar passe premium...</p>
+                    <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mt-4">A verificar acesso...</p>
                 </div>
             </div>
         );

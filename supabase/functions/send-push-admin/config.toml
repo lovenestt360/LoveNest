@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "send-push-admin": {
-      "verify_jwt": false
-    }
-  }
-}

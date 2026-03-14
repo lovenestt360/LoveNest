@@ -94,6 +94,27 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       complaint_messages: {
         Row: {
           complaint_id: string
@@ -963,6 +984,27 @@ export type Database = {
           registar_dia?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      free_mode_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
         }
         Relationships: []
       }
