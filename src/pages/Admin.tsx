@@ -13,6 +13,68 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminToken: string | null }) {
+    const [freeMode, setFreeMode] = useState(false);
+    const [loadingFM, setLoadingFM] = useState(true);
+    const [togglingFM, setTogglingFM] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        adminClient.from("app_settings").select("value").eq("key", "free_mode").maybeSingle()
+            .then(({ data }: any) => {
+                setFreeMode(data?.value === "true");
+                setLoadingFM(false);
+            });
+    }, [adminClient]);
+
+    const handleToggle = async (checked: boolean) => {
+        try {
+            setTogglingFM(true);
+            const { error } = await adminClient.from("app_settings").update({ value: checked ? "true" : "false", updated_at: new Date().toISOString() }).eq("key", "free_mode");
+            if (error) throw error;
+
+            // Log the action
+            await adminClient.from("free_mode_logs").insert({
+                admin_id: adminToken || "unknown",
+                action: checked ? "activated" : "deactivated"
+            });
+
+            setFreeMode(checked);
+            toast({ title: checked ? "Free Mode Ativado" : "Free Mode Desativado", description: checked ? "Todas as funcionalidades estão agora gratuitas." : "O sistema de subscrições foi reativado." });
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setTogglingFM(false);
+        }
+    };
+
+    if (loadingFM) return <div className="glass-card rounded-2xl p-6 animate-pulse h-24" />;
+
+    return (
+        <div className={`border-2 rounded-3xl p-6 shadow-sm transition-all ${freeMode ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${freeMode ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                        {freeMode ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg">Free Mode</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {freeMode ? "A app está totalmente gratuita. Subscrições desativadas." : "O sistema de monetização está ativo."}
+                        </p>
+                    </div>
+                </div>
+                <Switch checked={freeMode} onCheckedChange={handleToggle} disabled={togglingFM} />
+            </div>
+            {freeMode && (
+                <p className="text-xs text-primary font-medium mt-3 bg-primary/10 p-2 rounded-lg">
+                    ⚡ Todas as funcionalidades premium estão desbloqueadas para todos os utilizadores. A infraestrutura de pagamentos mantém-se intacta.
+                </p>
+            )}
+        </div>
+    );
+}
+
 export default function Admin() {
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks">("overview");
