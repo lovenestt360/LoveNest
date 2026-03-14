@@ -114,7 +114,7 @@ const App = () => (
                       <Route path="capsula" element={<TimeCapsule />} />
                     </Route>
                     <Route path="wrapped" element={<LoveWrapped />} />
-                    </Route>
+                  </Route>
                   </Route>
                 </Route>
 
