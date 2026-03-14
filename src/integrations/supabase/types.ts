@@ -1064,6 +1064,53 @@ export type Database = {
           },
         ]
       }
+      love_wrapped: {
+        Row: {
+          challenges_completed: number
+          couple_space_id: string
+          generated_at: string
+          id: string
+          memories_count: number
+          messages_count: number
+          month: number
+          mood_checkins: number
+          streak_days: number
+          year: number
+        }
+        Insert: {
+          challenges_completed?: number
+          couple_space_id: string
+          generated_at?: string
+          id?: string
+          memories_count?: number
+          messages_count?: number
+          month: number
+          mood_checkins?: number
+          streak_days?: number
+          year: number
+        }
+        Update: {
+          challenges_completed?: number
+          couple_space_id?: string
+          generated_at?: string
+          id?: string
+          memories_count?: number
+          messages_count?: number
+          month?: number
+          mood_checkins?: number
+          streak_days?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "love_wrapped_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           couple_space_id: string
@@ -1499,6 +1546,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           gender: string | null
+          referral_code: string | null
           timezone: string | null
           updated_at: string
           user_id: string
@@ -1509,6 +1557,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           gender?: string | null
+          referral_code?: string | null
           timezone?: string | null
           updated_at?: string
           user_id: string
@@ -1519,6 +1568,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           gender?: string | null
+          referral_code?: string | null
           timezone?: string | null
           updated_at?: string
           user_id?: string
@@ -1565,6 +1615,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          new_user_id: string
+          referrer_user_id: string
+          reward_given: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_user_id: string
+          referrer_user_id: string
+          reward_given?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_user_id?: string
+          referrer_user_id?: string
+          reward_given?: boolean
+        }
+        Relationships: []
       }
       routine_day_logs: {
         Row: {
