@@ -10,9 +10,9 @@ export default defineConfig(({ mode }) => {
   return {
     define: {
       // Always inject env vars so the app never crashes with "supabaseUrl is required"
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || "https://jxwvvbqitdcczlwnptxj.supabase.co"),
-      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4d3Z2YnFpdGRjY3psd25wdHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTQ5NDQsImV4cCI6MjA4ODU5MDk0NH0.aCJK8f5qZXizm4LxBA4Esa6Ve9QnPNYzAnAzN2rvJFo"),
-      'import.meta.env.VITE_SUPABASE_PROJECT_ID': JSON.stringify(env.VITE_SUPABASE_PROJECT_ID || "jxwvvbqitdcczlwnptxj"),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(env.VITE_SUPABASE_PUBLISHABLE_KEY),
+      'import.meta.env.VITE_SUPABASE_PROJECT_ID': JSON.stringify(env.VITE_SUPABASE_PROJECT_ID),
     },
   optimizeDeps: {
     force: true,
