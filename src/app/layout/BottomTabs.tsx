@@ -4,6 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
+import { useFreeMode } from "@/hooks/useFreeMode";
 import {
   Home,
   MessageCircle,
@@ -59,6 +60,7 @@ export function BottomTabs() {
     prayerUnread,
     complaintsUnread,
   } = useAppNotifContext();
+  const { freeMode } = useFreeMode();
   const [moreOpen, setMoreOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -127,32 +129,34 @@ export function BottomTabs() {
                 <SheetTitle className="text-left text-lg font-bold">More</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-3 gap-3 pt-4">
-                {moreItems.map(({ to, label, Icon }) => {
-                  const badge = getMoreBadge(to);
-                  const active = location.pathname === to;
-                  return (
-                    <button
-                      key={to}
-                      type="button"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        navigate(to);
-                      }}
-                      className={cn(
-                        "relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
-                        active
-                          ? "border-primary/30 bg-primary/10 text-primary glow-primary"
-                          : "border-border/50 text-muted-foreground hover:bg-secondary"
-                      )}
-                    >
-                      <span className="relative">
-                        <Icon className="h-6 w-6" />
-                        {badge > 0 && <Badge count={badge} />}
-                      </span>
-                      <span className="leading-tight">{label}</span>
-                    </button>
-                  );
-                })}
+                {moreItems
+                  .filter((item) => (freeMode ? item.to !== "/subscricao" : true))
+                  .map(({ to, label, Icon }) => {
+                    const badge = getMoreBadge(to);
+                    const active = location.pathname === to;
+                    return (
+                      <button
+                        key={to}
+                        type="button"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          navigate(to);
+                        }}
+                        className={cn(
+                          "relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
+                          active
+                            ? "border-primary/30 bg-primary/10 text-primary glow-primary"
+                            : "border-border/50 text-muted-foreground hover:bg-secondary"
+                        )}
+                      >
+                        <span className="relative">
+                          <Icon className="h-6 w-6" />
+                          {badge > 0 && <Badge count={badge} />}
+                        </span>
+                        <span className="leading-tight">{label}</span>
+                      </button>
+                    );
+                  })}
               </div>
             </SheetContent>
           </Sheet>

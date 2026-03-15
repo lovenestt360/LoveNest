@@ -204,8 +204,9 @@ export default function Subscription() {
                         <div className="mx-auto w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-inner">
                             <CheckCircle className="w-10 h-10" />
                         </div>
-                        <h2 className="text-3xl font-black mb-2 tracking-tight">Tudo Desbloqueado! 🎉</h2>
-                        <p className="text-foreground/80 leading-relaxed font-medium">O LoveNest está em modo gratuito. Todas as funcionalidades estão disponíveis sem necessidade de subscrição.</p>
+                        <h2 className="text-3xl font-black mb-2 tracking-tight text-primary">Modo Gratuito Ativo! ✨</h2>
+                        <p className="text-foreground/80 leading-relaxed font-medium">O LoveNest está atualmente em modo de oferta total. Podes desfrutar de todas as funcionalidades premium sem qualquer custo ou subscrição.</p>
+                        <Button className="mt-8 w-full rounded-2xl font-bold h-12" onClick={() => navigate("/")}>Voltar à Home</Button>
                     </div>
                 </main>
             </div>

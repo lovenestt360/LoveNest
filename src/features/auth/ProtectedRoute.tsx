@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useFreeMode } from "@/hooks/useFreeMode";
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -147,6 +148,15 @@ export function ProtectedRoute() {
   }
 
   // Check Trial Flow if they have a house but never started a trial and are not active
+  const { freeMode, loading: freeModeLoading } = useFreeMode();
+  if (freeModeLoading) return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+
+  if (freeMode) return <Outlet />;
+
   if (houseData && houseData.trial_used === false && houseData.subscription_status !== 'active') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background/95 p-4 backdrop-blur-sm">
