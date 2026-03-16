@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     }
     const senderId = claimsData.claims.sub;
 
-    const { couple_space_id, title, body, url, type } = await req.json();
+    const { couple_space_id, title, body, url, type, is_test } = await req.json();
     if (!couple_space_id || !title) {
       return new Response(
         JSON.stringify({ error: "Missing couple_space_id or title" }),
@@ -54,17 +54,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get push subscriptions for the OTHER member
+    // Get push subscriptions for the recipient(s)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: subs } = await adminClient
+    let query = adminClient
       .from("push_subscriptions")
       .select("*")
-      .eq("couple_space_id", couple_space_id)
-      .neq("user_id", senderId);
+      .eq("couple_space_id", couple_space_id);
+    
+    // If not a test, filter out the sender to target only the partner
+    if (!is_test) {
+      query = query.neq("user_id", senderId);
+    } else {
+      // If it IS a test, specifically target only the sender's own subscriptions to avoid bothering the partner
+      query = query.eq("user_id", senderId);
+    }
+
+    const { data: subs } = await query;
 
     if (!subs || subs.length === 0) {
       return new Response(JSON.stringify({ sent: 0 }), {

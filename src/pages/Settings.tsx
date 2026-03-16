@@ -147,7 +147,8 @@ export default function Settings() {
           title: "🔔 Teste de Notificação",
           body: "Se estás a ver isto, as tuas notificações estão a funcionar!",
           url: "/configuracoes",
-          type: "chat"
+          type: "chat",
+          is_test: true
         }
       });
       if (error) throw error;
@@ -436,6 +437,10 @@ export default function Settings() {
         toast({ title: "Erro ao guardar subscrição", description: error.message, variant: "destructive" });
       } else {
         setPushSubscribed(true);
+        // Refresh diagnostics state
+        if (subJson.endpoint) {
+          checkSubscriptionInDB(subJson.endpoint);
+        }
         toast({ title: "Notificações ativadas! 🔔" });
       }
     } catch (err: any) {
@@ -470,6 +475,7 @@ export default function Settings() {
         await supabase.from("push_subscriptions").delete().eq("user_id", user!.id);
       }
       setPushSubscribed(false);
+      setDbSubscription(null); // Clear diagnostics state
       toast({ title: "Notificações desativadas" });
     } catch (err: any) {
       console.error(err);
