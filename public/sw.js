@@ -56,23 +56,39 @@ self.addEventListener("fetch", (event) => {
 
 // Push notification handler
 self.addEventListener("push", (event) => {
-  let data = { title: "DK", body: "", icon: "/icon-192.png", data: { url: "/chat" } };
+  console.log("Push event received", event);
+  let data = { title: "LoveNest", body: "", icon: "/icon-192.png", data: { url: "/chat" } };
   try {
     if (event.data) {
       data = { ...data, ...event.data.json() };
+      console.log("Push data parsed:", data);
     }
   } catch (e) {
-    // fallback
+    console.error("Error parsing push data:", e);
   }
 
+  // Update App Badge if supported
+  if ('setAppBadge' in navigator) {
+    if (data.badge_count !== undefined) {
+      navigator.setAppBadge(data.badge_count).catch(console.error);
+    } else {
+      // If no count provided, just ensure it's at least visible (or we could try to increment if we had state)
+      // navigator.setAppBadge(1).catch(console.error);
+    }
+  }
+
+  const options = {
+    body: data.body || "Nova atualização no LoveNest",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
+    data: data.data || { url: "/chat" },
+    vibrate: [200, 100, 200],
+    tag: data.tag || 'lovenest-notif', // Use tags to group same-type notifications
+    renotify: true,
+  };
+
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon || "/icon-192.png",
-      badge: data.badge || "/icon-192.png",
-      data: data.data,
-      vibrate: [200, 100, 200],
-    })
+    self.registration.showNotification(data.title || "LoveNest", options)
   );
 });
 

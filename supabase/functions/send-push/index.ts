@@ -75,6 +75,11 @@ Deno.serve(async (req) => {
     const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
 
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error("Missing VAPID keys in Env Secrets");
+      return new Response(JSON.stringify({ error: "Server misconfigured (VAPID)" }), { status: 500, headers: corsHeaders });
+    }
+
     // Use web-push npm package
     const webpush = await import("https://esm.sh/web-push@3.6.7");
     webpush.setVapidDetails(

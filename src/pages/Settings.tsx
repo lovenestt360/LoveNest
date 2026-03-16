@@ -109,6 +109,7 @@ export default function Settings() {
   const [pushLoading, setPushLoading] = useState(false);
   const [pushStatusMsg, setPushStatusMsg] = useState("");
   const [testLoading, setTestLoading] = useState(false);
+  const [dbSubscription, setDbSubscription] = useState<any>(null);
 
   useEffect(() => {
     if (!("Notification" in window) || !("PushManager" in window)) {
@@ -119,10 +120,22 @@ export default function Settings() {
       navigator.serviceWorker?.ready.then((reg) => {
         (reg as any).pushManager.getSubscription().then((sub: any) => {
           setPushSubscribed(!!sub);
+          if (sub && user) {
+            checkSubscriptionInDB(sub.endpoint);
+          }
         });
       });
     }
-  }, []);
+  }, [user]);
+
+  const checkSubscriptionInDB = async (endpoint: string) => {
+    const { data } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('endpoint', endpoint)
+      .maybeSingle();
+    setDbSubscription(data);
+  };
 
   const handleTestNotification = async () => {
     if (!user || !spaceId) return;
@@ -591,6 +604,11 @@ export default function Settings() {
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar perfil
           </Button>
+          {navigator.clearAppBadge && (
+            <Button variant="ghost" size="sm" className="w-full text-[10px] h-6 opacity-50" onClick={() => navigator.clearAppBadge()}>
+              Limpar badge do ícone (Debug)
+            </Button>
+          )}
         </div>
       </div>
 
@@ -652,6 +670,18 @@ export default function Settings() {
                 Testar
               </Button>
             </div>
+            {dbSubscription ? (
+              <p className="text-[10px] text-green-500 font-medium bg-green-500/5 p-1 rounded border border-green-500/20">
+                ✓ Registado no servidor em {new Date(dbSubscription.created_at).toLocaleDateString()}
+              </p>
+            ) : (
+              <p className="text-[10px] text-amber-500 font-medium bg-amber-500/5 p-1 rounded border border-amber-500/20">
+                ⚠ Não registado no servidor. Tente reativar.
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground leading-tight italic">
+              Nota: No iPhone, as notificações só funcionam se a App for "Adicionada ao Ecrã Principal".
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
