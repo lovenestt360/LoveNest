@@ -201,12 +201,25 @@ export default function Settings() {
   };
 
   const fetchDebugLogs = async () => {
-    const { data } = await supabase
+    console.log("Fetching debug logs...");
+    const { data, error } = await supabase
       .from('edge_function_logs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(10);
-    if (data) setDebugLogs(data);
+    
+    if (error) {
+      console.error("Error fetching logs:", error);
+      setDebugLogs([{ 
+        id: 'err', 
+        event_type: 'FETCH_ERROR', 
+        payload: error, 
+        created_at: new Date().toISOString() 
+      }]);
+    } else {
+      console.log("Logs fetched:", data?.length);
+      if (data) setDebugLogs(data);
+    }
   };
 
   useEffect(() => {
