@@ -14,7 +14,6 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-  // GET: return VAPID public key
   if (req.method === "GET") {
     return new Response(Deno.env.get("VAPID_PUBLIC_KEY") || "", {
       headers: { ...corsHeaders, "Content-Type": "text/plain" },
@@ -22,44 +21,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Log immediately to see if we reached this code
-    if (supabaseUrl && serviceRoleKey) {
-      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const adminClient = supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
+    
+    // Attempt log
+    if (adminClient) {
       await adminClient.from("edge_function_logs").insert({
         function_name: "send-push",
-        event_type: "BOOT_OK",
-        payload: { method: req.method, ua: req.headers.get("user-agent") }
-      });
+        event_type: "ALIVE_CHECK",
+        payload: { method: req.method }
+      }).catch(e => console.error("Log failed, table probably missing", e));
     }
 
-    // 2. Try to parse body
-    let body = {};
-    try {
-      body = await req.json();
-    } catch (e) {
-      body = { error: "Failed to parse JSON body" };
-    }
-
-    if (supabaseUrl && serviceRoleKey) {
-      const adminClient = createClient(supabaseUrl, serviceRoleKey);
-      await adminClient.from("edge_function_logs").insert({
-        function_name: "send-push",
-        event_type: "BODY_RECEIVED",
-        payload: body
-      });
-    }
+    const configReport = {
+      has_url: !!supabaseUrl,
+      has_service_role: !!serviceRoleKey,
+      has_vapid_public: !!Deno.env.get("VAPID_PUBLIC_KEY"),
+      has_vapid_private: !!Deno.env.get("VAPID_PRIVATE_KEY"),
+      env_keys: Object.keys(Deno.env.toObject()).filter(k => k.includes("SUPABASE") || k.includes("VAPID"))
+    };
 
     return new Response(JSON.stringify({ 
       status: "alive", 
-      received: body 
+      config: configReport 
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (err: any) {
-    console.error("send-push boot error:", err);
-    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
