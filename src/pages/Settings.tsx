@@ -110,6 +110,8 @@ export default function Settings() {
   const [pushStatusMsg, setPushStatusMsg] = useState("");
   const [testLoading, setTestLoading] = useState(false);
   const [dbSubscription, setDbSubscription] = useState<any>(null);
+  const [debugLogs, setDebugLogs] = useState<any[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     if (!("Notification" in window) || !("PushManager" in window)) {
@@ -183,7 +185,17 @@ export default function Settings() {
       });
     } finally {
       setTestLoading(false);
+      fetchDebugLogs();
     }
+  };
+
+  const fetchDebugLogs = async () => {
+    const { data } = await supabase
+      .from('edge_function_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) setDebugLogs(data);
   };
 
   useEffect(() => {
@@ -632,6 +644,33 @@ export default function Settings() {
             <Button variant="ghost" size="sm" className="w-full text-[10px] h-6 opacity-50" onClick={() => navigator.clearAppBadge()}>
               Limpar badge do ícone (Debug)
             </Button>
+          )}
+          <Button variant="ghost" size="sm" className="w-full text-[10px] h-6 opacity-50" onClick={() => { setShowDebug(!showDebug); if (!showDebug) fetchDebugLogs(); }}>
+            {showDebug ? "Esconder Logs" : "Ver Logs do Servidor (Debug)"}
+          </Button>
+
+          {showDebug && (
+            <div className="mt-4 p-2 bg-black text-green-400 font-mono text-[9px] rounded-md overflow-x-auto border border-zinc-800 max-h-60 overflow-y-auto">
+              <div className="flex justify-between mb-1 border-b border-zinc-800 pb-1">
+                <span>Últimos Logs do Servidor:</span>
+                <button onClick={fetchDebugLogs} className="hover:text-white">Atualizar</button>
+              </div>
+              {debugLogs.length === 0 ? (
+                <div className="text-zinc-500">Nenhum log encontrado. Tabela pode não existir ou nenhum erro recente.</div>
+              ) : (
+                debugLogs.map((log) => (
+                  <div key={log.id} className="mb-2 border-b border-zinc-900 pb-1 last:border-0">
+                    <div className="flex justify-between opacity-50">
+                      <span>{new Date(log.created_at).toLocaleTimeString()}</span>
+                      <span className="text-zinc-400">{log.event_type}</span>
+                    </div>
+                    <pre className="whitespace-pre-wrap break-all text-white mt-1">
+                      {JSON.stringify(log.payload, null, 1)}
+                    </pre>
+                  </div>
+                ))
+              )}
+            </div>
           )}
         </div>
       </div>
