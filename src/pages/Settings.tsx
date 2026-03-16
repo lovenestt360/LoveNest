@@ -222,6 +222,39 @@ export default function Settings() {
     }
   };
 
+  const handlePingRaw = async () => {
+    setPushLoading(true);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+        },
+        body: JSON.stringify({ ping: true, user: user?.id })
+      });
+      const data = await resp.json().catch(() => resp.text());
+      setDebugLogs(prev => [{ 
+        id: 'ping-' + Date.now(), 
+        event_type: 'RAW_PING_RESULT', 
+        payload: data, 
+        created_at: new Date().toISOString() 
+      }, ...prev]);
+      setShowDebug(true);
+      toast({ title: "Ping enviado!", description: "Verifica os logs abaixo." });
+    } catch (err: any) {
+      setDebugLogs(prev => [{ 
+        id: 'ping-err' + Date.now(), 
+        event_type: 'RAW_PING_ERROR', 
+        payload: err.message, 
+        created_at: new Date().toISOString() 
+      }, ...prev]);
+      setShowDebug(true);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     const loadProfile = async () => {
@@ -751,6 +784,15 @@ export default function Settings() {
                 onClick={() => { setShowDebug(!showDebug); if (!showDebug) fetchDebugLogs(); }}
               >
                 {showDebug ? "FECHAR MONITOR DE ERROS" : "⚠️ ABRIR MONITOR DE ERROS (DEBUG)"}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full h-8 text-[10px] opacity-40 hover:opacity-100" 
+                onClick={handlePingRaw}
+                disabled={pushLoading}
+              >
+                {pushLoading ? "A enviar ping..." : "PINGER SERVIDOR (TESTE MANUAL)"}
               </Button>
               <div className="text-[8px] text-center text-zinc-600 font-mono">
                 Project ID target: {import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}
