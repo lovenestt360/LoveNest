@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -11,43 +9,25 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
+  // Basic GET
   if (req.method === "GET") {
-    return new Response(Deno.env.get("VAPID_PUBLIC_KEY") || "", {
+    return new Response("OK", {
       headers: { ...corsHeaders, "Content-Type": "text/plain" },
     });
   }
 
+  // Basic POST
   try {
-    const adminClient = supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
-    
-    // Attempt log
-    if (adminClient) {
-      await adminClient.from("edge_function_logs").insert({
-        function_name: "send-push",
-        event_type: "ALIVE_CHECK",
-        payload: { method: req.method }
-      }).catch(e => console.error("Log failed, table probably missing", e));
-    }
-
-    const configReport = {
-      has_url: !!supabaseUrl,
-      has_service_role: !!serviceRoleKey,
-      has_vapid_public: !!Deno.env.get("VAPID_PUBLIC_KEY"),
-      has_vapid_private: !!Deno.env.get("VAPID_PRIVATE_KEY"),
-      env_keys: Object.keys(Deno.env.toObject()).filter(k => k.includes("SUPABASE") || k.includes("VAPID"))
-    };
-
+    const body = await req.json().catch(() => ({}));
     return new Response(JSON.stringify({ 
-      status: "alive", 
-      config: configReport 
+      success: true, 
+      message: "Server reached!", 
+      method: req.method,
+      received: body
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
