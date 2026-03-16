@@ -108,13 +108,14 @@ export default function Settings() {
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushStatusMsg, setPushStatusMsg] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     if (!("Notification" in window) || !("PushManager" in window)) {
       setPushPermission("unsupported");
     } else {
       setPushPermission(Notification.permission);
-      // Check if already subscribed
+      // Check if already subscribed in browser
       navigator.serviceWorker?.ready.then((reg) => {
         (reg as any).pushManager.getSubscription().then((sub: any) => {
           setPushSubscribed(!!sub);
@@ -122,6 +123,36 @@ export default function Settings() {
       });
     }
   }, []);
+
+  const handleTestNotification = async () => {
+    if (!user || !spaceId) return;
+    setTestLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-push", {
+        body: {
+          couple_space_id: spaceId,
+          title: "🔔 Teste de Notificação",
+          body: "Se estás a ver isto, as tuas notificações estão a funcionar!",
+          url: "/configuracoes",
+          type: "chat"
+        }
+      });
+      if (error) throw error;
+      if (data?.sent === 0) {
+        toast({
+          title: "Nenhuma subscrição ativa",
+          description: "Notificação não enviada porque não há dispositivos registados.",
+          variant: "destructive"
+        });
+      } else {
+        toast({ title: "Notificação de teste enviada! 🚀" });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro no teste", description: err.message, variant: "destructive" });
+    } finally {
+      setTestLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -316,7 +347,10 @@ export default function Settings() {
       setPushStatusMsg("A obter chave de segurança...");
       const vapidRes = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`,
-        { headers: { "Content-Type": "text/plain" } }
+        {
+          method: 'GET',
+          headers: { "Content-Type": "text/plain" }
+        }
       );
       if (!vapidRes.ok) {
         throw new Error(`Servidor retornou erro ${vapidRes.status} ao obter VAPID`);
@@ -603,15 +637,21 @@ export default function Settings() {
             </p>
           </div>
         ) : pushSubscribed ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              <Bell className="mr-1 inline h-4 w-4 text-primary" />
-              Notificações ativadas neste dispositivo.
-            </p>
-            <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading}>
-              {pushLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Desativar
-            </Button>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Bell className="h-4 w-4 text-green-500" />
+              <span>Notificações ativadas neste dispositivo.</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading}>
+                {pushLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Desativar
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleTestNotification} disabled={testLoading}>
+                {testLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bell className="mr-2 h-4 w-4" />}
+                Testar
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">

@@ -257,9 +257,20 @@ export function useAppNotifications() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === "SUBSCRIBED") {
+          console.log("✅ Realtime: Subscribed to app-notifications");
+        }
+        if (status === "CHANNEL_ERROR") {
+          console.error("❌ Realtime: Subscription error", err);
+        }
+        if (status === "TIMED_OUT") {
+          console.warn("⚠️ Realtime: Subscription timed out");
+        }
+      });
 
     return () => {
+      console.log("🧹 Realtime: Removing app-notifications channel");
       supabase.removeChannel(channel);
     };
   }, [spaceId, user]);
