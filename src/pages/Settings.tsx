@@ -167,12 +167,23 @@ export default function Settings() {
       console.error("Detailed Test Error:", err);
       let errorMsg = err.message || "Erro desconhecido";
       
-      // If it's a Supabase check if it has a context with JSON
-      if (err.context && typeof err.context.json === 'function') {
+      // Try to get more info from the response
+      if (err.context) {
         try {
-          const body = await err.context.json();
-          console.log("Error body received:", body);
-          errorMsg = body.message || body.error || errorMsg;
+          // Attempt JSON first
+          if (typeof err.context.json === 'function') {
+            const body = await err.context.clone().json().catch(() => null);
+            if (body) {
+              console.log("Error body JSON received:", body);
+              errorMsg = body.message || body.error || errorMsg;
+            } else if (typeof err.context.text === 'function') {
+              const text = await err.context.clone().text().catch(() => null);
+              if (text) {
+                console.log("Error body Text received:", text);
+                if (text.length < 200) errorMsg = text;
+              }
+            }
+          }
         } catch (e) {
           console.error("Could not parse error body", e);
         }
@@ -645,33 +656,6 @@ export default function Settings() {
               Limpar badge do ícone (Debug)
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="w-full text-[10px] h-6 opacity-50" onClick={() => { setShowDebug(!showDebug); if (!showDebug) fetchDebugLogs(); }}>
-            {showDebug ? "Esconder Logs" : "Ver Logs do Servidor (Debug)"}
-          </Button>
-
-          {showDebug && (
-            <div className="mt-4 p-2 bg-black text-green-400 font-mono text-[9px] rounded-md overflow-x-auto border border-zinc-800 max-h-60 overflow-y-auto">
-              <div className="flex justify-between mb-1 border-b border-zinc-800 pb-1">
-                <span>Últimos Logs do Servidor:</span>
-                <button onClick={fetchDebugLogs} className="hover:text-white">Atualizar</button>
-              </div>
-              {debugLogs.length === 0 ? (
-                <div className="text-zinc-500">Nenhum log encontrado. Tabela pode não existir ou nenhum erro recente.</div>
-              ) : (
-                debugLogs.map((log) => (
-                  <div key={log.id} className="mb-2 border-b border-zinc-900 pb-1 last:border-0">
-                    <div className="flex justify-between opacity-50">
-                      <span>{new Date(log.created_at).toLocaleTimeString()}</span>
-                      <span className="text-zinc-400">{log.event_type}</span>
-                    </div>
-                    <pre className="whitespace-pre-wrap break-all text-white mt-1">
-                      {JSON.stringify(log.payload, null, 1)}
-                    </pre>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -742,9 +726,56 @@ export default function Settings() {
                 ⚠ Não registado no servidor. Tente reativar.
               </p>
             )}
-            <p className="text-[10px] text-muted-foreground leading-tight italic">
+            <p className="text-[10px] text-muted-foreground leading-tight italic mb-2">
               Nota: No iPhone, as notificações só funcionam se a App for "Adicionada ao Ecrã Principal".
             </p>
+
+            <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-zinc-100/10">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full h-9 text-xs font-bold bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20" 
+                onClick={() => { setShowDebug(!showDebug); if (!showDebug) fetchDebugLogs(); }}
+              >
+                {showDebug ? "FECHAR MONITOR DE ERROS" : "⚠️ ABRIR MONITOR DE ERROS (DEBUG)"}
+              </Button>
+              <div className="text-[8px] text-center text-zinc-600 font-mono">
+                Project ID target: {import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}
+              </div>
+            </div>
+
+            {showDebug && (
+              <div className="mt-2 p-3 bg-zinc-950 text-zinc-300 font-mono text-[10px] rounded-lg overflow-x-auto border-2 border-amber-500/50 max-h-96 overflow-y-auto shadow-2xl z-50 relative">
+                <div className="flex justify-between mb-2 border-b border-zinc-800 pb-1 text-amber-500 font-bold">
+                  <span>DEBUG CONSOLE:</span>
+                  <button onClick={fetchDebugLogs} className="px-3 py-1 bg-zinc-800 rounded-md hover:bg-zinc-700 text-[10px] text-white">ATUALIZAR</button>
+                </div>
+                {debugLogs.length === 0 ? (
+                  <div className="text-zinc-600 p-6 text-center italic">
+                    Nenhum sinal do servidor recebido ainda.<br/>
+                    Tenta clicar em 'Testar' e depois em 'Atualizar' aqui dentro.
+                  </div>
+                ) : (
+                  debugLogs.map((log) => (
+                    <div key={log.id} className="mb-4 border-b border-zinc-900 pb-2 last:border-0">
+                      <div className="flex justify-between text-[9px] font-bold text-amber-500/80">
+                        <span>{new Date(log.created_at).toLocaleTimeString()}</span>
+                        <span className="bg-zinc-900 px-1 rounded">{log.event_type}</span>
+                      </div>
+                      <div className="text-zinc-200 mt-2 pl-2 border-l-2 border-amber-500/30 font-mono text-[9px] leading-relaxed">
+                        {typeof log.payload === 'object' ? (
+                          <pre className="whitespace-pre-wrap break-all tabular-nums">
+                            {JSON.stringify(log.payload, null, 2)}
+                          </pre>
+                        ) : (
+                          String(log.payload)
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
