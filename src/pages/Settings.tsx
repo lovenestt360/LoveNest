@@ -162,7 +162,21 @@ export default function Settings() {
         toast({ title: "Notificação de teste enviada! 🚀" });
       }
     } catch (err: any) {
-      toast({ title: "Erro no teste", description: err.message, variant: "destructive" });
+      console.error("Test error:", err);
+      let errorMsg = err.message;
+      if (err.context?.json) {
+        try {
+          const body = await err.context.json();
+          errorMsg = body.message || body.error || errorMsg;
+        } catch (e) {
+          // fallback to err.message
+        }
+      }
+      toast({ 
+        title: "Erro no teste", 
+        description: errorMsg, 
+        variant: "destructive" 
+      });
     } finally {
       setTestLoading(false);
     }

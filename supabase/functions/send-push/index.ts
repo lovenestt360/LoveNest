@@ -131,11 +131,15 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ sent }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("send-push error:", err);
-    return new Response(JSON.stringify({ error: "Internal error" }), {
+  } catch (err: any) {
+    console.error("send-push final crash:", err);
+    return new Response(JSON.stringify({ 
+      error: "Internal error in send-push", 
+      message: err?.message || "Unknown error",
+      stack: err?.stack
+    }), {
       status: 500,
-      headers: corsHeaders,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
