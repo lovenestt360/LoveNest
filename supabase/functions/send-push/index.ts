@@ -11,7 +11,10 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Simple GET for VAPID
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  // GET: return VAPID public key
   if (req.method === "GET") {
     return new Response(Deno.env.get("VAPID_PUBLIC_KEY") || "", {
       headers: { ...corsHeaders, "Content-Type": "text/plain" },
@@ -19,19 +22,44 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    console.log("Request received:", body);
+    // 1. Log immediately to see if we reached this code
+    if (supabaseUrl && serviceRoleKey) {
+      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+      await adminClient.from("edge_function_logs").insert({
+        function_name: "send-push",
+        event_type: "BOOT_OK",
+        payload: { method: req.method, ua: req.headers.get("user-agent") }
+      });
+    }
+
+    // 2. Try to parse body
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (e) {
+      body = { error: "Failed to parse JSON body" };
+    }
+
+    if (supabaseUrl && serviceRoleKey) {
+      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+      await adminClient.from("edge_function_logs").insert({
+        function_name: "send-push",
+        event_type: "BODY_RECEIVED",
+        payload: body
+      });
+    }
 
     return new Response(JSON.stringify({ 
-      success: true, 
-      message: "Edge Function is alive!", 
-      projectId: Deno.env.get("SUPABASE_URL") 
+      status: "alive", 
+      received: body 
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("send-push boot error:", err);
+    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
