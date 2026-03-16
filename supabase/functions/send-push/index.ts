@@ -12,9 +12,21 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
   const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  // Helper for remote logging
+  const logToDB = async (eventType: string, payload: any) => {
+    if (supabaseUrl && serviceRoleKey) {
+      const client = createClient(supabaseUrl, serviceRoleKey);
+      await client.from("edge_function_logs").insert({
+        function_name: "send-push",
+        event_type: eventType,
+        payload: payload
+      }).catch(err => console.error("Log to DB failed", err));
+    }
+  };
 
   // GET: return VAPID public key
   if (req.method === "GET") {
@@ -24,74 +36,85 @@ Deno.serve(async (req) => {
   }
 
   try {
+    await logToDB("execution_start", { method: req.method });
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      await logToDB("auth_error", { message: "No auth header" });
       return new Response(JSON.stringify({ error: "No auth header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { couple_space_id, title, body, url, type, is_test } = await req.json();
+    const body = await req.json();
+    const { couple_space_id, title, is_test } = body;
+    await logToDB("request_body", body);
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Missing Supabase configuration (URL or Service Role Key)");
-    }
-
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      throw new Error("Missing VAPID keys");
+    if (!supabaseUrl || !serviceRoleKey || !vapidPublicKey || !vapidPrivateKey) {
+      const missing = { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey, vapidPublicKey: !!vapidPublicKey, vapidPrivateKey: !!vapidPrivateKey };
+      await logToDB("config_error", missing);
+      throw new Error(`Missing configuration: ${JSON.stringify(missing)}`);
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get current user ID from token
+    // Verify User
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
     
     if (userError || !user) {
+      await logToDB("user_verification_failed", { userError });
       return new Response(JSON.stringify({ error: "Invalid token", details: userError }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const senderId = user.id;
+    await logToDB("user_verified", { userId: user.id });
 
+    // Get Subscriptions
     let query = adminClient
       .from("push_subscriptions")
       .select("*")
       .eq("couple_space_id", couple_space_id);
     
     if (is_test) {
-      query = query.eq("user_id", senderId);
+      query = query.eq("user_id", user.id);
     } else {
-      query = query.neq("user_id", senderId);
+      query = query.neq("user_id", user.id);
     }
 
     const { data: subs, error: subsError } = await query;
+    if (subsError) {
+      await logToDB("db_query_error", { subsError });
+      throw subsError;
+    }
 
-    if (subsError) throw subsError;
+    await logToDB("subscriptions_found", { count: subs?.length || 0 });
 
     if (!subs || subs.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No subscriptions found" }), {
+      return new Response(JSON.stringify({ sent: 0, message: "No active subscriptions found for target." }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const webpush = await import("npm:web-push");
+    // Stable Import
+    await logToDB("importing_webpush", {});
+    const webpush = await import("https://esm.sh/web-push@3.6.7");
     webpush.default.setVapidDetails(
       "mailto:app@lovenestt.lovable.app",
       vapidPublicKey,
       vapidPrivateKey
     );
 
-    const payload = JSON.stringify({
+    const notificationPayload = JSON.stringify({
       title: title || "LoveNest",
-      body: body || "",
+      body: body.body || "",
       icon: "/icon-192.png",
       badge: "/icon-192.png",
-      data: { url: url || "/chat", type: type || "chat" },
+      data: { url: body.url || "/chat", type: body.type || "chat" },
     });
 
     let sent = 0;
@@ -104,7 +127,7 @@ Deno.serve(async (req) => {
             endpoint: sub.endpoint,
             keys: { p256dh: sub.p256dh, auth: sub.auth },
           },
-          payload
+          notificationPayload
         );
         sent++;
       } catch (err: any) {
@@ -115,15 +138,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    await logToDB("execution_complete", { sent, errorCount: errors.length });
+
     return new Response(JSON.stringify({ sent, errors }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (err: any) {
-    console.error("send-push error:", err);
+    console.error("send-push fatal:", err);
+    // Attempt to log final crash if possible
+    await logToDB("fatal_error", { message: err.message, stack: err.stack });
+    
     return new Response(JSON.stringify({ 
-      error: "Edge Function Error", 
+      error: "Edge Function Fatal Crash", 
       message: err.message,
       stack: err.stack 
     }), {
