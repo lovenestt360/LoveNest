@@ -8,6 +8,7 @@ import { useFreeMode } from "@/hooks/useFreeMode";
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const { freeMode, loading: freeModeLoading } = useFreeMode();
   const [hasCoupleSpace, setHasCoupleSpace] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
   const [checkError, setCheckError] = useState<string | null>(null);
@@ -92,7 +93,7 @@ export function ProtectedRoute() {
     }
   };
 
-  if (loading || checking) {
+  if (loading || checking || freeModeLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -147,14 +148,7 @@ export function ProtectedRoute() {
     return <Navigate to="/casa" replace />;
   }
 
-  // Check Trial Flow if they have a house but never started a trial and are not active
-  const { freeMode, loading: freeModeLoading } = useFreeMode();
-  if (freeModeLoading) return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-    </div>
-  );
-
+  // If Free Mode is active, we bypass everything downstream (trials, paywalls, etc.)
   if (freeMode) return <Outlet />;
 
   if (houseData && houseData.trial_used === false && houseData.subscription_status !== 'active') {
