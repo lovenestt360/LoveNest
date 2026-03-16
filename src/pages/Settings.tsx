@@ -162,18 +162,22 @@ export default function Settings() {
         toast({ title: "Notificação de teste enviada! 🚀" });
       }
     } catch (err: any) {
-      console.error("Test error:", err);
-      let errorMsg = err.message;
-      if (err.context?.json) {
+      console.error("Detailed Test Error:", err);
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      // If it's a Supabase check if it has a context with JSON
+      if (err.context && typeof err.context.json === 'function') {
         try {
           const body = await err.context.json();
+          console.log("Error body received:", body);
           errorMsg = body.message || body.error || errorMsg;
         } catch (e) {
-          // fallback to err.message
+          console.error("Could not parse error body", e);
         }
       }
+      
       toast({ 
-        title: "Erro no teste", 
+        title: "Erro no teste de push", 
         description: errorMsg, 
         variant: "destructive" 
       });

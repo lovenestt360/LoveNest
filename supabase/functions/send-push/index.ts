@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,87 +11,76 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // GET: return VAPID public key as raw text
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+  const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  // GET: return VAPID public key
   if (req.method === "GET") {
-    const key = (Deno.env.get("VAPID_PUBLIC_KEY") ?? "").trim();
-    return new Response(key, {
+    return new Response(vapidPublicKey || "", {
       headers: { ...corsHeaders, "Content-Type": "text/plain" },
     });
   }
 
-  // POST: send push notification
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "No auth header" }), {
         status: 401,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } =
-      await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: corsHeaders,
-      });
-    }
-    const senderId = claimsData.claims.sub;
 
     const { couple_space_id, title, body, url, type, is_test } = await req.json();
-    if (!couple_space_id || !title) {
-      return new Response(
-        JSON.stringify({ error: "Missing couple_space_id or title" }),
-        { status: 400, headers: corsHeaders }
-      );
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Missing Supabase configuration (URL or Service Role Key)");
     }
 
-    // Get push subscriptions for the recipient(s)
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      throw new Error("Missing VAPID keys");
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Get current user ID from token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid token", details: userError }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const senderId = user.id;
 
     let query = adminClient
       .from("push_subscriptions")
       .select("*")
       .eq("couple_space_id", couple_space_id);
     
-    // If not a test, filter out the sender to target only the partner
-    if (!is_test) {
-      query = query.neq("user_id", senderId);
-    } else {
-      // If it IS a test, specifically target only the sender's own subscriptions to avoid bothering the partner
+    if (is_test) {
       query = query.eq("user_id", senderId);
+    } else {
+      query = query.neq("user_id", senderId);
     }
 
-    const { data: subs } = await query;
+    const { data: subs, error: subsError } = await query;
+
+    if (subsError) throw subsError;
 
     if (!subs || subs.length === 0) {
-      return new Response(JSON.stringify({ sent: 0 }), {
+      return new Response(JSON.stringify({ sent: 0, message: "No subscriptions found" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
-
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      console.error("Missing VAPID keys in Env Secrets");
-      return new Response(JSON.stringify({ error: "Server misconfigured (VAPID)" }), { status: 500, headers: corsHeaders });
-    }
-
-    // Use web-push npm package
-    const webpush = await import("https://esm.sh/web-push@3.6.7");
-    webpush.setVapidDetails(
+    const webpush = await import("npm:web-push");
+    webpush.default.setVapidDetails(
       "mailto:app@lovenestt.lovable.app",
       vapidPublicKey,
       vapidPrivateKey
@@ -106,9 +95,11 @@ Deno.serve(async (req) => {
     });
 
     let sent = 0;
+    const errors = [];
+
     for (const sub of subs) {
       try {
-        await webpush.sendNotification(
+        await webpush.default.sendNotification(
           {
             endpoint: sub.endpoint,
             keys: { p256dh: sub.p256dh, auth: sub.auth },
@@ -117,26 +108,24 @@ Deno.serve(async (req) => {
         );
         sent++;
       } catch (err: any) {
-        // If subscription expired (410), remove it
-        if (err?.statusCode === 410 || err?.statusCode === 404) {
-          await adminClient
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", sub.id);
+        errors.push({ endpoint: sub.endpoint, error: err.message });
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await adminClient.from("push_subscriptions").delete().eq("id", sub.id);
         }
-        console.error("Push send error:", err?.message);
       }
     }
 
-    return new Response(JSON.stringify({ sent }), {
+    return new Response(JSON.stringify({ sent, errors }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (err: any) {
-    console.error("send-push final crash:", err);
+    console.error("send-push error:", err);
     return new Response(JSON.stringify({ 
-      error: "Internal error in send-push", 
-      message: err?.message || "Unknown error",
-      stack: err?.stack
+      error: "Edge Function Error", 
+      message: err.message,
+      stack: err.stack 
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
