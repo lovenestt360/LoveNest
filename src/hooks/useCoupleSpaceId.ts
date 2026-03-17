@@ -16,9 +16,23 @@ export function useCoupleSpaceId() {
       return;
     }
 
-    supabase.rpc("get_user_couple_space_id").then(({ data }) => {
-      setSpaceId(data ?? null);
-    });
+    const fetchSpaceId = async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_user_couple_space_id");
+        if (error) {
+          console.error("Error fetching couple_space_id:", error.message);
+          setSpaceId(null);
+        } else {
+          console.log("Fetched couple_space_id:", data);
+          setSpaceId(data ?? null);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching couple_space_id:", err);
+        setSpaceId(null);
+      }
+    };
+
+    fetchSpaceId();
   }, [user]);
 
   return spaceId;

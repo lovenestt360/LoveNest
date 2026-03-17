@@ -319,7 +319,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -345,22 +345,40 @@ export default function Chat() {
   /* ── Load messages ── */
   useEffect(() => {
     resetChatUnread();
-    if (!spaceId) return;
+    if (!spaceId) {
+      console.log("Chat: No spaceId available yet, skipping message load.");
+      setLoading(false);
+      return;
+    }
+    
+    console.log("Chat: Loading messages for spaceId:", spaceId);
     setLoading(true);
-    supabase
-      .from("messages")
-      .select("*")
-      .eq("couple_space_id", spaceId)
-      .order("created_at", { ascending: false })
-      .limit(PAGE_SIZE)
-      .then(({ data }) => {
-        if (data) {
+    const fetchMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("*")
+          .eq("couple_space_id", spaceId)
+          .order("created_at", { ascending: false })
+          .limit(PAGE_SIZE);
+
+        if (error) {
+          console.error("Chat: Error loading messages:", error.message);
+          toast({ title: "Erro ao carregar mensagens", description: error.message, variant: "destructive" });
+        } else if (data) {
+          console.log("Chat: Loaded", data.length, "messages.");
           setMessages((data as Message[]).reverse());
           setHasMore(data.length === PAGE_SIZE);
         }
+      } catch (err) {
+        console.error("Chat: Unexpected error loading messages:", err);
+      } finally {
         setLoading(false);
-      });
-  }, [spaceId, resetChatUnread]);
+      }
+    };
+
+    fetchMessages();
+  }, [spaceId, resetChatUnread, toast]);
 
   const loadMore = useCallback(async () => {
     if (!spaceId || loadingMore || messages.length === 0) return;
