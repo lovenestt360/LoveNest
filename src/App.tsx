@@ -118,6 +118,7 @@ const App = () => (
                 </Route>
 
                 {/* Admin Auth */}
+                <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/admin-setup-secret" element={<AdminRegister />} />
 
                 {/* Protected Admin routes */}
