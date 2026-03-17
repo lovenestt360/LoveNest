@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS public.edge_function_logs (
 );
 
 ALTER TABLE public.edge_function_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can view logs" ON public.edge_function_logs;
 CREATE POLICY "Admins can view logs" ON public.edge_function_logs FOR SELECT USING (true); -- Ajustar conforme necessário
 
 -- 4. Garantir permissões de EXECUTE para a Edge Function chamar auth.getUser
