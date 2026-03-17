@@ -469,7 +469,7 @@ export default function Chat() {
         audioUrl = await uploadMedia(audio.audioBlob, ext);
       }
 
-      await supabase.from("messages").insert({
+      const { error: insertError } = await supabase.from("messages").insert({
         couple_space_id: spaceId,
         sender_user_id: user.id,
         content: text,
@@ -477,6 +477,13 @@ export default function Chat() {
         image_url: imageUrl,
         audio_url: audioUrl,
       });
+
+      if (insertError) {
+        console.error("Chat: Insert error:", insertError.message);
+        toast({ title: "Erro ao enviar", description: insertError.message, variant: "destructive" });
+        setSending(false);
+        return;
+      }
 
       // Record interaction for LoveStreak (anti-spam: >3 chars or has emoji)
       const hasEmoji = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(text);
