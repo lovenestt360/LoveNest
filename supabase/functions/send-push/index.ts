@@ -68,8 +68,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { couple_space_id, title, body, url, type, is_test } = await req.json();
-    await logInternal("PAYLOAD_DATA", { couple_space_id, is_test });
+    await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, has_title: !!title });
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -77,9 +76,24 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
     
+    // If auth fails, we check if it was just a ping
     if (userError || !user) {
-      await logInternal("AUTH_VERIFY_FAILED", { userError });
-      return new Response(JSON.stringify({ error: "Unauthorized access" }), {
+      await logInternal("AUTH_VERIFY_FAILED", { userError, token_preview: token.substring(0, 10) });
+      
+      // If it's a manual ping from debug console, allow it to return config info
+      const { ping } = await req.json().catch(() => ({}));
+      if (ping) {
+        return new Response(JSON.stringify({ 
+          status: "Function reachable", 
+          auth_error: userError?.message,
+          config: { url: !!supabaseUrl, pub: !!vapidPublicKey, priv: !!vapidPrivateKey }
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: "Unauthorized access", details: userError?.message }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -111,12 +125,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Dynamic Import of web-push using esm.sh for stability in Deno
-    const webpush = await import("https://esm.sh/web-push@3.6.7");
+    // Use npm:web-push for better Deno compatibility
+    const webpush = await import("npm:web-push");
     webpush.default.setVapidDetails(
       "mailto:app@lovenestt.lovable.app",
-      vapidPublicKey,
-      vapidPrivateKey
+      vapidPublicKey.trim(),
+      vapidPrivateKey.trim()
     );
 
     const notificationPayload = JSON.stringify({
