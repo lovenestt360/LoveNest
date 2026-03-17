@@ -13,6 +13,7 @@ export interface LoveStreakData {
   partner2_interacted_today: boolean;
   interaction_date: string | null;
   level_title: string;
+  total_points: number;
 }
 
 const STREAK_LEVELS = [
@@ -238,6 +239,25 @@ export function useLoveStreak() {
     return false;
   }, [spaceId, data, todayStr, load]);
 
+  // Buy a shield using points (e.g., 50 points per shield)
+  const buyShield = useCallback(async () => {
+    if (!spaceId || !data || data.total_points < 50) return false;
+
+    const { error } = await supabase
+      .from("love_streaks")
+      .update({
+        shield_remaining: (data.shield_remaining || 0) + 1,
+        total_points: data.total_points - 50,
+      })
+      .eq("couple_space_id", spaceId);
+
+    if (!error) {
+      load();
+      return true;
+    }
+    return false;
+  }, [spaceId, data, load]);
+
   // Check if streak is broken and can be restored
   const canUseShield = data && data.shield_remaining > 0 && data.last_streak_date
     ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) > 1
@@ -249,6 +269,7 @@ export function useLoveStreak() {
     streakIncreased,
     recordInteraction,
     useShield,
+    buyShield, // Added
     canUseShield,
     reload: load,
   };

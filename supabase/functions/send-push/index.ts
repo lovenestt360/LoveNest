@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { couple_space_id, title, body, url, type, is_test } = await req.json();
     await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, has_title: !!title });
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);

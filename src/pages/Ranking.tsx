@@ -4,15 +4,17 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { useDailyChallenge } from "@/hooks/useDailyChallenge";
-import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check } from "lucide-react";
+import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, TrendingUp, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface RankEntry {
   couple_space_id: string;
   current_streak: number;
   best_streak: number;
+  total_points: number;
   level_title: string;
   house_name: string | null;
 }
@@ -22,19 +24,21 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export default function Ranking() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, canUseShield, useShield } = useLoveStreak();
+  const { data: streakData, canUseShield, useShield, buyShield } = useLoveStreak();
   const { challenge, completed, completeChallenge } = useDailyChallenge();
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rankType, setRankType] = useState<"streak" | "points">("streak");
 
   useEffect(() => {
     const fetchRanking = async () => {
+      setLoading(true);
       // Get all streaks with couple space names
       const { data: streaks } = await supabase
         .from("love_streaks")
-        .select("couple_space_id, current_streak, best_streak, level_title")
-        .order("current_streak", { ascending: false })
-        .limit(50);
+        .select("couple_space_id, current_streak, best_streak, total_points, level_title")
+        .order(rankType === "streak" ? "current_streak" : "total_points", { ascending: false })
+        .limit(50) as any;
 
       if (!streaks) {
         setLoading(false);
@@ -52,6 +56,7 @@ export default function Ranking() {
 
       const ranked: RankEntry[] = streaks.map(s => ({
         ...s,
+        total_points: s.total_points || 0,
         house_name: nameMap.get(s.couple_space_id) || "LoveNest",
       }));
 
@@ -60,7 +65,7 @@ export default function Ranking() {
     };
 
     fetchRanking();
-  }, []);
+  }, [rankType]);
 
   const myRank = ranking.findIndex(r => r.couple_space_id === spaceId) + 1;
   const level = streakData ? getStreakLevel(streakData.current_streak) : null;
@@ -69,178 +74,187 @@ export default function Ranking() {
     ? Math.min(100, Math.round((streakData.current_streak / nextLevel.min) * 100))
     : 100;
 
+  const handleBuyShield = async () => {
+    if (!streakData || streakData.total_points < 50) {
+      toast.error("Pontos insuficientes (Mínimo 50 pts)");
+      return;
+    }
+    const ok = await buyShield();
+    if (ok) {
+      toast.success("LoveShield adquirido com sucesso! 🛡️");
+    } else {
+      toast.error("Erro ao adquirir escudo");
+    }
+  };
+
   return (
     <section className="space-y-6 pb-8 animate-fade-in">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-amber-500" /> LoveNest Ranking
-        </h1>
-        <p className="text-sm text-muted-foreground">Casais com os maiores LoveStreaks</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Trophy className="w-6 h-6 text-amber-500" /> Ranking Global
+          </h1>
+          <p className="text-sm text-muted-foreground">Os casais mais dedicados do LoveNest</p>
+        </div>
+        {streakData && (
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              <Coins className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-primary">{streakData.total_points || 0}</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium">Meus Pontos</p>
+          </div>
+        )}
       </header>
 
-      {/* My Stats */}
+      {/* Stats Summary */}
       {streakData && (
-        <div className="glass-card rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
-                <Flame className="w-6 h-6 text-orange-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-black">{streakData.current_streak}</p>
-                <p className="text-xs text-muted-foreground">Streak atual</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-muted-foreground">{streakData.best_streak}</p>
-              <p className="text-xs text-muted-foreground">Melhor streak</p>
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="glass-card rounded-2xl p-4 flex flex-col items-center justify-center text-center space-y-1">
+            <Flame className="w-5 h-5 text-orange-500" />
+            <p className="text-xl font-black">{streakData.current_streak}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Dias de Streak</p>
           </div>
-
-          {/* Level */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-bold flex items-center gap-1.5">
-                <Star className="w-4 h-4 text-amber-500" /> {level?.title}
-              </span>
-              {myRank > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  #{myRank} no ranking
-                </span>
-              )}
-            </div>
-            {nextLevel && (
-              <div className="space-y-1">
-                <Progress value={nextLevelProgress} className="h-2" />
-                <p className="text-[10px] text-muted-foreground">
-                  {nextLevel.min - streakData.current_streak} dias para <strong>{nextLevel.title}</strong>
-                </p>
-              </div>
-            )}
+          <div className="glass-card rounded-2xl p-4 flex flex-col items-center justify-center text-center space-y-1">
+            <Shield className="w-5 h-5 text-blue-500" />
+            <p className="text-xl font-black">{streakData.shield_remaining}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">LoveShields</p>
           </div>
-
-          {/* Shields */}
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-bold">LoveShield:</span>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className={cn(
-                "text-sm",
-                i < streakData.shield_remaining ? "" : "opacity-30"
-              )}>
-                🛡️
-              </span>
-            ))}
-            <span className="text-xs text-muted-foreground ml-1">
-              ({streakData.shield_remaining}/3 este mês)
-            </span>
-          </div>
-
-          {/* Shield restore */}
-          {canUseShield && (
-            <Button size="sm" variant="outline" className="w-full border-amber-500/30 text-amber-600" onClick={useShield}>
-              <Shield className="w-4 h-4 mr-1" /> Restaurar Streak com LoveShield
-            </Button>
-          )}
         </div>
       )}
 
-      {/* Daily Challenge */}
-      {challenge && (
-        <div className="glass-card rounded-2xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold flex items-center gap-2 text-sm">
-              <Sparkles className="w-4 h-4 text-primary" /> Desafio do Dia
-            </h3>
-            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              +{challenge.points} pts
-            </span>
-          </div>
-          <p className="text-base font-medium">
-            {challenge.emoji} {challenge.challenge_text}
-          </p>
-          {!completed ? (
-            <Button size="sm" className="w-full" onClick={completeChallenge}>
-              <Check className="w-4 h-4 mr-1" /> Marcar como Concluído
-            </Button>
-          ) : (
-            <div className="text-center text-sm font-bold text-green-600 bg-green-500/10 py-2 rounded-xl">
-              ✅ Desafio concluído hoje!
-            </div>
+      {/* Tabs Switcher */}
+      <div className="flex p-1 bg-muted rounded-xl gap-1">
+        <button
+          onClick={() => setRankType("streak")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all",
+            rankType === "streak" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           )}
+        >
+          <Flame className="w-4 h-4" /> Sequência
+        </button>
+        <button
+          onClick={() => setRankType("points")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all",
+            rankType === "points" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <TrendingUp className="w-4 h-4" /> Pontuação
+        </button>
+      </div>
+
+      {/* Daily Challenge Card */}
+      {challenge && (
+        <div className="relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
+          <div className="glass-card rounded-2xl p-5 space-y-3 relative border-primary/20">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4 text-primary animate-pulse" /> Desafio do Dia
+              </h3>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <Check className={cn("w-3 h-3", completed ? "text-green-500" : "text-primary")} />
+                +{challenge.points} pts
+              </div>
+            </div>
+            <p className="text-base font-medium leading-relaxed">
+              {challenge.emoji} {challenge.challenge_text}
+            </p>
+            {!completed ? (
+              <Button size="sm" className="w-full font-bold h-10 shadow-lg shadow-primary/20" onClick={completeChallenge}>
+                Concluir Desafio
+              </Button>
+            ) : (
+              <div className="flex items-center justify-center gap-2 py-2 text-sm font-bold text-green-600 bg-green-500/10 rounded-xl">
+                <Sparkles className="w-4 h-4" /> Recompensa resgatada!
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Shop - Utility for points */}
+      {streakData && (
+        <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-blue-500" />
+              <span className="text-sm font-bold">Loja de Escudos</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Pontos: {streakData.total_points}</span>
+          </div>
+          <div className="flex items-center justify-between bg-background/50 p-3 rounded-xl border border-border/50">
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold">Comprar LoveShield</p>
+              <p className="text-[10px] text-muted-foreground">Custa 50 pontos</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="secondary" 
+              className="h-8 text-xs font-bold px-4"
+              onClick={handleBuyShield}
+              disabled={streakData.total_points < 50}
+            >
+              Adquirir
+            </Button>
+          </div>
         </div>
       )}
 
       {/* Ranking List */}
-      <div className="space-y-2">
-        <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">
-          🏆 Top Casais
+      <div className="space-y-4">
+        <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-widest pl-1">
+          {rankType === "streak" ? "🔥 Melhores Chamas" : "🏆 Maiores Conquistas"}
         </h3>
 
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">A carregar...</div>
+          <div className="flex flex-col items-center justify-center py-12 space-y-3 text-muted-foreground">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-xs font-medium">A atualizar o ranking...</p>
+          </div>
         ) : ranking.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            Nenhum casal com streak ainda. Sejam os primeiros! 🔥
+          <div className="text-center py-12 glass-card rounded-2xl">
+            <p className="text-sm text-muted-foreground">Ainda não há dados suficientes.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {ranking.map((entry, i) => {
               const isMe = entry.couple_space_id === spaceId;
+              const value = rankType === "streak" ? entry.current_streak : entry.total_points;
               const isTop3 = i < 3;
+              
               return (
                 <div
                   key={entry.couple_space_id}
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl p-4 transition-all",
-                    isMe ? "glass-card ring-2 ring-primary/30" : "bg-card/50 border",
-                    isTop3 && i === 0 && "bg-gradient-to-r from-amber-500/10 to-yellow-500/5",
-                    isTop3 && i === 1 && "bg-gradient-to-r from-gray-400/10 to-gray-300/5",
-                    isTop3 && i === 2 && "bg-gradient-to-r from-orange-700/10 to-orange-600/5",
+                    "flex items-center gap-3 rounded-2xl p-4 transition-all duration-300",
+                    isMe ? "glass-card ring-2 ring-primary/40 scale-[1.02] z-10" : "bg-card/40 border border-border/50",
+                    isTop3 && i === 0 && "bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/20",
                   )}
                 >
-                  {/* Position */}
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0">
-                    {isTop3 ? (
-                      <span className="text-2xl">{MEDALS[i]}</span>
-                    ) : (
-                      <span className="text-lg font-black text-muted-foreground">
-                        {i + 1}
-                      </span>
-                    )}
+                  <div className="flex h-9 w-9 items-center justify-center shrink-0 font-black italic text-lg">
+                    {isTop3 ? MEDALS[i] : i + 1}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "font-bold truncate",
-                        isMe && "text-primary"
-                      )}>
-                        {entry.house_name || "LoveNest"}
-                      </span>
-                      {isMe && (
-                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
-                          Vocês
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {entry.level_title} • Melhor: {entry.best_streak}
+                    <p className={cn("font-bold truncate text-sm", isMe && "text-primary")}>
+                      {entry.house_name || "LoveNest"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                      {entry.level_title}
                     </p>
                   </div>
 
-                  {/* Streak */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Flame className={cn(
-                      "w-4 h-4",
-                      entry.current_streak > 0 ? "text-orange-500" : "text-muted-foreground"
-                    )} />
-                    <span className={cn(
-                      "text-lg font-black",
-                      entry.current_streak > 0 ? "text-orange-500" : "text-muted-foreground"
-                    )}>
-                      {entry.current_streak}
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/40 border">
+                    {rankType === "streak" ? (
+                      <Flame className={cn("w-4 h-4", value > 0 ? "text-orange-500" : "text-muted-foreground")} />
+                    ) : (
+                      <Coins className={cn("w-4 h-4", value > 0 ? "text-primary" : "text-muted-foreground")} />
+                    )}
+                    <span className="text-base font-black tabular-nums">
+                      {value}
                     </span>
                   </div>
                 </div>

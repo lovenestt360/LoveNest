@@ -80,9 +80,15 @@ export function LoveStreakHomeCard() {
                     </span>
                   )}
                 </span>
-                <p className="text-[10px] text-muted-foreground">
-                  {level.title} • Melhor: {data.best_streak} dias
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-[10px] text-muted-foreground">
+                    {level.title} • Melhor: {data.best_streak} dias
+                  </p>
+                  <span className="text-[10px] text-muted-foreground">•</span>
+                  <p className="text-[10px] font-bold text-primary">
+                    {data.total_points || 0} pts
+                  </p>
+                </div>
               </div>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
