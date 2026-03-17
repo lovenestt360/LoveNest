@@ -445,31 +445,23 @@ export default function Settings() {
         return;
       }
 
-      setPushStatusMsg("A obter chave de segurança...");
-      const vapidRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`,
-        {
-          method: 'GET',
-          headers: { "Content-Type": "text/plain" }
-        }
-      );
-      if (!vapidRes.ok) {
-        throw new Error(`Servidor retornou erro ${vapidRes.status} ao obter VAPID`);
-      }
-      const publicKey = (await vapidRes.text()).trim();
-      console.log("VAPID length:", publicKey.length);
-      if (!publicKey || publicKey.startsWith("{") || publicKey.startsWith("<")) {
-        toast({ title: "Erro na chave VAPID", description: "Formato inválido recebido do servidor.", variant: "destructive" });
+      setPushStatusMsg("A preparar chave de segurança...");
+      const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      
+      if (!publicKey) {
+        toast({ title: "Erro na configuração", description: "VITE_VAPID_PUBLIC_KEY não encontrada no .env.", variant: "destructive" });
         setPushLoading(false);
         setPushStatusMsg("");
         return;
       }
 
+      console.log("Using VAPID Public Key from ENV");
+
       let keyBytes;
       try {
         keyBytes = urlBase64ToUint8Array(publicKey);
       } catch (e) {
-        toast({ title: "Erro base64 VAPID", description: "Chave mal formatada no Edge Function.", variant: "destructive" });
+        toast({ title: "Erro de formato", description: "VITE_VAPID_PUBLIC_KEY tem um formato inválido.", variant: "destructive" });
         setPushLoading(false);
         setPushStatusMsg("");
         return;
