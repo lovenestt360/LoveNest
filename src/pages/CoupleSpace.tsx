@@ -169,31 +169,14 @@ export default function CoupleSpace() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("create-couple-space", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      // Verificar se já é membro
+      const { data: existingMember } = await supabase
+        .from("members")
+        .select("couple_space_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
 
-      if (error) {
-        const message =
-          (error as any)?.context?.body?.error ||
-          (error as any)?.context?.body ||
-          (error as any)?.message ||
-          "Não foi possível criar seu LoveNest.";
-
-        const msg = typeof message === "string" ? message : "Não foi possível criar seu LoveNest.";
-
-        toast({
-          variant: "destructive",
-          title: "Erro ao criar LoveNest",
-          description: msg,
-        });
-        return;
-      }
-
-      if ((data as any)?.already_member) {
+      if (existingMember) {
         toast({
           title: "Você já está num LoveNest",
           description: "Abrindo seu LoveNest...",
@@ -202,17 +185,38 @@ export default function CoupleSpace() {
         return;
       }
 
+      // Gerar código de convite único localmente
+      const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      // Criar o espaço (couple_space)
+      const { data: space, error: spaceError } = await supabase
+        .from("couple_spaces")
+        .insert({ invite_code: inviteCode })
+        .select()
+        .single();
+
+      if (spaceError) throw spaceError;
+
+      // Adicionar o criador como membro
+      const { error: memberError } = await supabase.from("members").insert({
+        couple_space_id: space.id,
+        user_id: session.user.id,
+      });
+
+      if (memberError) throw memberError;
+
       toast({
         title: "LoveNest criado!",
         description: "Agora copie o código e envie para o seu par.",
       });
 
       await refresh();
-    } catch {
+    } catch (error: any) {
+      console.error("Error creating space:", error);
       toast({
         variant: "destructive",
         title: "Erro ao criar LoveNest",
-        description: "Não foi possível criar seu LoveNest.",
+        description: error.message || "Não foi possível criar seu LoveNest.",
       });
     } finally {
       setLoadingAction(false);
@@ -240,37 +244,42 @@ export default function CoupleSpace() {
 
       const code = inviteCodeInput.trim().toUpperCase();
 
-      const { data, error } = await supabase.functions.invoke("join-couple-space", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: { invite_code: code },
-      });
+      // Buscar espaço pelo código
+      const { data: space, error: spaceError } = await supabase
+        .from("couple_spaces")
+        .select("id")
+        .eq("invite_code", code)
+        .eq("status", "active")
+        .maybeSingle();
 
-      if (error) {
-        const message =
-          (error as any)?.context?.body?.error ||
-          (error as any)?.context?.body ||
-          (error as any)?.message ||
-          "Código inválido ou Casa completa.";
+      if (spaceError) throw spaceError;
 
-        const msg = typeof message === "string" ? message : "Código inválido ou Casa completa.";
-
+      if (!space) {
         toast({
           variant: "destructive",
-          title: "Erro ao entrar no LoveNest",
-          description: msg,
+          title: "Código inválido",
+          description: "Não encontramos nenhum LoveNest com este código.",
         });
         return;
       }
 
-      if ((data as any)?.already_member) {
+      // Tentar entrar no espaço
+      // O trigger no banco (tr_check_member_limit) vai barrar se já houver 2 membros
+      const { error: joinError } = await supabase.from("members").insert({
+        couple_space_id: space.id,
+        user_id: session.user.id,
+      });
+
+      if (joinError) {
+        const msg = joinError.message.includes("couple_space_full") 
+          ? "Este LoveNest já está completo (máximo 2 membros)."
+          : "Não foi possível entrar no LoveNest.";
+        
         toast({
-          title: "Você já está num LoveNest",
-          description: "Abrindo seu LoveNest...",
+          variant: "destructive",
+          title: "Erro ao entrar",
+          description: msg,
         });
-        await refresh();
         return;
       }
 
@@ -281,11 +290,12 @@ export default function CoupleSpace() {
 
       await refresh();
       navigate("/", { replace: true });
-    } catch {
+    } catch (error: any) {
+      console.error("Error joining space:", error);
       toast({
         variant: "destructive",
         title: "Erro ao entrar no LoveNest",
-        description: "Código inválido ou Casa completa.",
+        description: error.message || "Código inválido ou Casa completa.",
       });
     } finally {
       setLoadingAction(false);
