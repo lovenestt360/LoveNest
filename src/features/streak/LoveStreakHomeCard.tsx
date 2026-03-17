@@ -62,7 +62,7 @@ export function LoveStreakHomeCard() {
 
       {/* Main Streak Card */}
       <button
-        onClick={() => navigate("/ranking")}
+        onClick={() => navigate("/ranking?tab=streak")}
         className="glass-card glass-card-hover relative flex w-full flex-col rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
       >
         <div className="bg-gradient-to-r from-orange-500/10 via-red-500/10 to-pink-500/10 p-4 space-y-3 w-full">
@@ -146,7 +146,10 @@ export function LoveStreakHomeCard() {
 
       {/* Daily Challenge Card */}
       {challenge && (
-        <div className="glass-card rounded-2xl p-4 space-y-2">
+        <div 
+          className="glass-card rounded-2xl p-4 space-y-2 cursor-pointer hover:bg-muted/10 transition-colors"
+          onClick={() => navigate("/ranking?tab=tasks")}
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <Trophy className="w-3 h-3" /> Desafio do Dia
