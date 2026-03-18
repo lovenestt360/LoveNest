@@ -239,15 +239,15 @@ export function useLoveStreak() {
     return false;
   }, [spaceId, data, todayStr, load]);
 
-  // Buy a shield using points (e.g., 50 points per shield)
+  // Buy a shield using points (e.g., 200 points per shield)
   const buyShield = useCallback(async () => {
-    if (!spaceId || !data || data.total_points < 50) return false;
+    if (!spaceId || !data || data.total_points < 200) return false;
 
     const { error } = await supabase
       .from("love_streaks")
       .update({
         shield_remaining: (data.shield_remaining || 0) + 1,
-        total_points: data.total_points - 50,
+        total_points: data.total_points - 200,
       })
       .eq("couple_space_id", spaceId);
 

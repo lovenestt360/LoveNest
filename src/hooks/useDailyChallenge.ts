@@ -15,9 +15,9 @@ export interface MicroChallenge {
 export function useDailyChallenge() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const [challenge, setChallenge] = useState<MicroChallenge | null>(null);
-  const [completed, setCompleted] = useState(false);
-  const [partnerCompleted, setPartnerCompleted] = useState(false);
+  const [challenges, setChallenges] = useState<MicroChallenge[]>([]);
+  const [completions, setCompletions] = useState<Record<string, boolean>>({});
+  const [partnerCompletions, setPartnerCompletions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -25,34 +25,48 @@ export function useDailyChallenge() {
   const load = useCallback(async () => {
     if (!spaceId || !user) return;
 
-    // Get all challenges and pick one deterministically for today
-    const { data: challenges } = await supabase
+    // Get all challenges
+    const { data: allChallenges } = await supabase
       .from("micro_challenges")
       .select("*")
       .order("created_at");
 
-    if (!challenges || challenges.length === 0) {
+    if (!allChallenges || allChallenges.length === 0) {
       setLoading(false);
       return;
     }
 
-    // Deterministic daily challenge based on date hash
+    // Deterministic 3 challenges based on date hash
     const dateNum = parseInt(todayStr.replace(/-/g, ""), 10);
-    const idx = dateNum % challenges.length;
-    const todayChallenge = challenges[idx] as MicroChallenge;
-    setChallenge(todayChallenge);
+    const dailyChallenges: MicroChallenge[] = [];
+    
+    for (let i = 0; i < 3; i++) {
+      const idx = (dateNum + i * 7) % allChallenges.length;
+      dailyChallenges.push(allChallenges[idx]);
+    }
+    
+    setChallenges(dailyChallenges);
 
-    // Check completions
-    const { data: completions } = await supabase
+    // Check completions for these 3 challenges
+    const challengeIds = dailyChallenges.map(c => c.id);
+    const { data: compData } = await supabase
       .from("micro_challenge_completions")
-      .select("user_id")
+      .select("challenge_id, user_id")
       .eq("couple_space_id", spaceId)
-      .eq("challenge_id", todayChallenge.id)
+      .in("challenge_id", challengeIds)
       .eq("day_key", todayStr);
 
-    if (completions) {
-      setCompleted(completions.some(c => c.user_id === user.id));
-      setPartnerCompleted(completions.some(c => c.user_id !== user.id));
+    if (compData) {
+      const userComp: Record<string, boolean> = {};
+      const partComp: Record<string, boolean> = {};
+      
+      challengeIds.forEach(id => {
+        userComp[id] = compData.some(c => c.challenge_id === id && c.user_id === user.id);
+        partComp[id] = compData.some(c => c.challenge_id === id && c.user_id !== user.id);
+      });
+      
+      setCompletions(userComp);
+      setPartnerCompletions(partComp);
     }
 
     setLoading(false);
@@ -62,20 +76,19 @@ export function useDailyChallenge() {
     load();
   }, [load]);
 
-  const completeChallenge = useCallback(async () => {
-    if (!spaceId || !user || !challenge) return;
+  const completeChallenge = useCallback(async (challengeId: string) => {
+    if (!spaceId || !user) return;
 
     await supabase.from("micro_challenge_completions").upsert({
       couple_space_id: spaceId,
-      challenge_id: challenge.id,
+      challenge_id: challengeId,
       user_id: user.id,
       day_key: todayStr,
       completed: true,
     }, { onConflict: "couple_space_id,challenge_id,user_id,day_key" });
 
-    setCompleted(true);
     load();
-  }, [spaceId, user, challenge, todayStr, load]);
+  }, [spaceId, user, todayStr, load]);
 
-  return { challenge, completed, partnerCompleted, loading, completeChallenge };
+  return { challenges, completions, partnerCompletions, loading, completeChallenge };
 }

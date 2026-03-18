@@ -18,6 +18,7 @@ interface RankEntry {
   total_points: number;
   level_title: string;
   house_name: string | null;
+  house_image: string | null;
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -29,7 +30,13 @@ export default function Ranking() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { data: streakData, buyShield } = useLoveStreak();
-  const { challenge, completed, completeChallenge } = useDailyChallenge();
+  const { 
+    challenges, 
+    completions, 
+    partnerCompletions, 
+    loading: challengesLoading, 
+    completeChallenge: handleCompleteChallenge 
+  } = useDailyChallenge();
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,16 +62,20 @@ export default function Ranking() {
       const spaceIds = streaks.map(s => s.couple_space_id);
       const { data: spaces } = await supabase
         .from("couple_spaces")
-        .select("id, house_name")
+        .select("id, house_name, house_image")
         .in("id", spaceIds);
 
-      const nameMap = new Map((spaces || []).map(s => [s.id, s.house_name]));
+      const spaceMap = new Map((spaces || []).map(s => [s.id, s]));
 
-      const ranked: RankEntry[] = streaks.map(s => ({
-        ...s,
-        total_points: s.total_points || 0,
-        house_name: nameMap.get(s.couple_space_id) || "LoveNest",
-      }));
+      const ranked: RankEntry[] = streaks.map(s => {
+        const space = spaceMap.get(s.couple_space_id);
+        return {
+          ...s,
+          total_points: s.total_points || 0,
+          house_name: space?.house_name || "LoveNest",
+          house_image: space?.house_image || null,
+        };
+      });
 
       setRanking(ranked);
       setLoading(false);
@@ -196,23 +207,36 @@ export default function Ranking() {
               {/* Tarefas de Pontos */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-                  <Star className="w-4 h-4" /> Tarefas de Pontos
+                  <Star className="w-4 h-4" /> Missões Diárias (+ Pontos)
                 </div>
-                {challenge && (
-                  <div className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold">{challenge.emoji} {challenge.challenge_text}</span>
-                      <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{challenge.points} PTS</span>
+                <div className="grid gap-4">
+                  {challenges.map((ch) => (
+                    <div key={ch.id} className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4 relative overflow-hidden">
+                      {completions[ch.id] && (
+                        <div className="absolute top-0 right-0 p-2 text-green-500 animate-in fade-in zoom-in duration-300">
+                          <Check className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold">{ch.emoji} {ch.challenge_text}</span>
+                        <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{ch.points} PTS</span>
+                      </div>
+                      <Button 
+                        className={cn("w-full h-11 font-black shadow-lg", completions[ch.id] ? "bg-green-500/20 text-green-500 shadow-none border-green-500/20" : "shadow-primary/20")}
+                        onClick={() => handleCompleteChallenge(ch.id)}
+                        disabled={completions[ch.id]}
+                        variant={completions[ch.id] ? "outline" : "default"}
+                      >
+                        {completions[ch.id] ? "Missão Cumprida! ✨" : "Completar Missão"}
+                      </Button>
+                      {partnerCompletions[ch.id] && (
+                        <p className="text-[10px] text-center text-muted-foreground italic">
+                          O teu parceiro já completou esta tarefa! 🙌
+                        </p>
+                      )}
                     </div>
-                    <Button 
-                      className="w-full h-11 font-black shadow-lg shadow-primary/20" 
-                      onClick={completeChallenge}
-                      disabled={completed}
-                    >
-                      {completed ? "Tarefa Concluída!" : "Ir para o Desafio"}
-                    </Button>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -256,11 +280,11 @@ export default function Ranking() {
                 </div>
                 <Button 
                   size="sm" 
-                  className={cn("h-9 text-[11px] font-black px-4 rounded-xl shadow-lg transition-all", streakData?.total_points && streakData.total_points >= 50 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20" : "bg-muted text-muted-foreground")}
+                  className={cn("h-9 text-[11px] font-black px-4 rounded-xl shadow-lg transition-all", streakData?.total_points && streakData.total_points >= 200 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20" : "bg-muted text-muted-foreground")}
                   onClick={handleBuyShield}
-                  disabled={!streakData || streakData.total_points < 50 || streakData.shield_remaining >= 3}
+                  disabled={!streakData || streakData.total_points < 200 || streakData.shield_remaining >= 3}
                 >
-                  50 PTS
+                  200 PTS
                 </Button>
               </div>
             </div>
@@ -275,17 +299,40 @@ export default function Ranking() {
                   <div
                     key={entry.couple_space_id}
                     className={cn(
-                      "flex items-center gap-3 rounded-2xl p-4 transition-all duration-300",
+                      "flex items-center gap-3 rounded-2xl p-4 transition-all duration-300 relative",
                       entry.couple_space_id === spaceId ? "bg-orange-500/5 ring-1 ring-orange-500/20 shadow-md shadow-orange-500/5" : "bg-card/40 border border-border/50",
+                      i === 0 && "ring-2 ring-orange-500 bg-orange-500/5 shadow-xl shadow-orange-500/5 scale-[1.02]"
                     )}
                   >
-                    <div className="flex h-9 w-9 items-center justify-center shrink-0 font-black italic text-lg text-orange-500">
-                      {i < 3 ? MEDALS[i] : i + 1}
+                    <div className="relative group shrink-0">
+                      <div className={cn("h-12 w-12 rounded-2xl overflow-hidden border-2 shadow-sm transition-transform group-hover:scale-105", i === 0 ? "border-orange-500" : "border-background")}>
+                        {entry.house_image ? (
+                          <img src={entry.house_image} alt="Casa" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={cn("w-full h-full flex items-center justify-center font-bold", i === 0 ? "bg-orange-100 text-orange-600" : "bg-orange-500/10 text-orange-500")}>
+                            {entry.house_name?.charAt(0) || "L"}
+                          </div>
+                        )}
+                      </div>
+                      {i === 0 && (
+                        <div className="absolute -top-2 -left-2 bg-orange-500 text-white rounded-lg p-1 shadow-lg animate-bounce duration-[2000ms]">
+                          <Crown className="w-4 h-4" />
+                        </div>
+                      )}
+                      {i > 0 && i < 3 && (
+                        <div className="absolute -top-1.5 -left-1.5 bg-background border rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                          {MEDALS[i]}
+                        </div>
+                      )}
                     </div>
+
                     <div className="flex-1 min-w-0">
-                      <p className={cn("font-bold truncate text-sm", entry.couple_space_id === spaceId && "text-orange-600")}>
-                        {entry.house_name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className={cn("font-bold truncate text-sm", entry.couple_space_id === spaceId && "text-orange-600")}>
+                          {entry.house_name}
+                        </p>
+                        {i === 0 && <Sparkles className="w-3 h-3 text-orange-500" />}
+                      </div>
                       <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">
                         {entry.level_title}
                       </p>
@@ -348,17 +395,40 @@ export default function Ranking() {
                   <div
                     key={entry.couple_space_id}
                     className={cn(
-                      "flex items-center gap-3 rounded-2xl p-4 transition-all duration-300",
+                      "flex items-center gap-3 rounded-2xl p-4 transition-all duration-300 relative",
                       entry.couple_space_id === spaceId ? "bg-primary/5 ring-1 ring-primary/20 shadow-md shadow-primary/5" : "bg-card/40 border border-border/50",
+                      i === 0 && "ring-2 ring-yellow-500 bg-yellow-500/5 shadow-xl shadow-yellow-500/5 scale-[1.02]"
                     )}
                   >
-                    <div className="flex h-9 w-9 items-center justify-center shrink-0 font-black italic text-lg text-primary">
-                      {i < 3 ? MEDALS[i] : i + 1}
+                    <div className="relative group shrink-0">
+                      <div className={cn("h-12 w-12 rounded-2xl overflow-hidden border-2 shadow-sm transition-transform group-hover:scale-105", i === 0 ? "border-yellow-500" : "border-background")}>
+                        {entry.house_image ? (
+                          <img src={entry.house_image} alt="Casa" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={cn("w-full h-full flex items-center justify-center font-bold", i === 0 ? "bg-yellow-100 text-yellow-600" : "bg-primary/10 text-primary")}>
+                            {entry.house_name?.charAt(0) || "L"}
+                          </div>
+                        )}
+                      </div>
+                      {i === 0 && (
+                        <div className="absolute -top-2 -left-2 bg-yellow-500 text-white rounded-lg p-1 shadow-lg animate-bounce duration-[2000ms]">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                      )}
+                      {i > 0 && i < 3 && (
+                        <div className="absolute -top-1.5 -left-1.5 bg-background border rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                          {MEDALS[i]}
+                        </div>
+                      )}
                     </div>
+
                     <div className="flex-1 min-w-0">
-                      <p className={cn("font-bold truncate text-sm", entry.couple_space_id === spaceId && "text-primary")}>
-                        {entry.house_name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className={cn("font-bold truncate text-sm", entry.couple_space_id === spaceId && "text-primary")}>
+                          {entry.house_name}
+                        </p>
+                        {i === 0 && <Sparkles className="w-3 h-3 text-yellow-500" />}
+                      </div>
                       <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">
                         {entry.level_title}
                       </p>
