@@ -4,10 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
-    ShieldCheck, Check, X, FileText, Users, Home,
-    Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
-    Sparkles, Calendar, Coins, Target, TrendingUp, Search
+    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -599,7 +596,19 @@ export default function Admin() {
                 {/* OVERVIEW TAB */}
                 {tab === "overview" && (
                     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold">Dashboard</h2>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-bold">Dashboard</h2>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-9 gap-2 font-bold bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+                                onClick={fetchAllData}
+                                disabled={loading}
+                            >
+                                <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                                {loading ? "A atualizar..." : "Forçar Atualização"}
+                            </Button>
+                        </div>
 
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -622,6 +631,11 @@ export default function Admin() {
                                 <FileText className="w-6 h-6 text-yellow-500 mb-4" />
                                 <span className="text-3xl font-black">{pendingPayments.length}</span>
                                 <span className="text-sm text-yellow-600/70 font-bold uppercase tracking-wider mt-1">Pendentes</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-purple-500/20 bg-purple-500/5">
+                                <Flame className="w-6 h-6 text-purple-500 mb-4" />
+                                <span className="text-3xl font-black">{streaks.length}</span>
+                                <span className="text-sm text-purple-600/70 font-bold uppercase tracking-wider mt-1">Streaks</span>
                             </div>
                         </div>
 
