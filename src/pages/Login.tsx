@@ -21,8 +21,9 @@ export default function Login() {
     setLoading(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
 
@@ -30,10 +31,14 @@ export default function Login() {
 
       navigate("/casa");
     } catch (error: any) {
+      let msg = error.message;
+      if (msg.includes("Invalid login credentials")) {
+        msg = "Email ou senha incorretos. Verifique se digitou corretamente ou se já confirmou o seu e-mail.";
+      }
       toast({
         variant: "destructive",
         title: "Erro ao entrar",
-        description: error.message || "Verifique suas credenciais e tente novamente.",
+        description: msg || "Verifique suas credenciais e tente novamente.",
       });
     } finally {
       setLoading(false);
@@ -45,8 +50,9 @@ export default function Login() {
     setLoading(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: cleanEmail,
         options: {
           emailRedirectTo: window.location.origin + "/casa",
         },

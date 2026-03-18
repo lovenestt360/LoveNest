@@ -34,8 +34,9 @@ export default function Signup() {
     setLoading(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
           data: {
