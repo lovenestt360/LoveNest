@@ -63,12 +63,12 @@ export default function Ranking() {
       const { data: spaces } = await supabase
         .from("couple_spaces")
         .select("id, house_name, house_image")
-        .in("id", spaceIds);
+        .in("id", spaceIds) as any;
 
       const spaceMap = new Map((spaces || []).map(s => [s.id, s]));
 
       const ranked: RankEntry[] = streaks.map(s => {
-        const space = spaceMap.get(s.couple_space_id);
+        const space = spaceMap.get(s.couple_space_id) as any;
         return {
           ...s,
           total_points: s.total_points || 0,
