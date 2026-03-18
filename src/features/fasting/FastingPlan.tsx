@@ -4,7 +4,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Edit2, Check, X } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Edit2, Check, X, Trash2 } from "lucide-react";
 import { UseFastingReturn } from "./useFasting";
 import { PLAN_TYPES } from "./types";
 import { format } from "date-fns";
@@ -168,6 +179,32 @@ export function FastingPlan({ data }: Props) {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Cancel Plan */}
+            <div className="pt-4 pb-2">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-red-50 hover:text-red-700 h-10 font-medium">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Cancelar Plano de Jejum
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[2rem]">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Cancelar Jejum?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Tens a certeza? O teu percurso e registos deste plano serão arquivados e não poderás voltar atrás.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="rounded-full">Não, manter</AlertDialogCancel>
+                            <AlertDialogAction onClick={deletePlan} className="bg-destructive hover:bg-destructive/90 rounded-full">
+                                Sim, cancelar jejum
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );
