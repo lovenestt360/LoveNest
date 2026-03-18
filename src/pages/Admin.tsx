@@ -4,6 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
+    ShieldCheck, Check, X, FileText, Users, Home,
+    Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
+    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
     Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
