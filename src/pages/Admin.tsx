@@ -646,7 +646,6 @@ export default function Admin() {
                                 {pendingPayments.length > 0 && <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{pendingPayments.length}</span>}
                             </h3>
                             <div className="space-y-3">
-                                {pendingPayments.length === 0 && <p className="text-sm text-muted-foreground bg-card p-4 rounded-xl border border-dashed">Nenhuma subscrição pendente de aprovação.</p>}
                                 {pendingPayments.map((payment) => (
                                     <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div>
