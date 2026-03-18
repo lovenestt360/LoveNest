@@ -1,4 +1,4 @@
-const CACHE_NAME = "dk-cache-v2";
+const CACHE_NAME = "dk-cache-v4";
 const OFFLINE_URL = "/offline.html";
 
 // Pre-cache the offline page on install
