@@ -35,7 +35,7 @@ export default function Signup() {
 
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
@@ -49,12 +49,19 @@ export default function Signup() {
 
       if (error) throw error;
 
-      toast({
-        title: "Conta criada!",
-        description: "Verifique seu e-mail para confirmar.",
-      });
-
-      navigate("/entrar");
+      if (data.session) {
+        toast({
+          title: "Conta criada e ativa!",
+          description: "Bem-vindo ao LoveNest ✨",
+        });
+        navigate("/casa");
+      } else {
+        toast({
+          title: "Conta criada!",
+          description: "Verifique seu e-mail para confirmar a conta.",
+        });
+        navigate("/entrar");
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",

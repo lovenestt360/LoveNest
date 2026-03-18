@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,13 @@ export default function Login() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate("/casa", { replace: true });
+    });
+  }, [navigate]);
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +40,7 @@ export default function Login() {
     } catch (error: any) {
       let msg = error.message;
       if (msg.includes("Invalid login credentials")) {
-        msg = "Email ou senha incorretos. Verifique se digitou corretamente ou se já confirmou o seu e-mail.";
+        msg = "Email ou senha incorretos. Verifique se digitou corretamente.";
       }
       toast({
         variant: "destructive",
