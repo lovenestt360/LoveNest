@@ -485,11 +485,8 @@ export default function Chat() {
         return;
       }
 
-      // Record interaction for LoveStreak (anti-spam: >3 chars or has emoji)
-      const hasEmoji = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(text);
-      if (text.length > 3 || hasEmoji || imageUrl || audioUrl) {
-        recordInteraction("chat_message");
-      }
+      // Record interaction for LoveStreak (all messages count now)
+      recordInteraction("chat_message");
 
       // Notify partner
       let body = text;

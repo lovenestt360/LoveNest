@@ -29,7 +29,7 @@ export default function Ranking() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, buyShield } = useLoveStreak();
+  const { data: streakData, buyShield, isPartner1 } = useLoveStreak();
   const { 
     challenges, 
     completions, 
@@ -106,6 +106,9 @@ export default function Ranking() {
       fetchRanking();
     }
   }, [activeTab]);
+
+  const meInteracted = isPartner1 ? streakData?.partner1_interacted_today : streakData?.partner2_interacted_today;
+  const partnerInteracted = isPartner1 ? streakData?.partner2_interacted_today : streakData?.partner1_interacted_today;
 
   useEffect(() => {
     if (spaceId) {
@@ -204,18 +207,18 @@ export default function Ranking() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                        streakData?.partner1_interacted_today 
+                        meInteracted 
                           ? "bg-green-500/20 border-green-500 text-green-600" 
                           : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
                       )}>
-                        {streakData?.partner1_interacted_today ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
+                        {meInteracted ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
                       <div className="flex-1">
-                        <p className={cn("font-bold text-sm", streakData?.partner1_interacted_today ? "text-foreground" : "text-muted-foreground")}>
+                        <p className={cn("font-bold text-sm", meInteracted ? "text-foreground" : "text-muted-foreground")}>
                           {avatars.me?.displayName || "Tu"}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                          {streakData?.partner1_interacted_today ? "Interagiu ✨" : "Pendente ⏳"}
+                          {meInteracted ? "Interagiu ✨" : "Pendente ⏳"}
                         </p>
                       </div>
                     </div>
@@ -225,18 +228,18 @@ export default function Ranking() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                        streakData?.partner2_interacted_today 
+                        partnerInteracted 
                           ? "bg-green-500/20 border-green-500 text-green-600" 
                           : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
                       )}>
-                        {streakData?.partner2_interacted_today ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
+                        {partnerInteracted ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
                       <div className="flex-1">
-                        <p className={cn("font-bold text-sm", streakData?.partner2_interacted_today ? "text-foreground" : "text-muted-foreground")}>
+                        <p className={cn("font-bold text-sm", partnerInteracted ? "text-foreground" : "text-muted-foreground")}>
                           {avatars.partner?.displayName || "Parceiro"}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                          {streakData?.partner2_interacted_today ? "Interagiu ✨" : "Pendente ⏳"}
+                          {partnerInteracted ? "Interagiu ✨" : "Pendente ⏳"}
                         </p>
                       </div>
                     </div>

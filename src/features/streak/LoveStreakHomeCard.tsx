@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function LoveStreakHomeCard() {
-  const { data, loading, streakIncreased, canUseShield, useShield } = useLoveStreak();
-  const { challenge, completed, partnerCompleted } = useDailyChallenge();
+  const { data, loading, streakIncreased, canUseShield, useShield, isPartner1 } = useLoveStreak();
+  const { challenges, completions, partnerCompletions } = useDailyChallenge();
+  const challenge = challenges[0];
+  const completed = challenge ? completions[challenge.id] : false;
+  const partnerCompleted = challenge ? partnerCompletions[challenge.id] : false;
   const navigate = useNavigate();
 
   if (loading || !data) return null;
@@ -96,22 +99,31 @@ export function LoveStreakHomeCard() {
 
           {/* Today status */}
           <div className="flex items-center gap-3 text-xs">
-            <div className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-              data.partner1_interacted_today
-                ? "bg-green-500/15 text-green-700"
-                : "bg-muted text-muted-foreground"
-            )}>
-              {data.partner1_interacted_today ? "✓" : "○"} Parceiro 1
-            </div>
-            <div className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-              data.partner2_interacted_today
-                ? "bg-green-500/15 text-green-700"
-                : "bg-muted text-muted-foreground"
-            )}>
-              {data.partner2_interacted_today ? "✓" : "○"} Parceiro 2
-            </div>
+            {(() => {
+              const meInteracted = isPartner1 ? data.partner1_interacted_today : data.partner2_interacted_today;
+              const partnerInteracted = isPartner1 ? data.partner2_interacted_today : data.partner1_interacted_today;
+              
+              return (
+                <>
+                  <div className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+                    meInteracted
+                      ? "bg-green-500/15 text-green-700"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {meInteracted ? "✓" : "○"} Tu
+                  </div>
+                  <div className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+                    partnerInteracted
+                      ? "bg-green-500/15 text-green-700"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {partnerInteracted ? "✓" : "○"} Par
+                  </div>
+                </>
+              );
+            })()}
             {bothToday && (
               <span className="text-green-600 font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> Completo!

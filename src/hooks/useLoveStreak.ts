@@ -45,6 +45,7 @@ export function useLoveStreak() {
   const [data, setData] = useState<LoveStreakData | null>(null);
   const [loading, setLoading] = useState(true);
   const [streakIncreased, setStreakIncreased] = useState(false);
+  const [isPartner1, setIsPartner1] = useState(true);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
@@ -67,8 +68,20 @@ export function useLoveStreak() {
         .maybeSingle();
       if (created) setData(created as any);
     }
+
+    // Determine if I am partner 1
+    const { data: members } = await supabase
+      .from("members")
+      .select("user_id")
+      .eq("couple_space_id", spaceId)
+      .order("joined_at");
+    
+    if (members && members.length > 0) {
+      setIsPartner1(members[0].user_id === user.id);
+    }
+
     setLoading(false);
-  }, [spaceId]);
+  }, [spaceId, user]);
 
   useEffect(() => {
     load();
@@ -266,6 +279,7 @@ export function useLoveStreak() {
   return {
     data,
     loading,
+    isPartner1,
     streakIncreased,
     recordInteraction,
     useShield,
