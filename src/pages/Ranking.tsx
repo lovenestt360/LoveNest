@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { useDailyChallenge } from "@/hooks/useDailyChallenge";
+import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -24,9 +25,8 @@ interface RankEntry {
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function Ranking() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "streak";
-  
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { data: streakData, buyShield } = useLoveStreak();
@@ -40,8 +40,29 @@ export default function Ranking() {
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"tasks" | "streak" | "points">("tasks");
+  const avatars = useCoupleAvatars();
   const [tasksCompleted, setTasksCompleted] = useState(0);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [attemptedChallenges, setAttemptedChallenges] = useState<Record<string, boolean>>({});
+
+  const getChallengeUrl = (type: string) => {
+    switch (type) {
+      case "message": return "/chat";
+      case "mood": return "/humor";
+      case "memory": return "/memorias";
+      case "prayer": return "/oracao";
+      case "fasting": return "/jejum";
+      default: return null;
+    }
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl && (tabFromUrl === "tasks" || tabFromUrl === "streak" || tabFromUrl === "points")) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -113,8 +134,8 @@ export default function Ranking() {
   };
 
   const handleBuyShield = async () => {
-    if (!streakData || streakData.total_points < 50) {
-      toast.error("Pontos insuficientes (Mínimo 50 pts)");
+    if (!streakData || streakData.total_points < 200) {
+      toast.error("Pontos insuficientes (Mínimo 200 pts)");
       return;
     }
     const ok = await buyShield();
@@ -181,25 +202,44 @@ export default function Ranking() {
                 <div className="grid gap-3">
                   <div className="glass-card rounded-2xl p-4 border-orange-500/10 bg-orange-500/[0.02] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={cn("h-8 w-8 rounded-full flex items-center justify-center border-2 transition-colors", streakData?.partner1_interacted_today ? "bg-green-500 border-green-500 text-white" : "border-muted bg-muted/20")}>
-                        {streakData?.partner1_interacted_today ? <Check className="w-4 h-4" /> : <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />}
+                      <div className={cn(
+                        "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                        streakData?.partner1_interacted_today 
+                          ? "bg-green-500/20 border-green-500 text-green-600" 
+                          : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
+                      )}>
+                        {streakData?.partner1_interacted_today ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
-                      <span className="text-sm font-bold">Validar Parceiro 1</span>
+                      <div className="flex-1">
+                        <p className={cn("font-bold text-sm", streakData?.partner1_interacted_today ? "text-foreground" : "text-muted-foreground")}>
+                          {avatars.me?.displayName || "Tu"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                          {streakData?.partner1_interacted_today ? "Interagiu ✨" : "Pendente ⏳"}
+                        </p>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-[10px] uppercase font-black tracking-tighter" disabled>
-                      {streakData?.partner1_interacted_today ? "Feito" : "Pendente"}
-                    </Button>
                   </div>
+
                   <div className="glass-card rounded-2xl p-4 border-orange-500/10 bg-orange-500/[0.02] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={cn("h-8 w-8 rounded-full flex items-center justify-center border-2 transition-colors", streakData?.partner2_interacted_today ? "bg-green-500 border-green-500 text-white" : "border-muted bg-muted/20")}>
-                        {streakData?.partner2_interacted_today ? <Check className="w-4 h-4" /> : <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />}
+                      <div className={cn(
+                        "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                        streakData?.partner2_interacted_today 
+                          ? "bg-green-500/20 border-green-500 text-green-600" 
+                          : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
+                      )}>
+                        {streakData?.partner2_interacted_today ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
-                      <span className="text-sm font-bold">Validar Parceiro 2</span>
+                      <div className="flex-1">
+                        <p className={cn("font-bold text-sm", streakData?.partner2_interacted_today ? "text-foreground" : "text-muted-foreground")}>
+                          {avatars.partner?.displayName || "Parceiro"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                          {streakData?.partner2_interacted_today ? "Interagiu ✨" : "Pendente ⏳"}
+                        </p>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-[10px] uppercase font-black tracking-tighter" disabled>
-                      {streakData?.partner2_interacted_today ? "Feito" : "Pendente"}
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -221,14 +261,32 @@ export default function Ranking() {
                         <span className="text-lg font-bold">{ch.emoji} {ch.challenge_text}</span>
                         <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{ch.points} PTS</span>
                       </div>
-                      <Button 
-                        className={cn("w-full h-11 font-black shadow-lg", completions[ch.id] ? "bg-green-500/20 text-green-500 shadow-none border-green-500/20" : "shadow-primary/20")}
-                        onClick={() => handleCompleteChallenge(ch.id)}
-                        disabled={completions[ch.id]}
-                        variant={completions[ch.id] ? "outline" : "default"}
-                      >
-                        {completions[ch.id] ? "Missão Cumprida! ✨" : "Completar Missão"}
-                      </Button>
+                      <div className="flex gap-2">
+                        {!completions[ch.id] && getChallengeUrl(ch.challenge_type) && (
+                          <Button 
+                            variant="outline"
+                            className="flex-1 h-11 font-black border-primary/20 hover:bg-primary/5"
+                            onClick={() => {
+                              setAttemptedChallenges(prev => ({ ...prev, [ch.id]: true }));
+                              navigate(getChallengeUrl(ch.challenge_type)!);
+                            }}
+                          >
+                            Ir para a Missão 🚀
+                          </Button>
+                        )}
+                        <Button 
+                          className={cn(
+                            "h-11 font-black shadow-lg", 
+                            completions[ch.id] ? "flex-1 bg-green-500/20 text-green-500 shadow-none border-green-500/20" : 
+                            (getChallengeUrl(ch.challenge_type) && !attemptedChallenges[ch.id] ? "w-1/3 opacity-50" : "flex-1 shadow-primary/20")
+                          )}
+                          onClick={() => handleCompleteChallenge(ch.id)}
+                          disabled={completions[ch.id]}
+                          variant={completions[ch.id] ? "outline" : "default"}
+                        >
+                          {completions[ch.id] ? "Missão Cumprida! ✨" : "Concluir Missão"}
+                        </Button>
+                      </div>
                       {partnerCompletions[ch.id] && (
                         <p className="text-[10px] text-center text-muted-foreground italic">
                           O teu parceiro já completou esta tarefa! 🙌

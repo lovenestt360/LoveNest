@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useRelationshipStreak } from "@/hooks/useRelationshipStreak";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
 import { cn } from "@/lib/utils";
 
@@ -330,7 +330,8 @@ const Index = () => {
   const time = useTimeTogether();
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
-  const { streak } = useRelationshipStreak();
+  const { data: streakData } = useLoveStreak();
+  const streak = streakData?.current_streak ?? 0;
 
   const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
 
