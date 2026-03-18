@@ -44,17 +44,30 @@ export function useRoutineItems(userId?: string) {
     const activeItems = items.filter(i => i.active);
 
     const addItem = useCallback(async (title: string, emoji?: string) => {
-        if (!user || !spaceId) return;
-        const maxPos = items.length > 0 ? Math.max(...items.map(i => i.position)) + 1 : 0;
+        if (!user || !spaceId || typeof spaceId !== 'string') {
+            console.warn("AddItem cancelado: user ou spaceId inválido", { user: !!user, spaceId });
+            return;
+        }
+
+        const maxPos = items.length > 0 
+            ? Math.max(...items.map(i => typeof i.position === 'number' ? i.position : 0)) + 1 
+            : 0;
+
         const { error } = await supabase.from("routine_items").insert({
             user_id: user.id,
             couple_space_id: spaceId,
             title,
             emoji: emoji || null,
-            position: maxPos,
+            position: isNaN(maxPos) ? 0 : maxPos,
         });
+
         if (error) {
-            toast({ title: "Erro ao adicionar hábito", variant: "destructive" });
+            console.error("Erro ao adicionar hábito no Supabase:", error);
+            toast({ 
+                title: "Erro ao adicionar hábito", 
+                description: error.message,
+                variant: "destructive" 
+            });
         } else {
             toast({ title: "Hábito adicionado ✓" });
             notifyPartner({
