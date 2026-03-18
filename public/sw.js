@@ -1,10 +1,11 @@
-const CACHE_NAME = "dk-cache-v4";
+const CACHE_NAME = "dk-cache-v5";
 const OFFLINE_URL = "/offline.html";
+const APP_SHELL = ["/", "/index.html", "/manifest.json", OFFLINE_URL];
 
-// Pre-cache the offline page on install
+// Pre-cache the app shell on install
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
   self.skipWaiting();
 });
