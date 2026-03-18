@@ -11,6 +11,7 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -19,7 +20,13 @@ export default function Signup() {
   // Capture referral code from URL
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref) sessionStorage.setItem("lovenest_ref", ref);
+    if (ref) {
+      setInviteCode(ref);
+      sessionStorage.setItem("lovenest_ref", ref);
+    } else {
+      const storedRef = sessionStorage.getItem("lovenest_ref");
+      if (storedRef) setInviteCode(storedRef);
+    }
   }, [searchParams]);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -33,6 +40,7 @@ export default function Signup() {
         options: {
           data: {
             display_name: displayName,
+            referred_by_code: inviteCode || undefined,
           },
           emailRedirectTo: window.location.origin + "/casa",
         },
@@ -99,6 +107,19 @@ export default function Signup() {
                 required
                 minLength={6}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inviteCode">Código de Convite (Opcional)</Label>
+              <Input
+                id="inviteCode"
+                type="text"
+                placeholder="Ex: LOVENEST123"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+              />
+              <p className="text-[10px] text-muted-foreground italic">
+                Usa um código e ganha 100 pontos iniciais! ✨
+              </p>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Criando conta..." : "Criar conta"}

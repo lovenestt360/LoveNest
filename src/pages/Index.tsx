@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight, Megaphone, Trophy, Clock, Sparkles
+  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -150,6 +150,19 @@ function useMessagePreview() {
       });
   }, [spaceId, user]);
   return preview;
+}
+
+function useReferralCode() {
+  const { user } = useAuth();
+  const [code, setCode] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("referral_code").eq("user_id", user.id).single()
+      .then(({ data }) => {
+        if (data?.referral_code) setCode(data.referral_code);
+      });
+  }, [user]);
+  return code;
 }
 
 /* ── Fasting mini-hook (Home only) ── */
@@ -332,6 +345,27 @@ const Index = () => {
   const fasting = useFastingHome();
   const cycle = useCycleHome();
   const announcements = useGlobalAnnouncements();
+  const referralCode = useReferralCode();
+
+  const handleShare = () => {
+    if (!referralCode) return;
+    const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
+    const message = `Vem construir o teu ninho no LoveNest! Usa o meu código ${referralCode} e ganha 100 pontos iniciais. 💕\n${shareUrl}`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'Convite LoveNest',
+        text: message,
+        url: shareUrl,
+      });
+    } else {
+      navigator.clipboard.writeText(message);
+      toast({
+        title: "Mensagem copiada!",
+        description: "Partilha o link com os teus amigos para ganhares pontos.",
+      });
+    }
+  };
 
   // Easter countdown
   const easterStr = getEasterDate();
@@ -486,6 +520,27 @@ const Index = () => {
           )}
         </div>
       </button>
+
+      {/* ── Referral Section ── */}
+      <div className="glass-card overflow-hidden bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 border border-primary/20 rounded-2xl">
+        <div className="p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
+              <Share2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold">Convidar Amigos</h4>
+              <p className="text-[10px] text-muted-foreground">Ganha 50 pontos por convite! 💰</p>
+            </div>
+          </div>
+          <button
+            onClick={handleShare}
+            className="bg-primary text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+          >
+            Convidar
+          </button>
+        </div>
+      </div>
 
       {/* ── Ciclo Featured Card ── */}
       {(cycle.profile || cycle.isMale) && (

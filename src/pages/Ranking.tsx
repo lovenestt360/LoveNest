@@ -5,7 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { useDailyChallenge } from "@/hooks/useDailyChallenge";
-import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, TrendingUp, Coins, LayoutList, Target, ShoppingBag } from "lucide-react";
+import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,7 @@ export default function Ranking() {
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [tasksCompleted, setTasksCompleted] = useState(0);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -83,6 +84,22 @@ export default function Ranking() {
         .then(({ count }) => setTasksCompleted(count || 0));
     }
   }, [spaceId]);
+
+  useEffect(() => {
+    if (user) {
+      supabase.from("profiles").select("referral_code").eq("user_id", user.id).single()
+        .then(({ data }) => {
+          if (data?.referral_code) setReferralCode(data.referral_code);
+        });
+    }
+  }, [user]);
+
+  const handleCopyCode = () => {
+    if (referralCode) {
+      navigator.clipboard.writeText(referralCode);
+      toast.success("Código copiado! 🚀");
+    }
+  };
 
   const handleBuyShield = async () => {
     if (!streakData || streakData.total_points < 50) {
@@ -287,7 +304,30 @@ export default function Ranking() {
         {/* TAB: PONTOS */}
         {activeTab === "points" && (
           <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="glass-card rounded-2xl p-6 border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                      <Share2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">Convida e Ganha! 💰</h3>
+                      <p className="text-sm text-muted-foreground leading-snug">Cada amigo que entrar ganha 100 pontos e tu ganhas 50!</p>
+                    </div>
+                  </div>
+                  
+                  {referralCode && (
+                    <div className="flex items-center gap-2 bg-background/50 p-2 rounded-xl border self-start md:self-auto">
+                      <span className="font-mono font-bold px-3 text-primary">{referralCode}</span>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleCopyCode}>
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-center">
               <div className="glass-card rounded-3xl p-6 bg-primary/5 border-primary/10">
                 <p className="text-3xl font-black text-primary tracking-tighter">{streakData?.total_points || 0}</p>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Meus Pontos</p>
