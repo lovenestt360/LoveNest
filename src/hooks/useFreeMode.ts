@@ -17,18 +17,30 @@ export function useFreeMode() {
       return;
     }
 
-    (supabase as any)
-      .from("app_settings")
-      .select("value")
-      .eq("key", "free_mode")
-      .maybeSingle()
-      .then(({ data }: any) => {
-        const val = data?.value === "true";
-        cachedValue = val;
-        cacheTimestamp = Date.now();
-        setFreeMode(val);
-        setLoading(false);
-      });
+    const fetchStatus = () => {
+      (supabase as any)
+        .from("app_settings")
+        .select("value")
+        .eq("key", "free_mode")
+        .maybeSingle()
+        .then(({ data, error }: any) => {
+          if (error) {
+            setLoading(false);
+            return;
+          }
+          const val = data?.value === "true";
+          cachedValue = val;
+          cacheTimestamp = Date.now();
+          setFreeMode(val);
+          setLoading(false);
+        });
+    };
+
+    fetchStatus();
+    
+    // Check every 30s as a fallback for sync
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return { freeMode, loading };

@@ -7,12 +7,14 @@ import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
     CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
-    Sparkles, Calendar
+    Sparkles, Calendar, Coins, Target
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+
+import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 
 function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminToken: string | null }) {
     const [freeMode, setFreeMode] = useState(false);
@@ -22,8 +24,10 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
     useEffect(() => {
         adminClient.from("app_settings").select("value").eq("key", "free_mode").maybeSingle()
-            .then(({ data }: any) => {
-                setFreeMode(data?.value === "true");
+            .then(({ data, error }: any) => {
+                if (!error) {
+                    setFreeMode(data?.value === "true");
+                }
                 setLoadingFM(false);
             });
     }, [adminClient]);
@@ -31,7 +35,12 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
     const handleToggle = async (checked: boolean) => {
         try {
             setTogglingFM(true);
-            const { error } = await adminClient.from("app_settings").update({ value: checked ? "true" : "false", updated_at: new Date().toISOString() }).eq("key", "free_mode");
+            const { error } = await adminClient.from("app_settings").upsert({ 
+                key: "free_mode",
+                value: checked ? "true" : "false", 
+                updated_at: new Date().toISOString() 
+            }, { onConflict: 'key' });
+            
             if (error) throw error;
 
             // Log the action
@@ -40,6 +49,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
                 action: checked ? "activated" : "deactivated"
             });
 
+            invalidateFreeModeCache();
             setFreeMode(checked);
             toast({ title: checked ? "Free Mode Ativado" : "Free Mode Desativado", description: checked ? "Todas as funcionalidades estão agora gratuitas." : "O sistema de subscrições foi reativado." });
         } catch (error: any) {
@@ -78,7 +88,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "wrapped">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped">("overview");
     const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -559,6 +569,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "streaks" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("streaks")}>
                         <Flame className="w-4 h-4" /> <span className="hidden md:inline">Streaks</span>
+                    </Button>
+                    <Button variant={tab === "points" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("points")}>
+                        <Coins className="w-4 h-4" /> <span className="hidden md:inline">Pontos</span>
                     </Button>
                     <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
                         <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
@@ -1062,6 +1075,86 @@ export default function Admin() {
                                         {streaks.length === 0 && (
                                             <tr>
                                                 <td colSpan={6} className="p-4 text-center text-muted-foreground">Nenhum streak registado ainda.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* POINTS TAB */}
+                {tab === "points" && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Coins className="w-6 h-6 text-primary" /> LovePoints - Ranking Global</h2>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Coins className="w-6 h-6 text-primary mb-4" />
+                                <span className="text-3xl font-black">
+                                    {streaks.reduce((acc, s) => acc + (s.total_points || 0), 0)}
+                                </span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Total de Pontos</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <TrendingUp className="w-6 h-6 text-green-500 mb-4" />
+                                <span className="text-3xl font-black">
+                                    {streaks.length > 0 ? Math.round(streaks.reduce((acc, s) => acc + (s.total_points || 0), 0) / streaks.length) : 0}
+                                </span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Média / Casal</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Trophy className="w-6 h-6 text-primary mb-4" />
+                                <span className="text-3xl font-black">
+                                    {streaks.length > 0 ? Math.max(...streaks.map(s => s.total_points || 0)) : 0}
+                                </span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Recorde Pontos</span>
+                            </div>
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
+                                <Target className="w-6 h-6 text-blue-500 mb-4" />
+                                <span className="text-3xl font-black">
+                                    {streaks.filter(s => (s.total_points || 0) > 100).length}
+                                </span>
+                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Casais +100 Pts</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-muted/50 border-b">
+                                        <tr>
+                                            <th className="p-4 font-bold text-muted-foreground">#</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Casa</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Pontos Totais</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Nível Atual</th>
+                                            <th className="p-4 font-bold text-muted-foreground">Melhor Streak</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {[...streaks]
+                                            .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
+                                            .map((s, i) => {
+                                                const house = houses.find(h => h.id === s.couple_space_id);
+                                                const medals = ["🥇", "🥈", "🥉"];
+                                                return (
+                                                    <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                                                        <td className="p-4 font-bold">{i < 3 ? medals[i] : i + 1}</td>
+                                                        <td className="p-4 font-medium">{house?.house_name || "LoveNest"}</td>
+                                                        <td className="p-4">
+                                                            <span className="font-bold text-primary flex items-center gap-1">
+                                                                <Coins className="w-4 h-4" /> {s.total_points || 0}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-xs font-bold">{s.level_title}</td>
+                                                        <td className="p-4 text-xs font-medium text-muted-foreground">{s.best_streak} Dias</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        {streaks.length === 0 && (
+                                            <tr>
+                                                <td colSpan={5} className="p-4 text-center text-muted-foreground">Nenhum registo de pontos disponível.</td>
                                             </tr>
                                         )}
                                     </tbody>
