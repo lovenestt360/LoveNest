@@ -1,6 +1,13 @@
-const CACHE_NAME = "dk-cache-v5";
+const CACHE_NAME = "dk-cache-v6";
 const OFFLINE_URL = "/offline.html";
-const APP_SHELL = ["/", "/index.html", "/manifest.json", OFFLINE_URL];
+const APP_SHELL = [
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png",
+  OFFLINE_URL
+];
 
 // Pre-cache the app shell on install
 self.addEventListener("install", (event) => {
@@ -20,87 +27,79 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first for navigations, cache-first for assets
+// Stale-While-Revalidate Strategy
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip cross-origin and non-GET requests
+  if (request.method !== "GET" || !url.origin.includes(self.location.origin)) {
+    return;
+  }
+
+  // Handle Navigations (HTML)
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+      fetch(request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          return response;
+        })
+        .catch(() => caches.match(request) || caches.match(OFFLINE_URL))
     );
     return;
   }
 
-  if (
-    event.request.destination === "style" ||
-    event.request.destination === "script" ||
-    event.request.destination === "image" ||
-    event.request.destination === "font"
-  ) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request)
-          .then((response) => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-            }
-            return response;
-          })
-          .catch(() => new Response("", { status: 408 }));
-      })
-    );
-    return;
-  }
-
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  // Handle Static Assets (JS, CSS, Images, Fonts)
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const networked = fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached); // Fallback to cached if net fails
+        
+      return cached || networked; // Return cached fast, or wait for networked
+    })
+  );
 });
 
 // Push notification handler
 self.addEventListener("push", (event) => {
-  console.log("Push event received", event);
-  let data = { title: "LoveNest", body: "", icon: "/icon-192.png", data: { url: "/chat" } };
+  let data = { title: "LoveNest", body: "Nova atualização no LoveNest", icon: "/icon-192.png", data: { url: "/chat" } };
   try {
     if (event.data) {
       data = { ...data, ...event.data.json() };
-      console.log("Push data parsed:", data);
     }
   } catch (e) {
     console.error("Error parsing push data:", e);
   }
 
-  // Update App Badge if supported
-  if ('setAppBadge' in navigator) {
-    if (data.badge_count !== undefined) {
-      navigator.setAppBadge(data.badge_count).catch(console.error);
-    } else {
-      // If no count provided, just ensure it's at least visible (or we could try to increment if we had state)
-      // navigator.setAppBadge(1).catch(console.error);
-    }
-  }
-
   const options = {
-    body: data.body || "Nova atualização no LoveNest",
-    icon: data.icon || "/icon-192.png",
+    body: data.body,
+    icon: data.icon,
     badge: data.badge || "/icon-192.png",
-    data: data.data || { url: "/chat" },
+    data: data.data,
     vibrate: [200, 100, 200],
-    tag: data.tag || 'lovenest-notif', // Use tags to group same-type notifications
+    tag: data.tag || 'lovenest-notif',
     renotify: true,
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || "LoveNest", options)
+    self.registration.showNotification(data.title, options)
   );
 });
 
-// Click on notification → open the correct route
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetPath = event.notification.data?.url || "/";
-
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      // Try to find an existing window and navigate it
       for (const client of clients) {
         if ("focus" in client) {
           client.focus();
@@ -108,9 +107,7 @@ self.addEventListener("notificationclick", (event) => {
           return;
         }
       }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetPath);
-      }
+      if (self.clients.openWindow) return self.clients.openWindow(targetPath);
     })
   );
 });
