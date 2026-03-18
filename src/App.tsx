@@ -64,6 +64,7 @@ const App = () => (
                 {/* Public routes */}
                 <Route path="/entrar" element={<Login />} />
                 <Route path="/criar-conta" element={<Signup />} />
+                <Route path="/signup" element={<Signup />} />
 
                 {/* Auth-only routes (login required, sem pareamento obrigatório) */}
                 <Route element={<AuthOnlyRoute />}>
