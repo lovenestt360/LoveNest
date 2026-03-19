@@ -164,7 +164,8 @@ input, textarea, [contenteditable="true"] {
   }
   
   .glass-btn-primary {
-    @apply relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 backdrop-blur-md text-primary transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 active:scale-95 shadow-glow-sm;
+    @apply relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 backdrop-blur-md text-primary transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 active:scale-95 shadow-md;
+    box-shadow: var(--gradient-glow);
   }
 
   .apple-dock {
