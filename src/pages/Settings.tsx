@@ -240,16 +240,59 @@ export default function Settings() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    setUploading(true);
-    const path = `${user.id}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (!error) {
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-      setAvatarUrl(urlData.publicUrl);
-      await supabase.from("profiles").update({ avatar_url: urlData.publicUrl }).eq("user_id", user.id);
-      toast({ title: "Avatar atualizado ✨" });
+
+    // Validate size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Arquivo muito grande", description: "O limite é de 5MB por foto.", variant: "destructive" });
+      return;
     }
-    setUploading(false);
+
+    setUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const path = `${user.id}/${Date.now()}.${fileExt}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      setAvatarUrl(publicUrl);
+      
+      const { error: profileError } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
+      if (profileError) throw profileError;
+
+      toast({ title: "Avatar atualizado! ✨", description: "A tua nova foto de perfil já está visível." });
+    } catch (error: any) {
+      console.error("Avatar upload error:", error);
+      toast({ 
+        title: "Erro no upload", 
+        description: error.message || "Tenta novamente ou usa uma foto mais pequena.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleWallpaperUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadWallpaper(file);
+      if (url) {
+        await updateWallpaper({ url });
+        toast({ title: "Wallpaper atualizado! 🖼️" });
+      } else {
+        throw new Error("Erro no upload");
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const toggleNotif = (key: string) => {
@@ -407,7 +450,7 @@ export default function Settings() {
                 <div className="relative">
                   <Avatar className="h-24 w-24 ring-4 ring-primary/10 shadow-lg">{avatarUrl && <AvatarImage src={avatarUrl} />}<AvatarFallback className="text-2xl">{initials}</AvatarFallback></Avatar>
                   <label htmlFor="av-up" className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}</label>
-                  <input id="av-up" type="file" hidden onChange={handleAvatarChange} />
+                  <input id="av-up" type="file" hidden accept="image/*" onChange={handleAvatarChange} />
                 </div>
               </div>
               <div className="space-y-4 glass-card p-6">
@@ -473,13 +516,13 @@ export default function Settings() {
           {currentCategory === 'customization' && (
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
-                <h3 className="font-bold">Chat Wallpaper</h3>
+                <h3 className="font-bold">Papel de Parede</h3>
                 {wallpaperUrl ? (
                   <div className="relative aspect-video rounded-xl overflow-hidden group"><img src={wallpaperUrl} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center"><Button variant="destructive" size="sm" onClick={removeWallpaper}>Remover</Button></div></div>
                 ) : <div className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center bg-muted/20"><ImageIcon className="text-muted-foreground/30 h-8 w-8" /></div>}
-                <div className="space-y-2"><Label>Opacidade ({Math.round(wallpaperOpacity * 100)}%)</Label><Slider value={[wallpaperOpacity]} max={1} step={0.1} onValueChange={([v]) => updateWallpaper({ wallpaper_opacity: v })} /></div>
+                <div className="space-y-2"><Label>Opacidade ({Math.round(wallpaperOpacity * 100)}%)</Label><Slider value={[wallpaperOpacity]} max={1} step={0.1} onValueChange={([v]) => updateWallpaper({ opacity: v })} /></div>
                 <Button asChild className="w-full h-12 font-bold" variant="secondary"><label htmlFor="w-up"><Camera className="mr-2" /> Escolher Imagem</label></Button>
-                <input id="w-up" type="file" hidden onChange={uploadWallpaper} />
+                <input id="w-up" type="file" hidden accept="image/*" onChange={handleWallpaperUpload} />
               </div>
             </div>
           )}

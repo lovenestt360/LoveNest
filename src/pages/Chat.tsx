@@ -303,7 +303,7 @@ export default function Chat() {
   const { resetChatUnread } = useAppNotifContext();
   const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
-  const { wallpaperUrl, wallpaperOpacity, updateWallpaper } = useSharedWallpaper();
+  const { wallpaperUrl, wallpaperOpacity } = useSharedWallpaper();
   const [openSettings, setOpenSettings] = useState(false);
   const [tempWallpaperUrl, setTempWallpaperUrl] = useState("");
   const [tempOpacity, setTempOpacity] = useState(30);
@@ -581,16 +581,6 @@ export default function Chat() {
 
   return (
     <section className="relative flex flex-col overflow-hidden" style={{ height: "calc(100dvh - 7rem)" }}>
-
-      {/* ── Wallpaper (fixed, behind everything, full screen) ── */}
-      {wallpaperUrl && (
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${wallpaperUrl})`, opacity: wallpaperOpacity }}
-          />
-        </div>
-      )}
 
       {/* ── Header ── */}
       <header className="relative z-20 shrink-0 flex items-center gap-2 px-3 pt-3 pb-1 pointer-events-none">

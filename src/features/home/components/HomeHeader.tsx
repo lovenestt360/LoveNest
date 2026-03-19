@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 interface HomeHeaderProps {
   me: { avatarUrl?: string | null; displayName?: string | null } | null;
@@ -8,11 +9,16 @@ interface HomeHeaderProps {
 }
 
 export function HomeHeader({ me, partner, today }: HomeHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <header className="space-y-4 pt-2 text-center w-full">
       <div className="flex items-center justify-center gap-3 md:gap-8 px-2">
         <div className="relative shrink-0">
-          <Avatar className="h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500">
+          <Avatar 
+            className="h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500 cursor-pointer"
+            onClick={() => navigate("/configuracoes")}
+          >
             {me?.avatarUrl ? (
               <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />
             ) : null}
@@ -34,7 +40,10 @@ export function HomeHeader({ me, partner, today }: HomeHeaderProps) {
         </div>
 
         <div className="relative shrink-0">
-          <Avatar className="h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500">
+          <Avatar 
+            className="h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500 cursor-pointer"
+            onClick={() => navigate("/configuracoes")}
+          >
             {partner?.avatarUrl ? (
               <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />
             ) : null}

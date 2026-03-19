@@ -2,15 +2,29 @@ import { Outlet } from "react-router-dom";
 import { BottomTabs } from "@/app/layout/BottomTabs";
 import { Fab } from "@/app/layout/Fab";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { WifiOff } from "lucide-react";
 
 export function AppShell() {
   const isOnline = useOnlineStatus();
+  const { wallpaperUrl, wallpaperOpacity } = useUserSettings();
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground relative">
+    <div className="min-h-[100dvh] bg-background text-foreground relative overflow-x-hidden">
       {/* Dynamic Background Mesh */}
       <div className="bg-mesh" aria-hidden="true" />
+
+      {/* Global Wallpaper */}
+      {wallpaperUrl && (
+        <div 
+          className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center transition-opacity duration-700"
+          style={{ 
+            backgroundImage: `url(${wallpaperUrl})`, 
+            opacity: wallpaperOpacity 
+          }}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Offline Indicator */}
       {!isOnline && (

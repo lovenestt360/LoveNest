@@ -66,21 +66,21 @@ export default function Signup() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 overflow-hidden bg-white py-12">
-      <div className="bg-mesh opacity-30" />
+    <div className="relative flex min-h-screen items-center justify-center px-4 overflow-hidden bg-black text-white py-12">
+      <div className="bg-mesh opacity-60" />
 
       <div className="w-full max-w-lg animate-fade-in space-y-8 relative z-10">
         <div className="text-center space-y-4">
-            <div className="inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-2xl mb-2 border-2 border-primary/20">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white/10 backdrop-blur-xl shadow-2xl mb-2 border border-white/20">
                 <Heart className="h-10 w-10 text-primary fill-primary animate-pulse" />
             </div>
             <div className="space-y-1">
-                <h1 className="text-5xl font-black tracking-tighter text-foreground">Inicia o Ninho</h1>
-                <p className="text-xs font-black text-primary uppercase tracking-[0.3em]">A tua jornada romântica começa aqui</p>
+                <h1 className="text-5xl font-black tracking-tighter text-white drop-shadow-lg">Inicia o Ninho</h1>
+                <p className="text-xs font-black text-primary uppercase tracking-[0.3em] drop-shadow-sm">A tua jornada romântica começa aqui</p>
             </div>
         </div>
 
-        <div className="glass-card rounded-[3rem] p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border-white/80 bg-white/70 backdrop-blur-3xl space-y-8">
+        <div className="glass-card rounded-[3rem] p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] border-white/20 bg-white/5 backdrop-blur-3xl space-y-8">
           <form onSubmit={handleSignup} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2.5">
@@ -94,7 +94,7 @@ export default function Signup() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
-                  className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
+                  className="h-14 rounded-2xl bg-white/5 border-white/10 focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all font-bold placeholder:text-zinc-500 text-white"
                 />
               </div>
               <div className="space-y-2.5">
@@ -108,7 +108,7 @@ export default function Signup() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
+                  className="h-14 rounded-2xl bg-white/5 border-white/10 focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all font-bold placeholder:text-zinc-500 text-white"
                 />
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
+                className="h-14 rounded-2xl bg-white/5 border-white/10 focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all font-bold placeholder:text-zinc-500 text-white"
               />
             </div>
 
@@ -139,7 +139,7 @@ export default function Signup() {
                 placeholder="Ex: AMOR2024"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
+                className="h-14 rounded-2xl bg-white/5 border-white/10 focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all font-bold placeholder:text-zinc-500 text-white"
               />
               <p className="text-[10px] text-primary font-black italic px-2">
                 Ganha 100 pontos iniciais para usares na loja! ✨
@@ -155,13 +155,13 @@ export default function Signup() {
             </button>
           </form>
 
-          <div className="pt-8 text-center border-t border-zinc-100">
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-4">Já tens o teu lugar?</p>
+          <div className="pt-8 text-center border-t border-white/10">
+            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4">Já tens o teu lugar?</p>
             <button 
                 onClick={() => navigate("/entrar")}
                 className="group flex items-center justify-center mx-auto gap-2 text-sm font-black text-primary hover:scale-105 transition-transform"
             >
-              Entrar aqui <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+              Entrar aqui <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform shadow-glow-sm" />
             </button>
           </div>
         </div>
