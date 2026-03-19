@@ -324,7 +324,7 @@ const Index = () => {
 
       {/* ── Featured Destaques ── */}
       <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2 flex items-center gap-2">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2">
            <Compass className="w-3 h-3" /> Em Destaque
         </h2>
         
@@ -403,7 +403,7 @@ const Index = () => {
 
       {/* ── Nossa Vida Section ── */}
       <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2">
           🏠 Nossa Vida
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -456,7 +456,7 @@ const Index = () => {
 
       {/* ── Crescimento & Diversão ── */}
       <div className="space-y-4 pb-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2">
           ✨ Crescimento
         </h2>
         <div className="grid grid-cols-2 gap-4">

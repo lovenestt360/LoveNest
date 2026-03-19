@@ -28,7 +28,7 @@ export function HomeHeader({ me, partner, today }: HomeHeaderProps) {
             <span className="text-2xl md:text-3xl font-black tracking-tighter gradient-text">LoveNest</span>
             <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
           </div>
-          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-muted-foreground/40 whitespace-nowrap">
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-muted-foreground/70 whitespace-nowrap">
             {today}
           </p>
         </div>

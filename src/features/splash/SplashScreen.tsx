@@ -15,15 +15,32 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        // Try getting initials from space
-        const { data: member } = await supabase.from("members").select("couple_space_id").eq("user_id", session.user.id).maybeSingle();
+        // Try getting initials from space - refined query
+        const { data: member, error: memberError } = await supabase
+          .from("members")
+          .select("couple_space_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (memberError) console.error("Splash: Error fetching member", memberError);
+
         if (member?.couple_space_id) {
-          const { data: house } = await supabase.from("couple_spaces").select("initials, partner1_name, partner2_name").eq("id", member.couple_space_id).maybeSingle();
+          const { data: house, error: houseError } = await supabase
+            .from("couple_spaces")
+            .select("initials, partner1_name, partner2_name")
+            .eq("id", member.couple_space_id)
+            .maybeSingle();
+
+          if (houseError) console.error("Splash: Error fetching house", houseError);
+
           if (house && mounted) {
             if (house.initials) {
               setInitials(house.initials);
             } else if (house.partner1_name && house.partner2_name) {
-              setInitials(`${house.partner1_name[0]}${house.partner2_name[0]}`);
+              // Construct initials if missing from field
+              const i1 = house.partner1_name[0] || "";
+              const i2 = house.partner2_name[0] || "";
+              setInitials(`${i1}${i2}`);
             }
           }
         } else {
@@ -34,16 +51,16 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
           }
         }
       } catch (err) {
-        // ignore
+        console.error("Splash: fetchInfo exception", err);
       }
     }
 
     fetchInfo();
 
-    // Sequence for premium feel
-    const tInitials = setTimeout(() => setShowInitials(true), 1200);
-    const tFade = setTimeout(() => setFadeOut(true), 2800);
-    const tDone = setTimeout(onDone, 3300);
+    // Sequence for premium feel - adjusted timings for better perceived performance
+    const tInitials = setTimeout(() => setShowInitials(true), 800);
+    const tFade = setTimeout(() => setFadeOut(true), 2500);
+    const tDone = setTimeout(onDone, 3200);
 
     return () => {
       mounted = false;
@@ -55,47 +72,46 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${
         fadeOut ? "opacity-0 scale-105 pointer-events-none" : "opacity-100 scale-100"
       }`}
       style={{ 
-        background: "radial-gradient(circle at center, #1a0a0a 0%, #050505 100%)",
+        background: "radial-gradient(circle at center, #0a0a0a 0%, #000 100%)",
       }}
     >
-      {/* Background glow animation */}
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,var(--tw-gradient-from)_0%,transparent_70%)] from-rose-900/40 animate-pulse pointer-events-none" />
+      {/* Background glow animation - cleaner rose */}
+      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] animate-pulse pointer-events-none filter blur-3xl" />
 
       <div className="relative flex flex-col items-center justify-center scale-100 group">
-        {/* Animated Heart with scaling and glow */}
-        <div className="relative mb-4 flex h-24 w-24 items-center justify-center animate-in zoom-in duration-1000 ease-out">
-          <div className="absolute inset-0 rounded-full bg-rose-600/20 blur-2xl animate-pulse" />
-          <div className="absolute inset-0 rounded-full border border-rose-500/10 scale-150 animate-ping opacity-20" />
+        <div className="relative mb-6 flex h-28 w-28 items-center justify-center animate-in zoom-in duration-700 ease-out">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl animate-pulse" />
+          <div className="absolute inset-0 rounded-full border border-primary/20 scale-125 animate-ping opacity-10" />
           
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-rose-500 to-rose-700 shadow-[0_0_40px_rgba(225,29,72,0.4)] transition-transform duration-1000 group-hover:scale-110">
-            <Heart className="h-10 w-10 text-white fill-white animate-pulse" />
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-primary to-[#be123c] shadow-[0_0_50px_rgba(225,29,72,0.4)] transition-all duration-700 group-hover:scale-110">
+            <Heart className="h-12 w-12 text-white fill-white animate-pulse" />
           </div>
         </div>
 
-        <div className="text-center overflow-hidden">
-          <h1 className="text-5xl font-black tracking-tighter text-white drop-shadow-2xl animate-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both">
+        <div className="text-center overflow-hidden space-y-3">
+          <h1 className="text-5xl font-black tracking-tighter text-white drop-shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
             LoveNest
           </h1>
           
-          <div className={`mt-4 transition-all duration-1000 ${showInitials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <div className={`transition-all duration-1000 delay-500 ${showInitials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             {initials ? (
-              <p className="text-xs font-bold tracking-[0.3em] text-rose-500/80 uppercase">
-                {initials.length > 1 ? `${initials[0]} ♥ ${initials[1]}` : initials}
+              <p className="text-sm font-black tracking-[0.4em] text-primary-foreground/90 uppercase drop-shadow">
+                {initials.length > 1 ? `${initials[0]} ♥ ${initials[initials.length - 1]}` : initials}
               </p>
             ) : (
-              <div className="h-1 w-12 bg-rose-500/30 rounded-full mx-auto animate-pulse" />
+              <div className="h-0.5 w-12 bg-primary/40 rounded-full mx-auto animate-pulse" />
             )}
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-12 flex flex-col items-center animate-in fade-in duration-1000 delay-1000 fill-mode-both">
-        <p className="text-[10px] tracking-widest text-zinc-500 font-medium uppercase mb-2">Para Casais Extraordinários</p>
-        <div className="h-0.5 w-6 bg-rose-500/20 rounded-full" />
+      <div className="absolute bottom-16 flex flex-col items-center animate-in fade-in duration-1000 delay-700 fill-mode-both">
+        <p className="text-[9px] tracking-[0.4em] text-zinc-400 font-black uppercase mb-3">Para Casais Extraordinários</p>
+        <div className="h-0.5 w-8 bg-primary/40 rounded-full" />
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
         <span className="text-[15px] font-bold text-foreground block tracking-tight">{title}</span>
         <div className="space-y-0.5">
           {lines.map((line, i) => (
-            <p key={i} className="text-[11px] text-muted-foreground/80 leading-tight font-medium line-clamp-1">
+            <p key={i} className="text-[11px] text-muted-foreground leading-tight font-bold line-clamp-1">
               {line}
             </p>
           ))}
