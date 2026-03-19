@@ -19,7 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, Moon, Sun, Laptop } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 import {
   Select,
   SelectContent,
@@ -81,7 +82,9 @@ export default function Settings() {
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper, uploadWallpaper, removeWallpaper } = useUserSettings();
 
-  const [loading, setLoading] = useState(true);
+  const { theme, setTheme } = useTheme();
+  
+  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, birthday: null, gender: null });
   const [saving, setSaving] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
@@ -515,6 +518,36 @@ export default function Settings() {
 
           {currentCategory === 'customization' && (
             <div className="space-y-6">
+              <div className="glass-card p-6 space-y-4">
+                <h3 className="font-bold">Aparência</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button 
+                    variant={theme === "light" ? "default" : "outline"} 
+                    className="flex flex-col h-20 gap-2 rounded-2xl" 
+                    onClick={() => setTheme("light")}
+                  >
+                    <Sun className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase">Claro</span>
+                  </Button>
+                  <Button 
+                    variant={theme === "dark" ? "default" : "outline"} 
+                    className="flex flex-col h-20 gap-2 rounded-2xl" 
+                    onClick={() => setTheme("dark")}
+                  >
+                    <Moon className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase">Escuro</span>
+                  </Button>
+                  <Button 
+                    variant={theme === "system" ? "default" : "outline"} 
+                    className="flex flex-col h-20 gap-2 rounded-2xl" 
+                    onClick={() => setTheme("system")}
+                  >
+                    <Laptop className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase">Sistema</span>
+                  </Button>
+                </div>
+              </div>
+
               <div className="glass-card p-6 space-y-4">
                 <h3 className="font-bold">Papel de Parede</h3>
                 {wallpaperUrl ? (
