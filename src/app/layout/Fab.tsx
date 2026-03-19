@@ -42,15 +42,15 @@ export function Fab() {
 
   return (
     <>
-      <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-50 md:right-8">
+      <div className="fixed bottom-24 right-5 z-50">
         <Button
           type="button"
           size="icon"
-          className="h-14 w-14 rounded-full shadow-lg glow-primary active:animate-tab-tap"
+          className="h-14 w-14 rounded-2xl shadow-xl bg-primary text-primary-foreground hover:scale-110 active:scale-90 transition-all duration-300 glow-primary"
           aria-label="Adicionar"
           onClick={handleClick}
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-7 w-7" />
         </Button>
       </div>
 

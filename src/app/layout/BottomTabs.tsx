@@ -90,10 +90,10 @@ export function BottomTabs() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-3 z-40 flex justify-center px-4"
+      className="apple-dock"
       aria-label="Navegação principal"
     >
-      <div className="glass-card w-full max-w-md rounded-2xl px-2 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-1.5">
+      <div className="w-full">
         <div className="grid grid-cols-5 gap-0.5">
           {mainTabs.map(({ to, label, Icon }) => (
             <TabItem

@@ -56,13 +56,18 @@ input, textarea, [contenteditable="true"] {
     --input: 330 18% 89%;
     --ring: 335 42% 32%;
 
-    --radius: 1rem;
+    --radius: 1.5rem;
 
-    /* Romantic gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(335 42% 32%), hsl(345 55% 52%), hsl(15 75% 62%));
-    --gradient-primary-hover: linear-gradient(135deg, hsl(335 42% 28%), hsl(345 55% 48%), hsl(15 75% 58%));
-    --gradient-surface: linear-gradient(145deg, hsla(0,0%,100%,0.85), hsla(340,30%,97%,0.7));
-    --gradient-glow: 0 4px 24px -4px hsla(335,42%,32%,0.25);
+    /* Apple-style shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 20px 48px -12px rgba(0, 0, 0, 0.12);
+
+    /* Romantic gradients refined */
+    --gradient-primary: linear-gradient(135deg, #7c2d12, #9f1239, #be123c, #fb923c);
+    --gradient-premium: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    --gradient-surface: linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65));
+    --gradient-glow: 0 8px 32px -4px hsla(335,42%,32%,0.2);
     --gradient-gold: linear-gradient(135deg, hsl(28 75% 58%), hsl(38 80% 62%));
 
     --sidebar-background: 30 20% 97%;
@@ -135,24 +140,27 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
-/* Glass card utility */
+/* Glass card utility - Refined for Apple Style */
 @layer utilities {
   .glass-card {
     background: var(--gradient-surface);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.6);
-    box-shadow: 0 2px 16px -2px hsla(330, 20%, 20%, 0.06),
-                0 1px 4px -1px hsla(330, 20%, 20%, 0.04);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
   }
 
   .glass-card-hover {
-    transition: transform 200ms ease, box-shadow 200ms ease;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .glass-card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 28px -4px hsla(330, 20%, 20%, 0.1),
-                0 2px 8px -2px hsla(330, 20%, 20%, 0.06);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .apple-dock {
+    @apply glass-card fixed bottom-6 left-4 right-4 h-16 rounded-[2rem] flex items-center justify-around px-4 border border-white/20 shadow-2xl z-50;
   }
 
   .glow-primary {
@@ -164,6 +172,49 @@ input, textarea, [contenteditable="true"] {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    @apply font-black;
+  }
+
+  /* Animated background mesh */
+  .bg-mesh {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background-color: hsl(var(--background));
+  }
+
+  .bg-mesh::before, .bg-mesh::after {
+    content: "";
+    position: absolute;
+    width: 120vw;
+    height: 120vw;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    z-index: -1;
+    animation: mesh-float 20s infinite alternate ease-in-out;
+  }
+
+  .bg-mesh::before {
+    background: radial-gradient(circle, #fb7185 0%, transparent 70%);
+    top: -40%;
+    left: -20%;
+  }
+
+  .bg-mesh::after {
+    background: radial-gradient(circle, #fcd34d 0%, transparent 70%);
+    bottom: -40%;
+    right: -20%;
+    animation-delay: -10s;
+  }
+
+  @keyframes mesh-float {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(10%, 10%) scale(1.1); }
   }
 }
 

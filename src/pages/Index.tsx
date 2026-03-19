@@ -14,13 +14,18 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2
+  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+/* ── Components ── */
+import { DashCard } from "@/features/home/components/DashCard";
+import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
+import { HomeHeader } from "@/features/home/components/HomeHeader";
 
 /* ── data hooks ── */
 
@@ -165,8 +170,6 @@ function useReferralCode() {
   return code;
 }
 
-/* ── Fasting mini-hook (Home only) ── */
-
 function useFastingHome() {
   const { user } = useAuth();
   const [plan, setPlan] = useState<{
@@ -190,7 +193,6 @@ function useFastingHome() {
           end_date: profile.end_date,
           total_days: profile.total_days,
         });
-        // Get day logs
         supabase.from("fasting_day_logs" as any).select("day_key,result,finalized")
           .eq("user_id", user.id).eq("profile_id", profile.id)
           .then(({ data: logs }) => {
@@ -200,7 +202,6 @@ function useFastingHome() {
             setLoggedDays(finalized.length);
             const todayLog = (logs as any[]).find(l => l.day_key === today);
             setTodayResult(todayLog?.result ?? null);
-            // Streak
             let s = 0;
             const d = new Date();
             for (let i = 0; i < 100; i++) {
@@ -217,8 +218,6 @@ function useFastingHome() {
 
   return { plan, loggedDays, todayResult, streak };
 }
-
-/* ── Cycle mini-hook (Home only) ── */
 
 function useCycleHome() {
   const { user } = useAuth();
@@ -242,7 +241,6 @@ function useCycleHome() {
   return { profile, info, isMale };
 }
 
-/* ── Global Announcements ── */
 function useGlobalAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   useEffect(() => {
@@ -252,79 +250,6 @@ function useGlobalAnnouncements() {
   }, []);
   return announcements;
 }
-
-/* ── Time digit ── */
-
-function TimeUnit({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className="text-2xl font-extrabold tabular-nums text-foreground">
-        {String(value).padStart(2, "0")}
-      </span>
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
-/* ── Notification Badge ── */
-
-function NotifBadge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground shadow-sm">
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-}
-
-/* ── Dashboard Card ── */
-
-interface DashCardProps {
-  icon: React.ReactNode;
-  title: string;
-  lines: string[];
-  to: string;
-  badge?: number;
-  accent?: string;
-}
-
-function DashCard({ icon, title, lines, to, badge = 0, accent }: DashCardProps) {
-  const navigate = useNavigate();
-  return (
-    <button
-      onClick={() => navigate(to)}
-      className="glass-card glass-card-hover relative flex flex-col gap-2 rounded-2xl p-4 text-left w-full active:scale-[0.97] transition-transform duration-150"
-    >
-      <div className="flex items-center justify-between">
-        <div className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-xl",
-          accent ?? "bg-primary/10 text-primary"
-        )}>
-          {icon}
-        </div>
-        <NotifBadge count={badge} />
-      </div>
-      <span className="text-sm font-bold text-foreground">{title}</span>
-      {lines.map((line, i) => (
-        <p key={i} className="text-xs text-muted-foreground leading-snug line-clamp-1">
-          {line}
-        </p>
-      ))}
-    </button>
-  );
-}
-
-/* ── Phase colors for Cycle ── */
-
-const PHASE_COLORS: Record<string, string> = {
-  "Menstruação": "bg-red-500/15 text-red-700",
-  "Fértil": "bg-green-500/15 text-green-700",
-  "TPM": "bg-purple-500/15 text-purple-700",
-  "Folicular": "bg-blue-500/15 text-blue-700",
-  "Lútea": "bg-amber-500/15 text-amber-700",
-};
-
-/* ── Main ── */
 
 const Index = () => {
   const time = useTimeTogether();
@@ -354,26 +279,17 @@ const Index = () => {
     const message = `Vem construir o teu ninho no LoveNest! Usa o meu código ${referralCode} e ganha 100 pontos iniciais. 💕\n${shareUrl}`;
 
     if (navigator.share) {
-      navigator.share({
-        title: 'Convite LoveNest',
-        text: message,
-        url: shareUrl,
-      });
+      navigator.share({ title: 'Convite LoveNest', text: message, url: shareUrl });
     } else {
       navigator.clipboard.writeText(message);
-      toast({
-        title: "Mensagem copiada!",
-        description: "Partilha o link com os teus amigos para ganhares pontos.",
-      });
+      toast.success("Mensagem copiada para a área de transferência!");
     }
   };
 
-  // Easter countdown
   const easterStr = getEasterDate();
   const easterDate = new Date(easterStr + "T00:00:00");
   const daysToEaster = Math.max(0, differenceInDays(easterDate, new Date()));
 
-  // Fasting day number
   const fastingDayNumber = fasting.plan
     ? Math.max(1, differenceInDays(new Date(), new Date(fasting.plan.start_date + "T00:00:00")) + 1)
     : 0;
@@ -382,327 +298,220 @@ const Index = () => {
     : 0;
 
   return (
-    <section className="space-y-4 animate-fade-in pb-4">
-      {/* ── Emotional Header ── */}
-      <header className="space-y-3 pt-1 text-center">
-        <div className="flex items-center justify-center gap-3">
-          <Avatar className="h-10 w-10 ring-2 ring-primary/30">
-            {avatars.me?.avatarUrl ? (
-              <AvatarImage src={avatars.me.avatarUrl} alt="Eu" />
-            ) : null}
-            <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
-              {avatars.me?.displayName?.charAt(0)?.toUpperCase() ?? "L"}
-            </AvatarFallback>
-          </Avatar>
+    <section className="space-y-8 animate-fade-in pb-10">
+      {/* ── Premium Apple Header ── */}
+      <HomeHeader me={avatars.me} partner={avatars.partner} today={today} />
 
-          <div className="flex items-center gap-1.5">
-            <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
-            <h1 className="text-2xl font-extrabold tracking-tight gradient-text">LoveNest</h1>
-            <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
+      {/* ── Highlights & Status ── */}
+      <div className="space-y-4">
+        <TimeTogetherCard 
+          days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
+          streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
+        />
+
+        {/* Announcements */}
+        {announcements.map((ann) => (
+          <div key={ann.id} className="glass-card border-primary/20 bg-primary/5 text-primary p-4 rounded-3xl animate-in slide-in-from-top-4 shadow-sm">
+            <h3 className="font-black text-xs flex items-center gap-2 mb-1 uppercase tracking-widest">
+              <Megaphone className="w-3 h-3" /> {ann.title}
+            </h3>
+            <p className="text-sm font-medium">{ann.content}</p>
           </div>
+        ))}
 
-          <Avatar className="h-10 w-10 ring-2 ring-primary/30">
-            {avatars.partner?.avatarUrl ? (
-              <AvatarImage src={avatars.partner.avatarUrl} alt="Par" />
-            ) : null}
-            <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
-              {avatars.partner?.displayName?.charAt(0)?.toUpperCase() ?? "N"}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        <p className="text-xs text-muted-foreground capitalize">{today}</p>
+        <InstallBanner />
+      </div>
 
-        {time.startDate ? (
-          <div className="glass-card rounded-2xl p-4 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              <span>💕 Tempo juntos</span>
-              {streak > 0 && (
-                <span className="flex items-center gap-1 text-orange-500 font-bold bg-orange-500/10 px-2 py-0.5 rounded-full">
-                  <Flame className="w-3 h-3" /> {streak} D{streak !== 1 ? "ias" : "ia"}
-                </span>
+      {/* ── Featured Destaques ── */}
+      <div className="space-y-4">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2 flex items-center gap-2">
+           <Compass className="w-3 h-3" /> Em Destaque
+        </h2>
+        
+        <div className="space-y-3">
+          {/* LoveStreak Component */}
+          <LoveStreakHomeCard />
+
+          {/* Fasting Featured Card */}
+          <button
+            onClick={() => navigate("/jejum")}
+            className="glass-card glass-card-hover group relative flex w-full flex-col rounded-[2.5rem] overflow-hidden text-left active:scale-[0.98] transition-transform duration-300"
+          >
+            <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-transparent p-5 space-y-3 w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600 transition-transform group-hover:scale-110">
+                    <Flame className="h-5.5 w-5.5" />
+                  </div>
+                  <div>
+                    <span className="text-[15px] font-black text-foreground block tracking-tight">🕯️ Jejum (Páscoa)</span>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-0.5">
+                      {fasting.plan ? fasting.plan.plan_name : "Iniciar percurso"}
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground/50 group-hover:translate-x-1 transition-transform" />
+              </div>
+
+              {fasting.plan ? (
+                <>
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    <span className="text-amber-600">Dia {fastingDayNumber}/{fasting.plan.total_days}</span>
+                    <span className="text-muted-foreground/30">•</span>
+                    <span className={cn(
+                      "rounded-lg px-2 py-0.5 text-[9px] uppercase tracking-wider",
+                      fasting.todayResult === "cumprido" ? "bg-green-500/20 text-green-700" :
+                        fasting.todayResult === "parcial" ? "bg-yellow-400/20 text-yellow-700" :
+                          fasting.todayResult === "falhei" ? "bg-red-500/20 text-red-700" :
+                            "bg-muted/50 text-muted-foreground"
+                    )}>
+                      {fasting.todayResult ? dayResultLabel(fasting.todayResult as any) : "Pendente"}
+                    </span>
+                  </div>
+                  <Progress value={fastingProgress} className="h-2 rounded-full overflow-hidden" />
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground/80 font-medium">Faltam {daysToEaster} dias para a Páscoa. Prepara-te para a ressurreição! ✨</p>
               )}
             </div>
-            <div className="flex items-center justify-center gap-3">
-              <TimeUnit value={time.days} label="dias" />
-              <span className="text-lg font-bold text-muted-foreground/40">:</span>
-              <TimeUnit value={time.hours} label="hrs" />
-              <span className="text-lg font-bold text-muted-foreground/40">:</span>
-              <TimeUnit value={time.minutes} label="min" />
-              <span className="text-lg font-bold text-muted-foreground/40">:</span>
-              <TimeUnit value={time.seconds} label="seg" />
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => navigate("/configuracoes")}
-            className="mx-auto block text-xs text-primary underline underline-offset-2"
-          >
-            Definir data do início do namoro
           </button>
-        )}
-      </header>
 
-      {/* ── Global Announcements ── */}
-      {announcements.map((ann) => (
-        <div key={ann.id} className="bg-primary/10 border border-primary/20 text-primary p-4 rounded-2xl animate-in slide-in-from-top-4 relative shadow-sm">
-          <h3 className="font-bold flex items-center gap-2 mb-1">
-            <Megaphone className="w-4 h-4" /> {ann.title}
-          </h3>
-          <p className="text-sm font-medium">{ann.content}</p>
-        </div>
-      ))}
-
-      <InstallBanner />
-
-      {/* ── LoveStreak ── */}
-      <LoveStreakHomeCard />
-
-
-      {/* ── Jejum (Páscoa) Featured Card ── */}
-      <button
-        onClick={() => navigate("/jejum")}
-        className="glass-card glass-card-hover relative flex w-full flex-col rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
-      >
-        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 p-4 space-y-3 w-full">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600">
-                <Flame className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-foreground">
-                  🕯️ Jejum (Páscoa)
-                </span>
-                <p className="text-[10px] text-muted-foreground">
-                  {fasting.plan ? fasting.plan.plan_name : "Iniciar percurso de jejum"}
-                </p>
-              </div>
+          {/* Chat Quick Access */}
+          <button
+            onClick={() => navigate("/chat")}
+            className="glass-card glass-card-hover group relative flex w-full items-center gap-4 rounded-[2.5rem] p-5 text-left active:scale-[0.98] transition-all duration-300"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform">
+              <MessageCircle className="h-6 w-6" />
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </div>
-
-          {fasting.plan ? (
-            <>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-bold text-amber-600">
-                  Dia {fastingDayNumber}/{fasting.plan.total_days}
-                </span>
-                <span className="text-muted-foreground">•</span>
-                <span className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                  fasting.todayResult === "cumprido" ? "bg-green-500/20 text-green-700" :
-                    fasting.todayResult === "parcial" ? "bg-yellow-400/20 text-yellow-700" :
-                      fasting.todayResult === "falhei" ? "bg-red-500/20 text-red-700" :
-                        "bg-muted text-muted-foreground"
-                )}>
-                  {fasting.todayResult
-                    ? dayResultLabel(fasting.todayResult as any)
-                    : "— Não registado"}
-                </span>
-                {fasting.streak > 0 && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-amber-600 font-bold">🔥 {fasting.streak}</span>
-                  </>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-black text-foreground tracking-tight">Conversas</span>
+                {chatUnread > 0 && (
+                  <span className="bg-destructive text-destructive-foreground text-[10px] font-black px-2 py-0.5 rounded-lg shadow-glow">
+                    {chatUnread}
+                  </span>
                 )}
               </div>
-              <Progress value={fastingProgress} className="h-1.5" />
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{fasting.loggedDays} dias registados</span>
-                <span>Páscoa em {daysToEaster} dia{daysToEaster !== 1 ? "s" : ""}</span>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Faltam <strong className="text-amber-600">{daysToEaster} dias</strong> para a Páscoa</span>
-              <span>•</span>
-              <span className="text-primary font-medium">Começar agora →</span>
+              <p className="text-[11px] text-muted-foreground/80 font-medium line-clamp-1 mt-0.5 italic">
+                {chatPreview ?? "Envia um beijinho agora..."}
+              </p>
             </div>
-          )}
-        </div>
-      </button>
-
-      {/* ── Referral Section ── */}
-      <div className="glass-card overflow-hidden bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 border border-primary/20 rounded-2xl">
-        <div className="p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
-              <Share2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold">Convidar Amigos</h4>
-              <p className="text-[10px] text-muted-foreground">Ganha 50 pontos por convite! 💰</p>
-            </div>
-          </div>
-          <button
-            onClick={handleShare}
-            className="bg-primary text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
-          >
-            Convidar
           </button>
         </div>
       </div>
 
-      {/* ── Ciclo Featured Card ── */}
-      {(cycle.profile || cycle.isMale) && (
-        <button
-          onClick={() => navigate("/ciclo")}
-          className="glass-card glass-card-hover relative flex w-full items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.98] transition-transform duration-150"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-500/10 text-pink-500">
-            <Flower2 className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-foreground">
-                🌸 Ciclo {cycle.isMale && <span className="text-xs text-muted-foreground font-normal ml-1">(Da Parceira)</span>}
-              </span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                PHASE_COLORS[cycle.info.phase] ?? "bg-muted text-muted-foreground"
-              )}>
-                {cycle.info.phase}
-              </span>
-              {cycle.info.cycleDay > 0 && (
-                <span className="text-[10px] text-muted-foreground">Dia {cycle.info.cycleDay}</span>
-              )}
-              {cycle.info.nextPeriod && !isNaN(new Date(cycle.info.nextPeriod).getTime()) && (
-                <span className="text-[10px] text-muted-foreground">
-                  Próx: {format(new Date(cycle.info.nextPeriod + "T12:00:00"), "d MMM", { locale: pt })}
-                </span>
-              )}
-            </div>
-          </div>
-        </button>
-      )}
-
-      {/* ── Chat quick peek ── */}
-      <button
-        onClick={() => navigate("/chat")}
-        className="glass-card glass-card-hover relative flex w-full items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.98] transition-transform duration-150"
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <MessageCircle className="h-5 w-5" />
+      {/* ── Nossa Vida Section ── */}
+      <div className="space-y-4">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2">
+          🏠 Nossa Vida
+        </h2>
+        <div className="grid grid-cols-2 gap-4">
+          <DashCard
+            icon={<CheckSquare className="h-5 w-5" />}
+            title="Tarefas"
+            lines={[
+              tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
+              tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
+            ]}
+            to="/tarefas"
+            badge={tasksUnread}
+            accent="bg-emerald-500/10 text-emerald-600"
+          />
+          <DashCard
+            icon={<Smile className="h-5 w-5" />}
+            title="Humor"
+            lines={[
+              mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar hoje",
+              mood.partner ? `Par: ${mood.partner.emoji}` : "Esperando par...",
+            ]}
+            to="/humor"
+            badge={moodUnread}
+            accent="bg-orange-500/10 text-orange-600"
+          />
+          <DashCard
+            icon={<Camera className="h-5 w-5" />}
+            title="Memórias"
+            lines={[
+              photoCount > 0 ? `${photoCount} fotos` : "Sem fotos",
+              "Novas recordações 📸",
+            ]}
+            to="/memorias"
+            badge={memoriesUnread}
+            accent="bg-blue-500/10 text-blue-600"
+          />
+          <DashCard
+            icon={<CalendarDays className="h-5 w-5" />}
+            title="Agenda"
+            lines={[
+              nextEvent ? nextEvent.title : "Sem eventos",
+              nextEvent ? format(new Date(nextEvent.date + "T12:00:00"), "d MMM", { locale: pt }) : "Planear algo 📅",
+            ]}
+            to="/agenda"
+            badge={scheduleUnread}
+            accent="bg-purple-500/10 text-purple-600"
+          />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-foreground">Chat</span>
-            <NotifBadge count={chatUnread} />
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-            {chatPreview ?? "Nenhuma mensagem ainda…"}
-          </p>
+      </div>
+
+      {/* ── Crescimento & Diversão ── */}
+      <div className="space-y-4 pb-4">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2">
+          ✨ Crescimento
+        </h2>
+        <div className="grid grid-cols-2 gap-4">
+          <DashCard
+            icon={<Trophy className="h-5 w-5" />}
+            title="Desafios"
+            lines={["Concluir Desafios", "Ganhar Pontos 🎯"]}
+            to="/desafios"
+            accent="bg-yellow-500/10 text-yellow-600"
+          />
+          <DashCard
+            icon={<Sparkles className="h-5 w-5" />}
+            title="Wrapped"
+            lines={["Resumo Mensal", "Revive memórias"]}
+            to="/wrapped"
+            accent="bg-pink-500/10 text-pink-500"
+          />
+          <DashCard
+            icon={<BookHeart className="h-5 w-5" />}
+            title="Oração"
+            lines={[
+              prayer.myPrayed ? "Rezei hoje ✓" : "Não rezei",
+              prayer.partnerPrayed ? "Par rezou ✓" : "Par pendente",
+            ]}
+            to="/oracao"
+            badge={prayerUnread}
+            accent="bg-amber-500/10 text-amber-600"
+          />
+          <DashCard
+            icon={<Clock className="h-5 w-5" />}
+            title="Cápsula"
+            lines={["Mensagens 🔒", "Futuro Amor"]}
+            to="/capsula"
+            accent="bg-cyan-500/10 text-cyan-600"
+          />
         </div>
-      </button>
 
-      {/* ── 2-col grid ── */}
-      <div className="grid grid-cols-2 gap-3">
-        <DashCard
-          icon={<Trophy className="h-4.5 w-4.5" />}
-          title="Desafios"
-          lines={[
-            "Concluir Desafios",
-            "Criar Novos Jogos 🎯",
-          ]}
-          to="/desafios"
-          accent="bg-orange-500/10 text-orange-600"
-        />
-
-        <DashCard
-          icon={<Clock className="h-4.5 w-4.5" />}
-          title="Cápsula"
-          lines={[
-            "Mensagens ocultas",
-            "Guardar memórias 🔒",
-          ]}
-          to="/capsula"
-          accent="bg-indigo-500/10 text-indigo-600"
-        />
-
-        <DashCard
-          icon={<Sparkles className="h-4.5 w-4.5" />}
-          title="LoveWrapped"
-          lines={[
-            "Resumo mensal",
-            "Revive memórias ✨",
-          ]}
-          to="/wrapped"
-          accent="bg-pink-500/10 text-pink-500"
-        />
-
-        <DashCard
-          icon={<CheckSquare className="h-4.5 w-4.5" />}
-          title="Tarefas"
-          lines={[
-            tasks.open > 0 ? `${tasks.open} pendente${tasks.open !== 1 ? "s" : ""}` : "Tudo em dia ✓",
-            tasks.doneToday > 0 ? `${tasks.doneToday} feita${tasks.doneToday !== 1 ? "s" : ""} hoje` : "",
-          ].filter(Boolean)}
-          to="/tarefas"
-          badge={tasksUnread}
-          accent="bg-accent/15 text-accent-foreground"
-        />
-
-        <DashCard
-          icon={<Smile className="h-4.5 w-4.5" />}
-          title="Humor"
-          lines={[
-            mood.mine ? `Tu: ${mood.mine.emoji} ${mood.mine.label}` : "Registar humor",
-            mood.partner ? `Par: ${mood.partner.emoji} ${mood.partner.label}` : "Par ainda não registou",
-          ]}
-          to="/humor"
-          badge={moodUnread}
-          accent="bg-secondary text-secondary-foreground"
-        />
-
-        <DashCard
-          icon={<Camera className="h-4.5 w-4.5" />}
-          title="Memórias"
-          lines={[
-            photoCount > 0 ? `${photoCount} foto${photoCount !== 1 ? "s" : ""} guardadas` : "Sem fotos ainda",
-            "Adicionar memória 📸",
-          ]}
-          to="/memorias"
-          badge={memoriesUnread}
-        />
-
-        <DashCard
-          icon={<CalendarDays className="h-4.5 w-4.5" />}
-          title="Agenda"
-          lines={[
-            nextEvent ? nextEvent.title : "Sem eventos próximos",
-            nextEvent ? format(new Date(nextEvent.date + "T12:00:00"), "d MMM", { locale: pt }) : "Planear algo juntos 📅",
-          ]}
-          to="/agenda"
-          badge={scheduleUnread}
-          accent="bg-primary/10 text-primary"
-        />
-
-        <DashCard
-          icon={<BookHeart className="h-4.5 w-4.5" />}
-          title="Oração"
-          lines={[
-            prayer.myPrayed ? "Orei hoje ✓" : "Ainda não orei",
-            prayer.partnerPrayed ? "O teu par orou ✓" : "Par ainda não orou",
-          ]}
-          to="/oracao"
-          badge={prayerUnread}
-          accent="bg-accent/15 text-accent-foreground"
-        />
-
-        <DashCard
-          icon={<HeartHandshake className="h-4.5 w-4.5" />}
-          title="Conflitos"
-          lines={[
-            complaints > 0 ? `${complaints} aberto${complaints !== 1 ? "s" : ""}` : "Sem conflitos 🕊️",
-            complaints > 0 ? "Resolver juntos 💬" : "Tudo em paz",
-          ]}
-          to="/conflitos"
-          badge={complaintsUnread}
-          accent="bg-destructive/10 text-destructive"
-        />
+        {/* Invite Card */}
+        <div className="glass-card bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 rounded-[2.5rem] p-6 flex items-center justify-between gap-4 mt-6">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-white/50 flex items-center justify-center text-primary shadow-sm group-hover:rotate-12 transition-transform">
+              <Share2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black tracking-tight">Convidar Amigos</h4>
+              <p className="text-[10px] text-muted-foreground font-bold">50 Pontos por cada convite! 💰</p>
+            </div>
+          </div>
+          <button
+            onClick={handleShare}
+            className="bg-primary text-primary-foreground text-xs font-black px-5 py-2.5 rounded-2xl shadow-glow active:scale-95 transition-all"
+          >
+            Partilhar
+          </button>
+        </div>
       </div>
     </section>
   );
