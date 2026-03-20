@@ -43,32 +43,32 @@ input, textarea, [contenteditable="true"] {
     --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
 
     --background: 0 0% 100%;
-    --foreground: 335 40% 10%;
+    --foreground: 250 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 335 40% 10%;
+    --card-foreground: 250 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 335 40% 10%;
+    --popover-foreground: 250 20% 15%;
 
-    --primary: 340 85% 55%;
+    --primary: 258 60% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 340 40% 96%;
-    --secondary-foreground: 340 85% 30%;
+    --secondary: 255 30% 96%;
+    --secondary-foreground: 258 50% 35%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 230 15% 96%;
+    --muted-foreground: 230 10% 42%;
 
-    --accent: 340 85% 55%;
+    --accent: 258 60% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 340 85% 55%;
+    --border: 230 15% 88%;
+    --input: 230 15% 88%;
+    --ring: 258 60% 58%;
 
     --radius: 1.5rem;
 
@@ -77,21 +77,21 @@ input, textarea, [contenteditable="true"] {
     --shadow-md: 0 12px 30px -8px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 30px 60px -15px rgba(0, 0, 0, 0.15);
 
-    /* Vibrant gradients */
-    --gradient-primary: linear-gradient(135deg, #f43f5e, #e11d48, #be123c);
+    /* Calming gradients */
+    --gradient-primary: linear-gradient(135deg, #8b5cf6, #7c3aed, #6d28d9);
     --gradient-premium: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.3));
     --gradient-surface: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
-    --gradient-glow: 0 8px 32px -4px rgba(225, 29, 72, 0.3);
+    --gradient-glow: 0 8px 32px -4px rgba(124, 58, 237, 0.25);
     --gradient-gold: linear-gradient(135deg, #fbbf24, #f59e0b);
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 335 40% 20%;
-    --sidebar-primary: 340 85% 55%;
+    --sidebar-foreground: 250 20% 20%;
+    --sidebar-primary: 258 60% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 340 40% 96%;
-    --sidebar-accent-foreground: 340 85% 30%;
-    --sidebar-border: 214 20% 90%;
-    --sidebar-ring: 340 85% 55%;
+    --sidebar-accent: 255 30% 96%;
+    --sidebar-accent-foreground: 258 50% 35%;
+    --sidebar-border: 230 15% 88%;
+    --sidebar-ring: 258 60% 58%;
   }
 
   .dark {
@@ -104,7 +104,7 @@ input, textarea, [contenteditable="true"] {
     --popover: 240 10% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 340 85% 65%;
+    --primary: 258 55% 68%;
     --primary-foreground: 240 10% 4%;
 
     --secondary: 240 10% 12%;
@@ -113,7 +113,7 @@ input, textarea, [contenteditable="true"] {
     --muted: 240 10% 12%;
     --muted-foreground: 240 5% 65%;
 
-    --accent: 340 85% 65%;
+    --accent: 258 55% 68%;
     --accent-foreground: 240 10% 4%;
 
     --destructive: 0 62% 30%;
@@ -121,11 +121,11 @@ input, textarea, [contenteditable="true"] {
 
     --border: 240 10% 15%;
     --input: 240 10% 15%;
-    --ring: 340 85% 65%;
+    --ring: 258 55% 68%;
 
-    --gradient-primary: linear-gradient(135deg, #fb7185, #f43f5e, #e11d48);
+    --gradient-primary: linear-gradient(135deg, #a78bfa, #8b5cf6, #7c3aed);
     --gradient-surface: linear-gradient(145deg, rgba(20, 20, 25, 0.9), rgba(10, 10, 15, 0.8));
-    --gradient-glow: 0 8px 32px -4px rgba(244, 63, 94, 0.4);
+    --gradient-glow: 0 8px 32px -4px rgba(139, 92, 246, 0.35);
   }
 }
 

@@ -452,7 +452,7 @@ export default function Settings() {
       ) : (
         <section className="animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => setCurrentCategory('menu')} className="rounded-full hover:bg-rose-50"><ChevronLeft className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setCurrentCategory('menu')} className="rounded-full hover:bg-primary/5"><ChevronLeft className="h-5 w-5" /></Button>
             <h2 className="text-xl font-bold gradient-text">{menuItems.find(m => m.id === currentCategory)?.label}</h2>
           </div>
 
@@ -469,12 +469,12 @@ export default function Settings() {
                 )}
               </div>
               <div className="space-y-4 glass-card p-6">
-                <div className="space-y-2"><Label>Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
-                <div className="space-y-2"><Label>Aniversário</Label><Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
+                <div className="space-y-2"><Label className="font-bold text-sm">Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                <div className="space-y-2"><Label className="font-bold text-sm">Aniversário</Label><Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 <div className="space-y-2">
-                  <Label className="ml-1 font-bold">Género</Label>
+                  <Label className="ml-1 font-bold text-sm">Género</Label>
                   <Select value={gender || "none"} onValueChange={(v: any) => setGender(v === "none" ? null : v)}>
-                    <SelectTrigger className="h-12 bg-background/50 border-none rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl"><SelectItem value="none">Preferir não dizer</SelectItem><SelectItem value="female">Mulher</SelectItem><SelectItem value="male">Homem</SelectItem></SelectContent>
                   </Select>
                 </div>
@@ -483,11 +483,11 @@ export default function Settings() {
                 </Button>
 
                 {referralCode && (
-                  <div className="pt-4 border-t border-zinc-100 space-y-2">
+                  <div className="pt-4 border-t border-border space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Teu Código LoveNest (Amigos)</Label>
                     <div className="flex gap-2">
-                      <Input value={referralCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg" />
-                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-zinc-200" onClick={() => copyToClipboard(referralCode, "Código de parceiro copiado!")}>
+                      <Input value={referralCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(referralCode, "Código de parceiro copiado!")}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
@@ -501,20 +501,20 @@ export default function Settings() {
           {currentCategory === 'house' && (
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
-                <div className="space-y-2"><Label>Apelido da Casa</Label><Input value={houseName} onChange={e => setHouseName(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
+                <div className="space-y-2"><Label className="font-bold text-sm">Apelido da Casa</Label><Input value={houseName} onChange={e => setHouseName(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Tu (Iniciais)</Label><Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
-                  <div className="space-y-2"><Label>Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
+                  <div className="space-y-2"><Label className="font-bold text-sm">Tu (Iniciais)</Label><Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                  <div className="space-y-2"><Label className="font-bold text-sm">Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 </div>
-                <div className="space-y-2"><Label>Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
+                <div className="space-y-2"><Label className="font-bold text-sm">Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary">Guardar Dados</Button>
 
                 {houseInviteCode && (
-                  <div className="pt-4 border-t border-zinc-100 space-y-2">
+                  <div className="pt-4 border-t border-border space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código da Casa (Parceiro)</Label>
                     <div className="flex gap-2">
-                      <Input value={houseInviteCode} readOnly className="h-12 bg-rose-500/5 border-rose-500/20 text-center font-black tracking-widest text-rose-600 text-lg" />
-                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-zinc-200" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
+                      <Input value={houseInviteCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
