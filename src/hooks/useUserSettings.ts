@@ -21,6 +21,7 @@ export function useUserSettings() {
     const spaceId = useCoupleSpaceId();
     const [settings, setSettings] = useState<WallpaperSettings>(DEFAULTS);
     const [loading, setLoading] = useState(true);
+    const [timestamp, setTimestamp] = useState(Date.now());
 
     // Fetch from couple_spaces
     const fetchSettings = useCallback(async () => {
@@ -45,6 +46,11 @@ export function useUserSettings() {
     }, [spaceId]);
 
     useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+    // Update timestamp when URL changes to busting cache
+    useEffect(() => {
+        if (settings.url) setTimestamp(Date.now());
+    }, [settings.url]);
 
     // Realtime: sync when partner changes wallpaper
     useEffect(() => {
@@ -83,13 +89,13 @@ export function useUserSettings() {
         }
     }, [spaceId]);
 
-    // Upload to chat-media bucket (already has working RLS)
+    // Upload to avatars bucket (confirmed to exist)
     const uploadWallpaper = useCallback(async (file: File): Promise<string | null> => {
         if (!user || !spaceId) return null;
         const ext = file.name.split(".").pop() ?? "jpg";
-        const path = `${spaceId}/wallpaper_${Date.now()}.${ext}`;
+        const path = `${spaceId}/wallpapers/wp_${Date.now()}.${ext}`;
         try {
-            const { error } = await supabase.storage.from("chat-media").upload(path, file, {
+            const { error } = await supabase.storage.from("avatars").upload(path, file, {
                 cacheControl: "3600",
                 upsert: true,
             });
@@ -97,7 +103,7 @@ export function useUserSettings() {
                 console.error("[wallpaper] upload:", error);
                 return null;
             }
-            const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
+            const { data } = supabase.storage.from("avatars").getPublicUrl(path);
             return data?.publicUrl ?? null;
         } catch (e) {
             console.error("[wallpaper] upload exception:", e);
@@ -110,7 +116,7 @@ export function useUserSettings() {
     }, [updateSettings]);
 
     return {
-        wallpaperUrl: settings.url,
+        wallpaperUrl: settings.url ? `${settings.url}${settings.url.includes("?") ? "&" : "?"}v=${timestamp}` : null,
         wallpaperOpacity: settings.opacity,
         updateSettings,
         uploadWallpaper,

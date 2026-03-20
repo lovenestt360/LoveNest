@@ -351,6 +351,21 @@ export default function Settings() {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("user_id", user.id);
+      if (error) throw error;
+      setAvatarUrl(null);
+      toast({ title: "Foto de perfil removida! ✨" });
+    } catch (error: any) {
+      toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleExport = async () => {
     if (!spaceId) return;
     setExporting(true);
@@ -448,6 +463,9 @@ export default function Settings() {
                   <label htmlFor="av-up" className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}</label>
                   <input id="av-up" type="file" hidden accept="image/*" onChange={handleAvatarChange} />
                 </div>
+                {avatarUrl && (
+                  <Button variant="ghost" size="sm" className="h-8 text-destructive font-bold text-xs rounded-full hover:bg-destructive/5" onClick={handleRemoveAvatar}>Remover Foto</Button>
+                )}
               </div>
               <div className="space-y-4 glass-card p-6">
                 <div className="space-y-2"><Label>Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
@@ -613,13 +631,13 @@ export default function Settings() {
                       <Label className="text-xs font-bold">Opacidade do Fundo</Label>
                       <span className="text-xs font-bold text-primary">{Math.round(wallpaperOpacity * 100)}%</span>
                     </div>
-                    <input 
-                      type="range" min="0" max="1" step="0.01" 
-                      value={wallpaperOpacity} 
-                      onChange={(e) => updateWallpaper({ opacity: parseFloat(e.target.value) })}
-                      className="w-full accent-primary h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer"
-                    />
-                  </div>
+                      <input 
+                        type="range" min="0" max="1" step="0.01" 
+                        value={wallpaperOpacity} 
+                        onChange={(e) => updateWallpaper({ opacity: parseFloat(e.target.value) })}
+                        className="w-full accent-primary h-2 bg-zinc-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer"
+                      />
+                    </div>
                 </div>
               </div>
             </div>
