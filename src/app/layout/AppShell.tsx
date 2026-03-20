@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export function AppShell() {
   const isOnline = useOnlineStatus();
   const location = useLocation();
-  const isChat = location.pathname === "/casa";
+  const isChat = location.pathname === "/chat";
 
   return (
     <PWATutorialProvider>

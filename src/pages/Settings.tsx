@@ -85,6 +85,8 @@ export default function Settings() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingWallpaper, setSavingWallpaper] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -105,7 +107,6 @@ export default function Settings() {
   const [exporting, setExporting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploading, setUploading] = useState(false);
 
   // Push notification state
   const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
@@ -609,19 +610,45 @@ export default function Settings() {
                       )}
                     </div>
                     <div className="flex-1 space-y-2">
-                      <Button variant="outline" size="sm" className="w-full text-xs font-bold h-9" asChild>
-                        <label>
-                          Mudar Foto
+                      <Button variant="outline" size="sm" className="w-full text-xs font-bold h-9" asChild disabled={savingWallpaper}>
+                        <label className="cursor-pointer flex items-center justify-center">
+                          {savingWallpaper ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          {savingWallpaper ? "Carregando..." : "Mudar Foto"}
                           <input type="file" accept="image/*" hidden onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
-                            const url = await uploadWallpaper(file);
-                            if (url) updateWallpaper({ url });
+                            setSavingWallpaper(true);
+                            try {
+                              const url = await uploadWallpaper(file);
+                              if (url) {
+                                await updateWallpaper({ url });
+                                toast({ title: "Wallpaper atualizado! ✨" });
+                              } else {
+                                toast({ title: "Erro ao fazer upload", variant: "destructive" });
+                              }
+                            } catch (err: any) {
+                              toast({ title: "Erro", description: err.message, variant: "destructive" });
+                            } finally {
+                              setSavingWallpaper(false);
+                            }
                           }} />
                         </label>
                       </Button>
                       {wallpaperUrl && (
-                        <Button variant="ghost" size="sm" className="w-full text-xs font-bold h-9 text-destructive" onClick={removeWallpaper}>Remover</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-full text-xs font-bold h-9 text-destructive" 
+                          onClick={async () => {
+                            setSavingWallpaper(true);
+                            await removeWallpaper();
+                            setSavingWallpaper(false);
+                            toast({ title: "Wallpaper removido" });
+                          }}
+                          disabled={savingWallpaper}
+                        >
+                          Remover Fundo
+                        </Button>
                       )}
                     </div>
                   </div>

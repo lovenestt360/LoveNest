@@ -93,7 +93,7 @@ export function useUserSettings() {
     const uploadWallpaper = useCallback(async (file: File): Promise<string | null> => {
         if (!user || !spaceId) return null;
         const ext = file.name.split(".").pop() ?? "jpg";
-        const path = `${spaceId}/wallpapers/wp_${Date.now()}.${ext}`;
+        const path = `${user.id}/wallpapers/wp_${Date.now()}.${ext}`;
         try {
             const { error } = await supabase.storage.from("avatars").upload(path, file, {
                 cacheControl: "3600",
