@@ -7,7 +7,7 @@ import {
     ShieldCheck, Check, X, FileText, Users, Home,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
     CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
-    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw
+    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw, Smartphone
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped" | "pwa">("overview");
     const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -140,6 +140,10 @@ export default function Admin() {
     const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth() || 12);
     const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
     const [searchHouse, setSearchHouse] = useState("");
+
+    // PWA Settings
+    const [pwaSettings, setPwaSettings] = useState<any>(null);
+    const [savingPwa, setSavingPwa] = useState(false);
 
     const ALL_FEATURES = [
         { id: "home", label: "Home" },
@@ -455,6 +459,25 @@ export default function Admin() {
         }
     };
 
+    const handleSavePwaSettings = async () => {
+        if (!pwaSettings) return;
+        try {
+            setSavingPwa(true);
+            const { error } = await adminClient.from("pwa_tutorial_settings").update({
+                android_video_url: pwaSettings.android_video_url,
+                ios_video_url: pwaSettings.ios_video_url,
+                is_enabled: pwaSettings.is_enabled
+            }).eq("id", pwaSettings.id);
+            if (error) throw error;
+            toast({ title: "Configurações PWA salvas" });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setSavingPwa(false);
+        }
+    };
+
     const handleGenerateWrapped = async () => {
         try {
             setGeneratingWrapped(true);
@@ -575,6 +598,9 @@ export default function Admin() {
                     <Button variant={tab === "settings" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("settings")}>
                         <Settings className="w-4 h-4" /> <span className="hidden md:inline">Configurações</span>
                     </Button>
+                    <Button variant={tab === "pwa" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("pwa")}>
+                        <Smartphone className="w-4 h-4" /> <span className="hidden md:inline">Tutorial PWA</span>
+                    </Button>
                     <Button variant={tab === "streaks" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("streaks")}>
                         <Flame className="w-4 h-4" /> <span className="hidden md:inline">Streaks</span>
                     </Button>
@@ -583,6 +609,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
                         <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
+                    </Button>
+                    <Button variant={tab === "pwa" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("pwa")}>
+                        <Smartphone className="w-4 h-4" /> <span className="hidden md:inline">Tutorial PWA</span>
                     </Button>
                 </nav>
 
@@ -1345,7 +1374,78 @@ export default function Admin() {
                     </div>
                 )}
 
-            </main>
-        </div>
-    );
+                {tab === "pwa" && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="glass-card rounded-[2.5rem] p-8 space-y-8">
+                        <div>
+                            <h2 className="text-2xl font-bold mb-2">Tutorial de Instalação PWA</h2>
+                            <p className="text-muted-foreground">Configure os vídeos e a visibilidade do tutorial de instalação.</p>
+                        </div>
+
+                        {pwaSettings && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                                            <Smartphone className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold">Sistema Ativo</p>
+                                            <p className="text-xs text-muted-foreground">Define se o tutorial aparece automaticamente para novos usuários.</p>
+                                        </div>
+                                    </div>
+                                    <Switch 
+                                        checked={pwaSettings.is_enabled} 
+                                        onCheckedChange={(checked) => setPwaSettings({ ...pwaSettings, is_enabled: checked })} 
+                                    />
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <Label className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-[10px] font-bold">AN</div>
+                                            URL Vídeo Android
+                                        </Label>
+                                        <Input 
+                                            placeholder="https://..." 
+                                            value={pwaSettings.android_video_url || ""} 
+                                            onChange={(e) => setPwaSettings({ ...pwaSettings, android_video_url: e.target.value })}
+                                            className="h-12 rounded-xl bg-background/50"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground italic">Recomendado: Video direto (mp4) ou link do Supabase Storage.</p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Label className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center text-[10px] font-bold">IOS</div>
+                                            URL Vídeo iPhone (iOS)
+                                        </Label>
+                                        <Input 
+                                            placeholder="https://..." 
+                                            value={pwaSettings.ios_video_url || ""} 
+                                            onChange={(e) => setPwaSettings({ ...pwaSettings, ios_video_url: e.target.value })}
+                                            className="h-12 rounded-xl bg-background/50"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground italic">Recomendado: Video direto (mp4) ou link do Supabase Storage.</p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-border">
+                                    <Button 
+                                        onClick={handleSavePwaSettings} 
+                                        disabled={savingPwa} 
+                                        className="w-full md:w-auto min-w-[200px] h-12 rounded-2xl font-bold gap-2 shadow-lg shadow-primary/25"
+                                    >
+                                        {savingPwa ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                        Guardar Configurações PWA
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </main>
+    </div>
+  );
 }
