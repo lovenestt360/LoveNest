@@ -24,7 +24,7 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
     >
       <div className="flex items-center justify-between">
         <div className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110",
+          "flex h-11 w-11 items-center justify-center rounded-[1.25rem] transition-transform duration-300 group-hover:scale-110 shadow-sm",
           accent ?? "bg-primary/10 text-primary"
         )}>
           {icon}

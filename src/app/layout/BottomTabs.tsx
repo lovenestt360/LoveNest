@@ -124,7 +124,7 @@ export function BottomTabs() {
                 {isMoreActive && <ActiveDot />}
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-3xl border-t border-border/50 pb-[max(env(safe-area-inset-bottom),1rem)]">
+            <SheetContent side="bottom" className="rounded-t-[2.5rem] border-t border-border/50 pb-[max(env(safe-area-inset-bottom),1rem)]">
               <SheetHeader>
                 <SheetTitle className="text-left text-lg font-bold">More</SheetTitle>
               </SheetHeader>
@@ -143,7 +143,7 @@ export function BottomTabs() {
                           navigate(to);
                         }}
                         className={cn(
-                          "relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
+                          "relative flex flex-col items-center gap-2 rounded-[1.5rem] border p-4 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
                           active
                             ? "border-primary/30 bg-primary/10 text-primary glow-primary"
                             : "border-border/50 text-muted-foreground hover:bg-secondary"

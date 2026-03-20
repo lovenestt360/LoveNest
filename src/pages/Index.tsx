@@ -340,7 +340,7 @@ const Index = () => {
             <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-transparent p-5 space-y-3 w-full">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600 transition-transform group-hover:scale-110">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-[1.25rem] bg-amber-500/20 text-amber-600 transition-transform group-hover:scale-110 shadow-sm">
                     <Flame className="h-5.5 w-5.5" />
                   </div>
                   <div>
@@ -381,7 +381,7 @@ const Index = () => {
             onClick={() => navigate("/chat")}
             className="glass-card glass-card-hover group relative flex w-full items-center gap-4 rounded-[2.5rem] p-5 text-left active:scale-[0.98] transition-all duration-300"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
               <MessageCircle className="h-6 w-6" />
             </div>
             <div className="flex-1 min-w-0">
@@ -497,7 +497,7 @@ const Index = () => {
         {/* Invite Card */}
         <div className="glass-card bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 rounded-[2.5rem] p-6 flex items-center justify-between gap-4 mt-6">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-white/50 flex items-center justify-center text-primary shadow-sm group-hover:rotate-12 transition-transform">
+            <div className="h-12 w-12 rounded-[1.25rem] bg-white/50 flex items-center justify-center text-primary shadow-sm group-hover:rotate-12 transition-transform">
               <Share2 className="w-6 h-6" />
             </div>
             <div>
@@ -507,7 +507,7 @@ const Index = () => {
           </div>
           <button
             onClick={handleShare}
-            className="bg-primary text-primary-foreground text-xs font-black px-5 py-2.5 rounded-2xl shadow-glow active:scale-95 transition-all"
+            className="bg-primary text-primary-foreground text-xs font-black px-5 py-2.5 rounded-full shadow-glow active:scale-95 transition-all"
           >
             Partilhar
           </button>

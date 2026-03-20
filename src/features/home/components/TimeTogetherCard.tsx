@@ -32,7 +32,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, streak = 0, on
     return (
       <button
         onClick={onSetDate}
-        className="glass-card w-full rounded-3xl p-6 text-center active:scale-[0.98] transition-transform"
+        className="glass-card w-full rounded-[2rem] p-6 text-center active:scale-[0.98] transition-transform"
       >
         <p className="text-sm font-bold text-primary underline underline-offset-4">
           Definir data do início do namoro 💕

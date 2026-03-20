@@ -399,17 +399,17 @@ export default function Settings() {
             <div className="flex-1 min-w-0">
               <h3 className="text-lg font-bold truncate">{displayName || "Utilizador"}</h3>
               <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-              <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">PREMIUM ✨</div>
+              <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-sm">PREMIUM ✨</div>
             </div>
           </div>
 
           <div className="grid gap-4">
             {menuItems.map((item) => (
-              <button key={item.id} onClick={() => setCurrentCategory(item.id)} className="glass-card glass-card-hover p-4 flex items-center gap-4 text-left w-full group">
-                <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", item.color)}>{item.icon}</div>
+              <button key={item.id} onClick={() => setCurrentCategory(item.id)} className="glass-card glass-card-hover p-5 flex items-center gap-4 text-left w-full group rounded-[2rem]">
+                <div className={cn("h-12 w-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm", item.color)}>{item.icon}</div>
                 <div className="flex-1">
-                  <p className="font-bold">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.sub}</p>
+                  <p className="font-bold text-[15px]">{item.label}</p>
+                  <p className="text-xs text-muted-foreground/80 font-medium">{item.sub}</p>
                 </div>
                 <ChevronLeft className="h-4 w-4 text-muted-foreground rotate-180" />
               </button>
@@ -440,13 +440,15 @@ export default function Settings() {
                 <div className="space-y-2"><Label>Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
                 <div className="space-y-2"><Label>Aniversário</Label><Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
                 <div className="space-y-2">
-                  <Label>Género</Label>
+                  <Label className="ml-1 font-bold">Género</Label>
                   <Select value={gender || "none"} onValueChange={(v: any) => setGender(v === "none" ? null : v)}>
-                    <SelectTrigger className="h-12 bg-background/50 border-none"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="none">Preferir não dizer</SelectItem><SelectItem value="female">Mulher</SelectItem><SelectItem value="male">Homem</SelectItem></SelectContent>
+                    <SelectTrigger className="h-12 bg-background/50 border-none rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-2xl"><SelectItem value="none">Preferir não dizer</SelectItem><SelectItem value="female">Mulher</SelectItem><SelectItem value="male">Homem</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary">{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar</Button>
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary rounded-2xl">
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
+                </Button>
               </div>
             </div>
           )}
