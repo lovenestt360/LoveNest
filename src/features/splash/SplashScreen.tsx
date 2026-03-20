@@ -77,20 +77,34 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         fadeOut ? "opacity-0 scale-110 pointer-events-none" : "opacity-100 scale-100"
       }`}
       style={{ 
-        background: "black",
+        background: "radial-gradient(circle at center, #fdf2f8 0%, #fff 100%)",
       }}
     >
       {/* Premium Background Mesh */}
-      <div className="bg-mesh opacity-80" />
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+      <div className="bg-mesh opacity-30" />
 
       <div className="relative flex flex-col items-center justify-center scale-100 group">
         <div className="relative mb-8 flex h-32 w-32 items-center justify-center animate-in zoom-in duration-1000 ease-out">
           <div className="absolute inset-0 rounded-[2.5rem] bg-primary/30 blur-3xl animate-pulse" />
           <div className="absolute inset-0 rounded-[2.5rem] border-2 border-primary/20 scale-150 animate-ping opacity-5" />
           
-          <div className="relative flex h-28 w-28 items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-primary via-[#e11d48] to-[#be123c] shadow-[0_0_60px_rgba(225,29,72,0.5)] transition-all duration-700 group-hover:scale-110 border border-white/20">
-            <Heart className="h-14 w-14 text-white fill-white animate-heart-beat" />
+          {/* Replaced the single heart with initials and heart */}
+          <div className="flex items-center justify-center">
+            <div className="relative h-20 w-20 overflow-hidden transform hover:scale-110 transition-transform duration-500">
+              <div className="absolute inset-0 rounded-[2.5rem] bg-white/40 border border-white/50 backdrop-blur-md shadow-2xl" />
+              <div className="relative flex h-full w-full items-center justify-center p-4">
+                <span className="text-4xl font-black text-rose-500">{initials?.[0] || "L"}</span>
+              </div>
+            </div>
+            <div className="h-10 w-10 flex items-center justify-center -mx-2 z-10">
+              <Heart className="h-10 w-10 text-rose-500 fill-rose-500 animate-heart-beat shadow-glow-sm" />
+            </div>
+            <div className="relative h-20 w-20 overflow-hidden transform hover:scale-110 transition-transform duration-500">
+              <div className="absolute inset-0 rounded-[2.5rem] bg-white/40 border border-white/50 backdrop-blur-md shadow-2xl" />
+              <div className="relative flex h-full w-full items-center justify-center p-4">
+                <span className="text-4xl font-black text-rose-500 tracking-tighter">{initials?.[1] || "N"}</span>
+              </div>
+            </div>
           </div>
         </div>
 
