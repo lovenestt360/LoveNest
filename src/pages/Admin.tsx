@@ -1449,8 +1449,8 @@ export default function Admin() {
                                 <div className="max-w-md mx-auto">
                                     <p className="font-bold text-lg">Configurações não encontradas</p>
                                     <p className="text-sm text-muted-foreground mt-2">
-                                        Parece que a tabela ainda não foi criada no Supabase ou está vazia. 
-                                        Por favor, executa o script SQL fornecido nas instruções.
+                                        Parece que a tabela ainda não foi criada no Supabase. 
+                                        Por favor, executa o script SQL em <strong>'supabase/migrations/20260319_pwa_tutorial.sql'</strong> no teu Editor SQL do Supabase.
                                     </p>
                                     <div className="pt-6">
                                         <Button onClick={async () => {
