@@ -4,7 +4,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { useSharedWallpaper } from "@/hooks/useSharedWallpaper";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
-  Send, Loader2, Image as ImageIcon, Mic, MicOff, Pin, PinOff,
-  Reply, Pencil, Trash2, X, Check, CornerDownRight, Settings
+  Send,
+  Loader2,
+  Image as ImageIcon,
+  Mic,
+  MicOff,
+  Pin,
+  PinOff,
+  Reply,
+  Pencil,
+  Trash2,
+  X,
+  Check,
+  CornerDownRight,
+  Settings,
+  Palette
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -303,7 +316,7 @@ export default function Chat() {
   const { resetChatUnread } = useAppNotifContext();
   const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
-  const { wallpaperUrl, wallpaperOpacity, updateWallpaper } = useSharedWallpaper();
+  const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const [openSettings, setOpenSettings] = useState(false);
   const [tempWallpaperUrl, setTempWallpaperUrl] = useState("");
   const [tempOpacity, setTempOpacity] = useState(30);
@@ -582,24 +595,42 @@ export default function Chat() {
   return (
     <section className="relative flex flex-col overflow-hidden" style={{ height: "calc(100dvh - 7rem)" }}>
 
-      {/* ── Wallpaper (fixed, behind everything, full screen) ── */}
+      {/* ── Wallpaper (fixed, behind messages) ── */}
       {wallpaperUrl && (
-        <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${wallpaperUrl})`, opacity: wallpaperOpacity }}
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
+            style={{ 
+              backgroundImage: `url(${wallpaperUrl})`, 
+              opacity: wallpaperOpacity,
+              filter: "saturate(1.2)" 
+            }}
           />
         </div>
       )}
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 flex items-center gap-2 px-3 pt-3 pb-1 pointer-events-none">
-        <div className="h-8 w-8 rounded-full bg-background/30 backdrop-blur-md flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.05)] pointer-events-auto">
-          <span className="text-base">💬</span>
+      <header className="relative z-20 shrink-0 flex items-center justify-between px-3 pt-3 pb-1">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-background/30 backdrop-blur-md flex items-center justify-center shadow-sm">
+            <span className="text-base">💬</span>
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-sm font-black tracking-tight text-foreground/90 uppercase letter-spacing-[0.1em]">Chat</h1>
+          </div>
         </div>
-        <div className="flex-1 min-w-0 pointer-events-auto">
-          <h1 className="text-base font-bold tracking-tight text-foreground drop-shadow-sm">Chat</h1>
-        </div>
+
+        {/* Wallpaper Quick Adjust Button (Optional but helpful) */}
+        {!openSettings && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 rounded-full bg-background/20 backdrop-blur-sm shadow-sm"
+            onClick={() => window.location.assign("/configuracoes")}
+          >
+            <Palette className="h-4 w-4 text-foreground/60" />
+          </Button>
+        )}
       </header>
 
       {/* ── Pinned bar ── */}
@@ -608,8 +639,8 @@ export default function Chat() {
       </div>
 
       {/* ── Messages area ── */}
-      <div className="flex-1 relative z-10 overflow-y-auto px-2" style={{ scrollbarWidth: "thin" }}>
-        <div className="flex flex-col gap-0.5 py-2 pb-24 min-h-full justify-end">
+      <div className="flex-1 relative z-10 overflow-y-auto px-2 select-none" style={{ scrollbarWidth: "none" }}>
+        <div className="flex flex-col gap-1.5 py-4 pb-28 min-h-full justify-end">
           {hasMore && (
             <div className="flex justify-center py-2">
               <Button variant="secondary" size="sm" className="rounded-full shadow-sm" onClick={loadMore} disabled={loadingMore}>
