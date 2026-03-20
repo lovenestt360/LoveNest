@@ -534,13 +534,13 @@ export default function Admin() {
             const fileName = `pwa-tutorial-${platform}-${Date.now()}.${fileExt}`;
             const filePath = `tutorials/${fileName}`;
 
-            const { error: uploadError } = await adminClient.storage
-                .from("avatars") // Re-using existing configured bucket
-                .upload(filePath, file);
+            const { error: uploadError } = await supabase.storage
+                .from("avatars")
+                .upload(filePath, file, { upsert: true });
 
             if (uploadError) throw uploadError;
 
-            const { data: { publicUrl } } = adminClient.storage
+            const { data: { publicUrl } } = supabase.storage
                 .from("avatars")
                 .getPublicUrl(filePath);
 
