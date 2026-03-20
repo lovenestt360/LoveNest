@@ -189,83 +189,116 @@ export default function Admin() {
             setLoading(true);
 
             // 1. Payments
-            const { data: paymentsData } = await adminClient
-                .from("payments")
-                .select(`
-                    *,
-                    couple_spaces (
-                        house_name,
-                        partner1_name,
-                        partner2_name,
-                        is_suspended,
-                        subscription_status
-                    )
-                `)
-                .order("created_at", { ascending: false });
-            setPayments(paymentsData || []);
+            try {
+                const { data: paymentsData } = await adminClient
+                    .from("payments")
+                    .select(`
+                        *,
+                        couple_spaces (
+                            house_name,
+                            partner1_name,
+                            partner2_name,
+                            is_suspended,
+                            subscription_status
+                        )
+                    `)
+                    .order("created_at", { ascending: false });
+                setPayments(paymentsData || []);
+            } catch (e) {
+                console.error("Error fetching payments:", e);
+            }
 
             // 2. Houses
-            const { data: housesData } = await adminClient
-                .from("couple_spaces")
-                .select(`*`)
-                .order("created_at", { ascending: false });
-            setHouses(housesData || []);
+            try {
+                const { data: housesData } = await adminClient
+                    .from("couple_spaces")
+                    .select(`*`)
+                    .order("created_at", { ascending: false });
+                setHouses(housesData || []);
+            } catch (e) {
+                console.error("Error fetching houses:", e);
+            }
 
             // 3. Users profiles
-            const { data: usersData } = await adminClient
-                .from("profiles")
-                .select("*")
-                .order("created_at", { ascending: false });
-            setUsers(usersData || []);
+            try {
+                const { data: usersData } = await adminClient
+                    .from("profiles")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+                setUsers(usersData || []);
+            } catch (e) {
+                console.error("Error fetching users:", e);
+            }
 
             // 4. Announcements
-            const { data: annData } = await adminClient
-                .from("admin_announcements")
-                .select("*")
-                .order("created_at", { ascending: false });
-            setAnnouncements(annData || []);
+            try {
+                const { data: annData } = await adminClient
+                    .from("admin_announcements")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+                setAnnouncements(annData || []);
+            } catch (e) {
+                console.error("Error fetching announcements:", e);
+            }
 
             // 5. Plans
-            const { data: plansData } = await adminClient
-                .from("subscription_plans")
-                .select("*")
-                .order("created_at", { ascending: false });
-            setPlans(plansData || []);
+            try {
+                const { data: plansData } = await adminClient
+                    .from("subscription_plans")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+                setPlans(plansData || []);
+            } catch (e) {
+                console.error("Error fetching plans:", e);
+            }
 
             // 6. Payment Settings
-            const { data: psData } = await adminClient
-                .from("payment_settings")
-                .select("*")
-                .limit(1)
-                .maybeSingle();
+            try {
+                const { data: psData } = await adminClient
+                    .from("payment_settings")
+                    .select("*")
+                    .limit(1)
+                    .maybeSingle();
 
-            if (psData) {
-                setPaymentSettings(psData);
-                setSettingsForm({
-                    mpesa_number: psData.mpesa_number || "",
-                    emola_number: psData.emola_number || "",
-                    mkesh_number: psData.mkesh_number || "",
-                    account_name: psData.account_name || "",
-                    whatsapp_number: psData.whatsapp_number || "",
-                    whatsapp_message_template: psData.whatsapp_message_template || ""
-                });
+                if (psData) {
+                    setPaymentSettings(psData);
+                    setSettingsForm({
+                        mpesa_number: psData.mpesa_number || "",
+                        emola_number: psData.emola_number || "",
+                        mkesh_number: psData.mkesh_number || "",
+                        account_name: psData.account_name || "",
+                        whatsapp_number: psData.whatsapp_number || "",
+                        whatsapp_message_template: psData.whatsapp_message_template || ""
+                    });
+                }
+            } catch (e) {
+                console.error("Error fetching payment settings:", e);
             }
 
             // 7. Streaks
-            const { data: streaksData } = await adminClient
-                .from("love_streaks")
-                .select("*")
-                .order("current_streak", { ascending: false });
-            setStreaks(streaksData || []);
+            try {
+                const { data: streaksData } = await adminClient
+                    .from("love_streaks")
+                    .select("*")
+                    .order("current_streak", { ascending: false });
+                setStreaks(streaksData || []);
+            } catch (e) {
+                console.error("Error fetching streaks:", e);
+            }
 
             // 8. PWA Settings
-            const { data: pwaData } = await adminClient
-                .from("pwa_tutorial_settings")
-                .select("*")
-                .maybeSingle();
-            
-            if (pwaData) {
-                setPwaSettings(pwaData);
+            try {
+                const { data: pwaData, error: pError } = await adminClient
+                    .from("pwa_tutorial_settings")
+                    .select("*")
+                    .maybeSingle();
+                
+                if (pError) console.error("Error fetching PWA settings:", pError);
+                if (pwaData) {
+                    setPwaSettings(pwaData);
+                }
+            } catch (e) {
+                console.error("Error fetching PWA settings exception:", e);
             }
 
         } catch (error: any) {
