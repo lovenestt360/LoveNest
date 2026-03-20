@@ -25,7 +25,7 @@ TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM public.admin_users 
-        WHERE user_id = auth.uid()
+        WHERE id = auth.uid()
     )
 )
 WITH CHECK (
