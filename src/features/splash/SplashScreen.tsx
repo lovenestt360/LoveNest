@@ -34,14 +34,13 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
           if (houseError) console.error("Splash: Error fetching house", houseError);
 
           if (house && mounted) {
-            const hInitials = house.initials?.trim();
-            if (hInitials) {
-              setInitials(hInitials);
-            } else if (house.partner1_name || house.partner2_name) {
+            if (house.initials) {
+              setInitials(house.initials);
+            } else if (house.partner1_name && house.partner2_name) {
               // Construct initials if missing from field
-              const i1 = house.partner1_name?.[0] || "";
-              const i2 = house.partner2_name?.[0] || "";
-              setInitials(`${i1}${i2}`.toUpperCase());
+              const i1 = house.partner1_name[0] || "";
+              const i2 = house.partner2_name[0] || "";
+              setInitials(`${i1}${i2}`);
             }
           }
         } else {
@@ -74,54 +73,37 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
   return (
     <div
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${
-        fadeOut ? "opacity-0 scale-110 pointer-events-none" : "opacity-100 scale-100"
+        fadeOut ? "opacity-0 scale-105 pointer-events-none" : "opacity-100 scale-100"
       }`}
       style={{ 
-        background: "radial-gradient(circle at center, #fdf2f8 0%, #fff 100%)",
+        background: "radial-gradient(circle at center, #0a0a0a 0%, #000 100%)",
       }}
     >
-      {/* Premium Background Mesh */}
-      <div className="bg-mesh opacity-30" />
+      {/* Background glow animation - cleaner rose */}
+      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] animate-pulse pointer-events-none filter blur-3xl" />
 
       <div className="relative flex flex-col items-center justify-center scale-100 group">
-        <div className="relative mb-8 flex h-32 w-32 items-center justify-center animate-in zoom-in duration-1000 ease-out">
-          <div className="absolute inset-0 rounded-[2.5rem] bg-primary/30 blur-3xl animate-pulse" />
-          <div className="absolute inset-0 rounded-[2.5rem] border-2 border-primary/20 scale-150 animate-ping opacity-5" />
+        <div className="relative mb-6 flex h-28 w-28 items-center justify-center animate-in zoom-in duration-700 ease-out">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl animate-pulse" />
+          <div className="absolute inset-0 rounded-full border border-primary/20 scale-125 animate-ping opacity-10" />
           
-          {/* Replaced the single heart with initials and heart */}
-          <div className="flex items-center justify-center">
-            <div className="relative h-20 w-20 overflow-hidden transform hover:scale-110 transition-transform duration-500">
-              <div className="absolute inset-0 rounded-[2.5rem] bg-white/40 border border-white/50 backdrop-blur-md shadow-2xl" />
-              <div className="relative flex h-full w-full items-center justify-center p-4">
-                <span className="text-4xl font-black text-rose-500">{initials?.[0] || "L"}</span>
-              </div>
-            </div>
-            <div className="h-10 w-10 flex items-center justify-center -mx-2 z-10">
-              <Heart className="h-10 w-10 text-rose-500 fill-rose-500 animate-heart-beat shadow-glow-sm" />
-            </div>
-            <div className="relative h-20 w-20 overflow-hidden transform hover:scale-110 transition-transform duration-500">
-              <div className="absolute inset-0 rounded-[2.5rem] bg-white/40 border border-white/50 backdrop-blur-md shadow-2xl" />
-              <div className="relative flex h-full w-full items-center justify-center p-4">
-                <span className="text-4xl font-black text-rose-500 tracking-tighter">{initials?.[1] || "N"}</span>
-              </div>
-            </div>
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-primary to-[#be123c] shadow-[0_0_50px_rgba(225,29,72,0.4)] transition-all duration-700 group-hover:scale-110">
+            <Heart className="h-12 w-12 text-white fill-white animate-pulse" />
           </div>
         </div>
 
-        <div className="text-center overflow-hidden space-y-4">
-          <h1 className="text-6xl font-black tracking-tighter text-white drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200 fill-mode-both">
+        <div className="text-center overflow-hidden space-y-3">
+          <h1 className="text-5xl font-black tracking-tighter text-white drop-shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
             LoveNest
           </h1>
           
-          <div className={`transition-all duration-1000 delay-700 ${showInitials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <div className={`transition-all duration-1000 delay-500 ${showInitials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             {initials ? (
-              <div className="bg-white/10 backdrop-blur-md border border-white/10 px-6 py-2 rounded-2xl shadow-xl inline-block">
-                <p className="text-sm font-black tracking-[0.5em] text-white uppercase drop-shadow">
-                  {initials.length > 1 ? `${initials[0]} ❤️ ${initials[initials.length - 1]}` : initials}
-                </p>
-              </div>
+              <p className="text-sm font-black tracking-[0.4em] text-primary-foreground/90 uppercase drop-shadow">
+                {initials.length > 1 ? `${initials[0]} ♥ ${initials[initials.length - 1]}` : initials}
+              </p>
             ) : (
-              <div className="h-1 w-16 bg-gradient-to-r from-transparent via-primary/50 to-transparent rounded-full mx-auto animate-pulse" />
+              <div className="h-0.5 w-12 bg-primary/40 rounded-full mx-auto animate-pulse" />
             )}
           </div>
         </div>

@@ -82,46 +82,46 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 overflow-hidden bg-[#fdf2f8]">
-      {/* Animated Background Mesh */}
-      <div className="bg-mesh opacity-10" />
+    <div className="relative flex min-h-screen items-center justify-center px-4 overflow-hidden bg-white">
+      {/* Mesh Background with more vibrant colors */}
+      <div className="bg-mesh opacity-30" />
 
       <div className="w-full max-w-md animate-fade-in space-y-8 relative z-10">
         <div className="text-center space-y-4">
-            <div className="inline-flex h-20 w-20 items-center justify-center rounded-[2.5rem] bg-white border border-rose-100 shadow-xl mb-2">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-2xl mb-2 border-2 border-primary/20">
                 <Heart className="h-10 w-10 text-primary fill-primary animate-pulse" />
             </div>
             <div className="space-y-1">
-                <h1 className="text-4xl font-black tracking-tighter text-zinc-900">Bem-vindo</h1>
+                <h1 className="text-5xl font-black tracking-tighter text-foreground">Bem-vindo</h1>
                 <p className="text-xs font-black text-primary uppercase tracking-[0.3em]">O teu Hub de Casal privado</p>
             </div>
         </div>
 
-        <div className="glass-card rounded-[2.5rem] p-8 shadow-2xl relative z-10">
+        <div className="glass-card rounded-[3rem] p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border-white/80 bg-white/70 backdrop-blur-3xl">
           <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-2xl mb-8">
-              <TabsTrigger value="password" title="Entrar com Senha" className="rounded-xl font-black text-[10px] uppercase tracking-widest py-2.5">Senha</TabsTrigger>
-              <TabsTrigger value="magic" title="Link Mágico" className="rounded-xl font-black text-[10px] uppercase tracking-widest py-2.5">Mágico</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-zinc-200/50 p-1.5 rounded-2xl mb-8">
+              <TabsTrigger value="password" className="rounded-xl font-black text-[10px] uppercase tracking-widest py-2.5">Senha</TabsTrigger>
+              <TabsTrigger value="magic" className="rounded-xl font-black text-[10px] uppercase tracking-widest py-2.5">Mágico</TabsTrigger>
             </TabsList>
 
             <TabsContent value="password">
               <form onSubmit={handlePasswordLogin} className="space-y-6">
                 <div className="space-y-2.5">
-                  <Label htmlFor="email-pwd" title="E-mail" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-zinc-500 px-1">
+                  <Label htmlFor="email-pwd" title="E-mail" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary px-1">
                     <Mail className="w-3.5 h-3.5" /> E-mail
                   </Label>
-                   <Input
+                  <Input
                     id="email-pwd"
                     type="email"
                     placeholder="teu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-14 rounded-2xl bg-white border-rose-100 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400"
+                    className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
                   />
                 </div>
                 <div className="space-y-2.5">
-                  <Label htmlFor="password" title="Senha" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-zinc-500 px-1">
+                  <Label htmlFor="password" title="Senha" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary px-1">
                      <Lock className="w-3.5 h-3.5" /> Senha
                   </Label>
                   <Input
@@ -131,17 +131,16 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-14 rounded-2xl bg-white border-rose-100 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400"
+                    className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
                   />
                 </div>
-                <Button 
+                <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full h-16 rounded-2xl text-lg font-black tracking-tight shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                  className="glass-btn-primary w-full h-16 flex items-center justify-center gap-3 font-black tracking-tight text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                 >
-                  {loading ? "A entrar..." : "Entrar agora"}
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
+                  {loading ? "A entrar..." : <>Entrar agora <ArrowRight className="w-5 h-5" /></>}
+                </button>
               </form>
             </TabsContent>
 
@@ -166,7 +165,7 @@ export default function Login() {
               ) : (
                 <form onSubmit={handleMagicLink} className="space-y-6">
                   <div className="space-y-2.5">
-                    <Label htmlFor="email-magic" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-zinc-500 px-1">
+                    <Label htmlFor="email-magic" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary px-1">
                       <Mail className="w-3.5 h-3.5" /> E-mail para Link Rápido
                     </Label>
                     <Input
@@ -176,32 +175,29 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-14 rounded-2xl bg-white border-rose-100 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400"
+                      className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
                     />
                   </div>
-                  <Button 
+                  <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full h-16 rounded-2xl text-lg font-black tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                    className="glass-btn-primary w-full h-16 flex items-center justify-center gap-3 font-black tracking-tight text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                   >
-                    {loading ? "A enviar..." : "Enviar Link"}
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
+                    {loading ? "A enviar..." : <>Enviar Link <ArrowRight className="w-5 h-5" /></>}
+                  </button>
                 </form>
               )}
             </TabsContent>
           </Tabs>
 
-          <div className="mt-10 text-center border-t border-rose-50 pt-8">
+          <div className="mt-10 text-center border-t border-zinc-100 pt-8">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Novo por aqui?</p>
-            <Button
-                variant="ghost"
+            <button 
                 onClick={() => navigate("/criar-conta")}
-                className="group w-full h-12 rounded-2xl text-sm font-black text-primary hover:bg-rose-50/50 hover:text-primary transition-all"
+                className="group flex items-center justify-center mx-auto gap-2 text-sm font-black text-primary hover:scale-105 transition-transform"
             >
-              Cria o teu Ninho Grátis
-              <Sparkles className="ml-2 w-4 h-4 group-hover:rotate-12 transition-transform" />
-            </Button>
+              Cria o teu Ninho Grátis <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+            </button>
           </div>
         </div>
       </div>

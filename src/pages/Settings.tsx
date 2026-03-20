@@ -19,8 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, Moon, Sun, Laptop } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -82,9 +81,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper, uploadWallpaper, removeWallpaper } = useUserSettings();
 
-  const { theme, setTheme } = useTheme();
-  
-  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, birthday: null, gender: null });
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
@@ -274,25 +271,6 @@ export default function Settings() {
         description: error.message || "Tenta novamente ou usa uma foto mais pequena.", 
         variant: "destructive" 
       });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleWallpaperUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const url = await uploadWallpaper(file);
-      if (url) {
-        await updateWallpaper({ url });
-        toast({ title: "Wallpaper atualizado! 🖼️" });
-      } else {
-        throw new Error("Erro no upload");
-      }
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -519,43 +497,13 @@ export default function Settings() {
           {currentCategory === 'customization' && (
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
-                <h3 className="font-bold">Aparência</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button 
-                    variant={theme === "light" ? "default" : "outline"} 
-                    className="flex flex-col h-20 gap-2 rounded-2xl" 
-                    onClick={() => setTheme("light")}
-                  >
-                    <Sun className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase">Claro</span>
-                  </Button>
-                  <Button 
-                    variant={theme === "dark" ? "default" : "outline"} 
-                    className="flex flex-col h-20 gap-2 rounded-2xl" 
-                    onClick={() => setTheme("dark")}
-                  >
-                    <Moon className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase">Escuro</span>
-                  </Button>
-                  <Button 
-                    variant={theme === "system" ? "default" : "outline"} 
-                    className="flex flex-col h-20 gap-2 rounded-2xl" 
-                    onClick={() => setTheme("system")}
-                  >
-                    <Laptop className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase">Sistema</span>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="glass-card p-6 space-y-4">
-                <h3 className="font-bold">Papel de Parede</h3>
+                <h3 className="font-bold">Chat Wallpaper</h3>
                 {wallpaperUrl ? (
                   <div className="relative aspect-video rounded-xl overflow-hidden group"><img src={wallpaperUrl} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center"><Button variant="destructive" size="sm" onClick={removeWallpaper}>Remover</Button></div></div>
                 ) : <div className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center bg-muted/20"><ImageIcon className="text-muted-foreground/30 h-8 w-8" /></div>}
-                <div className="space-y-2"><Label>Opacidade ({Math.round(wallpaperOpacity * 100)}%)</Label><Slider value={[wallpaperOpacity]} max={1} step={0.1} onValueChange={([v]) => updateWallpaper({ opacity: v })} /></div>
+                <div className="space-y-2"><Label>Opacidade ({Math.round(wallpaperOpacity * 100)}%)</Label><Slider value={[wallpaperOpacity]} max={1} step={0.1} onValueChange={([v]) => updateWallpaper({ wallpaper_opacity: v })} /></div>
                 <Button asChild className="w-full h-12 font-bold" variant="secondary"><label htmlFor="w-up"><Camera className="mr-2" /> Escolher Imagem</label></Button>
-                <input id="w-up" type="file" hidden accept="image/*" onChange={handleWallpaperUpload} />
+                <input id="w-up" type="file" hidden onChange={uploadWallpaper} />
               </div>
             </div>
           )}
