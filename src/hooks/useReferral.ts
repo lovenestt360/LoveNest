@@ -17,7 +17,7 @@ export function useReferralTracking(userId: string | undefined) {
       .maybeSingle()
       .then(({ data }) => {
         if (data && !data.referral_code) {
-          const code = Math.random().toString(36).substring(2, 10);
+          const code = Math.random().toString(36).substring(2, 9).toUpperCase();
           supabase
             .from("profiles")
             .update({ referral_code: code } as any)

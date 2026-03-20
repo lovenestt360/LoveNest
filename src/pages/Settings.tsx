@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, Moon, Sun, Monitor } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, Moon, Sun, Monitor, Copy } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -97,6 +97,8 @@ export default function Settings() {
   const [partner1Name, setPartner1Name] = useState("");
   const [partner2Name, setPartner2Name] = useState("");
   const [relationshipDate, setRelationshipDate] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [houseInviteCode, setHouseInviteCode] = useState("");
 
   const [notifPrefs, setNotifPrefs] = useState(loadPrefs);
 
@@ -114,6 +116,15 @@ export default function Settings() {
   const [debugLogs, setDebugLogs] = useState<any[]>([]);
   const [showDebug, setShowDebug] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'notifications' | 'customization' | 'data'>('menu');
+
+  const copyToClipboard = async (text: string, message: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Copiado!", description: message });
+    } catch {
+      toast({ title: "Erro ao copiar", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     if (!("Notification" in window) || !("PushManager" in window)) {
@@ -200,6 +211,7 @@ export default function Settings() {
         setBirthday(data.birthday ?? "");
         setGender(data.gender as any);
         setAvatarUrl(data.avatar_url);
+        setReferralCode(data.referral_code ?? "");
       }
       if (spaceId) {
         const { data: spaceData } = await supabase.from("couple_spaces").select("*").eq("id", spaceId).maybeSingle();
@@ -209,6 +221,7 @@ export default function Settings() {
           setHouseName(spaceData.house_name || "");
           setPartner1Name(spaceData.partner1_name || "");
           setPartner2Name(spaceData.partner2_name || "");
+          setHouseInviteCode(spaceData.invite_code || "");
         }
       }
       setLoading(false);
@@ -449,6 +462,19 @@ export default function Settings() {
                 <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary rounded-2xl">
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
                 </Button>
+
+                {referralCode && (
+                  <div className="pt-4 border-t border-zinc-100 space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Teu Código LoveNest (Amigos)</Label>
+                    <div className="flex gap-2">
+                      <Input value={referralCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-zinc-200" onClick={() => copyToClipboard(referralCode, "Código de parceiro copiado!")}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Ganha 50 pontos por cada amigo que entrar! 🎁</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -463,6 +489,19 @@ export default function Settings() {
                 </div>
                 <div className="space-y-2"><Label>Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 bg-background/50 border-none" /></div>
                 <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary">Guardar Dados</Button>
+
+                {houseInviteCode && (
+                  <div className="pt-4 border-t border-zinc-100 space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código da Casa (Parceiro)</Label>
+                    <div className="flex gap-2">
+                      <Input value={houseInviteCode} readOnly className="h-12 bg-rose-500/5 border-rose-500/20 text-center font-black tracking-widest text-rose-600 text-lg" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-zinc-200" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Usa este código para convidar o teu par. 🏠</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
