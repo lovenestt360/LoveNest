@@ -258,6 +258,16 @@ export default function Admin() {
                 .order("current_streak", { ascending: false });
             setStreaks(streaksData || []);
 
+            // 8. PWA Settings
+            const { data: pwaData } = await adminClient
+                .from("pwa_tutorial_settings")
+                .select("*")
+                .maybeSingle();
+            
+            if (pwaData) {
+                setPwaSettings(pwaData);
+            }
+
         } catch (error: any) {
             toast({ title: "Erro de Gestão", description: error.message, variant: "destructive" });
         } finally {
