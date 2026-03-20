@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { BottomTabs } from "@/app/layout/BottomTabs";
 import { Fab } from "@/app/layout/Fab";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -6,13 +6,19 @@ import { WifiOff } from "lucide-react";
 import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
 import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
+import { cn } from "@/lib/utils";
 
 export function AppShell() {
   const isOnline = useOnlineStatus();
+  const location = useLocation();
+  const isChat = location.pathname === "/casa";
 
   return (
     <PWATutorialProvider>
-      <div className="min-h-[100dvh] bg-background text-foreground relative">
+      <div className={cn(
+        "min-h-[100dvh] text-foreground relative transition-colors duration-500",
+        isChat ? "bg-transparent" : "bg-background"
+      )}>
         {/* Dynamic Background Mesh */}
         <div className="bg-mesh" aria-hidden="true" />
 

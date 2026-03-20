@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -313,6 +314,7 @@ function ActionSheet({
 export default function Chat() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
+  const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
   const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
@@ -597,14 +599,12 @@ export default function Chat() {
 
       {/* ── Wallpaper (fixed, behind messages) ── */}
       {wallpaperUrl && (
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
-            style={{ 
-              backgroundImage: `url(${wallpaperUrl})`, 
-              opacity: wallpaperOpacity,
-              filter: "saturate(1.2)" 
-            }}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-background">
+          <img 
+            src={wallpaperUrl} 
+            alt="Chat Wallpaper" 
+            className="h-full w-full object-cover" 
+            style={{ opacity: wallpaperOpacity }}
           />
         </div>
       )}
@@ -626,7 +626,7 @@ export default function Chat() {
             variant="ghost" 
             size="icon" 
             className="h-8 w-8 rounded-full bg-background/20 backdrop-blur-sm shadow-sm"
-            onClick={() => window.location.assign("/configuracoes")}
+            onClick={() => navigate("/configuracoes")}
           >
             <Palette className="h-4 w-4 text-foreground/60" />
           </Button>
