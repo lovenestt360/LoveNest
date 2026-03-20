@@ -141,9 +141,9 @@ export default function Admin() {
     const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
     const [searchHouse, setSearchHouse] = useState("");
 
-    // PWA Settings
     const [pwaSettings, setPwaSettings] = useState<any>(null);
     const [savingPwa, setSavingPwa] = useState(false);
+    const [uploadingVideo, setUploadingVideo] = useState<"android" | "ios" | null>(null);
 
     const ALL_FEATURES = [
         { id: "home", label: "Home" },
@@ -478,6 +478,51 @@ export default function Admin() {
         }
     };
 
+    const handleUploadPwaVideo = async (file: File, platform: "android" | "ios") => {
+        if (!pwaSettings) {
+            toast({ title: "Erro", description: "Configurações não carregadas. Tente recarregar a página.", variant: "destructive" });
+            return;
+        }
+        
+        try {
+            setUploadingVideo(platform);
+            const fileExt = file.name.split('.').pop();
+            const fileName = `pwa-tutorial-${platform}-${Date.now()}.${fileExt}`;
+            const filePath = `tutorials/${fileName}`;
+
+            const { error: uploadError } = await adminClient.storage
+                .from("avatars") // Re-using existing configured bucket
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = adminClient.storage
+                .from("avatars")
+                .getPublicUrl(filePath);
+
+            const updatedSettings = {
+                ...pwaSettings,
+                [platform === "android" ? "android_video_url" : "ios_video_url"]: publicUrl
+            };
+            
+            setPwaSettings(updatedSettings);
+            
+            // Auto save
+            const { error: updateError } = await adminClient.from("pwa_tutorial_settings").update({
+                android_video_url: updatedSettings.android_video_url,
+                ios_video_url: updatedSettings.ios_video_url
+            }).eq("id", pwaSettings.id);
+
+            if (updateError) throw updateError;
+            
+            toast({ title: "Vídeo enviado com sucesso!" });
+        } catch (error: any) {
+            toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+        } finally {
+            setUploadingVideo(null);
+        }
+    };
+
     const handleGenerateWrapped = async () => {
         try {
             setGeneratingWrapped(true);
@@ -609,9 +654,6 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
                         <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
-                    </Button>
-                    <Button variant={tab === "pwa" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("pwa")}>
-                        <Smartphone className="w-4 h-4" /> <span className="hidden md:inline">Tutorial PWA</span>
                     </Button>
                 </nav>
 
@@ -1377,67 +1419,162 @@ export default function Admin() {
                 {tab === "pwa" && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="glass-card rounded-[2.5rem] p-8 space-y-8">
-                        <div>
-                            <h2 className="text-2xl font-bold mb-2">Tutorial de Instalação PWA</h2>
-                            <p className="text-muted-foreground">Configure os vídeos e a visibilidade do tutorial de instalação.</p>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h2 className="text-2xl font-bold mb-2">Tutorial de Instalação PWA</h2>
+                                <p className="text-muted-foreground">Configure os vídeos e a visibilidade do tutorial de instalação.</p>
+                            </div>
+                            {!pwaSettings && !loading && (
+                                <Button variant="outline" size="sm" onClick={fetchAllData} className="gap-2">
+                                    <RefreshCw className="w-4 h-4" /> Recarregar
+                                </Button>
+                            )}
                         </div>
 
-                        {pwaSettings && (
+                        {!pwaSettings && !loading ? (
+                            <div className="p-8 border-2 border-dashed border-primary/20 rounded-[2rem] bg-primary/5 text-center space-y-4">
+                                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mx-auto">
+                                    <AlertTriangle className="w-8 h-8" />
+                                </div>
+                                <div className="max-w-md mx-auto">
+                                    <p className="font-bold text-lg">Configurações não encontradas</p>
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                        Parece que a tabela ainda não foi criada no Supabase ou está vazia. 
+                                        Por favor, executa o script SQL fornecido nas instruções.
+                                    </p>
+                                    <div className="pt-6">
+                                        <Button onClick={async () => {
+                                            toast({ title: "Tentando inicializar..." });
+                                            const { data, error } = await adminClient.from("pwa_tutorial_settings").insert({ android_video_url: '', ios_video_url: '', is_enabled: true }).select();
+                                            if (data) fetchAllData();
+                                            else toast({ title: "Falha", description: "Erro ao criar: " + error?.message, variant: "destructive" });
+                                        }} className="rounded-full px-8">
+                                            Inicializar Tabela Automático
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : pwaSettings && (
                             <div className="space-y-6">
-                                <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-                                            <Smartphone className="w-5 h-5" />
+                                <div className="flex items-center justify-between p-6 bg-primary/5 rounded-2xl border border-primary/10">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
+                                            <Smartphone className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <p className="font-bold">Sistema Ativo</p>
-                                            <p className="text-xs text-muted-foreground">Define se o tutorial aparece automaticamente para novos usuários.</p>
+                                            <p className="font-bold text-lg">Tutorial Adaptativo Ativo</p>
+                                            <p className="text-sm text-muted-foreground">O modal aparecerá automaticamente para quem ainda não instalou.</p>
                                         </div>
                                     </div>
-                                    <Switch 
-                                        checked={pwaSettings.is_enabled} 
-                                        onCheckedChange={(checked) => setPwaSettings({ ...pwaSettings, is_enabled: checked })} 
-                                    />
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <Label className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-[10px] font-bold">AN</div>
-                                            URL Vídeo Android
-                                        </Label>
-                                        <Input 
-                                            placeholder="https://..." 
-                                            value={pwaSettings.android_video_url || ""} 
-                                            onChange={(e) => setPwaSettings({ ...pwaSettings, android_video_url: e.target.value })}
-                                            className="h-12 rounded-xl bg-background/50"
+                                    <div className="flex items-center gap-3">
+                                        <span className={cn("text-xs font-bold", pwaSettings.is_enabled ? "text-green-500" : "text-muted-foreground")}>
+                                            {pwaSettings.is_enabled ? "LIGADO" : "DESLIGADO"}
+                                        </span>
+                                        <Switch 
+                                            checked={pwaSettings.is_enabled} 
+                                            onCheckedChange={(checked) => setPwaSettings({ ...pwaSettings, is_enabled: checked })} 
                                         />
-                                        <p className="text-[10px] text-muted-foreground italic">Recomendado: Video direto (mp4) ou link do Supabase Storage.</p>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <Label className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center text-[10px] font-bold">IOS</div>
-                                            URL Vídeo iPhone (iOS)
-                                        </Label>
-                                        <Input 
-                                            placeholder="https://..." 
-                                            value={pwaSettings.ios_video_url || ""} 
-                                            onChange={(e) => setPwaSettings({ ...pwaSettings, ios_video_url: e.target.value })}
-                                            className="h-12 rounded-xl bg-background/50"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground italic">Recomendado: Video direto (mp4) ou link do Supabase Storage.</p>
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t border-border">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    {/* Android Section */}
+                                    <div className="glass-card p-6 rounded-3xl space-y-4 shadow-sm border-emerald-500/10 hover:border-emerald-500/20 transition-colors">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Label className="flex items-center gap-2 font-black text-emerald-600">
+                                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-xs font-bold">AN</div>
+                                                ANDROID
+                                            </Label>
+                                            {pwaSettings.android_video_url && (
+                                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">VÍDEO ATIVO</span>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="space-y-3">
+                                            <Input 
+                                                placeholder="Cola o link do vídeo aqui..." 
+                                                value={pwaSettings.android_video_url || ""} 
+                                                onChange={(e) => setPwaSettings({ ...pwaSettings, android_video_url: e.target.value })}
+                                                className="h-12 rounded-xl bg-background/50"
+                                            />
+                                            <div className="relative">
+                                                <Button 
+                                                    variant="secondary" 
+                                                    className="w-full h-12 rounded-xl gap-2 font-bold relative overflow-hidden"
+                                                    disabled={uploadingVideo === "android"}
+                                                    asChild
+                                                >
+                                                    <label className="cursor-pointer">
+                                                        {uploadingVideo === "android" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                        Subir Vídeo Android
+                                                        <input 
+                                                            type="file" 
+                                                            accept="video/*" 
+                                                            hidden 
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) handleUploadPwaVideo(file, "android");
+                                                            }} 
+                                                        />
+                                                    </label>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* iOS Section */}
+                                    <div className="glass-card p-6 rounded-3xl space-y-4 shadow-sm border-blue-500/10 hover:border-blue-500/20 transition-colors">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Label className="flex items-center gap-2 font-black text-blue-600">
+                                                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-xs font-bold">IOS</div>
+                                                IPHONE (iOS)
+                                            </Label>
+                                            {pwaSettings.ios_video_url && (
+                                                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">VÍDEO ATIVO</span>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="space-y-3">
+                                            <Input 
+                                                placeholder="Cola o link do vídeo aqui..." 
+                                                value={pwaSettings.ios_video_url || ""} 
+                                                onChange={(e) => setPwaSettings({ ...pwaSettings, ios_video_url: e.target.value })}
+                                                className="h-12 rounded-xl bg-background/50"
+                                            />
+                                            <div className="relative">
+                                                <Button 
+                                                    variant="secondary" 
+                                                    className="w-full h-12 rounded-xl gap-2 font-bold relative overflow-hidden"
+                                                    disabled={uploadingVideo === "ios"}
+                                                    asChild
+                                                >
+                                                    <label className="cursor-pointer">
+                                                        {uploadingVideo === "ios" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                        Subir Vídeo iPhone
+                                                        <input 
+                                                            type="file" 
+                                                            accept="video/*" 
+                                                            hidden 
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) handleUploadPwaVideo(file, "ios");
+                                                            }} 
+                                                        />
+                                                    </label>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 flex justify-center">
                                     <Button 
                                         onClick={handleSavePwaSettings} 
                                         disabled={savingPwa} 
-                                        className="w-full md:w-auto min-w-[200px] h-12 rounded-2xl font-bold gap-2 shadow-lg shadow-primary/25"
+                                        className="min-w-[280px] h-14 rounded-2xl font-black text-lg gap-3 shadow-xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95"
                                     >
-                                        {savingPwa ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                                        Guardar Configurações PWA
+                                        {savingPwa ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                                        Guardar Configurações
                                     </Button>
                                 </div>
                             </div>
