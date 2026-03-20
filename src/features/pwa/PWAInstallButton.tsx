@@ -24,6 +24,11 @@ export function PWAInstallButton() {
 
   if (!settings?.is_enabled) return null;
 
+  // Hide if already running as installed PWA
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches 
+    || (window.navigator as any).standalone === true;
+  if (isStandalone) return null;
+
   const handleInstallClick = () => {
     setShowModal(true);
     // If it's Android and we have a prompt, we could also trigger it

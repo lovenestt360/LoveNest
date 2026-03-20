@@ -63,18 +63,19 @@ export function PWATutorialModal() {
           </div>
 
           {/* Video / Content Section */}
-          <div className="aspect-[9/16] max-h-[400px] w-full bg-black/10 rounded-3xl overflow-hidden border border-border/50 relative group">
+          <div className="w-full bg-black/5 rounded-2xl overflow-hidden border border-border/50 relative">
             {videoUrl ? (
               <video 
                 src={videoUrl} 
-                className="w-full h-full object-cover" 
+                className="w-full max-h-[55vh] object-contain rounded-2xl" 
                 controls 
                 playsInline
                 loop
                 autoPlay
+                muted
               />
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center space-y-4">
+              <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 min-h-[200px]">
                 <HelpCircle className="w-12 h-12 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground font-medium italic">
                   O administrador ainda não configurou o vídeo tutorial para {activePlatform === "android" ? "Android" : "iPhone"}.

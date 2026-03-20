@@ -30,6 +30,11 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   const isAndroid = /Android/.test(navigator.userAgent);
+  
+  // Detect if we're running as an installed PWA (standalone mode)
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches 
+    || (window.navigator as any).standalone === true
+    || document.referrer.includes("android-app://");
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -42,9 +47,9 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
       if (!error && data) {
         setSettings(data);
         
-        // Auto-show logic
+        // Auto-show logic: Only show if NOT already installed as PWA
         const hasSeen = localStorage.getItem("pwa_tutorial_seen") === "true";
-        if (data.is_enabled && !hasSeen && user) {
+        if (data.is_enabled && !hasSeen && user && !isStandalone) {
           // Delay a bit to wait for splash/login transition
           setTimeout(() => setShowModal(true), 1500);
         }
@@ -54,7 +59,7 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isStandalone]);
 
   useEffect(() => {
     fetchSettings();
