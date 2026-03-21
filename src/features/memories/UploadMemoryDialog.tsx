@@ -44,7 +44,10 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
   };
 
   const handleSave = async () => {
-    if (!file || !spaceId) return;
+    if (!file || !spaceId || !userId) {
+      toast({ title: "Dados em falta", description: "Não foi possível identificar o teu utilizador ou casa.", variant: "destructive" });
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() ?? "jpg";
