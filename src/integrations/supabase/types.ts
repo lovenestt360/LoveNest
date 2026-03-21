@@ -250,6 +250,7 @@ export type Database = {
       }
       couple_spaces: {
         Row: {
+          age_gap_flag: boolean | null
           chat_wallpaper_opacity: number
           chat_wallpaper_url: string | null
           created_at: string
@@ -1111,6 +1112,53 @@ export type Database = {
           },
         ]
       }
+      identity_verifications: {
+        Row: {
+          admin_notes: string | null
+          age: number
+          created_at: string
+          document_url: string
+          full_name: string
+          id: string
+          id_number: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          age: number
+          created_at?: string
+          document_url: string
+          full_name: string
+          id?: string
+          id_number: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          age?: number
+          created_at?: string
+          document_url?: string
+          full_name?: string
+          id?: string
+          id_number?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       members: {
         Row: {
           couple_space_id: string
@@ -1541,6 +1589,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
           birthday: string | null
           created_at: string
@@ -1550,6 +1599,7 @@ export type Database = {
           timezone: string | null
           updated_at: string
           user_id: string
+          verification_status: string | null
         }
         Insert: {
           avatar_url?: string | null

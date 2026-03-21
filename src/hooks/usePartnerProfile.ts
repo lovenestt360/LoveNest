@@ -27,7 +27,7 @@ export function usePartnerProfile() {
       try {
         // 1. Get the other member of the couple space
         const { data: members, error: mError } = await supabase
-          .from("couple_space_members")
+          .from("members")
           .select("user_id")
           .eq("couple_space_id", spaceId)
           .neq("user_id", user.id);

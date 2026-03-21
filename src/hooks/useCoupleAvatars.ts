@@ -58,7 +58,7 @@ export function useCoupleAvatars() {
         );
         setPartner(
           partnerProfile
-            ? { displayName: partnerProfile.display_name, avatarUrl: partnerProfile.partner_avatar_url || partnerProfile.avatar_url, verificationStatus: partnerProfile.verification_status as any }
+            ? { displayName: partnerProfile.display_name, avatarUrl: partnerProfile.avatar_url, verificationStatus: partnerProfile.verification_status as any }
             : null
         );
       } finally {
