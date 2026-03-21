@@ -409,20 +409,23 @@ const Index = () => {
 
               {fasting.plan ? (
                 <>
-                  <div className="flex items-center gap-2 text-xs font-bold">
-                    <span className="text-amber-600">Dia {fastingDayNumber}/{fasting.plan.total_days}</span>
-                    <span className="text-muted-foreground/30">•</span>
-                    <span className={cn(
-                      "rounded-lg px-2 py-0.5 text-[9px] uppercase tracking-wider",
-                      fasting.todayResult === "cumprido" ? "bg-green-500/20 text-green-700" :
-                        fasting.todayResult === "parcial" ? "bg-yellow-400/20 text-yellow-700" :
-                          fasting.todayResult === "falhei" ? "bg-red-500/20 text-red-700" :
-                            "bg-muted/50 text-muted-foreground"
-                    )}>
-                      {fasting.todayResult ? dayResultLabel(fasting.todayResult as any) : "Pendente"}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 text-xs font-bold mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-600">Dia {fastingDayNumber}/{fasting.plan.total_days}</span>
+                      <span className="text-muted-foreground/30">•</span>
+                      <span className={cn(
+                        "rounded-lg px-2 py-0.5 text-[9px] uppercase tracking-wider",
+                        fasting.todayResult === "cumprido" ? "bg-green-500/20 text-green-700" :
+                          fasting.todayResult === "parcial" ? "bg-yellow-400/20 text-yellow-700" :
+                            fasting.todayResult === "falhei" ? "bg-red-500/20 text-red-700" :
+                              "bg-muted/50 text-muted-foreground"
+                      )}>
+                        {fasting.todayResult ? dayResultLabel(fasting.todayResult as any) : "Pendente"}
+                      </span>
+                    </div>
+                    <span className="text-amber-600 font-black">{fastingProgress}%</span>
                   </div>
-                  <Progress value={fastingProgress} className="h-2 rounded-full overflow-hidden" />
+                  <Progress value={fastingProgress} className="h-2 rounded-full overflow-hidden bg-amber-500/10" />
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground/80 font-medium">Faltam {daysToEaster} dias para a Páscoa. Prepara-te para a ressurreição! ✨</p>
