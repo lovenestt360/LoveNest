@@ -6,6 +6,7 @@ import { WifiOff } from "lucide-react";
 import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
 import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { cn } from "@/lib/utils";
 
 export function AppShell() {
@@ -37,9 +38,10 @@ export function AppShell() {
         <Fab />
         <BottomTabs />
         
-        {/* PWA System Components */}
+        {/* System Components */}
         <PWAInstallButton />
         <PWATutorialModal />
+        <OnboardingWizard />
       </div>
     </PWATutorialProvider>
   );

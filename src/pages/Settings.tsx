@@ -128,6 +128,19 @@ export default function Settings() {
   };
 
   useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (["profile", "house", "notifications", "customization", "data"].includes(hash)) {
+        setCurrentCategory(hash as any);
+      }
+    };
+
+    handleHashChange(); // Initial check
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  useEffect(() => {
     if (!("Notification" in window) || !("PushManager" in window)) {
       setPushPermission("unsupported");
     } else {
