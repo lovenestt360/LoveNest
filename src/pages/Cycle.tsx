@@ -71,41 +71,43 @@ export default function Cycle() {
         </TabsContent>
       </Tabs>
 
-      {/* Reset data (temporary dev utility) */}
-      <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
-        <p className="text-xs font-bold text-destructive">⚠️ Zona de perigo</p>
-        {!confirmReset ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
-            onClick={() => setConfirmReset(true)}
-          >
-            <Trash2 className="mr-2 h-3.5 w-3.5" />
-            Resetar dados do ciclo
-          </Button>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Isto apaga todos os teus registos de ciclo (perfil, períodos, sintomas). Tens a certeza?
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmReset(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleReset}
-                disabled={resetting}
-              >
-                {resetting && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-                Sim, apagar tudo
-              </Button>
+      {/* Reset data (owner only) */}
+      {!data.isMale && (
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+          <p className="text-xs font-bold text-destructive">⚠️ Zona de perigo</p>
+          {!confirmReset ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+              onClick={() => setConfirmReset(true)}
+            >
+              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              Resetar dados do ciclo
+            </Button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Isto apaga todos os teus registos de ciclo (perfil, períodos, sintomas). Tens a certeza?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={() => setConfirmReset(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={resetting}
+                >
+                  {resetting && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                  Sim, apagar tudo
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

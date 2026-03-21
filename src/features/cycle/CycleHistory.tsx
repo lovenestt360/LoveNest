@@ -34,15 +34,15 @@ export function CycleHistory({ data }: { data: CycleData }) {
 
   // Fetch all symptoms for insights
   useEffect(() => {
-    if (!user) return;
+    if (!data.targetUserId) return;
     supabase
       .from("daily_symptoms")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", data.targetUserId)
       .order("day_key", { ascending: false })
       .limit(200)
       .then(({ data }) => setAllSymptoms((data as DailySymptom[]) ?? []));
-  }, [user]);
+  }, [data.targetUserId]);
 
   // Compute cycle stats
   const cycles: { start: string; end: string | null; cycleLength: number | null; periodLength: number | null }[] = [];
@@ -197,55 +197,57 @@ export function CycleHistory({ data }: { data: CycleData }) {
         </CardContent>
       </Card>
 
-      {/* Settings */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Configurações do ciclo</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Ciclo (dias)</Label>
-              <Input type="number" min={18} max={45} value={avgCycle} onChange={(e) => setAvgCycle(+e.target.value)} />
+      {/* Settings (owner only) */}
+      {!data.isMale && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Configurações do ciclo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Ciclo (dias)</Label>
+                <Input type="number" min={18} max={45} value={avgCycle} onChange={(e) => setAvgCycle(+e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Período (dias)</Label>
+                <Input type="number" min={1} max={12} value={avgPeriod} onChange={(e) => setAvgPeriod(+e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Fase lútea</Label>
+                <Input type="number" min={8} max={20} value={luteal} onChange={(e) => setLuteal(+e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Dias TPM</Label>
+                <Input type="number" min={1} max={14} value={pmsDays} onChange={(e) => setPmsDays(+e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Período (dias)</Label>
-              <Input type="number" min={1} max={12} value={avgPeriod} onChange={(e) => setAvgPeriod(+e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Fase lútea</Label>
-              <Input type="number" min={8} max={20} value={luteal} onChange={(e) => setLuteal(+e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Dias TPM</Label>
-              <Input type="number" min={1} max={14} value={pmsDays} onChange={(e) => setPmsDays(+e.target.value)} />
-            </div>
-          </div>
 
-          {/* Share level */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Partilha com o par</Label>
-            <Select value={shareLevel} onValueChange={setShareLevel}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="private">🔒 Privado — nada partilhado</SelectItem>
-                <SelectItem value="summary">📋 Resumo — fase e data prevista</SelectItem>
-                <SelectItem value="summary_signals">📋+ Resumo + sinais — fase, data e níveis (dor/energia)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {shareLevel === "private" && "O teu par não verá nenhum dado do ciclo."}
-              {shareLevel === "summary" && "O teu par verá apenas a fase actual e a data prevista da próxima menstruação."}
-              {shareLevel === "summary_signals" && "O teu par verá a fase, data prevista e níveis de dor/energia (sem sintomas detalhados)."}
-            </p>
-          </div>
+            {/* Share level */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Partilha com o par</Label>
+              <Select value={shareLevel} onValueChange={setShareLevel}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">🔒 Privado — nada partilhado</SelectItem>
+                  <SelectItem value="summary">📋 Resumo — fase e data prevista</SelectItem>
+                  <SelectItem value="summary_signals">📋+ Resumo + sinais — fase, data e níveis (dor/energia)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {shareLevel === "private" && "O teu par não verá nenhum dado do ciclo."}
+                {shareLevel === "summary" && "O teu par verá apenas a fase actual e a data prevista da próxima menstruação."}
+                {shareLevel === "summary_signals" && "O teu par verá a fase, data prevista e níveis de dor/energia (sem sintomas detalhados)."}
+              </p>
+            </div>
 
-          <Button onClick={handleSaveSettings} disabled={saving} className="w-full">
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Guardar configurações
-          </Button>
-        </CardContent>
-      </Card>
+            <Button onClick={handleSaveSettings} disabled={saving} className="w-full">
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Guardar configurações
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

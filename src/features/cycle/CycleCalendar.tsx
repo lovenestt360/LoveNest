@@ -45,19 +45,19 @@ export function CycleCalendar({ data }: { data: CycleData }) {
 
   // Fetch which days have symptom logs this month
   useEffect(() => {
-    if (!user) return;
+    if (!data.targetUserId) return;
     const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
     const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
     supabase
       .from("daily_symptoms")
       .select("day_key")
-      .eq("user_id", user.id)
+      .eq("user_id", data.targetUserId)
       .gte("day_key", from)
       .lte("day_key", to)
       .then(({ data }) => {
         setLoggedDays(new Set((data ?? []).map((d: any) => d.day_key)));
       });
-  }, [user, year, month, daysInMonth]);
+  }, [data.targetUserId, year, month, daysInMonth]);
 
   const getDayClass = (dayStr: string) => {
     if (!profile || periods.length === 0) return "";
