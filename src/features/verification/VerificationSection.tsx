@@ -19,7 +19,7 @@ export function VerificationSection({ userId }: Props) {
     setLoading(true);
     try {
       // 1. Check Profile status
-      const { data: profile } = await supabase.from("profiles").select("verification_status").eq("user_id", userId).maybeSingle();
+      const { data: profile } = await (supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle() as any);
       
       if (profile) {
         setStatus((profile.verification_status as VerificationStatus) || "unverified");

@@ -38,29 +38,45 @@ export function useCoupleAvatars() {
 
         const userIds = members.map((m) => m.user_id);
 
-        const { data: profiles } = await supabase
+        // 2. Get profile details (Select all to avoid missing column errors)
+        const { data: profiles, error: pError } = await (supabase
           .from("profiles")
-          .select("user_id, display_name, avatar_url, verification_status")
-          .in("user_id", userIds);
+          .select("*")
+          .in("user_id", userIds) as any);
 
-        if (!profiles) {
+        if (pError || !profiles || profiles.length === 0) {
           setLoading(false);
           return;
         }
 
-        const myProfile = profiles.find((p) => p.user_id === user.id);
-        const partnerProfile = profiles.find((p) => p.user_id !== user.id);
+        const myProfile = profiles.find((p: any) => p.user_id === user.id);
+        const partnerProfile = profiles.find((p: any) => p.user_id !== user.id);
 
-        setMe(
-          myProfile
-            ? { displayName: myProfile.display_name, avatarUrl: myProfile.avatar_url, verificationStatus: myProfile.verification_status as any }
-            : null
-        );
-        setPartner(
-          partnerProfile
-            ? { displayName: partnerProfile.display_name, avatarUrl: partnerProfile.avatar_url, verificationStatus: partnerProfile.verification_status as any }
-            : null
-        );
+        if (myProfile) {
+          setMe({ 
+            displayName: myProfile.display_name, 
+            avatarUrl: myProfile.avatar_url, 
+            verificationStatus: myProfile.verification_status || "unverified"
+          });
+        } else {
+          setMe({ 
+            displayName: user.email?.split("@")[0] || "Tu", 
+            avatarUrl: null, 
+            verificationStatus: "unverified" 
+          });
+        }
+
+        if (partnerProfile) {
+          setPartner({ 
+            displayName: partnerProfile.display_name, 
+            avatarUrl: partnerProfile.avatar_url, 
+            verificationStatus: partnerProfile.verification_status || "unverified" 
+          });
+        } else {
+          setPartner(null);
+        }
+      } catch (err) {
+        console.error("Error in useCoupleAvatars:", err);
       } finally {
         setLoading(false);
       }

@@ -38,7 +38,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
               "bg-gradient-to-tr from-primary/20 to-primary/40 text-primary font-black text-lg",
               loading && "text-transparent"
             )}>
-              {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "L")}
+              {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "U")}
             </AvatarFallback>
           </Avatar>
           {me?.verificationStatus === 'verified' && (
@@ -75,7 +75,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
               "bg-gradient-to-tr from-secondary/40 to-secondary/60 text-primary font-black text-lg",
               loading && "text-transparent"
             )}>
-              {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "N")}
+              {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
             </AvatarFallback>
           </Avatar>
           {partner?.verificationStatus === 'verified' && (

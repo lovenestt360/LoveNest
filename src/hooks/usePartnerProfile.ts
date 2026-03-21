@@ -37,15 +37,24 @@ export function usePartnerProfile() {
         if (members && members.length > 0) {
           const partnerId = members[0].user_id;
 
-          // 2. Get profile details
-          const { data: profile, error: pError } = await supabase
+          // 2. Get profile details with fallback
+          const { data: profile, error: pError } = await (supabase
             .from("profiles")
-            .select("user_id, display_name, avatar_url, verification_status")
+            .select("*")
             .eq("user_id", partnerId)
-            .maybeSingle();
+            .maybeSingle() as any);
 
-          if (pError) throw pError;
-          setPartner(profile as any);
+          if (pError || !profile) {
+            setPartner(null);
+            return;
+          }
+
+          setPartner({
+            user_id: profile.user_id,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+            verification_status: profile.verification_status || "unverified"
+          });
         } else {
           setPartner(null);
         }
