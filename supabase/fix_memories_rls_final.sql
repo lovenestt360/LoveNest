@@ -2,6 +2,7 @@
 -- Este script limpa políticas antigas e configura novas regras à prova de erro.
 
 -- 1. Garantir que a função auxiliadora é segura e globalmente acessível
+DROP FUNCTION IF EXISTS public.is_member_of_couple_space(uuid) CASCADE;
 CREATE OR REPLACE FUNCTION public.is_member_of_couple_space(space_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
