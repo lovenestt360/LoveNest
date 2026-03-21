@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface Props {
@@ -89,44 +89,84 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Adicionar memória</DialogTitle>
-          <DialogDescription>Escolhe uma foto e adiciona uma legenda.</DialogDescription>
+      <DialogContent className="max-w-md p-6 rounded-[2rem] border-none bg-background/80 backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in duration-300">
+        <DialogHeader className="text-center pb-2">
+          <DialogTitle className="text-2xl font-black tracking-tight text-center w-full">Cria uma Memória ✨</DialogTitle>
+          <DialogDescription className="text-center w-full font-medium text-muted-foreground">Regista este momento especial no vosso ninho.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5 pt-2">
           {preview ? (
-            <div className="relative">
-              <img src={preview} alt="Preview" className="w-full rounded-lg object-cover max-h-56" />
-              <Button variant="secondary" size="sm" className="absolute top-2 right-2" onClick={() => { setFile(null); setPreview(null); }}>
-                Trocar
+            <div className="relative group overflow-hidden rounded-3xl shadow-lg ring-1 ring-border/50 transition-all duration-500 hover:ring-primary/30">
+              <img src={preview} alt="Preview" className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="absolute top-3 right-3 rounded-full bg-white/90 backdrop-blur shadow-lg hover:bg-white transition-all font-bold"
+                onClick={() => { setFile(null); setPreview(null); }}
+              >
+                Trocar Foto
               </Button>
             </div>
           ) : (
             <button
               type="button"
-              className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 py-10 text-muted-foreground hover:border-primary/50 transition-colors"
+              className="group flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 p-12 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.02] transition-all duration-300 bg-muted/30"
               onClick={() => inputRef.current?.click()}
             >
-              <ImagePlus className="h-8 w-8" />
-              <span className="text-sm">Escolher foto</span>
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110 duration-300">
+                <ImagePlus className="h-7 w-7" />
+              </div>
+              <div className="text-center">
+                <span className="text-sm font-bold block text-foreground">Escolher foto da galeria</span>
+                <span className="text-[10px] uppercase font-black tracking-widest opacity-60">Formatos: JPG, PNG, WEBP</span>
+              </div>
             </button>
           )}
           <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-          <div className="space-y-2">
-            <Label>Legenda</Label>
-            <Textarea rows={2} placeholder="Opcional..." value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300} />
+          <div className="space-y-4 bg-muted/30 p-4 rounded-2xl border border-border/50">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">O que aconteceu?</Label>
+              <Textarea 
+                rows={2} 
+                placeholder="Escreve uma legenda para esta memória..." 
+                className="resize-none border-none bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/50 p-0 text-sm font-medium" 
+                value={caption} 
+                onChange={(e) => setCaption(e.target.value)} 
+                maxLength={300} 
+              />
+            </div>
+
+            <div className="h-px bg-border/50" />
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Data do Momento</Label>
+              <div className="relative">
+                <Input 
+                  type="date" 
+                  className="bg-transparent border-none focus-visible:ring-0 p-0 h-auto font-bold text-sm cursor-pointer" 
+                  value={takenOn} 
+                  onChange={(e) => setTakenOn(e.target.value)} 
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Data</Label>
-            <Input type="date" value={takenOn} onChange={(e) => setTakenOn(e.target.value)} />
-          </div>
-
-          <Button className="w-full" disabled={!file || uploading} onClick={handleSave}>
-            {uploading ? "A guardar…" : "Guardar"}
+          <Button 
+            className="w-full h-12 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300" 
+            disabled={!file || uploading} 
+            onClick={handleSave}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                A Guardar...
+              </>
+            ) : (
+              "Guardar Memória 📸"
+            )}
           </Button>
         </div>
       </DialogContent>

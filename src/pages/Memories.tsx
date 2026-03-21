@@ -95,14 +95,14 @@ export default function Memories() {
   };
 
   return (
-    <section className="space-y-4 pb-4">
-      <header className="flex items-center justify-between">
+    <section className="space-y-6 pb-24 animate-fade-in max-w-lg mx-auto px-4 pt-4">
+      <header className="flex items-center justify-between bg-background/40 backdrop-blur-md p-4 rounded-3xl border border-border/50 sticky top-4 z-40 shadow-sm">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Memórias</h1>
-          <p className="text-sm text-muted-foreground">{photos.length} foto{photos.length !== 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-black tracking-tight">Memórias</h1>
+          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{photos.length} momento{photos.length !== 1 ? "s" : ""} registado{photos.length !== 1 ? "s" : ""}</p>
         </div>
-        <Button size="sm" onClick={() => setUploadOpen(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Adicionar
+        <Button size="sm" onClick={() => setUploadOpen(true)} className="rounded-xl font-bold shadow-lg shadow-primary/20">
+          <Plus className="mr-1 h-4 w-4" /> Novo
         </Button>
       </header>
 
