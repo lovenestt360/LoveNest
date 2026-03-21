@@ -36,28 +36,28 @@ export function PWAInstallButton() {
   };
 
   return (
-    <div className="fixed bottom-24 left-6 z-[150] flex items-center gap-3 pointer-events-none sm:pointer-events-auto">
-      {/* Tooltip */}
-      <div className={cn(
-        "bg-zinc-900/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md shadow-xl transition-all duration-500 origin-left scale-0",
-        showTooltip && "scale-100"
-      )}>
-        Instalar App ✨
-      </div>
-
+    <div className="fixed top-24 right-4 z-[150] flex flex-col items-end gap-2 pointer-events-none sm:pointer-events-auto">
       {/* Floating Button */}
       <button
         onClick={handleInstallClick}
         className={cn(
-          "w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-2xl pointer-events-auto transition-transform active:scale-90 hover:scale-110 relative group border-2 border-white/20",
+          "w-11 h-11 rounded-full bg-primary/90 backdrop-blur-md text-primary-foreground flex items-center justify-center shadow-xl pointer-events-auto transition-all active:scale-95 hover:scale-110 relative group border border-white/20",
           pulse && "animate-pulse"
         )}
       >
-        <Download className="w-6 h-6 transition-transform group-hover:-translate-y-0.5" />
+        <Download className="w-5 h-5 transition-transform group-hover:-translate-y-0.5" />
         
         {/* Subtle Ring Animation */}
         <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20 pointer-events-none" />
       </button>
+
+      {/* Tooltip */}
+      <div className={cn(
+        "bg-zinc-900/90 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl backdrop-blur-md shadow-xl transition-all duration-500 origin-top scale-0",
+        showTooltip && "scale-100"
+      )}>
+        Instalar App ✨
+      </div>
     </div>
   );
 }
