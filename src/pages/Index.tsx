@@ -290,25 +290,33 @@ const Index = () => {
   const handleShareReferral = () => {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
-    const message = `Vem construir o teu ninho no LoveNest! Usa o meu código ${referralCode} e ganha 50 pontos iniciais. 💕\n${shareUrl}`;
+    const message = `Vem construir o teu ninho comigo no LoveNest! 🏰❤️ Usa o meu código de convite ${referralCode} e ganha 50 pontos iniciais para a vossa jornada. ✨`;
 
     if (navigator.share) {
-      navigator.share({ title: 'Convite LoveNest', text: message, url: shareUrl });
+      navigator.share({ 
+        title: 'Convite LoveNest', 
+        text: message, 
+        url: shareUrl 
+      }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(message);
+      navigator.clipboard.writeText(`${message}\n${shareUrl}`);
       toast.success("Convite copiado! Partilha com amigos. ✨");
     }
   };
 
   const handleShareHouse = () => {
     if (!houseInviteCode) return;
-    const message = `Entra no nosso ninho no LoveNest! Usa o código: ${houseInviteCode} 🏠💕`;
+    const message = `Vem construir o nosso ninho no LoveNest! 🏠❤️ Usa o código do nosso espaço: ${houseInviteCode}`;
     
     if (navigator.share) {
-      navigator.share({ title: 'Nosso Ninho', text: message });
+      navigator.share({ 
+        title: 'Nosso Ninho no LoveNest', 
+        text: message,
+        url: window.location.origin 
+      }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(message);
-      toast.success("Código do ninho copiado! Envia ao teu par. ✨");
+      navigator.clipboard.writeText(`${message}\n${window.location.origin}`);
+      toast.success("Código e link copiados! 🏠");
     }
   };
 

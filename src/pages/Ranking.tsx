@@ -129,10 +129,20 @@ export default function Ranking() {
     }
   }, [user]);
 
-  const handleCopyCode = () => {
-    if (referralCode) {
-      navigator.clipboard.writeText(referralCode);
-      toast.success("Código copiado! 🚀");
+  const handleShareReferral = () => {
+    if (!referralCode) return;
+    const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
+    const message = `Vem construir o teu ninho comigo no LoveNest! 🏰❤️ Usa o meu código de convite ${referralCode} e ganha 50 pontos iniciais para a vossa jornada. ✨`;
+
+    if (navigator.share) {
+      navigator.share({ 
+        title: 'Convite LoveNest', 
+        text: message, 
+        url: shareUrl 
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${message}\n${shareUrl}`);
+      toast.success("Convite copiado! 🚀");
     }
   };
 
@@ -425,11 +435,19 @@ export default function Ranking() {
                   </div>
                   
                   {referralCode && (
-                    <div className="flex items-center gap-2 bg-background/50 p-2 rounded-xl border self-start md:self-auto">
-                      <span className="font-mono font-bold px-3 text-primary">{referralCode}</span>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleCopyCode}>
-                        <Copy className="w-4 h-4" />
-                      </Button>
+                    <div className="flex items-center gap-2 bg-background/50 p-1 rounded-xl border self-start md:self-auto">
+                      <span className="font-mono font-bold px-3 text-primary text-sm">{referralCode}</span>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
+                          navigator.clipboard.writeText(referralCode);
+                          toast.success("Código copiado! 🚀");
+                        }}>
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-primary" onClick={handleShareReferral}>
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
