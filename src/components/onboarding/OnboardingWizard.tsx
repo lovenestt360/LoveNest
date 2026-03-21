@@ -19,8 +19,13 @@ export function OnboardingWizard() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Only show if not loading and a step is required
-    if (!loading && step !== "complete") {
+    // Detect if we're running as an installed PWA (standalone mode)
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches 
+      || (window.navigator as any).standalone === true
+      || document.referrer.includes("android-app://");
+
+    // Only show if not loading, a step is required, AND we are in standalone mode
+    if (!loading && step !== "complete" && isStandalone) {
       // Don't show modal if we are already in the correct settings section
       const hash = location.hash.replace("#", "");
       if (location.pathname === "/configuracoes" && hash === step) {
