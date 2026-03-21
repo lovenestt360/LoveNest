@@ -20,7 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, Moon, Sun, Monitor, Copy } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy } from "lucide-react";
+import { VerificationSection } from "@/features/verification/VerificationSection";
 import {
   Select,
   SelectContent,
@@ -116,7 +117,7 @@ export default function Settings() {
   const [dbSubscription, setDbSubscription] = useState<any>(null);
   const [debugLogs, setDebugLogs] = useState<any[]>([]);
   const [showDebug, setShowDebug] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'notifications' | 'customization' | 'data'>('menu');
+  const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'notifications' | 'customization' | 'verification' | 'data'>('menu');
 
   const copyToClipboard = async (text: string, message: string) => {
     try {
@@ -130,7 +131,7 @@ export default function Settings() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (["profile", "house", "notifications", "customization", "data"].includes(hash)) {
+      if (["profile", "house", "notifications", "customization", "verification", "data"].includes(hash)) {
         setCurrentCategory(hash as any);
       }
     };
@@ -420,6 +421,7 @@ export default function Settings() {
     { id: 'profile', label: 'Meu Perfil', sub: 'Dados e foto de perfil', icon: <User className="h-5 w-5" />, color: 'bg-rose-100 text-rose-600' },
     { id: 'house', label: 'Nossa Casa', sub: 'Dados do parceiro e namoro', icon: <Heart className="h-5 w-5" />, color: 'bg-rose-100 text-rose-600' },
     { id: 'notifications', label: 'Notificações', sub: 'Alertas e avisos do app', icon: <Bell className="h-5 w-5" />, color: 'bg-indigo-100 text-indigo-600' },
+    { id: 'verification', label: 'Verificar Identidade', sub: 'Segurança e confiança (KYC)', icon: <ShieldCheck className="h-5 w-5" />, color: 'bg-emerald-100 text-emerald-600' },
     { id: 'customization', label: 'Personalização', sub: 'Fundo do chat e opacidade', icon: <Palette className="h-5 w-5" />, color: 'bg-purple-100 text-purple-600' },
     { id: 'data', label: 'Segurança e Dados', sub: 'Exportação e conta', icon: <Shield className="h-5 w-5" />, color: 'bg-slate-100 text-slate-600' },
   ] as const;
@@ -681,6 +683,10 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+          )}
+
+          {currentCategory === 'verification' && user && (
+            <VerificationSection userId={user.id} />
           )}
 
           {currentCategory === 'data' && (

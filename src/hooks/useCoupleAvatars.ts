@@ -6,6 +6,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 interface AvatarInfo {
   displayName: string | null;
   avatarUrl: string | null;
+  verificationStatus: "unverified" | "pending" | "verified" | "rejected";
 }
 
 export function useCoupleAvatars() {
@@ -39,7 +40,7 @@ export function useCoupleAvatars() {
 
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("user_id, display_name, avatar_url")
+          .select("user_id, display_name, avatar_url, verification_status")
           .in("user_id", userIds);
 
         if (!profiles) {
@@ -52,12 +53,12 @@ export function useCoupleAvatars() {
 
         setMe(
           myProfile
-            ? { displayName: myProfile.display_name, avatarUrl: myProfile.avatar_url }
+            ? { displayName: myProfile.display_name, avatarUrl: myProfile.avatar_url, verificationStatus: myProfile.verification_status as any }
             : null
         );
         setPartner(
           partnerProfile
-            ? { displayName: partnerProfile.display_name, avatarUrl: partnerProfile.avatar_url }
+            ? { displayName: partnerProfile.display_name, avatarUrl: partnerProfile.partner_avatar_url || partnerProfile.avatar_url, verificationStatus: partnerProfile.verification_status as any }
             : null
         );
       } finally {

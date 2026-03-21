@@ -7,6 +7,7 @@ import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
 import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
 
 export function AppShell() {
@@ -42,6 +43,7 @@ export function AppShell() {
         <PWAInstallButton />
         <PWATutorialModal />
         <OnboardingWizard />
+        <VerificationPrompt />
       </div>
     </PWATutorialProvider>
   );

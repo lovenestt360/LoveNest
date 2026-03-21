@@ -7,6 +7,7 @@ import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,8 @@ import {
   Check,
   CornerDownRight,
   Settings,
-  Palette
+  Palette,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -322,6 +324,8 @@ export default function Chat() {
   const [openSettings, setOpenSettings] = useState(false);
   const [tempWallpaperUrl, setTempWallpaperUrl] = useState("");
   const [tempOpacity, setTempOpacity] = useState(30);
+
+  const { partner, loading: loadingPartner } = usePartnerProfile();
 
   // Sync temp state when opening dialog
   useEffect(() => {
@@ -616,7 +620,15 @@ export default function Chat() {
             <span className="text-base">💬</span>
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-black tracking-tight text-foreground/90 uppercase letter-spacing-[0.1em]">Chat</h1>
+            <h1 className="text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase">Chat</h1>
+            <div className="flex items-center gap-1.5 -mt-0.5">
+              <span className="text-sm font-black text-foreground/90 truncate max-w-[120px]">
+                {partner?.display_name || "Amor"}
+              </span>
+              {partner?.verification_status === 'verified' && (
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/10" title="Perfil Verificado" />
+              )}
+            </div>
           </div>
         </div>
 

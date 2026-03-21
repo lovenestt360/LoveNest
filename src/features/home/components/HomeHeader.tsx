@@ -1,11 +1,17 @@
-import { Heart } from "lucide-react";
+import { Heart, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
+interface UserInfo {
+  avatarUrl?: string | null;
+  displayName?: string | null;
+  verificationStatus?: "unverified" | "pending" | "verified" | "rejected";
+}
+
 interface HomeHeaderProps {
-  me: { avatarUrl?: string | null; displayName?: string | null } | null;
-  partner: { avatarUrl?: string | null; displayName?: string | null } | null;
+  me: UserInfo | null;
+  partner: UserInfo | null;
   today: string;
   loading?: boolean;
 }
@@ -35,6 +41,11 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
               {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "L")}
             </AvatarFallback>
           </Avatar>
+          {me?.verificationStatus === 'verified' && (
+            <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm z-10">
+              <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/10" />
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1 md:gap-1.5 px-2 shrink-0 min-w-0">
@@ -67,6 +78,11 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
               {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "N")}
             </AvatarFallback>
           </Avatar>
+          {partner?.verificationStatus === 'verified' && (
+            <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm z-10">
+              <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/10" />
+            </div>
+          )}
         </div>
       </div>
     </header>

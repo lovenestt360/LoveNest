@@ -90,7 +90,8 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped" | "pwa">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped" | "pwa" | "verifications">("overview");
+    const [verifications, setVerifications] = useState<any[]>([]);
     const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -300,6 +301,17 @@ export default function Admin() {
                 }
             } catch (e) {
                 console.error("Error fetching PWA settings exception:", e);
+            }
+
+            // 9. Verifications
+            try {
+                const { data: verData } = await adminClient
+                    .from("identity_verifications")
+                    .select("*, profiles(display_name, avatar_url)")
+                    .order("created_at", { ascending: false });
+                setVerifications(verData || []);
+            } catch (e) {
+                console.error("Error fetching verifications:", e);
             }
 
         } catch (error: any) {
@@ -587,6 +599,36 @@ export default function Admin() {
         }
     };
 
+    const handleApproveVerification = async (verId: string, userId: string) => {
+        try {
+            const { error: vErr } = await adminClient.from("identity_verifications").update({ status: 'verified' }).eq("id", verId);
+            if (vErr) throw vErr;
+
+            const { error: pErr } = await adminClient.from("profiles").update({ verification_status: 'verified' }).eq("user_id", userId);
+            if (pErr) throw pErr;
+
+            toast({ title: "Utilizador Verificado ✅" });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
+
+    const handleRejectVerification = async (verId: string, userId: string, notes: string) => {
+        try {
+            const { error: vErr } = await adminClient.from("identity_verifications").update({ status: 'rejected', admin_notes: notes }).eq("id", verId);
+            if (vErr) throw vErr;
+
+            const { error: pErr } = await adminClient.from("profiles").update({ verification_status: 'rejected' }).eq("user_id", userId);
+            if (pErr) throw pErr;
+
+            toast({ title: "Verificação Recusada ⚠️" });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
+
     if (loading && payments.length === 0) {
         return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
     }
@@ -686,6 +728,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "settings" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("settings")}>
                         <Settings className="w-4 h-4" /> <span className="hidden md:inline">Configurações</span>
+                    </Button>
+                    <Button variant={tab === "verifications" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("verifications")}>
+                        <ShieldCheck className="w-4 h-4" /> <span className="hidden md:inline">Verificações ({verifications.filter(v => v.status === 'pending').length})</span>
                     </Button>
                     <Button variant={tab === "pwa" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("pwa")}>
                         <Smartphone className="w-4 h-4" /> <span className="hidden md:inline">Tutorial PWA</span>
@@ -827,6 +872,14 @@ export default function Admin() {
                                         {filteredHouses.map((house) => {
                                             const activePayment = payments.find(p => p.couple_space_id === house.id && p.status === 'approved');
                                             const isTrialExpired = house.trial_ends_at && new Date(house.trial_ends_at) < new Date();
+                                            
+                                            // Age gap detection (if both ages exist)
+                                            const p1Age = house.partner1_age;
+                                            const p2Age = house.partner2_age;
+                                            const ageGap = (p1Age && p2Age) ? Math.abs(p1Age - p2Age) : null;
+                                            const isAgeGapSignificant = ageGap !== null && ageGap >= 10; // Example: significant if gap is 10+ years
+
+                                            const verificationStatus = verifications.find(v => v.couple_space_id === house.id);
                                             
                                             return (
                                                 <tr key={house.id} className={cn("hover:bg-muted/30 transition-colors", house.is_suspended && "bg-destructive/[0.02] opacity-80")}>
@@ -1456,6 +1509,125 @@ export default function Admin() {
                                     </li>
                                 </ul>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {tab === "verifications" && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-6xl mx-auto">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-bold flex items-center gap-2">
+                                <ShieldCheck className="w-6 h-6 text-primary" />
+                                Verificação de Identidade
+                            </h2>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={fetchAllData} disabled={loading}>
+                                    <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
+                                    Atualizar
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {verifications.length === 0 ? (
+                                <div className="glass-card p-12 text-center">
+                                    <p className="text-muted-foreground italic">Nenhuma submissão de verificação encontrada.</p>
+                                </div>
+                            ) : (
+                                verifications.map((v) => (
+                                    <div key={v.id} className="bg-card border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6">
+                                        <div className="flex-1 space-y-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-12 w-12 rounded-full overflow-hidden bg-muted">
+                                                    {v.profiles?.avatar_url ? (
+                                                        <img src={v.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <div className="h-full w-full flex items-center justify-center text-lg font-bold">
+                                                            {(v.profiles?.display_name || "?").charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-lg">{v.full_name}</h4>
+                                                    <p className="text-xs text-muted-foreground">{v.profiles?.display_name || "Sem nome"} • ID: {v.user_id.slice(0,8)}...</p>
+                                                </div>
+                                                <div className="ml-auto">
+                                                    <span className={cn(
+                                                        "text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest",
+                                                        v.status === 'pending' ? "bg-blue-500/10 text-blue-600" :
+                                                        v.status === 'verified' ? "bg-emerald-500/10 text-emerald-600" :
+                                                        "bg-amber-500/10 text-amber-600"
+                                                    )}>
+                                                        {v.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl text-sm">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Idade</p>
+                                                    <p className="font-bold">{v.age} anos</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nº Documento</p>
+                                                    <p className="font-bold">{v.id_number}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Data Submissão</p>
+                                                    <p className="font-bold">{new Date(v.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+
+                                            {v.status === 'pending' && (
+                                                <div className="flex gap-3 pt-2">
+                                                    <Button 
+                                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11"
+                                                        onClick={() => handleApproveVerification(v.id, v.user_id)}
+                                                    >
+                                                        <Check className="w-4 h-4 mr-2" /> Aprovar Identidade
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outline"
+                                                        className="flex-1 border-destructive/20 text-destructive hover:bg-destructive/5 font-bold h-11"
+                                                        onClick={() => {
+                                                            const reason = prompt("Indique o motivo da rejeição:");
+                                                            if (reason) handleRejectVerification(v.id, v.user_id, reason);
+                                                        }}
+                                                    >
+                                                        <X className="w-4 h-4 mr-2" /> Rejeitar
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {v.admin_notes && (
+                                                <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs">
+                                                    <span className="font-bold text-amber-600">Nota Admin:</span> {v.admin_notes}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="w-full md:w-64 space-y-2">
+                                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Documento Identidade</p>
+                                            <div 
+                                                className="group relative h-48 rounded-xl overflow-hidden border bg-muted cursor-pointer"
+                                                onClick={async () => {
+                                                    const { data, error } = await adminClient.storage
+                                                        .from('identity-documents')
+                                                        .createSignedUrl(v.document_url, 60);
+                                                    if (data) setSelectedImage(data.signedUrl);
+                                                }}
+                                            >
+                                                <div className="absolute inset-0 flex items-center justify-center flex-col gap-2 transition-transform group-hover:scale-110">
+                                                    <FileText className="w-10 h-10 text-muted-foreground/40" />
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Ver Documento</span>
+                                                </div>
+                                                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                            <p className="text-[9px] text-muted-foreground italic text-center">Clique para abrir visualização segura.</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 )}
