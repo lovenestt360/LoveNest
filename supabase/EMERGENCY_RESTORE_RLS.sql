@@ -2,6 +2,7 @@
 -- Este script restaura todas as políticas de segurança apagadas acidentalmente.
 
 -- 1. Restaurar a Função Auxiliar (sem CASCADE desta vez)
+DROP FUNCTION IF EXISTS public.is_member_of_couple_space(uuid) CASCADE;
 CREATE OR REPLACE FUNCTION public.is_member_of_couple_space(_couple_space_id uuid)
  RETURNS boolean
  LANGUAGE sql
