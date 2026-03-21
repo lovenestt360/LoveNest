@@ -99,8 +99,10 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
           
           <div className={`transition-all duration-1000 delay-500 ${showInitials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             {initials ? (
-              <p className="text-sm font-black tracking-[0.4em] text-primary-foreground/90 uppercase drop-shadow">
-                {initials.length > 1 ? `${initials[0]} ♥ ${initials[initials.length - 1]}` : initials}
+              <p className="text-sm font-black tracking-[0.4em] text-white/90 uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                {initials.includes("&") 
+                  ? initials.replace("&", "♥") 
+                  : (initials.length > 1 ? `${initials[0]} ♥ ${initials[initials.length - 1]}` : initials)}
               </p>
             ) : (
               <div className="h-0.5 w-12 bg-primary/40 rounded-full mx-auto animate-pulse" />
