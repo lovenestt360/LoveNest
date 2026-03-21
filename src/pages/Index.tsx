@@ -334,7 +334,7 @@ const Index = () => {
   return (
     <section className="space-y-8 animate-fade-in pb-10">
       {/* ── Premium Apple Header ── */}
-      <HomeHeader me={avatars.me} partner={avatars.partner} today={today} />
+      <HomeHeader me={avatars.me} partner={avatars.partner} today={today} loading={avatars.loading} />
 
       {/* ── Highlights & Status ── */}
       <div className="space-y-4">
@@ -355,8 +355,8 @@ const Index = () => {
 
         <InstallBanner />
 
-        {/* Invite Partner Card - Only if no partner! */}
-        {!avatars.partner && houseInviteCode && (
+        {/* Invite Partner Card - Only if no partner and NOT loading! */}
+        {!avatars.loading && !avatars.partner && houseInviteCode && (
           <div className="glass-card bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/30 rounded-[2.5rem] p-6 shadow-glow transition-all animate-in zoom-in-95 duration-500">
             <div className="flex items-center gap-4 mb-4">
               <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
