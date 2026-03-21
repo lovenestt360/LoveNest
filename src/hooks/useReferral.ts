@@ -9,23 +9,6 @@ export function useReferralTracking(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    // Generate referral code if missing
-    supabase
-      .from("profiles")
-      .select("referral_code")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data && !data.referral_code) {
-          const code = Math.random().toString(36).substring(2, 9).toUpperCase();
-          supabase
-            .from("profiles")
-            .update({ referral_code: code } as any)
-            .eq("user_id", userId)
-            .then(() => {});
-        }
-      });
-
     // Check referral from URL (stored in sessionStorage during signup)
     const refCode = sessionStorage.getItem("lovenest_ref");
     if (!refCode) return;

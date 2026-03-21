@@ -162,11 +162,24 @@ function useReferralCode() {
   const [code, setCode] = useState<string | null>(null);
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("referral_code").eq("user_id", user.id).single()
+    supabase.from("profiles").select("referral_code").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
         if (data?.referral_code) setCode(data.referral_code);
       });
   }, [user]);
+  return code;
+}
+
+function useHouseInviteCode() {
+  const spaceId = useCoupleSpaceId();
+  const [code, setCode] = useState<string | null>(null);
+  useEffect(() => {
+    if (!spaceId) return;
+    supabase.from("couple_spaces").select("invite_code").eq("id", spaceId).maybeSingle()
+      .then(({ data }) => {
+        if (data?.invite_code) setCode(data.invite_code);
+      });
+  }, [spaceId]);
   return code;
 }
 
@@ -272,17 +285,30 @@ const Index = () => {
   const cycle = useCycleHome();
   const announcements = useGlobalAnnouncements();
   const referralCode = useReferralCode();
+  const houseInviteCode = useHouseInviteCode();
 
-  const handleShare = () => {
+  const handleShareReferral = () => {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
-    const message = `Vem construir o teu ninho no LoveNest! Usa o meu código ${referralCode} e ganha 100 pontos iniciais. 💕\n${shareUrl}`;
+    const message = `Vem construir o teu ninho no LoveNest! Usa o meu código ${referralCode} e ganha 50 pontos iniciais. 💕\n${shareUrl}`;
 
     if (navigator.share) {
       navigator.share({ title: 'Convite LoveNest', text: message, url: shareUrl });
     } else {
       navigator.clipboard.writeText(message);
-      toast.success("Mensagem copiada para a área de transferência!");
+      toast.success("Convite copiado! Partilha com amigos. ✨");
+    }
+  };
+
+  const handleShareHouse = () => {
+    if (!houseInviteCode) return;
+    const message = `Entra no nosso ninho no LoveNest! Usa o código: ${houseInviteCode} 🏠💕`;
+    
+    if (navigator.share) {
+      navigator.share({ title: 'Nosso Ninho', text: message });
+    } else {
+      navigator.clipboard.writeText(message);
+      toast.success("Código do ninho copiado! Envia ao teu par. ✨");
     }
   };
 
@@ -320,6 +346,34 @@ const Index = () => {
         ))}
 
         <InstallBanner />
+
+        {/* Invite Partner Card - Only if no partner! */}
+        {!avatars.partner && houseInviteCode && (
+          <div className="glass-card bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/30 rounded-[2.5rem] p-6 shadow-glow transition-all animate-in zoom-in-95 duration-500">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <HeartHandshake className="w-8 h-8" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-[17px] font-black tracking-tight leading-tight">Convidar Par</h3>
+                <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">O teu ninho ainda está vazio!</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <div className="flex-1 bg-white/50 border border-primary/20 rounded-2xl h-14 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
+                {houseInviteCode}
+              </div>
+              <button 
+                onClick={handleShareHouse}
+                className="h-14 w-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+              >
+                <Share2 className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground font-black italic mt-3 text-center">Partilha este código com o teu amor para começarem a jornada juntos. 💕</p>
+          </div>
+        )}
       </div>
 
       {/* ── Featured Destaques ── */}
@@ -506,7 +560,7 @@ const Index = () => {
             </div>
           </div>
           <button
-            onClick={handleShare}
+            onClick={handleShareReferral}
             className="bg-primary text-primary-foreground text-xs font-black px-5 py-2.5 rounded-full shadow-glow active:scale-95 transition-all"
           >
             Partilhar
