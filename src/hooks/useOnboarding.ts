@@ -28,6 +28,8 @@ export function useOnboarding() {
 
       const profileComplete = 
         profile?.display_name && 
+        !profile.display_name.includes("@") && 
+        profile.display_name !== "LoveNest" &&
         profile?.gender && 
         profile?.birthday;
 
@@ -47,6 +49,7 @@ export function useOnboarding() {
 
         const houseComplete = 
           space?.house_name && 
+          space.house_name !== "LoveNest" &&
           space?.partner1_name && 
           space?.partner2_name && 
           space?.relationship_start_date;
