@@ -10,20 +10,24 @@ import {
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
 import { ShieldCheck, Sparkles } from "lucide-react";
+import { usePWATutorial } from "@/features/pwa/PWATutorialContext";
 
 export function VerificationPrompt() {
   const [open, setOpen] = useState(false);
+  const { showModal: pwaModalShowing } = usePWATutorial();
 
   useEffect(() => {
     const hasSeen = localStorage.getItem("verification_prompt_seen");
-    if (!hasSeen) {
-      // Pequeno delay para não aparecer imediatamente no splash/load
+    
+    // Só mostramos se não viu ainda E se o modal de PWA não estiver no ecrã
+    if (!hasSeen && !pwaModalShowing) {
+      // Delay um pouco maior para deixar o utilizador respirar
       const timer = setTimeout(() => {
         setOpen(true);
-      }, 2000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [pwaModalShowing]);
 
   const handleClose = () => {
     localStorage.setItem("verification_prompt_seen", "true");
