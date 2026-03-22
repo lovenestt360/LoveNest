@@ -1606,24 +1606,50 @@ export default function Admin() {
                                             )}
                                         </div>
 
-                                        <div className="w-full md:w-64 space-y-2">
-                                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Documento Identidade</p>
-                                            <div 
-                                                className="group relative h-48 rounded-xl overflow-hidden border bg-muted cursor-pointer"
-                                                onClick={async () => {
-                                                    const { data, error } = await adminClient.storage
-                                                        .from('identity-documents')
-                                                        .createSignedUrl(v.document_url, 60);
-                                                    if (data) setSelectedImage(data.signedUrl);
-                                                }}
-                                            >
-                                                <div className="absolute inset-0 flex items-center justify-center flex-col gap-2 transition-transform group-hover:scale-110">
-                                                    <FileText className="w-10 h-10 text-muted-foreground/40" />
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Ver Documento</span>
+                                        <div className="w-full md:w-80 space-y-4">
+                                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Documentos de Identidade</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                {/* FRONT */}
+                                                <div 
+                                                    className="group relative h-40 rounded-xl overflow-hidden border bg-muted cursor-pointer"
+                                                    onClick={async () => {
+                                                        const { data } = await adminClient.storage
+                                                            .from('identity-documents')
+                                                            .createSignedUrl(v.document_url, 60);
+                                                        if (data) setSelectedImage(data.signedUrl);
+                                                    }}
+                                                >
+                                                    <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
+                                                        <FileText className="w-8 h-8 text-primary/40" />
+                                                        <span className="text-[9px] font-black uppercase tracking-widest">Frente</span>
+                                                    </div>
+                                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 </div>
-                                                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                                {/* BACK (If exists) */}
+                                                {v.document_back_url ? (
+                                                    <div 
+                                                        className="group relative h-40 rounded-xl overflow-hidden border bg-muted cursor-pointer animate-in fade-in"
+                                                        onClick={async () => {
+                                                            const { data } = await adminClient.storage
+                                                                .from('identity-documents')
+                                                                .createSignedUrl(v.document_back_url, 60);
+                                                            if (data) setSelectedImage(data.signedUrl);
+                                                        }}
+                                                    >
+                                                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
+                                                            <FileText className="w-8 h-8 text-primary/40" />
+                                                            <span className="text-[9px] font-black uppercase tracking-widest">Verso</span>
+                                                        </div>
+                                                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-40 rounded-xl border border-dashed flex items-center justify-center bg-muted/20">
+                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase">Face Única</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <p className="text-[9px] text-muted-foreground italic text-center">Clique para abrir visualização segura.</p>
+                                            <p className="text-[9px] text-muted-foreground italic text-center">Clique para visualização segura.</p>
                                         </div>
                                     </div>
                                 ))

@@ -17,55 +17,87 @@ export function VerificationForm({ userId, currentStatus, onStatusChange, adminN
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState<string>("");
   const [idNumber, setIdNumber] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [documentType, setDocumentType] = useState<"bi" | "passport">("bi");
+  const [fileFront, setFileFront] = useState<File | null>(null);
+  const [fileBack, setFileBack] = useState<File | null>(null);
+  const [previewFront, setPreviewFront] = useState<string | null>(null);
+  const [previewBack, setPreviewBack] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputFrontRef = useRef<HTMLInputElement>(null);
+  const fileInputBackRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, side: "front" | "back") => {
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 10 * 1024 * 1024) {
       toast({ title: "Ficheiro muito grande", description: "O limite é de 10MB.", variant: "destructive" });
       return;
     }
-    setFile(f);
-    const reader = new FileReader();
-    reader.onload = (ev) => setPreview(ev.target?.result as string);
-    reader.readAsDataURL(f);
+    
+    if (side === "front") {
+      setFileFront(f);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreviewFront(ev.target?.result as string);
+      reader.readAsDataURL(f);
+    } else {
+      setFileBack(f);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreviewBack(ev.target?.result as string);
+      reader.readAsDataURL(f);
+    }
   };
 
   const handleSubmit = async () => {
-    if (!file || !fullName || !idNumber || !age) {
+    if (!fileFront || !fullName || !idNumber || !age) {
       toast({ title: "Campos em falta", description: "Por favor preencha todos os campos e anexe o documento.", variant: "destructive" });
+      return;
+    }
+
+    if (documentType === "bi" && !fileBack) {
+      toast({ title: "Verso em falta", description: "O BI requer a foto da frente e do verso.", variant: "destructive" });
       return;
     }
 
     setUploading(true);
     try {
-      // 1. Upload Document to Private Bucket
-      const fileExt = file.name.split('.').pop();
-      const path = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+      // 1. Upload Front Document
+      const fileExtFront = fileFront.name.split('.').pop();
+      const pathFront = `${userId}/${crypto.randomUUID()}_front.${fileExtFront}`;
       
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadFrontError } = await supabase.storage
         .from("identity-documents")
-        .upload(path, file);
+        .upload(pathFront, fileFront);
 
-      if (uploadError) throw uploadError;
+      if (uploadFrontError) throw uploadFrontError;
 
-      // 2. Create Verification Record
+      // 2. Upload Back Document (if BI)
+      let pathBack = null;
+      if (documentType === "bi" && fileBack) {
+        const fileExtBack = fileBack.name.split('.').pop();
+        pathBack = `${userId}/${crypto.randomUUID()}_back.${fileExtBack}`;
+        
+        const { error: uploadBackError } = await supabase.storage
+          .from("identity-documents")
+          .upload(pathBack, fileBack);
+
+        if (uploadBackError) throw uploadBackError;
+      }
+
+      // 3. Create Verification Record
       const { error: dbError } = await supabase.from("identity_verifications" as any).insert({
         user_id: userId,
         full_name: fullName,
         age: parseInt(age),
         id_number: idNumber,
-        document_url: path,
+        document_type: documentType,
+        document_url: pathFront,
+        document_back_url: pathBack,
         status: 'pending'
       } as any);
 
       if (dbError) throw dbError;
 
-      // 3. Update Profile Status
+      // 4. Update Profile Status
       await supabase.from("profiles").update({ verification_status: 'pending' }).eq("user_id", userId);
 
       toast({ title: "Submetido com sucesso! 🚀", description: "A tua verificação está agora em análise pela equipa." });
@@ -152,35 +184,88 @@ export function VerificationForm({ userId, currentStatus, onStatusChange, adminN
           </div>
         </div>
 
-        <div className="space-y-3">
-          <Label className="font-bold text-sm block">Documento de Identidade (BI / Passaporte)</Label>
-          <div 
-            onClick={() => fileInputRef.current?.click()}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-primary/20 bg-primary/[0.02] transition-all hover:bg-primary/[0.04] hover:border-primary/40"
-          >
-            {preview ? (
-              <div className="p-2">
-                <div className="relative h-48 w-full rounded-xl overflow-hidden shadow-lg">
-                  <img src={preview} alt="ID Preview" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera className="text-white h-8 w-8" />
-                  </div>
-                </div>
-                <p className="text-[10px] text-center mt-2 text-muted-foreground font-bold uppercase tracking-widest">Toque para trocar foto</p>
-              </div>
-            ) : (
-              <div className="py-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                  <FileText className="h-6 w-6" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-bold text-foreground">Tirar foto do documento</p>
-                  <p className="text-[10px] uppercase font-black tracking-widest opacity-60">PNG, JPG ou PDF até 10MB</p>
-                </div>
-              </div>
-            )}
+        <div className="space-y-4">
+          <Label className="font-bold text-sm block">Tipo de Documento</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setDocumentType("bi")}
+              className={cn(
+                "h-12 rounded-xl border-2 font-bold text-sm transition-all",
+                documentType === "bi" ? "border-primary bg-primary/5 text-primary" : "border-border bg-muted/20"
+              )}
+            >
+              Bilhete (BI)
+            </button>
+            <button
+              onClick={() => setDocumentType("passport")}
+              className={cn(
+                "h-12 rounded-xl border-2 font-bold text-sm transition-all",
+                documentType === "passport" ? "border-primary bg-primary/5 text-primary" : "border-border bg-muted/20"
+              )}
+            >
+              Passaporte
+            </button>
           </div>
-          <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* FRONT DOCUMENT */}
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground ml-1">
+              {documentType === "bi" ? "Frente do BI" : "Página do Passaporte"}
+            </Label>
+            <div 
+              onClick={() => fileInputFrontRef.current?.click()}
+              className="group relative cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-primary/20 bg-primary/[0.02] transition-all hover:bg-primary/[0.04] hover:border-primary/40"
+            >
+              {previewFront ? (
+                <div className="p-2">
+                  <div className="relative h-40 w-full rounded-xl overflow-hidden shadow-lg">
+                    <img src={previewFront} alt="Front Preview" className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="text-white h-8 w-8" />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-center mt-2 text-muted-foreground font-bold uppercase tracking-widest">Alterar Frente</p>
+                </div>
+              ) : (
+                <div className="py-8 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <FileText className="h-6 w-6 text-primary" />
+                  <p className="text-xs font-bold text-foreground text-center px-4">Tirar foto da frente</p>
+                </div>
+              )}
+            </div>
+            <input ref={fileInputFrontRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, "front")} />
+          </div>
+
+          {/* BACK DOCUMENT (Only for BI) */}
+          {documentType === "bi" && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+              <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground ml-1">Verso do BI</Label>
+              <div 
+                onClick={() => fileInputBackRef.current?.click()}
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-primary/20 bg-primary/[0.02] transition-all hover:bg-primary/[0.04] hover:border-primary/40"
+              >
+                {previewBack ? (
+                  <div className="p-2">
+                    <div className="relative h-40 w-full rounded-xl overflow-hidden shadow-lg">
+                      <img src={previewBack} alt="Back Preview" className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="text-white h-8 w-8" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-center mt-2 text-muted-foreground font-bold uppercase tracking-widest">Alterar Verso</p>
+                  </div>
+                ) : (
+                  <div className="py-8 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <FileText className="h-6 w-6 text-primary" />
+                    <p className="text-xs font-bold text-foreground text-center px-4">Tirar foto do verso</p>
+                  </div>
+                )}
+              </div>
+              <input ref={fileInputBackRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, "back")} />
+            </div>
+          )}
         </div>
 
         <div className="p-4 bg-muted/30 rounded-2xl flex gap-3 border border-border/50">
@@ -192,7 +277,7 @@ export function VerificationForm({ userId, currentStatus, onStatusChange, adminN
 
         <Button 
           onClick={handleSubmit} 
-          disabled={uploading || !file} 
+          disabled={uploading || !fileFront || (documentType === "bi" && !fileBack)} 
           className="w-full h-14 rounded-2xl font-black text-lg glow-primary flex items-center justify-center gap-2 shadow-xl shadow-primary/20"
         >
           {uploading ? (
