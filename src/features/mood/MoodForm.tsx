@@ -54,20 +54,21 @@ export function MoodForm({
                 <CardContent className="space-y-5">
                     {/* Main Emotion */}
                     <div className="grid grid-cols-4 gap-2">
-                        {MOOD_OPTIONS.map((m) => (
+                        {MOOD_OPTIONS.map((m, idx) => (
                             <button
                                 key={m.key}
                                 type="button"
                                 onClick={() => setMoodKey(m.key)}
                                 className={cn(
-                                    "flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-colors",
+                                    "flex flex-col items-center gap-1 rounded-2xl border p-3 text-xs transition-all duration-300 animate-fade-slide-up",
+                                    `stagger-${(idx % 5) + 1}`,
                                     moodKey === m.key
-                                        ? "border-primary bg-primary/10 text-primary"
-                                        : "border-border text-muted-foreground hover:bg-accent"
+                                        ? "border-primary bg-primary/20 text-primary scale-110 shadow-md ring-2 ring-primary/20"
+                                        : "border-border text-muted-foreground hover:bg-accent active:scale-95"
                                 )}
                             >
-                                <span className="text-2xl">{m.emoji}</span>
-                                <span>{m.label}</span>
+                                <span className={cn("text-3xl transition-transform duration-500", moodKey === m.key && "scale-110")}>{m.emoji}</span>
+                                <span className="font-bold">{m.label}</span>
                             </button>
                         ))}
                     </div>
@@ -116,7 +117,7 @@ export function MoodForm({
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base text-sm font-medium">Factores e Atividades</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="animate-fade-slide-up stagger-2">
                     <div className="flex flex-wrap gap-2">
                         {ACTIVITIES.map((act) => {
                             const active = activities.includes(act.key);
@@ -126,9 +127,9 @@ export function MoodForm({
                                     type="button"
                                     onClick={() => toggleActivity(act.key)}
                                     className={cn(
-                                        "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors",
+                                        "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs transition-all active:scale-90",
                                         active
-                                            ? "border-primary bg-primary/10 text-primary font-medium"
+                                            ? "border-primary bg-primary/20 text-primary font-bold shadow-sm"
                                             : "border-border text-muted-foreground hover:bg-accent"
                                     )}
                                 >
@@ -146,7 +147,7 @@ export function MoodForm({
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base text-sm font-medium">Qualidade do Sono</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="animate-fade-slide-up stagger-3">
                     <div className="grid grid-cols-4 gap-2">
                         {SLEEP_QUALITY_OPTIONS.map((sq) => {
                             const active = sleepQuality === sq.key;
@@ -156,13 +157,13 @@ export function MoodForm({
                                     type="button"
                                     onClick={() => setSleepQuality(active ? null : sq.key)}
                                     className={cn(
-                                        "flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-colors",
+                                        "flex flex-col items-center gap-1 rounded-xl border p-2 text-xs transition-all active:scale-95",
                                         active
-                                            ? "border-primary bg-primary/10 text-primary"
+                                            ? "border-primary bg-primary/20 text-primary font-bold scale-105"
                                             : "border-border text-muted-foreground hover:bg-accent"
                                     )}
                                 >
-                                    <span className="text-lg">{sq.emoji}</span>
+                                    <span className="text-2xl">{sq.emoji}</span>
                                     <span>{sq.label}</span>
                                 </button>
                             );

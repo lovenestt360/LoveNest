@@ -397,7 +397,7 @@ const Index = () => {
 
         {/* Announcements */}
         {announcements.map((ann) => (
-          <div key={ann.id} className="glass-card border-primary/20 bg-primary/5 text-primary p-4 rounded-3xl animate-in slide-in-from-top-4 shadow-sm">
+          <div key={ann.id} className="glass-card border-primary/20 bg-primary/5 text-primary p-4 rounded-3xl animate-fade-slide-up stagger-1 shadow-sm">
             <h3 className="font-black text-xs flex items-center gap-2 mb-1 uppercase tracking-widest">
               <Megaphone className="w-3 h-3" /> {ann.title}
             </h3>
@@ -409,7 +409,7 @@ const Index = () => {
 
         {/* Invite Partner Card - Only if no partner and NOT loading! */}
         {!avatars.loading && !avatars.partner && houseInviteCode && (
-          <div className="glass-card bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/30 rounded-[2.5rem] p-6 shadow-glow transition-all animate-in zoom-in-95 duration-500">
+          <div className="glass-card bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/30 rounded-[2.5rem] p-6 shadow-glow transition-all animate-fade-slide-up stagger-1">
             <div className="flex items-center gap-4 mb-4">
               <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                 <HeartHandshake className="w-8 h-8" />
@@ -438,18 +438,20 @@ const Index = () => {
 
       {/* ── Featured Destaques ── */}
       <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2 animate-fade-slide-up stagger-1">
            <Compass className="w-3 h-3" /> Em Destaque
         </h2>
         
         <div className="space-y-3">
           {/* LoveStreak Component */}
-          <LoveStreakHomeCard />
+          <div className="animate-fade-slide-up stagger-2">
+            <LoveStreakHomeCard />
+          </div>
 
           {/* Fasting Featured Card */}
           <button
             onClick={() => navigate("/jejum")}
-            className="glass-card glass-card-hover group relative flex w-full flex-col rounded-[2.5rem] overflow-hidden text-left active:scale-[0.98] transition-transform duration-300"
+            className="glass-card glass-card-hover group relative flex w-full flex-col rounded-[2.5rem] overflow-hidden text-left active:scale-[0.96] transition-transform duration-300 animate-fade-slide-up stagger-3"
           >
             <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-transparent p-5 space-y-3 w-full">
               <div className="flex items-center justify-between">
@@ -496,7 +498,7 @@ const Index = () => {
           {/* Chat Quick Access */}
           <button
             onClick={() => navigate("/chat")}
-            className="glass-card glass-card-hover group relative flex w-full items-center gap-4 rounded-[2.5rem] p-5 text-left active:scale-[0.98] transition-all duration-300"
+            className="glass-card glass-card-hover group relative flex w-full items-center gap-4 rounded-[2.5rem] p-5 text-left active:scale-[0.96] transition-all duration-300 animate-fade-slide-up stagger-4"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
               <MessageCircle className="h-6 w-6" />

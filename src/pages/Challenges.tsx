@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
     { id: "romantico", label: "💕 Romântico" },
@@ -36,6 +37,7 @@ export default function Challenges() {
     const [generating, setGenerating] = useState(false);
     const [aiSuggestions, setAiSuggestions] = useState<{ title: string; description: string }[]>([]);
     const [selectedCategory, setSelectedCategory] = useState("romantico");
+    const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
     useEffect(() => {
         loadChallenges();
@@ -97,6 +99,8 @@ export default function Challenges() {
             if (error) throw error;
             loadChallenges();
             if (!currentStatus) {
+                setShowSuccessOverlay(true);
+                setTimeout(() => setShowSuccessOverlay(false), 2500);
                 toast({ title: "Desafio Concluído! 🎉", description: "Continuem a colecionar memórias!", className: "bg-green-500 text-white" });
             }
         } catch (error: any) {
@@ -292,8 +296,12 @@ export default function Challenges() {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {challenges.map((c) => (
-                            <div key={c.id} className={`bg-card border rounded-2xl p-5 relative overflow-hidden transition-all shadow-sm ${c.is_completed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                        {challenges.map((c, idx) => (
+                            <div key={c.id} className={cn(
+                                "bg-card border rounded-2xl p-5 relative overflow-hidden transition-all shadow-sm animate-fade-slide-up",
+                                `stagger-${(idx % 5) + 1}`,
+                                c.is_completed ? 'opacity-60 grayscale-[0.5]' : ''
+                            )}>
                                 {c.is_completed && <div className="absolute top-0 right-0 p-3 bg-green-500/10 rounded-bl-2xl"><CheckCircle className="w-5 h-5 text-green-500" /></div>}
 
                                 <h4 className={`font-bold text-lg mb-1 pr-10 ${c.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{c.title}</h4>
@@ -318,6 +326,26 @@ export default function Challenges() {
                     </div>
                 )}
             </main>
+
+            {/* Success Overlay */}
+            {showSuccessOverlay && (
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="text-center space-y-4 animate-bounce-in">
+                        <div className="bg-green-500/20 p-6 rounded-full inline-block shadow-glow">
+                            <CheckCircle className="w-20 h-20 text-green-500" />
+                        </div>
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-black text-foreground font-italy tracking-tight">Missão concluída ✨</h2>
+                            <p className="text-sm text-muted-foreground font-medium italic">Continuem a crescer juntos, um desafio de cada vez.</p>
+                        </div>
+                        <div className="flex justify-center gap-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <Sparkles key={i} className={cn("w-4 h-4 text-yellow-500 animate-pulse", i % 2 === 0 ? "animation-delay-200" : "animation-delay-500")} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

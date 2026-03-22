@@ -848,7 +848,7 @@ export default function Chat() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-125 duration-300"
+                      className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-[1.3] duration-300"
                       onClick={handleSendCarinho}
                       disabled={sending}
                       title="Enviar Carinho"
@@ -934,7 +934,7 @@ function MessageBubble({
   return (
     <div
       ref={refCallback}
-      className={cn("flex mb-1.5 transition-all rounded-xl", isMine ? "justify-end" : "justify-start")}
+      className={cn("flex mb-1.5 transition-all rounded-xl animate-fade-slide-up", isMine ? "justify-end" : "justify-start")}
     >
       <div className="relative max-w-[80%]">
         {/* Pin indicator */}

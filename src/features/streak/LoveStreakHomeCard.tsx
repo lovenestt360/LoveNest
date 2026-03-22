@@ -71,7 +71,10 @@ export function LoveStreakHomeCard() {
         <div className="bg-gradient-to-r from-orange-500/10 via-red-500/10 to-pink-500/10 p-4 space-y-3 w-full">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-500">
+              <div className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-xl",
+                bothToday ? "bg-orange-500/20 text-orange-500 animate-pulse-glow" : "bg-orange-500/10 text-orange-400 animate-streak-shake"
+              )}>
                 <Flame className="h-5 w-5" />
               </div>
               <div>
@@ -125,12 +128,12 @@ export function LoveStreakHomeCard() {
               );
             })()}
             {bothToday ? (
-              <span className="text-green-600 font-bold flex items-center gap-1 animate-in fade-in duration-500">
+              <span className="text-green-600 font-bold flex items-center gap-1 animate-fade-slide-up">
                 <Sparkles className="w-3 h-3" /> Vocês apareceram um para o outro hoje 💛
               </span>
             ) : (
-              <span className="text-amber-600 font-bold flex items-center gap-1 animate-in pulse duration-1000">
-                <Flame className="w-3 h-3" /> Falta pouco… não deixem o vosso streak cair 😢
+              <span className="text-amber-600 font-bold flex items-center gap-1 animate-pulse">
+                <Flame className="w-3 h-3" /> Falta pouco… não deixem o vosso streak cair 🔥
               </span>
             )}
           </div>

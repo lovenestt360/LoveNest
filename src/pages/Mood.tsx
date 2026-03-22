@@ -7,6 +7,7 @@ import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle2 } from "lucide-react";
 import { MoodCheckin } from "@/features/mood/types";
 import { MoodForm } from "@/features/mood/MoodForm";
 import { MoodHistory } from "@/features/mood/MoodHistory";
@@ -35,6 +36,7 @@ export default function Mood() {
 
   const [existingId, setExistingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   // We fetch history over last 14 days minimum
   const [history, setHistory] = useState<MoodCheckin[]>([]);
@@ -150,6 +152,9 @@ export default function Mood() {
       });
     }
 
+    setShowSuccessOverlay(true);
+    setTimeout(() => setShowSuccessOverlay(false), 2500);
+
     // Emotional Feedback UI
     toast.success("Obrigado por partilhares como te sentes 💛", {
       description: "O teu par vai sentir-se mais próximo de ti.",
@@ -201,6 +206,20 @@ export default function Mood() {
         </TabsContent>
       </Tabs>
 
+      {/* Success Overlay */}
+      {showSuccessOverlay && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="text-center space-y-4 animate-bounce-in">
+            <div className="bg-primary/20 p-6 rounded-full inline-block shadow-glow">
+              <CheckCircle2 className="w-20 h-20 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black text-foreground">Obrigado por partilhares 💛</h2>
+              <p className="text-sm text-muted-foreground font-medium italic">O teu par vai valorizar saber como estás.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

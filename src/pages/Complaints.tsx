@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -61,6 +61,7 @@ export default function Complaints() {
   const [selected, setSelected] = useState<Complaint | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showResolvedOverlay, setShowResolvedOverlay] = useState(false);
 
   const fetchComplaints = useCallback(async () => {
     if (!spaceId) return;
@@ -85,7 +86,7 @@ export default function Complaints() {
   }, [spaceId, fetchComplaints]);
 
   if (selected) {
-    return <ComplaintDetail complaint={selected} onBack={() => { setSelected(null); fetchComplaints(); }} />;
+    return <ComplaintDetail complaint={selected} onBack={() => { setSelected(null); fetchComplaints(); }} onResolve={() => { setShowResolvedOverlay(true); setTimeout(() => setShowResolvedOverlay(false), 3000); }} />;
   }
 
   const filtered = complaints.filter(c => c.status === filter).slice(0, PAGE_SIZE);
@@ -130,8 +131,15 @@ export default function Complaints() {
         <p className="text-sm text-muted-foreground pt-4">Nenhuma reclamação {STATUS_MAP[filter]?.label.toLowerCase()}.</p>
       ) : (
         <div className="space-y-2">
-          {filtered.map(c => (
-            <Card key={c.id} className="cursor-pointer hover:bg-accent/30 transition-colors" onClick={() => setSelected(c)}>
+          {filtered.map((c, idx) => (
+            <Card 
+              key={c.id} 
+              className={cn(
+                "cursor-pointer hover:bg-accent/30 transition-all animate-fade-slide-up shadow-sm",
+                `stagger-${(idx % 5) + 1}`
+              )} 
+              onClick={() => setSelected(c)}
+            >
               <CardContent className="py-3 flex items-start justify-between gap-2">
                 <div className="space-y-1 min-w-0">
                   <p className="text-sm font-medium truncate">{c.title}</p>
@@ -148,6 +156,24 @@ export default function Complaints() {
           {totalForFilter > PAGE_SIZE && (
             <p className="text-xs text-muted-foreground text-center pt-2">A mostrar {PAGE_SIZE} de {totalForFilter}</p>
           )}
+        </div>
+      )}
+
+      {/* Reconciliation Overlay */}
+      {showResolvedOverlay && (
+        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-background/90 backdrop-blur-xl animate-in fade-in duration-500">
+          <div className="text-center space-y-6 animate-bounce-in">
+            <div className="relative inline-block">
+              <div className="bg-primary/20 p-8 rounded-full shadow-glow animate-pulse">
+                <Heart className="w-24 h-24 text-primary fill-primary" />
+              </div>
+              <Sparkles className="absolute -top-2 -right-2 w-10 h-10 text-yellow-500 animate-spin-slow" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-black text-foreground tracking-tight italic">Mais fortes juntos 💛</h2>
+              <p className="text-muted-foreground text-sm font-medium mx-auto max-w-[280px]">O diálogo cura e o compromisso fortalece a vossa história.</p>
+            </div>
+          </div>
         </div>
       )}
     </section>
@@ -226,7 +252,7 @@ function CreateComplaintForm({ spaceId, userId, onCreated }: { spaceId: string |
 }
 
 /* ---------- Detail View ---------- */
-function ComplaintDetail({ complaint: initial, onBack }: { complaint: Complaint; onBack: () => void }) {
+function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint: Complaint; onBack: () => void; onResolve: () => void }) {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const [complaint, setComplaint] = useState(initial);
@@ -296,6 +322,7 @@ function ComplaintDetail({ complaint: initial, onBack }: { complaint: Complaint;
     await supabase.from("complaints").update(update).eq("id", complaint.id);
     
     if (status === "resolved") {
+      onResolve();
       toast({ title: "Mais fortes juntos 💛", description: "Resolver conflitos fortalece a vossa união." });
     } else {
       toast({ title: `Estado: ${STATUS_MAP[status]?.label}` });
