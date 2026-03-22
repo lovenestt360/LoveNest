@@ -139,6 +139,7 @@ export default function Admin() {
 
     // LoveWrapped generation
     const [generatingWrapped, setGeneratingWrapped] = useState(false);
+    const [clearingWrapped, setClearingWrapped] = useState(false);
     const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth() || 12);
     const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
     const [searchHouse, setSearchHouse] = useState("");
@@ -631,6 +632,27 @@ export default function Admin() {
             toast({ title: "Erro na Geração", description: error.message, variant: "destructive" });
         } finally {
             setGeneratingWrapped(false);
+        }
+    };
+
+    const handleClearWrapped = async () => {
+        if (!window.confirm("⚠️ ATENÇÃO: Isto irá APAGAR TODOS os LoveWrapped gerados até agora. Tem a certeza?")) {
+            return;
+        }
+
+        try {
+            setClearingWrapped(true);
+            const { error } = await adminClient
+                .from("love_wrapped")
+                .delete()
+                .neq("id", "00000000-0000-0000-0000-000000000000"); // Deleta todos
+
+            if (error) throw error;
+            toast({ title: "Limpeza Concluída", description: "Todos os registos de LoveWrapped foram removidos." });
+        } catch (error: any) {
+            toast({ title: "Erro na Limpeza", description: error.message, variant: "destructive" });
+        } finally {
+            setClearingWrapped(false);
         }
     };
 
@@ -1546,6 +1568,25 @@ export default function Admin() {
                                         <span className="flex items-center gap-2">
                                             <Sparkles className="w-5 h-5 text-yellow-300 fill-yellow-300" />
                                             Disparar Geração Global
+                                        </span>
+                                    )}
+                                </Button>
+
+                                <Button 
+                                    variant="outline"
+                                    className="w-full h-11 text-sm font-bold rounded-xl border-dashed border-red-500/50 text-red-500 hover:bg-red-500/10 transition-all mt-2"
+                                    onClick={handleClearWrapped}
+                                    disabled={clearingWrapped || generatingWrapped}
+                                >
+                                    {clearingWrapped ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                                            A Limpar...
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            <Trash2 className="w-4 h-4" />
+                                            Limpar Registos de Teste
                                         </span>
                                     )}
                                 </Button>
