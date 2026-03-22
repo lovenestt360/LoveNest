@@ -318,27 +318,12 @@ export default function Admin() {
 
             // 9. Verifications
             try {
-                // We fetch verifications with their profiles and the members (to find their house)
-                const { data: verData, error: verError } = await adminClient
+                const { data: verData } = await adminClient
                     .from("identity_verifications")
-                    .select(`
-                        *,
-                        profiles:user_id(display_name, avatar_url, birthday, verification_status),
-                        members:user_id(couple_space_id)
-                    `)
+                    .select("*")
                     .order("created_at", { ascending: false });
                 
-                if (verError) {
-                    console.error("Error fetching verifications:", verError);
-                    // Fallback to fetch without profiles if join fails
-                    const { data: fallbackData } = await adminClient
-                        .from("identity_verifications")
-                        .select("*")
-                        .order("created_at", { ascending: false });
-                    setVerifications(fallbackData || []);
-                } else {
-                    setVerifications(verData || []);
-                }
+                setVerifications(verData || []);
             } catch (e) {
                 console.error("Error fetching verifications exception:", e);
             }
@@ -1624,28 +1609,14 @@ export default function Admin() {
                             ) : (
                                 verifications.map((v) => {
                                     const applicantUserId = v.user_id;
-                                    const houseId = v.members?.[0]?.couple_space_id;
-                                    const house = houses.find(h => h.id === houseId);
+                                    const house = houses.find(h => h.members?.some((m: any) => m.user_id === applicantUserId));
+                                    const houseId = house?.id;
                                     const partner = house?.members?.find((m: any) => m.user_id !== applicantUserId);
                                     
-                                    const partnerProfile = partner?.profiles;
+                                    const p1Profile = users.find(u => u.id === applicantUserId);
+                                    const partnerProfile = partner ? users.find(u => u.id === partner.user_id) : null;
+                                    
                                     const partnerName = partnerProfile?.display_name || "Sem nome";
-                                    const isPartnerVerified = partnerProfile?.verification_status === 'verified';
-
-                                    // Age Gap calculation
-                                    let ageGapText = "";
-                                    let isDisproportionate = false;
-                                    if (partnerProfile?.birthday) {
-                                        const birthDate = new Date(partnerProfile.birthday);
-                                        const today = new Date();
-                                        let pAge = today.getFullYear() - birthDate.getFullYear();
-                                        const m = today.getMonth() - birthDate.getMonth();
-                                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) pAge--;
-                                        
-                                        const diff = Math.abs(v.age - pAge);
-                                        ageGapText = `${diff} anos de diferença`;
-                                        if (diff >= 12) isDisproportionate = true;
-                                    }
 
                                     return (
                                         <div key={v.id} className="bg-card border rounded-3xl p-6 shadow-sm flex flex-col gap-6 transition-all">
@@ -1655,11 +1626,11 @@ export default function Admin() {
                                                 <div className="flex-1 space-y-4">
                                                     <div className="flex items-center gap-4">
                                                         <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted shadow-inner">
-                                                            {v.profiles?.avatar_url ? (
-                                                                <img src={v.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                                                            {p1Profile?.avatar_url ? (
+                                                                <img src={p1Profile.avatar_url} alt="" className="h-full w-full object-cover" />
                                                             ) : (
                                                                 <div className="h-full w-full flex items-center justify-center text-xl font-bold bg-primary/10 text-primary">
-                                                                    {(v.profiles?.display_name || "?").charAt(0)}
+                                                                    {(p1Profile?.display_name || "?").charAt(0)}
                                                                 </div>
                                                             )}
                                                         </div>
