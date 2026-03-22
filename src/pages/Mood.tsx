@@ -145,11 +145,13 @@ export default function Mood() {
         title: `${moodInfo?.emoji ?? "😶"} Novo Humor (${moodPercent}%)`,
         body: emotions.length > 0 ? `Sentindo-se: ${emotions.join(", ")}` : (note ? `Houve uma actualização no humor de hoje.` : (moodInfo?.label ?? moodKey)),
         url: "/humor",
+        type: "humor",
       });
     }
 
     // Emotional Feedback UI
-    toast.success("Obrigado por partilhares como te sentes 💛 O teu par vai sentir-se mais próximo de ti.", {
+    toast.success("Obrigado por partilhares como te sentes 💛", {
+      description: "O teu par vai sentir-se mais próximo de ti.",
       duration: 5000,
     });
 
@@ -157,12 +159,13 @@ export default function Mood() {
       setTimeout(() => {
         toast("O teu par ainda não respondeu... 💬", {
           description: "Talvez precise de um empurrãozinho para partilhar também.",
+          icon: "✨",
           action: {
-            label: "Mudar para Chat",
+            label: "Dar empurrãozinho",
             onClick: () => navigate("/chat"),
           },
         });
-      }, 2000);
+      }, 1500);
     }
   };
 
