@@ -31,7 +31,8 @@ import {
   CornerDownRight,
   Settings,
   Palette,
-  ShieldCheck
+  ShieldCheck,
+  Heart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
