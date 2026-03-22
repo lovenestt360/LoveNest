@@ -1729,13 +1729,19 @@ export default function Admin() {
 
                                             {/* PERSON 2 (PARTNER) CARD */}
                                             <div className="mt-2 border-t pt-6">
-                                                <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-                                                    <Users className="w-4 h-4" /> Parceiro (Casa ID: {houseId?.slice(0,8) || "Indefinido"})
-                                                </h4>
+                                                <div className="mb-4 flex flex-col gap-1">
+                                                    <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                        <Users className="w-4 h-4" /> Parceiro
+                                                    </h4>
+                                                    <p className="text-[10px] font-bold text-muted-foreground shadow-sm bg-muted/30 inline-flex px-2 py-1 rounded w-max border">
+                                                        Membros na Casa: {house?.members?.length || 1}/2 • Casa: {houseId?.slice(0,8) || "Indefinido"} • Submissor: {applicantUserId.slice(0,8)} {partner ? `• Parceiro: ${partner.user_id.slice(0,8)}` : ''}
+                                                    </p>
+                                                </div>
                                                 
                                                 {!partner ? (
-                                                    <div className="p-4 bg-muted/30 rounded-2xl border border-dashed flex items-center justify-center text-sm text-muted-foreground font-medium">
-                                                        Sem segundo membro associado.
+                                                    <div className="p-4 bg-muted/30 rounded-2xl border border-dashed flex flex-col items-center justify-center text-sm text-muted-foreground font-medium text-center gap-1">
+                                                        <span className="font-bold">Sem segundo membro associado na base de dados.</span>
+                                                        <span className="text-xs opacity-70">Nota: O utilizador pode ainda não ter convidado ninguém para a Casa.</span>
                                                     </div>
                                                 ) : (() => {
                                                     const partnerVerification = verifications.find(pv => pv.user_id === partner.user_id);
