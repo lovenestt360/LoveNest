@@ -305,13 +305,25 @@ export default function Admin() {
 
             // 9. Verifications
             try {
-                const { data: verData } = await adminClient
+                // We use an explicit join hint if needed, or simply handle the profiles relation
+                const { data: verData, error: verError } = await adminClient
                     .from("identity_verifications")
-                    .select("*, profiles(display_name, avatar_url)")
+                    .select("*, profiles:user_id(display_name, avatar_url)")
                     .order("created_at", { ascending: false });
-                setVerifications(verData || []);
+                
+                if (verError) {
+                    console.error("Error fetching verifications:", verError);
+                    // Fallback to fetch without profiles if join fails
+                    const { data: fallbackData } = await adminClient
+                        .from("identity_verifications")
+                        .select("*")
+                        .order("created_at", { ascending: false });
+                    setVerifications(fallbackData || []);
+                } else {
+                    setVerifications(verData || []);
+                }
             } catch (e) {
-                console.error("Error fetching verifications:", e);
+                console.error("Error fetching verifications exception:", e);
             }
 
         } catch (error: any) {
