@@ -37,13 +37,13 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
     const handleToggle = async (checked: boolean) => {
         try {
             setTogglingFM(true);
-            const { error } = await adminClient.from("app_settings").upsert({ 
+            const { error: fcmError } = await adminClient.from("app_settings" as any).upsert({ 
                 key: "free_mode",
                 value: checked ? "true" : "false", 
                 updated_at: new Date().toISOString() 
             }, { onConflict: 'key' });
             
-            if (error) throw error;
+            if (fcmError) throw fcmError;
 
             // Log the action
             await adminClient.from("free_mode_logs").insert({
@@ -302,7 +302,7 @@ export default function Admin() {
             // 8. PWA Settings
             try {
                 const { data: pwaData, error: pError } = await adminClient
-                    .from("pwa_tutorial_settings")
+                    .from("pwa_tutorial_settings" as any)
                     .select("*")
                     .maybeSingle();
                 
@@ -557,7 +557,7 @@ export default function Admin() {
         if (!pwaSettings) return;
         try {
             setSavingPwa(true);
-            const { error } = await adminClient.from("pwa_tutorial_settings").update({
+            const { error } = await adminClient.from("pwa_tutorial_settings" as any).update({
                 android_video_url: pwaSettings.android_video_url,
                 ios_video_url: pwaSettings.ios_video_url,
                 is_enabled: pwaSettings.is_enabled
@@ -602,7 +602,7 @@ export default function Admin() {
             setPwaSettings(updatedSettings);
             
             // Auto save
-            const { error: updateError } = await adminClient.from("pwa_tutorial_settings").update({
+            const { error: updateError } = await adminClient.from("pwa_tutorial_settings" as any).update({
                 android_video_url: updatedSettings.android_video_url,
                 ios_video_url: updatedSettings.ios_video_url
             }).eq("id", pwaSettings.id);
@@ -1820,7 +1820,7 @@ export default function Admin() {
                                     <div className="pt-6">
                                         <Button onClick={async () => {
                                             toast({ title: "Tentando inicializar..." });
-                                            const { data, error } = await adminClient.from("pwa_tutorial_settings").insert({ android_video_url: '', ios_video_url: '', is_enabled: true }).select();
+                                            const { data, error } = await adminClient.from("pwa_tutorial_settings" as any).insert({ android_video_url: '', ios_video_url: '', is_enabled: true }).select();
                                             if (data) fetchAllData();
                                             else toast({ title: "Falha", description: "Erro ao criar: " + error?.message, variant: "destructive" });
                                         }} className="rounded-full px-8">
