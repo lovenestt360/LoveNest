@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
           .gte("created_at", monthStart)
           .lt("created_at", monthEnd);
         if (msgErr) throw new Error(`Messages check failed: ${msgErr.message}`);
+        console.log(`  - Messages: ${messagesCount}`);
 
         // Count memories (photos)
         const { count: memoriesCount, error: photoErr } = await sb
@@ -97,6 +98,7 @@ Deno.serve(async (req) => {
           .gte("created_at", monthStart)
           .lt("created_at", monthEnd);
         if (photoErr) throw new Error(`Photos check failed: ${photoErr.message}`);
+        console.log(`  - Photos: ${memoriesCount}`);
 
         // Count challenges completed
         const { count: challengesCount, error: challErr } = await sb
@@ -107,6 +109,7 @@ Deno.serve(async (req) => {
           .gte("completed_at", monthStart)
           .lt("completed_at", monthEnd);
         if (challErr) throw new Error(`Challenges check failed: ${challErr.message}`);
+        console.log(`  - Challenges: ${challengesCount}`);
 
         // Get streak days
         const { data: streakData, error: streakErr } = await sb
@@ -115,6 +118,7 @@ Deno.serve(async (req) => {
           .eq("couple_space_id", spaceId)
           .maybeSingle();
         if (streakErr) throw new Error(`Streak check failed: ${streakErr.message}`);
+        console.log(`  - Streak: ${streakData?.current_streak ?? 0}`);
 
         // Count mood checkins
         const { data: moodEntries, error: moodErr } = await sb
@@ -124,6 +128,7 @@ Deno.serve(async (req) => {
           .gte("created_at", monthStart)
           .lt("created_at", monthEnd);
         if (moodErr) throw new Error(`Mood check failed: ${moodErr.message}`);
+        console.log(`  - Moods: ${moodEntries?.length ?? 0}`);
 
         const moodCount = moodEntries?.length ?? 0;
         
@@ -137,7 +142,7 @@ Deno.serve(async (req) => {
           topMood = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
         }
 
-        // Upsert wrapped (update if exists for space/month/year)
+        // Upsert wrapped
         const { error: upsertError } = await sb.from("love_wrapped").upsert({
           couple_space_id: spaceId,
           month,
@@ -153,6 +158,7 @@ Deno.serve(async (req) => {
         });
 
         if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
+        console.log(`  - Upsert: SUCCESS`);
 
         processed++;
       } catch (err: any) {

@@ -618,9 +618,13 @@ export default function Admin() {
             const processedCount = data.processed ?? data.generated ?? 0;
             const totalCount = data.total_spaces ?? processedCount;
 
+            const firstError = data.failures?.[0]?.error;
+
             toast({
                 title: data.failures?.length > 0 ? "Geração Concluída com Alertas" : "Sucesso!",
-                description: `Processados: ${processedCount} de ${totalCount} casas. ${data.failures?.length > 0 ? `${data.failures.length} falhas detectadas. Verifica os logs da consola.` : ''}`,
+                description: data.failures?.length > 0 
+                    ? `Falha em ${data.failures.length} casas. Erro: ${firstError || "Desconhecido"}`
+                    : `Processados: ${processedCount} de ${totalCount} casas.`,
                 variant: data.failures?.length > 0 ? "destructive" : "default"
             });
         } catch (error: any) {
