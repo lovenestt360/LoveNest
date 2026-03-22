@@ -28,7 +28,7 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/.test(navigator.userAgent);
   
   // Detect if we're running as an installed PWA (standalone mode)
@@ -49,9 +49,9 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
         
         // Auto-show logic: Only show if NOT already installed as PWA
         const hasSeen = localStorage.getItem("pwa_tutorial_seen") === "true";
-        if (data.is_enabled && !hasSeen && user && !isStandalone) {
+        if (data.is_enabled && !hasSeen && !isStandalone) {
           // Delay a bit to wait for splash/login transition
-          setTimeout(() => setShowModal(true), 1500);
+          setTimeout(() => setShowModal(true), 3500);
         }
       }
     } catch (err) {
@@ -59,7 +59,7 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [user, isStandalone]);
+  }, [isStandalone]);
 
   useEffect(() => {
     fetchSettings();

@@ -13,6 +13,9 @@ import { PremiumGuard } from "@/features/auth/PremiumGuard";
 import { AppNotifProvider } from "@/features/notifications/AppNotifContext";
 import { SplashGate } from "@/features/splash/SplashScreen";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
+import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
+import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -60,83 +63,87 @@ const App = () => (
       <BrowserRouter>
         <SplashGate>
           <AuthProvider>
-          <AppNotifProvider>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/entrar" element={<Login />} />
-                <Route path="/criar-conta" element={<Signup />} />
-                <Route path="/signup" element={<Signup />} />
+            <PWATutorialProvider>
+              <AppNotifProvider>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/entrar" element={<Login />} />
+                    <Route path="/criar-conta" element={<Signup />} />
+                    <Route path="/signup" element={<Signup />} />
 
-                {/* Auth-only routes (login required, sem pareamento obrigatório) */}
-                <Route element={<AuthOnlyRoute />}>
-                  <Route path="/casa" element={<CoupleSpace />} />
-                </Route>
+                    {/* Auth-only routes (login required, sem pareamento obrigatório) */}
+                    <Route element={<AuthOnlyRoute />}>
+                      <Route path="/casa" element={<CoupleSpace />} />
+                    </Route>
 
-                {/* Protected routes (login + pareamento) */}
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<AppShell />}>
-                    <Route index element={<Index />} />
-                    <Route path="chat" element={<Chat />} />
-                    <Route path="humor" element={<Mood />} />
-                    <Route path="configuracoes" element={<Settings />} />
-                    <Route path="subscricao" element={<Subscription />} />
+                    {/* Protected routes (login + pareamento) */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route element={<AppShell />}>
+                        <Route index element={<Index />} />
+                        <Route path="chat" element={<Chat />} />
+                        <Route path="humor" element={<Mood />} />
+                        <Route path="configuracoes" element={<Settings />} />
+                        <Route path="subscricao" element={<Subscription />} />
 
-                    {/* Paywalled Premium Routes */}
-                    <Route element={<PremiumGuard requiredFeature="tasks" />}>
-                      <Route path="tarefas" element={<Tasks />} />
+                        {/* Paywalled Premium Routes */}
+                        <Route element={<PremiumGuard requiredFeature="tasks" />}>
+                          <Route path="tarefas" element={<Tasks />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="prayer" />}>
+                          <Route path="oracao" element={<Prayer />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="agenda" />}>
+                          <Route path="agenda" element={<Schedule />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="conflicts" />}>
+                          <Route path="conflitos" element={<Complaints />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="memories" />}>
+                          <Route path="memorias" element={<Memories />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="cycle" />}>
+                          <Route path="ciclo" element={<Cycle />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="fasting" />}>
+                          <Route path="jejum" element={<Fasting />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="routine" />}>
+                          <Route path="rotina" element={<Routine />} />
+                          <Route path="rotina/dia/:date" element={<RoutineDay />} />
+                          <Route path="rotina/gerir" element={<RoutineManage />} />
+                        </Route>
+                        <Route element={<PremiumGuard requiredFeature="challenges" />}>
+                          <Route path="desafios" element={<Challenges />} />
+                        </Route>
+                        <Route path="ranking" element={<Ranking />} />
+                        <Route element={<PremiumGuard requiredFeature="time_capsules" />}>
+                          <Route path="capsula" element={<TimeCapsule />} />
+                        </Route>
+                        <Route path="wrapped" element={<LoveWrapped />} />
+                      </Route>
                     </Route>
-                    <Route element={<PremiumGuard requiredFeature="prayer" />}>
-                      <Route path="oracao" element={<Prayer />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="agenda" />}>
-                      <Route path="agenda" element={<Schedule />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="conflicts" />}>
-                      <Route path="conflitos" element={<Complaints />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="memories" />}>
-                      <Route path="memorias" element={<Memories />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="cycle" />}>
-                      <Route path="ciclo" element={<Cycle />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="fasting" />}>
-                      <Route path="jejum" element={<Fasting />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="routine" />}>
-                      <Route path="rotina" element={<Routine />} />
-                      <Route path="rotina/dia/:date" element={<RoutineDay />} />
-                      <Route path="rotina/gerir" element={<RoutineManage />} />
-                    </Route>
-                    <Route element={<PremiumGuard requiredFeature="challenges" />}>
-                      <Route path="desafios" element={<Challenges />} />
-                    </Route>
-                    <Route path="ranking" element={<Ranking />} />
-                    <Route element={<PremiumGuard requiredFeature="time_capsules" />}>
-                      <Route path="capsula" element={<TimeCapsule />} />
-                    </Route>
-                    <Route path="wrapped" element={<LoveWrapped />} />
-                  </Route>
-                </Route>
 
-                {/* Admin Auth */}
-                <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/admin-setup-secret" element={<AdminRegister />} />
+                    {/* Admin Auth */}
+                    <Route path="/admin-login" element={<AdminLogin />} />
+                    <Route path="/admin-setup-secret" element={<AdminRegister />} />
 
-                {/* Protected Admin routes */}
-                <Route element={<AdminRoute />}>
-                  <Route path="/admin" element={<Admin />} />
-                </Route>
+                    {/* Protected Admin routes */}
+                    <Route element={<AdminRoute />}>
+                      <Route path="/admin" element={<Admin />} />
+                    </Route>
 
-                {/* 404 */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </AppNotifProvider>
-        </AuthProvider>
-      </SplashGate>
-    </BrowserRouter>
+                    {/* 404 */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </AppNotifProvider>
+              <PWAInstallButton />
+              <PWATutorialModal />
+            </PWATutorialProvider>
+          </AuthProvider>
+        </SplashGate>
+      </BrowserRouter>
     </ThemeProvider>
   </QueryClientProvider>
 );
