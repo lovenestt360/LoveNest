@@ -142,23 +142,53 @@ Deno.serve(async (req) => {
           topMood = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
         }
 
-        // Upsert wrapped
-        const { error: upsertError } = await sb.from("love_wrapped").upsert({
-          couple_space_id: spaceId,
-          month,
-          year,
-          messages_count: messagesCount ?? 0,
-          memories_count: memoriesCount ?? 0,
-          challenges_completed: challengesCount ?? 0,
-          streak_days: streakData?.current_streak ?? 0,
-          mood_checkins: moodCount,
-          top_mood: topMood,
-        }, {
-          onConflict: 'couple_space_id,month,year'
-        });
+        // Check if already generated for this space/month/year
+        const { data: existing, error: checkError } = await sb
+          .from("love_wrapped")
+          .select("id")
+          .eq("couple_space_id", spaceId)
+          .eq("month", month)
+          .eq("year", year)
+          .maybeSingle();
 
-        if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
-        console.log(`  - Upsert: SUCCESS`);
+        if (checkError) throw new Error(`Check existing failed: ${checkError.message}`);
+
+        if (existing) {
+          console.log(`  - Record exists (ID: ${existing.id}), updating...`);
+          const { error: updateError } = await sb
+            .from("love_wrapped")
+            .update({
+              messages_count: messagesCount ?? 0,
+              memories_count: memoriesCount ?? 0,
+              challenges_completed: challengesCount ?? 0,
+              streak_days: streakData?.current_streak ?? 0,
+              mood_checkins: moodCount,
+              top_mood: topMood,
+              generated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+          
+          if (updateError) throw new Error(`Update failed: ${updateError.message}`);
+          console.log(`  - Update: SUCCESS`);
+        } else {
+          console.log(`  - No record found, inserting...`);
+          const { error: insertError } = await sb
+            .from("love_wrapped")
+            .insert({
+              couple_space_id: spaceId,
+              month,
+              year,
+              messages_count: messagesCount ?? 0,
+              memories_count: memoriesCount ?? 0,
+              challenges_completed: challengesCount ?? 0,
+              streak_days: streakData?.current_streak ?? 0,
+              mood_checkins: moodCount,
+              top_mood: topMood,
+            });
+          
+          if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
+          console.log(`  - Insert: SUCCESS`);
+        }
 
         processed++;
       } catch (err: any) {

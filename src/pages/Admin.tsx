@@ -1488,7 +1488,7 @@ export default function Admin() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-bold flex items-center gap-2">
-                                    <Sparkles className="w-6 h-6 text-primary" /> Gestão LoveWrapped
+                                    <Sparkles className="w-6 h-6 text-primary" /> Gestão LoveWrapped <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded-full font-mono text-primary border border-primary/20">v1.5.1</span>
                                 </h2>
                                 <p className="text-sm text-muted-foreground mt-1">Gera e gere os resumos mensais de atividade dos casais.</p>
                             </div>
