@@ -214,7 +214,18 @@ export default function Admin() {
             try {
                 const { data: housesData } = await adminClient
                     .from("couple_spaces")
-                    .select(`*`)
+                    .select(`
+                        *,
+                        members (
+                            user_id,
+                            profiles (
+                                display_name,
+                                avatar_url,
+                                verification_status,
+                                birthday
+                            )
+                        )
+                    `)
                     .order("created_at", { ascending: false });
                 setHouses(housesData || []);
             } catch (e) {
@@ -305,10 +316,14 @@ export default function Admin() {
 
             // 9. Verifications
             try {
-                // We use an explicit join hint if needed, or simply handle the profiles relation
+                // We fetch verifications with their profiles and the members (to find their house)
                 const { data: verData, error: verError } = await adminClient
                     .from("identity_verifications")
-                    .select("*, profiles:user_id(display_name, avatar_url)")
+                    .select(`
+                        *,
+                        profiles:user_id(display_name, avatar_url, birthday, verification_status),
+                        members:user_id(couple_space_id)
+                    `)
                     .order("created_at", { ascending: false });
                 
                 if (verError) {
@@ -400,6 +415,17 @@ export default function Admin() {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
             setAssigningPlan(false);
+        }
+    };
+
+    const handleToggleHouseVerification = async (id: string, currentStatus: boolean) => {
+        try {
+            const { error } = await adminClient.from("couple_spaces").update({ is_verified: !currentStatus }).eq("id", id);
+            if (error) throw error;
+            toast({ title: !currentStatus ? "Casa Verificada!" : "Selo Removido", description: "O estado de confiança da casa foi atualizado." });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
     };
 
@@ -904,7 +930,25 @@ export default function Admin() {
                                                         </div>
                                                     </td>
                                                     <td className="p-4">
-                                                        <p className="text-muted-foreground whitespace-nowrap">{house.partner1_name || "P1"} & {house.partner2_name || "P2"}</p>
+                                                        <div className="flex flex-col gap-1">
+                                                            <p className="text-muted-foreground whitespace-nowrap font-medium flex items-center gap-2">
+                                                                {house.partner1_name || "P1"} & {house.partner2_name || "P2"}
+                                                            </p>
+                                                            <div className="flex gap-1.5 overflow-hidden">
+                                                                {house.members?.map((m: any, idx: number) => {
+                                                                    const isV = m.profiles?.verification_status === 'verified';
+                                                                    return (
+                                                                        <div key={m.user_id} className={cn(
+                                                                            "text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0",
+                                                                            isV ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground/60"
+                                                                        )}>
+                                                                            {isV ? <ShieldCheck className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+                                                                            {m.profiles?.display_name?.split(' ')[0] || `P${idx+1}`}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="p-4">
                                                         <div className="flex flex-col gap-1">
@@ -933,7 +977,33 @@ export default function Admin() {
                                                         )}
                                                     </td>
                                                     <td className="p-4 text-right">
-                                                        <div className="flex justify-end gap-2">
+                                                        <div className="flex justify-end items-center gap-2">
+                                                            {/* House Verification Badge / Action */}
+                                                            {house.is_verified ? (
+                                                                <button 
+                                                                    onClick={() => handleToggleHouseVerification(house.id, true)}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                                                                >
+                                                                    <Sparkles className="w-3.5 h-3.5" /> Verificada
+                                                                </button>
+                                                            ) : (
+                                                                (() => {
+                                                                    const bothVerified = house.members?.length === 2 && house.members.every((m: any) => m.profiles?.verification_status === 'verified');
+                                                                    if (bothVerified) {
+                                                                        return (
+                                                                            <Button 
+                                                                                size="sm" 
+                                                                                className="h-8 bg-primary/20 hover:bg-primary/30 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest"
+                                                                                onClick={() => handleToggleHouseVerification(house.id, false)}
+                                                                            >
+                                                                                VERIFICAR CASA
+                                                                            </Button>
+                                                                        );
+                                                                    }
+                                                                    return null;
+                                                                })()
+                                                            )}
+
                                                             {house.is_suspended && (
                                                                 <div className="flex items-center gap-1 text-[10px] font-bold text-destructive mr-2 uppercase">
                                                                     <AlertTriangle className="w-3 h-3" /> Suspensa
@@ -1546,125 +1616,176 @@ export default function Admin() {
                                     <p className="text-muted-foreground italic">Nenhuma submissão de verificação encontrada.</p>
                                 </div>
                             ) : (
-                                verifications.map((v) => (
-                                    <div key={v.id} className="bg-card border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6">
-                                        <div className="flex-1 space-y-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 rounded-full overflow-hidden bg-muted">
-                                                    {v.profiles?.avatar_url ? (
-                                                        <img src={v.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
-                                                    ) : (
-                                                        <div className="h-full w-full flex items-center justify-center text-lg font-bold">
-                                                            {(v.profiles?.display_name || "?").charAt(0)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-lg">{v.full_name}</h4>
-                                                    <p className="text-xs text-muted-foreground">{v.profiles?.display_name || "Sem nome"} • ID: {v.user_id.slice(0,8)}...</p>
-                                                </div>
-                                                <div className="ml-auto">
-                                                    <span className={cn(
-                                                        "text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest",
-                                                        v.status === 'pending' ? "bg-blue-500/10 text-blue-600" :
-                                                        v.status === 'verified' ? "bg-emerald-500/10 text-emerald-600" :
-                                                        "bg-amber-500/10 text-amber-600"
-                                                    )}>
-                                                        {v.status}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                verifications.map((v) => {
+                                    const applicantUserId = v.user_id;
+                                    const houseId = v.members?.[0]?.couple_space_id;
+                                    const house = houses.find(h => h.id === houseId);
+                                    const partner = house?.members?.find((m: any) => m.user_id !== applicantUserId);
+                                    
+                                    const partnerProfile = partner?.profiles;
+                                    const partnerName = partnerProfile?.display_name || "Sem nome";
+                                    const isPartnerVerified = partnerProfile?.verification_status === 'verified';
 
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl text-sm">
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Idade</p>
-                                                    <p className="font-bold">{v.age} anos</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nº Documento</p>
-                                                    <p className="font-bold">{v.id_number}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Data Submissão</p>
-                                                    <p className="font-bold">{new Date(v.created_at).toLocaleDateString()}</p>
-                                                </div>
-                                            </div>
+                                    // Age Gap calculation
+                                    let ageGapText = "";
+                                    let isDisproportionate = false;
+                                    if (partnerProfile?.birthday) {
+                                        const birthDate = new Date(partnerProfile.birthday);
+                                        const today = new Date();
+                                        let pAge = today.getFullYear() - birthDate.getFullYear();
+                                        const m = today.getMonth() - birthDate.getMonth();
+                                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) pAge--;
+                                        
+                                        const diff = Math.abs(v.age - pAge);
+                                        ageGapText = `${diff} anos de diferença`;
+                                        if (diff >= 12) isDisproportionate = true;
+                                    }
 
-                                            {v.status === 'pending' && (
-                                                <div className="flex gap-3 pt-2">
-                                                    <Button 
-                                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11"
-                                                        onClick={() => handleApproveVerification(v.id, v.user_id)}
-                                                    >
-                                                        <Check className="w-4 h-4 mr-2" /> Aprovar Identidade
-                                                    </Button>
-                                                    <Button 
-                                                        variant="outline"
-                                                        className="flex-1 border-destructive/20 text-destructive hover:bg-destructive/5 font-bold h-11"
-                                                        onClick={() => {
-                                                            const reason = prompt("Indique o motivo da rejeição:");
-                                                            if (reason) handleRejectVerification(v.id, v.user_id, reason);
-                                                        }}
-                                                    >
-                                                        <X className="w-4 h-4 mr-2" /> Rejeitar
-                                                    </Button>
-                                                </div>
-                                            )}
-
-                                            {v.admin_notes && (
-                                                <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs">
-                                                    <span className="font-bold text-amber-600">Nota Admin:</span> {v.admin_notes}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="w-full md:w-80 space-y-4">
-                                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Documentos de Identidade</p>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                {/* FRONT */}
-                                                <div 
-                                                    className="group relative h-40 rounded-xl overflow-hidden border bg-muted cursor-pointer"
-                                                    onClick={async () => {
-                                                        const { data } = await adminClient.storage
-                                                            .from('identity-documents')
-                                                            .createSignedUrl(v.document_url, 60);
-                                                        if (data) setSelectedImage(data.signedUrl);
-                                                    }}
-                                                >
-                                                    <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
-                                                        <FileText className="w-8 h-8 text-primary/40" />
-                                                        <span className="text-[9px] font-black uppercase tracking-widest">Frente</span>
+                                    return (
+                                        <div key={v.id} className={cn(
+                                            "bg-card border rounded-3xl p-6 shadow-sm flex flex-col lg:flex-row gap-6 transition-all",
+                                            isDisproportionate && "border-amber-500/30 bg-amber-500/[0.02]"
+                                        )}>
+                                            <div className="flex-1 space-y-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted shadow-inner">
+                                                        {v.profiles?.avatar_url ? (
+                                                            <img src={v.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                                                        ) : (
+                                                            <div className="h-full w-full flex items-center justify-center text-xl font-bold bg-primary/10 text-primary">
+                                                                {(v.profiles?.display_name || "?").charAt(0)}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <div>
+                                                        <h4 className="font-bold text-xl">{v.full_name}</h4>
+                                                        <p className="text-sm text-muted-foreground font-medium">@{v.profiles?.display_name || "utilizador"} • ID: {v.user_id.slice(0,8)}</p>
+                                                    </div>
+                                                    <div className="ml-auto flex flex-col items-end gap-1">
+                                                        <span className={cn(
+                                                            "text-[10px] font-black underline decoration-2 underline-offset-4 uppercase px-3 py-1 rounded-full tracking-widest",
+                                                            v.status === 'pending' ? "text-blue-600" :
+                                                            v.status === 'verified' ? "text-emerald-600" :
+                                                            "text-amber-600"
+                                                        )}>
+                                                            {v.status}
+                                                        </span>
+                                                        <p className="text-[9px] font-bold text-muted-foreground">SUBMETIDO A {new Date(v.created_at).toLocaleDateString()}</p>
+                                                    </div>
                                                 </div>
 
-                                                {/* BACK (If exists) */}
-                                                {v.document_back_url ? (
+                                                {/* CONTEXT CARD: PARTNER & HOUSE */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="bg-muted/30 p-4 rounded-2xl border border-border/50">
+                                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-3 flex items-center gap-2">
+                                                            <Users className="w-3 h-3" /> Contexto do Casal
+                                                        </p>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-10 w-10 rounded-xl overflow-hidden bg-background border flex items-center justify-center shadow-sm">
+                                                                {partnerProfile?.avatar_url ? (
+                                                                    <img src={partnerProfile.avatar_url} alt="" className="h-full w-full object-cover" />
+                                                                ) : <User className="w-5 h-5 text-muted-foreground/40" />}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-bold text-sm truncate">{partnerName}</p>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    {isPartnerVerified ? (
+                                                                        <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                                                            <ShieldCheck className="w-2.5 h-2.5" /> VERIFICADO
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-md">
+                                                                            <AlertTriangle className="w-2.5 h-2.5" /> NÃO VERIFICADO
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className={cn(
+                                                        "p-4 rounded-2xl border flex flex-col justify-center",
+                                                        isDisproportionate ? "bg-amber-500/10 border-amber-500/20" : "bg-muted/30 border-border/50"
+                                                    )}>
+                                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Diferença de Idade</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className={cn("text-lg font-black", isDisproportionate ? "text-amber-600" : "text-foreground")}>
+                                                                {ageGapText || "—"}
+                                                            </p>
+                                                            {isDisproportionate && (
+                                                                <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-black animate-pulse">ALERTA</div>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-muted-foreground italic mt-1">Recomendado análise cautelosa se > 12 anos.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-2xl border border-dashed text-sm">
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Idade (Documento)</p>
+                                                        <p className="font-black text-primary">{v.age} anos</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Nº Documento</p>
+                                                        <p className="font-mono font-bold tracking-tighter">{v.id_number}</p>
+                                                    </div>
+                                                </div>
+
+                                                {v.admin_notes && (
+                                                    <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-xs shadow-inner">
+                                                        <span className="font-black text-amber-600 uppercase tracking-widest mr-2 text-[10px]">Nota Admin:</span> {v.admin_notes}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="w-full md:w-80 space-y-4">
+                                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Documentos de Identidade</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {/* FRONT */}
                                                     <div 
-                                                        className="group relative h-40 rounded-xl overflow-hidden border bg-muted cursor-pointer animate-in fade-in"
+                                                        className="group relative h-40 rounded-xl overflow-hidden border bg-muted cursor-pointer"
                                                         onClick={async () => {
                                                             const { data } = await adminClient.storage
                                                                 .from('identity-documents')
-                                                                .createSignedUrl(v.document_back_url, 60);
+                                                                .createSignedUrl(v.document_url, 60);
                                                             if (data) setSelectedImage(data.signedUrl);
                                                         }}
                                                     >
                                                         <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
                                                             <FileText className="w-8 h-8 text-primary/40" />
-                                                            <span className="text-[9px] font-black uppercase tracking-widest">Verso</span>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest">Frente</span>
                                                         </div>
                                                         <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                     </div>
-                                                ) : (
-                                                    <div className="h-40 rounded-xl border border-dashed flex items-center justify-center bg-muted/20">
-                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase">Face Única</span>
-                                                    </div>
-                                                )}
+
+                                                    {/* BACK (If exists) */}
+                                                    {v.document_back_url ? (
+                                                        <div 
+                                                            className="group relative h-40 rounded-xl overflow-hidden border bg-muted cursor-pointer animate-in fade-in"
+                                                            onClick={async () => {
+                                                                const { data } = await adminClient.storage
+                                                                    .from('identity-documents')
+                                                                    .createSignedUrl(v.document_back_url, 60);
+                                                                if (data) setSelectedImage(data.signedUrl);
+                                                            }}
+                                                        >
+                                                            <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
+                                                                <FileText className="w-8 h-8 text-primary/40" />
+                                                                <span className="text-[9px] font-black uppercase tracking-widest">Verso</span>
+                                                            </div>
+                                                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-40 rounded-xl border border-dashed flex items-center justify-center bg-muted/20">
+                                                            <span className="text-[9px] font-bold text-muted-foreground uppercase">Face Única</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <p className="text-[9px] text-muted-foreground italic text-center">Clique para visualização segura.</p>
                                             </div>
-                                            <p className="text-[9px] text-muted-foreground italic text-center">Clique para visualização segura.</p>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
