@@ -357,6 +357,9 @@ export default function Chat() {
   // Action sheet
   const [sheetMsg, setSheetMsg] = useState<Message | null>(null);
 
+  // Carinho/Love animation state
+  const [showCarinhoAnim, setShowCarinhoAnim] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const msgRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -531,6 +534,44 @@ export default function Chat() {
     }
   }, [input, spaceId, user, sending, imageFile, audio, replyTo, uploadMedia, toast]);
 
+  /* ── Send Carinho ── */
+  const handleSendCarinho = useCallback(async () => {
+    if (!spaceId || !user || sending) return;
+    
+    setSending(true);
+    setShowCarinhoAnim(true);
+    
+    try {
+      const { error: insertError } = await supabase.from("messages").insert({
+        couple_space_id: spaceId,
+        sender_user_id: user.id,
+        content: "Só para te lembrar que te amo 💛",
+      });
+
+      if (insertError) throw insertError;
+
+      // Interaction for LoveStreak
+      recordInteraction("chat_message");
+
+      // Notify partner
+      notifyPartner({
+        couple_space_id: spaceId,
+        title: "💖 Recebeste carinho!",
+        body: "Só para te lembrar que te amo 💛",
+        url: "/chat",
+        type: "chat",
+      });
+
+      // Animation timeout
+      setTimeout(() => setShowCarinhoAnim(false), 2000);
+      
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar carinho", description: err?.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  }, [spaceId, user, sending, recordInteraction, toast]);
+
   /* ── Edit message ── */
   const handleEditSave = useCallback(async () => {
     if (!editingMsg || !editText.trim()) return;
@@ -632,16 +673,27 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Wallpaper Quick Adjust Button (Optional but helpful) */}
-        {!openSettings && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-full bg-background/20 backdrop-blur-sm shadow-sm"
-            onClick={() => navigate("/configuracoes")}
-          >
-            <Palette className="h-4 w-4 text-foreground/60" />
-          </Button>
+        {/* Heart Animation Overlay */}
+        {showCarinhoAnim && (
+          <div className="absolute inset-0 z-[100] pointer-events-none flex items-center justify-center">
+            <div className="animate-bounce p-4 bg-primary/20 rounded-full backdrop-blur-sm">
+              <Heart className="h-16 w-16 text-primary fill-primary animate-pulse" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="absolute animate-in fade-out zoom-out duration-1000 fill-mode-forwards"
+                  style={{ 
+                    transform: `rotate(${i * 30}deg) translateY(-100px)`,
+                    animationDelay: `${i * 0.05}s`
+                  }}
+                >
+                  <Heart className="h-6 w-6 text-primary/40 fill-primary/40" />
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </header>
 
@@ -805,26 +857,41 @@ export default function Chat() {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={(replyTo || imageFile || audio.audioBlob) ? "Adicionar texto..." : "Mensagem..."}
-                className="flex-1 h-9 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]"
+                placeholder={(replyTo || imageFile || audio.audioBlob) 
+                  ? "Adicionar texto..." 
+                  : (new Date().getHours() > 18 ? "Diz algo bonito hoje..." : "Escreve algo que aqueça o coração 💛")}
+                className="flex-1 h-10 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]"
                 autoComplete="off"
               />
               <div className="flex items-center gap-1 shrink-0">
                 {(!input.trim() && !imageFile && !audio.audioBlob) ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className={cn("h-9 w-9 rounded-full transition-colors", audio.recording ? "text-red-500 bg-red-500/10" : "text-muted-foreground hover:bg-muted/50")}
-                    onClick={() => audio.recording ? audio.stop() : audio.start()}
-                  >
-                    {audio.recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-125 duration-300"
+                      onClick={handleSendCarinho}
+                      disabled={sending}
+                      title="Enviar Carinho"
+                    >
+                      <Heart className="h-5 w-5 fill-primary" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-10 w-10 rounded-full transition-colors", audio.recording ? "text-red-500 bg-red-500/10" : "text-muted-foreground hover:bg-muted/50")}
+                      onClick={() => audio.recording ? audio.stop() : audio.start()}
+                    >
+                      {audio.recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     type="submit"
                     size="icon"
-                    className="h-9 w-9 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
+                    className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
                     disabled={sending}
                   >
                     {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
