@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.notification_templates (
 );
 
 -- Enable RLS
-ALTER TABLE public.notification_templates ENABLE CONTROLLED ACCESS;
+ALTER TABLE public.notification_templates ENABLE ROW LEVEL SECURITY;
 
 -- Allow read access for everyone (or at least authenticated)
 CREATE POLICY "Allow read for authenticated" ON public.notification_templates
