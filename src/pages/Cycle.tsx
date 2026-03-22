@@ -5,6 +5,7 @@ import { useCycleData } from "@/features/cycle/useCycleData";
 import { CycleToday } from "@/features/cycle/CycleToday";
 import { CycleCalendar } from "@/features/cycle/CycleCalendar";
 import { CycleHistory } from "@/features/cycle/CycleHistory";
+import { CycleInsights } from "@/features/cycle/CycleInsights";
 import { useAuth } from "@/features/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Trash2 } from "lucide-react";
@@ -52,6 +53,8 @@ export default function Cycle() {
           {data.isMale ? "Acompanhamento do ciclo da tua parceira." : "Acompanhamento menstrual privado."}
         </p>
       </header>
+
+      <CycleInsights data={data} />
 
       <Tabs defaultValue="hoje" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
