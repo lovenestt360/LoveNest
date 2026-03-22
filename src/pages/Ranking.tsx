@@ -6,7 +6,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { useDailyChallenge } from "@/hooks/useDailyChallenge";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
-import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2 } from "lucide-react";
+import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, ShieldCheck, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ interface RankEntry {
   level_title: string;
   house_name: string | null;
   house_image: string | null;
+  is_verified?: boolean;
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -83,7 +84,7 @@ export default function Ranking() {
       const spaceIds = streaks.map(s => s.couple_space_id);
       const { data: spaces } = await supabase
         .from("couple_spaces")
-        .select("id, house_name, house_image")
+        .select("id, house_name, house_image, is_verified")
         .in("id", spaceIds) as any;
 
       const spaceMap = new Map((spaces || []).map(s => [s.id, s]));
@@ -95,6 +96,7 @@ export default function Ranking() {
           total_points: s.total_points || 0,
           house_name: space?.house_name || "LoveNest",
           house_image: space?.house_image || null,
+          is_verified: space?.is_verified || false,
         };
       });
 
@@ -399,8 +401,9 @@ export default function Ranking() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={cn("font-bold truncate text-sm", entry.couple_space_id === spaceId && "text-orange-600")}>
+                        <p className={cn("font-bold truncate text-sm flex items-center gap-1", entry.couple_space_id === spaceId && "text-orange-600")}>
                           {entry.house_name}
+                          {entry.is_verified && <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/10" />}
                         </p>
                         {i === 0 && <Sparkles className="w-3 h-3 text-orange-500" />}
                       </div>
@@ -503,8 +506,9 @@ export default function Ranking() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={cn("font-bold truncate text-sm", entry.couple_space_id === spaceId && "text-primary")}>
+                        <p className={cn("font-bold truncate text-sm flex items-center gap-1", entry.couple_space_id === spaceId && "text-primary")}>
                           {entry.house_name}
+                          {entry.is_verified && <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/10" />}
                         </p>
                         {i === 0 && <Sparkles className="w-3 h-3 text-yellow-500" />}
                       </div>

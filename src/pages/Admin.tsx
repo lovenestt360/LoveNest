@@ -1623,7 +1623,8 @@ export default function Admin() {
                                             id: h.id,
                                             name: h.house_name || "Casa Sem Nome",
                                             members: houseMembers,
-                                            submissions: houseSubmissions
+                                            submissions: houseSubmissions,
+                                            is_verified: h.is_verified || false
                                         });
                                         houseSubmissions.forEach(v => processedVerIds.add(v.id));
                                     }
@@ -1671,14 +1672,44 @@ export default function Admin() {
                                                     <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Status da Casa</p>
                                                     <span className={cn(
                                                         "text-[10px] font-black uppercase tracking-widest",
-                                                        group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length 
+                                                        (group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length) || group.is_verified
                                                             ? "text-emerald-600" 
                                                             : "text-amber-500"
                                                     )}>
-                                                        {group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length 
+                                                        {(group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length) || group.is_verified
                                                             ? "CASA VERIFICADA" : "VERIFICAÇÃO PENDENTE"}
                                                     </span>
                                                 </div>
+
+                                                {/* SEAL ACTION BUTTON */}
+                                                {!group.isOrphan && (
+                                                    <div className="flex items-center">
+                                                        {group.is_verified ? (
+                                                            <button 
+                                                                onClick={() => handleToggleHouseVerification(group.id, true)}
+                                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 text-white text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                                                            >
+                                                                <Sparkles className="w-3.5 h-3.5" /> Selo Ativo
+                                                            </button>
+                                                        ) : (
+                                                            (() => {
+                                                                const bothVerified = group.submissions.length === 2 && group.submissions.every((s: any) => s.status === 'verified');
+                                                                if (bothVerified) {
+                                                                    return (
+                                                                        <Button 
+                                                                            size="sm" 
+                                                                            className="h-10 bg-primary/20 hover:bg-primary/30 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest"
+                                                                            onClick={() => handleToggleHouseVerification(group.id, false)}
+                                                                        >
+                                                                            ENVIAR SELO
+                                                                        </Button>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
