@@ -176,9 +176,13 @@ function CreateComplaintForm({ spaceId, userId, onCreated }: { spaceId: string |
       severity,
     });
     if (error) {
-      toast({ title: "Erro ao criar reclamação", description: "Tenta novamente.", variant: "destructive" });
+      toast({ title: "Erro ao criar conflito", description: "Tenta novamente.", variant: "destructive" });
     } else {
-      toast({ title: "📝 Reclamação criada" });
+      toast({ 
+        title: "Vamos resolver isto com calma 💛", 
+        description: "O amor também se constrói nos momentos difíceis.",
+        duration: 6000
+      });
       if (spaceId) {
         notifyPartner({
           couple_space_id: spaceId,
@@ -290,7 +294,12 @@ function ComplaintDetail({ complaint: initial, onBack }: { complaint: Complaint;
     const update: Record<string, unknown> = { status };
     if (status === "resolved") update.resolved_at = new Date().toISOString();
     await supabase.from("complaints").update(update).eq("id", complaint.id);
-    toast({ title: `Estado: ${STATUS_MAP[status]?.label}` });
+    
+    if (status === "resolved") {
+      toast({ title: "Mais fortes juntos 💛", description: "Resolver conflitos fortalece a vossa união." });
+    } else {
+      toast({ title: `Estado: ${STATUS_MAP[status]?.label}` });
+    }
     // Push for resolved
     if (status === "resolved" && spaceId) {
       notifyPartner({
@@ -337,6 +346,23 @@ function ComplaintDetail({ complaint: initial, onBack }: { complaint: Complaint;
           <p className="text-xs text-muted-foreground">{isMine ? "Criada por ti" : "Criada pelo teu par"} — {format(new Date(complaint.created_at), "d MMM, HH:mm", { locale: pt })}</p>
         </CardContent>
       </Card>
+
+      {/* Guided Tips */}
+      {complaint.status !== "resolved" && complaint.status !== "archived" && (
+        <div className="rounded-xl bg-primary/5 border border-primary/10 p-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <Heart className="h-4 w-4 text-primary fill-primary/20" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-primary">Dicas para uma resolução saudável:</p>
+            <ul className="text-[11px] text-muted-foreground list-disc list-inside space-y-0.5">
+              <li>Respirem antes de responder ✨</li>
+              <li>Evitem responder com raiva 💛</li>
+              <li>Foquem-se em como se sentem, não em culpar.</li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
