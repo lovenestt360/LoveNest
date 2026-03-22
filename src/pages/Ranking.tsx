@@ -365,7 +365,7 @@ export default function Ranking() {
             {/* Streak Ranking */}
             <div className="space-y-4">
               <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
-                <Medal className="w-4 h-4" /> Ranking de Chamas
+                <Medal className="w-4 h-4" /> Casais que não desistem 💛
               </h3>
               <div className="space-y-2.5">
                 {ranking.map((entry, i) => (
@@ -410,6 +410,11 @@ export default function Ranking() {
                       <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">
                         {entry.level_title}
                       </p>
+                      {i === 0 && entry.couple_space_id === spaceId && (
+                        <p className="text-[9px] text-orange-600 font-bold animate-pulse mt-0.5">
+                          Vocês estão a inspirar outros casais ✨
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background/50 border shadow-inner">
                       <Flame className="w-4 h-4 text-orange-500" />
