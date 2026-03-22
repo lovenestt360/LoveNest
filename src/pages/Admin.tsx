@@ -1716,7 +1716,7 @@ export default function Admin() {
                                                                 <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-black animate-pulse">ALERTA</div>
                                                             )}
                                                         </div>
-                                                        <p className="text-[10px] text-muted-foreground italic mt-1">Recomendado análise cautelosa se > 12 anos.</p>
+                                                        <p className="text-[10px] text-muted-foreground italic mt-1">Recomendado análise cautelosa se &gt; 12 anos.</p>
                                                     </div>
                                                 </div>
 
