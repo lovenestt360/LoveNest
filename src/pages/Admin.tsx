@@ -1601,238 +1601,197 @@ export default function Admin() {
                             </div>
                         </div>
 
-                        <div className="grid gap-4">
+                        <div className="grid gap-6">
                             {verifications.length === 0 ? (
                                 <div className="glass-card p-12 text-center">
                                     <p className="text-muted-foreground italic">Nenhuma submissão de verificação encontrada.</p>
                                 </div>
-                            ) : (
-                                verifications.map((v) => {
-                                    const applicantUserId = v.user_id;
-                                    const house = houses.find(h => h.members?.some((m: any) => m.user_id === applicantUserId));
-                                    const houseId = house?.id;
-                                    const partner = house?.members?.find((m: any) => m.user_id !== applicantUserId);
-                                    
-                                    const p1Profile = users.find(u => u.id === applicantUserId);
-                                    const partnerProfile = partner ? users.find(u => u.id === partner.user_id) : null;
-                                    
-                                    const partnerName = partnerProfile?.display_name || "Sem nome";
+                            ) : (() => {
+                                // Grouping logic
+                                const houseGroups: any[] = [];
+                                const processedVerIds = new Set();
 
-                                    return (
-                                        <div key={v.id} className="bg-card border rounded-3xl p-6 shadow-sm flex flex-col gap-6 transition-all">
-                                            
-                                            {/* PERSON 1 CARD */}
-                                            <div className="flex flex-col lg:flex-row gap-6">
-                                                <div className="flex-1 space-y-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted shadow-inner">
-                                                            {p1Profile?.avatar_url ? (
-                                                                <img src={p1Profile.avatar_url} alt="" className="h-full w-full object-cover" />
-                                                            ) : (
-                                                                <div className="h-full w-full flex items-center justify-center text-xl font-bold bg-primary/10 text-primary">
-                                                                    {(p1Profile?.display_name || "?").charAt(0)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-bold text-xl">{v.full_name}</h4>
-                                                            <p className="text-sm text-muted-foreground font-medium">@{v.profiles?.display_name || "utilizador"} • ID: {v.user_id.slice(0,8)}</p>
-                                                        </div>
-                                                        <div className="ml-auto flex flex-col items-end gap-1">
-                                                            <span className={cn(
-                                                                "text-[10px] font-black underline decoration-2 underline-offset-4 uppercase px-3 py-1 rounded-full tracking-widest",
-                                                                v.status === 'pending' ? "text-blue-600" :
-                                                                v.status === 'verified' ? "text-emerald-600" :
-                                                                "text-amber-600"
-                                                            )}>
-                                                                {v.status}
-                                                            </span>
-                                                            <p className="text-[9px] font-bold text-muted-foreground">SUBMETIDO A {new Date(v.created_at).toLocaleDateString()}</p>
-                                                        </div>
-                                                    </div>
+                                // 1. Group by known houses
+                                houses.forEach(h => {
+                                    const houseMembers = h.members || [];
+                                    const houseSubmissions = verifications.filter(v => 
+                                        houseMembers.some((m: any) => m.user_id === v.user_id)
+                                    );
 
-                                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-2xl border border-dashed text-sm">
-                                                        <div>
-                                                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Idade (Documento)</p>
-                                                            <p className="font-black text-primary">{v.age} anos</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Nº Documento</p>
-                                                            <p className="font-mono font-bold tracking-tighter">{v.id_number}</p>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {v.admin_notes && (
-                                                        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-xs shadow-inner mt-2">
-                                                            <span className="font-black text-amber-600 uppercase tracking-widest mr-2 text-[10px]">Nota Admin:</span> {v.admin_notes}
-                                                        </div>
-                                                    )}
+                                    if (houseSubmissions.length > 0) {
+                                        houseGroups.push({
+                                            id: h.id,
+                                            name: h.house_name || "Casa Sem Nome",
+                                            members: houseMembers,
+                                            submissions: houseSubmissions
+                                        });
+                                        houseSubmissions.forEach(v => processedVerIds.add(v.id));
+                                    }
+                                });
+
+                                // 2. Add verifications with no detected house
+                                const orphaned = verifications.filter(v => !processedVerIds.has(v.id));
+                                orphaned.forEach(ov => {
+                                    houseGroups.push({
+                                        id: 'orphan-' + ov.id,
+                                        name: 'Sem Casa Detectada',
+                                        members: [{ user_id: ov.user_id }],
+                                        submissions: [ov],
+                                        isOrphan: true
+                                    });
+                                });
+
+                                return houseGroups.map((group) => (
+                                    <div key={group.id} className="bg-card border-2 rounded-[2rem] p-6 shadow-md flex flex-col gap-6 transition-all overflow-hidden relative">
+                                        
+                                        {/* HOUSE HEADER */}
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dashed">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+                                                    <Home className="w-6 h-6" />
                                                 </div>
+                                                <div>
+                                                    <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                                                        {group.name}
+                                                        {group.isOrphan && <span className="text-[10px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full font-bold">Avulso</span>}
+                                                    </h3>
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-0.5">
+                                                        <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                                            <Hash className="w-3 h-3" /> ID DA CASA: <span className="text-primary/70">{group.isOrphan ? 'N/A' : group.id.slice(0, 13)}</span>
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                                            <Users className="w-3 h-3" /> MEMBROS: <span className="text-primary/70">{group.members.length}/2</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex gap-2">
+                                                <div className="text-right flex flex-col items-end">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Status da Casa</p>
+                                                    <span className={cn(
+                                                        "text-[10px] font-black uppercase tracking-widest",
+                                                        group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length 
+                                                            ? "text-emerald-600" 
+                                                            : "text-amber-500"
+                                                    )}>
+                                                        {group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length 
+                                                            ? "CASA VERIFICADA" : "VERIFICAÇÃO PENDENTE"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                                <div className="w-full md:w-80 space-y-4">
-                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Documentos de Identidade</p>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                        {/* FRONT */}
-                                                        <div 
-                                                            className="group relative h-32 rounded-xl overflow-hidden border bg-muted cursor-pointer"
-                                                            onClick={async () => {
-                                                                const { data } = await adminClient.storage
-                                                                    .from('identity-documents')
-                                                                    .createSignedUrl(v.document_url, 60);
-                                                                if (data) setSelectedImage(data.signedUrl);
-                                                            }}
-                                                        >
-                                                            <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
-                                                                <FileText className="w-6 h-6 text-primary/40" />
-                                                                <span className="text-[9px] font-black uppercase tracking-widest">Frente</span>
+                                        {/* MEMBERS GRID */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
+                                            {/* Vertical divider on desktop */}
+                                            <div className="hidden lg:block absolute left-1/2 top-4 bottom-4 w-px bg-border/50 border-dashed border-l" />
+
+                                            {/* Render 2 slots if possible, or just the submissions for orphans */}
+                                            {(group.members.length === 0 ? group.submissions : group.members).map((member: any, idx: number) => {
+                                                const userId = member.user_id;
+                                                const submission = group.submissions.find((s: any) => s.user_id === userId);
+                                                const profile = users.find(u => u.id === userId);
+
+                                                return (
+                                                    <div key={userId || idx} className="space-y-4 relative">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className="text-[10px] font-black text-white bg-primary px-2 py-0.5 rounded shadow-sm uppercase tracking-tighter">
+                                                                Membro {idx + 1}
                                                             </div>
-                                                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            {userId && <span className="text-[9px] font-mono text-muted-foreground opacity-50">UID: {userId.slice(0, 8)}</span>}
                                                         </div>
 
-                                                        {/* BACK (If exists) */}
-                                                        {v.document_back_url ? (
-                                                            <div 
-                                                                className="group relative h-32 rounded-xl overflow-hidden border bg-muted cursor-pointer animate-in fade-in"
-                                                                onClick={async () => {
-                                                                    const { data } = await adminClient.storage
-                                                                        .from('identity-documents')
-                                                                        .createSignedUrl(v.document_back_url, 60);
-                                                                    if (data) setSelectedImage(data.signedUrl);
-                                                                }}
-                                                            >
-                                                                <div className="absolute inset-0 flex items-center justify-center flex-col gap-1 transition-transform group-hover:scale-110">
-                                                                    <FileText className="w-6 h-6 text-primary/40" />
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest">Verso</span>
+                                                        {submission ? (
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted shadow-inner border">
+                                                                        {profile?.avatar_url ? (
+                                                                            <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                                                                        ) : (
+                                                                            <div className="h-full w-full flex items-center justify-center text-xl font-bold bg-primary/10 text-primary uppercase">
+                                                                                {(profile?.display_name || submission.full_name || "?").charAt(0)}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h4 className="font-bold text-lg leading-tight">{submission.full_name}</h4>
+                                                                            <span className={cn(
+                                                                                "text-[9px] font-black uppercase px-2 py-0.5 rounded-full",
+                                                                                submission.status === 'pending' ? "bg-blue-100 text-blue-700" :
+                                                                                submission.status === 'verified' ? "bg-emerald-100 text-emerald-700" :
+                                                                                "bg-amber-100 text-amber-700"
+                                                                            )}>
+                                                                                {submission.status}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-xs text-muted-foreground font-medium">@{profile?.display_name || "utilizador"} • Submetido a {new Date(submission.created_at).toLocaleDateString()}</p>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                                                <div className="grid grid-cols-2 gap-3 bg-muted/20 p-3 rounded-2xl border border-dashed text-xs">
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black uppercase text-muted-foreground mb-0.5 opacity-70 tracking-widest">Documento</p>
+                                                                        <p className="font-bold text-primary">{submission.document_type || 'BI'} • {submission.age} anos</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black uppercase text-muted-foreground mb-0.5 opacity-70 tracking-widest">Nº Documento</p>
+                                                                        <p className="font-mono font-bold tracking-tighter">{submission.id_number}</p>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* DOCUMENTS PREVIEW */}
+                                                                <div className="space-y-2">
+                                                                    <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Imagens do Documento</p>
+                                                                    <div className="flex gap-2">
+                                                                        <Button size="sm" variant="outline" className="flex-1 text-[10px] h-9 border-2" onClick={async () => {
+                                                                            const { data } = await adminClient.storage.from('identity-documents').createSignedUrl(submission.document_url, 60);
+                                                                            if (data) setSelectedImage(data.signedUrl);
+                                                                        }}>
+                                                                            <FileImage className="w-3 h-3 mr-1.5" /> Frente
+                                                                        </Button>
+                                                                        {submission.document_back_url ? (
+                                                                            <Button size="sm" variant="outline" className="flex-1 text-[10px] h-9 border-2" onClick={async () => {
+                                                                                const { data } = await adminClient.storage.from('identity-documents').createSignedUrl(submission.document_back_url, 60);
+                                                                                if (data) setSelectedImage(data.signedUrl);
+                                                                            }}>
+                                                                                <FileImage className="w-3 h-3 mr-1.5" /> Verso
+                                                                            </Button>
+                                                                        ) : (
+                                                                            <div className="flex-1 text-[9px] font-bold text-muted-foreground border border-dashed rounded-lg flex items-center justify-center opacity-50 uppercase">Face Única</div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* ACTIONS */}
+                                                                {submission.status === 'pending' && (
+                                                                    <div className="flex gap-2 pt-2">
+                                                                        <Button variant="outline" size="sm" className="flex-1 text-[10px] border-red-500/20 text-red-600 hover:bg-red-50" onClick={() => handleRejectVerification(submission.id, submission.user_id, "Documento Inválido")}>
+                                                                            Recusar
+                                                                        </Button>
+                                                                        <Button size="sm" className="flex-1 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApproveVerification(submission.id, submission.user_id)}>
+                                                                            Aprovar
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ) : (
-                                                            <div className="h-32 rounded-xl border border-dashed flex items-center justify-center bg-muted/20">
-                                                                <span className="text-[9px] font-bold text-muted-foreground uppercase">Face Única</span>
+                                                            <div className="h-[220px] rounded-3xl border border-dashed bg-muted/5 flex flex-col items-center justify-center text-center p-6 transition-all border-muted-foreground/20">
+                                                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 opacity-30">
+                                                                    <FileQuestion className="w-6 h-6" />
+                                                                </div>
+                                                                <h4 className="font-bold text-muted-foreground/60 text-sm">{profile?.display_name || "Membro " + (idx + 1)}</h4>
+                                                                <p className="text-[10px] font-medium text-muted-foreground/40 mt-1 uppercase tracking-widest">Aguardando submissão</p>
                                                             </div>
                                                         )}
                                                     </div>
-                                                </div>
-                                            </div>
-
-                                            {/* PERSON 1 BUTTONS */}
-                                            {v.status === 'pending' && (
-                                                <div className="flex gap-3 justify-end border-t pt-4">
-                                                    <Button variant="outline" className="border-red-500/20 text-red-600 hover:bg-red-50" onClick={() => handleRejectVerification(v.id, v.user_id, "Documento não cumpre os requisitos.")}>
-                                                        <X className="w-4 h-4 mr-2" /> Recusar Verificação
-                                                    </Button>
-                                                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApproveVerification(v.id, v.user_id)}>
-                                                        <Check className="w-4 h-4 mr-2" /> Aprovar Verificação
-                                                    </Button>
-                                                </div>
-                                            )}
-
-                                            {/* PERSON 2 (PARTNER) CARD */}
-                                            <div className="mt-2 border-t pt-6">
-                                                <div className="mb-4 flex flex-col gap-1">
-                                                    <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                        <Users className="w-4 h-4" /> Parceiro
-                                                    </h4>
-                                                    <p className="text-[10px] font-bold text-muted-foreground shadow-sm bg-muted/30 inline-flex px-2 py-1 rounded w-max border">
-                                                        Membros na Casa: {house?.members?.length || 1}/2 • Casa: {houseId?.slice(0,8) || "Indefinido"} • Submissor: {applicantUserId.slice(0,8)} {partner ? `• Parceiro: ${partner.user_id.slice(0,8)}` : ''}
-                                                    </p>
-                                                </div>
-                                                
-                                                {!partner ? (
-                                                    <div className="p-4 bg-muted/30 rounded-2xl border border-dashed flex flex-col items-center justify-center text-sm text-muted-foreground font-medium text-center gap-1">
-                                                        <span className="font-bold">Sem segundo membro associado na base de dados.</span>
-                                                        <span className="text-xs opacity-70">Nota: O utilizador pode ainda não ter convidado ninguém para a Casa.</span>
-                                                    </div>
-                                                ) : (() => {
-                                                    const partnerVerification = verifications.find(pv => pv.user_id === partner.user_id);
-                                                    
-                                                    if (partnerVerification) {
-                                                        return (
-                                                            <div className="bg-muted/10 border rounded-2xl p-5 flex flex-col lg:flex-row gap-6">
-                                                                <div className="flex-1 space-y-4">
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className="h-10 w-10 rounded-xl overflow-hidden bg-muted shadow-inner">
-                                                                            <User className="w-5 h-5 m-auto mt-2.5 text-muted-foreground/40" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="font-bold text-lg">{partnerVerification.full_name}</h4>
-                                                                            <p className="text-xs text-muted-foreground">@{partnerProfile?.display_name || "utilizador"}</p>
-                                                                        </div>
-                                                                        <div className="ml-auto">
-                                                                            <span className={cn(
-                                                                                "text-[9px] font-black uppercase px-2 py-1 rounded-md tracking-widest",
-                                                                                partnerVerification.status === 'pending' ? "bg-blue-500/10 text-blue-600" :
-                                                                                partnerVerification.status === 'verified' ? "bg-emerald-500/10 text-emerald-600" :
-                                                                                "bg-amber-500/10 text-amber-600"
-                                                                            )}>
-                                                                                {partnerVerification.status}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-        
-                                                                    <div className="grid grid-cols-2 gap-4 bg-background p-3 rounded-xl border border-dashed text-xs">
-                                                                        <div>
-                                                                            <p className="text-[9px] font-black uppercase text-muted-foreground">Idade</p>
-                                                                            <p className="font-bold text-primary">{partnerVerification.age} anos</p>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-[9px] font-black uppercase text-muted-foreground">Nº Documento</p>
-                                                                            <p className="font-mono font-bold">{partnerVerification.id_number}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <div className="w-full md:w-48 space-y-2 flex flex-col justify-center border-l pl-6">
-                                                                    <p className="text-[9px] font-black uppercase text-muted-foreground text-center">Documentos</p>
-                                                                    <div className="flex gap-2 justify-center">
-                                                                        <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={async () => {
-                                                                            const { data } = await adminClient.storage.from('identity-documents').createSignedUrl(partnerVerification.document_url, 60);
-                                                                            if (data) setSelectedImage(data.signedUrl);
-                                                                        }}><FileText className="w-3 h-3 mr-1"/> Frente</Button>
-                                                                        
-                                                                        {partnerVerification.document_back_url && (
-                                                                            <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={async () => {
-                                                                                const { data } = await adminClient.storage.from('identity-documents').createSignedUrl(partnerVerification.document_back_url, 60);
-                                                                                if (data) setSelectedImage(data.signedUrl);
-                                                                            }}><FileText className="w-3 h-3 mr-1"/> Verso</Button>
-                                                                        )}
-                                                                    </div>
-                                                                    {partnerVerification.status === 'pending' && (
-                                                                        <div className="flex flex-col gap-2 mt-2 pt-2 border-t">
-                                                                            <Button size="sm" className="bg-emerald-600 text-[10px] w-full" onClick={() => handleApproveVerification(partnerVerification.id, partnerVerification.user_id)}>
-                                                                                Aprovar Parceiro
-                                                                            </Button>
-                                                                            <Button size="sm" variant="outline" className="text-red-500 text-[10px] w-full" onClick={() => handleRejectVerification(partnerVerification.id, partnerVerification.user_id, "Documento Inválido")}>
-                                                                                Recusar
-                                                                            </Button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    } else {
-                                                        return (
-                                                            <div className="p-4 bg-muted/30 rounded-2xl border flex items-center gap-4">
-                                                                <div className="h-10 w-10 rounded-xl bg-background border flex items-center justify-center">
-                                                                    <User className="w-4 h-4 text-muted-foreground/40" />
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="font-bold text-sm">{partnerName}</h4>
-                                                                    <div className="flex mt-1">
-                                                                        <span className="text-[10px] text-amber-600 font-black tracking-widest bg-amber-500/10 px-2 py-0.5 rounded-md uppercase">
-                                                                            Ainda não submeteu verificação
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                })()}
-                                            </div>
+                                                )
+                                            })}
                                         </div>
-                                    );
-                                })
-                            )}
+                                    </div>
+                                ))
+                            })()}
                         </div>
                     </div>
                 )}
