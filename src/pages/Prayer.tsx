@@ -14,6 +14,7 @@ import { Pencil, Save, BookOpen, Heart, Eye } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 interface DailyPrayer {
   id: string;
@@ -128,11 +129,25 @@ export default function Prayer() {
     }
     setEditingPrayer(false);
 
+    if (spaceId) {
+      notifyPartner({
+        couple_space_id: spaceId,
+        title: "🙏 Oração do dia atualizada",
+        body: prayerText.trim().slice(0, 80),
+        url: "/oracao",
+        type: "oracao",
+      });
+    }
+
     // Emotional feedback
     if (partnerLog?.prayed_today) {
       toast({ title: "Vocês cresceram juntos hoje ✨", description: "A união espiritual fortalece o vosso amor." });
     } else {
-      toast({ title: "🙏 Oração guardada", description: "Partilha com o teu par para rezarem juntos 💛" });
+      toast({ 
+        title: "🙏 Oração guardada", 
+        description: "Partilha com o teu par para rezarem juntos 💛",
+        action: <ToastAction altText="Convidar par" onClick={handleJoinPrayer}>Convidar</ToastAction>
+      });
     }
   };
 
@@ -155,12 +170,26 @@ export default function Prayer() {
     }
     setLogDirty(false);
 
+    if (spaceId) {
+      notifyPartner({
+        couple_space_id: spaceId,
+        title: "✨ Diário espiritual atualizado",
+        body: gratitude.trim().slice(0, 60) || "Registo do dia atualizado",
+        url: "/oracao",
+        type: "oracao",
+      });
+    }
+
     // Emotional feedback
     if (prayedToday) {
       if (partnerLog?.prayed_today) {
         toast({ title: "Vocês cresceram juntos hoje ✨", description: "A vossa conexão espiritual é linda." });
       } else {
-        toast({ title: "✅ Diário guardado", description: "Incentiva o teu par a rezar contigo hoje 💛" });
+        toast({ 
+          title: "✅ Diário guardado", 
+          description: "Incentiva o teu par a rezar contigo hoje 💛",
+          action: <ToastAction altText="Rezar juntos" onClick={handleJoinPrayer}>Rezar juntos</ToastAction>
+        });
       }
     } else {
       toast({ title: "✅ Diário guardado" });
