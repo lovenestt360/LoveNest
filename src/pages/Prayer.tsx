@@ -127,15 +127,12 @@ export default function Prayer() {
       await supabase.from("daily_prayers").insert(payload);
     }
     setEditingPrayer(false);
-    toast({ title: "🙏 Oração guardada" });
-    if (spaceId) {
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "🙏 Oração do dia atualizada",
-        body: prayerText.trim().slice(0, 80),
-        url: "/oracao",
-        type: "oracao",
-      });
+
+    // Emotional feedback
+    if (partnerLog?.prayed_today) {
+      toast({ title: "Vocês cresceram juntos hoje ✨", description: "A união espiritual fortalece o vosso amor." });
+    } else {
+      toast({ title: "🙏 Oração guardada", description: "Partilha com o teu par para rezarem juntos 💛" });
     }
   };
 
@@ -157,16 +154,29 @@ export default function Prayer() {
       await supabase.from("daily_spiritual_logs").insert(payload);
     }
     setLogDirty(false);
-    toast({ title: "✅ Diário guardado" });
-    if (spaceId) {
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "✨ Diário espiritual atualizado",
-        body: gratitude.trim().slice(0, 60) || "Registo do dia atualizado",
-        url: "/oracao",
-        type: "oracao",
-      });
+
+    // Emotional feedback
+    if (prayedToday) {
+      if (partnerLog?.prayed_today) {
+        toast({ title: "Vocês cresceram juntos hoje ✨", description: "A vossa conexão espiritual é linda." });
+      } else {
+        toast({ title: "✅ Diário guardado", description: "Incentiva o teu par a rezar contigo hoje 💛" });
+      }
+    } else {
+      toast({ title: "✅ Diário guardado" });
     }
+  };
+
+  const handleJoinPrayer = async () => {
+    if (!spaceId) return;
+    notifyPartner({
+      couple_space_id: spaceId,
+      title: "🙏 Convite Especial",
+      body: "O teu par está à tua espera para rezarem juntos! ✨",
+      url: "/oracao",
+      type: "oracao",
+    });
+    toast({ title: "✨ Convite enviado!", description: "O teu par foi notificado para rezarem juntos." });
   };
 
   const togglePrayed = async (val: boolean) => {
@@ -285,26 +295,42 @@ export default function Prayer() {
         </CardHeader>
         <CardContent>
           {partnerLog ? (
-            <div className="space-y-2 text-sm">
+            <div className="space-y-3 text-sm">
               <div className="flex gap-4">
-                <span>{partnerLog.prayed_today ? "🙏 Orou hoje" : "— Ainda não orou"}</span>
+                <span className={cn("font-medium", partnerLog.prayed_today ? "text-green-600" : "text-amber-600")}>
+                  {partnerLog.prayed_today ? "🙏 Já orou hoje" : "— Ainda não orou"}
+                </span>
                 {partnerLog.cried_today && <span>😢 Chorou hoje</span>}
               </div>
+              
+              {!partnerLog.prayed_today && (
+                <Button variant="outline" size="sm" className="w-full h-8 text-[11px] gap-2 border-primary/20 hover:bg-primary/5" onClick={handleJoinPrayer}>
+                  <Heart className="h-3 w-3 text-primary animate-pulse" /> Rezar juntos agora
+                </Button>
+              )}
+
+              <Separator className="opacity-50" />
+              
               {partnerLog.gratitude_note && (
                 <div>
-                  <span className="text-xs text-muted-foreground">Gratidão:</span>
-                  <p className="text-sm">{partnerLog.gratitude_note}</p>
+                  <span className="text-xs text-muted-foreground font-medium">Gratidão:</span>
+                  <p className="text-sm italic text-foreground/80">"{partnerLog.gratitude_note}"</p>
                 </div>
               )}
               {partnerLog.reflection_note && (
                 <div>
-                  <span className="text-xs text-muted-foreground">Reflexão:</span>
-                  <p className="text-sm">{partnerLog.reflection_note}</p>
+                  <span className="text-xs text-muted-foreground font-medium">Reflexão:</span>
+                  <p className="text-sm text-foreground/80">{partnerLog.reflection_note}</p>
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">O teu par ainda não preencheu hoje.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">O teu par ainda não abriu o diário hoje.</p>
+              <Button variant="outline" size="sm" className="w-full h-8 text-[11px] gap-2 border-primary/20 hover:bg-primary/5" onClick={handleJoinPrayer}>
+                <Heart className="h-3 w-3 text-primary animate-pulse" /> Rezar juntos agora
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
