@@ -432,7 +432,7 @@ export default function Settings() {
         <section className="space-y-6">
           <header className="mb-8">
             <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Definições</h1>
-            <p className="text-muted-foreground">Personaliza o teu ninho de amor.</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Este é o vosso espaço 💛<br />Personalizem a vossa história.</p>
           </header>
 
           <div className="glass-card p-6 flex items-center gap-4 mb-8">
