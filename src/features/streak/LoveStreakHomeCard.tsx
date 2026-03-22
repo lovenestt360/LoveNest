@@ -124,9 +124,13 @@ export function LoveStreakHomeCard() {
                 </>
               );
             })()}
-            {bothToday && (
-              <span className="text-green-600 font-bold flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Completo!
+            {bothToday ? (
+              <span className="text-green-600 font-bold flex items-center gap-1 animate-in fade-in duration-500">
+                <Sparkles className="w-3 h-3" /> Vocês apareceram um para o outro hoje 💛
+              </span>
+            ) : (
+              <span className="text-amber-600 font-bold flex items-center gap-1 animate-in pulse duration-1000">
+                <Flame className="w-3 h-3" /> Falta pouco… não deixem o vosso streak cair 😢
               </span>
             )}
           </div>
@@ -163,8 +167,8 @@ export function LoveStreakHomeCard() {
           onClick={() => navigate("/ranking?tab=tasks")}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <Trophy className="w-3 h-3" /> Desafio do Dia
+            <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5" /> Criem um momento juntos hoje 📸✨
             </span>
             <span className="text-xs font-bold text-primary">+{challenge.points} pts</span>
           </div>

@@ -54,8 +54,17 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
             <span className="text-2xl md:text-3xl font-black tracking-tighter gradient-text">LoveNest</span>
             <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
           </div>
-          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-muted-foreground/70 whitespace-nowrap">
-            {today}
+          <p className="text-[10px] md:text-xs font-bold text-primary/80 italic animate-in fade-in slide-in-from-bottom-1 duration-700">
+            {(() => {
+              const messages = [
+                "Hoje é mais um capítulo da vossa história 💛",
+                "Cuidem um do outro hoje ✨",
+                "O amor também se constrói nos pequenos momentos",
+                "Não deixem o vosso streak cair hoje 🔥"
+              ];
+              const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+              return messages[dayOfYear % messages.length];
+            })()}
           </p>
         </div>
 
