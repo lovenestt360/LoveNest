@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Share2, Copy, MessageCircle, Gift, Flame, Camera, 
-  Trophy, Smile, ChevronLeft, ChevronRight, Sparkles, 
-  X, Heart, CalendarDays, TrendingUp
+  Share2, MessageCircle, Gift, Flame, Camera, 
+  Trophy, ChevronLeft, ChevronRight, Sparkles, 
+  X, Heart, CalendarDays
 } from "lucide-react";
-import { format, differenceInDays, parseISO } from "date-fns";
-import { pt } from "date-fns/locale";
+import { differenceInDays, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +39,34 @@ interface WrappedData {
   generated_at: string;
 }
 
+function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = value;
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
+
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [value, duration]);
+
+  return <span>{count}</span>;
+}
+
 export default function LoveWrapped() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
@@ -51,12 +78,27 @@ export default function LoveWrapped() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<'list' | 'story'>('list');
+  const [isPaused, setIsPaused] = useState(false);
   
   const [houseName, setHouseName] = useState("LoveNest");
   const [relationshipStart, setRelationshipStart] = useState<string | null>(null);
   const [lastPhoto, setLastPhoto] = useState<string | null>(null);
   
   const touchStartX = useRef<number | null>(null);
+  const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (mode === 'story' && !isPaused) {
+      autoPlayTimer.current = setInterval(() => {
+        nextSlide();
+      }, 3500);
+    } else {
+      if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
+    }
+    return () => {
+      if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
+    };
+  }, [mode, isPaused, currentSlide]);
 
   useEffect(() => {
     if (!spaceId || !user) return;
@@ -71,7 +113,6 @@ export default function LoveWrapped() {
       
       if (wrappedData && wrappedData.length > 0) {
         setWrappedList(wrappedData as WrappedData[]);
-        // Fetch last photo for the most recent wrapped
         fetchLastPhoto(spaceId, wrappedData[0].month, wrappedData[0].year);
       }
       
@@ -106,41 +147,32 @@ export default function LoveWrapped() {
     }
   };
 
+  const nextSlide = () => {
+    setCurrentSlide(s => {
+      if (s < 8) return s + 1;
+      setMode('list');
+      return 0;
+    });
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide(s => (s > 0 ? s - 1 : 0));
+  };
+
   const handleStartStory = (index: number) => {
     setSelectedWrappedIndex(index);
     setCurrentSlide(0);
     setMode('story');
+    setIsPaused(false);
     fetchLastPhoto(spaceId!, wrappedList[index].month, wrappedList[index].year);
-  };
-
-  const nextSlide = () => {
-    if (currentSlide < 8) setCurrentSlide(s => s + 1);
-    else setMode('list');
-  };
-
-  const prevSlide = () => {
-    if (currentSlide > 0) setCurrentSlide(s => s - 1);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) nextSlide();
-      else prevSlide();
-    }
-    touchStartX.current = null;
   };
 
   if (loading) {
     return (
-      <section className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </section>
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center space-y-4">
+        <Sparkles className="w-12 h-12 text-primary animate-pulse" />
+        <p className="text-white/40 font-mono text-[10px] uppercase tracking-widest">A preparar a vossa história...</p>
+      </div>
     );
   }
 
@@ -152,9 +184,11 @@ export default function LoveWrapped() {
 
     return (
       <div 
-        className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-500"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center justify-center overflow-hidden bg-wrapped-gradient"
+        onMouseDown={() => setIsPaused(true)}
+        onMouseUp={() => setIsPaused(false)}
+        onTouchStart={() => setIsPaused(true)}
+        onTouchEnd={() => setIsPaused(false)}
       >
         {/* Progress Bars */}
         <div className="absolute top-4 left-4 right-4 flex gap-1 z-[110]">
@@ -163,7 +197,7 @@ export default function LoveWrapped() {
               <div 
                 className={cn(
                   "h-full bg-white transition-all duration-300",
-                  i < currentSlide ? "w-full" : i === currentSlide ? "w-full animate-progress" : "w-0"
+                  i < currentSlide ? "w-full" : i === currentSlide ? (isPaused ? "w-[50%]" : "animate-progress-3s") : "w-0"
                 )}
               />
             </div>
@@ -178,23 +212,24 @@ export default function LoveWrapped() {
           <X className="h-6 w-6" />
         </button>
 
+        {/* Interaction Areas for mobile tap navigation */}
+        <div className="absolute inset-0 z-[105] flex">
+          <div className="flex-1" onClick={prevSlide} />
+          <div className="flex-1" onClick={nextSlide} />
+        </div>
+
         {/* Content Area */}
-        <div className="relative w-full h-full max-w-md mx-auto p-8 flex flex-col items-center justify-center text-center select-none" onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          if (x > rect.width / 2) nextSlide();
-          else prevSlide();
-        }}>
+        <div className="relative z-[106] w-full h-full max-w-md mx-auto p-8 flex flex-col items-center justify-center text-center select-none pointer-events-none">
           
           {currentSlide === 0 && (
-            <div className="space-y-6 animate-fade-slide-up">
-              <div className="bg-primary/20 p-8 rounded-full inline-block shadow-glow animate-pulse">
-                <Heart className="w-20 h-20 text-primary fill-primary" />
+            <div className="space-y-6 animate-fade-scale-in">
+              <div className="bg-primary/20 p-10 rounded-full inline-block shadow-glow animate-pulse-soft">
+                <Heart className="w-24 h-24 text-primary fill-primary" />
               </div>
-              <div className="space-y-2">
-                <h1 className="text-4xl font-black italic tracking-tighter">LoveWrapped</h1>
-                <p className="text-xl font-medium text-white/80">Este foi o vosso mês 💛</p>
-                <div className="text-primary font-black uppercase tracking-widest pt-4">
+              <div className="space-y-3">
+                <h1 className="text-5xl font-black italic tracking-tighter drop-shadow-glow">LoveWrapped</h1>
+                <p className="text-xl font-medium text-white/80 delay-300 animate-fade-slide-up">Este foi o vosso mês 💛</p>
+                <div className="text-primary font-black uppercase tracking-widest pt-6 animate-fade-slide-up delay-600">
                   {MONTH_NAMES[current.month]} {current.year}
                 </div>
               </div>
@@ -202,140 +237,154 @@ export default function LoveWrapped() {
           )}
 
           {currentSlide === 1 && (
-            <div className="space-y-8 animate-fade-slide-up">
+            <div className="space-y-8 animate-fade-scale-in">
               <CalendarDays className="w-24 h-24 mx-auto text-primary animate-bounce-in" />
               <div className="space-y-4">
-                <p className="text-5xl font-black">{totalDays}</p>
-                <p className="text-2xl font-bold italic">Mais um mês lado a lado ✨</p>
-                <p className="text-sm text-white/60">Dias de muita história e amor.</p>
+                <p className="text-7xl font-black tracking-tighter">
+                  <AnimatedCounter value={totalDays} />
+                </p>
+                <p className="text-2xl font-bold italic delay-300 animate-fade-slide-up">Mais um mês lado a lado ✨</p>
+                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up uppercase tracking-widest font-black">Dias de pura história.</p>
               </div>
             </div>
           )}
 
           {currentSlide === 2 && (
-            <div className="space-y-8 animate-fade-slide-up">
-              <Flame className={cn("w-24 h-24 mx-auto animate-pulse-glow", current.streak_days > 0 ? "text-orange-500" : "text-white/20")} />
+            <div className="space-y-8 animate-fade-scale-in">
+              <Flame className={cn("w-24 h-24 mx-auto", current.streak_days > 0 ? "text-orange-500 animate-pulse-glow" : "text-white/20")} />
               <div className="space-y-4">
-                <p className="text-5xl font-black">{current.streak_days}</p>
-                <h2 className="text-2xl font-black italic">
+                <p className="text-7xl font-black tracking-tighter">
+                  <AnimatedCounter value={current.streak_days} />
+                </p>
+                <h2 className="text-2xl font-black italic delay-300 animate-fade-slide-up">
                   {current.streak_days >= 20 
                     ? "Vocês mantiveram o fogo aceso 🔥" 
-                    : "Quase lá… vamos mais forte no próximo mês 💛"}
+                    : "Quase lá… o próximo mês é vosso 💛"}
                 </h2>
-                <p className="text-sm text-white/60">Maior streak atingido este mês.</p>
+                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up">Maior streak ativo este mês.</p>
               </div>
             </div>
           )}
 
           {currentSlide === 3 && (
-            <div className="space-y-8 animate-fade-slide-up">
-              <div className="text-8xl mx-auto drop-shadow-glow animate-bounce-in">
+            <div className="space-y-10 animate-fade-scale-in">
+              <div className="text-9xl mx-auto drop-shadow-glow animate-bounce-in">
                 {current.top_mood ? MOOD_EMOJIS[current.top_mood] || "😊" : "🥰"}
               </div>
               <div className="space-y-4">
-                <h2 className="text-2xl font-black italic">
-                  Este mês vocês sentiram-se mais... <br/>
-                  <span className="text-primary uppercase">{current.top_mood || "Apaixonados"}</span>
+                <h2 className="text-xl font-bold italic text-white/60 animate-fade-slide-up">
+                  Este mês vocês sentiram-se mais...
                 </h2>
-                <p className="text-sm text-white/60">Sintonizados um com o outro.</p>
+                <h2 className="text-4xl font-black tracking-tighter text-primary uppercase delay-600 animate-fade-scale-in drop-shadow-glow">
+                  {current.top_mood || "Apaixonados"} 💛
+                </h2>
               </div>
             </div>
           )}
 
           {currentSlide === 4 && (
-            <div className="space-y-8 animate-fade-slide-up">
-              <MessageCircle className="w-24 h-24 mx-auto text-indigo-400 animate-in zoom-in duration-500" />
+            <div className="space-y-8 animate-fade-scale-in">
+              <div className="relative inline-block">
+                <MessageCircle className="w-24 h-24 mx-auto text-indigo-400 animate-bounce-in" />
+                <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-400 animate-pulse" />
+              </div>
               <div className="space-y-4">
-                <p className="text-5xl font-black">{current.messages_count}</p>
-                <h2 className="text-2xl font-black italic">
+                <p className="text-7xl font-black tracking-tighter">
+                  <AnimatedCounter value={current.messages_count} />
+                </p>
+                <h2 className="text-2xl font-black italic delay-300 animate-fade-slide-up px-4">
                   {current.messages_count > 100 
-                    ? "Conversaram muito este mês 💬" 
-                    : "Podem falar mais no próximo 💛"}
+                    ? "Conversaram bastante este mês 💬✨" 
+                    : "Vocês podem falar mais… mas ainda assim estiveram presentes 💛"}
                 </h2>
-                <p className="text-sm text-white/60">Mensagens trocadas entre vocês.</p>
+                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up uppercase tracking-widest font-black">Mensagens trocadas.</p>
               </div>
             </div>
           )}
 
           {currentSlide === 5 && (
-            <div className="space-y-8 animate-fade-slide-up">
+            <div className="space-y-8 animate-fade-scale-in">
               <Trophy className="w-24 h-24 mx-auto text-yellow-400 animate-bounce-in" />
               <div className="space-y-4">
-                <p className="text-5xl font-black">{current.challenges_completed}</p>
-                <h2 className="text-2xl font-black italic">Vocês cresceram juntos ✨</h2>
-                <p className="text-sm text-white/60">Desafios concluídos em equipa.</p>
+                <p className="text-7xl font-black tracking-tighter">
+                  <AnimatedCounter value={current.challenges_completed} />
+                </p>
+                <h2 className="text-2xl font-black italic delay-300 animate-fade-slide-up">Vocês cresceram juntos ✨</h2>
+                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up">Desafios concluídos em equipa.</p>
               </div>
             </div>
           )}
 
           {currentSlide === 6 && (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 animate-fade-slide-up">
+            <div className="w-full h-full flex flex-col items-center justify-center p-4">
               {lastPhoto ? (
-                <div className="relative group w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10">
+                <div className="relative group w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 animate-fade-scale-in">
                   <img src={lastPhoto} className="w-full h-full object-cover" alt="Momento especial" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-left">
-                    <p className="text-xl font-black italic">Momentos que ficam para sempre 📸</p>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-8 text-left">
+                    <p className="text-2xl font-black italic drop-shadow-lg">Momentos que ficam para sempre 📸</p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  <Camera className="w-20 h-20 mx-auto text-white/20" />
-                  <p className="text-xl font-bold italic">Ainda não registaram a vossa primeira foto este mês... 📸</p>
+                <div className="space-y-6 animate-fade-scale-in">
+                  <div className="w-64 h-80 rounded-[3rem] bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-primary/10 animate-pulse-soft" />
+                    <Camera className="w-16 h-16 text-white/20 relative z-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xl font-bold italic leading-tight">
+                      Os melhores momentos nem sempre precisam de foto… <br/>
+                      <span className="text-primary">mas vocês viveram-nos 💛</span>
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
           {currentSlide === 7 && (
-            <div className="space-y-8 animate-fade-slide-up px-4">
-              <Heart className="w-16 h-16 mx-auto text-rose-500 fill-rose-500 animate-pulse" />
-              <div className="space-y-6 text-center">
-                <p className="text-2xl font-medium leading-relaxed italic">
-                  "Mais do que números... vocês construíram momentos 💛"
+            <div className="space-y-8 px-4 animate-fade-scale-in">
+              <Heart className="w-20 h-20 mx-auto text-rose-500 fill-rose-500 animate-pulse-glow" />
+              <div className="space-y-10 text-center">
+                <p className="text-3xl font-black leading-relaxed italic drop-shadow-glow">
+                  "Mais do que números... vocês construíram memórias 💛"
                 </p>
-                <p className="text-xl font-bold text-primary italic">
-                  E isto é só o começo.
+                <p className="text-2xl font-bold text-primary italic delay-600 animate-fade-slide-up">
+                  E o melhor ainda está por vir.
                 </p>
               </div>
             </div>
           )}
 
           {currentSlide === 8 && (
-            <div className="space-y-8 animate-fade-slide-up">
-              <div className="bg-white/10 p-8 rounded-3xl border border-white/20 space-y-4">
-                <Sparkles className="w-12 h-12 text-primary mx-auto" />
-                <h3 className="text-2xl font-black italic">{houseName}</h3>
-                <div className="grid grid-cols-2 gap-4 text-left">
-                   <div className="space-y-1">
-                     <p className="text-[10px] uppercase opacity-50 font-black">Streak</p>
-                     <p className="text-lg font-bold">🔥 {current.streak_days}</p>
-                   </div>
-                   <div className="space-y-1">
-                     <p className="text-[10px] uppercase opacity-50 font-black">Mensagens</p>
-                     <p className="text-lg font-bold">💬 {current.messages_count}</p>
-                   </div>
+            <div className="space-y-10 animate-in fade-in zoom-in duration-1000">
+              <div className="space-y-6">
+                <Sparkles className="w-16 h-16 text-primary mx-auto animate-pulse-soft" />
+                <h3 className="text-5xl font-black italic tracking-tighter gradient-text drop-shadow-glow">{houseName}</h3>
+                <div className="space-y-4 delay-600 animate-fade-slide-up">
+                   <p className="text-2xl font-medium text-white/80">Vocês são mais do que números...</p>
+                   <p className="text-3xl font-black italic text-primary animate-pulse">são história 💛</p>
                 </div>
               </div>
               
-              <div className="space-y-3 pt-6">
+              <div className="space-y-4 pt-10 px-4 delay-1000 animate-fade-slide-up pointer-events-auto">
                 <Button 
-                  onClick={() => {
-                    const text = `💕 Nosso LoveWrapped: 🔥 ${current.streak_days} de streak e 💬 ${current.messages_count} mensagens trocadas! #LoveNest`;
+                   onClick={() => {
+                    const text = `💕 Nosso LoveWrapped em ${houseName}: 🔥 ${current.streak_days} de streak e 💬 ${current.messages_count} mensagens! #LoveNest`;
                     if (navigator.share) {
-                      navigator.share({ title: "LoveWrapped", text, url: window.location.origin });
+                      navigator.share({ title: "LoveWrapped", text, url: window.location.href });
                     } else {
                       navigator.clipboard.writeText(text);
                       toast({ title: "Copiado!" });
                     }
                   }}
-                  className="w-full bg-white text-black hover:bg-white/90 font-black py-6 rounded-[1.5rem] shadow-glow"
+                  className="w-full bg-primary text-white hover:bg-primary/90 font-black py-8 rounded-[2rem] shadow-glow text-lg active:scale-95 transition-all animate-bounce-in pointer-events-auto"
                 >
-                  <Share2 className="mr-2 h-5 w-5" /> Partilhar o nosso mês 💛
+                  <Share2 className="mr-2 h-6 w-6" /> Partilhar o nosso mês 💛
                 </Button>
                 <Button 
                   variant="ghost" 
                   onClick={() => setMode('list')}
-                  className="text-white/60 font-bold"
+                  className="text-white/40 font-bold hover:text-white pointer-events-auto"
                 >
                   Sair do Wrapped
                 </Button>
