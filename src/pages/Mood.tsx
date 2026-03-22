@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -10,6 +11,7 @@ import { MoodCheckin } from "@/features/mood/types";
 import { MoodForm } from "@/features/mood/MoodForm";
 import { MoodHistory } from "@/features/mood/MoodHistory";
 import { MOOD_OPTIONS } from "@/features/mood/constants";
+import { toast } from "sonner";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -20,6 +22,9 @@ export default function Mood() {
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
   const { recordInteraction } = useLoveStreak();
+  const navigate = useNavigate();
+
+  const [partnerRespondedToday, setPartnerRespondedToday] = useState(false);
 
   const [moodKey, setMoodKey] = useState("feliz");
   const [moodPercent, setMoodPercent] = useState(50);
@@ -70,6 +75,9 @@ export default function Mood() {
         setSleepQuality(mine.sleep_quality ?? null);
         setExistingId(mine.id);
       }
+
+      const partnerCheckin = todayData.find((c) => c.user_id !== user.id);
+      setPartnerRespondedToday(!!partnerCheckin);
     }
   }, [spaceId, user, today]);
 
@@ -137,8 +145,24 @@ export default function Mood() {
         title: `${moodInfo?.emoji ?? "😶"} Novo Humor (${moodPercent}%)`,
         body: emotions.length > 0 ? `Sentindo-se: ${emotions.join(", ")}` : (note ? `Houve uma actualização no humor de hoje.` : (moodInfo?.label ?? moodKey)),
         url: "/humor",
-        type: "humor",
       });
+    }
+
+    // Emotional Feedback UI
+    toast.success("Obrigado por partilhares como te sentes 💛 O teu par vai sentir-se mais próximo de ti.", {
+      duration: 5000,
+    });
+
+    if (!partnerRespondedToday) {
+      setTimeout(() => {
+        toast("O teu par ainda não respondeu... 💬", {
+          description: "Talvez precise de um empurrãozinho para partilhar também.",
+          action: {
+            label: "Mudar para Chat",
+            onClick: () => navigate("/chat"),
+          },
+        });
+      }, 2000);
     }
   };
 
