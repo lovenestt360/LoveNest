@@ -607,15 +607,21 @@ export default function Admin() {
     const handleGenerateWrapped = async () => {
         try {
             setGeneratingWrapped(true);
-            const { data, error } = await supabase.functions.invoke('generate-love-wrapped', {
+            const { data, error } = await adminClient.functions.invoke('generate-love-wrapped', {
                 body: { month: wrappedMonth, year: wrappedYear }
             });
 
+            console.log("LoveWrapped Debug Response:", { data, error });
+
             if (error) throw error;
             
+            const processedCount = data.processed ?? data.generated ?? 0;
+            const totalCount = data.total_spaces ?? processedCount;
+
             toast({
-                title: "Sucesso!",
-                description: `LoveWrapped gerado para ${data.generated} casais (${data.month}/${data.year}).`
+                title: data.failures?.length > 0 ? "Geração Concluída com Alertas" : "Sucesso!",
+                description: `Processados: ${processedCount} de ${totalCount} casas. ${data.failures?.length > 0 ? `${data.failures.length} falhas detectadas. Verifica os logs da consola.` : ''}`,
+                variant: data.failures?.length > 0 ? "destructive" : "default"
             });
         } catch (error: any) {
             toast({ title: "Erro na Geração", description: error.message, variant: "destructive" });
