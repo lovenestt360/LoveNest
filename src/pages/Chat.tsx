@@ -668,34 +668,11 @@ export default function Chat() {
                 {partner?.display_name || "Amor"}
               </span>
               {partner?.verification_status === 'verified' && (
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/10" title="Perfil Verificado" />
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/10" />
               )}
             </div>
           </div>
         </div>
-
-        {/* Heart Animation Overlay */}
-        {showCarinhoAnim && (
-          <div className="absolute inset-0 z-[100] pointer-events-none flex items-center justify-center">
-            <div className="animate-bounce p-4 bg-primary/20 rounded-full backdrop-blur-sm">
-              <Heart className="h-16 w-16 text-primary fill-primary animate-pulse" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="absolute animate-in fade-out zoom-out duration-1000 fill-mode-forwards"
-                  style={{ 
-                    transform: `rotate(${i * 30}deg) translateY(-100px)`,
-                    animationDelay: `${i * 0.05}s`
-                  }}
-                >
-                  <Heart className="h-6 w-6 text-primary/40 fill-primary/40" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </header>
 
       {/* ── Pinned bar ── */}
@@ -903,6 +880,30 @@ export default function Chat() {
           )}
         </div>
       </div>
+      {/* Heart Animation Overlay - Positioned more centrally */}
+      {showCarinhoAnim && (
+        <div className="absolute top-1/3 left-0 right-0 z-[100] pointer-events-none flex items-center justify-center">
+          <div className="relative">
+            <div className="animate-bounce p-5 bg-primary/20 rounded-full backdrop-blur-md shadow-glow">
+              <Heart className="h-20 w-20 text-primary fill-primary animate-pulse" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="absolute animate-in fade-out zoom-out duration-1000 fill-mode-forwards"
+                  style={{ 
+                    transform: `rotate(${i * 22.5}deg) translateY(-140px)`,
+                    animationDelay: `${i * 0.04}s`
+                  }}
+                >
+                  <Heart className="h-8 w-8 text-primary/30 fill-primary/30" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
