@@ -134,7 +134,7 @@ export default function Ranking() {
   const handleShareReferral = () => {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
-    const message = `Vem construir o teu ninho comigo no LoveNest! 🏰❤️ Usa o meu código de convite ${referralCode} e ganha 50 pontos iniciais para a vossa jornada. ✨`;
+    const message = `Estamos a usar o LoveNest 💛\num espaço só nosso…\ncria o teu também ✨\n\nCódigo: ${referralCode}`;
 
     if (navigator.share) {
       navigator.share({ 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -21,11 +21,14 @@ import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { notifyPartner } from "@/lib/notifyPartner";
+import { Button } from "@/components/ui/button";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
 import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
+import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
 
@@ -141,20 +144,68 @@ function useOpenComplaints() {
 function useMessagePreview() {
   const spaceId = useCoupleSpaceId();
   const { user } = useAuth();
-  const [preview, setPreview] = useState<string | null>(null);
+  const [data, setData] = useState<{ preview: string | null; lastTime: string | null }>({ preview: null, lastTime: null });
   useEffect(() => {
     if (!spaceId) return;
-    supabase.from("messages").select("content,sender_user_id")
+    supabase.from("messages").select("content,sender_user_id,created_at")
       .eq("couple_space_id", spaceId).order("created_at", { ascending: false }).limit(1)
-      .then(({ data }) => {
-        if (data?.[0]) {
-          const prefix = data[0].sender_user_id === user?.id ? "Tu: " : "";
-          const text = data[0].content;
-          setPreview(prefix + (text.length > 40 ? text.slice(0, 40) + "…" : text));
+      .then(({ data: msgs }) => {
+        if (msgs?.[0]) {
+          const prefix = msgs[0].sender_user_id === user?.id ? "Tu: " : "";
+          const text = msgs[0].content;
+          setData({
+            preview: prefix + (text.length > 40 ? text.slice(0, 40) + "…" : text),
+            lastTime: msgs[0].created_at
+          });
         }
       });
   }, [spaceId, user]);
-  return preview;
+  return data;
+}
+
+function useIntelligentNotifs(spaceId: string | null) {
+  const { user } = useAuth();
+  const { data: streakData, isPartner1 } = useLoveStreak();
+  const lastMsg = useMessagePreview();
+  const sentRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!spaceId || !user || !streakData) return;
+
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // 1. Streak Reminder (if after 19h and partner hasn't interacted)
+    const partnerInteracted = isPartner1 ? streakData.partner2_interacted_today : streakData.partner1_interacted_today;
+    if (currentHour >= 19 && !partnerInteracted && !sentRef.current.has("streak_reminder")) {
+      notifyPartner({
+        couple_space_id: spaceId,
+        title: "Quase lá! 🔥",
+        body: "Não deixem o streak cair hoje 🔥",
+        url: "/",
+        type: "routine",
+        template_key: "streak_reminder"
+      });
+      sentRef.current.add("streak_reminder");
+    }
+
+    // 2. Chat Inactivity (if last message > 8 hours ago during day)
+    if (lastMsg.lastTime && currentHour > 10 && currentHour < 22) {
+      const lastTime = new Date(lastMsg.lastTime);
+      const diffHours = (now.getTime() - lastTime.getTime()) / (1000 * 60 * 60);
+      if (diffHours > 8 && !sentRef.current.has("chat_inactivity")) {
+        notifyPartner({
+          couple_space_id: spaceId,
+          title: "Falta um brilho aqui... 💛",
+          body: "Hoje ainda não falaram muito… tudo bem por aí? 💛",
+          url: "/chat",
+          type: "chat",
+          template_key: "chat_inactivity"
+        });
+        sentRef.current.add("chat_inactivity");
+      }
+    }
+  }, [spaceId, user, streakData, lastMsg.lastTime, isPartner1]);
 }
 
 function useReferralCode() {
@@ -270,6 +321,7 @@ const Index = () => {
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
   const { data: streakData } = useLoveStreak();
   const streak = streakData?.current_streak ?? 0;
+  useIntelligentNotifs(useCoupleSpaceId());
 
   const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
 
@@ -290,7 +342,7 @@ const Index = () => {
   const handleShareReferral = () => {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
-    const message = `Vem construir o teu ninho comigo no LoveNest! 🏰❤️ Usa o meu código de convite ${referralCode} e ganha 50 pontos iniciais para a vossa jornada. ✨`;
+    const message = `Estamos a usar o LoveNest 💛\num espaço só nosso…\ncria o teu também ✨\n\nCódigo: ${referralCode}`;
 
     if (navigator.share) {
       navigator.share({ 
@@ -459,10 +511,35 @@ const Index = () => {
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground/80 font-medium line-clamp-1 mt-0.5 italic">
-                {chatPreview ?? "Envia um beijinho agora..."}
+                {chatPreview.preview ?? "Envia um beijinho agora..."}
               </p>
             </div>
           </button>
+        </div>
+
+        {/* Small Gesture Nudge */}
+        <div className="flex justify-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="rounded-full text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 hover:text-primary hover:bg-primary/5 transition-all gap-2 py-1 h-auto"
+            onClick={() => {
+              notifyPartner({
+                couple_space_id: useCoupleSpaceId() || "",
+                title: "Hora de um mimo 💌",
+                body: "Hora de um pequeno gesto 💌",
+                url: "/chat",
+                type: "chat",
+                template_key: "small_gesture"
+              });
+              toast.success("Enviado com sucesso! 💌", {
+                description: "O parceiro recebeu o teu convite para um pequeno gesto."
+              });
+            }}
+          >
+            <Coffee className="w-3 h-3" />
+            Enviar um pequeno gesto
+          </Button>
         </div>
       </div>
 

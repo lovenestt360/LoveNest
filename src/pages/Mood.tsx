@@ -146,6 +146,7 @@ export default function Mood() {
         body: emotions.length > 0 ? `Sentindo-se: ${emotions.join(", ")}` : (note ? `Houve uma actualização no humor de hoje.` : (moodInfo?.label ?? moodKey)),
         url: "/humor",
         type: "humor",
+        template_key: "partner_mood",
       });
     }
 

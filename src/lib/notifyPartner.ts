@@ -8,6 +8,7 @@ interface PushPayload {
   body: string;
   url: string;
   type: NotifType;
+  template_key?: string;
 }
 
 /**

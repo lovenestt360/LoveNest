@@ -68,10 +68,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { couple_space_id, title, body, url, type, is_test } = await req.json();
-    await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, has_title: !!title });
+    const { couple_space_id, title, body, url, type, is_test, template_key } = await req.json();
+    await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, template_key });
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    let finalTitle = title;
+    let finalBody = body;
+    let finalType = type || "chat";
+
+    if (template_key) {
+      const { data: template, error: templateError } = await adminClient
+        .from("notification_templates")
+        .select("*")
+        .eq("key", template_key)
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (!templateError && template) {
+        finalTitle = template.title;
+        finalBody = template.body;
+        finalType = template.type;
+      }
+    }
 
     // Get Sender ID from Token
     const token = authHeader.replace("Bearer ", "");
@@ -135,11 +154,11 @@ Deno.serve(async (req) => {
     );
 
     const notificationPayload = JSON.stringify({
-      title: title || "LoveNest",
-      body: body || "",
+      title: finalTitle || "LoveNest",
+      body: finalBody || "",
       icon: "/icon-192.png",
       badge: "/icon-192.png",
-      data: { url: url || "/chat", type: type || "chat" },
+      data: { url: url || "/chat", type: finalType },
     });
 
     let sentCount = 0;
