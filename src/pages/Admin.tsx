@@ -214,19 +214,21 @@ export default function Admin() {
             try {
                 const { data: housesData } = await adminClient
                     .from("couple_spaces")
-                    .select(`
-                        *,
-                        members (
-                            user_id,
-                            profiles (
-                                display_name,
-                                avatar_url,
-                                verification_status,
-                                birthday
-                            )
-                        )
-                    `)
+                    .select("*")
                     .order("created_at", { ascending: false });
+
+                const { data: membersData } = await adminClient
+                    .from("members")
+                    .select("user_id, couple_space_id");
+
+                if (housesData && membersData) {
+                    housesData.forEach((h: any) => {
+                        h.members = membersData
+                            .filter((m: any) => m.couple_space_id === h.id)
+                            .map((m: any) => ({ user_id: m.user_id }));
+                    });
+                }
+
                 setHouses(housesData || []);
             } catch (e) {
                 console.error("Error fetching houses:", e);
@@ -936,14 +938,15 @@ export default function Admin() {
                                                             </p>
                                                             <div className="flex gap-1.5 overflow-hidden">
                                                                 {house.members?.map((m: any, idx: number) => {
-                                                                    const isV = m.profiles?.verification_status === 'verified';
+                                                                    const profile = users.find(u => u.id === m.user_id);
+                                                                    const isV = profile?.verification_status === 'verified';
                                                                     return (
                                                                         <div key={m.user_id} className={cn(
                                                                             "text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0",
                                                                             isV ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground/60"
                                                                         )}>
                                                                             {isV ? <ShieldCheck className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
-                                                                            {m.profiles?.display_name?.split(' ')[0] || `P${idx+1}`}
+                                                                            {profile?.display_name?.split(' ')[0] || `P${idx+1}`}
                                                                         </div>
                                                                     );
                                                                 })}
@@ -988,7 +991,10 @@ export default function Admin() {
                                                                 </button>
                                                             ) : (
                                                                 (() => {
-                                                                    const bothVerified = house.members?.length === 2 && house.members.every((m: any) => m.profiles?.verification_status === 'verified');
+                                                                    const bothVerified = house.members?.length === 2 && house.members.every((m: any) => {
+                                                                        const p = users.find(u => u.id === m.user_id);
+                                                                        return p?.verification_status === 'verified';
+                                                                    });
                                                                     if (bothVerified) {
                                                                         return (
                                                                             <Button 
