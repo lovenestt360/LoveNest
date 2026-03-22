@@ -264,6 +264,11 @@ input, textarea, [contenteditable="true"] {
     100% { background-position: 200% 0; }
   }
 
+  @keyframes progress {
+    0% { width: 0; }
+    100% { width: 100%; }
+  }
+
   /* ── Animation Utilities ── */
   .animate-fade-slide-up {
     animation: fade-slide-up 350ms ease-out forwards;
@@ -301,6 +306,18 @@ input, textarea, [contenteditable="true"] {
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite linear;
     @apply bg-muted/30 rounded-lg;
+  }
+
+  .animate-progress {
+    animation: progress 5s linear forwards;
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 20px 5px rgba(244, 63, 94, 0.2);
+  }
+
+  .drop-shadow-glow {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
   }
 }
 

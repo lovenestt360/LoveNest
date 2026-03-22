@@ -94,12 +94,24 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       // Count mood checkins
-      const { count: moodCount } = await sb
+      const { data: moodEntries } = await sb
         .from("mood_checkins")
-        .select("id", { count: "exact", head: true })
+        .select("mood_key")
         .eq("couple_space_id", spaceId)
         .gte("created_at", monthStart)
         .lt("created_at", monthEnd);
+
+      const moodCount = moodEntries?.length ?? 0;
+      
+      // Calculate top_mood
+      let topMood = null;
+      if (moodEntries && moodEntries.length > 0) {
+        const counts: Record<string, number> = {};
+        moodEntries.forEach(m => {
+          counts[m.mood_key] = (counts[m.mood_key] || 0) + 1;
+        });
+        topMood = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      }
 
       // Insert wrapped
       await sb.from("love_wrapped").insert({
@@ -110,7 +122,8 @@ Deno.serve(async (req) => {
         memories_count: memoriesCount ?? 0,
         challenges_completed: challengesCount ?? 0,
         streak_days: streakData?.current_streak ?? 0,
-        mood_checkins: moodCount ?? 0,
+        mood_checkins: moodCount,
+        top_mood: topMood,
       });
 
       generated++;

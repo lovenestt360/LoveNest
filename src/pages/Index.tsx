@@ -141,6 +141,28 @@ function useOpenComplaints() {
   return count;
 }
 
+function useWrappedStatus() {
+  const spaceId = useCoupleSpaceId();
+  const [hasNew, setHasNew] = useState(false);
+  useEffect(() => {
+    if (!spaceId) return;
+    const now = new Date();
+    let month = now.getMonth(); 
+    let year = now.getFullYear();
+    if (month === 0) {
+      month = 12;
+      year -= 1;
+    }
+    supabase.from("love_wrapped").select("id")
+      .eq("couple_space_id", spaceId)
+      .eq("month", month)
+      .eq("year", year)
+      .maybeSingle()
+      .then(({ data }) => setHasNew(!!data));
+  }, [spaceId]);
+  return hasNew;
+}
+
 function useMessagePreview() {
   const spaceId = useCoupleSpaceId();
   const { user } = useAuth();
@@ -335,6 +357,7 @@ const Index = () => {
   const chatPreview = useMessagePreview();
   const fasting = useFastingHome();
   const cycle = useCycleHome();
+  const hasWrapped = useWrappedStatus();
   const announcements = useGlobalAnnouncements();
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
@@ -616,6 +639,7 @@ const Index = () => {
             title="Wrapped"
             lines={["Resumo Mensal", "Revive memórias"]}
             to="/wrapped"
+            badge={hasWrapped ? "Novo" : 0}
             accent="bg-pink-500/10 text-pink-500"
           />
           <DashCard

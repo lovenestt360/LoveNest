@@ -6,7 +6,7 @@ interface DashCardProps {
   title: string;
   lines: string[];
   to: string;
-  badge?: number;
+  badge?: number | string;
   accent?: string;
   className?: string;
 }
@@ -29,9 +29,9 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
         )}>
           {icon}
         </div>
-        {badge > 0 && (
+        {(typeof badge === 'number' ? badge > 0 : !!badge) && (
           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-black text-destructive-foreground shadow-lg animate-in zoom-in duration-300">
-            {badge > 99 ? "99+" : badge}
+            {typeof badge === 'number' && badge > 99 ? "99+" : badge}
           </span>
         )}
       </div>
