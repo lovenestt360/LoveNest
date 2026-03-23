@@ -159,7 +159,7 @@ export function LoveStreakHomeCard() {
       </button>
 
       {/* Daily Love Mission Card */}
-      {dailyStatus && (
+      {dailyStatus && dailyStatus.mission_title && (
         <div 
           className="glass-card rounded-2xl p-4 space-y-2 cursor-pointer hover:bg-muted/10 transition-colors"
           onClick={() => navigate("/ranking?tab=tasks")}

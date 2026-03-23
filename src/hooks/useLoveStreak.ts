@@ -207,6 +207,7 @@ export function useLoveStreak() {
   // Check if streak is broken and can be restored
   const canUseShield = data && data.shield_remaining > 0 && data.last_streak_date
     ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) > 1
+      && !dailyStatus?.day_complete // If they already completed today, don't show "lost" even if sync is lagging
     : false;
 
   return {

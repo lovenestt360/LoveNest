@@ -122,6 +122,12 @@ BEGIN
         v_check_date := v_check_date + 1;
     END LOOP;
 
+    -- NEW: If last_sync is still before yesterday (meaning we didn't enter the loop or loop ended early)
+    -- but no days were missed today, update last_sync to CURRENT_DATE - 1 to stop the "Streak Lost" alert.
+    IF v_last_sync < (CURRENT_DATE - 1) THEN
+        v_last_sync := CURRENT_DATE - 1;
+    END IF;
+
     -- Update the streak record
     UPDATE public.love_streaks
     SET 
@@ -131,10 +137,19 @@ BEGIN
         updated_at = now()
     WHERE couple_space_id = p_couple_space_id;
 
-    -- Assign a mission for TODAY if missing
+    -- Robust Mission Assignment for TODAY
     IF NOT EXISTS (SELECT 1 FROM public.couple_missions WHERE couple_space_id = p_couple_space_id AND day_key = CURRENT_DATE) THEN
+        -- Pick a random mission that hasn't been used recently if possible
         INSERT INTO public.couple_missions (couple_space_id, mission_id)
-        SELECT p_couple_space_id, id FROM public.love_missions ORDER BY random() LIMIT 1;
+        SELECT p_couple_space_id, id FROM public.love_missions 
+        WHERE id NOT IN (SELECT mission_id FROM public.couple_missions WHERE couple_space_id = p_couple_space_id ORDER BY day_key DESC LIMIT 5)
+        ORDER BY random() LIMIT 1;
+        
+        -- Fallback to any mission if none left in subquery
+        IF NOT FOUND THEN
+            INSERT INTO public.couple_missions (couple_space_id, mission_id)
+            SELECT p_couple_space_id, id FROM public.love_missions ORDER BY random() LIMIT 1;
+        END IF;
     END IF;
 
     RETURN json_build_object(

@@ -221,7 +221,7 @@ export default function Tasks() {
       </header>
 
       {/* Love Mission Card - High Prominence */}
-      {dailyStatus && (
+      {dailyStatus && dailyStatus.mission_title && (
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4 animate-fade-in shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">

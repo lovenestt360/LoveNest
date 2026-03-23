@@ -257,7 +257,7 @@ export default function Ranking() {
                   <Star className="w-4 h-4" /> Missão do Dia (+ Pontos)
                 </div>
                 
-                {dailyStatus ? (
+                {dailyStatus && dailyStatus.mission_title ? (
                   <div className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4 relative overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold">{dailyStatus.mission_emoji} {dailyStatus.mission_title}</span>

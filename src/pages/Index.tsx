@@ -213,11 +213,11 @@ function useIntelligentNotifs(spaceId: string | null) {
 
     // 1b. Mission Reminder (if after 17h and mission not done)
     const meMission = isPartner1 ? dailyStatus?.is_completed_p1 : dailyStatus?.is_completed_p2;
-    if (currentHour >= 17 && !meMission && !sentRef.current.has("mission_reminder")) {
+    if (currentHour >= 17 && !meMission && dailyStatus?.mission_title && !sentRef.current.has("mission_reminder")) {
       notifyPartner({
         couple_space_id: spaceId,
         title: "Missão Especial! 📸",
-        body: `Já viste a missão do dia? "${dailyStatus?.mission_title}" ✨`,
+        body: `Já viste a missão do dia? "${dailyStatus.mission_title}" ✨`,
         url: "/tarefas",
         type: "tarefas",
         template_key: "mission_reminder"
