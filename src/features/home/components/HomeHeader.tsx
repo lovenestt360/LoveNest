@@ -20,13 +20,13 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="space-y-4 pt-2 text-center w-full">
+    <header className="space-y-4 pt-4 text-center w-full">
       <div className="flex items-center justify-center gap-3 md:gap-8 px-2">
         {/* Me Avatar */}
         <div className="relative shrink-0">
           <Avatar 
             className={cn(
-              "h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500 cursor-pointer",
+              "h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/10 shadow-sm transition-all active:scale-95 duration-500 cursor-pointer",
               loading && "animate-pulse"
             )}
             onClick={() => navigate("/configuracoes")}
@@ -35,7 +35,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
               <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />
             ) : null}
             <AvatarFallback className={cn(
-              "bg-gradient-to-tr from-primary/20 to-primary/40 text-primary font-black text-lg",
+              "bg-muted text-muted-foreground font-black text-lg",
               loading && "text-transparent"
             )}>
               {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "U")}
@@ -43,24 +43,22 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
           </Avatar>
           {me?.verificationStatus === 'verified' && (
             <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm z-10">
-              <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/10" />
+              <ShieldCheck className="h-4 w-4 text-emerald-500/50" />
             </div>
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-1 md:gap-1.5 px-2 shrink-0 min-w-0">
-          <div className="flex items-center gap-1">
-            <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
-            <span className="text-2xl md:text-3xl font-black tracking-tighter gradient-text">LoveNest</span>
-            <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
+        <div className="flex flex-col items-center gap-0.5 px-2 shrink-0 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl md:text-3xl font-black tracking-tighter text-foreground/90">LoveNest</span>
           </div>
-          <p className="text-[10px] md:text-xs font-bold text-primary/80 italic animate-in fade-in slide-in-from-bottom-1 duration-700">
+          <p className="text-[10px] font-black uppercase tracking-widest text-primary/40 italic">
             {(() => {
               const messages = [
-                "Hoje é mais um capítulo da vossa história 💛",
+                "Mais um capítulo da vossa história 💛",
                 "Cuidem um do outro hoje ✨",
-                "O amor também se constrói nos pequenos momentos",
-                "Não deixem o vosso streak cair hoje 🔥"
+                "Pequenos momentos importam",
+                "Mantenham a chama acesa 🔥"
               ];
               const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
               return messages[dayOfYear % messages.length];
@@ -72,7 +70,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
         <div className="relative shrink-0">
           <Avatar 
             className={cn(
-              "h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500 cursor-pointer",
+              "h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/10 shadow-sm transition-all active:scale-95 duration-500 cursor-pointer",
               loading && "animate-pulse"
             )}
             onClick={() => navigate("/configuracoes")}
@@ -81,7 +79,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
               <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />
             ) : null}
             <AvatarFallback className={cn(
-              "bg-gradient-to-tr from-secondary/40 to-secondary/60 text-primary font-black text-lg",
+              "bg-muted text-muted-foreground font-black text-lg",
               loading && "text-transparent"
             )}>
               {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
@@ -89,7 +87,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
           </Avatar>
           {partner?.verificationStatus === 'verified' && (
             <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm z-10">
-              <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/10" />
+              <ShieldCheck className="h-4 w-4 text-emerald-500/50" />
             </div>
           )}
         </div>

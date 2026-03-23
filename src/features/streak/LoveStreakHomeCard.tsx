@@ -66,100 +66,80 @@ export function LoveStreakHomeCard() {
       {/* Main Streak Card */}
       <button
         onClick={() => navigate("/ranking?tab=streak")}
-        className="glass-card glass-card-hover relative flex w-full flex-col rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
+        className="glass-card glass-card-hover relative flex w-full flex-col rounded-[2.5rem] overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
       >
-        <div className="bg-gradient-to-r from-orange-500/10 via-red-500/10 to-pink-500/10 p-4 space-y-3 w-full">
+        <div className="p-6 space-y-4 w-full">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-4">
               <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-xl",
-                bothToday ? "bg-orange-500/20 text-orange-500 animate-pulse-glow" : "bg-orange-500/10 text-orange-400 animate-streak-shake"
+                "flex h-12 w-12 items-center justify-center rounded-2xl",
+                bothToday ? "bg-orange-500/10 text-orange-500" : "bg-muted text-muted-foreground/40"
               )}>
-                <Flame className="h-5 w-5" />
+                <Flame className="h-6 w-6" />
               </div>
               <div>
-                <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  🔥 LoveStreak
+                <span className="text-sm font-black text-foreground uppercase tracking-widest flex items-center gap-2">
+                  LoveStreak
                   {data.current_streak > 0 && (
-                    <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                      {data.current_streak} dia{data.current_streak !== 1 ? "s" : ""}
+                    <span className="text-[10px] font-black text-orange-500 bg-orange-500/5 px-2 py-0.5 rounded-full border border-orange-500/10">
+                      {data.current_streak} DIAS
                     </span>
                   )}
                 </span>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-[10px] text-muted-foreground">
-                    {level.title} • Melhor: {data.best_streak} dias
-                  </p>
-                  <span className="text-[10px] text-muted-foreground">•</span>
-                  <p className="text-[10px] font-bold text-primary">
-                    {data.total_points || 0} pts
+                  <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
+                    {level.title} • Recorde: {data.best_streak}
                   </p>
                 </div>
               </div>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
           </div>
 
-          {/* Today status */}
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-4 py-1">
             {(() => {
               const meInteracted = isPartner1 ? data.partner1_interacted_today : data.partner2_interacted_today;
               const partnerInteracted = isPartner1 ? data.partner2_interacted_today : data.partner1_interacted_today;
               
               return (
-                <>
+                <div className="flex items-center gap-2">
                   <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-                    meInteracted
-                      ? "bg-green-500/15 text-green-700"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {meInteracted ? "✓" : "○"} Tu
-                  </div>
+                    "h-2 w-2 rounded-full",
+                    meInteracted ? "bg-green-500/50 shadow-[0_0_8px_rgba(34,197,94,0.3)]" : "bg-muted"
+                  )} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Tu</span>
+                  
+                  <div className="w-4" />
+                  
                   <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-                    partnerInteracted
-                      ? "bg-green-500/15 text-green-700"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {partnerInteracted ? "✓" : "○"} Par
-                  </div>
-                </>
+                    "h-2 w-2 rounded-full",
+                    partnerInteracted ? "bg-green-500/50 shadow-[0_0_8px_rgba(34,197,94,0.3)]" : "bg-muted"
+                  )} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Par</span>
+                </div>
               );
             })()}
-            {bothToday ? (
-              <span className="text-green-600 font-bold flex items-center gap-1 animate-fade-slide-up">
-                <Sparkles className="w-3 h-3" /> Vocês apareceram um para o outro hoje 💛
-              </span>
-            ) : (
-              <span className="text-amber-600 font-bold flex items-center gap-1 animate-pulse">
-                <Flame className="w-3 h-3" /> Falta pouco… não deixem o vosso streak cair 🔥
-              </span>
-            )}
           </div>
+
+          {!bothToday && (
+            <p className="text-[10px] text-orange-500/80 font-black uppercase tracking-widest animate-pulse">
+              Falta pouco para manter a chama acesa... 🔥
+            </p>
+          )}
 
           {/* Shields */}
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Shield className="w-3 h-3" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className={cn(
-                "w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold",
-                i < data.shield_remaining
-                  ? "bg-blue-500/20 text-blue-600"
-                  : "bg-muted text-muted-foreground/40"
-              )}>
-                🛡️
-              </span>
-            ))}
-            <span className="ml-1">LoveShield</span>
-          </div>
-
-          {/* Next level progress */}
-          {nextLevel && (
-            <div className="text-[10px] text-muted-foreground">
-              <span>Próximo nível: <strong className="text-foreground">{nextLevel.title}</strong> ({nextLevel.min - data.current_streak} dias restantes)</span>
+          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">LoveShield</span>
+            <div className="flex gap-1.5 text-xs">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <span key={i} className={cn(
+                  "opacity-50 grayscale transition-all",
+                  i < data.shield_remaining ? "opacity-100 grayscale-0" : "opacity-20"
+                )}>
+                  🛡️
+                </span>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </button>
 
