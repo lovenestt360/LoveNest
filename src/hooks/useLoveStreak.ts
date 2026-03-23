@@ -205,10 +205,9 @@ export function useLoveStreak() {
   }, [spaceId, data, load]);
 
   // Check if streak is broken and can be restored
-  const canUseShield = data && data.shield_remaining > 0 && data.last_streak_date
-    ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) > 1
-      && !dailyStatus?.day_complete // If they already completed today, don't show "lost" even if sync is lagging
-    : false;
+  // RESTRUTURADO: O alerta falso de "Streak Lost" foi desativado no frontend
+  // para não incomodar os usuários até que o motor v3 (SQL) seja perfeitamente sincronizado no banco.
+  const canUseShield = false; 
 
   return {
     data,

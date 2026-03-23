@@ -173,7 +173,7 @@ export default function Tasks() {
         </p>
         <div className="flex flex-wrap items-center gap-1.5 mt-1">
           <Badge variant={priorityColor(task.priority) as any} className="text-[10px]">{priorityLabel(task.priority)}</Badge>
-          {task.due_date && (
+          {task.due_date && task.due_date.trim() !== "" && !isNaN(new Date(task.due_date + "T00:00:00").getTime()) && (
             <span className="text-[10px] text-muted-foreground">
               {format(new Date(task.due_date + "T00:00:00"), "d MMM", { locale: pt })}
             </span>
