@@ -190,6 +190,49 @@ Deno.serve(async (req) => {
           console.log(`  - Insert: SUCCESS`);
         }
 
+        // --- SEND NOTIFICATION (Requirement #7) ---
+        try {
+          const { data: subs } = await sb
+            .from("push_subscriptions")
+            .select("*")
+            .eq("couple_space_id", spaceId);
+
+          if (subs && (subs as any[]).length > 0) {
+            const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
+            const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
+            const webpush = await import("npm:web-push");
+            
+            webpush.default.setVapidDetails(
+              "mailto:app@lovenestt.lovable.app",
+              vapidPublicKey.trim(),
+              vapidPrivateKey.trim()
+            );
+
+            const payload = JSON.stringify({
+              title: "💛 O vosso mês está pronto!",
+              body: "O resumo LoveWrapped deste mês já está disponível... querem reviver?",
+              icon: "/icon-192.png",
+              data: { url: "/wrapped", type: "system" }
+            });
+
+            for (const sub of (subs as any[])) {
+              try {
+                await (webpush as any).default.sendNotification(
+                  { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                  payload
+                );
+              } catch (e: any) {
+                if (e.statusCode === 410 || e.statusCode === 404) {
+                  await sb.from("push_subscriptions").delete().eq("id", sub.id);
+                }
+              }
+            }
+            console.log(`  - Push Sent: ${(subs as any[]).length} recipients`);
+          }
+        } catch (pushErr: any) {
+          console.error(`  - Push Failed for ${spaceId}:`, pushErr.message);
+        }
+
         processed++;
       } catch (err: any) {
         console.error(`Error processing space ${spaceName}:`, err.message);
