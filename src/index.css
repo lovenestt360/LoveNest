@@ -280,6 +280,21 @@ input, textarea, [contenteditable="true"] {
     50% { opacity: 0.7; transform: scale(1.05); }
   }
 
+  @keyframes ken-burns {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.15) translate(-2%, -2%); }
+  }
+
+  @keyframes text-reveal-cinematic {
+    0% { opacity: 0; filter: blur(10px); transform: translateY(20px); }
+    100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+  }
+
+  @keyframes glow-pulsate-cinematic {
+    0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(40px); }
+    50% { opacity: 0.6; transform: scale(1.2); filter: blur(60px); }
+  }
+
   /* ── Animation Utilities ── */
   .animate-fade-scale-in {
     animation: fade-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -297,13 +312,35 @@ input, textarea, [contenteditable="true"] {
     animation: progress 3s linear forwards;
   }
 
+  .animate-progress-4s {
+    animation: progress 4s linear forwards;
+  }
+
+  .animate-ken-burns {
+    animation: ken-burns 10s ease-out forwards;
+  }
+
+  .animate-text-reveal {
+    animation: text-reveal-cinematic 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-glow-pulsate {
+    animation: glow-pulsate-cinematic 6s ease-in-out infinite;
+  }
+
   .delay-150 { animation-delay: 150ms; }
   .delay-300 { animation-delay: 300ms; }
   .delay-450 { animation-delay: 450ms; }
   .delay-600 { animation-delay: 600ms; }
 
   .bg-wrapped-gradient {
-    background: radial-gradient(circle at center, rgba(244, 63, 94, 0.15) 0%, rgba(0, 0, 0, 0) 70%), #000;
+    background: radial-gradient(circle at center, rgba(244, 63, 94, 0.2) 0%, rgba(0, 0, 0, 1) 100%);
+  }
+
+  /* Cinematic overlay for the "film" look */
+  .cinematic-overlay {
+    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none;
   }
 }
 

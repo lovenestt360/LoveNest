@@ -39,10 +39,19 @@ interface WrappedData {
   generated_at: string;
 }
 
-function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
+function AnimatedCounter({ value, duration = 1000, delay = 0 }: { value: number; duration?: number; delay?: number }) {
   const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(delay === 0);
 
   useEffect(() => {
+    if (delay > 0) {
+      const t = setTimeout(() => setStarted(true), delay);
+      return () => clearTimeout(t);
+    }
+  }, [delay]);
+
+  useEffect(() => {
+    if (!started) return;
     let start = 0;
     const end = value;
     if (end === 0) {
@@ -62,7 +71,7 @@ function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?:
     }, 16);
 
     return () => clearInterval(timer);
-  }, [value, duration]);
+  }, [value, duration, started]);
 
   return <span>{count}</span>;
 }
@@ -80,24 +89,40 @@ export default function LoveWrapped() {
   const [mode, setMode] = useState<'list' | 'story'>('list');
   const [isPaused, setIsPaused] = useState(false);
   
+  // Cinematic States
+  const [stage, setStage] = useState(0); // 0: Hide, 1: Intro Text, 2: Data Reveal, 3: Conclusion
+  
   const [houseName, setHouseName] = useState("LoveNest");
+  const [partner1Name, setPartner1Name] = useState("");
   const [relationshipStart, setRelationshipStart] = useState<string | null>(null);
   const [lastPhoto, setLastPhoto] = useState<string | null>(null);
   
   const touchStartX = useRef<number | null>(null);
   const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
+  const stageTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (mode === 'story' && !isPaused) {
+      // Story duration is now longer to allow for cinematic stages
+      const slideDuration = 5500; 
+      
       autoPlayTimer.current = setInterval(() => {
         nextSlide();
-      }, 3500);
+      }, slideDuration);
+
+      // Stage timing logic
+      setStage(1);
+      const t2 = setTimeout(() => setStage(2), 1500); // Reveal data after 1.5s
+      const t3 = setTimeout(() => setStage(3), 4000); // Climax/Final text
+      
+      return () => {
+        clearInterval(autoPlayTimer.current!);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
     } else {
       if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
     }
-    return () => {
-      if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
-    };
   }, [mode, isPaused, currentSlide]);
 
   useEffect(() => {
@@ -109,7 +134,7 @@ export default function LoveWrapped() {
         .order("year", { ascending: false })
         .order("month", { ascending: false });
 
-      const { data: spaceData } = await supabase.from("couple_spaces").select("house_name, relationship_start_date").eq("id", spaceId).maybeSingle();
+      const { data: spaceData } = await supabase.from("couple_spaces").select("house_name, relationship_start_date, partner1_name").eq("id", spaceId).maybeSingle();
       
       if (wrappedData && wrappedData.length > 0) {
         setWrappedList(wrappedData as WrappedData[]);
@@ -117,6 +142,7 @@ export default function LoveWrapped() {
       }
       
       setHouseName(spaceData?.house_name || "LoveNest");
+      setPartner1Name(spaceData?.partner1_name || "");
       setRelationshipStart(spaceData?.relationship_start_date || null);
       setLoading(false);
     };
@@ -147,15 +173,19 @@ export default function LoveWrapped() {
     }
   };
 
+  const lastPointerDownTime = useRef<number>(0);
+
   const nextSlide = () => {
+    if (Date.now() - lastPointerDownTime.current > 300) return; // Ignore if it was a hold
     setCurrentSlide(s => {
-      if (s < 8) return s + 1;
+      if (s < 10) return s + 1;
       setMode('list');
       return 0;
     });
   };
 
   const prevSlide = () => {
+    if (Date.now() - lastPointerDownTime.current > 300) return;
     setCurrentSlide(s => (s > 0 ? s - 1 : 0));
   };
 
@@ -164,6 +194,7 @@ export default function LoveWrapped() {
     setCurrentSlide(0);
     setMode('story');
     setIsPaused(false);
+    lastPointerDownTime.current = 0;
     fetchLastPhoto(spaceId!, wrappedList[index].month, wrappedList[index].year);
   };
 
@@ -187,17 +218,27 @@ export default function LoveWrapped() {
         className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center justify-center overflow-hidden bg-wrapped-gradient"
         onMouseDown={() => setIsPaused(true)}
         onMouseUp={() => setIsPaused(false)}
-        onTouchStart={() => setIsPaused(true)}
-        onTouchEnd={() => setIsPaused(false)}
+        onPointerDown={() => {
+          setIsPaused(true);
+          lastPointerDownTime.current = Date.now();
+        }}
+        onPointerUp={() => setIsPaused(false)}
       >
+        {/* Cinematic Background Glows */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[80px] animate-glow-pulsate pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] animate-glow-pulsate delay-1000 pointer-events-none" />
+        
+        {/* Cinematic Film Overlay */}
+        <div className="absolute inset-0 cinematic-overlay z-[101]" />
+
         {/* Progress Bars */}
         <div className="absolute top-4 left-4 right-4 flex gap-1 z-[110]">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+          {Array.from({ length: 11 }).map((_, i) => (
+            <div key={i} className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className={cn(
                   "h-full bg-white transition-all duration-300",
-                  i < currentSlide ? "w-full" : i === currentSlide ? (isPaused ? "w-[50%]" : "animate-progress-3s") : "w-0"
+                  i < currentSlide ? "w-full" : i === currentSlide ? (isPaused ? "w-[50%]" : "animate-progress-4s") : "w-0"
                 )}
               />
             </div>
@@ -212,179 +253,235 @@ export default function LoveWrapped() {
           <X className="h-6 w-6" />
         </button>
 
-        {/* Interaction Areas for mobile tap navigation */}
+        {/* Interaction Areas */}
         <div className="absolute inset-0 z-[105] flex">
           <div className="flex-1" onClick={prevSlide} />
           <div className="flex-1" onClick={nextSlide} />
         </div>
 
         {/* Content Area */}
-        <div className="relative z-[106] w-full h-full max-w-md mx-auto p-8 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+        <div className="relative z-[106] w-full h-full max-w-md mx-auto p-10 flex flex-col items-center justify-center text-center select-none pointer-events-none overflow-hidden">
           
+          {/* SLIDE 0: CINEMATIC INTRO */}
           {currentSlide === 0 && (
-            <div className="space-y-6 animate-fade-scale-in">
-              <div className="bg-primary/20 p-10 rounded-full inline-block shadow-glow animate-pulse-soft">
-                <Heart className="w-24 h-24 text-primary fill-primary" />
-              </div>
-              <div className="space-y-3">
-                <h1 className="text-5xl font-black italic tracking-tighter drop-shadow-glow">LoveWrapped</h1>
-                <p className="text-xl font-medium text-white/80 delay-300 animate-fade-slide-up">Este foi o vosso mês 💛</p>
-                <div className="text-primary font-black uppercase tracking-widest pt-6 animate-fade-slide-up delay-600">
+            <div className="space-y-4">
+              <p className={cn(
+                "text-2xl font-medium text-white/60 transition-all duration-1000",
+                stage >= 1 ? "animate-text-reveal" : "opacity-0"
+              )}>
+                Este foi o vosso mês...
+              </p>
+              <h1 className={cn(
+                "text-4xl font-black italic tracking-tighter text-primary transition-all duration-1000",
+                stage >= 2 ? "animate-text-reveal" : "opacity-0 invisible"
+              )}>
+                no LoveNest 💛
+              </h1>
+              <div className={cn(
+                "pt-10 transition-all duration-1000",
+                stage >= 3 ? "animate-fade-scale-in" : "opacity-0"
+              )}>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
                   {MONTH_NAMES[current.month]} {current.year}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* SLIDE 1: DAYS TOGETHER */}
+          {currentSlide === 1 && (
+            <div className="space-y-8">
+              <div className={cn("transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                <p className="text-xl font-bold italic text-white/40">Vocês já somam...</p>
+              </div>
+              <div className={cn("space-y-4 transition-all duration-700", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
+                <p className="text-8xl font-black tracking-tighter drop-shadow-glow">
+                  <AnimatedCounter value={totalDays} delay={500} />
+                </p>
+                <p className="text-2xl font-black italic text-primary">Dias de pura história ✨</p>
+              </div>
+            </div>
+          )}
+
+          {/* SLIDE 2: STREAK (EMOTIONAL) */}
+          {currentSlide === 2 && (
+            <div className="space-y-10">
+              <div className={cn("transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                <p className="text-2xl font-bold italic leading-tight text-white/60 px-6">
+                  "Nem sempre foi fácil..."
+                </p>
+              </div>
+              <div className={cn("space-y-6 transition-all duration-1000", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
+                <p className="text-2xl font-black italic text-primary px-4">
+                  ...mas vocês continuaram 🔥
+                </p>
+                <div className="relative inline-block mt-4">
+                   <Flame className="w-24 h-24 mx-auto text-orange-500 fill-orange-500 animate-pulse-glow" />
+                   <p className="text-6xl font-black tracking-tighter absolute inset-0 flex items-center justify-center pt-4 text-white drop-shadow-md">
+                     <AnimatedCounter value={current.streak_days} delay={200} />
+                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {currentSlide === 1 && (
-            <div className="space-y-8 animate-fade-scale-in">
-              <CalendarDays className="w-24 h-24 mx-auto text-primary animate-bounce-in" />
-              <div className="space-y-4">
-                <p className="text-7xl font-black tracking-tighter">
-                  <AnimatedCounter value={totalDays} />
-                </p>
-                <p className="text-2xl font-bold italic delay-300 animate-fade-slide-up">Mais um mês lado a lado ✨</p>
-                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up uppercase tracking-widest font-black">Dias de pura história.</p>
-              </div>
-            </div>
-          )}
-
-          {currentSlide === 2 && (
-            <div className="space-y-8 animate-fade-scale-in">
-              <Flame className={cn("w-24 h-24 mx-auto", current.streak_days > 0 ? "text-orange-500 animate-pulse-glow" : "text-white/20")} />
-              <div className="space-y-4">
-                <p className="text-7xl font-black tracking-tighter">
-                  <AnimatedCounter value={current.streak_days} />
-                </p>
-                <h2 className="text-2xl font-black italic delay-300 animate-fade-slide-up">
-                  {current.streak_days >= 20 
-                    ? "Vocês mantiveram o fogo aceso 🔥" 
-                    : "Quase lá… o próximo mês é vosso 💛"}
-                </h2>
-                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up">Maior streak ativo este mês.</p>
-              </div>
-            </div>
-          )}
-
+          {/* SLIDE 3: MOOD (DRAMATIC) */}
           {currentSlide === 3 && (
-            <div className="space-y-10 animate-fade-scale-in">
-              <div className="text-9xl mx-auto drop-shadow-glow animate-bounce-in">
-                {current.top_mood ? MOOD_EMOJIS[current.top_mood] || "😊" : "🥰"}
+            <div className="space-y-12">
+              <div className={cn("transition-base", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                <p className="text-xl font-bold italic text-white/50">Este mês vocês sentiram-se...</p>
               </div>
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold italic text-white/60 animate-fade-slide-up">
-                  Este mês vocês sentiram-se mais...
-                </h2>
-                <h2 className="text-4xl font-black tracking-tighter text-primary uppercase delay-600 animate-fade-scale-in drop-shadow-glow">
+              <div className={cn("space-y-6", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
+                <div className="text-9xl drop-shadow-[0_0_50px_rgba(255,255,255,0.3)] animate-bounce-in">
+                  {current.top_mood ? MOOD_EMOJIS[current.top_mood] || "😊" : "🥰"}
+                </div>
+                <h2 className="text-5xl font-black tracking-tighter text-primary uppercase drop-shadow-glow">
                   {current.top_mood || "Apaixonados"} 💛
                 </h2>
               </div>
             </div>
           )}
 
+          {/* SLIDE 4: MESSAGES */}
           {currentSlide === 4 && (
-            <div className="space-y-8 animate-fade-scale-in">
-              <div className="relative inline-block">
-                <MessageCircle className="w-24 h-24 mx-auto text-indigo-400 animate-bounce-in" />
-                <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-400 animate-pulse" />
+            <div className="space-y-8">
+              <div className={cn("transition-base", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                <p className="text-xl font-bold italic text-white/60">Este mês...</p>
+                <p className="text-2xl font-black italic text-primary mt-2">vossas palavras aqueceram a casa 💬</p>
               </div>
-              <div className="space-y-4">
-                <p className="text-7xl font-black tracking-tighter">
-                  <AnimatedCounter value={current.messages_count} />
+              <div className={cn("space-y-4", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
+                <p className="text-8xl font-black tracking-tighter">
+                  <AnimatedCounter value={current.messages_count} delay={300} />
                 </p>
-                <h2 className="text-2xl font-black italic delay-300 animate-fade-slide-up px-4">
-                  {current.messages_count > 100 
-                    ? "Conversaram bastante este mês 💬✨" 
-                    : "Vocês podem falar mais… mas ainda assim estiveram presentes 💛"}
-                </h2>
-                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up uppercase tracking-widest font-black">Mensagens trocadas.</p>
+                <p className="text-xs font-black uppercase tracking-widest text-white/30">Mensagens enviadas com carinho.</p>
               </div>
             </div>
           )}
 
+          {/* SLIDE 5: CHALLENGES */}
           {currentSlide === 5 && (
-            <div className="space-y-8 animate-fade-scale-in">
-              <Trophy className="w-24 h-24 mx-auto text-yellow-400 animate-bounce-in" />
-              <div className="space-y-4">
-                <p className="text-7xl font-black tracking-tighter">
-                  <AnimatedCounter value={current.challenges_completed} />
+            <div className="space-y-10">
+              <Trophy className={cn("w-24 h-24 mx-auto transition-all duration-700", stage >= 2 ? "text-yellow-400 animate-bounce-in" : "text-white/10")} />
+              <div className={cn("space-y-4", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                <p className="text-2xl font-black italic px-4">
+                  Vocês cresceram juntos, <br/>
+                  desafio por desafio ✨
                 </p>
-                <h2 className="text-2xl font-black italic delay-300 animate-fade-slide-up">Vocês cresceram juntos ✨</h2>
-                <p className="text-sm text-white/40 delay-450 animate-fade-slide-up">Desafios concluídos em equipa.</p>
+                {stage >= 2 && (
+                  <p className="text-7xl font-black tracking-tighter delay-300 animate-fade-scale-in">
+                    <AnimatedCounter value={current.challenges_completed} />
+                  </p>
+                )}
               </div>
             </div>
           )}
 
+          {/* SLIDE 6: PHOTO (KEN BURNS) */}
           {currentSlide === 6 && (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4">
+            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center overflow-hidden">
               {lastPhoto ? (
-                <div className="relative group w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 animate-fade-scale-in">
-                  <img src={lastPhoto} className="w-full h-full object-cover" alt="Momento especial" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-8 text-left">
-                    <p className="text-2xl font-black italic drop-shadow-lg">Momentos que ficam para sempre 📸</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6 animate-fade-scale-in">
-                  <div className="w-64 h-80 rounded-[3rem] bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-primary/10 animate-pulse-soft" />
-                    <Camera className="w-16 h-16 text-white/20 relative z-10" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xl font-bold italic leading-tight">
-                      Os melhores momentos nem sempre precisam de foto… <br/>
-                      <span className="text-primary">mas vocês viveram-nos 💛</span>
+                <>
+                  <img 
+                    src={lastPhoto} 
+                    className="absolute inset-0 w-full h-full object-cover animate-ken-burns opacity-60" 
+                    alt="Momento" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-[107]" />
+                  <div className="relative z-[108] p-10 space-y-4 scale-95">
+                    <p className={cn("text-3xl font-black italic leading-tight drop-shadow-2xl transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                      Momentos que ficam <br/>para sempre 📸
                     </p>
+                    <p className={cn("text-lg font-medium text-primary shadow-black drop-shadow-md transition-all duration-1000", stage >= 2 ? "animate-fade-slide-up" : "opacity-0")}>
+                      Vivido em equipa.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="p-10 space-y-8">
+                  <div className={cn("transition-all duration-1500 px-6", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                    <p className="text-2xl font-bold italic leading-relaxed text-white/50">
+                      "Nem todos os momentos foram registados..."
+                    </p>
+                  </div>
+                  <div className={cn("transition-all duration-1000", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
+                    <p className="text-3xl font-black italic text-primary">
+                      mas foram vividos 💛
+                    </p>
+                    <div className="mt-8 opacity-20"><Camera className="w-16 h-16 mx-auto" /></div>
                   </div>
                 </div>
               )}
             </div>
           )}
 
+          {/* SLIDE 7: CLIMAX 1 */}
           {currentSlide === 7 && (
-            <div className="space-y-8 px-4 animate-fade-scale-in">
+            <div className="space-y-6">
               <Heart className="w-20 h-20 mx-auto text-rose-500 fill-rose-500 animate-pulse-glow" />
-              <div className="space-y-10 text-center">
-                <p className="text-3xl font-black leading-relaxed italic drop-shadow-glow">
-                  "Mais do que números... vocês construíram memórias 💛"
-                </p>
-                <p className="text-2xl font-bold text-primary italic delay-600 animate-fade-slide-up">
-                  E o melhor ainda está por vir.
-                </p>
-              </div>
+              <p className={cn("text-3xl font-black italic leading-tight transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                Vocês são mais do que números...
+              </p>
             </div>
           )}
 
+          {/* SLIDE 8: CLIMAX 2 */}
           {currentSlide === 8 && (
-            <div className="space-y-10 animate-in fade-in zoom-in duration-1000">
+            <div className="space-y-6">
+              <Sparkles className="w-16 h-16 text-primary mx-auto animate-pulse-soft" />
+              <p className={cn("text-4xl font-black italic tracking-tighter transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                São história 💛
+              </p>
+            </div>
+          )}
+
+          {/* SLIDE 9: CLIMAX 3 */}
+          {currentSlide === 9 && (
+            <div className="space-y-6">
+              <p className={cn("text-2xl font-medium text-white/60 transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
+                E isto...
+              </p>
+              <h2 className={cn("text-5xl font-black italic text-primary animate-pulse transition-all duration-1000", stage >= 2 ? "animate-text-reveal" : "opacity-0 invisible")}>
+                é só o começo.
+              </h2>
+            </div>
+          )}
+
+          {/* SLIDE 10: FINAL BUTTONS */}
+          {currentSlide === 10 && (
+            <div className="space-y-12 animate-in fade-in zoom-in duration-1000">
               <div className="space-y-6">
-                <Sparkles className="w-16 h-16 text-primary mx-auto animate-pulse-soft" />
-                <h3 className="text-5xl font-black italic tracking-tighter gradient-text drop-shadow-glow">{houseName}</h3>
-                <div className="space-y-4 delay-600 animate-fade-slide-up">
-                   <p className="text-2xl font-medium text-white/80">Vocês são mais do que números...</p>
-                   <p className="text-3xl font-black italic text-primary animate-pulse">são história 💛</p>
+                <div className="bg-primary/10 h-24 w-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-glow">
+                  <Sparkles className="w-12 h-12 text-primary animate-pulse-soft" />
                 </div>
+                <h3 className="text-5xl font-black italic tracking-tighter gradient-text drop-shadow-glow">{houseName}</h3>
+                <p className="text-sm font-black uppercase tracking-[0.4em] text-white/30">O vosso refúgio ✨</p>
               </div>
               
-              <div className="space-y-4 pt-10 px-4 delay-1000 animate-fade-slide-up pointer-events-auto">
+              <div className="space-y-4 pt-4 px-4 pointer-events-auto">
                 <Button 
                    onClick={() => {
-                    const text = `💕 Nosso LoveWrapped em ${houseName}: 🔥 ${current.streak_days} de streak e 💬 ${current.messages_count} mensagens! #LoveNest`;
+                    const monthName = MONTH_NAMES[current.month];
+                    const shareText = `O nosso mês no LoveNest 💛\n\n🏠 ${houseName}\n🔥 ${current.streak_days} dias de Streak\n💬 ${current.messages_count} mensagens trocadas\n\n${partner1Name && partner1Name + ' & '}Parceiro(a) estão a construir história! ✨`;
+                    
                     if (navigator.share) {
-                      navigator.share({ title: "LoveWrapped", text, url: window.location.href });
+                      navigator.share({ 
+                        title: `LoveWrapped: ${monthName} ${current.year}`, 
+                        text: shareText, 
+                        url: window.location.origin 
+                      }).catch(() => {});
                     } else {
-                      navigator.clipboard.writeText(text);
-                      toast({ title: "Copiado!" });
+                      navigator.clipboard.writeText(shareText);
+                      toast({ title: "Resumo copiado!", description: "Agora podes partilhar nas redes sociais! 🚀" });
                     }
                   }}
-                  className="w-full bg-primary text-white hover:bg-primary/90 font-black py-8 rounded-[2rem] shadow-glow text-lg active:scale-95 transition-all animate-bounce-in pointer-events-auto"
+                  className="w-full bg-primary text-white hover:bg-primary/90 font-black py-8 rounded-[2rem] shadow-glow text-lg active:scale-95 transition-all animate-bounce-in flex items-center justify-center group"
                 >
-                  <Share2 className="mr-2 h-6 w-6" /> Partilhar o nosso mês 💛
+                  <Share2 className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" /> Partilhar o mês 💛
                 </Button>
                 <Button 
                   variant="ghost" 
                   onClick={() => setMode('list')}
-                  className="text-white/40 font-bold hover:text-white pointer-events-auto"
+                  className="text-white/40 font-bold hover:text-white"
                 >
                   Sair do Wrapped
                 </Button>
