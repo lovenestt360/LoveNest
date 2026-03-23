@@ -202,6 +202,16 @@ export function useLoveStreak() {
     ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) > 1
     : false;
 
+  // CRITICAL FIX: Only trust interaction booleans if interaction_date matches today.
+  // If the interaction_date is from a previous day, the booleans are stale and mean nothing.
+  const interactionIsToday = data?.interaction_date === todayStr;
+  const p1Today = interactionIsToday ? !!data?.partner1_interacted_today : false;
+  const p2Today = interactionIsToday ? !!data?.partner2_interacted_today : false;
+
+  const meInteractedToday = isPartner1 ? p1Today : p2Today;
+  const partnerInteractedToday = isPartner1 ? p2Today : p1Today;
+  const bothInteractedToday = p1Today && p2Today;
+
   return {
     data,
     loading,
@@ -209,8 +219,12 @@ export function useLoveStreak() {
     streakIncreased,
     recordInteraction,
     useShield,
-    buyShield, // Added
+    buyShield,
     canUseShield,
     reload: load,
+    // Computed, date-validated interaction status
+    meInteractedToday,
+    partnerInteractedToday,
+    bothInteractedToday,
   };
 }

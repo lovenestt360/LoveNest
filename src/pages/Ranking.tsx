@@ -30,7 +30,7 @@ export default function Ranking() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, buyShield, isPartner1 } = useLoveStreak();
+  const { data: streakData, buyShield, meInteractedToday: meInteracted, partnerInteractedToday: partnerInteracted } = useLoveStreak();
   const { 
     challenges, 
     completions, 
@@ -109,8 +109,7 @@ export default function Ranking() {
     }
   }, [activeTab]);
 
-  const meInteracted = isPartner1 ? streakData?.partner1_interacted_today : streakData?.partner2_interacted_today;
-  const partnerInteracted = isPartner1 ? streakData?.partner2_interacted_today : streakData?.partner1_interacted_today;
+
 
   useEffect(() => {
     if (spaceId) {

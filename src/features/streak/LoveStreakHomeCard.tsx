@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function LoveStreakHomeCard() {
-  const { data, loading, streakIncreased, canUseShield, useShield, isPartner1 } = useLoveStreak();
+  const { data, loading, streakIncreased, canUseShield, useShield, meInteractedToday, partnerInteractedToday, bothInteractedToday } = useLoveStreak();
   const { challenges, completions, partnerCompletions } = useDailyChallenge();
   const challenge = challenges[0];
   const completed = challenge ? completions[challenge.id] : false;
@@ -17,7 +17,6 @@ export function LoveStreakHomeCard() {
 
   const level = getStreakLevel(data.current_streak);
   const nextLevel = getNextLevel(data.current_streak);
-  const bothToday = data.partner1_interacted_today && data.partner2_interacted_today;
 
   return (
     <div className="space-y-3">
@@ -73,7 +72,7 @@ export function LoveStreakHomeCard() {
             <div className="flex items-center gap-2.5">
               <div className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-xl",
-                bothToday ? "bg-orange-500/20 text-orange-500 animate-pulse-glow" : "bg-orange-500/10 text-orange-400 animate-streak-shake"
+                bothInteractedToday ? "bg-orange-500/20 text-orange-500 animate-pulse-glow" : "bg-orange-500/10 text-orange-400 animate-streak-shake"
               )}>
                 <Flame className="h-5 w-5" />
               </div>
@@ -102,32 +101,23 @@ export function LoveStreakHomeCard() {
 
           {/* Today status */}
           <div className="flex items-center gap-3 text-xs">
-            {(() => {
-              const meInteracted = isPartner1 ? data.partner1_interacted_today : data.partner2_interacted_today;
-              const partnerInteracted = isPartner1 ? data.partner2_interacted_today : data.partner1_interacted_today;
-              
-              return (
-                <>
-                  <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-                    meInteracted
-                      ? "bg-green-500/15 text-green-700"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {meInteracted ? "✓" : "○"} Tu
-                  </div>
-                  <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-                    partnerInteracted
-                      ? "bg-green-500/15 text-green-700"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {partnerInteracted ? "✓" : "○"} Par
-                  </div>
-                </>
-              );
-            })()}
-            {bothToday ? (
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+              meInteractedToday
+                ? "bg-green-500/15 text-green-700"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {meInteractedToday ? "✓" : "○"} Tu
+            </div>
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+              partnerInteractedToday
+                ? "bg-green-500/15 text-green-700"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {partnerInteractedToday ? "✓" : "○"} Par
+            </div>
+            {bothInteractedToday ? (
               <span className="text-green-600 font-bold flex items-center gap-1 animate-fade-slide-up">
                 <Sparkles className="w-3 h-3" /> Vocês apareceram um para o outro hoje 💛
               </span>
