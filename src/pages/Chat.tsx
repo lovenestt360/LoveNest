@@ -8,6 +8,7 @@ import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
+import { useLoveEngine } from "@/hooks/useLoveEngine";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -319,7 +320,7 @@ export default function Chat() {
   const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
-  const { recordInteraction } = useLoveStreak();
+  const { emitEvent } = useLoveEngine();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const [openSettings, setOpenSettings] = useState(false);
@@ -508,8 +509,8 @@ export default function Chat() {
         return;
       }
 
-      // Record interaction for LoveStreak (all messages count now)
-      recordInteraction("chat_message");
+      // Record interaction for Love Engine (message event with length)
+      emitEvent("message", { length: text.length });
 
       // Notify partner
       let body = text;
@@ -551,8 +552,8 @@ export default function Chat() {
 
       if (insertError) throw insertError;
 
-      // Interaction for LoveStreak
-      recordInteraction("chat_message");
+      // Interaction for Love Engine
+      emitEvent("message", { length: "Só para te lembrar que te amo 💛".length });
 
       // Notify partner
       notifyPartner({

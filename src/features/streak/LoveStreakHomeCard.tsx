@@ -166,32 +166,58 @@ export function LoveStreakHomeCard() {
       {/* Daily Challenge Card */}
       {challenge && (
         <div 
-          className="glass-card rounded-2xl p-4 space-y-2 cursor-pointer hover:bg-muted/10 transition-colors"
-          onClick={() => navigate("/ranking?tab=tasks")}
+          className="glass-card rounded-2xl p-4 space-y-3 relative overflow-hidden group shadow-sm"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5" /> Criem um momento juntos hoje 📸✨
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5 opacity-80">
+              <Trophy className="w-3 h-3" /> Missão do Dia
             </span>
-            <span className="text-xs font-bold text-primary">+{challenge.points} pts</span>
+            <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">+{challenge.points} pts</span>
           </div>
-          <p className="text-sm font-medium text-foreground">
-            {challenge.emoji} {challenge.challenge_text}
-          </p>
-          <div className="flex items-center gap-2 text-xs">
-            <span className={cn(
-              "px-2 py-0.5 rounded-full font-bold",
-              completed ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
-            )}>
-              {completed ? "✓ Tu" : "○ Tu"}
-            </span>
-            <span className={cn(
-              "px-2 py-0.5 rounded-full font-bold",
-              partnerCompleted ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
-            )}>
-              {partnerCompleted ? "✓ Par" : "○ Par"}
-            </span>
+          
+          <div className="flex gap-3 items-start">
+            <div className="text-2xl bg-muted/30 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/20">
+              {challenge.emoji} 
+            </div>
+            <div className="flex-1">
+              <p className="text-[15px] font-black text-foreground leading-tight tracking-tight">
+                {challenge.challenge_text}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full font-black border",
+                  completed ? "bg-green-500/15 text-green-700 border-green-500/20" : "bg-muted text-muted-foreground border-transparent"
+                )}>
+                  {completed ? "✓ Tu" : "○ Tu"}
+                </span>
+                <span className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full font-black border",
+                  partnerCompleted ? "bg-green-500/15 text-green-700 border-green-500/20" : "bg-muted text-muted-foreground border-transparent"
+                )}>
+                  {partnerCompleted ? "✓ Par" : "○ Par"}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {!completed && (
+            <Button 
+              size="sm" 
+              className="w-full bg-primary text-primary-foreground font-black text-xs rounded-xl h-9 shadow-lg shadow-primary/20 active:scale-95 transition-all mt-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                const type = challenge.challenge_type;
+                if (type === 'message') navigate("/chat");
+                else if (type === 'task') navigate("/tarefas");
+                else if (type === 'memory') navigate("/memorias");
+                else if (type === 'mood') navigate("/humor");
+                else if (type === 'prayer') navigate("/oracao");
+                else navigate("/ranking?tab=tasks");
+              }}
+            >
+              Cumprir Missão <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          )}
         </div>
       )}
     </div>

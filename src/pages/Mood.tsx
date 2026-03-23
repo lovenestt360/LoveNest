@@ -6,6 +6,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
+import { useLoveEngine } from "@/hooks/useLoveEngine";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
 import { MoodCheckin } from "@/features/mood/types";
@@ -22,7 +23,7 @@ export default function Mood() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
-  const { recordInteraction } = useLoveStreak();
+  const { emitEvent } = useLoveEngine();
   const navigate = useNavigate();
 
   const [partnerRespondedToday, setPartnerRespondedToday] = useState(false);
@@ -133,8 +134,8 @@ export default function Mood() {
       if (data) setExistingId(data.id);
     }
 
-    // Record interaction for LoveStreak
-    recordInteraction("mood_update");
+    // Record interaction for Love Engine
+    emitEvent("mood", { mood_key: moodKey, mood_percent: moodPercent });
 
     setSaving(false);
     loadData();

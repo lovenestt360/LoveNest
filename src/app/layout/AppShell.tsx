@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomTabs } from "@/app/layout/BottomTabs";
 import { Fab } from "@/app/layout/Fab";
@@ -6,11 +7,17 @@ import { WifiOff } from "lucide-react";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
+import { useLoveEngine } from "@/hooks/useLoveEngine";
 
 export function AppShell() {
   const isOnline = useOnlineStatus();
   const location = useLocation();
   const isChat = location.pathname === "/chat";
+  const { emitEvent } = useLoveEngine();
+
+  useEffect(() => {
+    emitEvent("app_open");
+  }, [emitEvent]);
 
   return (
     <div className={cn(

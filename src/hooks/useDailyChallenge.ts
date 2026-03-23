@@ -74,21 +74,24 @@ export function useDailyChallenge() {
 
   useEffect(() => {
     load();
-  }, [load]);
+    
+    if (!spaceId) return;
 
-  const completeChallenge = useCallback(async (challengeId: string) => {
-    if (!spaceId || !user) return;
+    // Realtime subscription for completions
+    const channel = supabase
+      .channel("micro-completions")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "micro_challenge_completions",
+        filter: `couple_space_id=eq.${spaceId}`,
+      }, () => {
+        load();
+      })
+      .subscribe();
 
-    await supabase.from("micro_challenge_completions").upsert({
-      couple_space_id: spaceId,
-      challenge_id: challengeId,
-      user_id: user.id,
-      day_key: todayStr,
-      completed: true,
-    }, { onConflict: "couple_space_id,challenge_id,user_id,day_key" });
+    return () => { supabase.removeChannel(channel); };
+  }, [load, spaceId]);
 
-    load();
-  }, [spaceId, user, todayStr, load]);
-
-  return { challenges, completions, partnerCompletions, loading, completeChallenge };
+  return { challenges, completions, partnerCompletions, loading, reload: load };
 }

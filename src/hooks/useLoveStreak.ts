@@ -115,107 +115,33 @@ export function useLoveStreak() {
   const recordInteraction = useCallback(async (type: string) => {
     if (!spaceId || !user) return;
 
-    // Insert interaction (ignore duplicates via unique constraint)
-    await supabase.from("daily_interactions").upsert({
-      couple_space_id: spaceId,
-      user_id: user.id,
-      day_key: todayStr,
-      interaction_type: type,
-    }, { onConflict: "couple_space_id,user_id,day_key,interaction_type" });
+    try {
+      // Step 1: Log the interaction in the legacy table (optional, for compatibility)
+      await supabase.from("daily_interactions").upsert({
+        couple_space_id: spaceId,
+        user_id: user.id,
+        day_key: todayStr,
+        interaction_type: type,
+      }, { onConflict: "couple_space_id,user_id,day_key,interaction_type" });
 
-    // Get members to determine partner1 vs partner2
-    const { data: members } = await supabase
-      .from("members")
-      .select("user_id")
-      .eq("couple_space_id", spaceId)
-      .order("joined_at");
+      // Step 2: Emit the modern Love Event that triggers the Love Engine
+      let eventType = 'app_open';
+      if (type.includes('chat')) eventType = 'message';
+      else if (type.includes('task')) eventType = 'task';
+      else if (type.includes('memory')) eventType = 'memory';
+      else if (type.includes('mood')) eventType = 'mood';
+      else if (type.includes('prayer')) eventType = 'prayer';
 
-    if (!members || members.length < 2) return;
-
-    const isPartner1 = members[0].user_id === user.id;
-    const partnerId = isPartner1 ? members[1].user_id : members[0].user_id;
-
-    // Check if partner has interacted today
-    const { data: partnerInteractions } = await supabase
-      .from("daily_interactions")
-      .select("id")
-      .eq("couple_space_id", spaceId)
-      .eq("user_id", partnerId)
-      .eq("day_key", todayStr)
-      .limit(1);
-
-    const partnerInteracted = (partnerInteractions?.length ?? 0) > 0;
-
-    // Update streak record
-    const { data: current } = await supabase
-      .from("love_streaks")
-      .select("*")
-      .eq("couple_space_id", spaceId)
-      .maybeSingle();
-
-    if (!current) return;
-    const s = current as any as LoveStreakData;
-
-    // Reset monthly shields
-    const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
-    let shieldRemaining = s.shield_remaining;
-    if ((s as any).shield_monthly_reset !== monthStart) {
-      shieldRemaining = 3;
+      await supabase.from("love_events" as any).insert({
+        couple_space_id: spaceId,
+        user_id: user.id,
+        event_type: eventType,
+        metadata: { source: 'useLoveStreak_legacy' },
+        created_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Error in recordInteraction:', err);
     }
-
-    const updates: any = {
-      shield_monthly_reset: monthStart,
-      shield_remaining: shieldRemaining,
-    };
-
-    if (isPartner1) {
-      updates.partner1_interacted_today = true;
-    } else {
-      updates.partner2_interacted_today = true;
-    }
-
-    // If interaction_date is not today, reset both flags
-    if (s.interaction_date !== todayStr) {
-      updates.partner1_interacted_today = isPartner1;
-      updates.partner2_interacted_today = !isPartner1;
-      updates.interaction_date = todayStr;
-    }
-
-    // Check if both interacted now
-    const bothInteracted = isPartner1
-      ? (updates.partner1_interacted_today && (s.interaction_date === todayStr ? s.partner2_interacted_today : false))
-      : ((s.interaction_date === todayStr ? s.partner1_interacted_today : false) && updates.partner2_interacted_today);
-
-    // If both interacted and streak hasn't been counted for today
-    if (bothInteracted && s.last_streak_date !== todayStr) {
-      const lastDate = s.last_streak_date;
-      let newStreak = s.current_streak;
-
-      if (!lastDate) {
-        newStreak = 1;
-      } else {
-        const diff = differenceInDays(
-          new Date(todayStr + "T00:00:00"),
-          new Date(lastDate + "T00:00:00")
-        );
-        if (diff === 1) {
-          newStreak += 1;
-        } else if (diff > 1) {
-          // Streak broken (shield would have been used separately)
-          newStreak = 1;
-        }
-      }
-
-      updates.current_streak = newStreak;
-      updates.best_streak = Math.max(newStreak, s.best_streak);
-      updates.last_streak_date = todayStr;
-      updates.level_title = getStreakLevel(newStreak).title;
-    }
-
-    await supabase
-      .from("love_streaks")
-      .update(updates)
-      .eq("couple_space_id", spaceId);
   }, [spaceId, user, todayStr]);
 
   // Use shield to restore broken streak
