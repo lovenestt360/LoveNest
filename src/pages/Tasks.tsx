@@ -121,6 +121,9 @@ export default function Tasks() {
         }
         toast({ title: "✅ Tarefa criada!" });
 
+        // Record interaction for Love Engine (Task Created)
+        emitEvent("task", { title: values.title, action: "created" });
+
         // Push notification for new task assigned to partner
         if (spaceId) {
           notifyPartner({
@@ -151,9 +154,9 @@ export default function Tasks() {
       done_at: newStatus === "done" ? new Date().toISOString() : null,
     }).eq("id", task.id);
 
-    // Record interaction for Love Engine
+    // Record interaction for Love Engine (Task Completed)
     if (newStatus === "done") {
-      emitEvent("task", { title: task.title, task_id: task.id });
+      emitEvent("task", { title: task.title, action: "completed", task_id: task.id });
     }
 
     // Notify partner when task completed
