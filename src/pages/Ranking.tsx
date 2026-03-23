@@ -35,8 +35,8 @@ export default function Ranking() {
     challenges, 
     completions, 
     partnerCompletions, 
-    loading: challengesLoading, 
-    completeChallenge: handleCompleteChallenge 
+    loading: challengesLoading,
+    reload: reloadChallenges
   } = useDailyChallenge();
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
@@ -164,36 +164,36 @@ export default function Ranking() {
   return (
     <section className="min-h-screen bg-transparent pb-24 animate-fade-in max-w-md mx-auto px-4 pt-4 space-y-6">
       {/* Tab Navigation */}
-      <div className="flex p-1 bg-muted/50 backdrop-blur-sm rounded-2xl border border-border/50 sticky top-4 z-50">
+      <div className="flex p-1.5 bg-white/20 backdrop-blur-xl rounded-[2rem] border border-white/30 sticky top-4 z-[100] shadow-2xl">
         <button
           onClick={() => setSearchParams({ tab: "tasks" })}
           className={cn(
-            "flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all duration-300",
-            activeTab === "tasks" ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-background/20"
+            "flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-[1.5rem] transition-all duration-300",
+            activeTab === "tasks" ? "bg-primary text-white shadow-xl scale-105" : "text-white/70 hover:text-white hover:bg-white/10"
           )}
         >
-          <LayoutList className="w-4 h-4 mb-1" />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Tarefas</span>
+          <LayoutList className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-black uppercase tracking-tight">Missões</span>
         </button>
         <button
           onClick={() => setSearchParams({ tab: "streak" })}
           className={cn(
-            "flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all duration-300",
-            activeTab === "streak" ? "bg-background text-orange-500 shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-background/20"
+            "flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-[1.5rem] transition-all duration-300",
+            activeTab === "streak" ? "bg-orange-500 text-white shadow-xl scale-105" : "text-white/70 hover:text-white hover:bg-white/10"
           )}
         >
-          <Flame className="w-4 h-4 mb-1" />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Love Streak</span>
+          <Flame className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-black uppercase tracking-tight">Streak</span>
         </button>
         <button
           onClick={() => setSearchParams({ tab: "points" })}
           className={cn(
-            "flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all duration-300",
-            activeTab === "points" ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-background/20"
+            "flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-[1.5rem] transition-all duration-300",
+            activeTab === "points" ? "bg-yellow-500 text-white shadow-xl scale-105" : "text-white/70 hover:text-white hover:bg-white/10"
           )}
         >
-          <Trophy className="w-4 h-4 mb-1" />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Pontos</span>
+          <Trophy className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-black uppercase tracking-tight">Ranking</span>
         </button>
       </div>
 
@@ -215,43 +215,43 @@ export default function Ranking() {
                   <Flame className="w-4 h-4" /> Tarefas Love Streak
                 </div>
                 <div className="grid gap-3">
-                  <div className="glass-card rounded-2xl p-4 border-orange-500/10 bg-orange-500/[0.02] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-[2rem] p-5 text-white shadow-lg border-none">
+                    <div className="flex items-center gap-4">
                       <div className={cn(
-                        "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                        "h-12 w-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500",
                         meInteracted 
-                          ? "bg-green-500/20 border-green-500 text-green-600" 
-                          : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
+                          ? "bg-white/20 border-white text-white" 
+                          : "bg-black/20 border-white/30 text-white/50"
                       )}>
-                        {meInteracted ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
+                        {meInteracted ? <Check className="w-6 h-6" /> : <div className="w-3 h-3 rounded-full bg-current" />}
                       </div>
                       <div className="flex-1">
-                        <p className={cn("font-bold text-sm", meInteracted ? "text-foreground" : "text-muted-foreground")}>
+                        <p className="font-black text-lg tracking-tight">
                           {avatars.me?.displayName || "Tu"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                          {meInteracted ? "Interagiu ✨" : "Pendente ⏳"}
+                        <p className="text-[10px] text-white/80 uppercase tracking-widest font-black">
+                          {meInteracted ? "Já Interagiu ✨" : "Pendente hoje ⏳"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="glass-card rounded-2xl p-4 border-orange-500/10 bg-orange-500/[0.02] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-[2rem] p-5 text-white shadow-lg border-none">
+                    <div className="flex items-center gap-4">
                       <div className={cn(
-                        "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                        "h-12 w-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500",
                         partnerInteracted 
-                          ? "bg-green-500/20 border-green-500 text-green-600" 
-                          : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
+                          ? "bg-white/20 border-white text-white" 
+                          : "bg-black/20 border-white/30 text-white/50"
                       )}>
-                        {partnerInteracted ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
+                        {partnerInteracted ? <Check className="w-6 h-6" /> : <div className="w-3 h-3 rounded-full bg-current" />}
                       </div>
                       <div className="flex-1">
-                        <p className={cn("font-bold text-sm", partnerInteracted ? "text-foreground" : "text-muted-foreground")}>
+                        <p className="font-black text-lg tracking-tight">
                           {avatars.partner?.displayName || "Parceiro"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                          {partnerInteracted ? "Interagiu ✨" : "Pendente ⏳"}
+                        <p className="text-[10px] text-white/80 uppercase tracking-widest font-black">
+                          {partnerInteracted ? "Já Interagiu ✨" : "Pendente hoje ⏳"}
                         </p>
                       </div>
                     </div>
@@ -261,52 +261,68 @@ export default function Ranking() {
 
               {/* Tarefas de Pontos */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#EAB308]">
                   <Star className="w-4 h-4" /> Missões Diárias (+ Pontos)
                 </div>
                 <div className="grid gap-4">
-                  {challenges.map((ch) => (
-                    <div key={ch.id} className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4 relative overflow-hidden">
+                  {challenges.map((ch, i) => (
+                    <div key={ch.id} className={cn(
+                      "rounded-[2.5rem] p-6 text-white shadow-xl relative overflow-hidden border-none",
+                      i % 3 === 0 ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20" : 
+                      i % 3 === 1 ? "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/20" : 
+                      "bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-purple-500/20"
+                    )}>
                       {completions[ch.id] && (
-                        <div className="absolute top-0 right-0 p-2 text-green-500 animate-in fade-in zoom-in duration-300">
-                          <Check className="w-5 h-5" />
+                        <div className="absolute top-0 right-0 p-4 text-white animate-in fade-in zoom-in duration-300">
+                          <Check className="w-6 h-6" />
                         </div>
                       )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold">{ch.emoji} {ch.challenge_text}</span>
-                        <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{ch.points} PTS</span>
+                      
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="text-3xl bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center">
+                            {ch.emoji}
+                          </div>
+                          <div>
+                            <span className="text-lg font-black tracking-tight leading-tight block">{ch.challenge_text}</span>
+                            <span className="text-[10px] font-black bg-white/20 px-2.5 py-1 rounded-full uppercase tracking-widest mt-1 inline-block">+{ch.points} PTS</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        {!completions[ch.id] && getChallengeUrl(ch.challenge_type) && (
-                          <Button 
-                            variant="outline"
-                            className="flex-1 h-11 font-black border-primary/20 hover:bg-primary/5"
-                            onClick={() => {
-                              setAttemptedChallenges(prev => ({ ...prev, [ch.id]: true }));
-                              navigate(getChallengeUrl(ch.challenge_type)!);
-                            }}
-                          >
-                            Ir para a Missão 🚀
-                          </Button>
-                        )}
-                        <Button 
-                          className={cn(
-                            "h-11 font-black shadow-lg", 
-                            completions[ch.id] ? "flex-1 bg-green-500/20 text-green-500 shadow-none border-green-500/20" : 
-                            (getChallengeUrl(ch.challenge_type) && !attemptedChallenges[ch.id] ? "w-1/3 opacity-50" : "flex-1 shadow-primary/20")
+
+                      <div className="flex flex-col gap-3">
+                        <div className="flex gap-2">
+                          {completions[ch.id] ? (
+                            <div className="flex-1 h-12 bg-white/20 rounded-2xl flex items-center justify-center font-black text-xs gap-2">
+                               Missão Cumprida! ✨
+                            </div>
+                          ) : (
+                            <>
+                              {getChallengeUrl(ch.challenge_type) && (
+                                <Button 
+                                  variant="outline"
+                                  className="flex-1 h-12 font-black rounded-2xl bg-white text-emerald-600 border-none hover:bg-white/90"
+                                  onClick={() => navigate(getChallengeUrl(ch.challenge_type)!)}
+                                >
+                                  Ir para a Missão 🚀
+                                </Button>
+                              )}
+                              <div className="flex-1 h-12 bg-black/10 border border-white/20 rounded-2xl flex flex-col items-center justify-center">
+                                 <p className="text-[8px] font-black uppercase tracking-tighter opacity-70">Sistema Inteligente</p>
+                                 <p className="text-[10px] font-bold">Auto-conclusão ⚡</p>
+                              </div>
+                            </>
                           )}
-                          onClick={() => handleCompleteChallenge(ch.id)}
-                          disabled={completions[ch.id]}
-                          variant={completions[ch.id] ? "outline" : "default"}
-                        >
-                          {completions[ch.id] ? "Missão Cumprida! ✨" : "Concluir Missão"}
-                        </Button>
+                        </div>
+                        
+                        {partnerCompletions[ch.id] && (
+                          <div className="bg-white/10 p-2 rounded-xl text-center">
+                            <p className="text-[10px] text-white/80 font-bold italic">
+                              Seu par já completou esta tarefa! 🙌
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      {partnerCompletions[ch.id] && (
-                        <p className="text-[10px] text-center text-muted-foreground italic">
-                          O teu parceiro já completou esta tarefa! 🙌
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>
