@@ -18,36 +18,37 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
     <button
       onClick={() => navigate(to)}
       className={cn(
-        "glass-card glass-card-hover group relative flex flex-col gap-3 rounded-[2.5rem] p-6 text-left w-full active:scale-[0.96] transition-all duration-300",
+        "glass-card glass-card-hover group relative flex flex-col gap-2 rounded-[2rem] p-5 text-left w-full active:scale-[0.96] transition-all duration-300",
         className
       )}
     >
-      <div className="flex items-center justify-between min-h-[44px]">
+      <div className="flex items-center justify-between">
         <div className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105",
-          accent ? "bg-white/5" : "bg-primary/5 text-primary"
+          "flex h-11 w-11 items-center justify-center rounded-[1.25rem] transition-transform duration-300 group-hover:scale-110 shadow-sm",
+          accent ?? "bg-primary/10 text-primary"
         )}>
-          <div className={cn("opacity-60 grayscale-[40%] group-hover:grayscale-0 transition-all", accent)}>
-            {icon}
-          </div>
+          {icon}
         </div>
         {(typeof badge === 'number' ? badge > 0 : !!badge) && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/20 px-1.5 text-[10px] font-black text-primary shadow-sm">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-black text-destructive-foreground shadow-lg animate-in zoom-in duration-300">
             {typeof badge === 'number' && badge > 99 ? "99+" : badge}
           </span>
         )}
       </div>
 
-      <div className="space-y-1 mt-1">
-        <span className="text-sm font-black text-foreground block tracking-tight">{title}</span>
+      <div className="space-y-0.5 mt-1">
+        <span className="text-[15px] font-bold text-foreground block tracking-tight">{title}</span>
         <div className="space-y-0.5">
           {lines.map((line, i) => (
-            <p key={i} className="text-[10px] text-muted-foreground/40 leading-none font-black uppercase tracking-wider line-clamp-1">
+            <p key={i} className="text-[11px] text-muted-foreground leading-tight font-bold line-clamp-1">
               {line}
             </p>
           ))}
         </div>
       </div>
+
+      {/* Subtle border shine effect */}
+      <div className="absolute inset-0 rounded-[2rem] border border-white/20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </button>
   );
 }
