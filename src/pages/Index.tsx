@@ -583,7 +583,8 @@ const Index = () => {
             ]}
             to="/tarefas"
             badge={tasksUnread}
-            accent="bg-emerald-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-emerald-500/20 shadow-xl"
           />
           <DashCard
             icon={<Smile className="h-5 w-5" />}
@@ -594,7 +595,8 @@ const Index = () => {
             ]}
             to="/humor"
             badge={moodUnread}
-            accent="bg-orange-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-orange-500 to-amber-600 text-white border-none shadow-orange-500/20 shadow-xl"
           />
           <DashCard
             icon={<Camera className="h-5 w-5" />}
@@ -605,7 +607,8 @@ const Index = () => {
             ]}
             to="/memorias"
             badge={memoriesUnread}
-            accent="bg-blue-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white border-none shadow-blue-500/20 shadow-xl"
           />
           <DashCard
             icon={<CalendarDays className="h-5 w-5" />}
@@ -616,7 +619,8 @@ const Index = () => {
             ]}
             to="/agenda"
             badge={scheduleUnread}
-            accent="bg-purple-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white border-none shadow-purple-500/20 shadow-xl"
           />
         </div>
       </div>
@@ -632,7 +636,8 @@ const Index = () => {
             title="Desafios"
             lines={["Concluir Desafios", "Ganhar Pontos 🎯"]}
             to="/desafios"
-            accent="bg-yellow-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-yellow-500 to-orange-400 text-white border-none shadow-yellow-500/20 shadow-xl"
           />
           <DashCard
             icon={<Sparkles className="h-5 w-5" />}
@@ -640,7 +645,8 @@ const Index = () => {
             lines={["Resumo Mensal", "Revive memórias"]}
             to="/wrapped"
             badge={hasWrapped ? "Novo" : 0}
-            accent="bg-pink-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-pink-500 to-rose-600 text-white border-none shadow-pink-500/20 shadow-xl"
           />
           <DashCard
             icon={<BookHeart className="h-5 w-5" />}
@@ -651,14 +657,16 @@ const Index = () => {
             ]}
             to="/oracao"
             badge={prayerUnread}
-            accent="bg-amber-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-none shadow-amber-500/20 shadow-xl"
           />
           <DashCard
             icon={<Clock className="h-5 w-5" />}
             title="Cápsula"
             lines={["Mensagens 🔒", "Futuro Amor"]}
             to="/capsula"
-            accent="bg-cyan-500 text-white"
+            accent="bg-white/20 text-white"
+            className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-none shadow-cyan-500/20 shadow-xl"
           />
         </div>
 
@@ -679,6 +687,12 @@ const Index = () => {
           >
             Partilhar
           </button>
+        </div>
+
+        {/* Version Marker for Deploy Verification */}
+        <div className="py-8 flex flex-col items-center justify-center opacity-30 gap-1">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em]">LoveNest v2.0</span>
+          <span className="text-[8px] font-bold italic">Love Engine Ativo & Colorido</span>
         </div>
       </div>
     </section>

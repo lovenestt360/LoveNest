@@ -51,24 +51,24 @@ input, textarea, [contenteditable="true"] {
     --popover: 0 0% 100%;
     --popover-foreground: 250 20% 15%;
 
-    --primary: 345 60% 65%;
+    --primary: 345 100% 60%; /* More vibrant pink */
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 345 40% 97%;
-    --secondary-foreground: 345 60% 40%;
-
-    --muted: 230 15% 96%;
-    --muted-foreground: 230 10% 42%;
-
-    --accent: 345 60% 65%;
+ 
+    --secondary: 250 100% 98%;
+    --secondary-foreground: 345 80% 45%;
+ 
+    --muted: 230 20% 96%;
+    --muted-foreground: 230 15% 40%;
+ 
+    --accent: 345 100% 60%;
     --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
+ 
+    --destructive: 0 100% 50%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 345 20% 90%;
-    --input: 345 20% 90%;
-    --ring: 345 60% 65%;
+ 
+    --border: 345 30% 92%;
+    --input: 345 30% 92%;
+    --ring: 345 100% 60%;
 
     --radius: 1.5rem;
 
@@ -77,12 +77,12 @@ input, textarea, [contenteditable="true"] {
     --shadow-md: 0 12px 30px -8px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 30px 60px -15px rgba(0, 0, 0, 0.15);
 
-    /* Calming Rose gradients */
-    --gradient-primary: linear-gradient(135deg, #fda4af, #fb7185, #f43f5e);
-    --gradient-premium: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.3));
-    --gradient-surface: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
-    --gradient-glow: 0 8px 32px -4px rgba(244, 63, 94, 0.2);
-    --gradient-gold: linear-gradient(135deg, #fbbf24, #f59e0b);
+    /* Vibrant Rainbow gradients */
+    --gradient-primary: linear-gradient(135deg, #ff5e78, #ff2d55, #d91b42);
+    --gradient-premium: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+    --gradient-surface: linear-gradient(145deg, #ffffff, #fdf4f5);
+    --gradient-glow: 0 12px 40px -6px rgba(255, 45, 85, 0.4);
+    --gradient-gold: linear-gradient(135deg, #ffcc33, #ff9900);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 345 20% 20%;
@@ -173,7 +173,8 @@ input, textarea, [contenteditable="true"] {
   }
 
   .apple-dock {
-    @apply glass-card fixed bottom-6 left-4 right-4 h-16 rounded-[2rem] flex items-center justify-around px-4 border border-white/20 shadow-2xl z-50;
+    @apply fixed bottom-0 left-0 right-0 h-20 flex items-center justify-around px-6 z-[100] border-t border-border/50 bg-white/95 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)];
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
   }
 
   .glow-primary {
