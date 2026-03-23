@@ -14,6 +14,7 @@ import { format, startOfDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { TaskDialog, type TaskFormValues } from "@/features/tasks/TaskDialog";
 import { toast } from "@/hooks/use-toast";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface Task {
   id: string;
@@ -209,7 +210,8 @@ export default function Tasks() {
   };
 
   return (
-    <section className="space-y-4 pb-4">
+    <ErrorBoundary>
+      <section className="space-y-4 pb-4">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Tarefas</h1>
@@ -308,5 +310,6 @@ export default function Tasks() {
         userId={user?.id ?? ""}
       />
     </section>
+    </ErrorBoundary>
   );
 }

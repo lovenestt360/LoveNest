@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface RankEntry {
   couple_space_id: string;
@@ -154,7 +155,8 @@ export default function Ranking() {
   };
 
   return (
-    <section className="min-h-screen bg-transparent pb-24 animate-fade-in max-w-md mx-auto px-4 pt-4 space-y-6">
+    <ErrorBoundary>
+      <section className="min-h-screen bg-transparent pb-24 animate-fade-in max-w-md mx-auto px-4 pt-4 space-y-6">
       {/* Tab Navigation */}
       <div className="flex p-1 bg-muted/50 backdrop-blur-sm rounded-2xl border border-border/50 sticky top-4 z-50">
         <button
@@ -529,5 +531,6 @@ export default function Ranking() {
 
       </div>
     </section>
+    </ErrorBoundary>
   );
 }
