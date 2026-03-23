@@ -7,17 +7,20 @@ CREATE TABLE IF NOT EXISTS public.love_events (
     user_id UUID NOT NULL REFERENCES auth.users(id),
     couple_space_id UUID NOT NULL REFERENCES public.couple_spaces(id),
     event_type TEXT NOT NULL, -- 'message', 'task', 'memory', 'mood', 'app_open'
-    metadata JSONB DEFAULT '{}'::jsonb, -- e.g., { "length": 15, "task_id": "..." }
+    metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Enable RLS for love_events
 ALTER TABLE public.love_events ENABLE ROW LEVEL SECURITY;
 
+-- SAFE POLICY CREATION
+DROP POLICY IF EXISTS "Users can insert their own events" ON public.love_events;
 CREATE POLICY "Users can insert their own events" 
 ON public.love_events FOR INSERT 
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Couples can see each other's events" ON public.love_events;
 CREATE POLICY "Couples can see each other's events" 
 ON public.love_events FOR SELECT 
 USING (
@@ -41,6 +44,7 @@ CREATE TABLE IF NOT EXISTS public.streak_daily_logs (
 -- Enable RLS for streak_daily_logs
 ALTER TABLE public.streak_daily_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Couples can view daily logs" ON public.streak_daily_logs;
 CREATE POLICY "Couples can view daily logs" 
 ON public.streak_daily_logs FOR SELECT 
 USING (couple_space_id IN (SELECT id FROM couple_spaces));
