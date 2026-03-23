@@ -6,6 +6,7 @@ import { WifiOff } from "lucide-react";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
+import { ChatWallpaper } from "@/features/chat/components/ChatWallpaper";
 
 function PageTransition({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -26,6 +27,9 @@ export function AppShell() {
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
       isChat ? "bg-transparent" : "bg-background"
     )}>
+      {/* Global Chat Wallpaper (Fixed, outside transitions) */}
+      <ChatWallpaper />
+
       {/* Dynamic Background Mesh */}
       <div className="bg-mesh" aria-hidden="true" />
 
@@ -37,7 +41,10 @@ export function AppShell() {
         </div>
       )}
 
-      <main className="mx-auto w-full max-w-md px-4 pb-32 pt-6 relative z-10">
+      <main className={cn(
+        "mx-auto w-full max-w-md relative z-10",
+        isChat ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-6"
+      )}>
         <PageTransition>
           <Outlet />
         </PageTransition>

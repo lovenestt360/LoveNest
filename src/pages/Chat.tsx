@@ -641,36 +641,37 @@ export default function Chat() {
   }, [messages]);
 
   return (
-    <section className="relative flex flex-col overflow-hidden" style={{ height: "calc(100dvh - 7rem)" }}>
-
-      {/* ── Wallpaper (fixed, behind messages) ── */}
-      {wallpaperUrl && (
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-background">
-          <img 
-            src={wallpaperUrl} 
-            alt="Chat Wallpaper" 
-            className="h-full w-full object-cover" 
-            style={{ opacity: wallpaperOpacity }}
-          />
-        </div>
-      )}
+    <section className="relative flex flex-col overflow-hidden h-[100dvh]">
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 flex items-center justify-between px-3 pt-3 pb-1">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-background/30 backdrop-blur-md flex items-center justify-center shadow-sm">
-            <span className="text-base">💬</span>
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase">Chat</h1>
-            <div className="flex items-center gap-1.5 -mt-0.5">
-              <span className="text-sm font-black text-foreground/90 truncate max-w-[120px]">
-                {partner?.display_name || "Amor"}
-              </span>
-              {partner?.verification_status === 'verified' && (
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/10" />
-              )}
+      <header className="relative z-20 shrink-0 px-4 pt-4 pb-2 bg-background/40 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-primary/20 backdrop-blur-lg flex items-center justify-center shadow-inner border border-white/20">
+              <span className="text-xl">💬</span>
             </div>
+            <div className="min-w-0">
+              <h1 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/80 uppercase mb-0.5">Chat</h1>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-black text-foreground truncate max-w-[150px]">
+                  {partner?.display_name || "Amor"}
+                </span>
+                {partner?.verification_status === 'verified' && (
+                  <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/20" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-foreground hover:bg-white/20 transition-all active:scale-90"
+              onClick={() => setOpenSettings(true)}
+            >
+              <Palette className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </header>
@@ -682,7 +683,7 @@ export default function Chat() {
 
       {/* ── Messages area ── */}
       <div className="flex-1 relative z-10 overflow-y-auto px-2 select-none" style={{ scrollbarWidth: "none" }}>
-        <div className="flex flex-col gap-1.5 py-4 pb-28 min-h-full justify-end">
+        <div className="flex flex-col gap-1.5 py-4 pb-44 min-h-full justify-end">
           {hasMore && (
             <div className="flex justify-center py-2">
               <Button variant="secondary" size="sm" className="rounded-full shadow-sm" onClick={loadMore} disabled={loadingMore}>
@@ -753,7 +754,7 @@ export default function Chat() {
       )}
 
       {/* ── Bottom bar area (Floating Pill) ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-50 px-2 pb-2 pt-2 pointer-events-none">
+      <div className="absolute bottom-20 left-0 right-0 z-50 px-2 pb-2 pt-2 pointer-events-none">
         <div className="mx-auto max-w-lg bg-background/80 backdrop-blur-xl border border-white/20 shadow-lg p-1 rounded-full pointer-events-auto">
           {/* Edit overlay */}
           {editingMsg && (
