@@ -12,9 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import {
   Send,
   Loader2,
@@ -323,19 +320,8 @@ export default function Chat() {
   const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
-  const [openSettings, setOpenSettings] = useState(false);
-  const [tempWallpaperUrl, setTempWallpaperUrl] = useState("");
-  const [tempOpacity, setTempOpacity] = useState(30);
-
   const { partner, loading: loadingPartner } = usePartnerProfile();
 
-  // Sync temp state when opening dialog
-  useEffect(() => {
-    if (openSettings) {
-      setTempWallpaperUrl(wallpaperUrl || "");
-      setTempOpacity(wallpaperOpacity * 100);
-    }
-  }, [openSettings, wallpaperUrl, wallpaperOpacity]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -679,7 +665,7 @@ export default function Chat() {
               variant="ghost"
               size="icon"
               className="h-10 w-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-foreground hover:bg-white/20 transition-all active:scale-90"
-              onClick={() => setOpenSettings(true)}
+              onClick={() => navigate("/configuracoes#customization")}
             >
               <Palette className="h-5 w-5" />
             </Button>
