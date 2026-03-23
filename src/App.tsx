@@ -16,6 +16,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
 import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -138,9 +139,11 @@ const App = () => (
           <AuthProvider>
             <PWATutorialProvider>
               <AppNotifProvider>
-                <Suspense fallback={<PageLoader />}>
-                  <AppRoutes />
-                </Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <AppRoutes />
+                  </Suspense>
+                </ErrorBoundary>
               </AppNotifProvider>
               <PWAInstallButton />
               <PWATutorialModal />
