@@ -634,12 +634,21 @@ export default function Settings() {
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
                 <div className="flex items-center justify-between"><div><h3 className="font-bold">Notificações Push</h3><p className="text-xs text-muted-foreground">Alertas no telemóvel.</p></div>{pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}</div>
-                {pushSubscribed ? (
+                {pushPermission === "unsupported" ? (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    <p className="text-[11px] text-amber-700 font-medium leading-tight">
+                      As notificações não são suportadas neste navegador. 
+                      No iPhone, usa o botão "Partilhar" e escolhe <b>"Adicionar ao Ecrã Inicial"</b> para ativar. ✨
+                    </p>
+                  </div>
+                ) : pushSubscribed ? (
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading}>Desativar</Button>
                     <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading}>Testar</Button>
                   </div>
-                ) : <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-bold glow-primary">Ativar</Button>}
+                ) : (
+                  <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-bold glow-primary">Ativar</Button>
+                )}
               </div>
               <div className="glass-card p-6 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
