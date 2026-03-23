@@ -53,14 +53,6 @@ function PageLoader() {
   );
 }
 
-function PageTransition({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  return (
-    <div key={location.pathname} className="animate-fade-slide-up w-full min-h-screen">
-      {children}
-    </div>
-  );
-}
 
 const AppRoutes = () => (
   <Routes>
@@ -148,9 +140,7 @@ const App = () => (
             <PWATutorialProvider>
               <AppNotifProvider>
                 <Suspense fallback={<PageLoader />}>
-                  <PageTransition>
                     <AppRoutes />
-                  </PageTransition>
                 </Suspense>
               </AppNotifProvider>
               <PWAInstallButton />
