@@ -36,7 +36,7 @@ export function AppShell() {
       )}
 
       <main className="mx-auto w-full max-w-md px-4 pb-32 pt-6 relative z-10">
-        <div key={location.pathname} className="animate-fade-slide-up w-full min-h-screen">
+        <div key={location.pathname} className="w-full min-h-screen">
           <Outlet />
         </div>
       </main>

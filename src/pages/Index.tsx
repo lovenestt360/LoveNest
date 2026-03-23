@@ -583,7 +583,7 @@ const Index = () => {
             ]}
             to="/tarefas"
             badge={tasksUnread}
-            accent="bg-emerald-500/10 text-emerald-600"
+            accent="bg-emerald-500 text-white"
           />
           <DashCard
             icon={<Smile className="h-5 w-5" />}
@@ -594,7 +594,7 @@ const Index = () => {
             ]}
             to="/humor"
             badge={moodUnread}
-            accent="bg-orange-500/10 text-orange-600"
+            accent="bg-orange-500 text-white"
           />
           <DashCard
             icon={<Camera className="h-5 w-5" />}
@@ -605,7 +605,7 @@ const Index = () => {
             ]}
             to="/memorias"
             badge={memoriesUnread}
-            accent="bg-blue-500/10 text-blue-600"
+            accent="bg-blue-500 text-white"
           />
           <DashCard
             icon={<CalendarDays className="h-5 w-5" />}
@@ -616,7 +616,7 @@ const Index = () => {
             ]}
             to="/agenda"
             badge={scheduleUnread}
-            accent="bg-purple-500/10 text-purple-600"
+            accent="bg-purple-500 text-white"
           />
         </div>
       </div>
@@ -632,7 +632,7 @@ const Index = () => {
             title="Desafios"
             lines={["Concluir Desafios", "Ganhar Pontos 🎯"]}
             to="/desafios"
-            accent="bg-yellow-500/10 text-yellow-600"
+            accent="bg-yellow-500 text-white"
           />
           <DashCard
             icon={<Sparkles className="h-5 w-5" />}
@@ -640,7 +640,7 @@ const Index = () => {
             lines={["Resumo Mensal", "Revive memórias"]}
             to="/wrapped"
             badge={hasWrapped ? "Novo" : 0}
-            accent="bg-pink-500/10 text-pink-500"
+            accent="bg-pink-500 text-white"
           />
           <DashCard
             icon={<BookHeart className="h-5 w-5" />}
@@ -651,14 +651,14 @@ const Index = () => {
             ]}
             to="/oracao"
             badge={prayerUnread}
-            accent="bg-amber-500/10 text-amber-600"
+            accent="bg-amber-500 text-white"
           />
           <DashCard
             icon={<Clock className="h-5 w-5" />}
             title="Cápsula"
             lines={["Mensagens 🔒", "Futuro Amor"]}
             to="/capsula"
-            accent="bg-cyan-500/10 text-cyan-600"
+            accent="bg-cyan-500 text-white"
           />
         </div>
 
