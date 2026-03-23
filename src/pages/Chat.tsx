@@ -32,7 +32,8 @@ import {
   Settings,
   Palette,
   ShieldCheck,
-  Heart
+  Heart,
+  ChevronLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -646,10 +647,19 @@ export default function Chat() {
       {/* ── Header ── */}
       <header className="relative z-20 shrink-0 px-4 pt-4 pb-2 bg-background/40 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-primary/20 backdrop-blur-lg flex items-center justify-center shadow-inner border border-white/20">
-              <span className="text-xl">💬</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 rounded-2xl mr-1 hover:bg-white/10" 
+              onClick={() => navigate("/")}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-primary/20 backdrop-blur-lg flex items-center justify-center shadow-inner border border-white/20">
+                <span className="text-xl">💬</span>
+              </div>
             <div className="min-w-0">
               <h1 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/80 uppercase mb-0.5">Chat</h1>
               <div className="flex items-center gap-2">
@@ -662,6 +672,7 @@ export default function Chat() {
               </div>
             </div>
           </div>
+        </div>
 
           <div className="flex items-center gap-2">
             <Button
@@ -683,7 +694,7 @@ export default function Chat() {
 
       {/* ── Messages area ── */}
       <div className="flex-1 relative z-10 overflow-y-auto px-2 select-none" style={{ scrollbarWidth: "none" }}>
-        <div className="flex flex-col gap-1.5 py-4 pb-44 min-h-full justify-end">
+        <div className="flex flex-col gap-1.5 py-4 pb-32 min-h-full justify-end">
           {hasMore && (
             <div className="flex justify-center py-2">
               <Button variant="secondary" size="sm" className="rounded-full shadow-sm" onClick={loadMore} disabled={loadingMore}>
@@ -754,7 +765,7 @@ export default function Chat() {
       )}
 
       {/* ── Bottom bar area (Floating Pill) ── */}
-      <div className="absolute bottom-20 left-0 right-0 z-50 px-2 pb-2 pt-2 pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 z-50 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <div className="mx-auto max-w-lg bg-background/80 backdrop-blur-xl border border-white/20 shadow-lg p-1 rounded-full pointer-events-auto">
           {/* Edit overlay */}
           {editingMsg && (

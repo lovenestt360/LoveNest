@@ -50,8 +50,8 @@ export function AppShell() {
         </PageTransition>
       </main>
 
-      <Fab />
-      <BottomTabs />
+      {!isChat && <Fab />}
+      {!isChat && <BottomTabs />}
       
       {/* System Components */}
       <OnboardingWizard />
