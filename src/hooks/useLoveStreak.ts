@@ -197,10 +197,13 @@ export function useLoveStreak() {
     return false;
   }, [spaceId, data, load]);
 
-  // Check if streak is broken and can be restored
-  const canUseShield = data && data.shield_remaining > 0 && data.last_streak_date
-    ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) > 1
-    : false;
+  // Show shield alert only when exactly yesterday was missed (gap === 2 from today).
+  // If gap > 2, the streak is already too stale — the shield wouldn't help.
+  // If gap <= 1, the streak is still valid — no need for a shield.
+  const daysSinceLastStreak = data && data.last_streak_date
+    ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00"))
+    : 0;
+  const canUseShield = !!(data && data.shield_remaining > 0 && data.current_streak > 0 && daysSinceLastStreak === 2);
 
   // CRITICAL FIX: Only trust interaction booleans if interaction_date matches today.
   // If the interaction_date is from a previous day, the booleans are stale and mean nothing.
