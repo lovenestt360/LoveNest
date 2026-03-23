@@ -148,7 +148,10 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (!("Notification" in window) || !("PushManager" in window)) {
+    const isNotificationSupported = typeof Notification !== "undefined";
+    const isPushSupported = "PushManager" in window;
+
+    if (!isNotificationSupported || !isPushSupported) {
       setPushPermission("unsupported");
     } else {
       setPushPermission(Notification.permission);
@@ -402,6 +405,9 @@ export default function Settings() {
     if (!user || !spaceId) return;
     setPushLoading(true);
     try {
+      if (typeof Notification === "undefined") {
+        throw new Error("API de Notificações não suportada neste dispositivo.");
+      }
       const permission = await Notification.requestPermission();
       setPushPermission(permission);
       if (permission === "granted") {
