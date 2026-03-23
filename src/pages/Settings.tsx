@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles } from "lucide-react";
 import { VerificationSection } from "@/features/verification/VerificationSection";
 import {
   Select,
@@ -117,6 +117,12 @@ export default function Settings() {
   const [dbSubscription, setDbSubscription] = useState<any>(null);
   const [debugLogs, setDebugLogs] = useState<any[]>([]);
   const [showDebug, setShowDebug] = useState(false);
+  
+  // Smart Notifications State
+  const [smartSettings, setSmartSettings] = useState<any[]>([]);
+  const [preferredHour, setPreferredHour] = useState(10);
+  const [savingSmart, setSavingSmart] = useState(false);
+
   const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'notifications' | 'customization' | 'verification' | 'data'>('menu');
 
   const copyToClipboard = async (text: string, message: string) => {
@@ -228,6 +234,22 @@ export default function Settings() {
         setAvatarUrl(data.avatar_url);
         setReferralCode(data.referral_code ?? "");
       }
+      
+      // Load Smart Notif Settings
+      const { data: sNotifs } = await supabase
+        .from("notification_settings" as any)
+        .select("*")
+        .eq("user_id", user.id);
+      
+      if (sNotifs && sNotifs.length > 0) {
+        setSmartSettings(sNotifs);
+        setPreferredHour(sNotifs[0].preferred_hour);
+      } else {
+        // Initialize default categories if none exist
+        const defaultCats = ['engagement', 'emotion', 'partner', 'system'];
+        setSmartSettings(defaultCats.map(c => ({ category: c, enabled: true })));
+      }
+
       if (spaceId) {
         const { data: spaceData } = await supabase.from("couple_spaces").select("*").eq("id", spaceId).maybeSingle();
         if (spaceData) {
@@ -303,6 +325,68 @@ export default function Settings() {
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const toggleSmartNotif = async (category: string) => {
+    if (!user) return;
+    const existing = smartSettings.find(s => s.category === category);
+    const newState = existing ? !existing.enabled : false;
+
+    // Optimistic update
+    setSmartSettings(prev => {
+      const idx = prev.findIndex(s => s.category === category);
+      if (idx > -1) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], enabled: newState };
+        return next;
+      }
+      return [...prev, { category, enabled: newState }];
+    });
+
+    try {
+      await supabase.from("notification_settings" as any).upsert({
+        user_id: user.id,
+        category,
+        enabled: newState,
+        preferred_hour: preferredHour
+      }, { onConflict: 'user_id,category' });
+    } catch (e) {
+      console.error("Error updating smart settings:", e);
+    }
+  };
+
+  const updatePreferredHour = async (hour: string) => {
+    if (!user) return;
+    const h = parseInt(hour);
+    setPreferredHour(h);
+    
+    try {
+      setSavingSmart(true);
+      // Update all categories with the new preferred hour
+      const updates = smartSettings.map(s => ({
+        user_id: user.id,
+        category: s.category,
+        enabled: s.enabled,
+        preferred_hour: h
+      }));
+      
+      if (updates.length > 0) {
+        await supabase.from("notification_settings" as any).upsert(updates, { onConflict: 'user_id,category' });
+      } else {
+        // Just create one to store the hour if nothing exists
+        await supabase.from("notification_settings" as any).upsert({
+          user_id: user.id,
+          category: 'system',
+          enabled: true,
+          preferred_hour: h
+        }, { onConflict: 'user_id,category' });
+      }
+      toast({ title: "Horário atualizado!" });
+    } catch (e) {
+      console.error("Error updating hour:", e);
+    } finally {
+      setSavingSmart(false);
     }
   };
 
@@ -552,7 +636,56 @@ export default function Settings() {
                 ) : <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-bold glow-primary">Ativar</Button>}
               </div>
               <div className="glass-card p-6 space-y-4">
-                <h3 className="font-bold text-sm uppercase text-muted-foreground">Módulos</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-sm uppercase text-primary">Lembretes Inteligentes</h3>
+                </div>
+                
+                <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                  O LoveNest analisa o vosso ritmo para enviar mensagens de carinho, 
+                  incentivos e alertas nos momentos certos. ✨
+                </p>
+
+                <div className="space-y-4 pt-2">
+                  {[
+                    { id: 'engagement', label: 'Interação e Conexão', desc: 'Incentivos quando estão distantes' },
+                    { id: 'emotion', label: 'Cuidado Emocional', desc: 'Lembretes para registar o humor' },
+                    { id: 'partner', label: 'Atividade do Par', desc: 'Saber quando o par está ativo' },
+                    { id: 'system', label: 'Tarefas e Sistema', desc: 'Alertas de tarefas pendentes' }
+                  ].map((cat) => (
+                    <div key={cat.id} className="flex items-center justify-between group">
+                      <div className="space-y-0.5">
+                        <p className="text-[13px] font-bold group-hover:text-primary transition-colors">{cat.label}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium">{cat.desc}</p>
+                      </div>
+                      <Switch 
+                        checked={smartSettings.find(s => s.category === cat.id)?.enabled !== false} 
+                        onCheckedChange={() => toggleSmartNotif(cat.id)} 
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4 border-t border-border/50">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Horário Preferido</Label>
+                  <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
+                    <SelectTrigger className="h-10 bg-white dark:bg-white/5 border-border rounded-xl mt-1">
+                      <SelectValue placeholder="Escolhe uma hora..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[9px] text-muted-foreground italic mt-2">Dica: Escolhe um horário em que costumas estar livre. 💛</p>
+                </div>
+              </div>
+
+              <div className="glass-card p-6 space-y-4">
+                <h3 className="font-bold text-sm uppercase text-muted-foreground">Módulos em Tempo Real</h3>
                 <div className="space-y-3">
                   {Object.entries(notifPrefs).map(([k, v]) => (
                     <div key={k} className="flex items-center justify-between"><span className="text-sm capitalize">{k.replace('_', ' ')}</span><Switch checked={v} onCheckedChange={() => toggleNotif(k)} /></div>
