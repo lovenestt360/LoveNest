@@ -1,23 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { Flame, Shield, Trophy, ArrowRight, Sparkles } from "lucide-react";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
-import { useDailyChallenge } from "@/hooks/useDailyChallenge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function LoveStreakHomeCard() {
-  const { data, loading, streakIncreased, canUseShield, useShield, isPartner1 } = useLoveStreak();
-  const { challenges, completions, partnerCompletions } = useDailyChallenge();
-  const challenge = challenges[0];
-  const completed = challenge ? completions[challenge.id] : false;
-  const partnerCompleted = challenge ? partnerCompletions[challenge.id] : false;
+  const { data, dailyStatus, loading, streakIncreased, canUseShield, useShield, isPartner1 } = useLoveStreak();
   const navigate = useNavigate();
 
   if (loading || !data) return null;
 
   const level = getStreakLevel(data.current_streak);
   const nextLevel = getNextLevel(data.current_streak);
-  const bothToday = data.partner1_interacted_today && data.partner2_interacted_today;
+  const bothToday = dailyStatus?.p1_interacted && dailyStatus?.p2_interacted;
 
   return (
     <div className="space-y-3">
@@ -103,8 +98,8 @@ export function LoveStreakHomeCard() {
           {/* Today status */}
           <div className="flex items-center gap-3 text-xs">
             {(() => {
-              const meInteracted = isPartner1 ? data.partner1_interacted_today : data.partner2_interacted_today;
-              const partnerInteracted = isPartner1 ? data.partner2_interacted_today : data.partner1_interacted_today;
+              const meInteracted = isPartner1 ? dailyStatus?.p1_interacted : dailyStatus?.p2_interacted;
+              const partnerInteracted = isPartner1 ? dailyStatus?.p2_interacted : dailyStatus?.p1_interacted;
               
               return (
                 <>
@@ -163,34 +158,51 @@ export function LoveStreakHomeCard() {
         </div>
       </button>
 
-      {/* Daily Challenge Card */}
-      {challenge && (
+      {/* Daily Love Mission Card */}
+      {dailyStatus && (
         <div 
           className="glass-card rounded-2xl p-4 space-y-2 cursor-pointer hover:bg-muted/10 transition-colors"
           onClick={() => navigate("/ranking?tab=tasks")}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5" /> Criem um momento juntos hoje 📸✨
+              <Trophy className="w-3.5 h-3.5" /> MISSÃO DO DIA 📸✨
             </span>
-            <span className="text-xs font-bold text-primary">+{challenge.points} pts</span>
+            <span className="text-xs font-bold text-primary">+{dailyStatus.mission_points} pts</span>
           </div>
           <p className="text-sm font-medium text-foreground">
-            {challenge.emoji} {challenge.challenge_text}
+            {dailyStatus.mission_emoji} {dailyStatus.mission_title}
           </p>
-          <div className="flex items-center gap-2 text-xs">
-            <span className={cn(
-              "px-2 py-0.5 rounded-full font-bold",
-              completed ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
-            )}>
-              {completed ? "✓ Tu" : "○ Tu"}
-            </span>
-            <span className={cn(
-              "px-2 py-0.5 rounded-full font-bold",
-              partnerCompleted ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
-            )}>
-              {partnerCompleted ? "✓ Par" : "○ Par"}
-            </span>
+          <p className="text-[11px] text-muted-foreground leading-tight italic">
+            {dailyStatus.mission_description}
+          </p>
+          <div className="flex items-center gap-2 text-xs pt-1">
+            {(() => {
+              const meMission = isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2;
+              const partnerMission = isPartner1 ? dailyStatus.is_completed_p2 : dailyStatus.is_completed_p1;
+              
+              return (
+                <>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full font-bold",
+                    meMission ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
+                  )}>
+                    {meMission ? "✓ Tu" : "○ Tu"}
+                  </span>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full font-bold",
+                    partnerMission ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
+                  )}>
+                    {partnerMission ? "✓ Par" : "○ Par"}
+                  </span>
+                  {meMission && partnerMission && (
+                    <span className="text-[10px] text-primary font-black ml-auto flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> CONCLUÍDA!
+                    </span>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

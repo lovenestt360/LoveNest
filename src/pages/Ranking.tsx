@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
-import { useDailyChallenge } from "@/hooks/useDailyChallenge";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, ShieldCheck, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,14 +29,7 @@ export default function Ranking() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, buyShield, isPartner1 } = useLoveStreak();
-  const { 
-    challenges, 
-    completions, 
-    partnerCompletions, 
-    loading: challengesLoading, 
-    completeChallenge: handleCompleteChallenge 
-  } = useDailyChallenge();
+  const { data: streakData, buyShield, isPartner1, dailyStatus, reload: reloadStreak } = useLoveStreak();
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,8 +101,8 @@ export default function Ranking() {
     }
   }, [activeTab]);
 
-  const meInteracted = isPartner1 ? streakData?.partner1_interacted_today : streakData?.partner2_interacted_today;
-  const partnerInteracted = isPartner1 ? streakData?.partner2_interacted_today : streakData?.partner1_interacted_today;
+  const meInteracted = isPartner1 ? dailyStatus?.p1_interacted : dailyStatus?.p2_interacted;
+  const partnerInteracted = isPartner1 ? dailyStatus?.p2_interacted : dailyStatus?.p1_interacted;
 
   useEffect(() => {
     if (spaceId) {
@@ -259,57 +251,60 @@ export default function Ranking() {
                 </div>
               </div>
 
-              {/* Tarefas de Pontos */}
+              {/* Missão Diária (v3) */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-                  <Star className="w-4 h-4" /> Missões Diárias (+ Pontos)
+                  <Star className="w-4 h-4" /> Missão do Dia (+ Pontos)
                 </div>
-                <div className="grid gap-4">
-                  {challenges.map((ch) => (
-                    <div key={ch.id} className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4 relative overflow-hidden">
-                      {completions[ch.id] && (
-                        <div className="absolute top-0 right-0 p-2 text-green-500 animate-in fade-in zoom-in duration-300">
-                          <Check className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold">{ch.emoji} {ch.challenge_text}</span>
-                        <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{ch.points} PTS</span>
-                      </div>
-                      <div className="flex gap-2">
-                        {!completions[ch.id] && getChallengeUrl(ch.challenge_type) && (
-                          <Button 
-                            variant="outline"
-                            className="flex-1 h-11 font-black border-primary/20 hover:bg-primary/5"
-                            onClick={() => {
-                              setAttemptedChallenges(prev => ({ ...prev, [ch.id]: true }));
-                              navigate(getChallengeUrl(ch.challenge_type)!);
-                            }}
-                          >
-                            Ir para a Missão 🚀
-                          </Button>
-                        )}
-                        <Button 
-                          className={cn(
-                            "h-11 font-black shadow-lg", 
-                            completions[ch.id] ? "flex-1 bg-green-500/20 text-green-500 shadow-none border-green-500/20" : 
-                            (getChallengeUrl(ch.challenge_type) && !attemptedChallenges[ch.id] ? "w-1/3 opacity-50" : "flex-1 shadow-primary/20")
-                          )}
-                          onClick={() => handleCompleteChallenge(ch.id)}
-                          disabled={completions[ch.id]}
-                          variant={completions[ch.id] ? "outline" : "default"}
-                        >
-                          {completions[ch.id] ? "Missão Cumprida! ✨" : "Concluir Missão"}
-                        </Button>
-                      </div>
-                      {partnerCompletions[ch.id] && (
-                        <p className="text-[10px] text-center text-muted-foreground italic">
-                          O teu parceiro já completou esta tarefa! 🙌
-                        </p>
-                      )}
+                
+                {dailyStatus ? (
+                  <div className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold">{dailyStatus.mission_emoji} {dailyStatus.mission_title}</span>
+                      <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{dailyStatus.mission_points} PTS</span>
                     </div>
-                  ))}
-                </div>
+                    
+                    <p className="text-sm text-muted-foreground leading-relaxed italic">
+                      {dailyStatus.mission_description}
+                    </p>
+
+                    <div className="flex gap-2">
+                      {(() => {
+                        const meMission = isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2;
+                        const partnerMission = isPartner1 ? dailyStatus.is_completed_p2 : dailyStatus.is_completed_p1;
+                        
+                        return (
+                          <div className="w-full space-y-3">
+                            <div className="flex gap-2">
+                              <div className={cn(
+                                "flex-1 h-11 rounded-xl flex items-center justify-center font-black text-sm transition-all",
+                                meMission ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-muted text-muted-foreground border border-transparent"
+                              )}>
+                                {meMission ? "✓ Concluíste" : "○ Tua parte"}
+                              </div>
+                              <div className={cn(
+                                "flex-1 h-11 rounded-xl flex items-center justify-center font-black text-sm transition-all",
+                                partnerMission ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-muted text-muted-foreground border border-transparent"
+                              )}>
+                                {partnerMission ? "✓ Par concluiu" : "○ Parte do Par"}
+                              </div>
+                            </div>
+                            
+                            {!meMission && (
+                              <p className="text-[10px] text-center text-primary font-bold animate-pulse">
+                                Completa uma interação relevante para concluir! ✨
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="glass-card rounded-2xl p-8 text-center border-dashed border-2">
+                    <p className="text-sm text-muted-foreground italic">Estamos a preparar a vossa missão de hoje... ✨</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

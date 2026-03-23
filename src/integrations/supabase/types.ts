@@ -210,6 +210,81 @@ export type Database = {
           },
         ]
       }
+      love_missions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          emoji: string
+          id: string
+          points_reward: number
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          emoji?: string
+          id?: string
+          points_reward?: number
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          emoji?: string
+          id?: string
+          points_reward?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      couple_missions: {
+        Row: {
+          couple_space_id: string
+          created_at: string | null
+          day_key: string
+          id: string
+          is_completed_p1: boolean | null
+          is_completed_p2: boolean | null
+          mission_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string | null
+          day_key?: string
+          id?: string
+          is_completed_p1?: boolean | null
+          is_completed_p2?: boolean | null
+          mission_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string | null
+          day_key?: string
+          id?: string
+          is_completed_p1?: boolean | null
+          is_completed_p2?: boolean | null
+          mission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_missions_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "love_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couple_challenges: {
         Row: {
           completed_at: string | null
@@ -1019,8 +1094,6 @@ export type Database = {
           interaction_date: string | null
           last_streak_date: string | null
           level_title: string
-          partner1_interacted_today: boolean
-          partner2_interacted_today: boolean
           shield_monthly_reset: string
           shield_remaining: number
           total_points: number
@@ -1035,10 +1108,9 @@ export type Database = {
           interaction_date?: string | null
           last_streak_date?: string | null
           level_title?: string
-          partner1_interacted_today?: boolean
-          partner2_interacted_today?: boolean
           shield_monthly_reset?: string
           shield_remaining?: number
+          total_points?: number
           updated_at?: string
         }
         Update: {
@@ -1050,10 +1122,9 @@ export type Database = {
           interaction_date?: string | null
           last_streak_date?: string | null
           level_title?: string
-          partner1_interacted_today?: boolean
-          partner2_interacted_today?: boolean
           shield_monthly_reset?: string
           shield_remaining?: number
+          total_points?: number
           updated_at?: string
         }
         Relationships: [
@@ -2015,7 +2086,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_daily_completion: {
+        Row: {
+          couple_space_id: string
+          p1_user_id: string
+          p2_user_id: string
+          p1_interacted: boolean
+          p2_interacted: boolean
+          is_completed_p1: boolean
+          is_completed_p2: boolean
+          mission_title: string | null
+          mission_description: string | null
+          mission_emoji: string | null
+          mission_points: number | null
+          day_complete: boolean
+        }
+        Relationships: []
+      }
     }
     Functions: {
       are_users_in_same_couple_space: {
@@ -2032,6 +2119,10 @@ export type Database = {
       is_member_of_couple_space: {
         Args: { _couple_space_id: string }
         Returns: boolean
+      }
+      sync_streak_v3: {
+        Args: { p_couple_space_id: string }
+        Returns: Json
       }
     }
     Enums: {

@@ -187,7 +187,7 @@ function useMessagePreview() {
 
 function useIntelligentNotifs(spaceId: string | null) {
   const { user } = useAuth();
-  const { data: streakData, isPartner1 } = useLoveStreak();
+  const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
   const lastMsg = useMessagePreview();
   const sentRef = useRef<Set<string>>(new Set());
 
@@ -209,6 +209,20 @@ function useIntelligentNotifs(spaceId: string | null) {
         template_key: "streak_reminder"
       });
       sentRef.current.add("streak_reminder");
+    }
+
+    // 1b. Mission Reminder (if after 17h and mission not done)
+    const meMission = isPartner1 ? dailyStatus?.is_completed_p1 : dailyStatus?.is_completed_p2;
+    if (currentHour >= 17 && !meMission && !sentRef.current.has("mission_reminder")) {
+      notifyPartner({
+        couple_space_id: spaceId,
+        title: "Missão Especial! 📸",
+        body: `Já viste a missão do dia? "${dailyStatus?.mission_title}" ✨`,
+        url: "/tarefas",
+        type: "tarefas",
+        template_key: "mission_reminder"
+      });
+      sentRef.current.add("mission_reminder");
     }
 
     // 2. Chat Inactivity (if last message > 8 hours ago during day)
@@ -341,7 +355,7 @@ const Index = () => {
   const time = useTimeTogether();
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
-  const { data: streakData } = useLoveStreak();
+  const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
   const streak = streakData?.current_streak ?? 0;
   useIntelligentNotifs(useCoupleSpaceId());
 
@@ -578,11 +592,13 @@ const Index = () => {
             icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
             title="Tarefas"
             lines={[
-              tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
+              dailyStatus && !(isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2) 
+                ? "🎯 Missão pendente!" 
+                : tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
               tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
             ]}
             to="/tarefas"
-            badge={tasksUnread}
+            badge={tasksUnread || (dailyStatus && !(isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2) ? 1 : 0)}
             accent="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           />
           <DashCard

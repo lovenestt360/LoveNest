@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, ChevronDown, Trash2, Pencil } from "lucide-react";
+import { Plus, ChevronDown, Trash2, Pencil, Trophy, Sparkles } from "lucide-react";
 import { format, startOfDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { TaskDialog, type TaskFormValues } from "@/features/tasks/TaskDialog";
@@ -32,7 +32,7 @@ interface Task {
 export default function Tasks() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { recordInteraction } = useLoveStreak();
+  const { dailyStatus, isPartner1, reload: reloadStreak } = useLoveStreak();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -129,11 +129,6 @@ export default function Tasks() {
       done_at: newStatus === "done" ? new Date().toISOString() : null,
     }).eq("id", task.id);
 
-    // Record interaction for LoveStreak
-    if (newStatus === "done") {
-      recordInteraction("task_complete");
-    }
-
     // Notify partner when task completed
     if (newStatus === "done" && spaceId) {
       notifyPartner({
@@ -224,6 +219,61 @@ export default function Tasks() {
           <Plus className="mr-1 h-4 w-4" /> Nova
         </Button>
       </header>
+
+      {/* Love Mission Card - High Prominence */}
+      {dailyStatus && (
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4 animate-fade-in shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+              <Trophy className="w-4 h-4" /> MISSÃO DO DIA
+            </span>
+            <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+              +{dailyStatus.mission_points} pts
+            </span>
+          </div>
+          
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <span className="text-2xl">{dailyStatus.mission_emoji}</span>
+              {dailyStatus.mission_title}
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed italic">
+              {dailyStatus.mission_description}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-primary/10">
+            <div className="flex items-center gap-2 text-xs">
+              {(() => {
+                const meMission = isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2;
+                const partnerMission = isPartner1 ? dailyStatus.is_completed_p2 : dailyStatus.is_completed_p1;
+                
+                return (
+                  <>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full font-bold transition-colors",
+                      meMission ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                      {meMission ? "✓ Tu" : "○ Tu"}
+                    </span>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full font-bold transition-colors",
+                      partnerMission ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                      {partnerMission ? "✓ Par" : "○ Par"}
+                    </span>
+                    {meMission && partnerMission && (
+                      <span className="text-xs text-primary font-black flex items-center gap-1.5 ml-2 animate-bounce">
+                        <Sparkles className="w-4 h-4" /> MISSÃO CUMPRIDA!
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {renderSection("Atrasadas", overdueTasks)}

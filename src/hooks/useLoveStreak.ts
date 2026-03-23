@@ -9,11 +9,21 @@ export interface LoveStreakData {
   best_streak: number;
   last_streak_date: string | null;
   shield_remaining: number;
-  partner1_interacted_today: boolean;
-  partner2_interacted_today: boolean;
   interaction_date: string | null;
   level_title: string;
   total_points: number;
+}
+
+export interface DailyCompletion {
+  p1_interacted: boolean;
+  p2_interacted: boolean;
+  is_completed_p1: boolean;
+  is_completed_p2: boolean;
+  mission_title: string | null;
+  mission_description: string | null;
+  mission_emoji: string | null;
+  mission_points: number | null;
+  day_complete: boolean;
 }
 
 const STREAK_LEVELS = [
@@ -43,6 +53,7 @@ export function useLoveStreak() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const [data, setData] = useState<LoveStreakData | null>(null);
+  const [dailyStatus, setDailyStatus] = useState<DailyCompletion | null>(null);
   const [loading, setLoading] = useState(true);
   const [streakIncreased, setStreakIncreased] = useState(false);
   const [isPartner1, setIsPartner1] = useState(true);
@@ -51,25 +62,32 @@ export function useLoveStreak() {
 
   const load = useCallback(async () => {
     if (!spaceId) return;
+    
+    // 1. Sync streak via RPC (Idempotent)
+    const { data: syncResult, error: syncError } = await supabase
+      .rpc('sync_streak_v3', { p_couple_space_id: spaceId });
+    
+    if (syncError) console.error("Error syncing streak:", syncError);
+
+    // 2. Load streak data
     const { data: streak } = await supabase
       .from("love_streaks")
       .select("*")
       .eq("couple_space_id", spaceId)
       .maybeSingle();
 
-    if (streak) {
-      setData(streak as any);
-    } else {
-      // Create initial record
-      const { data: created } = await supabase
-        .from("love_streaks")
-        .insert({ couple_space_id: spaceId })
-        .select()
-        .maybeSingle();
-      if (created) setData(created as any);
-    }
+    if (streak) setData(streak as any);
 
-    // Determine if I am partner 1
+    // 3. Load daily completion (v3 View)
+    const { data: completion } = await supabase
+      .from("v_daily_completion" as any)
+      .select("*")
+      .eq("couple_space_id", spaceId)
+      .maybeSingle();
+    
+    if (completion) setDailyStatus(completion as any);
+
+    // 4. Determine if I am partner 1
     const { data: members } = await supabase
       .from("members")
       .select("user_id")
@@ -107,9 +125,25 @@ export function useLoveStreak() {
           return newData;
         });
       })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "couple_missions",
+        filter: `couple_space_id=eq.${spaceId}`,
+      }, () => {
+        load();
+      })
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "daily_interactions",
+        filter: `couple_space_id=eq.${spaceId}`,
+      }, () => {
+        load();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [spaceId]);
+  }, [spaceId, load]);
 
   // Record an interaction for the current user (Now handled by DB Triggers)
   const recordInteraction = useCallback(async (type: string) => {
@@ -177,12 +211,13 @@ export function useLoveStreak() {
 
   return {
     data,
+    dailyStatus,
     loading,
     isPartner1,
     streakIncreased,
     recordInteraction,
     useShield,
-    buyShield, // Added
+    buyShield, 
     canUseShield,
     reload: load,
   };
