@@ -188,96 +188,82 @@ export default function Admin() {
     }, [adminClient]);
 
     const fetchAllData = async () => {
+        setLoading(true);
+        console.log("Admin: Iniciando carregamento de dados...");
+        
         try {
-            setLoading(true);
+            // 1. Pagamentos
+            const { data: paymentsData } = await adminClient
+                .from("subscription_payments")
+                .select(`
+                    *,
+                    couple_spaces (
+                        house_name,
+                        partner1_name,
+                        partner2_name,
+                        is_suspended,
+                        subscription_status
+                    )
+                `)
+                .order("created_at", { ascending: false });
+            setPayments(paymentsData || []);
 
-            // 1. Payments
-            try {
-                const { data: paymentsData } = await adminClient
-                    .from("payments")
-                    .select(`
-                        *,
-                        couple_spaces (
-                            house_name,
-                            partner1_name,
-                            partner2_name,
-                            is_suspended,
-                            subscription_status
-                        )
-                    `)
-                    .order("created_at", { ascending: false });
-                setPayments(paymentsData || []);
-            } catch (e) {
-                console.error("Error fetching payments:", e);
+            // 2. Casas
+            const { data: housesData } = await adminClient
+                .from("couple_spaces")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            const { data: membersData } = await adminClient
+                .from("members")
+                .select("user_id, couple_space_id");
+
+            if (housesData && membersData) {
+                housesData.forEach((h: any) => {
+                    h.members = membersData
+                        .filter((m: any) => m.couple_space_id === h.id)
+                        .map((m: any) => ({ user_id: m.user_id }));
+                });
             }
+            setHouses(housesData || []);
 
-            // 2. Houses
-            try {
-                const { data: housesData } = await adminClient
-                    .from("couple_spaces")
-                    .select("*")
-                    .order("created_at", { ascending: false });
+            // 3. Perfis
+            const { data: usersData } = await adminClient
+                .from("profiles")
+                .select("*")
+                .order("created_at", { ascending: false });
+            setUsers(usersData || []);
 
-                const { data: membersData } = await adminClient
-                    .from("members")
-                    .select("user_id, couple_space_id");
+            // 4. Anúncios
+            const { data: annData } = await adminClient
+                .from("admin_announcements")
+                .select("*")
+                .order("created_at", { ascending: false });
+            setAnnouncements(annData || []);
 
-                if (housesData && membersData) {
-                    housesData.forEach((h: any) => {
-                        h.members = membersData
-                            .filter((m: any) => m.couple_space_id === h.id)
-                            .map((m: any) => ({ user_id: m.user_id }));
-                    });
-                }
+            // 5. Planos
+            const { data: plansData } = await adminClient
+                .from("subscription_plans")
+                .select("*")
+                .order("created_at", { ascending: false });
+            setPlans(plansData || []);
 
-                setHouses(housesData || []);
-            } catch (e) {
-                console.error("Error fetching houses:", e);
-            }
-
-            // 3. Users profiles
-            try {
-                const { data: usersData } = await adminClient
-                    .from("profiles")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-                setUsers(usersData || []);
-            } catch (e) {
-                console.error("Error fetching users:", e);
-            }
-
-            // 4. Announcements
-            try {
-                const { data: annData } = await adminClient
-                    .from("admin_announcements")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-                setAnnouncements(annData || []);
-            } catch (e) {
-                console.error("Error fetching announcements:", e);
-            }
-
-            // 5. Plans
-            try {
-                const { data: plansData } = await adminClient
-                    .from("subscription_plans")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-                setPlans(plansData || []);
-            } catch (e) {
-                console.error("Error fetching plans:", e);
-            }
-
-            // 6. Payment Settings
-            try {
-                const { data: psData } = await adminClient
-                    .from("payment_settings")
-                    .select("*")
-                    .limit(1)
-                    .maybeSingle();
-
+            // 6. Configurações de Pagamento (app_settings ou payment_settings)
+            // Nota: O código original usava app_settings e payment_settings de forma inconsistente.
+            // Vou tentar buscar de app_settings primeiro, depois de payment_settings.
+            const { data: settingsData } = await adminClient.from("app_settings").select("*");
+            if (settingsData && settingsData.length > 0) {
+                const form: any = { ...settingsForm };
+                settingsData.forEach(s => {
+                    if (form.hasOwnProperty(s.key)) {
+                        form[s.key] = s.value;
+                    }
+                });
+                setSettingsForm(form);
+            } else {
+                // Fallback para payment_settings
+                const { data: psData } = await adminClient.from("payment_settings").select("*").limit(1).maybeSingle();
                 if (psData) {
-                    setPaymentSettings(psData);
                     setSettingsForm({
                         mpesa_number: psData.mpesa_number || "",
                         emola_number: psData.emola_number || "",
@@ -287,50 +273,42 @@ export default function Admin() {
                         whatsapp_message_template: psData.whatsapp_message_template || ""
                     });
                 }
-            } catch (e) {
-                console.error("Error fetching payment settings:", e);
             }
 
             // 7. Streaks
-            try {
-                const { data: streaksData } = await adminClient
-                    .from("love_streaks")
-                    .select("*")
-                    .order("current_streak", { ascending: false });
-                setStreaks(streaksData || []);
-            } catch (e) {
-                console.error("Error fetching streaks:", e);
-            }
+            const { data: streaksData } = await adminClient
+                .from("love_streaks")
+                .select("*")
+                .order("current_streak", { ascending: false });
+            setStreaks(streaksData || []);
 
-            // 8. PWA Settings
+            // 8. PWA Settings (Garded against missing table)
             try {
                 const { data: pwaData, error: pError } = await adminClient
                     .from("pwa_tutorial_settings" as any)
                     .select("*")
                     .maybeSingle();
                 
-                if (pError) console.error("Error fetching PWA settings:", pError);
-                if (pwaData) {
-                    setPwaSettings(pwaData);
-                }
+                if (pError) console.warn("Admin: PWA table error (might be missing)", pError);
+                if (pwaData) setPwaSettings(pwaData);
             } catch (e) {
-                console.error("Error fetching PWA settings exception:", e);
+                console.warn("Admin: PWA fetch exception", e);
             }
 
-            // 9. Verifications
-            try {
-                const { data: verData } = await adminClient
-                    .from("identity_verifications")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-                
-                setVerifications(verData || []);
-            } catch (e) {
-                console.error("Error fetching verifications exception:", e);
-            }
+            // 9. Verificações
+            const { data: verData } = await adminClient
+                .from("identity_verifications")
+                .select("*")
+                .order("created_at", { ascending: false });
+            setVerifications(verData || []);
 
         } catch (error: any) {
-            toast({ title: "Erro de Gestão", description: error.message, variant: "destructive" });
+            console.error("Admin: Erro crítico ao carregar dados", error);
+            toast({ 
+                title: "Erro de Carregamento", 
+                description: error.message || "Não foi possível sincronizar todos os dados.", 
+                variant: "destructive" 
+            });
         } finally {
             setLoading(false);
         }
@@ -1394,8 +1372,8 @@ export default function Admin() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                        {streaks.map((s, i) => {
-                                            const house = houses.find(h => h.id === s.couple_space_id);
+                                        {(streaks || []).map((s, i) => {
+                                            const house = houses?.find(h => h.id === s.couple_space_id);
                                             const medals = ["🥇", "🥈", "🥉"];
                                             return (
                                                 <tr key={s.id} className="hover:bg-muted/30 transition-colors">
@@ -1473,10 +1451,10 @@ export default function Admin() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                        {[...streaks]
+                                        {[...(streaks || [])]
                                             .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
                                             .map((s, i) => {
-                                                const house = houses.find(h => h.id === s.couple_space_id);
+                                                const house = houses?.find(h => h.id === s.couple_space_id);
                                                 const medals = ["🥇", "🥈", "🥉"];
                                                 return (
                                                     <tr key={s.id} className="hover:bg-muted/30 transition-colors">
@@ -1663,7 +1641,7 @@ export default function Admin() {
                                 const processedVerIds = new Set();
 
                                 // 1. Group by known houses
-                                houses.forEach(h => {
+                                (houses || []).forEach(h => {
                                     const houseMembers = h.members || [];
                                     const houseSubmissions = verifications.filter(v => 
                                         houseMembers.some((m: any) => m.user_id === v.user_id)

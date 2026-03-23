@@ -1023,6 +1023,7 @@ export type Database = {
           partner2_interacted_today: boolean
           shield_monthly_reset: string
           shield_remaining: number
+          total_points: number
           updated_at: string
         }
         Insert: {
@@ -1665,6 +1666,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pwa_tutorial_settings: {
+        Row: {
+          android_video_url: string | null
+          created_at: string | null
+          id: string
+          ios_video_url: string | null
+          is_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          android_video_url?: string | null
+          created_at?: string | null
+          id?: string
+          ios_video_url?: string | null
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          android_video_url?: string | null
+          created_at?: string | null
+          id?: string
+          ios_video_url?: string | null
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       referrals: {
         Row: {

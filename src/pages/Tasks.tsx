@@ -5,7 +5,6 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
-import { useLoveEngine } from "@/hooks/useLoveEngine";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +32,7 @@ interface Task {
 export default function Tasks() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { emitEvent } = useLoveEngine();
+  const { recordInteraction } = useLoveStreak();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -76,75 +75,51 @@ export default function Tasks() {
 
   const handleSave = async (values: TaskFormValues) => {
     if (!spaceId || !user) return;
+    const assignedTo = values.assigned === "me" ? user.id : values.assigned === "partner" ? null : null;
     const assignedIsPartner = values.assigned === "partner";
 
-    try {
-      // Resolve partner ID if needed
+    if (editingTask) {
+      // For partner assignment we need partner id
       let partnerAssign: string | null = null;
       if (assignedIsPartner) {
         const { data: members } = await supabase.from("members").select("user_id").eq("couple_space_id", spaceId);
         partnerAssign = members?.find((m) => m.user_id !== user.id)?.user_id ?? null;
       }
-
-      const assignedTo = values.assigned === "me" ? user.id : values.assigned === "partner" ? partnerAssign : null;
-
-      if (editingTask) {
-        const { error } = await supabase.from("tasks").update({
-          title: values.title,
-          notes: values.notes || null,
-          due_date: values.due_date || null,
-          priority: values.priority,
-          assigned_to: assignedTo,
-        }).eq("id", editingTask.id);
-
-        if (error) {
-          console.error("Erro ao atualizar tarefa:", error);
-          toast({ title: "Erro", description: "Não foi possível atualizar a tarefa. Tenta novamente.", variant: "destructive" });
-          return;
-        }
-        toast({ title: "✅ Tarefa atualizada" });
-      } else {
-        const { error } = await supabase.from("tasks").insert({
-          couple_space_id: spaceId,
-          created_by: user.id,
-          assigned_to: assignedTo,
-          title: values.title,
-          notes: values.notes || null,
-          due_date: values.due_date || null,
-          priority: values.priority,
-        });
-
-        if (error) {
-          console.error("Erro ao criar tarefa:", error);
-          toast({ title: "Erro", description: `Não foi possível criar a tarefa: ${error.message}`, variant: "destructive" });
-          return;
-        }
-        toast({ title: "✅ Tarefa criada!" });
-
-        // Record interaction for Love Engine (Task Created)
-        emitEvent("task", { title: values.title, action: "created" });
-
-        // Push notification for new task assigned to partner
-        if (spaceId) {
-          notifyPartner({
-            couple_space_id: spaceId,
-            title: "📋 Nova tarefa",
-            body: values.title.length > 80 ? values.title.slice(0, 80) + "…" : values.title,
-            url: "/tarefas",
-            type: "tarefas",
-          });
-        }
+      await supabase.from("tasks").update({
+        title: values.title,
+        notes: values.notes || null,
+        due_date: values.due_date || null,
+        priority: values.priority,
+        assigned_to: values.assigned === "me" ? user.id : values.assigned === "partner" ? partnerAssign : null,
+      }).eq("id", editingTask.id);
+    } else {
+      let partnerAssign: string | null = null;
+      if (assignedIsPartner) {
+        const { data: members } = await supabase.from("members").select("user_id").eq("couple_space_id", spaceId);
+        partnerAssign = members?.find((m) => m.user_id !== user.id)?.user_id ?? null;
       }
-
-      // Force refresh the list immediately (don't rely only on Realtime)
-      await fetchTasks();
-
-      setEditingTask(null);
-      setDialogOpen(false);
-    } catch (err) {
-      console.error("Erro inesperado:", err);
-      toast({ title: "Erro inesperado", description: "Algo correu mal. Tenta novamente.", variant: "destructive" });
+      await supabase.from("tasks").insert({
+        couple_space_id: spaceId,
+        created_by: user.id,
+        assigned_to: values.assigned === "me" ? user.id : values.assigned === "partner" ? partnerAssign : null,
+        title: values.title,
+        notes: values.notes || null,
+        due_date: values.due_date || null,
+        priority: values.priority,
+      });
     }
+    // Push notification for new task assigned to partner
+    if (!editingTask && spaceId) {
+      notifyPartner({
+        couple_space_id: spaceId,
+        title: "📋 Nova tarefa",
+        body: values.title.length > 80 ? values.title.slice(0, 80) + "…" : values.title,
+        url: "/tarefas",
+        type: "tarefas",
+      });
+    }
+    setEditingTask(null);
+    setDialogOpen(false);
   };
 
   const toggleStatus = async (task: Task) => {
@@ -154,9 +129,9 @@ export default function Tasks() {
       done_at: newStatus === "done" ? new Date().toISOString() : null,
     }).eq("id", task.id);
 
-    // Record interaction for Love Engine (Task Completed)
+    // Record interaction for LoveStreak
     if (newStatus === "done") {
-      emitEvent("task", { title: task.title, action: "completed", task_id: task.id });
+      recordInteraction("task_complete");
     }
 
     // Notify partner when task completed

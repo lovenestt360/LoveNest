@@ -30,13 +30,13 @@ export default function Ranking() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, buyShield, meInteractedToday: meInteracted, partnerInteractedToday: partnerInteracted } = useLoveStreak();
+  const { data: streakData, buyShield, isPartner1 } = useLoveStreak();
   const { 
     challenges, 
     completions, 
     partnerCompletions, 
-    loading: challengesLoading,
-    reload: reloadChallenges
+    loading: challengesLoading, 
+    completeChallenge: handleCompleteChallenge 
   } = useDailyChallenge();
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
@@ -109,7 +109,8 @@ export default function Ranking() {
     }
   }, [activeTab]);
 
-
+  const meInteracted = isPartner1 ? streakData?.partner1_interacted_today : streakData?.partner2_interacted_today;
+  const partnerInteracted = isPartner1 ? streakData?.partner2_interacted_today : streakData?.partner1_interacted_today;
 
   useEffect(() => {
     if (spaceId) {
@@ -260,7 +261,7 @@ export default function Ranking() {
 
               {/* Tarefas de Pontos */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#EAB308]">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
                   <Star className="w-4 h-4" /> Missões Diárias (+ Pontos)
                 </div>
                 <div className="grid gap-4">
@@ -271,43 +272,41 @@ export default function Ranking() {
                           <Check className="w-5 h-5" />
                         </div>
                       )}
-                      
                       <div className="flex items-center justify-between">
                         <span className="text-lg font-bold">{ch.emoji} {ch.challenge_text}</span>
                         <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{ch.points} PTS</span>
                       </div>
-
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          {completions[ch.id] ? (
-                            <div className="flex-1 h-11 bg-green-500/10 text-green-600 rounded-xl flex items-center justify-center font-black text-xs gap-2">
-                               Missão Cumprida! ✨
-                            </div>
-                          ) : (
-                            <>
-                              {getChallengeUrl(ch.challenge_type) && (
-                                <Button 
-                                  variant="outline"
-                                  className="flex-1 h-11 font-black border-primary/20 hover:bg-primary/5"
-                                  onClick={() => navigate(getChallengeUrl(ch.challenge_type)!)}
-                                >
-                                  Ir para a Missão 🚀
-                                </Button>
-                              )}
-                              <div className="flex-1 h-11 bg-muted rounded-xl flex flex-col items-center justify-center">
-                                 <p className="text-[8px] font-black uppercase tracking-tighter opacity-70">Sistema Inteligente</p>
-                                 <p className="text-[10px] font-bold text-muted-foreground">Auto-conclusão ⚡</p>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        
-                        {partnerCompletions[ch.id] && (
-                          <p className="text-[10px] text-center text-muted-foreground italic mt-1">
-                            Seu par já completou esta tarefa! 🙌
-                          </p>
+                      <div className="flex gap-2">
+                        {!completions[ch.id] && getChallengeUrl(ch.challenge_type) && (
+                          <Button 
+                            variant="outline"
+                            className="flex-1 h-11 font-black border-primary/20 hover:bg-primary/5"
+                            onClick={() => {
+                              setAttemptedChallenges(prev => ({ ...prev, [ch.id]: true }));
+                              navigate(getChallengeUrl(ch.challenge_type)!);
+                            }}
+                          >
+                            Ir para a Missão 🚀
+                          </Button>
                         )}
+                        <Button 
+                          className={cn(
+                            "h-11 font-black shadow-lg", 
+                            completions[ch.id] ? "flex-1 bg-green-500/20 text-green-500 shadow-none border-green-500/20" : 
+                            (getChallengeUrl(ch.challenge_type) && !attemptedChallenges[ch.id] ? "w-1/3 opacity-50" : "flex-1 shadow-primary/20")
+                          )}
+                          onClick={() => handleCompleteChallenge(ch.id)}
+                          disabled={completions[ch.id]}
+                          variant={completions[ch.id] ? "outline" : "default"}
+                        >
+                          {completions[ch.id] ? "Missão Cumprida! ✨" : "Concluir Missão"}
+                        </Button>
                       </div>
+                      {partnerCompletions[ch.id] && (
+                        <p className="text-[10px] text-center text-muted-foreground italic">
+                          O teu parceiro já completou esta tarefa! 🙌
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

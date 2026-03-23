@@ -575,7 +575,7 @@ const Index = () => {
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
-            icon={<CheckSquare className="h-5 w-5" />}
+            icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
             title="Tarefas"
             lines={[
               tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
@@ -583,11 +583,10 @@ const Index = () => {
             ]}
             to="/tarefas"
             badge={tasksUnread}
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-emerald-500/20 shadow-xl"
+            accent="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           />
           <DashCard
-            icon={<Smile className="h-5 w-5" />}
+            icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
             title="Humor"
             lines={[
               mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar hoje",
@@ -595,32 +594,29 @@ const Index = () => {
             ]}
             to="/humor"
             badge={moodUnread}
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-orange-500 to-amber-600 text-white border-none shadow-orange-500/20 shadow-xl"
+            accent="bg-orange-500/20 text-orange-600 dark:text-orange-400"
           />
           <DashCard
-            icon={<Camera className="h-5 w-5" />}
+            icon={<Camera className="h-6 w-6 stroke-[2.5]" />}
             title="Memórias"
             lines={[
-              photoCount > 0 ? `${photoCount} fotos` : "Sem fotos",
-              "Novas recordações 📸",
+              photoCount > 0 ? `${photoCount} fotos` : "0 fotos",
+              "Novas recordações 📸"
             ]}
             to="/memorias"
             badge={memoriesUnread}
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white border-none shadow-blue-500/20 shadow-xl"
+            accent="bg-violet-500/20 text-violet-600 dark:text-violet-400"
           />
           <DashCard
-            icon={<CalendarDays className="h-5 w-5" />}
+            icon={<CalendarDays className="h-6 w-6 stroke-[2.5]" />}
             title="Agenda"
             lines={[
               nextEvent ? nextEvent.title : "Sem eventos",
-              nextEvent ? format(new Date(nextEvent.date + "T12:00:00"), "d MMM", { locale: pt }) : "Planear algo 📅",
+              nextEvent ? format(new Date(nextEvent.date), "d 'de' MMM", { locale: pt }) : "Planear algo 🗓️"
             ]}
             to="/agenda"
             badge={scheduleUnread}
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white border-none shadow-purple-500/20 shadow-xl"
+            accent="bg-blue-500/20 text-blue-600 dark:text-blue-400"
           />
         </div>
       </div>
@@ -632,41 +628,37 @@ const Index = () => {
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
-            icon={<Trophy className="h-5 w-5" />}
+            icon={<Trophy className="h-6 w-6 stroke-[2.5]" />}
             title="Desafios"
             lines={["Concluir Desafios", "Ganhar Pontos 🎯"]}
             to="/desafios"
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-yellow-500 to-orange-400 text-white border-none shadow-yellow-500/20 shadow-xl"
+            accent="bg-blue-600/20 text-blue-600 dark:text-blue-400"
           />
           <DashCard
-            icon={<Sparkles className="h-5 w-5" />}
+            icon={<Sparkles className="h-6 w-6 stroke-[2.5]" />}
             title="Wrapped"
             lines={["Resumo Mensal", "Revive memórias"]}
             to="/wrapped"
             badge={hasWrapped ? "Novo" : 0}
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-pink-500 to-rose-600 text-white border-none shadow-pink-500/20 shadow-xl"
+            accent="bg-rose-500/20 text-rose-600 dark:text-rose-400"
           />
           <DashCard
-            icon={<BookHeart className="h-5 w-5" />}
+            icon={<BookHeart className="h-6 w-6 stroke-[2.5]" />}
             title="Oração"
             lines={[
-              prayer.myPrayed ? "Rezei hoje ✓" : "Não rezei",
-              prayer.partnerPrayed ? "Par rezou ✓" : "Par pendente",
+              prayer.myPrayed ? "Tu: Rezei ✨" : "Não rezei",
+              prayer.partnerPrayed ? "Par: Rezo ✨" : "Par pendente",
             ]}
             to="/oracao"
             badge={prayerUnread}
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-none shadow-amber-500/20 shadow-xl"
+            accent="bg-amber-500/20 text-amber-600 dark:text-amber-400"
           />
           <DashCard
-            icon={<Clock className="h-5 w-5" />}
+            icon={<Clock className="h-6 w-6 stroke-[2.5]" />}
             title="Cápsula"
             lines={["Mensagens 🔒", "Futuro Amor"]}
             to="/capsula"
-            accent="bg-white/20 text-white"
-            className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-none shadow-cyan-500/20 shadow-xl"
+            accent="bg-primary/20 text-primary"
           />
         </div>
 
@@ -687,12 +679,6 @@ const Index = () => {
           >
             Partilhar
           </button>
-        </div>
-
-        {/* Version Marker for Deploy Verification */}
-        <div className="py-8 flex flex-col items-center justify-center opacity-30 gap-1">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em]">LoveNest v2.0</span>
-          <span className="text-[8px] font-bold italic">Love Engine Ativo & Colorido</span>
         </div>
       </div>
     </section>

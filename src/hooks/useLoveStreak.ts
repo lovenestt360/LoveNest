@@ -111,38 +111,11 @@ export function useLoveStreak() {
     return () => { supabase.removeChannel(channel); };
   }, [spaceId]);
 
-  // Record an interaction for the current user
+  // Record an interaction for the current user (Now handled by DB Triggers)
   const recordInteraction = useCallback(async (type: string) => {
-    if (!spaceId || !user) return;
-
-    try {
-      // Step 1: Log the interaction in the legacy table (optional, for compatibility)
-      await supabase.from("daily_interactions").upsert({
-        couple_space_id: spaceId,
-        user_id: user.id,
-        day_key: todayStr,
-        interaction_type: type,
-      }, { onConflict: "couple_space_id,user_id,day_key,interaction_type" });
-
-      // Step 2: Emit the modern Love Event that triggers the Love Engine
-      let eventType = 'app_open';
-      if (type.includes('chat')) eventType = 'message';
-      else if (type.includes('task')) eventType = 'task';
-      else if (type.includes('memory')) eventType = 'memory';
-      else if (type.includes('mood')) eventType = 'mood';
-      else if (type.includes('prayer')) eventType = 'prayer';
-
-      await supabase.from("love_events" as any).insert({
-        couple_space_id: spaceId,
-        user_id: user.id,
-        event_type: eventType,
-        metadata: { source: 'useLoveStreak_legacy' },
-        created_at: new Date().toISOString()
-      });
-    } catch (err) {
-      console.error('Error in recordInteraction:', err);
-    }
-  }, [spaceId, user, todayStr]);
+    console.log("Interaction recorded via trigger:", type);
+    // Logic moved to Postgres triggers for stability and atomic updates
+  }, []);
 
   // Use shield to restore broken streak
   const useShield = useCallback(async () => {
@@ -197,26 +170,10 @@ export function useLoveStreak() {
     return false;
   }, [spaceId, data, load]);
 
-  // DEFINITIVE FIX: Shield alert only when streak was truly RESET to 0.
-  // If current_streak > 0, the streak is alive — nothing to restore.
-  const canUseShield = !!(
-    data &&
-    data.current_streak === 0 &&
-    data.best_streak > 0 &&
-    data.shield_remaining > 0 &&
-    data.last_streak_date &&
-    differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) <= 2
-  );
-
-  // CRITICAL FIX: Only trust interaction booleans if interaction_date matches today.
-  // If the interaction_date is from a previous day, the booleans are stale and mean nothing.
-  const interactionIsToday = data?.interaction_date === todayStr;
-  const p1Today = interactionIsToday ? !!data?.partner1_interacted_today : false;
-  const p2Today = interactionIsToday ? !!data?.partner2_interacted_today : false;
-
-  const meInteractedToday = isPartner1 ? p1Today : p2Today;
-  const partnerInteractedToday = isPartner1 ? p2Today : p1Today;
-  const bothInteractedToday = p1Today && p2Today;
+  // Check if streak is broken and can be restored
+  const canUseShield = data && data.shield_remaining > 0 && data.last_streak_date
+    ? differenceInDays(new Date(todayStr + "T00:00:00"), new Date(data.last_streak_date + "T00:00:00")) > 1
+    : false;
 
   return {
     data,
@@ -225,12 +182,8 @@ export function useLoveStreak() {
     streakIncreased,
     recordInteraction,
     useShield,
-    buyShield,
+    buyShield, // Added
     canUseShield,
     reload: load,
-    // Computed, date-validated interaction status
-    meInteractedToday,
-    partnerInteractedToday,
-    bothInteractedToday,
   };
 }
