@@ -7,6 +7,15 @@ import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
 
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="animate-fade-slide-up w-full">
+      {children}
+    </div>
+  );
+}
+
 export function AppShell() {
   const isOnline = useOnlineStatus();
   const location = useLocation();
@@ -29,7 +38,9 @@ export function AppShell() {
       )}
 
       <main className="mx-auto w-full max-w-md px-4 pb-32 pt-6 relative z-10">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
 
       <Fab />
