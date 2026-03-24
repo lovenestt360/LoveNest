@@ -117,6 +117,13 @@ export default function Settings() {
   const [dbSubscription, setDbSubscription] = useState<any>(null);
   const [debugLogs, setDebugLogs] = useState<any[]>([]);
   const [showDebug, setShowDebug] = useState(false);
+  const [hidePushWarning, setHidePushWarning] = useState(() => localStorage.getItem("hide_push_warning") === "true");
+  
+  const toggleHidePushWarning = (val: boolean) => {
+    setHidePushWarning(val);
+    localStorage.setItem("hide_push_warning", String(val));
+    if (val) toast({ title: "Aviso de iOS escondido" });
+  };
   
   // Smart Notifications State
   const [smartSettings, setSmartSettings] = useState<any[]>([]);
@@ -633,16 +640,41 @@ export default function Settings() {
           {currentCategory === 'notifications' && (
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
-                <div className="flex items-center justify-between"><div><h3 className="font-bold">Notificações Push</h3><p className="text-xs text-muted-foreground">Alertas no telemóvel.</p></div>{pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}</div>
-                {pushPermission === "unsupported" ? (
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold">Notificações Push</h3>
+                    <p className="text-xs text-muted-foreground">Alertas no telemóvel.</p>
+                  </div>
+                  {pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}
+                </div>
+                {pushPermission === "unsupported" && !hidePushWarning ? (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 relative">
                     <p className="text-[11px] text-amber-900 font-bold leading-tight mb-1">
                       ⚠️ O teu iPhone precisa do iOS 16.4 ou superior.
                     </p>
-                    <p className="text-[11px] text-amber-700 font-medium leading-tight">
+                    <p className="text-[11px] text-amber-700 font-medium leading-tight pr-8">
                       A Apple só libertou as notificações para apps instaladas (PWA) no <b>iOS 16.4</b>. 
                       Atualiza o teu iPhone nas Definições do sistema para ativares esta funcionalidade! ✨
                     </p>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-6 w-6 text-amber-900/50 hover:text-amber-900 hover:bg-amber-500/20 rounded-full"
+                      onClick={() => toggleHidePushWarning(true)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : pushPermission === "unsupported" && hidePushWarning ? (
+                  <div className="flex items-center justify-between group">
+                    <div className="space-y-0.5">
+                      <p className="text-[13px] font-bold">Mostrar aviso de suporte iOS</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">Reativar o alerta de versão 16.4+</p>
+                    </div>
+                    <Switch 
+                      checked={!hidePushWarning} 
+                      onCheckedChange={(checked) => toggleHidePushWarning(!checked)} 
+                    />
                   </div>
                 ) : pushSubscribed ? (
                   <div className="grid grid-cols-2 gap-2">
@@ -713,7 +745,7 @@ export default function Settings() {
               <Button variant="ghost" size="sm" className="w-full text-[9px] opacity-10" onClick={() => setShowDebug(!showDebug)}>{showDebug ? "Fechar Logs" : "Abrir Logs"}</Button>
               {showDebug && (
                 <div className="p-4 bg-zinc-900 rounded-xl overflow-hidden shadow-2xl animate-in zoom-in-95">
-                  <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-mono text-zinc-500">SYSTEM_LOGS</span><Button onClick={handlePingRaw} size="xs" className="h-6">Ping</Button></div>
+                  <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-mono text-zinc-500">SYSTEM_LOGS</span><Button onClick={handlePingRaw} size="sm" className="h-6">Ping</Button></div>
                   <div className="max-h-60 overflow-y-auto font-mono text-[9px] text-zinc-400 space-y-1">
                     {debugLogs.map((log, i) => <div key={i} className="border-b border-zinc-800 pb-1">[{new Date(log.created_at).toLocaleTimeString()}] {log.event_type}</div>)}
                   </div>
