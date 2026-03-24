@@ -198,8 +198,8 @@ export default function Ranking() {
         {activeTab === "tasks" && (
           <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
             <header className="space-y-1">
-              <h2 className="text-2xl font-black tracking-tight">Suas Missões</h2>
-              <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest text-[#EAB308]">Pequenas ações criam grandes relações 💛</p>
+              <h2 className="text-2xl font-black tracking-tight text-primary">Love Streak</h2>
+              <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Atividade do Casal & Missões Diárias 💛</p>
             </header>
 
             <div className="space-y-6">
