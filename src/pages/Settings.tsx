@@ -637,8 +637,8 @@ export default function Settings() {
                 {pushPermission === "unsupported" ? (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
                     <p className="text-[11px] text-amber-700 font-medium leading-tight">
-                      As notificações não são suportadas neste navegador. 
-                      No iPhone, usa o botão "Partilhar" e escolhe <b>"Adicionar ao Ecrã Inicial"</b> para ativar. ✨
+                      As notificações ainda não aparecem como suportadas (N: {String(typeof Notification !== "undefined")}, P: {String("PushManager" in window)}). 
+                      No iPhone, usa o botão "Partilhar" e escolhe <b>"Adicionar ao Ecrã Inicial"</b>. ✨
                     </p>
                   </div>
                 ) : pushSubscribed ? (
