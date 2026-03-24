@@ -15,6 +15,7 @@ import { pt } from "date-fns/locale";
 import { TaskDialog, type TaskFormValues } from "@/features/tasks/TaskDialog";
 import { toast } from "@/hooks/use-toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
