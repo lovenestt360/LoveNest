@@ -636,9 +636,12 @@ export default function Settings() {
                 <div className="flex items-center justify-between"><div><h3 className="font-bold">Notificações Push</h3><p className="text-xs text-muted-foreground">Alertas no telemóvel.</p></div>{pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}</div>
                 {pushPermission === "unsupported" ? (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    <p className="text-[11px] text-amber-900 font-bold leading-tight mb-1">
+                      ⚠️ O teu iPhone precisa do iOS 16.4 ou superior.
+                    </p>
                     <p className="text-[11px] text-amber-700 font-medium leading-tight">
-                      As notificações ainda não aparecem como suportadas (N: {String(typeof Notification !== "undefined")}, P: {String("PushManager" in window)}). 
-                      No iPhone, usa o botão "Partilhar" e escolhe <b>"Adicionar ao Ecrã Inicial"</b>. ✨
+                      A Apple só libertou as notificações para apps instaladas (PWA) no <b>iOS 16.4</b>. 
+                      Atualiza o teu iPhone nas Definições do sistema para ativares esta funcionalidade! ✨
                     </p>
                   </div>
                 ) : pushSubscribed ? (
