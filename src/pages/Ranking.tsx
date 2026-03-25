@@ -5,7 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
-import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, ShieldCheck, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2 } from "lucide-react";
+import { Flame, Shield, Trophy, Medal, Crown, Star, Sparkles, Check, ShieldCheck, TrendingUp, Coins, LayoutList, Target, ShoppingBag, Copy, Share2, ExternalLink, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ export default function Ranking() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, buyShield, isPartner1, dailyStatus, reload: reloadStreak } = useLoveStreak();
+  const { data: streakData, buyShield, confirmAction, useShield, dailyStatus, reload: reloadStreak } = useLoveStreak();
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,15 +102,14 @@ export default function Ranking() {
     }
   }, [activeTab]);
 
-  const meInteracted = isPartner1 ? dailyStatus?.p1_interacted : dailyStatus?.p2_interacted;
-  const partnerInteracted = isPartner1 ? dailyStatus?.p2_interacted : dailyStatus?.p1_interacted;
 
   useEffect(() => {
     if (spaceId) {
       supabase
-        .from("micro_challenge_completions")
+        .from("daily_activity")
         .select("id", { count: "exact", head: true })
-        .eq("couple_space_id", spaceId)
+        .eq("couple_id", spaceId)
+        .eq("did_action", true)
         .then(({ count }) => setTasksCompleted(count || 0));
     }
   }, [spaceId]);
@@ -151,6 +150,24 @@ export default function Ranking() {
       toast.success("LoveShield adquirido com sucesso! 🛡️");
     } else {
       toast.error("Erro ao adquirir escudo");
+    }
+  };
+
+  const handleConfirm = async () => {
+    const ok = await confirmAction();
+    if (ok) {
+      toast.success("Ação confirmada! ✨");
+    }
+  };
+
+  const handleUseShield = async () => {
+    if (streakData && streakData.loveshield_count < 1) {
+      toast.error("Você não tem LoveShields");
+      return;
+    }
+    const ok = await useShield();
+    if (ok) {
+      toast.success("LoveShield ativado! Streak restaurado ✨");
     }
   };
 
@@ -206,25 +223,25 @@ export default function Ranking() {
               {/* Tarefas Love Streak */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600">
-                  <Flame className="w-4 h-4" /> Tarefas Love Streak
+                  <Flame className="w-4 h-4" /> Status de Atividade
                 </div>
                 <div className="grid gap-3">
                   <div className="glass-card rounded-2xl p-4 border-orange-500/10 bg-orange-500/[0.02] flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                        meInteracted 
+                        dailyStatus?.me_active 
                           ? "bg-green-500/20 border-green-500 text-green-600" 
                           : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
                       )}>
-                        {meInteracted ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
+                        {dailyStatus?.me_active ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
                       <div className="flex-1">
-                        <p className={cn("font-bold text-sm", meInteracted ? "text-foreground" : "text-muted-foreground")}>
+                        <p className={cn("font-bold text-sm", dailyStatus?.me_active ? "text-foreground" : "text-muted-foreground")}>
                           {avatars.me?.displayName || "Tu"}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                          {meInteracted ? "Interagiu ✨" : "Pendente ⏳"}
+                          {dailyStatus?.me_active ? "Ativo ✨" : "Pendente ⏳"}
                         </p>
                       </div>
                     </div>
@@ -234,18 +251,18 @@ export default function Ranking() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                        partnerInteracted 
+                        dailyStatus?.partner_active 
                           ? "bg-green-500/20 border-green-500 text-green-600" 
                           : "bg-muted border-muted-foreground/20 text-muted-foreground opacity-50"
                       )}>
-                        {partnerInteracted ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
+                        {dailyStatus?.partner_active ? <Check className="w-5 h-5" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
                       <div className="flex-1">
-                        <p className={cn("font-bold text-sm", partnerInteracted ? "text-foreground" : "text-muted-foreground")}>
+                        <p className={cn("font-bold text-sm", dailyStatus?.partner_active ? "text-foreground" : "text-muted-foreground")}>
                           {avatars.partner?.displayName || "Parceiro"}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                          {partnerInteracted ? "Interagiu ✨" : "Pendente ⏳"}
+                          {dailyStatus?.partner_active ? "Ativo ✨" : "Pendente ⏳"}
                         </p>
                       </div>
                     </div>
@@ -270,36 +287,48 @@ export default function Ranking() {
                       {dailyStatus.mission_description}
                     </p>
 
-                    <div className="flex gap-2">
-                      {(() => {
-                        const meMission = isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2;
-                        const partnerMission = isPartner1 ? dailyStatus.is_completed_p2 : dailyStatus.is_completed_p1;
-                        
-                        return (
-                          <div className="w-full space-y-3">
-                            <div className="flex gap-2">
-                              <div className={cn(
-                                "flex-1 h-11 rounded-xl flex items-center justify-center font-black text-sm transition-all",
-                                meMission ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-muted text-muted-foreground border border-transparent"
-                              )}>
-                                {meMission ? "✓ Concluíste" : "○ Tua parte"}
-                              </div>
-                              <div className={cn(
-                                "flex-1 h-11 rounded-xl flex items-center justify-center font-black text-sm transition-all",
-                                partnerMission ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-muted text-muted-foreground border border-transparent"
-                              )}>
-                                {partnerMission ? "✓ Par concluiu" : "○ Parte do Par"}
-                              </div>
-                            </div>
-                            
-                            {!meMission && (
-                              <p className="text-[10px] text-center text-primary font-bold animate-pulse">
-                                Completa uma interação relevante para concluir! ✨
-                              </p>
-                            )}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        {dailyStatus.me_active ? (
+                          <div className="flex-1 h-11 rounded-xl flex items-center justify-center font-black text-sm bg-green-500/10 text-green-600 border border-green-500/20">
+                            <CheckCircle2 className="w-4 h-4 mr-2" /> Missão Concluída
                           </div>
-                        );
-                      })()}
+                        ) : (
+                          <>
+                            <Button 
+                              variant="outline"
+                              className="flex-1 h-11 rounded-xl font-black text-xs"
+                              onClick={() => {
+                                navigate("/chat");
+                              }}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-1.5" /> Ir para Missão
+                            </Button>
+                            <Button 
+                              className="flex-1 h-11 rounded-xl font-black text-xs"
+                              onClick={handleConfirm}
+                            >
+                              Confirmar Ação
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                      
+                      {!dailyStatus.me_active && (
+                        <p className="text-[10px] text-center text-primary font-bold animate-pulse">
+                          Realiza a missão e clica em confirmar para manter o streak! ✨
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-3 border-t border-border/50">
+                        <span>Status do Par hoje:</span>
+                        <span className={cn(
+                          "font-black uppercase",
+                          dailyStatus.partner_active ? "text-green-600" : "text-amber-500"
+                        )}>
+                          {dailyStatus.partner_active ? "Concluído ✨" : "Pendente ⏳"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -325,10 +354,29 @@ export default function Ranking() {
               <div className="glass-card rounded-3xl p-6 flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-12 h-12 bg-blue-500/10 rounded-bl-full transform translate-x-2 -translate-y-2 group-hover:scale-150 transition-transform duration-500" />
                 <Shield className="w-8 h-8 text-blue-500 mb-1" />
-                <p className="text-3xl font-black tracking-tighter">{streakData?.shield_remaining || 0}</p>
+                <p className="text-3xl font-black tracking-tighter">{streakData?.loveshield_count || 0}</p>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">LoveShields</p>
               </div>
             </div>
+
+            {/* Shield Protection Area */}
+            {streakData?.current_streak === 0 && streakData?.loveshield_count > 0 && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 space-y-3 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <Shield size={24} className="text-amber-600" />
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-900">Sua Streak quebrou!</h4>
+                    <p className="text-xs text-amber-800">Use um LoveShield para restaurar seus dias.</p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleUseShield}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold h-10 rounded-xl"
+                >
+                  Usar LoveShield Agora
+                </Button>
+              </div>
+            )}
 
             {/* Shop Section Integrated */}
             <div className="glass-card rounded-3xl p-5 border-blue-500/10 bg-blue-500/[0.01] space-y-4 shadow-sm">
@@ -336,7 +384,7 @@ export default function Ranking() {
                 <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4" /> Loja de Itens
                 </h3>
-                <span className="text-[10px] font-black bg-blue-600/10 text-blue-600 px-2 py-0.5 rounded-full">Disponíveis: {streakData?.shield_remaining}/3</span>
+                <span className="text-[10px] font-black bg-blue-600/10 text-blue-600 px-2 py-0.5 rounded-full">Meus Shields: {streakData?.loveshield_count}</span>
               </div>
               <div className="flex items-center justify-between bg-background/40 p-3 rounded-2xl border border-border/50">
                 <div className="flex items-center gap-3">
@@ -352,7 +400,7 @@ export default function Ranking() {
                   size="sm" 
                   className={cn("h-9 text-[11px] font-black px-4 rounded-xl shadow-lg transition-all", streakData?.total_points && streakData.total_points >= 200 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20" : "bg-muted text-muted-foreground")}
                   onClick={handleBuyShield}
-                  disabled={!streakData || streakData.total_points < 200 || streakData.shield_remaining >= 3}
+                  disabled={!streakData || streakData.total_points < 200}
                 >
                   200 PTS
                 </Button>
@@ -465,7 +513,7 @@ export default function Ranking() {
               </div>
               <div className="glass-card rounded-3xl p-6">
                 <p className="text-3xl font-black tracking-tighter">{tasksCompleted}</p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Micro-Desafios</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Ações Realizadas</p>
               </div>
             </div>
 

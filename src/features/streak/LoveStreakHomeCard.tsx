@@ -1,18 +1,27 @@
 import { useNavigate } from "react-router-dom";
-import { Flame, Shield, Trophy, ArrowRight, Sparkles } from "lucide-react";
+import { Flame, Shield, Trophy, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export function LoveStreakHomeCard() {
-  const { data, dailyStatus, loading, streakIncreased, canUseShield, useShield, isPartner1 } = useLoveStreak();
+  const { data, dailyStatus, loading, streakIncreased, useShield, confirmAction } = useLoveStreak();
   const navigate = useNavigate();
 
   if (loading || !data) return null;
 
   const level = getStreakLevel(data.current_streak);
   const nextLevel = getNextLevel(data.current_streak);
-  const bothToday = dailyStatus?.p1_interacted && dailyStatus?.p2_interacted;
+  const bothToday = dailyStatus?.day_complete;
+
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const ok = await confirmAction();
+    if (ok) {
+      toast.success("Ação confirmada! ✨");
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -25,35 +34,6 @@ export function LoveStreakHomeCard() {
             <p className="text-lg text-white/80">
               Vocês estão juntos há <span className="font-bold text-amber-400">{data.current_streak}</span> dias consecutivos.
             </p>
-          </div>
-        </div>
-      )}
-
-      {/* Shield Alert */}
-      {canUseShield && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 animate-fade-in">
-          <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-            <div className="flex-1 space-y-2">
-              <p className="text-sm font-bold text-foreground">
-                Perderam o LoveStreak ontem! 😢
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Usem um <strong>LoveShield</strong> para restaurar ({data.shield_remaining}/3 restantes)
-              </p>
-              <Button
-                size="sm"
-                className="text-xs"
-                onClick={async () => {
-                  const ok = await useShield();
-                  if (ok) {
-                    // Could show toast
-                  }
-                }}
-              >
-                <Shield className="w-3 h-3 mr-1" /> Restaurar Streak
-              </Button>
-            </div>
           </div>
         </div>
       )}
@@ -97,38 +77,30 @@ export function LoveStreakHomeCard() {
 
           {/* Today status */}
           <div className="flex items-center gap-3 text-xs">
-            {(() => {
-              const meInteracted = isPartner1 ? dailyStatus?.p1_interacted : dailyStatus?.p2_interacted;
-              const partnerInteracted = isPartner1 ? dailyStatus?.p2_interacted : dailyStatus?.p1_interacted;
-              
-              return (
-                <>
-                  <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-                    meInteracted
-                      ? "bg-green-500/15 text-green-700"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {meInteracted ? "✓" : "○"} Tu
-                  </div>
-                  <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-                    partnerInteracted
-                      ? "bg-green-500/15 text-green-700"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {partnerInteracted ? "✓" : "○"} Par
-                  </div>
-                </>
-              );
-            })()}
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+              dailyStatus?.me_active
+                ? "bg-green-500/15 text-green-700"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {dailyStatus?.me_active ? "✓" : "○"} Tu
+            </div>
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+              dailyStatus?.partner_active
+                ? "bg-green-500/15 text-green-700"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {dailyStatus?.partner_active ? "✓" : "○"} Par
+            </div>
+            
             {bothToday ? (
               <span className="text-green-600 font-bold flex items-center gap-1 animate-fade-slide-up">
-                <Sparkles className="w-3 h-3" /> Vocês apareceram um para o outro hoje 💛
+                <Sparkles className="w-3 h-3" /> Streak Seguro! 💛
               </span>
             ) : (
               <span className="text-amber-600 font-bold flex items-center gap-1 animate-pulse">
-                <Flame className="w-3 h-3" /> Falta pouco… não deixem o vosso streak cair 🔥
+                <Flame className="w-3 h-3" /> Falta pouco 🔥
               </span>
             )}
           </div>
@@ -136,33 +108,18 @@ export function LoveStreakHomeCard() {
           {/* Shields */}
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Shield className="w-3 h-3" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className={cn(
-                "w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold",
-                i < data.shield_remaining
-                  ? "bg-blue-500/20 text-blue-600"
-                  : "bg-muted text-muted-foreground/40"
-              )}>
-                🛡️
-              </span>
-            ))}
-            <span className="ml-1">LoveShield</span>
+            <span className="font-bold text-blue-600 bg-blue-500/10 px-1.5 rounded-full">
+              {data.loveshield_count}
+            </span>
+            <span className="ml-1">LoveShields disponíveis</span>
           </div>
-
-          {/* Next level progress */}
-          {nextLevel && (
-            <div className="text-[10px] text-muted-foreground">
-              <span>Próximo nível: <strong className="text-foreground">{nextLevel.title}</strong> ({nextLevel.min - data.current_streak} dias restantes)</span>
-            </div>
-          )}
         </div>
       </button>
 
       {/* Daily Love Mission Card */}
       {dailyStatus && dailyStatus.mission_title && (
         <div 
-          className="glass-card rounded-2xl p-4 space-y-2 cursor-pointer hover:bg-muted/10 transition-colors"
-          onClick={() => navigate("/ranking?tab=tasks")}
+          className="glass-card rounded-2xl p-4 space-y-3 border-primary/10 transition-colors"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
@@ -170,39 +127,39 @@ export function LoveStreakHomeCard() {
             </span>
             <span className="text-xs font-bold text-primary">+{dailyStatus.mission_points} pts</span>
           </div>
-          <p className="text-sm font-medium text-foreground">
-            {dailyStatus.mission_emoji} {dailyStatus.mission_title}
-          </p>
-          <p className="text-[11px] text-muted-foreground leading-tight italic">
-            {dailyStatus.mission_description}
-          </p>
-          <div className="flex items-center gap-2 text-xs pt-1">
-            {(() => {
-              const meMission = isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2;
-              const partnerMission = isPartner1 ? dailyStatus.is_completed_p2 : dailyStatus.is_completed_p1;
-              
-              return (
-                <>
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full font-bold",
-                    meMission ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
-                  )}>
-                    {meMission ? "✓ Tu" : "○ Tu"}
-                  </span>
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full font-bold",
-                    partnerMission ? "bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
-                  )}>
-                    {partnerMission ? "✓ Par" : "○ Par"}
-                  </span>
-                  {meMission && partnerMission && (
-                    <span className="text-[10px] text-primary font-black ml-auto flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> CONCLUÍDA!
-                    </span>
-                  )}
-                </>
-              );
-            })()}
+          
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              {dailyStatus.mission_emoji} {dailyStatus.mission_title}
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-tight italic">
+              {dailyStatus.mission_description}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            {dailyStatus.me_active ? (
+              <div className="flex items-center gap-1.5 text-xs font-bold text-green-600 bg-green-500/10 px-3 py-1.5 rounded-xl w-full justify-center">
+                <CheckCircle2 className="w-4 h-4" /> Ação Confirmada
+              </div>
+            ) : (
+              <Button 
+                onClick={handleConfirm}
+                className="w-full text-xs font-bold h-9 rounded-xl shadow-lg shadow-primary/20"
+              >
+                Confirmar Ação
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+            <span>Status do Par:</span>
+            <span className={cn(
+              "font-bold",
+              dailyStatus.partner_active ? "text-green-600" : "text-amber-500"
+            )}>
+              {dailyStatus.partner_active ? "✓ Concluído" : "○ Pendente"}
+            </span>
           </div>
         </div>
       )}

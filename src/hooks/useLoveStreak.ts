@@ -2,23 +2,21 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 
 export interface LoveStreakData {
   current_streak: number;
   best_streak: number;
   last_streak_date: string | null;
-  shield_remaining: number;
-  interaction_date: string | null;
-  level_title: string;
+  loveshield_count: number;
   total_points: number;
+  level_title: string;
 }
 
 export interface DailyCompletion {
-  p1_interacted: boolean;
-  p2_interacted: boolean;
-  is_completed_p1: boolean;
-  is_completed_p2: boolean;
+  me_active: boolean;
+  partner_active: boolean;
+  mission_completed: boolean;
   mission_title: string | null;
   mission_description: string | null;
   mission_emoji: string | null;
@@ -61,33 +59,68 @@ export function useLoveStreak() {
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
   const load = useCallback(async () => {
-    if (!spaceId) return;
+    if (!spaceId || !user) return;
     
-    // 1. Sync streak via RPC (Idempotent)
-    const { data: syncResult, error: syncError } = await supabase
-      .rpc('sync_streak_v3', { p_couple_space_id: spaceId });
-    
-    if (syncError) console.error("Error syncing streak:", syncError);
-
-    // 2. Load streak data
+    // 1. Load streak data
     const { data: streak } = await supabase
       .from("love_streaks")
       .select("*")
       .eq("couple_space_id", spaceId)
       .maybeSingle();
 
-    if (streak) setData(streak as any);
-
-    // 3. Load daily completion (v3 View)
-    const { data: completion } = await supabase
-      .from("v_daily_completion" as any)
-      .select("*")
-      .eq("couple_space_id", spaceId)
+    // 2. Load user items (shields)
+    const { data: items } = await supabase
+      .from("user_items")
+      .select("loveshield_count")
+      .eq("user_id", user.id)
       .maybeSingle();
-    
-    if (completion) setDailyStatus(completion as any);
 
-    // 4. Determine if I am partner 1
+    if (streak) {
+      setData({
+        ...streak,
+        loveshield_count: items?.loveshield_count || 0,
+        level_title: getStreakLevel(streak.current_streak).title
+      });
+    }
+
+    // 3. Load daily activity
+    const { data: activities } = await supabase
+      .from("daily_activity")
+      .select("user_id, did_action")
+      .eq("couple_id", spaceId)
+      .eq("date", todayStr);
+
+    const meActive = activities?.some(a => a.user_id === user.id && a.did_action) || false;
+    const partnerActive = activities?.some(a => a.user_id !== user.id && a.did_action) || false;
+
+    // 4. Load latest mission
+    const { data: mission } = await supabase
+      .from("love_missions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // 5. Check if mission completed today
+    const { data: completion } = await supabase
+      .from("mission_completions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("date" as any, todayStr) // Assuming date field names might vary slightly, but following SQL plan
+      .maybeSingle();
+
+    setDailyStatus({
+      me_active: meActive,
+      partner_active: partnerActive,
+      mission_completed: !!completion,
+      mission_title: mission?.title || null,
+      mission_description: mission?.description || null,
+      mission_emoji: "✨", // Default or from table
+      mission_points: mission?.reward_points || null,
+      day_complete: meActive && partnerActive
+    });
+
+    // 6. Determine if I am partner 1
     const { data: members } = await supabase
       .from("members")
       .select("user_id")
@@ -99,7 +132,7 @@ export function useLoveStreak() {
     }
 
     setLoading(false);
-  }, [spaceId, user]);
+  }, [spaceId, user, todayStr]);
 
   useEffect(() => {
     load();
@@ -122,22 +155,14 @@ export function useLoveStreak() {
             setStreakIncreased(true);
             setTimeout(() => setStreakIncreased(false), 3000);
           }
-          return newData;
+          return { ...prev, ...newData } as any;
         });
       })
       .on("postgres_changes", {
         event: "*",
         schema: "public",
-        table: "couple_missions",
-        filter: `couple_space_id=eq.${spaceId}`,
-      }, () => {
-        load();
-      })
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "daily_interactions",
-        filter: `couple_space_id=eq.${spaceId}`,
+        table: "daily_activity",
+        filter: `couple_id=eq.${spaceId}`,
       }, () => {
         load();
       })
@@ -145,69 +170,33 @@ export function useLoveStreak() {
     return () => { supabase.removeChannel(channel); };
   }, [spaceId, load]);
 
-  // Record an interaction for the current user (Now handled by DB Triggers)
-  const recordInteraction = useCallback(async (type: string) => {
-    console.log("Interaction recorded via trigger:", type);
-    // Logic moved to Postgres triggers for stability and atomic updates
-  }, []);
+  const confirmAction = useCallback(async () => {
+    if (!spaceId) return false;
+    const { error } = await supabase.rpc('fn_confirm_daily_action', { p_couple_id: spaceId });
+    if (!error) {
+      load();
+      return true;
+    }
+    return false;
+  }, [spaceId, load]);
 
-  // Use shield to restore broken streak
   const useShield = useCallback(async () => {
-    if (!spaceId || !data || data.shield_remaining <= 0) return false;
-
-    const yesterday = format(
-      new Date(Date.now() - 86400000),
-      "yyyy-MM-dd"
-    );
-
-    // Only allow if last_streak_date is before yesterday (they missed a day)
-    if (!data.last_streak_date) return false;
-
-    const diff = differenceInDays(
-      new Date(todayStr + "T00:00:00"),
-      new Date(data.last_streak_date + "T00:00:00")
-    );
-
-    if (diff <= 1) return false; // No missed day
-
-    const { error } = await supabase
-      .from("love_streaks")
-      .update({
-        last_streak_date: yesterday,
-        shield_remaining: data.shield_remaining - 1,
-      })
-      .eq("couple_space_id", spaceId);
-
+    const { error } = await supabase.rpc('fn_use_loveshield');
     if (!error) {
       load();
       return true;
     }
     return false;
-  }, [spaceId, data, todayStr, load]);
+  }, [load]);
 
-  // Buy a shield using points (e.g., 200 points per shield)
-  const buyShield = useCallback(async () => {
-    if (!spaceId || !data || data.total_points < 200) return false;
-
-    const { error } = await supabase
-      .from("love_streaks")
-      .update({
-        shield_remaining: (data.shield_remaining || 0) + 1,
-        total_points: data.total_points - 200,
-      })
-      .eq("couple_space_id", spaceId);
-
+  const buyShield = useCallback(async (cost: number = 200) => {
+    const { error } = await supabase.rpc('fn_purchase_loveshield', { p_cost: cost });
     if (!error) {
       load();
       return true;
     }
     return false;
-  }, [spaceId, data, load]);
-
-  // Check if streak is broken and can be restored
-  // RESTRUTURADO: O alerta falso de "Streak Lost" foi desativado no frontend
-  // para não incomodar os usuários até que o motor v3 (SQL) seja perfeitamente sincronizado no banco.
-  const canUseShield = false; 
+  }, [load]);
 
   return {
     data,
@@ -215,10 +204,9 @@ export function useLoveStreak() {
     loading,
     isPartner1,
     streakIncreased,
-    recordInteraction,
+    confirmAction,
     useShield,
     buyShield, 
-    canUseShield,
     reload: load,
   };
 }
