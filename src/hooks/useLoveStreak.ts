@@ -202,6 +202,11 @@ export function useLoveStreak() {
     return false;
   }, [load]);
 
+  const recordInteraction = useCallback(async (actionType?: string) => {
+    console.log(`Recording interaction: ${actionType || 'general'}`);
+    return confirmAction();
+  }, [confirmAction]);
+
   return {
     data,
     dailyStatus,
@@ -209,6 +214,7 @@ export function useLoveStreak() {
     isPartner1,
     streakIncreased,
     confirmAction,
+    recordInteraction,
     useShield,
     buyShield, 
     reload: load,

@@ -621,7 +621,7 @@ export default function Chat() {
     } finally {
       setSending(false);
     }
-  }, [spaceId, user, sending, recordInteraction, toast]);
+  }, [spaceId, user, sending, confirmAction, toast]);
 
   /* ── Edit message ── */
   const handleEditSave = useCallback(async () => {
