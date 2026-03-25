@@ -97,17 +97,17 @@ function useLongPress(onLongPress: () => void, delay = 500) {
 
 function useAudioRecorder() {
   const [recording, setRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const streamRef = useRef<MediaStream | null>(null);
 
   const start = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       
-      // Determine the best supported mimeType
       let mimeType = "";
       const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
       for (const t of types) {
@@ -117,43 +117,60 @@ function useAudioRecorder() {
         }
       }
 
-      console.log("Selected mimeType for recording:", mimeType);
-
-      const recorder = new MediaRecorder(stream, {
-        mimeType: mimeType || undefined,
-      });
+      console.log("Audio: Starting recorder with", mimeType);
+      const recorder = new MediaRecorder(stream, { mimeType: mimeType || undefined });
       chunksRef.current = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/mp4" });
-        setAudioBlob(blob);
-        stream.getTracks().forEach(t => t.stop());
-      };
+      
       mediaRecorderRef.current = recorder;
-      recorder.start(200); // collect data regularly
+      recorder.start(200);
       setRecording(true);
       setDuration(0);
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
     } catch (err) {
-      console.error("Audio recording error:", err);
-      alert("Não foi possível iniciar a gravação. Verifica as permissões do microfone.");
+      console.error("Audio: Permissions denied or error:", err);
+      alert("Permissão de microfone negada ou erro ao iniciar gravação.");
     }
   }, []);
 
-  const stop = useCallback(() => {
-    if (mediaRecorderRef.current?.state === "recording") {
+  const stop = useCallback((): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+        resolve(null);
+        return;
+      }
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mediaRecorderRef.current?.mimeType || "audio/mp4" });
+        console.log("Audio: Recording stopped. Blob size:", blob.size);
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(t => t.stop());
+          streamRef.current = null;
+        }
+        resolve(blob.size > 0 ? blob : null);
+      };
+
       mediaRecorderRef.current.stop();
+      setRecording(false);
+      clearInterval(timerRef.current);
+    });
+  }, []);
+
+  const cancel = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
     }
     setRecording(false);
     clearInterval(timerRef.current);
+    chunksRef.current = [];
   }, []);
 
-  const clear = useCallback(() => {
-    setAudioBlob(null);
-    setDuration(0);
-  }, []);
-
-  return { recording, audioBlob, duration, start, stop, clear };
+  return { recording, duration, start, stop, cancel };
 }
 
 /* ── Image Picker ── */
@@ -522,11 +539,12 @@ export default function Chat() {
     return data?.publicUrl ?? null;
   }, [user]);
 
-  /* ── Send message ── */
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(async (blobOverride?: Blob) => {
     if (!spaceId || !user || sending) return;
     const text = input.trim();
-    if (!text && !imageFile && !audio.audioBlob) return;
+    const activeAudioBlob = blobOverride;
+    
+    if (!text && !imageFile && !activeAudioBlob) return;
 
     setSending(true);
     try {
@@ -537,9 +555,20 @@ export default function Chat() {
         const ext = imageFile.name.split(".").pop() ?? "jpg";
         imageUrl = await uploadMedia(imageFile, ext);
       }
-      if (audio.audioBlob) {
-        const ext = audio.audioBlob.type.includes("mp4") ? "mp4" : "webm";
-        audioUrl = await uploadMedia(audio.audioBlob, ext);
+      
+      if (activeAudioBlob) {
+        if (activeAudioBlob.size === 0) {
+          console.warn("Audio: Attempted to send empty blob, skipping.");
+          setSending(false);
+          return;
+        }
+        const ext = activeAudioBlob.type.includes("mp4") ? "mp4" : "webm";
+        audioUrl = await uploadMedia(activeAudioBlob, ext);
+        if (!audioUrl) {
+          toast({ title: "Erro no áudio", description: "Falha ao carregar o ficheiro de voz.", variant: "destructive" });
+          setSending(false);
+          return;
+        }
       }
 
       const { error: insertError } = await supabase.from("messages").insert({
@@ -558,7 +587,6 @@ export default function Chat() {
         return;
       }
 
-      // Record interaction for LoveStreak (all messages count now)
       confirmAction();
 
       // Notify partner
@@ -576,14 +604,13 @@ export default function Chat() {
       setInput("");
       setReplyTo(null);
       setImageFile(null);
-      audio.clear();
     } catch (err: any) {
       toast({ title: "Erro ao enviar", description: err?.message, variant: "destructive" });
     } finally {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [input, spaceId, user, sending, imageFile, audio, replyTo, uploadMedia, toast]);
+  }, [input, spaceId, user, sending, imageFile, uploadMedia, toast, replyTo, confirmAction]);
 
   /* ── Send Carinho ── */
   const handleSendCarinho = useCallback(async () => {
@@ -871,73 +898,111 @@ export default function Chat() {
             </div>
           )}
 
-          {/* Recording indicator */}
-          {audio.recording && (
-            <div className="flex items-center gap-3 rounded-2xl bg-red-500/10 border border-red-500/20 px-3 py-2 mb-2 mx-1 mt-1">
-              <span className="relative flex h-2.5 w-2.5 shrink-0 align-middle">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-              </span>
-              <p className="flex-1 text-xs text-red-600 dark:text-red-400 font-semibold tracking-wide">A GRAVAR • {audio.duration}s</p>
-              <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-red-500/20" onClick={audio.stop}>
-                <MicOff className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </Button>
-            </div>
-          )}
-
           {/* Input bar */}
           {!editingMsg && (
-            <form
-              className="flex items-center gap-1 pl-1 pr-1.5"
-              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-            >
-              <ImagePickerButton onPick={setImageFile} />
-              <Input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={(replyTo || imageFile || audio.audioBlob) 
-                  ? "Adicionar texto..." 
-                  : (new Date().getHours() > 18 ? "Diz algo bonito hoje..." : "Escreve algo que aqueça o coração 💛")}
-                className="flex-1 h-10 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]"
-                autoComplete="off"
-              />
-              <div className="flex items-center gap-1 shrink-0">
-                {(!input.trim() && !imageFile && !audio.audioBlob) ? (
-                  <>
+            <div className="relative">
+              {/* WhatsApp Recording Overlay */}
+              {audio.recording && (
+                <div className="absolute inset-0 z-50 flex items-center bg-background px-4 animate-in fade-in slide-in-from-right duration-300 rounded-2xl">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex items-center gap-2 animate-pulse">
+                      <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                      <span className="text-sm font-semibold text-red-500 font-mono">
+                        {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                    <div className="flex-1 text-center">
+                      <p className="text-xs text-muted-foreground animate-pulse">
+                        Arrasta para a esquerda para cancelar
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <form
+                className="flex items-center gap-1 pl-1 pr-1.5"
+                onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+              >
+                <ImagePickerButton onPick={setImageFile} />
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={(replyTo || imageFile) 
+                    ? "Adicionar texto..." 
+                    : (new Date().getHours() > 18 ? "Diz algo bonito hoje..." : "Escreve algo que aqueça o coração 💛")}
+                  className={cn(
+                    "flex-1 h-10 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]",
+                    audio.recording && "opacity-0 invisible"
+                  )}
+                  autoComplete="off"
+                />
+                <div className="flex items-center gap-1 shrink-0">
+                  {(!input.trim() && !imageFile) ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-[1.3] duration-300"
+                        onClick={handleSendCarinho}
+                        disabled={sending}
+                        title="Enviar Carinho"
+                      >
+                        <Heart className="h-5 w-5 fill-primary" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={audio.recording ? "default" : "ghost"}
+                        size="icon"
+                        className={cn(
+                          "h-10 w-10 rounded-full transition-all duration-300 touch-none select-none",
+                          audio.recording 
+                            ? "bg-red-500 hover:bg-red-600 scale-125 text-white shadow-lg" 
+                            : "text-muted-foreground hover:bg-muted/50"
+                        )}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          audio.start();
+                          const startX = e.clientX;
+                          const onPointerMove = (moveEvent: PointerEvent) => {
+                            const diffX = startX - moveEvent.clientX;
+                            if (diffX > 80) { // Cancel threshold
+                              audio.cancel();
+                              window.removeEventListener('pointermove', onPointerMove);
+                              window.removeEventListener('pointerup', onPointerUp);
+                              toast({ title: "Cancelado", description: "Gravação descartada." });
+                            }
+                          };
+                          const onPointerUp = async () => {
+                            window.removeEventListener('pointermove', onPointerMove);
+                            window.removeEventListener('pointerup', onPointerUp);
+                            if (audio.recording) {
+                              const blob = await audio.stop();
+                              if (blob) handleSend(blob);
+                            }
+                          };
+                          window.addEventListener('pointermove', onPointerMove);
+                          window.addEventListener('pointerup', onPointerUp);
+                        }}
+                      >
+                        <Mic className={cn("h-4 w-4", audio.recording && "animate-pulse")} />
+                      </Button>
+                    </>
+                  ) : (
                     <Button
-                      type="button"
-                      variant="ghost"
+                      type="submit"
                       size="icon"
-                      className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-[1.3] duration-300"
-                      onClick={handleSendCarinho}
+                      className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
                       disabled={sending}
-                      title="Enviar Carinho"
                     >
-                      <Heart className="h-5 w-5 fill-primary" />
+                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className={cn("h-10 w-10 rounded-full transition-colors", audio.recording ? "text-red-500 bg-red-500/10" : "text-muted-foreground hover:bg-muted/50")}
-                      onClick={() => audio.recording ? audio.stop() : audio.start()}
-                    >
-                      {audio.recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
-                    disabled={sending}
-                  >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
-                  </Button>
-                )}
-              </div>
-            </form>
+                  )}
+                </div>
+              </form>
+            </div>
           )}
         </div>
       </div>
