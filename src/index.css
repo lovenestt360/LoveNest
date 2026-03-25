@@ -344,3 +344,24 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
+/* ── Voice Message Sliders (WhatsApp Style) ── */
+.voice-slider-mine [role="slider"] {
+  @apply bg-white border-white h-3 w-3;
+}
+.voice-slider-mine span[data-orientation="horizontal"] {
+  @apply bg-white/30 h-1;
+}
+.voice-slider-mine [data-orientation="horizontal"] > span:first-child {
+  @apply bg-white h-1;
+}
+
+.voice-slider-partner [role="slider"] {
+  @apply bg-primary border-primary h-3 w-3;
+}
+.voice-slider-partner span[data-orientation="horizontal"] {
+  @apply bg-muted-foreground/20 h-1;
+}
+.voice-slider-partner [data-orientation="horizontal"] > span:first-child {
+  @apply bg-primary h-1;
+}
+

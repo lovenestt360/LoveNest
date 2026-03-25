@@ -30,8 +30,11 @@ import {
   Palette,
   ShieldCheck,
   Heart,
-  ChevronLeft
+  ChevronLeft,
+  Play,
+  Pause
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -103,32 +106,37 @@ function useAudioRecorder() {
   const start = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Try different mimeTypes for mobile compatibility
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : MediaRecorder.isTypeSupported("audio/webm")
-          ? "audio/webm"
-          : MediaRecorder.isTypeSupported("audio/mp4")
-            ? "audio/mp4"
-            : "audio/ogg";
+      
+      // Determine the best supported mimeType
+      let mimeType = "";
+      const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
+      for (const t of types) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          break;
+        }
+      }
+
+      console.log("Selected mimeType for recording:", mimeType);
 
       const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
+        mimeType: mimeType || undefined,
       });
       chunksRef.current = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/mp4" });
         setAudioBlob(blob);
         stream.getTracks().forEach(t => t.stop());
       };
       mediaRecorderRef.current = recorder;
-      recorder.start(100); // collect data every 100ms for better mobile support
+      recorder.start(200); // collect data regularly
       setRecording(true);
       setDuration(0);
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
     } catch (err) {
       console.error("Audio recording error:", err);
+      alert("Não foi possível iniciar a gravação. Verifica as permissões do microfone.");
     }
   }, []);
 
@@ -220,33 +228,88 @@ function DateSeparator({ date }: { date: string }) {
 }
 
 /* ── Audio Player ── */
-
-function AudioPlayer({ url }: { url: string }) {
+function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
   const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const toggle = useCallback(() => {
     if (!audioRef.current) return;
     if (playing) {
       audioRef.current.pause();
-      setPlaying(false);
     } else {
       audioRef.current.play().catch(() => { });
-      setPlaying(true);
     }
   }, [playing]);
 
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSeek = (val: number[]) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = val[0];
+      setCurrentTime(val[0]);
+    }
+  };
+
+  const formatAudioTime = (time: number) => {
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn(
+      "flex items-center gap-3 py-1 min-w-[200px] sm:min-w-[240px]",
+      isMine ? "text-primary-foreground" : "text-foreground"
+    )}>
       <audio
         ref={audioRef}
         src={url}
         preload="metadata"
-        onEnded={() => setPlaying(false)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); setCurrentTime(0); }}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
       />
-      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={toggle}>
-        {playing ? "⏸️ Parar" : "▶️ Ouvir"}
+      
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="icon" 
+        className={cn(
+          "h-10 w-10 shrink-0 rounded-full transition-all active:scale-90",
+          isMine ? "hover:bg-white/20 text-white" : "hover:bg-muted text-primary"
+        )} 
+        onClick={toggle}
+      >
+        {playing ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 ml-0.5 fill-current" />}
       </Button>
+
+      <div className="flex-1 space-y-1">
+        <Slider
+          value={[currentTime]}
+          max={duration || 100}
+          step={0.1}
+          onValueChange={handleSeek}
+          className={isMine ? "voice-slider-mine" : "voice-slider-partner"}
+        />
+        <div className="flex justify-between items-center text-[10px] opacity-70 font-mono">
+          <span>{formatAudioTime(currentTime)}</span>
+          <span>{formatAudioTime(duration)}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -317,7 +380,7 @@ export default function Chat() {
   const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
-  const { recordInteraction } = useLoveStreak();
+  const { confirmAction } = useLoveStreak();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const { partner, loading: loadingPartner } = usePartnerProfile();
@@ -496,7 +559,7 @@ export default function Chat() {
       }
 
       // Record interaction for LoveStreak (all messages count now)
-      recordInteraction("chat_message");
+      confirmAction();
 
       // Notify partner
       let body = text;
@@ -539,7 +602,7 @@ export default function Chat() {
       if (insertError) throw insertError;
 
       // Interaction for LoveStreak
-      recordInteraction("chat_message");
+      confirmAction();
 
       // Notify partner
       notifyPartner({
@@ -984,7 +1047,7 @@ function MessageBubble({
           {/* Audio */}
           {msg.audio_url && !isDeleted && (
             <div className="mb-1">
-              <AudioPlayer url={msg.audio_url} />
+              <AudioPlayer url={msg.audio_url} isMine={isMine} />
             </div>
           )}
 
