@@ -93,13 +93,17 @@ export function useLoveStreak() {
     const meActive = activities?.some(a => a.user_id === user.id && a.did_action) || false;
     const partnerActive = activities?.some(a => a.user_id !== user.id && a.did_action) || false;
 
-    // 4. Load latest mission
-    const { data: mission } = await supabase
+    // 4. Load all missions to pick one for the day
+    const { data: allMissions } = await supabase
       .from("love_missions")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .select("*");
+
+    let mission = null;
+    if (allMissions && allMissions.length > 0) {
+      // Pick a mission based on the day of the month
+      const dayOfMonth = new Date().getDate();
+      mission = allMissions[dayOfMonth % allMissions.length];
+    }
 
     // 5. Check if mission completed today
     const { data: completion } = await supabase
