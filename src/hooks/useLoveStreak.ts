@@ -119,8 +119,8 @@ export function useLoveStreak() {
       mission_completed: !!completion,
       mission_title: mission?.title || null,
       mission_description: mission?.description || null,
-      mission_emoji: "✨", // Default or from table
-      mission_points: mission?.reward_points || null,
+      mission_emoji: mission?.emoji || "✨",
+      mission_points: mission?.points_reward || null,
       day_complete: meActive && partnerActive
     });
 
