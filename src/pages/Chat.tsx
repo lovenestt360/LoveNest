@@ -97,6 +97,7 @@ function useLongPress(onLongPress: () => void, delay = 500) {
 
 function useAudioRecorder() {
   const [recording, setRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -133,6 +134,7 @@ function useAudioRecorder() {
       recorder.start(200);
       setAudioBlob(null);
       setRecording(true);
+      setIsPaused(false);
       setDuration(0);
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
     } catch (err) {
@@ -166,8 +168,25 @@ function useAudioRecorder() {
       }
       mediaRecorderRef.current.stop();
       setRecording(false);
+      setIsPaused(false);
       clearInterval(timerRef.current);
     });
+  }, []);
+
+  const pause = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      clearInterval(timerRef.current);
+    }
+  }, []);
+
+  const resume = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+    }
   }, []);
 
   const cancel = useCallback(() => {
@@ -180,6 +199,7 @@ function useAudioRecorder() {
       streamRef.current = null;
     }
     setRecording(false);
+    setIsPaused(false);
     setAudioBlob(null);
     clearInterval(timerRef.current);
     chunksRef.current = [];
@@ -188,10 +208,11 @@ function useAudioRecorder() {
   const clear = useCallback(() => {
     setAudioBlob(null);
     setDuration(0);
+    setIsPaused(false);
     chunksRef.current = [];
   }, []);
 
-  return { recording, audioBlob, duration, start, stop, cancel, clear };
+  return { recording, isPaused, audioBlob, duration, start, stop, pause, resume, cancel, clear };
 }
 
 /* ── Image Picker ── */
@@ -936,8 +957,8 @@ export default function Chat() {
             <div className="relative">
               {/* WhatsApp Recording Overlay */}
               {(audio.recording || audio.audioBlob) && (
-                <div className="absolute inset-y-0 left-0 right-0 z-40 bg-background flex flex-col justify-center animate-in fade-in slide-in-from-right duration-200">
-                  <div className="flex items-center gap-2 pl-2 pr-1.5 h-10 py-1">
+                <div className="absolute inset-y-0 left-0 right-0 z-40 bg-background flex flex-col justify-center animate-in fade-in slide-in-from-bottom duration-300 rounded-t-3xl sm:rounded-3xl border-t border-muted sm:border shadow-2xl">
+                  <div className="flex items-center gap-2 pl-3 pr-2 h-[52px] py-1">
                     
                     {/* Trash Button */}
                     <Button 
@@ -952,9 +973,9 @@ export default function Chat() {
 
                     <div className="flex-1 flex items-center justify-center min-w-0">
                       {audio.recording ? (
-                        <div className="flex items-center gap-2 rounded-full bg-red-500/10 px-4 py-1.5 animate-pulse">
-                          <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                          <span className="text-[14px] font-semibold text-red-500 font-mono tracking-wide">
+                        <div className="flex items-center gap-2 rounded-full bg-red-500/10 px-4 py-2 border border-red-500/20">
+                          <div className={cn("h-2.5 w-2.5 rounded-full bg-red-500", !audio.isPaused && "animate-pulse")} />
+                          <span className="text-[15px] font-bold text-red-600 font-mono tracking-wider">
                             {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, '0')}
                           </span>
                         </div>
@@ -965,16 +986,41 @@ export default function Chat() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {audio.recording && (
+                        audio.isPaused ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 shrink-0 rounded-full text-red-500 hover:bg-red-50" 
+                            onClick={() => audio.resume()}
+                            title="Retomar Gravação"
+                          >
+                            <Mic className="h-5 w-5 fill-current" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-muted" 
+                            onClick={() => audio.pause()}
+                            title="Pausar Gravação"
+                          >
+                            <Pause className="h-5 w-5 fill-current" />
+                          </Button>
+                        )
+                      )}
+                      
+                      {/* Stop/Preview Button */}
                       {audio.recording && (
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           className="h-10 w-10 shrink-0 rounded-full text-primary hover:bg-primary/10" 
                           onClick={() => audio.stop()}
-                          title="Pausar / Ouvir"
+                          title="Finalizar e Ouvir"
                         >
-                          <Pause className="h-5 w-5 fill-current" />
+                          <div className="h-4 w-4 bg-current rounded-sm" />
                         </Button>
                       )}
                       <Button
