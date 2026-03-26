@@ -533,8 +533,13 @@ export default function Chat() {
   const uploadMedia = useCallback(async (file: Blob, ext: string): Promise<string | null> => {
     if (!user) return null;
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("chat-media").upload(path, file);
-    if (error) { console.error(error); return null; }
+    const { error } = await supabase.storage.from("chat-media").upload(path, file, {
+      contentType: file.type || undefined
+    });
+    if (error) { 
+      console.error("Storage upload error:", error); 
+      throw new Error(`Erro de storage: ${error.message}`); 
+    }
     const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
     return data?.publicUrl ?? null;
   }, [user]);
@@ -563,11 +568,10 @@ export default function Chat() {
           return;
         }
         const ext = activeAudioBlob.type.includes("mp4") ? "mp4" : "webm";
-        audioUrl = await uploadMedia(activeAudioBlob, ext);
+        const uploadedExt = activeAudioBlob.type.includes("mpeg") ? "mp3" : ext;
+        audioUrl = await uploadMedia(activeAudioBlob, uploadedExt);
         if (!audioUrl) {
-          toast({ title: "Erro no áudio", description: "Falha ao carregar o ficheiro de voz.", variant: "destructive" });
-          setSending(false);
-          return;
+          throw new Error("O servidor não devolveu o link do áudio.");
         }
       }
 
