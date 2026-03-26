@@ -108,12 +108,18 @@ function useAudioRecorder() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
       let mimeType = "";
-      const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
-      for (const t of types) {
-        if (MediaRecorder.isTypeSupported(t)) {
-          mimeType = t;
-          break;
+      if (isSafari && MediaRecorder.isTypeSupported("audio/mp4")) {
+        mimeType = "audio/mp4";
+      } else {
+        const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
+        for (const t of types) {
+          if (MediaRecorder.isTypeSupported(t)) {
+            mimeType = t;
+            break;
+          }
         }
       }
 
@@ -141,8 +147,9 @@ function useAudioRecorder() {
       }
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mediaRecorderRef.current?.mimeType || "audio/mp4" });
-        console.log("Audio: Recording stopped. Blob size:", blob.size);
+        const type = mediaRecorderRef.current?.mimeType || "audio/mp4";
+        const blob = new Blob(chunksRef.current, { type });
+        console.log("Audio: Recording stopped. Blob size:", blob.size, "Type:", type);
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(t => t.stop());
           streamRef.current = null;
@@ -150,6 +157,9 @@ function useAudioRecorder() {
         resolve(blob.size > 0 ? blob : null);
       };
 
+      if (mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.requestData();
+      }
       mediaRecorderRef.current.stop();
       setRecording(false);
       clearInterval(timerRef.current);
@@ -256,7 +266,11 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
     if (playing) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(() => { });
+      audioRef.current.play().catch((err) => { 
+        console.error("Audio playback error:", err);
+        alert("O seu telemóvel bloqueou a reprodução ou o áudio está corrompido.");
+        setPlaying(false);
+      });
     }
   }, [playing]);
 
@@ -293,12 +307,15 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
       <audio
         ref={audioRef}
         src={url}
-        preload="metadata"
+        preload="auto"
+        playsInline
+        controls={false}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => { setPlaying(false); setCurrentTime(0); }}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onError={(e) => console.error("Audio Load Error:", e)}
       />
       
       <Button 
