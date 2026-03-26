@@ -903,7 +903,7 @@ export default function Chat() {
             <div className="relative">
               {/* WhatsApp Recording Overlay */}
               {audio.recording && (
-                <div className="absolute inset-0 z-50 flex items-center bg-background px-4 animate-in fade-in slide-in-from-right duration-300 rounded-2xl">
+                <div className="absolute inset-y-0 left-0 right-14 z-40 flex items-center bg-background px-4 animate-in fade-in slide-in-from-right duration-300 rounded-2xl pointer-events-none">
                   <div className="flex items-center gap-3 w-full">
                     <div className="flex items-center gap-2 animate-pulse">
                       <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
@@ -957,7 +957,7 @@ export default function Chat() {
                         variant={audio.recording ? "default" : "ghost"}
                         size="icon"
                         className={cn(
-                          "h-10 w-10 rounded-full transition-all duration-300 touch-none select-none",
+                          "h-10 w-10 rounded-full transition-all duration-300 touch-none select-none relative z-50",
                           audio.recording 
                             ? "bg-red-500 hover:bg-red-600 scale-125 text-white shadow-lg" 
                             : "text-muted-foreground hover:bg-muted/50"
