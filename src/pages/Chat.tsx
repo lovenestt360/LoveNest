@@ -175,17 +175,27 @@ function useAudioRecorder() {
 
   const pause = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.pause();
-      setIsPaused(true);
-      clearInterval(timerRef.current);
+      try {
+        mediaRecorderRef.current.pause();
+        setIsPaused(true);
+        clearInterval(timerRef.current);
+      } catch (err) {
+        console.error("Audio pause error:", err);
+      }
     }
   }, []);
 
   const resume = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
-      mediaRecorderRef.current.resume();
-      setIsPaused(false);
-      timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+      try {
+        mediaRecorderRef.current.resume();
+        setIsPaused(false);
+        // Restart timer
+        clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+      } catch (err) {
+        console.error("Audio resume error:", err);
+      }
     }
   }, []);
 
@@ -549,9 +559,14 @@ export default function Chat() {
         filter: `couple_space_id=eq.${spaceId}`,
       }, (payload) => {
         if (payload.eventType === "INSERT") {
+          const newMsg = payload.new as Message;
           setMessages((prev) => {
-            if (prev.some((m) => m.id === (payload.new as Message).id)) return prev;
-            return [...prev, payload.new as Message];
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            // Remove optimistic temp message if it matches this one
+            if (newMsg.sender_user_id === user?.id) {
+              return [...prev.filter(m => !m.id.startsWith("temp-")), newMsg];
+            }
+            return [...prev, newMsg];
           });
         } else if (payload.eventType === "UPDATE") {
           setMessages((prev) => prev.map(m =>
@@ -594,20 +609,44 @@ export default function Chat() {
   }, [user]);
 
   const handleSend = useCallback(async (blobOverride?: Blob) => {
-    if (!spaceId || !user || sending) return;
-    const text = input.trim();
-    const activeAudioBlob = blobOverride;
-    
     if (!text && !imageFile && !activeAudioBlob) return;
+    
+    // ── Pre-calculate values ──
+    const currentReplyTo = replyTo;
+    const currentImageFile = imageFile;
+    const currentInput = input;
 
+    // ── Optimistic Clear ──
+    setInput("");
+    setReplyTo(null);
+    setImageFile(null);
+    audio.clear();
     setSending(true);
+
+    // ── Optimistic Message ──
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      couple_space_id: spaceId,
+      sender_user_id: user.id,
+      content: currentInput,
+      reply_to_id: currentReplyTo?.id ?? null,
+      image_url: currentImageFile ? URL.createObjectURL(currentImageFile) : null,
+      audio_url: activeAudioBlob ? "pending" : null,
+      is_pinned: false,
+      is_edited: false,
+      is_deleted: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
     try {
       let imageUrl: string | null = null;
       let audioUrl: string | null = null;
 
-      if (imageFile) {
-        const ext = imageFile.name.split(".").pop() ?? "jpg";
-        imageUrl = await uploadMedia(imageFile, ext);
+      if (currentImageFile) {
+        const ext = currentImageFile.name.split(".").pop() ?? "jpg";
+        imageUrl = await uploadMedia(currentImageFile, ext);
       }
       
       if (activeAudioBlob) {
@@ -627,8 +666,8 @@ export default function Chat() {
       const { error: insertError } = await supabase.from("messages").insert({
         couple_space_id: spaceId,
         sender_user_id: user.id,
-        content: text,
-        reply_to_id: replyTo?.id ?? null,
+        content: currentInput,
+        reply_to_id: currentReplyTo?.id ?? null,
         image_url: imageUrl,
         audio_url: audioUrl,
       });
@@ -642,23 +681,22 @@ export default function Chat() {
 
       confirmAction();
 
-      // Notify partner
-      let body = text;
+      // ── Non-blocking Notification ──
+      let body = currentInput;
       if (!body && imageUrl) body = "📷 Enviou uma foto";
       if (!body && audioUrl) body = "🎤 Enviou um áudio";
+      
       notifyPartner({
         couple_space_id: spaceId,
         title: "💬 Nova mensagem no Chat",
-        body: body.length > 100 ? body.slice(0, 100) + "…" : body,
+        body: body.length > 50 ? body.slice(0, 50) + "…" : body,
         url: "/chat",
         type: "chat",
-      });
+      }).catch(err => console.error("Notification fail (silent):", err));
 
-      setInput("");
-      setReplyTo(null);
-      setImageFile(null);
-      audio.clear();
     } catch (err: any) {
+      // Remove temp message on error
+      setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")));
       toast({ title: "Erro ao enviar", description: err?.message, variant: "destructive" });
     } finally {
       setSending(false);
@@ -718,11 +756,22 @@ export default function Chat() {
 
   /* ── Delete message ── */
   const handleDelete = useCallback(async (msg: Message) => {
-    await supabase.from("messages")
+    // ── Optimistic UI ──
+    setMessages((prev) => prev.map(m => 
+      m.id === msg.id ? { ...m, is_deleted: true, content: "" } : m
+    ));
+    setSheetMsg(null);
+
+    // ── Actual DB update ──
+    const { error } = await supabase.from("messages")
       .update({ is_deleted: true, content: "", image_url: null, audio_url: null, updated_at: new Date().toISOString() })
       .eq("id", msg.id);
-    setSheetMsg(null);
-  }, []);
+    
+    if (error) {
+      console.error("Delete error:", error);
+      toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" });
+    }
+  }, [toast]);
 
   /* ── Pin/Unpin ── */
   const handlePin = useCallback(async (msg: Message) => {
@@ -1173,6 +1222,7 @@ function MessageBubble({
               ? "rounded-[22px] rounded-br-[6px] bg-primary text-primary-foreground font-medium bg-gradient-to-br from-primary to-primary/95 shadow-primary/20"
               : "rounded-[22px] rounded-bl-[6px] bg-background border border-border/50 text-foreground font-medium shadow-border/10",
             isDeleted && "opacity-50 italic",
+            msg.id.startsWith("temp-") && "opacity-70 grayscale-[0.5] animate-pulse"
           )}
           style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
         >
@@ -1206,7 +1256,14 @@ function MessageBubble({
           {/* Audio */}
           {msg.audio_url && !isDeleted && (
             <div className="mb-1">
-              <AudioPlayer url={msg.audio_url} isMine={isMine} />
+              {msg.audio_url === "pending" ? (
+                <div className="flex items-center gap-2 py-2 px-3 bg-white/5 rounded-xl">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-[10px] opacity-70">A processar áudio...</span>
+                </div>
+              ) : (
+                <AudioPlayer url={msg.audio_url} isMine={isMine} />
+              )}
             </div>
           )}
 
