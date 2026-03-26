@@ -97,6 +97,7 @@ function useLongPress(onLongPress: () => void, delay = 500) {
 
 function useAudioRecorder() {
   const [recording, setRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -130,6 +131,7 @@ function useAudioRecorder() {
       
       mediaRecorderRef.current = recorder;
       recorder.start(200);
+      setAudioBlob(null);
       setRecording(true);
       setDuration(0);
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
@@ -154,7 +156,9 @@ function useAudioRecorder() {
           streamRef.current.getTracks().forEach(t => t.stop());
           streamRef.current = null;
         }
-        resolve(blob.size > 0 ? blob : null);
+        const finalBlob = blob.size > 0 ? blob : null;
+        setAudioBlob(finalBlob);
+        resolve(finalBlob);
       };
 
       if (mediaRecorderRef.current.state === "recording") {
@@ -176,11 +180,18 @@ function useAudioRecorder() {
       streamRef.current = null;
     }
     setRecording(false);
+    setAudioBlob(null);
     clearInterval(timerRef.current);
     chunksRef.current = [];
   }, []);
 
-  return { recording, duration, start, stop, cancel };
+  const clear = useCallback(() => {
+    setAudioBlob(null);
+    setDuration(0);
+    chunksRef.current = [];
+  }, []);
+
+  return { recording, audioBlob, duration, start, stop, cancel, clear };
 }
 
 /* ── Image Picker ── */
@@ -625,6 +636,7 @@ export default function Chat() {
       setInput("");
       setReplyTo(null);
       setImageFile(null);
+      audio.clear();
     } catch (err: any) {
       toast({ title: "Erro ao enviar", description: err?.message, variant: "destructive" });
     } finally {
@@ -923,26 +935,71 @@ export default function Chat() {
           {!editingMsg && (
             <div className="relative">
               {/* WhatsApp Recording Overlay */}
-              {audio.recording && (
-                <div className="absolute inset-y-0 left-0 right-14 z-40 flex items-center bg-background px-4 animate-in fade-in slide-in-from-right duration-300 rounded-2xl pointer-events-none">
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="flex items-center gap-2 animate-pulse">
-                      <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                      <span className="text-sm font-semibold text-red-500 font-mono">
-                        {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, '0')}
-                      </span>
+              {(audio.recording || audio.audioBlob) && (
+                <div className="absolute inset-y-0 left-0 right-0 z-40 bg-background flex flex-col justify-center animate-in fade-in slide-in-from-right duration-200">
+                  <div className="flex items-center gap-2 pl-2 pr-1.5 h-10 py-1">
+                    
+                    {/* Trash Button */}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500" 
+                      onClick={() => audio.cancel()}
+                      title="Apagar Gravação"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+
+                    <div className="flex-1 flex items-center justify-center min-w-0">
+                      {audio.recording ? (
+                        <div className="flex items-center gap-2 rounded-full bg-red-500/10 px-4 py-1.5 animate-pulse">
+                          <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                          <span className="text-[14px] font-semibold text-red-500 font-mono tracking-wide">
+                            {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="w-full flex justify-center">
+                          <AudioPlayer url={URL.createObjectURL(audio.audioBlob!)} isMine={false} />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 text-center">
-                      <p className="text-xs text-muted-foreground animate-pulse">
-                        Arrasta para a esquerda para cancelar
-                      </p>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {audio.recording && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 shrink-0 rounded-full text-primary hover:bg-primary/10" 
+                          onClick={() => audio.stop()}
+                          title="Pausar / Ouvir"
+                        >
+                          <Pause className="h-5 w-5 fill-current" />
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="icon"
+                        className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
+                        onClick={async () => {
+                          if (audio.recording) {
+                            const blob = await audio.stop();
+                            if (blob) handleSend(blob);
+                          } else if (audio.audioBlob) {
+                            handleSend(audio.audioBlob);
+                          }
+                        }}
+                        disabled={sending}
+                      >
+                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
+                      </Button>
                     </div>
                   </div>
                 </div>
               )}
 
               <form
-                className="flex items-center gap-1 pl-1 pr-1.5"
+                className={cn("flex items-center gap-1 pl-1 pr-1.5", (audio.recording || audio.audioBlob) && "opacity-0 invisible pointer-events-none")}
                 onSubmit={(e) => { e.preventDefault(); handleSend(); }}
               >
                 <ImagePickerButton onPick={setImageFile} />
@@ -953,10 +1010,7 @@ export default function Chat() {
                   placeholder={(replyTo || imageFile) 
                     ? "Adicionar texto..." 
                     : (new Date().getHours() > 18 ? "Diz algo bonito hoje..." : "Escreve algo que aqueça o coração 💛")}
-                  className={cn(
-                    "flex-1 h-10 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]",
-                    audio.recording && "opacity-0 invisible"
-                  )}
+                  className="flex-1 h-10 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]"
                   autoComplete="off"
                 />
                 <div className="flex items-center gap-1 shrink-0">
@@ -975,40 +1029,13 @@ export default function Chat() {
                       </Button>
                       <Button
                         type="button"
-                        variant={audio.recording ? "default" : "ghost"}
+                        variant="ghost"
                         size="icon"
-                        className={cn(
-                          "h-10 w-10 rounded-full transition-all duration-300 touch-none select-none relative z-50",
-                          audio.recording 
-                            ? "bg-red-500 hover:bg-red-600 scale-125 text-white shadow-lg" 
-                            : "text-muted-foreground hover:bg-muted/50"
-                        )}
-                        onPointerDown={(e) => {
-                          e.preventDefault();
-                          audio.start();
-                          const startX = e.clientX;
-                          const onPointerMove = (moveEvent: PointerEvent) => {
-                            const diffX = startX - moveEvent.clientX;
-                            if (diffX > 80) { // Cancel threshold
-                              audio.cancel();
-                              window.removeEventListener('pointermove', onPointerMove);
-                              window.removeEventListener('pointerup', onPointerUp);
-                              toast({ title: "Cancelado", description: "Gravação descartada." });
-                            }
-                          };
-                          const onPointerUp = async () => {
-                            window.removeEventListener('pointermove', onPointerMove);
-                            window.removeEventListener('pointerup', onPointerUp);
-                            if (audio.recording) {
-                              const blob = await audio.stop();
-                              if (blob) handleSend(blob);
-                            }
-                          };
-                          window.addEventListener('pointermove', onPointerMove);
-                          window.addEventListener('pointerup', onPointerUp);
-                        }}
+                        className="h-10 w-10 rounded-full transition-all text-muted-foreground hover:bg-muted/50"
+                        onClick={() => audio.start()}
+                        title="Gravar Áudio"
                       >
-                        <Mic className={cn("h-4 w-4", audio.recording && "animate-pulse")} />
+                        <Mic className="h-5 w-5" />
                       </Button>
                     </>
                   ) : (
