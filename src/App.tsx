@@ -22,9 +22,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const Index = lazy(() => import("./pages/Index"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Mood = lazy(() => import("./pages/Mood"));
-const Tasks = lazy(() => import("./pages/Tasks"));
 const Prayer = lazy(() => import("./pages/Prayer"));
-const Schedule = lazy(() => import("./pages/Schedule"));
+const Plano = lazy(() => import("./pages/Plano"));
 const Complaints = lazy(() => import("./pages/Complaints"));
 const Memories = lazy(() => import("./pages/Memories"));
 const Cycle = lazy(() => import("./pages/Cycle"));
@@ -74,16 +73,11 @@ const AppRoutes = () => (
         <Route path="humor" element={<Mood />} />
         <Route path="configuracoes" element={<Settings />} />
         <Route path="subscricao" element={<Subscription />} />
+        <Route path="plano" element={<Plano />} />
 
-        {/* Paywalled Premium Routes */}
-        <Route element={<PremiumGuard requiredFeature="tasks" />}>
-          <Route path="tarefas" element={<Tasks />} />
-        </Route>
+        {/* Premium Routes */}
         <Route element={<PremiumGuard requiredFeature="prayer" />}>
           <Route path="oracao" element={<Prayer />} />
-        </Route>
-        <Route element={<PremiumGuard requiredFeature="agenda" />}>
-          <Route path="agenda" element={<Schedule />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="conflicts" />}>
           <Route path="conflitos" element={<Complaints />} />

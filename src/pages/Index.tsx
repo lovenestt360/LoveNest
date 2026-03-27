@@ -32,22 +32,31 @@ import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
 
-function useTaskStats() {
+function usePlanoStats() {
   const spaceId = useCoupleSpaceId();
-  const [open, setOpen] = useState(0);
-  const [doneToday, setDoneToday] = useState(0);
+  const [pending, setPending] = useState(0);
+  const [next, setNext] = useState<{ title: string; time: string | null } | null>(null);
+
   useEffect(() => {
     if (!spaceId) return;
-    supabase.from("tasks").select("status,done_at")
+    supabase.from("plano_items")
+      .select("title,plan_at,completed")
       .eq("couple_space_id", spaceId)
       .then(({ data }) => {
         if (!data) return;
-        const today = new Date().toISOString().slice(0, 10);
-        setOpen(data.filter(t => t.status === "open").length);
-        setDoneToday(data.filter(t => t.status === "done" && t.done_at?.slice(0, 10) === today).length);
+        setPending(data.filter(t => !t.completed).length);
+        const upcoming = data
+          .filter(t => !t.completed && t.plan_at)
+          .sort((a, b) => a.plan_at!.localeCompare(b.plan_at!))[0];
+        if (upcoming) {
+          setNext({ 
+            title: upcoming.title, 
+            time: format(new Date(upcoming.plan_at!), "HH:mm") 
+          });
+        }
       });
   }, [spaceId]);
-  return { open, doneToday };
+  return { pending, next };
 }
 
 const MOOD_MAP: Record<string, [string, string]> = {
@@ -94,22 +103,6 @@ function usePhotoCount() {
   }, [spaceId]);
   return count;
 }
-
-function useNextEvent() {
-  const spaceId = useCoupleSpaceId();
-  const [ev, setEv] = useState<{ title: string; date: string } | null>(null);
-  useEffect(() => {
-    if (!spaceId) return;
-    const today = format(new Date(), "yyyy-MM-dd");
-    supabase.from("events").select("title,event_date").eq("couple_space_id", spaceId)
-      .gte("event_date", today).order("event_date").limit(1)
-      .then(({ data }) => {
-        if (data?.[0]) setEv({ title: data[0].title, date: data[0].event_date });
-      });
-  }, [spaceId]);
-  return ev;
-}
-
 function usePrayerStatus() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
@@ -218,8 +211,8 @@ function useIntelligentNotifs(spaceId: string | null) {
         couple_space_id: spaceId,
         title: "Missão Especial! 📸",
         body: `Já viste a missão do dia? "${dailyStatus.mission_title}" ✨`,
-        url: "/tarefas",
-        type: "tarefas",
+        url: "/plano",
+        type: "plano",
         template_key: "mission_reminder"
       });
       sentRef.current.add("mission_reminder");
@@ -362,10 +355,9 @@ const Index = () => {
   const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
 
   const avatars = useCoupleAvatars();
-  const tasks = useTaskStats();
+  const plano = usePlanoStats();
   const mood = useMoodToday();
   const photoCount = usePhotoCount();
-  const nextEvent = useNextEvent();
   const prayer = usePrayerStatus();
   const complaints = useOpenComplaints();
   const chatPreview = useMessagePreview();
@@ -590,14 +582,15 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4">
           <DashCard
             icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
-            title="Tarefas"
+            title="O Plano"
             lines={[
-              tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
-              tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
+              plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo pronto ✨",
+              plano.next ? `Próximo: ${plano.next.time} ${plano.next.title}` : "Nada mais por hoje"
             ]}
-            to="/tarefas"
-            badge={tasksUnread}
-            accent="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+            to="/plano"
+            badge={tasksUnread + scheduleUnread}
+            accent="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
+            className="col-span-2"
           />
           <DashCard
             icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
@@ -620,17 +613,6 @@ const Index = () => {
             to="/memorias"
             badge={memoriesUnread}
             accent="bg-violet-500/20 text-violet-600 dark:text-violet-400"
-          />
-          <DashCard
-            icon={<CalendarDays className="h-6 w-6 stroke-[2.5]" />}
-            title="Agenda"
-            lines={[
-              nextEvent ? nextEvent.title : "Sem eventos",
-              nextEvent ? format(new Date(nextEvent.date), "d 'de' MMM", { locale: pt }) : "Planear algo 🗓️"
-            ]}
-            to="/agenda"
-            badge={scheduleUnread}
-            accent="bg-blue-500/20 text-blue-600 dark:text-blue-400"
           />
         </div>
       </div>

@@ -33,12 +33,11 @@ const mainTabs = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/chat", label: "Chat", Icon: MessageCircle },
   { to: "/humor", label: "Mood", Icon: Smile },
-  { to: "/tarefas", label: "Tasks", Icon: CheckSquare },
+  { to: "/plano", label: "Plano", Icon: CheckSquare },
 ] as const;
 
 const moreItems = [
   { to: "/memorias", label: "Memórias", Icon: Image },
-  { to: "/agenda", label: "Agenda", Icon: CalendarDays },
   { to: "/rotina", label: "Rotina", Icon: ClipboardList },
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
   { to: "/jejum", label: "Jejum", Icon: Flame },
@@ -73,7 +72,7 @@ export function BottomTabs() {
     switch (to) {
       case "/chat": return chatUnread;
       case "/humor": return moodUnread;
-      case "/tarefas": return tasksUnread;
+      case "/plano": return tasksUnread + scheduleUnread;
       default: return 0;
     }
   };
