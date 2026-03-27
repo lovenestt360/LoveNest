@@ -32,6 +32,14 @@ const STREAK_LEVELS = [
   { min: 365, title: "Casal Lendário" },
 ];
 
+const FALLBACK_MISSIONS = [
+  { title: "Mensagem Carinhosa", description: "Envia uma mensagem de voz ou texto a dizer o que mais gostas no teu par hoje.", emoji: "💌", points_reward: 15 },
+  { title: "Foto Especial", description: "Partilha uma foto que represente um momento feliz que viveram juntos.", emoji: "📸", points_reward: 20 },
+  { title: "Elogio do Dia", description: "Escolhe um traço de personalidade do teu amor e faz um elogio sincero.", emoji: "✨", points_reward: 10 },
+  { title: "Plano para o Futuro", description: "Sugerir um encontro novo para o próximo fim de semana no chat.", emoji: "🗺️", points_reward: 10 },
+  { title: "Abraço Virtual", description: "Envia um GIF ou sticker que represente o abraço que gostarias de dar agora.", emoji: "🫂", points_reward: 10 },
+];
+
 export function getStreakLevel(streak: number) {
   let level = STREAK_LEVELS[0];
   for (const l of STREAK_LEVELS) {
@@ -100,9 +108,12 @@ export function useLoveStreak() {
 
     let mission = null;
     if (allMissions && allMissions.length > 0) {
-      // Pick a mission based on the day of the month
       const dayOfMonth = new Date().getDate();
       mission = allMissions[dayOfMonth % allMissions.length];
+    } else {
+      // Fallback if DB is empty
+      const dayOfMonth = new Date().getDate();
+      mission = FALLBACK_MISSIONS[dayOfMonth % FALLBACK_MISSIONS.length];
     }
 
     // 5. Check if mission completed today
