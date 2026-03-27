@@ -34,7 +34,7 @@ interface Task {
 export default function Tasks() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { dailyStatus, isPartner1, reload: reloadStreak } = useLoveStreak();
+  const { dailyStatus, isPartner1, reload: reloadStreak, confirmAction } = useLoveStreak();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -158,6 +158,9 @@ export default function Tasks() {
   const overdueTasks = openTasks.filter((t) => t.due_date && t.due_date < todayStr);
   const upcomingTasks = openTasks.filter((t) => t.due_date && t.due_date > todayStr);
   const noDueTasks = openTasks.filter((t) => !t.due_date);
+  
+  const isMissionPending = dailyStatus && !(isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2);
+  const totalPending = openTasks.length + (isMissionPending ? 1 : 0);
 
   const priorityLabel = (p: number) => p === 1 ? "Alta" : p === 3 ? "Baixa" : "Média";
   const priorityColor = (p: number) => p === 1 ? "destructive" : p === 3 ? "secondary" : "outline";
@@ -216,7 +219,7 @@ export default function Tasks() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Tarefas</h1>
-          <p className="text-sm text-muted-foreground">{openTasks.length} pendente{openTasks.length !== 1 ? "s" : ""}</p>
+          <p className="text-sm text-muted-foreground">{totalPending} pendente{totalPending !== 1 ? "s" : ""}</p>
         </div>
         <Button size="sm" onClick={() => { setEditingTask(null); setDialogOpen(true); }}>
           <Plus className="mr-1 h-4 w-4" /> Nova
@@ -224,6 +227,35 @@ export default function Tasks() {
       </header>
 
       <div className="space-y-4">
+        {isMissionPending && dailyStatus && (
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 animate-fade-slide-up shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Trophy className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-primary/70">Missão do Dia 🎯</h3>
+                <p className="text-sm font-bold text-foreground leading-tight">{dailyStatus.mission_title}</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="rounded-full bg-primary text-primary-foreground border-0 hover:bg-primary/90 hover:text-primary-foreground h-8 shadow-sm"
+                onClick={async () => {
+                  const ok = await confirmAction();
+                  if (ok) {
+                    toast({ title: "Missão concluída! 🎯", description: "Ganhaste pontos e mantiveste o streak vivo! ✨" });
+                    reloadStreak();
+                  }
+                }}
+              >
+                Concluir
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">{dailyStatus.mission_description}</p>
+          </div>
+        )}
+
         {renderSection("Atrasadas", overdueTasks)}
         {renderSection("Hoje", todayTasks)}
         {renderSection("Próximas", upcomingTasks)}
