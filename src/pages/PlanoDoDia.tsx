@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format, isToday } from "date-fns";
-import { pt } from "date-fns/locale";
+import { ptBR } from "date-fns/locale";
 import { 
   CheckCircle2, 
   Circle, 
@@ -38,23 +38,54 @@ import { toast } from "sonner";
 export default function PlanoDoDia() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { items, loading, partnerInfo, toggleItem, addItem, deleteItem } = useDailyPlan(selectedDate);
+  const { items, history, loading, partnerInfo, toggleItem, addItem, deleteItem } = useDailyPlan(selectedDate);
   
   const [viewingPartner, setViewingPartner] = useState(false);
   const [isAdding, setIsAdding] = useState<PlanType | null>(null);
-  const [formData, setFormData] = useState({ title: "", time: "", notes: "" });
+  const [formData, setFormData] = useState({ title: "", time: "", notes: "", emoji: "✨" });
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const todayStr = format(new Date(), "yyyy-MM-dd");
 
   const myItems = useMemo(() => items.filter(i => i.user_id === user?.id), [items, user?.id]);
   const partnerItems = useMemo(() => items.filter(i => i.user_id !== user?.id), [items, user?.id]);
 
+  const routineItems = useMemo(() => myItems.filter(i => i.type === "routine"), [myItems]);
+  const progressPercent = useMemo(() => {
+    if (routineItems.length === 0) return 0;
+    const completed = routineItems.filter(i => i.completed).length;
+    return Math.round((completed / routineItems.length) * 100);
+  }, [routineItems]);
+
+  const getDayStatusColor = (date: Date) => {
+    const dStr = format(date, "yyyy-MM-dd");
+    const dayLog = history.find(h => h.day === dStr);
+    if (!dayLog || dayLog.completion_rate === 0) return "bg-muted";
+    if (dayLog.completion_rate === 100) return "bg-green-500";
+    if (dayLog.completion_rate >= 50) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  const getProgressColor = (percent: number) => {
+    if (percent === 100) return "text-green-500";
+    if (percent >= 50) return "text-yellow-500";
+    if (percent > 0) return "text-red-500";
+    return "text-muted-foreground";
+  };
+
+  const last7Days = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d;
+    });
+  }, []);
+
   const handleAdd = async () => {
     if (!isAdding || !formData.title) return;
-    
     await addItem(isAdding, formData);
     setIsAdding(null);
-    setFormData({ title: "", time: "", notes: "" });
+    setFormData({ title: "", time: "", notes: "", emoji: "✨" });
     toast.success("Adicionado com sucesso!");
   };
 
@@ -88,7 +119,7 @@ export default function PlanoDoDia() {
                 className={cn(
                   "group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200",
                   item.completed 
-                    ? "bg-muted/30 border-transparent opacity-60" 
+                    ? "bg-muted/30 border-transparent opacity-60 shadow-none" 
                     : "bg-card border-border shadow-sm active:scale-[0.99]"
                 )}
               >
@@ -106,6 +137,10 @@ export default function PlanoDoDia() {
                   )
                 )}
 
+                <div className="h-12 w-12 rounded-xl bg-secondary/50 flex items-center justify-center text-xl shrink-0">
+                  {item.itemData?.emoji || (type === "routine" ? "✨" : type === "agenda" ? "📅" : "✅")}
+                </div>
+
                 <div className="flex-1 min-w-0">
                   <p className={cn(
                     "text-[15px] font-black tracking-tight",
@@ -113,7 +148,7 @@ export default function PlanoDoDia() {
                   )}>
                     {item.title}
                   </p>
-                  {(item.time || item.location || item.description) && (
+                  {(item.time || item.itemData?.notes || item.description) && (
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {item.time && (
                         <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground/70 bg-muted px-2 py-0.5 rounded-md">
@@ -121,9 +156,9 @@ export default function PlanoDoDia() {
                           {item.time.slice(0, 5)}
                         </span>
                       )}
-                      {item.description && (
+                      {(item.itemData?.notes || item.description) && (
                         <span className="text-[11px] text-muted-foreground truncate italic">
-                          {item.description}
+                          {item.itemData?.notes || item.description}
                         </span>
                       )}
                     </div>
@@ -182,20 +217,17 @@ export default function PlanoDoDia() {
         <Heart className="h-6 w-6 text-pink-500 fill-pink-500/10" />
       </header>
 
-      <div className="px-6 py-4 pb-32 overflow-y-auto h-full">
+      <div className="px-6 py-4 pb-32 overflow-y-auto h-full space-y-6">
         <Tabs defaultValue="routine" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/40 p-1 rounded-[1.25rem] h-14 border">
-            <TabsTrigger value="routine" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all">
-              <Flame className="h-4 w-4 mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Rotina</span>
+            <TabsTrigger value="routine" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
+              <Flame className="h-4 w-4 mr-2" /> Rotina
             </TabsTrigger>
-            <TabsTrigger value="agenda" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all">
-              <CalendarDays className="h-4 w-4 mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Agenda</span>
+            <TabsTrigger value="agenda" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
+              <CalendarDays className="h-4 w-4 mr-2" /> Agenda
             </TabsTrigger>
-            <TabsTrigger value="task" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all">
-              <ClipboardList className="h-4 w-4 mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Tarefas</span>
+            <TabsTrigger value="task" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
+              <ClipboardList className="h-4 w-4 mr-2" /> Tarefas
             </TabsTrigger>
           </TabsList>
 
@@ -220,7 +252,7 @@ export default function PlanoDoDia() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-muted-foreground/80">
-            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: pt })}
+            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </span>
           {isToday(selectedDate) && (
             <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
@@ -233,17 +265,14 @@ export default function PlanoDoDia() {
       <main className="px-6 flex-1">
         <Tabs defaultValue="routine" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/40 p-1 rounded-[1.25rem] h-14 border">
-            <TabsTrigger value="routine" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all">
-              <Flame className="h-4 w-4 mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Rotina</span>
+            <TabsTrigger value="routine" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
+              <Flame className="h-4 w-4 mr-2" /> Rotina
             </TabsTrigger>
-            <TabsTrigger value="agenda" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all">
-              <CalendarDays className="h-4 w-4 mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Agenda</span>
+            <TabsTrigger value="agenda" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
+              <CalendarDays className="h-4 w-4 mr-2" /> Agenda
             </TabsTrigger>
-            <TabsTrigger value="task" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all">
-              <ClipboardList className="h-4 w-4 mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Tarefas</span>
+            <TabsTrigger value="task" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
+              <ClipboardList className="h-4 w-4 mr-2" /> Tarefas
             </TabsTrigger>
           </TabsList>
 
@@ -254,7 +283,53 @@ export default function PlanoDoDia() {
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <TabsContent value="routine">{renderList(myItems, "routine", false)}</TabsContent>
+              <TabsContent value="routine" className="space-y-6">
+                {/* 7-Day History Calendar */}
+                <div className="flex justify-between items-center bg-card border rounded-3xl p-4 shadow-sm h-24">
+                  {last7Days.map((day) => {
+                    const isSel = format(day, "yyyy-MM-dd") === dateStr;
+                    const isTod = format(day, "yyyy-MM-dd") === todayStr;
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        onClick={() => setSelectedDate(day)}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 p-1.5 rounded-2xl transition-all active:scale-95",
+                          isSel ? "bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted/50"
+                        )}
+                      >
+                        <span className="text-[9px] font-black uppercase text-muted-foreground/60">
+                          {format(day, "EEE", { locale: ptBR }).charAt(0)}
+                        </span>
+                        <div className={cn(
+                          "h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-black transition-all",
+                          getDayStatusColor(day),
+                          isTod && "ring-2 ring-primary ring-offset-2 shadow-[0_0_15px_rgba(255,107,107,0.3)]",
+                          isSel ? "text-white" : "text-muted-foreground"
+                        )}>
+                          {format(day, "d")}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Performance Progress */}
+                <div className="bg-card border rounded-3xl p-6 shadow-sm flex items-center justify-between overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+                  <div className="relative z-10 space-y-1">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Desempenho de Hoje</p>
+                    <h2 className={cn("text-5xl font-black tracking-tighter", getProgressColor(progressPercent))}>
+                      {progressPercent}%
+                    </h2>
+                  </div>
+                  <div className="relative z-10 h-16 w-16 rounded-2xl bg-muted/20 flex items-center justify-center">
+                    <Flame className={cn("h-8 w-8 transition-all duration-500", progressPercent > 0 ? getProgressColor(progressPercent) : "text-muted-foreground/30")} />
+                  </div>
+                </div>
+
+                {renderList(myItems, "routine", false)}
+              </TabsContent>
               <TabsContent value="agenda">{renderList(myItems, "agenda", false)}</TabsContent>
               <TabsContent value="task">{renderList(myItems, "task", false)}</TabsContent>
             </div>
@@ -262,57 +337,73 @@ export default function PlanoDoDia() {
         </Tabs>
       </main>
 
-      {/* Creation Dialogs */}
+      {/* Unified Creation Dialog */}
       <Dialog open={!!isAdding} onOpenChange={(open) => !open && setIsAdding(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-[2rem]">
+        <DialogContent className="sm:max-w-[425px] rounded-[2.5rem] p-8">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black tracking-tight">
+            <DialogTitle className="text-2xl font-black tracking-tighter">
               Adicionar {isAdding === "routine" ? "Hábito" : isAdding === "agenda" ? "Evento" : "Tarefa"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-[11px] font-black uppercase tracking-widest ml-1">Título</Label>
+          <div className="grid gap-6 py-6">
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Título</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Ex: Treinar, Reunião, Comprar leite..."
-                className="h-12 rounded-xl"
+                className="h-14 rounded-2xl border-2 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-lg"
               />
             </div>
+            
             {isAdding === "agenda" && (
-              <div className="space-y-2">
-                <Label htmlFor="time" className="text-[11px] font-black uppercase tracking-widest ml-1">Horário (Opcional)</Label>
+              <div className="space-y-3">
+                <Label htmlFor="time" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Horário</Label>
                 <Input
                   id="time"
                   type="time"
                   value={formData.time}
                   onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  className="h-12 rounded-xl"
+                  className="h-14 rounded-2xl border-2 font-bold text-lg"
                 />
               </div>
             )}
+
+            {isAdding === "routine" && (
+              <div className="space-y-3">
+                <Label htmlFor="emoji" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Emoji do Hábito</Label>
+                <Input
+                  id="emoji"
+                  value={formData.emoji}
+                  onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+                  placeholder="✨"
+                  className="h-16 rounded-2xl border-2 text-center text-3xl font-bold"
+                  maxLength={2}
+                />
+              </div>
+            )}
+
             {isAdding !== "routine" && (
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-[11px] font-black uppercase tracking-widest ml-1">Notas (Opcional)</Label>
+              <div className="space-y-3">
+                <Label htmlFor="notes" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Notas Adicionais</Label>
                 <Input
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Detalhes extras..."
-                  className="h-12 rounded-xl"
+                  placeholder="Mais detalhes..."
+                  className="h-14 rounded-2xl border-2 font-bold"
                 />
               </div>
             )}
           </div>
           <DialogFooter>
             <Button 
-              className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest" 
+              className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-primary/20 transition-all active:scale-95" 
               onClick={handleAdd}
               disabled={!formData.title}
             >
-              Criar {isAdding === "routine" ? "Hábito" : isAdding === "agenda" ? "Evento" : "Tarefa"}
+              CRIAR {isAdding?.toUpperCase()}
             </Button>
           </DialogFooter>
         </DialogContent>
