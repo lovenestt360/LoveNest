@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePlano, type PlanoItem } from "@/hooks/usePlano";
 import { useRoutineItems } from "@/hooks/useRoutineItems";
 import { useRoutineLogs } from "@/hooks/useRoutineLogs";
