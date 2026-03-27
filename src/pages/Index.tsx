@@ -12,14 +12,12 @@ import { computeCycleInfo, useCycleTarget, type CycleProfile, type PeriodEntry }
 import { getEasterDate, dayResultLabel } from "@/features/fasting/types";
 import { Progress } from "@/components/ui/progress";
 import {
-  Smile, Camera, CalendarDays, BookHeart,
+  CheckSquare, Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass,
-  ClipboardList
+  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
-import { useDailyPlan } from "../hooks/useDailyPlan";
 import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -34,6 +32,23 @@ import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
 
+function useTaskStats() {
+  const spaceId = useCoupleSpaceId();
+  const [open, setOpen] = useState(0);
+  const [doneToday, setDoneToday] = useState(0);
+  useEffect(() => {
+    if (!spaceId) return;
+    supabase.from("tasks").select("status,done_at")
+      .eq("couple_space_id", spaceId)
+      .then(({ data }) => {
+        if (!data) return;
+        const today = new Date().toISOString().slice(0, 10);
+        setOpen(data.filter(t => t.status === "open").length);
+        setDoneToday(data.filter(t => t.status === "done" && t.done_at?.slice(0, 10) === today).length);
+      });
+  }, [spaceId]);
+  return { open, doneToday };
+}
 
 const MOOD_MAP: Record<string, [string, string]> = {
   feliz: ["😊", "Feliz"], tranquilo: ["😌", "Tranquilo"], apaixonado: ["🥰", "Apaixonado"],
@@ -132,7 +147,7 @@ function useWrappedStatus() {
   useEffect(() => {
     if (!spaceId) return;
     const now = new Date();
-    let month = now.getMonth();
+    let month = now.getMonth(); 
     let year = now.getFullYear();
     if (month === 0) {
       month = 12;
@@ -173,12 +188,8 @@ function useMessagePreview() {
 function useIntelligentNotifs(spaceId: string | null) {
   const { user } = useAuth();
   const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
-  const { items: planItems } = useDailyPlan();
   const lastMsg = useMessagePreview();
   const sentRef = useRef<Set<string>>(new Set());
-
-  const openTasks = planItems.filter(i => i.type === "task" && !i.completed).length;
-  const doneTasksToday = planItems.filter(i => i.type === "task" && i.completed).length;
 
   useEffect(() => {
     if (!spaceId || !user || !streakData) return;
@@ -187,7 +198,7 @@ function useIntelligentNotifs(spaceId: string | null) {
     const currentHour = now.getHours();
 
     // 1. Streak Reminder (if after 19h and partner hasn't interacted)
-    const partnerInteracted = dailyStatus?.partner_active;
+    const partnerInteracted = isPartner1 ? streakData.partner2_interacted_today : streakData.partner1_interacted_today;
     if (currentHour >= 19 && !partnerInteracted && !sentRef.current.has("streak_reminder")) {
       notifyPartner({
         couple_space_id: spaceId,
@@ -201,7 +212,7 @@ function useIntelligentNotifs(spaceId: string | null) {
     }
 
     // 1b. Mission Reminder (if after 17h and mission not done)
-    const meMission = dailyStatus?.me_active;
+    const meMission = isPartner1 ? dailyStatus?.is_completed_p1 : dailyStatus?.is_completed_p2;
     if (currentHour >= 17 && !meMission && dailyStatus?.mission_title && !sentRef.current.has("mission_reminder")) {
       notifyPartner({
         couple_space_id: spaceId,
@@ -351,9 +362,7 @@ const Index = () => {
   const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
 
   const avatars = useCoupleAvatars();
-  const { items: planItems } = useDailyPlan();
-  const openTasks = planItems.filter(i => i.type === "task" && !i.completed).length;
-  const doneTasksToday = planItems.filter(i => i.type === "task" && i.completed).length;
+  const tasks = useTaskStats();
   const mood = useMoodToday();
   const photoCount = usePhotoCount();
   const nextEvent = useNextEvent();
@@ -373,11 +382,11 @@ const Index = () => {
     const message = `Estamos a usar o LoveNest 💛\num espaço só nosso…\ncria o teu também ✨\n\nCódigo: ${referralCode}`;
 
     if (navigator.share) {
-      navigator.share({
-        title: 'Convite LoveNest',
-        text: message,
-        url: shareUrl
-      }).catch(() => { });
+      navigator.share({ 
+        title: 'Convite LoveNest', 
+        text: message, 
+        url: shareUrl 
+      }).catch(() => {});
     } else {
       navigator.clipboard.writeText(`${message}\n${shareUrl}`);
       toast.success("Convite copiado! Partilha com amigos. ✨");
@@ -387,13 +396,13 @@ const Index = () => {
   const handleShareHouse = () => {
     if (!houseInviteCode) return;
     const message = `Vem construir o nosso ninho no LoveNest! 🏠❤️ Usa o código do nosso espaço: ${houseInviteCode}`;
-
+    
     if (navigator.share) {
-      navigator.share({
-        title: 'Nosso Ninho no LoveNest',
+      navigator.share({ 
+        title: 'Nosso Ninho no LoveNest', 
         text: message,
-        url: window.location.origin
-      }).catch(() => { });
+        url: window.location.origin 
+      }).catch(() => {});
     } else {
       navigator.clipboard.writeText(`${message}\n${window.location.origin}`);
       toast.success("Código e link copiados! 🏠");
@@ -418,9 +427,9 @@ const Index = () => {
 
       {/* ── Highlights & Status ── */}
       <div className="space-y-4">
-        <TimeTogetherCard
-          days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
-          streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")}
+        <TimeTogetherCard 
+          days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
+          streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
         />
 
         {/* Announcements */}
@@ -447,12 +456,12 @@ const Index = () => {
                 <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">O teu ninho ainda está vazio!</p>
               </div>
             </div>
-
+            
             <div className="flex gap-2">
               <div className="flex-1 bg-white/50 border border-primary/20 rounded-2xl h-14 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
                 {houseInviteCode}
               </div>
-              <button
+              <button 
                 onClick={handleShareHouse}
                 className="h-14 w-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
               >
@@ -467,9 +476,9 @@ const Index = () => {
       {/* ── Featured Destaques ── */}
       <div className="space-y-4">
         <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2 animate-fade-slide-up stagger-1">
-          <Compass className="w-3 h-3" /> Em Destaque
+           <Compass className="w-3 h-3" /> Em Destaque
         </h2>
-
+        
         <div className="space-y-3">
           {/* LoveStreak Component */}
           <div className="animate-fade-slide-up stagger-2">
@@ -549,9 +558,9 @@ const Index = () => {
 
         {/* Small Gesture Nudge */}
         <div className="flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
+          <Button 
+            variant="ghost" 
+            size="sm" 
             className="rounded-full text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 hover:text-primary hover:bg-primary/5 transition-all gap-2 py-1 h-auto"
             onClick={() => {
               notifyPartner({
@@ -580,13 +589,13 @@ const Index = () => {
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
-            icon={<ClipboardList className="h-6 w-6 stroke-[2.5]" />}
-            title="Plano do Dia"
+            icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
+            title="Tarefas"
             lines={[
-              openTasks > 0 ? `${openTasks} pendentes` : "Tudo em dia ✓",
-              doneTasksToday > 0 ? `${doneTasksToday} feitas hoje` : " ",
+              tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
+              tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
             ]}
-            to="/plano"
+            to="/tarefas"
             badge={tasksUnread}
             accent="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           />
@@ -611,6 +620,17 @@ const Index = () => {
             to="/memorias"
             badge={memoriesUnread}
             accent="bg-violet-500/20 text-violet-600 dark:text-violet-400"
+          />
+          <DashCard
+            icon={<CalendarDays className="h-6 w-6 stroke-[2.5]" />}
+            title="Agenda"
+            lines={[
+              nextEvent ? nextEvent.title : "Sem eventos",
+              nextEvent ? format(new Date(nextEvent.date), "d 'de' MMM", { locale: pt }) : "Planear algo 🗓️"
+            ]}
+            to="/agenda"
+            badge={scheduleUnread}
+            accent="bg-blue-500/20 text-blue-600 dark:text-blue-400"
           />
         </div>
       </div>

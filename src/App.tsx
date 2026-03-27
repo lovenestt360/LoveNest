@@ -22,7 +22,9 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const Index = lazy(() => import("./pages/Index"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Mood = lazy(() => import("./pages/Mood"));
+const Tasks = lazy(() => import("./pages/Tasks"));
 const Prayer = lazy(() => import("./pages/Prayer"));
+const Schedule = lazy(() => import("./pages/Schedule"));
 const Complaints = lazy(() => import("./pages/Complaints"));
 const Memories = lazy(() => import("./pages/Memories"));
 const Cycle = lazy(() => import("./pages/Cycle"));
@@ -32,13 +34,15 @@ const Signup = lazy(() => import("./pages/Signup"));
 const CoupleSpace = lazy(() => import("./pages/CoupleSpace"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Fasting = lazy(() => import("./pages/Fasting"));
+const Routine = lazy(() => import("./pages/Routine"));
+const RoutineDay = lazy(() => import("./pages/RoutineDay"));
+const RoutineManage = lazy(() => import("./pages/RoutineManage"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const Ranking = lazy(() => import("./pages/Ranking"));
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const Admin = lazy(() => import("./pages/Admin"));
-const PlanoDoDia = lazy(() => import("./pages/PlanoDoDia"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminRegister = lazy(() => import("./pages/admin/AdminRegister"));
 
@@ -72,12 +76,14 @@ const AppRoutes = () => (
         <Route path="subscricao" element={<Subscription />} />
 
         {/* Paywalled Premium Routes */}
-        {/* Paywalled Premium Routes */}
         <Route element={<PremiumGuard requiredFeature="tasks" />}>
-          <Route path="plano" element={<PlanoDoDia />} />
+          <Route path="tarefas" element={<Tasks />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="prayer" />}>
           <Route path="oracao" element={<Prayer />} />
+        </Route>
+        <Route element={<PremiumGuard requiredFeature="agenda" />}>
+          <Route path="agenda" element={<Schedule />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="conflicts" />}>
           <Route path="conflitos" element={<Complaints />} />
@@ -92,7 +98,9 @@ const AppRoutes = () => (
           <Route path="jejum" element={<Fasting />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="routine" />}>
-          <Route path="plano" element={<PlanoDoDia />} />
+          <Route path="rotina" element={<Routine />} />
+          <Route path="rotina/dia/:date" element={<RoutineDay />} />
+          <Route path="rotina/gerir" element={<RoutineManage />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="challenges" />}>
           <Route path="desafios" element={<Challenges />} />

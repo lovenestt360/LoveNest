@@ -33,11 +33,13 @@ const mainTabs = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/chat", label: "Chat", Icon: MessageCircle },
   { to: "/humor", label: "Mood", Icon: Smile },
-  { to: "/plano", label: "Plano", Icon: ClipboardList },
+  { to: "/tarefas", label: "Tasks", Icon: CheckSquare },
 ] as const;
 
 const moreItems = [
   { to: "/memorias", label: "Memórias", Icon: Image },
+  { to: "/agenda", label: "Agenda", Icon: CalendarDays },
+  { to: "/rotina", label: "Rotina", Icon: ClipboardList },
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
   { to: "/jejum", label: "Jejum", Icon: Flame },
   { to: "/oracao", label: "Oração", Icon: BookOpen },
@@ -71,7 +73,7 @@ export function BottomTabs() {
     switch (to) {
       case "/chat": return chatUnread;
       case "/humor": return moodUnread;
-      case "/plano": return tasksUnread;
+      case "/tarefas": return tasksUnread;
       default: return 0;
     }
   };
@@ -79,6 +81,7 @@ export function BottomTabs() {
   const getMoreBadge = (to: string) => {
     switch (to) {
       case "/memorias": return memoriesUnread;
+      case "/agenda": return scheduleUnread;
       case "/oracao": return prayerUnread;
       case "/conflitos": return complaintsUnread;
       default: return 0;
