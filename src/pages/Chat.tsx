@@ -609,12 +609,16 @@ export default function Chat() {
   }, [user]);
 
   const handleSend = useCallback(async (blobOverride?: Blob) => {
-    if (!text && !imageFile && !activeAudioBlob) return;
-    
+    if (!spaceId || !user || sending) return;
+
     // ── Pre-calculate values ──
+    const currentInput = input;
+    const text = currentInput.trim();
+    const activeAudioBlob = blobOverride;
     const currentReplyTo = replyTo;
     const currentImageFile = imageFile;
-    const currentInput = input;
+
+    if (!text && !currentImageFile && !activeAudioBlob) return;
 
     // ── Optimistic Clear ──
     setInput("");
@@ -745,13 +749,20 @@ export default function Chat() {
   /* ── Edit message ── */
   const handleEditSave = useCallback(async () => {
     if (!editingMsg || !editText.trim()) return;
-    setSending(true);
-    await supabase.from("messages")
-      .update({ content: editText.trim(), is_edited: true, updated_at: new Date().toISOString() })
-      .eq("id", editingMsg.id);
+    const targetId = editingMsg.id;
+    const newContent = editText.trim();
+
+    // ── Optimistic UI ──
+    setMessages((prev) => prev.map(m => 
+      m.id === targetId ? { ...m, content: newContent, is_edited: true } : m
+    ));
     setEditingMsg(null);
     setEditText("");
-    setSending(false);
+
+    // ── Actual DB ──
+    await supabase.from("messages")
+      .update({ content: newContent, is_edited: true, updated_at: new Date().toISOString() })
+      .eq("id", targetId);
   }, [editingMsg, editText]);
 
   /* ── Delete message ── */
