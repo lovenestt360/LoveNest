@@ -14,7 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import {
   Smile, Camera, CalendarDays, BookHeart,
   HeartHandshake, MessageCircle, Heart, Flower2, Flame,
-  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
+  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass,
+  ClipboardList
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
