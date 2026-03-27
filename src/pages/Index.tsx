@@ -132,7 +132,7 @@ function useWrappedStatus() {
   useEffect(() => {
     if (!spaceId) return;
     const now = new Date();
-    let month = now.getMonth(); 
+    let month = now.getMonth();
     let year = now.getFullYear();
     if (month === 0) {
       month = 12;
@@ -373,11 +373,11 @@ const Index = () => {
     const message = `Estamos a usar o LoveNest 💛\num espaço só nosso…\ncria o teu também ✨\n\nCódigo: ${referralCode}`;
 
     if (navigator.share) {
-      navigator.share({ 
-        title: 'Convite LoveNest', 
-        text: message, 
-        url: shareUrl 
-      }).catch(() => {});
+      navigator.share({
+        title: 'Convite LoveNest',
+        text: message,
+        url: shareUrl
+      }).catch(() => { });
     } else {
       navigator.clipboard.writeText(`${message}\n${shareUrl}`);
       toast.success("Convite copiado! Partilha com amigos. ✨");
@@ -387,13 +387,13 @@ const Index = () => {
   const handleShareHouse = () => {
     if (!houseInviteCode) return;
     const message = `Vem construir o nosso ninho no LoveNest! 🏠❤️ Usa o código do nosso espaço: ${houseInviteCode}`;
-    
+
     if (navigator.share) {
-      navigator.share({ 
-        title: 'Nosso Ninho no LoveNest', 
+      navigator.share({
+        title: 'Nosso Ninho no LoveNest',
         text: message,
-        url: window.location.origin 
-      }).catch(() => {});
+        url: window.location.origin
+      }).catch(() => { });
     } else {
       navigator.clipboard.writeText(`${message}\n${window.location.origin}`);
       toast.success("Código e link copiados! 🏠");
@@ -418,9 +418,9 @@ const Index = () => {
 
       {/* ── Highlights & Status ── */}
       <div className="space-y-4">
-        <TimeTogetherCard 
-          days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
-          streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
+        <TimeTogetherCard
+          days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
+          streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")}
         />
 
         {/* Announcements */}
@@ -447,12 +447,12 @@ const Index = () => {
                 <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">O teu ninho ainda está vazio!</p>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <div className="flex-1 bg-white/50 border border-primary/20 rounded-2xl h-14 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
                 {houseInviteCode}
               </div>
-              <button 
+              <button
                 onClick={handleShareHouse}
                 className="h-14 w-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
               >
@@ -467,9 +467,9 @@ const Index = () => {
       {/* ── Featured Destaques ── */}
       <div className="space-y-4">
         <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2 animate-fade-slide-up stagger-1">
-           <Compass className="w-3 h-3" /> Em Destaque
+          <Compass className="w-3 h-3" /> Em Destaque
         </h2>
-        
+
         <div className="space-y-3">
           {/* LoveStreak Component */}
           <div className="animate-fade-slide-up stagger-2">
@@ -549,9 +549,9 @@ const Index = () => {
 
         {/* Small Gesture Nudge */}
         <div className="flex justify-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="rounded-full text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 hover:text-primary hover:bg-primary/5 transition-all gap-2 py-1 h-auto"
             onClick={() => {
               notifyPartner({
