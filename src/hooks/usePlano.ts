@@ -9,6 +9,9 @@ export interface PlanoItem {
   couple_space_id: string;
   user_id: string;
   title: string;
+  description: string | null;
+  category: string;
+  is_important: boolean;
   plan_at: string | null;
   completed: boolean;
   created_at: string;
@@ -27,6 +30,7 @@ export function usePlano() {
       .from("plano_items")
       .select("*")
       .eq("couple_space_id", spaceId)
+      .order("is_important", { ascending: false })
       .order("plan_at", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });
 
@@ -59,10 +63,15 @@ export function usePlano() {
     };
   }, [spaceId, fetchItems]);
 
-  const addPlan = async (title: string, time?: string) => {
+  const addPlan = async (
+    title: string, 
+    time?: string, 
+    description?: string, 
+    category: string = "geral",
+    isImportant: boolean = false
+  ) => {
     if (!spaceId || !user) return null;
     
-    // Construct plan_at with today's date if time is provided
     let planAt = null;
     if (time) {
       const today = new Date().toISOString().split('T')[0];
@@ -75,6 +84,9 @@ export function usePlano() {
         couple_space_id: spaceId,
         user_id: user.id,
         title,
+        description,
+        category,
+        is_important: isImportant,
         plan_at: planAt,
         completed: false
       })
@@ -103,6 +115,21 @@ export function usePlano() {
     }
   };
 
+  const updatePlan = async (id: string, updates: Partial<PlanoItem>) => {
+    // Optimistic UI update
+    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+
+    const { error } = await supabase
+      .from("plano_items")
+      .update(updates)
+      .eq("id", id);
+
+    if (error) {
+      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+      fetchItems(); // Rollback
+    }
+  };
+
   const deletePlan = async (id: string) => {
     // Optimistic UI update
     setItems(prev => prev.filter(item => item.id !== id));
@@ -123,6 +150,7 @@ export function usePlano() {
     loading,
     addPlan,
     toggleComplete,
+    updatePlan,
     deletePlan,
     refresh: fetchItems
   };
