@@ -156,6 +156,7 @@ export default function Tasks() {
 
   const todayTasks = openTasks.filter((t) => t.due_date === todayStr);
   const overdueTasks = openTasks.filter((t) => t.due_date && t.due_date < todayStr);
+  const upcomingTasks = openTasks.filter((t) => t.due_date && t.due_date > todayStr);
   const noDueTasks = openTasks.filter((t) => !t.due_date);
 
   const priorityLabel = (p: number) => p === 1 ? "Alta" : p === 3 ? "Baixa" : "Média";
