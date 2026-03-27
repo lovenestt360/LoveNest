@@ -33,23 +33,6 @@ import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
 
-function useTaskStats() {
-  const spaceId = useCoupleSpaceId();
-  const [open, setOpen] = useState(0);
-  const [doneToday, setDoneToday] = useState(0);
-  useEffect(() => {
-    if (!spaceId) return;
-    supabase.from("tasks").select("status,done_at")
-      .eq("couple_space_id", spaceId)
-      .then(({ data }) => {
-        if (!data) return;
-        const today = new Date().toISOString().slice(0, 10);
-        setOpen(data.filter(t => t.status === "open").length);
-        setDoneToday(data.filter(t => t.status === "done" && t.done_at?.slice(0, 10) === today).length);
-      });
-  }, [spaceId]);
-  return { open, doneToday };
-}
 
 const MOOD_MAP: Record<string, [string, string]> = {
   feliz: ["😊", "Feliz"], tranquilo: ["😌", "Tranquilo"], apaixonado: ["🥰", "Apaixonado"],
@@ -189,8 +172,12 @@ function useMessagePreview() {
 function useIntelligentNotifs(spaceId: string | null) {
   const { user } = useAuth();
   const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
+  const { items: planItems } = useDailyPlan();
   const lastMsg = useMessagePreview();
   const sentRef = useRef<Set<string>>(new Set());
+
+  const openTasks = planItems.filter(i => i.type === "task" && !i.completed).length;
+  const doneTasksToday = planItems.filter(i => i.type === "task" && i.completed).length;
 
   useEffect(() => {
     if (!spaceId || !user || !streakData) return;
@@ -199,7 +186,7 @@ function useIntelligentNotifs(spaceId: string | null) {
     const currentHour = now.getHours();
 
     // 1. Streak Reminder (if after 19h and partner hasn't interacted)
-    const partnerInteracted = isPartner1 ? streakData.partner2_interacted_today : streakData.partner1_interacted_today;
+    const partnerInteracted = dailyStatus?.partner_active;
     if (currentHour >= 19 && !partnerInteracted && !sentRef.current.has("streak_reminder")) {
       notifyPartner({
         couple_space_id: spaceId,
@@ -213,7 +200,7 @@ function useIntelligentNotifs(spaceId: string | null) {
     }
 
     // 1b. Mission Reminder (if after 17h and mission not done)
-    const meMission = isPartner1 ? dailyStatus?.is_completed_p1 : dailyStatus?.is_completed_p2;
+    const meMission = dailyStatus?.me_active;
     if (currentHour >= 17 && !meMission && dailyStatus?.mission_title && !sentRef.current.has("mission_reminder")) {
       notifyPartner({
         couple_space_id: spaceId,
@@ -363,7 +350,9 @@ const Index = () => {
   const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
 
   const avatars = useCoupleAvatars();
-  const tasks = useTaskStats();
+  const { items: planItems } = useDailyPlan();
+  const openTasks = planItems.filter(i => i.type === "task" && !i.completed).length;
+  const doneTasksToday = planItems.filter(i => i.type === "task" && i.completed).length;
   const mood = useMoodToday();
   const photoCount = usePhotoCount();
   const nextEvent = useNextEvent();
@@ -593,8 +582,8 @@ const Index = () => {
             icon={<ClipboardList className="h-6 w-6 stroke-[2.5]" />}
             title="Plano do Dia"
             lines={[
-              tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
-              tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
+              openTasks > 0 ? `${openTasks} pendentes` : "Tudo em dia ✓",
+              doneTasksToday > 0 ? `${doneTasksToday} feitas hoje` : " ",
             ]}
             to="/plano"
             badge={tasksUnread}
@@ -621,17 +610,6 @@ const Index = () => {
             to="/memorias"
             badge={memoriesUnread}
             accent="bg-violet-500/20 text-violet-600 dark:text-violet-400"
-          />
-          <DashCard
-            icon={<CalendarDays className="h-6 w-6 stroke-[2.5]" />}
-            title="Agenda"
-            lines={[
-              nextEvent ? nextEvent.title : "Sem eventos",
-              nextEvent ? format(new Date(nextEvent.date), "d 'de' MMM", { locale: pt }) : "Planear algo 🗓️"
-            ]}
-            to="/agenda"
-            badge={scheduleUnread}
-            accent="bg-blue-500/20 text-blue-600 dark:text-blue-400"
           />
         </div>
       </div>

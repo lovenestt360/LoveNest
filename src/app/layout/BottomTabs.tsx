@@ -72,7 +72,6 @@ export function BottomTabs() {
       case "/chat": return chatUnread;
       case "/humor": return moodUnread;
       case "/plano": return tasksUnread;
-      case "/tarefas": return tasksUnread;
       default: return 0;
     }
   };
@@ -80,7 +79,6 @@ export function BottomTabs() {
   const getMoreBadge = (to: string) => {
     switch (to) {
       case "/memorias": return memoriesUnread;
-      case "/agenda": return scheduleUnread;
       case "/oracao": return prayerUnread;
       case "/conflitos": return complaintsUnread;
       default: return 0;

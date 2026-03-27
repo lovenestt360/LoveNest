@@ -74,15 +74,12 @@ const AppRoutes = () => (
         <Route path="subscricao" element={<Subscription />} />
 
         {/* Paywalled Premium Routes */}
+        {/* Paywalled Premium Routes */}
         <Route element={<PremiumGuard requiredFeature="tasks" />}>
           <Route path="plano" element={<PlanoDoDia />} />
-          <Route path="tarefas" element={<PlanoDoDia />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="prayer" />}>
           <Route path="oracao" element={<Prayer />} />
-        </Route>
-        <Route element={<PremiumGuard requiredFeature="agenda" />}>
-          <Route path="agenda" element={<PlanoDoDia />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="conflicts" />}>
           <Route path="conflitos" element={<Complaints />} />
@@ -97,9 +94,7 @@ const AppRoutes = () => (
           <Route path="jejum" element={<Fasting />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="routine" />}>
-          <Route path="rotina" element={<PlanoDoDia />} />
-          <Route path="rotina/dia/:date" element={<RoutineDay />} />
-          <Route path="rotina/gerir" element={<RoutineManage />} />
+          <Route path="desafios" element={<Challenges />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="challenges" />}>
           <Route path="desafios" element={<Challenges />} />
