@@ -32,8 +32,6 @@ const Signup = lazy(() => import("./pages/Signup"));
 const CoupleSpace = lazy(() => import("./pages/CoupleSpace"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Fasting = lazy(() => import("./pages/Fasting"));
-const RoutineDay = lazy(() => import("./pages/RoutineDay"));
-const RoutineManage = lazy(() => import("./pages/RoutineManage"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const Ranking = lazy(() => import("./pages/Ranking"));
@@ -94,7 +92,7 @@ const AppRoutes = () => (
           <Route path="jejum" element={<Fasting />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="routine" />}>
-          <Route path="desafios" element={<Challenges />} />
+          <Route path="plano" element={<PlanoDoDia />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="challenges" />}>
           <Route path="desafios" element={<Challenges />} />

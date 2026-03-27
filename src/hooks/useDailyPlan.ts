@@ -128,14 +128,19 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
   }, [fetchItems]);
 
   const toggleItem = async (item: PlanItem) => {
-    if (!user || !spaceId || item.user_id !== user.id) return; // Only allow toggling own items
+    if (!user || !spaceId || item.user_id !== user.id) return;
 
     try {
       if (item.type === "task") {
         const newStatus = item.completed ? "open" : "done";
         await supabase.from("tasks").update({ status: newStatus }).eq("id", item.itemData.id);
       } else if (item.type === "routine") {
-        const { data: currentLog } = await supabase.from("routine_day_logs").select("*").eq("user_id", user.id).eq("day", dateStr).maybeSingle();
+        const { data: currentLog } = await supabase.from("routine_day_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("day", dateStr)
+          .maybeSingle();
+        
         let checkedIds = (currentLog?.checked_item_ids as string[]) || [];
         
         if (item.completed) {
@@ -164,5 +169,62 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
     }
   };
 
-  return { items, loading, partnerInfo, toggleItem, refresh: fetchItems };
+  const addItem = async (type: PlanType, data: { title: string; time?: string; notes?: string }) => {
+    if (!user || !spaceId) return;
+
+    try {
+      if (type === "task") {
+        await supabase.from("tasks").insert({
+          title: data.title,
+          notes: data.notes || "",
+          assigned_to: user.id,
+          created_by: user.id,
+          couple_space_id: spaceId,
+          due_date: dateStr,
+          status: "open"
+        });
+      } else if (type === "agenda") {
+        await supabase.from("events").insert({
+          title: data.title,
+          notes: data.notes || "",
+          created_by: user.id,
+          couple_space_id: spaceId,
+          event_date: dateStr,
+          start_time: data.time || null
+        });
+      } else if (type === "routine") {
+        await supabase.from("routine_items").insert({
+          title: data.title,
+          user_id: user.id,
+          couple_space_id: spaceId,
+          active: true
+        });
+      }
+
+      await recordInteraction();
+      await fetchItems();
+    } catch (error) {
+      console.error("Error adding item:", error);
+    }
+  };
+
+  const deleteItem = async (item: PlanItem) => {
+    if (!user || !spaceId || item.user_id !== user.id) return;
+
+    try {
+      if (item.type === "task") {
+        await supabase.from("tasks").delete().eq("id", item.itemData.id);
+      } else if (item.type === "agenda") {
+        await supabase.from("events").delete().eq("id", item.itemData.id);
+      } else if (item.type === "routine") {
+        await supabase.from("routine_items").delete().eq("id", item.itemData.id);
+      }
+
+      await fetchItems();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
+  };
+
+  return { items, loading, partnerInfo, toggleItem, addItem, deleteItem, refresh: fetchItems };
 }
