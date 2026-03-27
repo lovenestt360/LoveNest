@@ -43,6 +43,7 @@ const Ranking = lazy(() => import("./pages/Ranking"));
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const Admin = lazy(() => import("./pages/Admin"));
+const PlanoDoDia = lazy(() => import("./pages/PlanoDoDia"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminRegister = lazy(() => import("./pages/admin/AdminRegister"));
 
@@ -77,13 +78,14 @@ const AppRoutes = () => (
 
         {/* Paywalled Premium Routes */}
         <Route element={<PremiumGuard requiredFeature="tasks" />}>
-          <Route path="tarefas" element={<Tasks />} />
+          <Route path="plano" element={<PlanoDoDia />} />
+          <Route path="tarefas" element={<PlanoDoDia />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="prayer" />}>
           <Route path="oracao" element={<Prayer />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="agenda" />}>
-          <Route path="agenda" element={<Schedule />} />
+          <Route path="agenda" element={<PlanoDoDia />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="conflicts" />}>
           <Route path="conflitos" element={<Complaints />} />
@@ -98,7 +100,7 @@ const AppRoutes = () => (
           <Route path="jejum" element={<Fasting />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="routine" />}>
-          <Route path="rotina" element={<Routine />} />
+          <Route path="rotina" element={<PlanoDoDia />} />
           <Route path="rotina/dia/:date" element={<RoutineDay />} />
           <Route path="rotina/gerir" element={<RoutineManage />} />
         </Route>

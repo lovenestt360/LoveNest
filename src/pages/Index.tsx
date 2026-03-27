@@ -589,13 +589,13 @@ const Index = () => {
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
-            icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
-            title="Tarefas"
+            icon={<ClipboardList className="h-6 w-6 stroke-[2.5]" />}
+            title="Plano do Dia"
             lines={[
               tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
               tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
             ]}
-            to="/tarefas"
+            to="/plano"
             badge={tasksUnread}
             accent="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           />
