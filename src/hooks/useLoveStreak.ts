@@ -69,85 +69,117 @@ export function useLoveStreak() {
   const load = useCallback(async () => {
     if (!spaceId || !user) return;
     
-    // 1. Load streak data
-    const { data: streak } = await supabase
-      .from("love_streaks")
-      .select("*")
-      .eq("couple_space_id", spaceId)
-      .maybeSingle();
+    try {
+      // 1. Load streak data
+      const { data: streak } = await supabase
+        .from("love_streaks")
+        .select("*")
+        .eq("couple_space_id", spaceId)
+        .maybeSingle();
 
-    // 2. Load user items (shields)
-    const { data: items } = await supabase
-      .from("user_items")
-      .select("loveshield_count")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      // 2. Load user items (shields)
+      const { data: items } = await supabase
+        .from("user_items")
+        .select("loveshield_count")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (streak) {
-      setData({
-        ...streak,
-        loveshield_count: items?.loveshield_count || 0,
-        level_title: getStreakLevel(streak.current_streak).title
+      if (streak) {
+        setData({
+          ...streak,
+          loveshield_count: items?.loveshield_count || 0,
+          level_title: getStreakLevel(streak.current_streak).title
+        });
+      }
+
+      // 3. Load daily activity
+      const { data: activities } = await supabase
+        .from("daily_activity")
+        .select("user_id, did_action")
+        .eq("couple_id", spaceId)
+        .eq("date", todayStr);
+
+      const meActive = activities?.some(a => a.user_id === user.id && a.did_action) || false;
+      const partnerActive = activities?.some(a => a.user_id !== user.id && a.did_action) || false;
+
+      // 4. Load all missions to pick one for the day
+      let mission = null;
+      try {
+        const { data: allMissions } = await supabase
+          .from("love_missions")
+          .select("*");
+
+        if (allMissions && allMissions.length > 0) {
+          const dayOfMonth = new Date().getDate();
+          mission = allMissions[dayOfMonth % allMissions.length];
+        }
+      } catch (e) {
+        console.error("Error loading missions from DB:", e);
+      }
+
+      if (!mission) {
+        // Fallback if DB is empty or fails
+        const dayOfMonth = new Date().getDate();
+        mission = FALLBACK_MISSIONS[dayOfMonth % FALLBACK_MISSIONS.length];
+      }
+
+      // 5. Check if mission completed today
+      let missionCompleted = false;
+      try {
+        const { data: completion } = await supabase
+          .from("mission_completions")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("date", todayStr)
+          .maybeSingle();
+        missionCompleted = !!completion;
+      } catch (e) {
+        // If mission_completions table doesn't exist yet, it's fine
+      }
+
+      setDailyStatus({
+        me_active: meActive,
+        partner_active: partnerActive,
+        mission_completed: missionCompleted,
+        mission_title: mission?.title || "Missão Especial",
+        mission_description: mission?.description || "Realiza um gesto de carinho hoje.",
+        mission_emoji: mission?.emoji || "✨",
+        mission_points: mission?.points_reward || 10,
+        day_complete: meActive && partnerActive
       });
+
+      // 6. Determine if I am partner 1
+      const { data: members } = await supabase
+        .from("members")
+        .select("user_id")
+        .eq("couple_space_id", spaceId)
+        .order("joined_at");
+      
+      if (members && members.length > 0) {
+        setIsPartner1(members[0].user_id === user.id);
+      }
+    } catch (err) {
+      console.error("Critical error in useLoveStreak load:", err);
+      
+      // Ensure we have at least a fallback status even on error
+      if (!dailyStatus) {
+        const dayOfMonth = new Date().getDate();
+        const fallback = FALLBACK_MISSIONS[dayOfMonth % FALLBACK_MISSIONS.length];
+        setDailyStatus({
+          me_active: false,
+          partner_active: false,
+          mission_completed: false,
+          mission_title: fallback.title,
+          mission_description: fallback.description,
+          mission_emoji: fallback.emoji,
+          mission_points: fallback.points_reward,
+          day_complete: false
+        });
+      }
+    } finally {
+      setLoading(false);
     }
-
-    // 3. Load daily activity
-    const { data: activities } = await supabase
-      .from("daily_activity")
-      .select("user_id, did_action")
-      .eq("couple_id", spaceId)
-      .eq("date", todayStr);
-
-    const meActive = activities?.some(a => a.user_id === user.id && a.did_action) || false;
-    const partnerActive = activities?.some(a => a.user_id !== user.id && a.did_action) || false;
-
-    // 4. Load all missions to pick one for the day
-    const { data: allMissions } = await supabase
-      .from("love_missions")
-      .select("*");
-
-    let mission = null;
-    if (allMissions && allMissions.length > 0) {
-      const dayOfMonth = new Date().getDate();
-      mission = allMissions[dayOfMonth % allMissions.length];
-    } else {
-      // Fallback if DB is empty
-      const dayOfMonth = new Date().getDate();
-      mission = FALLBACK_MISSIONS[dayOfMonth % FALLBACK_MISSIONS.length];
-    }
-
-    // 5. Check if mission completed today
-    const { data: completion } = await supabase
-      .from("mission_completions")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("date" as any, todayStr) // Assuming date field names might vary slightly, but following SQL plan
-      .maybeSingle();
-
-    setDailyStatus({
-      me_active: meActive,
-      partner_active: partnerActive,
-      mission_completed: !!completion,
-      mission_title: mission?.title || null,
-      mission_description: mission?.description || null,
-      mission_emoji: mission?.emoji || "✨",
-      mission_points: mission?.points_reward || null,
-      day_complete: meActive && partnerActive
-    });
-
-    // 6. Determine if I am partner 1
-    const { data: members } = await supabase
-      .from("members")
-      .select("user_id")
-      .eq("couple_space_id", spaceId)
-      .order("joined_at");
-    
-    if (members && members.length > 0) {
-      setIsPartner1(members[0].user_id === user.id);
-    }
-
-    setLoading(false);
-  }, [spaceId, user, todayStr]);
+  }, [spaceId, user, todayStr, dailyStatus]);
 
   useEffect(() => {
     load();
