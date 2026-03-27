@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { useLoveStreak } from "@/hooks/useLoveStreak";
-import { useDailyPlan } from "@/hooks/useDailyPlan";
+import { useDailyPlan } from "../hooks/useDailyPlan";
 import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
