@@ -184,7 +184,7 @@ export default function Ranking() {
           )}
         >
           <LayoutList className="w-4 h-4 mb-1" />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Tarefas</span>
+          <span className="text-[10px] font-black uppercase tracking-tighter">Missões</span>
         </button>
         <button
           onClick={() => setSearchParams({ tab: "streak" })}
@@ -211,7 +211,7 @@ export default function Ranking() {
       {/* Content Areas */}
       <div className="space-y-6">
         
-        {/* TAB: TAREFAS */}
+        {/* TAB: MISSÕES */}
         {activeTab === "tasks" && (
           <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
             <header className="space-y-1">
@@ -220,7 +220,7 @@ export default function Ranking() {
             </header>
 
             <div className="space-y-6">
-              {/* Tarefas Love Streak */}
+              {/* Missões Love Streak */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600">
                   <Flame className="w-4 h-4" /> Status de Atividade

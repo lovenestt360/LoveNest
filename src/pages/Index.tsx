@@ -592,15 +592,11 @@ const Index = () => {
             icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
             title="Tarefas"
             lines={[
-              (dailyStatus && !(isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2))
-                ? "🎯 Missão pendente!" 
-                : tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
-              tasks.open > 0 && (dailyStatus && !(isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2))
-                ? `${tasks.open} pendentes + Missão`
-                : tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
+              tasks.open > 0 ? `${tasks.open} pendentes` : "Tudo em dia ✓",
+              tasks.doneToday > 0 ? `${tasks.doneToday} feitas hoje` : " ",
             ]}
             to="/tarefas"
-            badge={tasksUnread || (dailyStatus && !(isPartner1 ? dailyStatus.is_completed_p1 : dailyStatus.is_completed_p2) ? 1 : 0)}
+            badge={tasksUnread}
             accent="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           />
           <DashCard
