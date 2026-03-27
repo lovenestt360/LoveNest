@@ -31,14 +31,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { useDailyPlan, type PlanItem, type PlanType } from "@/hooks/useDailyPlan";
+import { useDailyPlan, type PlanItem, type PlanType, type DailyProgress } from "@/hooks/useDailyPlan";
 import { useAuth } from "@/features/auth/AuthContext";
 import { toast } from "sonner";
 
 export default function PlanoDoDia() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { items, history, loading, partnerInfo, toggleItem, addItem, deleteItem } = useDailyPlan(selectedDate);
+  const { items, history, partnerHistory, loading, partnerInfo, toggleItem, addItem, deleteItem } = useDailyPlan(selectedDate);
   
   const [viewingPartner, setViewingPartner] = useState(false);
   const [isAdding, setIsAdding] = useState<PlanType | null>(null);
@@ -51,15 +51,23 @@ export default function PlanoDoDia() {
   const partnerItems = useMemo(() => items.filter(i => i.user_id !== user?.id), [items, user?.id]);
 
   const routineItems = useMemo(() => myItems.filter(i => i.type === "routine"), [myItems]);
+  const partnerRoutineItems = useMemo(() => partnerItems.filter(i => i.type === "routine"), [partnerItems]);
+
   const progressPercent = useMemo(() => {
     if (routineItems.length === 0) return 0;
     const completed = routineItems.filter(i => i.completed).length;
     return Math.round((completed / routineItems.length) * 100);
   }, [routineItems]);
 
-  const getDayStatusColor = (date: Date) => {
+  const partnerProgressPercent = useMemo(() => {
+    if (partnerRoutineItems.length === 0) return 0;
+    const completed = partnerRoutineItems.filter(i => i.completed).length;
+    return Math.round((completed / partnerRoutineItems.length) * 100);
+  }, [partnerRoutineItems]);
+
+  const getDayStatusColor = (date: Date, hist: DailyProgress[]) => {
     const dStr = format(date, "yyyy-MM-dd");
-    const dayLog = history.find(h => h.day === dStr);
+    const dayLog = hist.find(h => h.day === dStr);
     if (!dayLog || dayLog.completion_rate === 0) return "bg-muted";
     if (dayLog.completion_rate === 100) return "bg-green-500";
     if (dayLog.completion_rate >= 50) return "bg-yellow-500";
@@ -94,6 +102,166 @@ export default function PlanoDoDia() {
     toast.success("Removido com sucesso!");
   };
 
+  const renderRoutineContent = (
+    itemList: PlanItem[], 
+    hist: DailyProgress[], 
+    percent: number, 
+    isPartner: boolean
+  ) => {
+    const list = itemList.filter(i => i.type === "routine");
+
+    return (
+      <div className="space-y-6">
+        {/* 1. Prominent Calendar */}
+        <div className="flex justify-between items-center bg-card border rounded-3xl p-5 shadow-sm h-28">
+          {last7Days.map((day) => {
+            const isSel = format(day, "yyyy-MM-dd") === dateStr;
+            const isTod = format(day, "yyyy-MM-dd") === todayStr;
+            return (
+              <button
+                key={day.toISOString()}
+                onClick={() => setSelectedDate(day)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-2 rounded-2xl transition-all active:scale-95",
+                  isSel ? "bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted/50"
+                )}
+              >
+                <span className="text-[10px] font-black uppercase text-muted-foreground/60">
+                  {format(day, "EEE", { locale: ptBR }).charAt(0)}
+                </span>
+                <div className={cn(
+                  "h-9 w-9 rounded-full flex items-center justify-center text-[12px] font-black transition-all",
+                  getDayStatusColor(day, hist),
+                  isTod && "ring-2 ring-primary ring-offset-2 shadow-[0_0_15px_rgba(255,107,107,0.3)]",
+                  isSel ? "text-white" : "text-muted-foreground"
+                )}>
+                  {format(day, "d")}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 2. Color Legend */}
+        <div className="flex justify-center gap-6 px-2">
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Completo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Parcial</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Falhou</span>
+          </div>
+        </div>
+
+        {/* 3. Smaller Progress Card */}
+        <div className="bg-muted/30 border rounded-2xl p-4 flex items-center justify-between mx-4">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Status de Hoje</span>
+            <div className="flex items-center gap-2">
+              <Flame className={cn("h-4 w-4", percent > 0 ? getProgressColor(percent) : "text-muted-foreground/30")} />
+              <span className={cn("text-xl font-black tabular-nums", getProgressColor(percent))}>
+                {percent}%
+              </span>
+            </div>
+          </div>
+          <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
+            <div 
+              className={cn("h-full transition-all duration-1000", getProgressColor(percent).replace("text", "bg"))} 
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 4. Habit List with new layout: [emoji] title [checkbox] */}
+        <div className="space-y-3">
+          {!isPartner && (
+            <button
+              onClick={() => setIsAdding("routine")}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-3xl border-2 border-dashed border-muted-foreground/10 text-muted-foreground hover:border-primary/40 hover:text-primary transition-all active:scale-[0.98] bg-muted/5 group"
+            >
+              <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-black uppercase tracking-widest">Novo Hábito</span>
+            </button>
+          )}
+
+          <div className="space-y-2.5">
+            {list.length > 0 ? (
+              list.map((item) => (
+                <div 
+                  key={item.id}
+                  className={cn(
+                    "group relative flex items-center gap-4 p-4 rounded-[1.75rem] border transition-all duration-200",
+                    item.completed 
+                      ? "bg-muted/30 border-transparent opacity-60 shadow-none" 
+                      : "bg-card border-border shadow-sm active:scale-[0.99]"
+                  )}
+                >
+                  {/* Emoji Leading */}
+                  <div className="h-11 w-11 rounded-2xl bg-secondary/60 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                    {item.itemData?.emoji || "✨"}
+                  </div>
+
+                  {/* Title Middle */}
+                  <div className="flex-1 min-w-0">
+                    <p className={cn(
+                      "text-[16px] font-black tracking-tight",
+                      item.completed && "line-through text-muted-foreground"
+                    )}>
+                      {item.title}
+                    </p>
+                  </div>
+
+                  {/* Checkbox Trailing */}
+                  {!isPartner ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleItem(item)}
+                        className={cn(
+                          "h-11 w-11 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 active:scale-90",
+                          item.completed 
+                            ? "bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/30" 
+                            : "bg-background border-muted-foreground/10 hover:border-primary/50"
+                        )}
+                      >
+                        {item.completed ? <CheckCircle2 className="h-6 w-6" /> : <Circle className="h-6 w-6 text-muted-foreground/10" />}
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground/20 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                        onClick={() => handleDelete(item)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="h-11 w-11 flex items-center justify-center">
+                      {item.completed ? (
+                        <CheckCircle2 className="h-7 w-7 text-primary/60" />
+                      ) : (
+                        <Circle className="h-7 w-7 text-muted-foreground/20" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12 px-6 bg-muted/5 rounded-[2.5rem] border border-dashed">
+                <Flame className="h-12 w-12 text-muted-foreground/20 mx-auto mb-3" />
+                <p className="text-xs font-black text-muted-foreground/40 uppercase tracking-widest">Nada planeado ainda</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderList = (itemList: PlanItem[], type: PlanType, isPartnerView: boolean) => {
     const list = itemList.filter(i => i.type === type);
     
@@ -106,7 +274,7 @@ export default function PlanoDoDia() {
           >
             <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
             <span className="text-sm font-bold uppercase tracking-wider">
-              Adicionar {type === "routine" ? "Hábito" : type === "agenda" ? "Evento" : "Tarefa"}
+              Adicionar {type === "agenda" ? "Evento" : "Tarefa"}
             </span>
           </button>
         )}
@@ -138,7 +306,7 @@ export default function PlanoDoDia() {
                 )}
 
                 <div className="h-12 w-12 rounded-xl bg-secondary/50 flex items-center justify-center text-xl shrink-0">
-                  {item.itemData?.emoji || (type === "routine" ? "✨" : type === "agenda" ? "📅" : "✅")}
+                  {item.itemData?.emoji || (type === "agenda" ? "📅" : "✅")}
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -180,7 +348,7 @@ export default function PlanoDoDia() {
           ) : (
             <div className="text-center py-12 px-6">
               <div className="h-16 w-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4 opacity-40">
-                {type === "routine" ? <Flame className="h-8 w-8" /> : type === "agenda" ? <CalendarDays className="h-8 w-8" /> : <ClipboardList className="h-8 w-8" />}
+                {type === "agenda" ? <CalendarDays className="h-8 w-8" /> : <ClipboardList className="h-8 w-8" />}
               </div>
               <p className="text-sm font-bold text-muted-foreground/50 uppercase tracking-widest">
                 {isPartnerView ? "Nada planeado ainda..." : "A tua lista está vazia"}
@@ -217,7 +385,7 @@ export default function PlanoDoDia() {
         <Heart className="h-6 w-6 text-pink-500 fill-pink-500/10" />
       </header>
 
-      <div className="px-6 py-4 pb-32 overflow-y-auto h-full space-y-6">
+      <div className="px-6 py-4 pb-32 overflow-y-auto h-full space-y-6 bg-slate-50/30">
         <Tabs defaultValue="routine" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/40 p-1 rounded-[1.25rem] h-14 border">
             <TabsTrigger value="routine" className="rounded-2xl data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all font-black text-[10px] uppercase tracking-wider">
@@ -231,9 +399,15 @@ export default function PlanoDoDia() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="routine">{renderList(partnerItems, "routine", true)}</TabsContent>
-          <TabsContent value="agenda">{renderList(partnerItems, "agenda", true)}</TabsContent>
-          <TabsContent value="task">{renderList(partnerItems, "task", true)}</TabsContent>
+          <TabsContent value="routine" className="animate-in fade-in slide-in-from-bottom-4">
+            {renderRoutineContent(partnerItems, partnerHistory, partnerProgressPercent, true)}
+          </TabsContent>
+          <TabsContent value="agenda" className="animate-in fade-in slide-in-from-bottom-4">
+            {renderList(partnerItems, "agenda", true)}
+          </TabsContent>
+          <TabsContent value="task" className="animate-in fade-in slide-in-from-bottom-4">
+            {renderList(partnerItems, "task", true)}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
@@ -283,55 +457,19 @@ export default function PlanoDoDia() {
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <TabsContent value="routine" className="space-y-6">
-                {/* 7-Day History Calendar */}
-                <div className="flex justify-between items-center bg-card border rounded-3xl p-4 shadow-sm h-24">
-                  {last7Days.map((day) => {
-                    const isSel = format(day, "yyyy-MM-dd") === dateStr;
-                    const isTod = format(day, "yyyy-MM-dd") === todayStr;
-                    return (
-                      <button
-                        key={day.toISOString()}
-                        onClick={() => setSelectedDate(day)}
-                        className={cn(
-                          "flex flex-col items-center gap-1.5 p-1.5 rounded-2xl transition-all active:scale-95",
-                          isSel ? "bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted/50"
-                        )}
-                      >
-                        <span className="text-[9px] font-black uppercase text-muted-foreground/60">
-                          {format(day, "EEE", { locale: ptBR }).charAt(0)}
-                        </span>
-                        <div className={cn(
-                          "h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-black transition-all",
-                          getDayStatusColor(day),
-                          isTod && "ring-2 ring-primary ring-offset-2 shadow-[0_0_15px_rgba(255,107,107,0.3)]",
-                          isSel ? "text-white" : "text-muted-foreground"
-                        )}>
-                          {format(day, "d")}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Performance Progress */}
-                <div className="bg-card border rounded-3xl p-6 shadow-sm flex items-center justify-between overflow-hidden relative group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
-                  <div className="relative z-10 space-y-1">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Desempenho de Hoje</p>
-                    <h2 className={cn("text-5xl font-black tracking-tighter", getProgressColor(progressPercent))}>
-                      {progressPercent}%
-                    </h2>
-                  </div>
-                  <div className="relative z-10 h-16 w-16 rounded-2xl bg-muted/20 flex items-center justify-center">
-                    <Flame className={cn("h-8 w-8 transition-all duration-500", progressPercent > 0 ? getProgressColor(progressPercent) : "text-muted-foreground/30")} />
-                  </div>
-                </div>
-
-                {renderList(myItems, "routine", false)}
+              <TabsContent value="routine">
+                {renderRoutineContent(myItems, history, progressPercent, false)}
               </TabsContent>
-              <TabsContent value="agenda">{renderList(myItems, "agenda", false)}</TabsContent>
-              <TabsContent value="task">{renderList(myItems, "task", false)}</TabsContent>
+              <TabsContent value="agenda">
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {renderList(myItems, "agenda", false)}
+                </div>
+              </TabsContent>
+              <TabsContent value="task">
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {renderList(myItems, "task", false)}
+                </div>
+              </TabsContent>
             </div>
           )}
         </Tabs>
@@ -346,13 +484,27 @@ export default function PlanoDoDia() {
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-6">
+            {isAdding === "routine" && (
+              <div className="space-y-3">
+                <Label htmlFor="emoji" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Escolha um Emoji</Label>
+                <Input
+                  id="emoji"
+                  value={formData.emoji}
+                  onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+                  placeholder="✨"
+                  className="h-20 rounded-2xl border-2 text-center text-4xl font-bold bg-muted/20 focus:ring-4 focus:ring-primary/20 transition-all"
+                  maxLength={2}
+                />
+              </div>
+            )}
+
             <div className="space-y-3">
               <Label htmlFor="title" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Título</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Ex: Treinar, Reunião, Comprar leite..."
+                placeholder={isAdding === "routine" ? "Ex: Beber água" : "Ex: Reunião, Comprar leite..."}
                 className="h-14 rounded-2xl border-2 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-lg"
               />
             </div>
@@ -366,20 +518,6 @@ export default function PlanoDoDia() {
                   value={formData.time}
                   onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                   className="h-14 rounded-2xl border-2 font-bold text-lg"
-                />
-              </div>
-            )}
-
-            {isAdding === "routine" && (
-              <div className="space-y-3">
-                <Label htmlFor="emoji" className="text-[11px] font-black uppercase tracking-widest ml-1 opacity-70">Emoji do Hábito</Label>
-                <Input
-                  id="emoji"
-                  value={formData.emoji}
-                  onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
-                  placeholder="✨"
-                  className="h-16 rounded-2xl border-2 text-center text-3xl font-bold"
-                  maxLength={2}
                 />
               </div>
             )}
@@ -399,11 +537,11 @@ export default function PlanoDoDia() {
           </div>
           <DialogFooter>
             <Button 
-              className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-primary/20 transition-all active:scale-95" 
+              className="w-full h-15 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-primary/20 transition-all active:scale-95 py-6" 
               onClick={handleAdd}
               disabled={!formData.title}
             >
-              CRIAR {isAdding?.toUpperCase()}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>

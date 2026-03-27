@@ -32,15 +32,15 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
   const { recordInteraction } = useLoveStreak();
   const [items, setItems] = useState<PlanItem[]>([]);
   const [history, setHistory] = useState<DailyProgress[]>([]);
+  const [partnerHistory, setPartnerHistory] = useState<DailyProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [partnerInfo, setPartnerInfo] = useState<{ id: string; name: string } | null>(null);
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
-  const dayOfWeek = selectedDate.getDay();
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (silent = false) => {
     if (!spaceId || !user) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
 
     try {
       const { data: members } = await supabase.from("members").select("user_id").eq("couple_space_id", spaceId);
@@ -64,11 +64,13 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
         supabase.from("tasks").select("*").eq("couple_space_id", spaceId).or(`due_date.eq.${dateStr},due_date.is.null`),
         supabase.from("events").select("*").eq("couple_space_id", spaceId).eq("event_date", dateStr),
         supabase.from("routine_items").select("*").eq("couple_space_id", spaceId).eq("active", true),
-        supabase.from("routine_day_logs").select("*").eq("couple_space_id", spaceId).eq("day", dateStr).eq("user_id", user.id),
-        supabase.from("routine_day_logs").select("day, completion_rate").eq("couple_space_id", spaceId).eq("user_id", user.id).gte("day", historyStartStr)
+        supabase.from("routine_day_logs").select("*").eq("couple_space_id", spaceId).eq("day", dateStr),
+        supabase.from("routine_day_logs").select("day, completion_rate, user_id").eq("couple_space_id", spaceId).gte("day", historyStartStr)
       ]);
 
-      setHistory((historyRes.data as DailyProgress[]) || []);
+      const historyData = (historyRes.data as (DailyProgress & { user_id: string })[]) || [];
+      setHistory(historyData.filter(h => h.user_id === user.id));
+      setPartnerHistory(historyData.filter(h => h.user_id === partnerId));
 
       const planItems: PlanItem[] = [];
 
@@ -107,8 +109,8 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
       // Routine
       const routineLogs = routineLogsRes.data || [];
       (routineItemsRes.data || []).forEach(ri => {
-        const log = routineLogs.find(l => l.user_id === ri.user_id);
-        const checkedIds = (log?.checked_item_ids as string[]) || [];
+        const userLog = routineLogs.find(l => l.user_id === ri.user_id);
+        const checkedIds = (userLog?.checked_item_ids as string[]) || [];
         
         planItems.push({
           id: `routine-${ri.id}`,
@@ -138,10 +140,11 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
   const toggleItem = async (item: PlanItem) => {
     if (!user || !spaceId || item.user_id !== user.id) return;
 
-    // Optimistic Update
+    // Phase 1: OPTIMISTIC UI (Instant Feedback)
     const oldItems = [...items];
     const oldHistory = [...history];
     
+    // Update main list instantly
     setItems(current => current.map(i => i.id === item.id ? { ...i, completed: !i.completed } : i));
 
     try {
@@ -165,7 +168,7 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
         const totalHabits = oldItems.filter(i => i.type === "routine" && i.user_id === user.id).length;
         const newRate = totalHabits > 0 ? (checkedIds.length / totalHabits) * 100 : 0;
 
-        // Update history cache optimistically
+        // Phase 2: OPTIMISTIC HISTORY (Calendar Update)
         setHistory(prev => {
           const existing = prev.find(h => h.day === dateStr);
           if (existing) {
@@ -193,9 +196,8 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
       }
 
       await recordInteraction();
-      // No full re-fetch here, we rely on optimistic UI and background sync eventually if needed, 
-      // but let's call fetchItems quietly in background to be safe
-      // Actually, for instant feel, don't setLoading(true) in background
+      // Background re-fetch to ensure server-side consistency without showing a loader
+      fetchItems(true); 
     } catch (error) {
       setItems(oldItems);
       setHistory(oldHistory);
@@ -237,7 +239,7 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
       }
 
       await recordInteraction();
-      await fetchItems();
+      await fetchItems(true); // Silent re-fetch
     } catch (error) {
       console.error("Error adding item:", error);
     }
@@ -255,11 +257,11 @@ export function useDailyPlan(selectedDate: Date = new Date()) {
         await supabase.from("routine_items").delete().eq("id", item.itemData.id);
       }
 
-      await fetchItems();
+      await fetchItems(true); // Silent re-fetch
     } catch (error) {
       console.error("Error deleting item:", error);
     }
   };
 
-  return { items, history, loading, partnerInfo, toggleItem, addItem, deleteItem, refresh: fetchItems };
+  return { items, history, partnerHistory, loading, partnerInfo, toggleItem, addItem, deleteItem, refresh: fetchItems };
 }
