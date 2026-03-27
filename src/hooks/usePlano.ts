@@ -12,6 +12,7 @@ export interface PlanoItem {
   description: string | null;
   category: string;
   is_important: boolean;
+  for_whom: "ambos" | "me" | "partner";
   plan_at: string | null;
   completed: boolean;
   created_at: string;
@@ -68,7 +69,8 @@ export function usePlano() {
     time?: string, 
     description?: string, 
     category: string = "geral",
-    isImportant: boolean = false
+    isImportant: boolean = false,
+    forWhom: "ambos" | "me" | "partner" = "ambos"
   ) => {
     if (!spaceId || !user) return null;
     
@@ -87,6 +89,7 @@ export function usePlano() {
         description,
         category,
         is_important: isImportant,
+        for_whom: forWhom,
         plan_at: planAt,
         completed: false
       })

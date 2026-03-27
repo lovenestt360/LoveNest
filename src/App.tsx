@@ -2,7 +2,7 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 // TooltipProvider removed to avoid duplicate React instance crash
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { AppShell } from "@/app/layout/AppShell";
 import { AuthProvider } from "@/features/auth/AuthContext";
@@ -92,7 +92,7 @@ const AppRoutes = () => (
           <Route path="jejum" element={<Fasting />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="routine" />}>
-          <Route path="rotina" element={<Routine />} />
+          <Route path="rotina" element={<Navigate to="/plano?tab=rotina" replace />} />
           <Route path="rotina/dia/:date" element={<RoutineDay />} />
           <Route path="rotina/gerir" element={<RoutineManage />} />
         </Route>

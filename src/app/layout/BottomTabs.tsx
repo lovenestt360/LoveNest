@@ -38,7 +38,6 @@ const mainTabs = [
 
 const moreItems = [
   { to: "/memorias", label: "Memórias", Icon: Image },
-  { to: "/rotina", label: "Rotina", Icon: ClipboardList },
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
   { to: "/jejum", label: "Jejum", Icon: Flame },
   { to: "/oracao", label: "Oração", Icon: BookOpen },
