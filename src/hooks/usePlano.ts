@@ -64,20 +64,31 @@ export function usePlano() {
     };
   }, [spaceId, fetchItems]);
 
-  const addPlan = async (
-    title: string, 
-    time?: string, 
-    description?: string, 
-    category: string = "geral",
-    isImportant: boolean = false,
-    forWhom: "ambos" | "me" | "partner" = "ambos"
-  ) => {
+  const addPlan = async ({
+    title, 
+    date,
+    time = "", 
+    description = "", 
+    category = "geral",
+    isImportant = false,
+    forWhom = "ambos"
+  }: {
+    title: string;
+    date?: string;
+    time?: string;
+    description?: string;
+    category?: string;
+    isImportant?: boolean;
+    forWhom?: "ambos" | "me" | "partner";
+  }) => {
     if (!spaceId || !user) return null;
     
     let planAt = null;
-    if (time) {
+    if (date) {
+      planAt = time ? `${date}T${time}:00` : `${date}T00:00:00`;
+    } else {
       const today = new Date().toISOString().split('T')[0];
-      planAt = `${today}T${time}:00`;
+      planAt = time ? `${today}T${time}:00` : `${today}T00:00:00`;
     }
 
     const { data, error } = await supabase

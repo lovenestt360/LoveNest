@@ -77,9 +77,14 @@ export default function Plano() {
 
   const handleAdd = async () => {
     if (!newTitle.trim()) return;
-    const plan_at = newTime ? `${selectedDate}T${newTime}:00` : selectedDate;
-    await addPlan({ title: newTitle, description: newDesc, plan_at, for_whom: forWhom });
-    setNewTitle(""); setNewTime(""); setNewDesc(""); setIsModalOpen(false);
+    await addPlan({ 
+      title: newTitle, 
+      description: newDesc, 
+      date: selectedDate, 
+      time: newTime,
+      forWhom: forWhom 
+    });
+    setNewTitle(""); setNewTime(""); setNewDesc("");
   };
 
   const glassStyle = "bg-white/40 backdrop-blur-xl border border-white/20 shadow-sm";
@@ -198,40 +203,49 @@ export default function Plano() {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
             {/* NOVO: Formulário Inline Estilo Rotina (Simples) */}
             <div className={cn("rounded-2xl border bg-card p-4 space-y-4 shadow-sm", glassStyle)}>
-              <div className="flex p-1 bg-slate-100 rounded-xl">
-                {(["ambos", "me", "partner"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setForWhom(v)}
-                    className={cn(
-                      "flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
-                      forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400"
-                    )}
-                  >
-                    {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between pb-1">
+                <div className="flex p-0.5 bg-slate-100 rounded-lg w-fit">
+                  {(["ambos", "me", "partner"] as const).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setForWhom(v)}
+                      className={cn(
+                        "px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-md transition-all",
+                        forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400"
+                      )}
+                    >
+                      {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
+                    </button>
+                  ))}
+                </div>
+                {/* Indicador de Data solicitado pelo utilizador */}
+                <div className="px-3 py-1 rounded-full bg-slate-50 border border-slate-100 flex items-center gap-1.5 grayscale opacity-70">
+                   <CalendarIcon className="h-2.5 w-2.5 text-slate-400" />
+                   <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
+                     {format(parseISO(selectedDate), "d 'de' MMM", { locale: ptBR })}
+                   </span>
+                </div>
               </div>
               
               <div className="flex gap-2">
                 <Input 
                   value={newTitle} 
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Novo plano..."
-                  className="flex-1 h-10 rounded-xl border-none bg-slate-50 font-medium text-sm"
+                  placeholder="Ex: Jantar em Lyon..."
+                  className="flex-1 h-10 rounded-xl border-none bg-slate-50 font-medium text-sm focus-visible:ring-1 focus-visible:ring-slate-100 transition-all"
                   onKeyDown={e => e.key === "Enter" && handleAdd()}
                 />
                 <Input 
                   type="time"
                   value={newTime} 
                   onChange={(e) => setNewTime(e.target.value)}
-                  className="w-24 h-10 rounded-xl border-none bg-slate-50 font-bold text-xs"
+                  className="w-24 h-10 rounded-xl border-none bg-slate-50 font-bold text-xs focus-visible:ring-1 focus-visible:ring-slate-100"
                 />
                 <Button 
                   size="icon" 
                   onClick={handleAdd}
                   disabled={!newTitle.trim()}
-                  className="h-10 w-10 rounded-xl bg-slate-900 text-white shrink-0 shadow-lg active:scale-95 transition-all"
+                  className="h-10 w-10 rounded-xl bg-slate-900 text-white shrink-0 shadow-lg active:scale-95 transition-all hover:bg-slate-800"
                 >
                   <Plus className="h-5 w-5" />
                 </Button>
