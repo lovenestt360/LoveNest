@@ -20,40 +20,51 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="space-y-6 pt-4 text-center w-full px-4 mb-4">
-      <div className="flex items-center justify-between w-full">
+    <header className="space-y-4 pt-2 text-center w-full">
+      <div className="flex items-center justify-center gap-3 md:gap-8 px-2">
         {/* Me Avatar */}
         <div className="relative shrink-0">
           <Avatar 
             className={cn(
-              "h-16 w-16 ring-4 ring-white shadow-apple transition-all active:scale-95 duration-500 cursor-pointer border border-slate-50",
+              "h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500 cursor-pointer",
               loading && "animate-pulse"
             )}
             onClick={() => navigate("/configuracoes")}
           >
-            {me?.avatarUrl && <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />}
+            {me?.avatarUrl ? (
+              <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />
+            ) : null}
             <AvatarFallback className={cn(
-              "bg-slate-100 text-slate-400 font-black text-xl",
+              "bg-gradient-to-tr from-primary/20 to-primary/40 text-primary font-black text-lg",
               loading && "text-transparent"
             )}>
               {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "U")}
             </AvatarFallback>
           </Avatar>
           {me?.verificationStatus === 'verified' && (
-            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm z-10">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm z-10">
+              <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/10" />
             </div>
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-1 shrink-0 px-2 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <Heart className="h-4 w-4 text-primary fill-primary" />
-            <span className="text-2xl font-black tracking-tighter text-slate-900 uppercase">LoveNest</span>
-            <Heart className="h-4 w-4 text-primary fill-primary" />
+        <div className="flex flex-col items-center gap-1 md:gap-1.5 px-2 shrink-0 min-w-0">
+          <div className="flex items-center gap-1">
+            <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
+            <span className="text-2xl md:text-3xl font-black tracking-tighter gradient-text">LoveNest</span>
+            <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
           </div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] leading-tight">
-            Ninho do Amor ✨
+          <p className="text-[10px] md:text-xs font-bold text-primary/80 italic animate-in fade-in slide-in-from-bottom-1 duration-700">
+            {(() => {
+              const messages = [
+                "Hoje é mais um capítulo da vossa história 💛",
+                "Cuidem um do outro hoje ✨",
+                "O amor também se constrói nos pequenos momentos",
+                "Não deixem o vosso streak cair hoje 🔥"
+              ];
+              const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+              return messages[dayOfYear % messages.length];
+            })()}
           </p>
         </div>
 
@@ -61,32 +72,26 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
         <div className="relative shrink-0">
           <Avatar 
             className={cn(
-              "h-16 w-16 ring-4 ring-white shadow-apple transition-all active:scale-95 duration-500 cursor-pointer border border-slate-50",
+              "h-14 w-14 md:h-16 md:w-16 ring-4 ring-white/30 shadow-xl transition-all active:scale-95 duration-500 cursor-pointer",
               loading && "animate-pulse"
             )}
             onClick={() => navigate("/configuracoes")}
           >
-            {partner?.avatarUrl && <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />}
+            {partner?.avatarUrl ? (
+              <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />
+            ) : null}
             <AvatarFallback className={cn(
-              "bg-slate-100 text-slate-400 font-black text-xl",
+              "bg-gradient-to-tr from-secondary/40 to-secondary/60 text-primary font-black text-lg",
               loading && "text-transparent"
             )}>
               {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
             </AvatarFallback>
           </Avatar>
           {partner?.verificationStatus === 'verified' && (
-            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm z-10">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm z-10">
+              <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/10" />
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="flex justify-center">
-        <div className="px-5 py-2.5 rounded-full bg-slate-50 border border-slate-100/50">
-           <p className="text-[11px] font-bold text-slate-500 italic">
-            {today} ✨
-           </p>
         </div>
       </div>
     </header>

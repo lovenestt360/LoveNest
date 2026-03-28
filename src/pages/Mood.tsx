@@ -176,39 +176,19 @@ export default function Mood() {
   };
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-4 space-y-8 max-w-2xl mx-auto overflow-x-hidden animate-fade-in">
-      {/* Header Estilo iPhone */}
-      <header className="space-y-4 pt-4 px-2">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter text-slate-900">O Teu Humor</h1>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-400">Como te sentes hoje?</span>
-              <div className="h-1 w-1 rounded-full bg-slate-200" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Registo</span>
-            </div>
-          </div>
-        </div>
+    <section className="space-y-6 pb-8 text-foreground">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Humor do dia</h1>
+        <p className="text-sm text-muted-foreground">Regista as tuas emoções, atividades e sono.</p>
       </header>
 
-      {/* Tab Switcher - iOS Inspired */}
-      <Tabs defaultValue="hoje" className="w-full space-y-8">
-        <TabsList className="p-1 h-auto rounded-[1.4rem] bg-slate-100 flex items-center border border-slate-200/20 w-full">
-          <TabsTrigger 
-            value="hoje" 
-            className="flex-1 py-2.5 rounded-[1.1rem] transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400"
-          >
-            Hoje
-          </TabsTrigger>
-          <TabsTrigger 
-            value="historico" 
-            className="flex-1 py-2.5 rounded-[1.1rem] transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400"
-          >
-            Histórico e Par
-          </TabsTrigger>
+      <Tabs defaultValue="hoje" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="hoje">Hoje</TabsTrigger>
+          <TabsTrigger value="historico">Histórico e Par</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="hoje" className="mt-0 animate-in fade-in slide-in-from-bottom-3 duration-500">
+        <TabsContent value="hoje" className="mt-4">
           <MoodForm
             moodKey={moodKey} setMoodKey={setMoodKey}
             moodPercent={moodPercent} setMoodPercent={setMoodPercent}
@@ -221,27 +201,25 @@ export default function Mood() {
           />
         </TabsContent>
 
-        <TabsContent value="historico" className="mt-0 animate-in fade-in slide-in-from-bottom-3 duration-500">
+        <TabsContent value="historico" className="mt-4">
           <MoodHistory history={history} userId={user?.id || ""} />
         </TabsContent>
       </Tabs>
 
-      {/* Success Overlay - Refined Glass Overlay */}
+      {/* Success Overlay */}
       {showSuccessOverlay && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/60 backdrop-blur-xl animate-in fade-in duration-500">
-          <div className="text-center space-y-6 scale-up-center">
-            <div className="bg-white p-6 rounded-[2rem] shadow-apple-soft border border-slate-50 flex flex-col items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Obrigado por partilhares 💛</h2>
-                <p className="text-[11px] font-bold text-slate-400 italic">O teu par vai valorizar saber como estás.</p>
-              </div>
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="text-center space-y-4 animate-bounce-in">
+            <div className="bg-primary/20 p-6 rounded-full inline-block shadow-glow">
+              <CheckCircle2 className="w-20 h-20 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black text-foreground">Obrigado por partilhares 💛</h2>
+              <p className="text-sm text-muted-foreground font-medium italic">O teu par vai valorizar saber como estás.</p>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -46,36 +46,37 @@ export function MoodForm({
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <Card>
-                <CardHeader>
-                    <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Como te sentes hoje?</CardTitle>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Como te sentes hoje?</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-8">
+                <CardContent className="space-y-5">
                     {/* Main Emotion */}
-                    <div className="grid grid-cols-4 gap-3">
-                        {MOOD_OPTIONS.map((m) => (
+                    <div className="grid grid-cols-4 gap-2">
+                        {MOOD_OPTIONS.map((m, idx) => (
                             <button
                                 key={m.key}
                                 type="button"
                                 onClick={() => setMoodKey(m.key)}
                                 className={cn(
-                                    "flex flex-col items-center gap-2 rounded-2xl py-4 transition-all duration-300",
+                                    "flex flex-col items-center gap-1 rounded-2xl border p-3 text-xs transition-all duration-300 animate-fade-slide-up",
+                                    `stagger-${(idx % 5) + 1}`,
                                     moodKey === m.key
-                                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-                                        : "bg-slate-50 text-slate-400 hover:bg-slate-100 active:scale-95"
+                                        ? "border-primary bg-primary/20 text-primary scale-110 shadow-md ring-2 ring-primary/20"
+                                        : "border-border text-muted-foreground hover:bg-accent active:scale-95"
                                 )}
                             >
-                                <span className="text-3xl">{m.emoji}</span>
-                                <span className="text-[10px] font-black uppercase tracking-widest">{m.label}</span>
+                                <span className={cn("text-3xl transition-transform duration-500", moodKey === m.key && "scale-110")}>{m.emoji}</span>
+                                <span className="font-bold">{m.label}</span>
                             </button>
                         ))}
                     </div>
 
-                    <div className="space-y-4 px-2">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Intensidade</span>
-                            <span className="text-xl font-black text-slate-900 tracking-tighter">{moodPercent}%</span>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                            <span>Intensidade</span>
+                            <span className="font-medium">{moodPercent}%</span>
                         </div>
                         <Slider
                             value={[moodPercent]}
@@ -89,100 +90,98 @@ export function MoodForm({
 
             {/* Sub emotions */}
             <Card>
-                <CardContent className="pt-6">
-                    <div className="space-y-4">
-                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Sentimentos Complementares</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {SUB_EMOTIONS.map((e) => {
-                                const active = emotions.includes(e);
-                                return (
-                                    <Badge
-                                        key={e}
-                                        variant={active ? "default" : "secondary"}
-                                        className={cn(
-                                            "cursor-pointer px-4 py-2 rounded-full border-none transition-all",
-                                            active ? "bg-primary text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                                        )}
-                                        onClick={() => toggleEmotion(e)}
-                                    >
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{e}</span>
-                                    </Badge>
-                                );
-                            })}
-                        </div>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-sm font-medium">Outros Sentimentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                        {SUB_EMOTIONS.map((e) => {
+                            const active = emotions.includes(e);
+                            return (
+                                <Badge
+                                    key={e}
+                                    variant={active ? "default" : "secondary"}
+                                    className={cn("cursor-pointer font-normal", !active && "bg-muted/50 text-muted-foreground")}
+                                    onClick={() => toggleEmotion(e)}
+                                >
+                                    {e}
+                                </Badge>
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
 
             {/* Activities */}
             <Card>
-                <CardContent className="pt-6">
-                    <div className="space-y-4">
-                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Factores e Atividades</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {ACTIVITIES.map((act) => {
-                                const active = activities.includes(act.key);
-                                return (
-                                    <button
-                                        key={act.key}
-                                        type="button"
-                                        onClick={() => toggleActivity(act.key)}
-                                        className={cn(
-                                            "flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all",
-                                            active
-                                                ? "bg-primary text-white shadow-lg shadow-primary/10"
-                                                : "bg-slate-50 text-slate-400 hover:bg-slate-100"
-                                        )}
-                                    >
-                                        <span>{act.emoji}</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{act.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-sm font-medium">Factores e Atividades</CardTitle>
+                </CardHeader>
+                <CardContent className="animate-fade-slide-up stagger-2">
+                    <div className="flex flex-wrap gap-2">
+                        {ACTIVITIES.map((act) => {
+                            const active = activities.includes(act.key);
+                            return (
+                                <button
+                                    key={act.key}
+                                    type="button"
+                                    onClick={() => toggleActivity(act.key)}
+                                    className={cn(
+                                        "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs transition-all active:scale-90",
+                                        active
+                                            ? "border-primary bg-primary/20 text-primary font-bold shadow-sm"
+                                            : "border-border text-muted-foreground hover:bg-accent"
+                                    )}
+                                >
+                                    <span>{act.emoji}</span>
+                                    <span>{act.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
 
             {/* Sleep */}
             <Card>
-                <CardContent className="pt-6">
-                    <div className="space-y-4">
-                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Qualidade do Sono</h4>
-                        <div className="grid grid-cols-4 gap-2">
-                            {SLEEP_QUALITY_OPTIONS.map((sq) => {
-                                const active = sleepQuality === sq.key;
-                                return (
-                                    <button
-                                        key={sq.key}
-                                        type="button"
-                                        onClick={() => setSleepQuality(active ? null : sq.key)}
-                                        className={cn(
-                                            "flex flex-col items-center gap-2 rounded-[1.5rem] py-4 transition-all",
-                                            active
-                                                ? "bg-primary text-white shadow-lg shadow-primary/10 scale-105"
-                                                : "bg-slate-50 text-slate-400 hover:bg-slate-100"
-                                        )}
-                                    >
-                                        <span className="text-2xl">{sq.emoji}</span>
-                                        <span className="text-[8px] font-black uppercase tracking-tighter">{sq.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-sm font-medium">Qualidade do Sono</CardTitle>
+                </CardHeader>
+                <CardContent className="animate-fade-slide-up stagger-3">
+                    <div className="grid grid-cols-4 gap-2">
+                        {SLEEP_QUALITY_OPTIONS.map((sq) => {
+                            const active = sleepQuality === sq.key;
+                            return (
+                                <button
+                                    key={sq.key}
+                                    type="button"
+                                    onClick={() => setSleepQuality(active ? null : sq.key)}
+                                    className={cn(
+                                        "flex flex-col items-center gap-1 rounded-xl border p-2 text-xs transition-all active:scale-95",
+                                        active
+                                            ? "border-primary bg-primary/20 text-primary font-bold scale-105"
+                                            : "border-border text-muted-foreground hover:bg-accent"
+                                    )}
+                                >
+                                    <span className="text-2xl">{sq.emoji}</span>
+                                    <span>{sq.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
 
             <Card>
-                <CardContent className="pt-6 space-y-6">
+                <CardContent className="pt-6 space-y-4">
                     <Textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         placeholder="Alguma nota sobre o dia de hoje?"
+                        className="min-h-[80px] resize-none"
                         maxLength={500}
                     />
-                    <Button onClick={onSave} disabled={saving} variant="apple" className="w-full h-14 rounded-3xl">
+                    <Button onClick={onSave} disabled={saving} className="w-full">
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdate ? "Actualizar Registo" : "Guardar Humor"}
                     </Button>

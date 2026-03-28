@@ -88,61 +88,47 @@ export function PartnerRoutinePanel() {
 
     if (!partnerId) {
         return (
-            <div className="rounded-[3rem] bg-slate-50 border border-slate-100 p-16 text-center space-y-4 opacity-40 grayscale">
-                <div className="h-20 w-20 rounded-full bg-white mx-auto flex items-center justify-center shadow-sm">
-                  <Heart className="h-10 w-10 text-slate-300" />
-                </div>
-                <div>
-                  <p className="font-black text-[12px] text-slate-400 uppercase tracking-widest">O teu par ainda não se juntou.</p>
-                  <p className="text-[10px] text-slate-300 font-bold mt-1 uppercase tracking-tight italic">Convida o teu amor nas definições! 🤍</p>
-                </div>
+            <div className="rounded-2xl border bg-card p-6 text-center">
+                <Heart className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">O teu par ainda não se juntou.</p>
             </div>
         );
     }
 
     if (loading) {
         return (
-            <div className="flex justify-center py-24">
-                <Loader2 className="h-10 w-10 animate-spin text-slate-200" />
+            <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 animate-fade-in px-1">
-            <div className="flex flex-col items-center gap-2">
-               <h3 className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-300">Rotina do Amor</h3>
-               <p className="text-xl font-black text-slate-900 tracking-tighter">{partnerName} ✨</p>
-            </div>
+        <div className="space-y-4">
+            <p className="text-sm font-medium text-muted-foreground text-center">
+                Rotina de <span className="text-foreground font-semibold">{partnerName}</span>
+            </p>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-apple overflow-hidden p-2">
-              <RoutineCalendar
-                  logs={logs}
-                  year={year}
-                  month={month}
-                  onChangeMonth={(y, m) => { setYear(y); setMonth(m); }}
-              />
-            </div>
+            <RoutineCalendar
+                logs={logs}
+                year={year}
+                month={month}
+                onChangeMonth={(y, m) => { setYear(y); setMonth(m); }}
+            />
 
             {items.length > 0 && (
-                <div className="space-y-4">
-                    <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] px-4 flex items-center justify-between">
-                        HÁBITOS HOJE
-                        <span className="text-slate-400">{todayChecked.length}/{items.length}</span>
-                    </h4>
+                <>
+                    <p className="text-xs font-medium text-muted-foreground px-1">
+                        Hábitos de hoje ({todayChecked.length}/{items.length})
+                    </p>
                     <RoutineChecklist items={items} checkedIds={todayChecked} onToggle={() => { }} readOnly />
-                </div>
+                </>
             )}
 
             {items.length === 0 && (
-                <div className="py-20 text-center space-y-2 grayscale opacity-40">
-                    <p className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
-                        Sem hábitos configurados
-                    </p>
-                    <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tight">
-                        {partnerName} ainda está a organizar o plano! ✨
-                    </p>
-                </div>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                    {partnerName} ainda não criou hábitos.
+                </p>
             )}
         </div>
     );

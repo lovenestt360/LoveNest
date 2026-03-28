@@ -40,29 +40,92 @@ input, textarea, [contenteditable="true"] {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 250 5% 10%;
+    --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
 
-    --primary: 345 100% 71%;
+    --background: 0 0% 100%;
+    --foreground: 250 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 250 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 250 20% 15%;
+
+    --primary: 345 60% 65%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 250 5% 10%;
+    --secondary: 345 40% 97%;
+    --secondary-foreground: 345 60% 40%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 2% 54%;
+    --muted: 230 15% 96%;
+    --muted-foreground: 230 10% 42%;
 
-    --accent: 345 100% 71%;
+    --accent: 345 60% 65%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 100% 60%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 0% / 0.05;
-    --input: 0 0% 0% / 0.05;
-    --ring: 345 100% 71%;
+    --border: 345 20% 90%;
+    --input: 345 20% 90%;
+    --ring: 345 60% 65%;
 
-    --radius: 16px;
+    --radius: 1.5rem;
+
+    /* Apple-style shadows refined */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 12px 30px -8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 30px 60px -15px rgba(0, 0, 0, 0.15);
+
+    /* Calming Rose gradients */
+    --gradient-primary: linear-gradient(135deg, #fda4af, #fb7185, #f43f5e);
+    --gradient-premium: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.3));
+    --gradient-surface: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+    --gradient-glow: 0 8px 32px -4px rgba(244, 63, 94, 0.2);
+    --gradient-gold: linear-gradient(135deg, #fbbf24, #f59e0b);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 345 20% 20%;
+    --sidebar-primary: 345 60% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 345 40% 97%;
+    --sidebar-accent-foreground: 345 60% 40%;
+    --sidebar-border: 345 20% 90%;
+    --sidebar-ring: 345 60% 65%;
+  }
+
+  .dark {
+    --background: 345 10% 4%;
+    --foreground: 0 0% 98%;
+
+    --card: 345 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 345 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 345 55% 72%;
+    --primary-foreground: 345 10% 4%;
+
+    --secondary: 345 10% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 345 10% 12%;
+    --muted-foreground: 345 5% 65%;
+
+    --accent: 345 55% 72%;
+    --accent-foreground: 345 10% 4%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 345 10% 15%;
+    --input: 345 10% 15%;
+    --ring: 345 55% 72%;
+
+    --gradient-primary: linear-gradient(135deg, #fecdd3, #fda4af, #fb7185);
+    --gradient-surface: linear-gradient(145deg, rgba(25, 20, 20, 0.9), rgba(15, 10, 10, 0.8));
+    --gradient-glow: 0 8px 32px -4px rgba(251, 113, 133, 0.3);
   }
 }
 
@@ -71,40 +134,12 @@ input, textarea, [contenteditable="true"] {
     @apply border-border;
   }
 
+  html {
+    font-family: var(--font-sans);
+  }
+
   body {
-    @apply bg-background text-foreground antialiased font-sans;
-    background-color: #FFFFFF;
-  }
-}
-
-/* Glassmorphism Utilities */
-@layer utilities {
-  .glass-nav {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
-  }
-
-  .glass-modal {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-  }
-
-  .apple-card {
-    @apply bg-white rounded-apple shadow-apple p-4 transition-all duration-300;
-  }
-
-  .apple-input {
-    @apply bg-secondary rounded-xl border-none px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all outline-none;
-  }
-
-  .apple-btn-primary {
-    @apply bg-primary text-white font-bold rounded-full px-6 py-3 active:scale-95 transition-all shadow-md hover:opacity-90;
+    @apply bg-background text-foreground antialiased;
   }
 }
 

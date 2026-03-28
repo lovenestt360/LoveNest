@@ -524,56 +524,40 @@ export default function Settings() {
   ] as const;
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-4 space-y-8 max-w-2xl mx-auto overflow-x-hidden animate-fade-in">
+    <div className="pb-24 animate-in fade-in duration-500">
       {currentCategory === 'menu' ? (
-        <section className="space-y-8">
-          {/* Header Estilo iPhone */}
-          <header className="space-y-4 pt-4 px-2">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h1 className="text-4xl font-black tracking-tighter text-slate-900">Definições</h1>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-400">Este é o vosso espaço 💛</span>
-                  <div className="h-1 w-1 rounded-full bg-slate-200" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Conta</span>
-                </div>
-              </div>
-            </div>
+        <section className="space-y-6">
+          <header className="mb-8">
+            <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Definições</h1>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Este é o vosso espaço 💛<br />Personalizem a vossa história.</p>
           </header>
 
-          <Card className="p-6 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
-            <Avatar className="h-16 w-16 ring-4 ring-slate-50 shadow-apple">
+          <div className="glass-card p-6 flex items-center gap-4 mb-8">
+            <Avatar className="h-20 w-20 ring-4 ring-background shadow-xl">
               {avatarUrl ? <AvatarImage src={avatarUrl} /> : null}
-              <AvatarFallback className="text-xl bg-slate-900 text-white font-black border-none">{initials}</AvatarFallback>
+              <AvatarFallback className="text-2xl bg-gradient-to-br from-rose-400 to-orange-400 text-white border-none">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">{displayName || "Utilizador"}</h3>
-              <p className="text-xs font-bold text-slate-400 truncate">{user?.email}</p>
-              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-primary text-white shadow-lg shadow-primary/20">PREMIUM ✨</div>
+              <h3 className="text-lg font-bold truncate">{displayName || "Utilizador"}</h3>
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-sm">PREMIUM ✨</div>
             </div>
-          </Card>
+          </div>
 
-          <div className="grid gap-3">
-            {menuItems.map((item, idx) => (
-              <button 
-                key={item.id} 
-                onClick={() => setCurrentCategory(item.id)} 
-                className={cn(
-                  "bg-white shadow-apple-soft rounded-[1.8rem] p-4 flex items-center gap-4 text-left w-full group transition-all active:scale-[0.98] animate-in fade-in slide-in-from-bottom-4 duration-500",
-                  `stagger-${(idx % 6) + 1}`
-                )}
-              >
-                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm", item.color)}>{item.icon}</div>
+          <div className="grid gap-4">
+            {menuItems.map((item) => (
+              <button key={item.id} onClick={() => setCurrentCategory(item.id)} className="glass-card glass-card-hover p-5 flex items-center gap-4 text-left w-full group rounded-[2rem]">
+                <div className={cn("h-12 w-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm", item.color)}>{item.icon}</div>
                 <div className="flex-1">
-                  <p className="font-black text-[13px] text-slate-900 tracking-tight">{item.label}</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.sub}</p>
+                  <p className="font-bold text-[15px]">{item.label}</p>
+                  <p className="text-xs text-muted-foreground/80 font-medium">{item.sub}</p>
                 </div>
-                <ChevronLeft className="h-4 w-4 text-slate-300 rotate-180 transition-transform group-hover:translate-x-1" />
+                <ChevronLeft className="h-4 w-4 text-muted-foreground rotate-180" />
               </button>
             ))}
           </div>
 
-          <Button variant="ghost" className="w-full text-slate-400 hover:text-destructive mt-4 h-14 font-black uppercase tracking-widest text-[10px] transition-all" onClick={() => signOut()}>
+          <Button variant="ghost" className="w-full text-destructive mt-8 h-12 font-bold" onClick={() => signOut()}>
             <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão
           </Button>
         </section>
@@ -585,152 +569,107 @@ export default function Settings() {
           </div>
 
           {currentCategory === 'profile' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="flex flex-col items-center gap-6 py-4">
+            <div className="space-y-6">
+              <div className="flex flex-col items-center gap-4">
                 <div className="relative">
-                  <Avatar className="h-24 w-24 ring-4 ring-white shadow-apple-soft">
-                    {avatarUrl && <AvatarImage src={avatarUrl} />}
-                    <AvatarFallback className="text-3xl font-black bg-slate-800 text-white">{initials}</AvatarFallback>
-                  </Avatar>
-                  <label htmlFor="av-up" className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-white shadow-xl hover:scale-110 transition-transform">
-                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                  </label>
+                  <Avatar className="h-24 w-24 ring-4 ring-primary/10 shadow-lg">{avatarUrl && <AvatarImage src={avatarUrl} />}<AvatarFallback className="text-2xl">{initials}</AvatarFallback></Avatar>
+                  <label htmlFor="av-up" className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}</label>
                   <input id="av-up" type="file" hidden accept="image/*" onChange={handleAvatarChange} />
                 </div>
                 {avatarUrl && (
-                  <Button variant="ghost" size="sm" className="h-9 text-destructive font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-destructive/5" onClick={handleRemoveAvatar}>Remover Foto</Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-destructive font-bold text-xs rounded-full hover:bg-destructive/5" onClick={handleRemoveAvatar}>Remover Foto</Button>
                 )}
               </div>
-
-              <Card className="p-6 space-y-6">
+              <div className="space-y-4 glass-card p-6">
+                <div className="space-y-2"><Label className="font-bold text-sm">Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                <div className="space-y-2"><Label className="font-bold text-sm">Aniversário</Label><Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Teu Nome de Exibição</Label>
-                  <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Como queres ser chamado?" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data de Aniversário</Label>
-                  <Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Género</Label>
+                  <Label className="ml-1 font-bold text-sm">Género</Label>
                   <Select value={gender || "none"} onValueChange={(v: any) => setGender(v === "none" ? null : v)}>
-                    <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-2xl">
-                      <SelectItem value="none">Preferir não dizer</SelectItem>
-                      <SelectItem value="female">Mulher</SelectItem>
-                      <SelectItem value="male">Homem</SelectItem>
-                    </SelectContent>
+                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-2xl"><SelectItem value="none">Preferir não dizer</SelectItem><SelectItem value="female">Mulher</SelectItem><SelectItem value="male">Homem</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleSaveProfile} disabled={saving} variant="apple" className="w-full h-14">
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar Alterações
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary rounded-2xl">
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
                 </Button>
 
                 {referralCode && (
-                  <div className="pt-6 border-t border-slate-50 space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">O Teu Código LoveNest</Label>
+                  <div className="pt-4 border-t border-border space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Teu Código LoveNest (Amigos)</Label>
                     <div className="flex gap-2">
-                      <Input value={referralCode} readOnly className="flex-1 text-center font-black tracking-[0.3em] text-primary text-lg" />
-                      <Button variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-slate-100 text-slate-400" onClick={() => copyToClipboard(referralCode, "Código copiado!")}>
-                        <Copy className="h-5 w-5" />
+                      <Input value={referralCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(referralCode, "Código de parceiro copiado!")}>
+                        <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-[10px] text-slate-400 font-bold italic px-1 text-center">Convida amigos e ganha 50 pontos por cada um! 🎁</p>
+                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Ganha 50 pontos por cada amigo que entrar! 🎁</p>
                   </div>
                 )}
-              </Card>
+              </div>
             </div>
           )}
 
           {currentCategory === 'house' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <Card className="p-6 space-y-6">
-                <div className="space-y-1 pb-2">
-                   <h3 className="text-xl font-black text-slate-900 tracking-tight">O Vosso Ninho</h3>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Personaliza os detalhes da vossa casa</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome da Casa</Label>
-                  <Input value={houseName} onChange={e => setHouseName(e.target.value)} placeholder="Ex: Casa do Amor" />
-                </div>
-                
+            <div className="space-y-6">
+              <div className="glass-card p-6 space-y-4">
+                <div className="space-y-2"><Label className="font-bold text-sm">Apelido da Casa</Label><Input value={houseName} onChange={e => setHouseName(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tu (Iniciais)</Label>
-                    <Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} maxLength={5} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Par (Iniciais)</Label>
-                    <Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} maxLength={5} />
-                  </div>
+                  <div className="space-y-2"><Label className="font-bold text-sm">Tu (Iniciais)</Label><Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                  <div className="space-y-2"><Label className="font-bold text-sm">Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Início do Relacionamento</Label>
-                  <Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} />
-                </div>
-
-                <Button onClick={handleSaveProfile} disabled={saving} variant="apple" className="w-full h-14">
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar Dados da Casa
-                </Button>
+                <div className="space-y-2"><Label className="font-bold text-sm">Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary">Guardar Dados</Button>
 
                 {houseInviteCode && (
-                  <div className="pt-6 border-t border-slate-50 space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Código de Convite da Casa</Label>
+                  <div className="pt-4 border-t border-border space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código da Casa (Parceiro)</Label>
                     <div className="flex gap-2">
-                      <Input value={houseInviteCode} readOnly className="flex-1 text-center font-black tracking-[0.3em] text-primary text-lg" />
-                      <Button variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-slate-100 text-slate-400" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
-                        <Copy className="h-5 w-5" />
+                      <Input value={houseInviteCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
+                        <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-[10px] text-slate-400 font-bold italic px-1 text-center">Partilha este código com o teu par para entrarem na mesma casa. 🏠</p>
+                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Usa este código para convidar o teu par. 🏠</p>
                   </div>
                 )}
-              </Card>
+              </div>
             </div>
           )}
 
           {currentCategory === 'notifications' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <Card className="p-6 space-y-6">
+            <div className="space-y-6">
+              <div className="glass-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Notificações Push</h3>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alertas em tempo real no teu telemóvel</p>
+                  <div>
+                    <h3 className="font-bold">Notificações Push</h3>
+                    <p className="text-xs text-muted-foreground">Alertas no telemóvel.</p>
                   </div>
-                  <div className={cn(
-                    "h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-apple",
-                    pushSubscribed ? "bg-emerald-50 text-emerald-500" : "bg-slate-50 text-slate-300"
-                  )}>
-                    {pushSubscribed ? <Bell className="h-6 w-6" /> : <BellOff className="h-6 w-6" />}
-                  </div>
+                  {pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}
                 </div>
-
                 {pushPermission === "unsupported" && !hidePushWarning ? (
-                  <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-6 relative space-y-3">
-                    <div className="flex items-center gap-2">
-                       <Shield className="h-4 w-4 text-amber-600" />
-                       <p className="text-[11px] text-amber-900 font-extrabold uppercase tracking-widest">Aviso de Compatibilidade iOS</p>
-                    </div>
-                    <p className="text-[12px] text-amber-700 font-medium leading-relaxed pr-8">
-                      A Apple só permite notificações em apps Web (PWA) no <b>iOS 16.4</b> ou superior. 
-                      Atualiza o teu iPhone para ativares esta funcionalidade! ✨
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 relative">
+                    <p className="text-[11px] text-amber-900 font-bold leading-tight mb-1">
+                      ⚠️ O teu iPhone precisa do iOS 16.4 ou superior.
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-medium leading-tight pr-8">
+                      A Apple só libertou as notificações para apps instaladas (PWA) no <b>iOS 16.4</b>. 
+                      Atualiza o teu iPhone nas Definições do sistema para ativares esta funcionalidade! ✨
                     </p>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="absolute top-4 right-4 h-8 w-8 text-amber-900/40 hover:text-amber-900 hover:bg-amber-100/50 rounded-full"
+                      className="absolute top-2 right-2 h-6 w-6 text-amber-900/50 hover:text-amber-900 hover:bg-amber-500/20 rounded-full"
                       onClick={() => toggleHidePushWarning(true)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : pushPermission === "unsupported" && hidePushWarning ? (
-                  <div className="flex items-center justify-between p-2">
+                  <div className="flex items-center justify-between group">
                     <div className="space-y-0.5">
-                      <p className="text-[12px] font-black text-slate-900">Mostrar aviso de suporte iOS</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Reativar o alerta de versão 16.4+</p>
+                      <p className="text-[13px] font-bold">Mostrar aviso de suporte iOS</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">Reativar o alerta de versão 16.4+</p>
                     </div>
                     <Switch 
                       checked={!hidePushWarning} 
@@ -738,43 +677,38 @@ export default function Settings() {
                     />
                   </div>
                 ) : pushSubscribed ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading} className="h-12 rounded-2xl border-slate-100 font-black text-[10px] uppercase tracking-widest text-slate-400">Desativar</Button>
-                    <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading} className="h-12 rounded-2xl border-slate-100 font-black text-[10px] uppercase tracking-widest text-primary">Testar Push</Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading}>Desativar</Button>
+                    <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading}>Testar</Button>
                   </div>
                 ) : (
-                  <Button onClick={handleEnablePush} disabled={pushLoading} variant="apple" className="w-full h-14">
-                    {pushLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Ativar Notificações
-                  </Button>
+                  <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-bold glow-primary">Ativar</Button>
                 )}
-              </Card>
-
-              <Card className="p-6 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-[1.25rem] bg-indigo-50 flex items-center justify-center shadow-apple shadow-indigo-100/50">
-                    <Sparkles className="h-6 w-6 text-indigo-500" />
+              </div>
+              <div className="glass-card p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="space-y-0.5">
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Dicas Inteligentes</h3>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lembretes personalizados por IA</p>
-                  </div>
+                  <h3 className="font-bold text-sm uppercase text-primary">Lembretes Inteligentes</h3>
                 </div>
                 
-                <p className="text-[12px] text-slate-500 font-medium leading-relaxed bg-slate-50/50 p-4 rounded-2xl border border-slate-50 italic">
-                  O LoveNest analisa o vosso ritmo para enviar mensagens de carinho e incentivos nos momentos certos. ✨
+                <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                  O LoveNest analisa o vosso ritmo para enviar mensagens de carinho, 
+                  incentivos e alertas nos momentos certos. ✨
                 </p>
 
-                <div className="space-y-5 pt-2">
+                <div className="space-y-4 pt-2">
                   {[
-                    { id: 'engagement', label: 'Conexão Positiva', desc: 'Incentivos quando estão distantes' },
+                    { id: 'engagement', label: 'Interação e Conexão', desc: 'Incentivos quando estão distantes' },
                     { id: 'emotion', label: 'Cuidado Emocional', desc: 'Lembretes para registar o humor' },
-                    { id: 'partner', label: 'Estado do Par', desc: 'Saber quando o par está ativo' },
-                    { id: 'system', label: 'Gestão de Rotina', desc: 'Alertas de tarefas pendentes' }
+                    { id: 'partner', label: 'Atividade do Par', desc: 'Saber quando o par está ativo' },
+                    { id: 'system', label: 'Tarefas e Sistema', desc: 'Alertas de tarefas pendentes' }
                   ].map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between group transition-all">
+                    <div key={cat.id} className="flex items-center justify-between group">
                       <div className="space-y-0.5">
-                        <p className="text-[13px] font-black text-slate-900 group-hover:text-primary transition-colors">{cat.label}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{cat.desc}</p>
+                        <p className="text-[13px] font-bold group-hover:text-primary transition-colors">{cat.label}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium">{cat.desc}</p>
                       </div>
                       <Switch 
                         checked={smartSettings.find(s => s.category === cat.id)?.enabled !== false} 
@@ -784,52 +718,36 @@ export default function Settings() {
                   ))}
                 </div>
 
-                <div className="pt-6 border-t border-slate-50 space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Horário Preferido para Alertas</Label>
+                <div className="pt-4 border-t border-border/50">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Horário Preferido</Label>
                   <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
-                    <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl">
+                    <SelectTrigger className="h-10 bg-white dark:bg-white/5 border-border rounded-xl mt-1">
                       <SelectValue placeholder="Escolhe uma hora..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl">
+                    <SelectContent className="rounded-xl">
                       {Array.from({ length: 24 }, (_, i) => (
-                        <SelectItem key={i} value={i.toString()} className="rounded-xl">{i.toString().padStart(2, '0')}:00</SelectItem>
+                        <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[9px] text-slate-400 font-black italic mt-2 text-center uppercase tracking-tight">Dica: Escolhe um horário em que costumas estar livre. 💛</p>
+                  <p className="text-[9px] text-muted-foreground italic mt-2">Dica: Escolhe um horário em que costumas estar livre. 💛</p>
                 </div>
-              </Card>
+              </div>
 
-              <Card className="p-6 space-y-6">
-                <div className="space-y-1">
-                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Canais em Tempo Real</h3>
-                </div>
-                <div className="space-y-4">
+              <div className="glass-card p-6 space-y-4">
+                <h3 className="font-bold text-sm uppercase text-muted-foreground">Módulos em Tempo Real</h3>
+                <div className="space-y-3">
                   {Object.entries(notifPrefs).map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between py-1 transition-all">
-                       <span className="text-[13px] font-black text-slate-700 capitalize tracking-tight">{k.replace('_', ' ')}</span>
-                       <Switch checked={v} onCheckedChange={() => toggleNotif(k)} />
-                    </div>
+                    <div key={k} className="flex items-center justify-between"><span className="text-sm capitalize">{k.replace('_', ' ')}</span><Switch checked={v} onCheckedChange={() => toggleNotif(k)} /></div>
                   ))}
                 </div>
-              </Card>
-
-              <Button variant="ghost" size="sm" className="w-full text-[9px] font-black uppercase tracking-widest text-slate-200 hover:text-slate-400 transition-all opacity-30 hover:opacity-100" onClick={() => setShowDebug(!showDebug)}>
-                {showDebug ? "Ocultar Sistema de Logs" : "Visualizar Logs de Sistema"}
-              </Button>
+              </div>
+              <Button variant="ghost" size="sm" className="w-full text-[9px] opacity-10" onClick={() => setShowDebug(!showDebug)}>{showDebug ? "Fechar Logs" : "Abrir Logs"}</Button>
               {showDebug && (
-                <div className="p-6 bg-slate-900 rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in-95 mt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Developer Debug Logs</span>
-                    <Button onClick={handlePingRaw} size="sm" variant="outline" className="h-8 rounded-full border-slate-800 text-slate-400 hover:bg-slate-800 font-black text-[9px] uppercase tracking-widest px-4">Ping System</Button>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto font-mono text-[9px] text-slate-400 space-y-2 pr-2 scrollbar-thin">
-                    {debugLogs.map((log, i) => (
-                      <div key={i} className="border-b border-slate-800 pb-2 flex flex-col gap-1">
-                        <span className="text-primary/70">[{new Date(log.created_at).toLocaleTimeString()}]</span>
-                        <span className="break-all">{log.event_type}</span>
-                      </div>
-                    ))}
+                <div className="p-4 bg-zinc-900 rounded-xl overflow-hidden shadow-2xl animate-in zoom-in-95">
+                  <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-mono text-zinc-500">SYSTEM_LOGS</span><Button onClick={handlePingRaw} size="sm" className="h-6">Ping</Button></div>
+                  <div className="max-h-60 overflow-y-auto font-mono text-[9px] text-zinc-400 space-y-1">
+                    {debugLogs.map((log, i) => <div key={i} className="border-b border-zinc-800 pb-1">[{new Date(log.created_at).toLocaleTimeString()}] {log.event_type}</div>)}
                   </div>
                 </div>
               )}
@@ -837,54 +755,63 @@ export default function Settings() {
           )}
 
           {currentCategory === 'customization' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <Card className="p-6 space-y-8">
+            <div className="space-y-6">
+              <div className="glass-card p-6 space-y-6">
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight mb-1">Cores e Tema</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Adapta o LoveNest ao teu estilo</p>
-                  
+                  <Label className="text-base font-bold mb-4 block">Modo do Aplicativo</Label>
                   <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: 'light', label: 'Claro', icon: Sun },
-                      { id: 'dark', label: 'Escuro', icon: Moon },
-                      { id: 'system', label: 'Sistema', icon: Monitor },
-                    ].map((item) => (
-                      <button 
-                        key={item.id}
-                        onClick={() => setTheme(item.id as any)}
-                        className={cn(
-                          "flex flex-col items-center gap-3 p-5 rounded-[1.75rem] border-2 transition-all active:scale-95",
-                          theme === item.id 
-                            ? "border-primary bg-primary/5 shadow-apple shadow-primary/10" 
-                            : "border-slate-50 bg-slate-50/50 hover:bg-slate-50"
-                        )}
-                      >
-                        <item.icon className={cn("h-7 w-7", theme === item.id ? "text-primary transition-transform scale-110" : "text-slate-300")} />
-                        <span className={cn("text-[10px] font-black uppercase tracking-widest", theme === item.id ? "text-primary" : "text-slate-400")}>{item.label}</span>
-                      </button>
-                    ))}
+                    <button 
+                      onClick={() => setTheme("light")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all",
+                        theme === "light" ? "border-primary bg-primary/5 shadow-md" : "border-transparent bg-background/50"
+                      )}
+                    >
+                      <Sun className={cn("h-6 w-6", theme === "light" ? "text-primary" : "text-muted-foreground")} />
+                      <span className="text-xs font-bold">Claro</span>
+                    </button>
+                    <button 
+                      onClick={() => setTheme("dark")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all",
+                        theme === "dark" ? "border-primary bg-primary/5 shadow-md" : "border-transparent bg-background/50"
+                      )}
+                    >
+                      <Moon className={cn("h-6 w-6", theme === "dark" ? "text-primary" : "text-muted-foreground")} />
+                      <span className="text-xs font-bold">Escuro</span>
+                    </button>
+                    <button 
+                      onClick={() => setTheme("system")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all",
+                        theme === "system" ? "border-primary bg-primary/5 shadow-md" : "border-transparent bg-background/50"
+                      )}
+                    >
+                      <Monitor className={cn("h-6 w-6", theme === "system" ? "text-primary" : "text-muted-foreground")} />
+                      <span className="text-xs font-bold">Sistema</span>
+                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-6 pt-6 border-t border-slate-50">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Fundo Dinâmico</h3>
-                    <p className="text-[11px] text-slate-500 font-medium">Escolhe uma foto especial para o fundo do vosso chat.</p>
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <div>
+                    <Label className="text-base font-bold mb-1 block">Papel de Parede do Chat</Label>
+                    <p className="text-xs text-muted-foreground mb-4">Escolha uma foto para o fundo das conversas.</p>
                   </div>
                   
-                  <div className="flex items-center gap-5">
-                    <div className="relative h-32 w-24 rounded-[1.5rem] overflow-hidden border-4 border-white shadow-apple bg-slate-50 shrink-0">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-24 w-16 rounded-lg overflow-hidden border border-white/20 bg-muted shrink-0">
                       {wallpaperUrl ? (
-                        <img src={wallpaperUrl} className="h-full w-full object-cover transition-opacity duration-300" style={{ opacity: wallpaperOpacity }} />
+                        <img src={wallpaperUrl} className="h-full w-full object-cover" style={{ opacity: wallpaperOpacity }} />
                       ) : (
-                        <div className="h-full w-full flex items-center justify-center text-slate-200"><ImageIcon className="h-8 w-8" /></div>
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground/30"><Palette className="h-6 w-6" /></div>
                       )}
                     </div>
-                    <div className="flex-1 space-y-3">
-                      <Button variant="outline" size="sm" className="w-full h-11 rounded-2xl border-slate-100 font-black text-[10px] uppercase tracking-widest text-slate-600 shadow-sm" asChild disabled={savingWallpaper}>
-                        <label className="cursor-pointer flex items-center justify-center gap-2">
-                          {savingWallpaper ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                          {savingWallpaper ? "A Carregar..." : "Alterar Foto"}
+                    <div className="flex-1 space-y-2">
+                      <Button variant="outline" size="sm" className="w-full text-xs font-bold h-9" asChild disabled={savingWallpaper}>
+                        <label className="cursor-pointer flex items-center justify-center">
+                          {savingWallpaper ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          {savingWallpaper ? "Carregando..." : "Mudar Foto"}
                           <input type="file" accept="image/*" hidden onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
@@ -909,7 +836,7 @@ export default function Settings() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="w-full h-11 rounded-2xl text-destructive font-black text-[10px] uppercase tracking-widest hover:bg-destructive/5" 
+                          className="w-full text-xs font-bold h-9 text-destructive" 
                           onClick={async () => {
                             setSavingWallpaper(true);
                             await removeWallpaper();
@@ -918,91 +845,40 @@ export default function Settings() {
                           }}
                           disabled={savingWallpaper}
                         >
-                          Limpar Fundo
+                          Remover Fundo
                         </Button>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-4 pt-2">
-                    <div className="flex justify-between items-center px-1">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Opacidade do Fundo</Label>
-                      <span className="text-base font-black text-primary tracking-tighter">{Math.round(wallpaperOpacity * 100)}%</span>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-xs font-bold">Opacidade do Fundo</Label>
+                      <span className="text-xs font-bold text-primary">{Math.round(wallpaperOpacity * 100)}%</span>
                     </div>
-                      <Slider 
-                        value={[wallpaperOpacity]} 
-                        min={0} 
-                        max={1} 
-                        step={0.01}
-                        onValueChange={([v]) => updateWallpaper({ opacity: v })}
-                        className="py-4"
+                      <input 
+                        type="range" min="0" max="1" step="0.01" 
+                        value={wallpaperOpacity} 
+                        onChange={(e) => updateWallpaper({ opacity: parseFloat(e.target.value) })}
+                        className="w-full accent-primary h-2 bg-zinc-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer"
                       />
-                      <p className="text-[9px] text-slate-400 font-bold italic text-center uppercase tracking-tight">Dica: Reduz a opacidade para facilitar a leitura das mensagens. 📝</p>
                     </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
           {currentCategory === 'verification' && user && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-               <VerificationSection userId={user.id} />
-            </div>
+            <VerificationSection userId={user.id} />
           )}
 
           {currentCategory === 'data' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <Card className="p-6 flex items-center justify-between group transition-all">
-                <div className="space-y-1">
-                  <p className="text-lg font-black text-slate-900 tracking-tight">Exportar os Meus Dados</p>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descarrega uma cópia em formato JSON</p>
-                </div>
-                <Button variant="ghost" size="icon" onClick={handleExport} disabled={exporting} className="h-12 w-12 rounded-2xl bg-slate-50 text-slate-400 hover:text-primary transition-all">
-                   {exporting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
-                </Button>
-              </Card>
-
+            <div className="space-y-4">
+              <div className="glass-card p-4 flex items-center justify-between"><div><p className="text-sm font-bold">Exportar Dados</p><p className="text-[10px] text-muted-foreground">JSON format.</p></div><Button variant="ghost" onClick={handleExport} disabled={exporting}>Exportar</Button></div>
               <AlertDialog open={leaving} onOpenChange={setLeaving}>
-                <AlertDialogTrigger asChild>
-                  <button className="bg-white shadow-apple rounded-[2rem] p-6 flex items-center justify-between w-full text-destructive hover:bg-rose-50/50 transition-all active:scale-95 group">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-2xl bg-rose-50 flex items-center justify-center transition-transform group-hover:scale-110">
-                        <LogOut className="h-5 w-5 text-rose-500" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-lg font-black tracking-tight">Sair da Casa</p>
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Abandonar este ninho permanentemente</p>
-                      </div>
-                    </div>
-                    <ChevronLeft className="h-4 w-4 rotate-180 opacity-30 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 max-w-sm mx-auto">
-                  <AlertDialogHeader className="space-y-4">
-                    <div className="h-20 w-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto mb-2">
-                       <LogOut className="h-10 w-10 text-rose-500" />
-                    </div>
-                    <AlertDialogTitle className="text-2xl font-black text-slate-900 tracking-tighter text-center">Tens a certeza?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm font-medium text-slate-500 text-center leading-relaxed">
-                      Se saíres desta casa, irás perder acesso a todas as memórias, chat e planos partilhados. Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="flex-col sm:flex-col gap-3 mt-8">
-                    <AlertDialogAction onClick={handleLeaveHouse} className="w-full h-14 bg-rose-500 hover:bg-rose-600 text-white font-black uppercase tracking-widest text-[11px] rounded-[1.5rem] shadow-xl shadow-rose-200 order-1 sm:order-2">Sair Definitivamente</AlertDialogAction>
-                    <AlertDialogCancel className="w-full h-14 bg-slate-50 border-none text-slate-400 font-black uppercase tracking-widest text-[11px] rounded-[1.5rem] order-2 sm:order-1">Cancelar</AlertDialogCancel>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
+                <AlertDialogTrigger asChild><button className="glass-card p-4 flex items-center justify-between w-full text-destructive hover:bg-destructive/5 transition-colors"><div className="flex items-center gap-3"><LogOut className="h-5 w-5" /><p className="text-sm font-bold">Sair da Casa</p></div><ChevronLeft className="h-4 w-4 rotate-180 opacity-50" /></button></AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[2rem]"><AlertDialogHeader><AlertDialogTitle>Tem certeza?</AlertDialogTitle><AlertDialogDescription>Irás perder acesso a este ninho.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleLeaveHouse} className="bg-destructive rounded-full">Sim, sair</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
               </AlertDialog>
-
-              <Card className="p-8 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50/50 border-dashed border-2 border-slate-100 rounded-[2.5rem]">
-                 <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
-                    <Shield className="h-8 w-8" />
-                 </div>
-                 <div className="space-y-1">
-                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Privacidade e Segurança</p>
-                    <p className="text-[13px] font-medium text-slate-500 leading-relaxed px-4">Os teus dados são encriptados e nunca partilhados com terceiros. O LoveNest é um espaço seguro apenas para vocês dois.</p>
-                 </div>
-              </Card>
             </div>
           )}
         </section>

@@ -17,64 +17,54 @@ export function RoutineProgressCards({
     const todayRate = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
 
     return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2">
             {/* Today */}
-            <div className="rounded-apple bg-white shadow-apple p-5 flex flex-col justify-between">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="h-8 w-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500">
-                      <Target className="h-4 w-4" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hoje</span>
+            <div className="rounded-2xl border bg-card p-3">
+                <div className="flex items-center gap-2 mb-1">
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-medium text-muted-foreground">Hoje</span>
                 </div>
-                <div>
-                  <p className="text-3xl font-black text-slate-900 leading-tight">
-                      {todayDone}<span className="text-sm font-black text-slate-300">/{todayTotal}</span>
-                  </p>
-                  <div className="mt-3 h-1.5 rounded-full bg-slate-50 overflow-hidden">
-                      <div
-                          className="h-full rounded-full bg-slate-900 transition-all duration-300"
-                          style={{ width: `${todayRate}%` }}
-                      />
-                  </div>
+                <p className="text-2xl font-bold">
+                    {todayDone}<span className="text-sm font-normal text-muted-foreground">/{todayTotal}</span>
+                </p>
+                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                        className="h-full rounded-full bg-primary transition-all duration-300"
+                        style={{ width: `${todayRate}%` }}
+                    />
                 </div>
             </div>
 
             {/* Streak */}
             {!hideStreak && (
-                <div className="rounded-apple bg-white shadow-apple p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="h-8 w-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
-                          <Flame className="h-4 w-4 fill-current" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Streak</span>
+                <div className="rounded-2xl border bg-card p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-medium text-muted-foreground">Streak</span>
                     </div>
-                    <p className="text-3xl font-black text-slate-900 leading-tight">
-                        {streak} <span className="text-sm font-black text-slate-300 uppercase">{streak === 1 ? "dia" : "dias"}</span>
+                    <p className="text-2xl font-bold">
+                        {streak} <span className="text-sm font-normal text-muted-foreground">{streak === 1 ? "dia" : "dias"}</span>
                     </p>
                 </div>
             )}
 
             {/* Average rate */}
-            <div className="rounded-apple bg-white shadow-apple p-5">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="h-8 w-8 rounded-xl bg-green-50 flex items-center justify-center text-green-500">
-                      <TrendingUp className="h-4 w-4" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Média</span>
+            <div className="rounded-2xl border bg-card p-3">
+                <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <span className="text-xs font-medium text-muted-foreground">Média</span>
                 </div>
-                <p className="text-3xl font-black text-slate-900 leading-tight">{avgRate}<span className="text-sm font-black text-slate-300">%</span></p>
+                <p className="text-2xl font-bold">{avgRate}<span className="text-sm font-normal text-muted-foreground">%</span></p>
             </div>
 
-            {/* Este Mês */}
-            <div className="rounded-apple bg-white shadow-apple p-5">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="h-8 w-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
-                      <CalendarCheck className="h-4 w-4" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Este Mês</span>
+            {/* Days completed this month */}
+            <div className="rounded-2xl border bg-card p-3">
+                <div className="flex items-center gap-2 mb-1">
+                    <CalendarCheck className="h-4 w-4 text-blue-500" />
+                    <span className="text-xs font-medium text-muted-foreground">Este mês</span>
                 </div>
-                <p className="text-3xl font-black text-slate-900 leading-tight">
-                    {completedDays} <span className="text-sm font-black text-slate-300 uppercase">Dias</span>
+                <p className="text-2xl font-bold">
+                    {completedDays} <span className="text-sm font-normal text-muted-foreground">completos</span>
                 </p>
             </div>
         </div>

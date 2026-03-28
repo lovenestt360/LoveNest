@@ -11,8 +11,6 @@ const buttonVariants = cva(
       variant: {
         default:
           "text-primary-foreground shadow-md hover:shadow-lg active:shadow-sm [background:var(--gradient-primary)] hover:[background:var(--gradient-primary-hover)]",
-        apple:
-          "bg-slate-800 text-white font-black uppercase tracking-widest shadow-lg shadow-slate-100/50 hover:bg-slate-700 active:scale-95 transition-all outline-none border-none",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
