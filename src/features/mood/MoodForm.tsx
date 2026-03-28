@@ -60,9 +60,9 @@ export function MoodForm({
                                 type="button"
                                 onClick={() => setMoodKey(m.key)}
                                 className={cn(
-                                    "flex flex-col items-center gap-2 rounded-3xl py-4 transition-all duration-300",
+                                    "flex flex-col items-center gap-2 rounded-2xl py-4 transition-all duration-300",
                                     moodKey === m.key
-                                        ? "bg-slate-900 text-white shadow-2xl shadow-slate-200 scale-105"
+                                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
                                         : "bg-slate-50 text-slate-400 hover:bg-slate-100 active:scale-95"
                                 )}
                             >
@@ -101,7 +101,7 @@ export function MoodForm({
                                         variant={active ? "default" : "secondary"}
                                         className={cn(
                                             "cursor-pointer px-4 py-2 rounded-full border-none transition-all",
-                                            active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                                            active ? "bg-primary text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
                                         )}
                                         onClick={() => toggleEmotion(e)}
                                     >
@@ -130,7 +130,7 @@ export function MoodForm({
                                         className={cn(
                                             "flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all",
                                             active
-                                                ? "bg-slate-900 text-white shadow-lg shadow-slate-100"
+                                                ? "bg-primary text-white shadow-lg shadow-primary/10"
                                                 : "bg-slate-50 text-slate-400 hover:bg-slate-100"
                                         )}
                                     >
@@ -158,9 +158,9 @@ export function MoodForm({
                                         type="button"
                                         onClick={() => setSleepQuality(active ? null : sq.key)}
                                         className={cn(
-                                            "flex flex-col items-center gap-2 rounded-[2rem] py-4 transition-all",
+                                            "flex flex-col items-center gap-2 rounded-[1.5rem] py-4 transition-all",
                                             active
-                                                ? "bg-slate-900 text-white shadow-xl shadow-slate-100 scale-105"
+                                                ? "bg-primary text-white shadow-lg shadow-primary/10 scale-105"
                                                 : "bg-slate-50 text-slate-400 hover:bg-slate-100"
                                         )}
                                     >

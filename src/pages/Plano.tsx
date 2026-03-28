@@ -126,7 +126,7 @@ export default function Plano() {
       </header>
 
       {/* Tab Switcher - iOS Inspired */}
-      <div className="p-1 rounded-[1.8rem] bg-slate-100 flex items-center border border-slate-200/20">
+      <div className="p-1 rounded-[1.4rem] bg-slate-100 flex items-center border border-slate-200/20">
         {TABS.map((t) => {
           const isActive = activeTab === t.id;
           return (
@@ -134,9 +134,9 @@ export default function Plano() {
               key={t.id}
               onClick={() => setSearchParams({ tab: t.id })}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[1.4rem] transition-all duration-300 font-black text-[11px] uppercase tracking-[0.2em]",
+                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[1.1rem] transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em]",
                 isActive 
-                  ? "bg-white shadow-xl text-slate-900 scale-[1.02]" 
+                  ? "bg-white shadow-lg text-slate-900 scale-[1.01]" 
                   : "text-slate-400 hover:text-slate-500"
               )}
             >
@@ -184,7 +184,7 @@ export default function Plano() {
                         hideStreak={true}
                     />
 
-                    <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-apple overflow-hidden p-2">
+                    <div className="bg-white rounded-[2rem] border border-slate-50 shadow-apple-soft overflow-hidden p-1">
                       <RoutineCalendar 
                         logs={logs} 
                         year={year} 
@@ -217,8 +217,8 @@ export default function Plano() {
 
         {activeTab === "agenda" && (
           <div className="animate-in fade-in slide-in-from-bottom-3 duration-500 space-y-8">
-            <div className="bg-white rounded-[2.5rem] p-6 shadow-apple border border-slate-50 space-y-6">
-               <h3 className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-300 text-center">Calendário de Planos</h3>
+            <div className="bg-white rounded-[2rem] p-4 shadow-apple-soft border border-slate-50 space-y-4">
+               <h3 className="text-[9px] font-black tracking-[0.4em] uppercase text-slate-300 text-center">Calendário de Planos</h3>
                <RoutineCalendar 
                 logs={agendaLogs as any}
                 year={year} 
@@ -237,9 +237,11 @@ export default function Plano() {
                 </h2>
                 <Button 
                     onClick={() => setIsModalOpen(true)}
-                    className="h-10 px-6 rounded-full bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-slate-100"
+                    variant="apple"
+                    size="sm"
+                    className="h-9 px-5 rounded-full text-[9px] shadow-apple-soft"
                 >
-                    <Plus className="mr-1.5 h-4 w-4" /> NOVO
+                    <Plus className="mr-1 h-3 w-3" /> NOVO
                 </Button>
               </div>
 
@@ -255,23 +257,23 @@ export default function Plano() {
               ) : (
                 <div className="space-y-4">
                   {items.filter(i => i.plan_at && i.plan_at.startsWith(selectedDate)).map(item => (
-                    <div key={item.id} className="group flex items-center gap-5 p-6 rounded-[2.2rem] bg-white border border-slate-50 shadow-apple transition-all hover:bg-slate-50/50">
+                    <div key={item.id} className="group flex items-center gap-4 p-5 rounded-[1.8rem] bg-white border border-slate-50 shadow-apple-soft transition-all hover:bg-slate-50/50">
                       <Checkbox 
                         checked={item.completed} 
                         onCheckedChange={(val) => toggleComplete(item.id, val as boolean)} 
-                        className="h-8 w-8 rounded-full border-2 border-slate-100 bg-slate-50 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                        className="h-7 w-7 rounded-full border-2 border-slate-100 bg-slate-50 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
                       <div className="flex-1 min-w-0">
                         <p className={cn(
-                          "text-lg font-black tracking-tight transition-all", 
+                          "text-base font-black tracking-tight transition-all", 
                           item.completed ? "line-through text-slate-300" : "text-slate-900"
                         )}>{item.title}</p>
-                        <div className="flex items-center gap-4 mt-2">
-                           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white shadow-sm">
-                             <Clock className="h-3 w-3" />
-                             <span className="text-[10px] font-black tabular-nums">{format(parseISO(item.plan_at!), "HH:mm")}</span>
+                        <div className="flex items-center gap-3 mt-1.5">
+                           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/5 text-primary shadow-sm border border-primary/10">
+                             <Clock className="h-2.5 w-2.5" />
+                             <span className="text-[9px] font-black tabular-nums">{format(parseISO(item.plan_at!), "HH:mm")}</span>
                            </div>
-                           <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">
+                           <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-300">
                              {item.for_whom === 'ambos' ? "Para Ambos" : item.for_whom === 'me' ? "Só Eu" : "Só Amor"}
                            </span>
                         </div>
@@ -352,7 +354,8 @@ export default function Plano() {
           <Button 
             onClick={handleAdd} 
             disabled={!newTitle.trim()}
-            className="w-full h-20 rounded-apple bg-slate-900 text-white font-black text-xl transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
+            variant="apple"
+            className="w-full h-16 rounded-2xl font-black text-lg shadow-apple-soft"
           >
             CRIAR PLANO 🚀
           </Button>

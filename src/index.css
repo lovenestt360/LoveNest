@@ -88,15 +88,15 @@ input, textarea, [contenteditable="true"] {
   }
 
   .glass-modal {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
   }
 
   .apple-card {
-    @apply bg-white rounded-apple shadow-apple p-5 transition-all duration-300;
+    @apply bg-white rounded-apple shadow-apple p-4 transition-all duration-300;
   }
 
   .apple-input {

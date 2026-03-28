@@ -66,8 +66,8 @@ export default {
         sm: "8px",
       },
       boxShadow: {
-        apple: "0 8px 32px rgba(0, 0, 0, 0.05)",
-        'apple-soft': "0 4px 16px rgba(0, 0, 0, 0.03)",
+        apple: "0 4px 20px rgba(0, 0, 0, 0.03)",
+        'apple-soft': "0 2px 10px rgba(0, 0, 0, 0.02)",
       },
       keyframes: {
         "accordion-down": {

@@ -427,11 +427,11 @@ const Index = () => {
         {/* Announcements - Minimalist Style */}
         <div className="space-y-3">
           {announcements.map((ann) => (
-            <div key={ann.id} className="bg-slate-900 text-white p-6 rounded-apple shadow-xl animate-fade-slide-up stagger-1">
-              <h3 className="font-black text-[10px] flex items-center gap-2 mb-2 uppercase tracking-[0.2em] text-slate-400">
+            <div key={ann.id} className="bg-slate-50 border border-slate-100 text-slate-900 p-5 rounded-3xl animate-fade-slide-up stagger-1">
+              <h3 className="font-black text-[9px] flex items-center gap-2 mb-2 uppercase tracking-[0.2em] text-slate-400">
                 <Megaphone className="w-3 h-3" /> {ann.title}
               </h3>
-              <p className="text-sm font-bold leading-relaxed">{ann.content}</p>
+              <p className="text-xs font-bold leading-relaxed">{ann.content}</p>
             </div>
           ))}
         </div>
@@ -439,30 +439,29 @@ const Index = () => {
         <InstallBanner />
 
         {/* Invite Partner Card - Redesigned to be clean and premium */}
-        {!avatars.loading && !avatars.partner && houseInviteCode && (
-          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-apple transition-all animate-fade-slide-up stagger-1">
-            <div className="flex items-center gap-5 mb-6">
-              <div className="h-16 w-16 rounded-[1.5rem] bg-primary/5 flex items-center justify-center text-primary">
-                <HeartHandshake className="w-9 h-9" />
+        {!navigator.userAgent.includes("Framer") && !avatars.loading && !avatars.partner && houseInviteCode && (
+          <div className="bg-white border border-slate-50 rounded-[2rem] p-6 shadow-apple-soft transition-all animate-fade-slide-up stagger-1">
+            <div className="flex items-center gap-4 mb-5">
+              <div className="h-14 w-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary">
+                <HeartHandshake className="w-8 h-8" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-black tracking-tighter text-slate-900">Convidar Par</h3>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">O teu ninho espera por vocês!</p>
+                <h3 className="text-lg font-black tracking-tight text-slate-900">Convidar Par</h3>
+                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">O vosso ninho espera por vocês!</p>
               </div>
             </div>
             
-            <div className="flex gap-3">
-              <div className="flex-1 bg-slate-50 rounded-2xl h-16 flex items-center justify-center font-black text-2xl tracking-[0.2em] text-slate-900">
+            <div className="flex gap-2">
+              <div className="flex-1 bg-slate-50 rounded-xl h-14 flex items-center justify-center font-black text-xl tracking-[0.2em] text-slate-900">
                 {houseInviteCode}
               </div>
               <button 
                 onClick={handleShareHouse}
-                className="h-16 w-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center active:scale-90 transition-all shadow-lg"
+                className="h-14 w-14 bg-slate-800 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-md"
               >
-                <Share2 className="w-6 h-6" />
+                <Share2 className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-[10px] text-slate-400 font-bold italic mt-4 text-center">Partilha este código com o teu amor para começarem. 🤍</p>
           </div>
         )}
       </div>
@@ -479,7 +478,7 @@ const Index = () => {
           {/* Fasting Featured Card - Clean Version */}
           <button
             onClick={() => navigate("/jejum")}
-            className="group relative flex w-full flex-col rounded-[2.5rem] bg-white border border-slate-50 shadow-apple overflow-hidden text-left active:scale-[0.98] transition-all duration-300"
+            className="group relative flex w-full flex-col rounded-[2rem] bg-white border border-slate-50 shadow-apple-soft overflow-hidden text-left active:scale-[0.99] transition-all duration-300"
           >
             <div className="p-6 space-y-4 w-full">
               <div className="flex items-center justify-between">
@@ -527,7 +526,7 @@ const Index = () => {
           {/* Chat Quick Access - Clean Version */}
           <button
             onClick={() => navigate("/chat")}
-            className="group relative flex w-full items-center gap-4 rounded-[2.5rem] bg-white border border-slate-50 shadow-apple p-6 text-left active:scale-[0.98] transition-all duration-300"
+            className="group relative flex w-full items-center gap-4 rounded-[2rem] bg-white border border-slate-50 shadow-apple-soft p-5 text-left active:scale-[0.99] transition-all duration-300"
           >
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.5rem] bg-indigo-50 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
               <MessageCircle className="h-7 w-7" />
@@ -579,7 +578,7 @@ const Index = () => {
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
-            icon={<CheckSquare className="h-6 w-6 stroke-[3]" />}
+            icon={<CheckSquare className="h-5 w-5 stroke-[3]" />}
             title="O Plano"
             lines={[
               plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo pronto ✨",
@@ -587,8 +586,8 @@ const Index = () => {
             ]}
             to="/plano"
             badge={tasksUnread + scheduleUnread}
-            accent="bg-slate-900 text-white"
-            className="col-span-2 py-8"
+            accent="bg-primary/5 text-primary"
+            className="col-span-2 py-6"
           />
           <DashCard
             icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
@@ -654,19 +653,19 @@ const Index = () => {
         </div>
 
         {/* Invite Friends Card - Redesigned to be clean */}
-        <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] p-8 flex items-center justify-between gap-4 mt-8">
-          <div className="flex items-center gap-5">
-            <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center text-slate-900 shadow-sm transition-transform">
-              <Share2 className="w-7 h-7" />
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 flex items-center justify-between gap-4 mt-6 shadow-apple-soft">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary shadow-sm transition-transform">
+              <Share2 className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-lg font-black tracking-tighter text-slate-900">Convidar Amigos</h4>
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Ganha 50 Pontos! 💰</p>
+              <h4 className="text-base font-black tracking-tight text-slate-900">Convidar Amigos</h4>
+              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Ganha 50 Pontos! 💰</p>
             </div>
           </div>
           <button
             onClick={handleShareReferral}
-            className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider px-6 py-3 rounded-full shadow-lg active:scale-95 transition-all"
+            className="bg-primary text-white text-[9px] font-black uppercase tracking-wider px-5 py-2.5 rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all"
           >
             Partilhar
           </button>

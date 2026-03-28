@@ -531,7 +531,7 @@ export default function Settings() {
           <header className="space-y-4 pt-4 px-2">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <h1 className="text-4xl font-black tracking-tighter text-slate-900 italic">Definições</h1>
+                <h1 className="text-4xl font-black tracking-tighter text-slate-900">Definições</h1>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-slate-400">Este é o vosso espaço 💛</span>
                   <div className="h-1 w-1 rounded-full bg-slate-200" />
@@ -559,14 +559,14 @@ export default function Settings() {
                 key={item.id} 
                 onClick={() => setCurrentCategory(item.id)} 
                 className={cn(
-                  "bg-white shadow-apple rounded-[2rem] p-5 flex items-center gap-4 text-left w-full group transition-all active:scale-95 animate-in fade-in slide-in-from-bottom-4 duration-500",
+                  "bg-white shadow-apple-soft rounded-[1.8rem] p-4 flex items-center gap-4 text-left w-full group transition-all active:scale-[0.98] animate-in fade-in slide-in-from-bottom-4 duration-500",
                   `stagger-${(idx % 6) + 1}`
                 )}
               >
-                <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm", item.color)}>{item.icon}</div>
+                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm", item.color)}>{item.icon}</div>
                 <div className="flex-1">
-                  <p className="font-black text-[14px] text-slate-900 tracking-tight">{item.label}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.sub}</p>
+                  <p className="font-black text-[13px] text-slate-900 tracking-tight">{item.label}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.sub}</p>
                 </div>
                 <ChevronLeft className="h-4 w-4 text-slate-300 rotate-180 transition-transform group-hover:translate-x-1" />
               </button>
@@ -588,12 +588,12 @@ export default function Settings() {
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="flex flex-col items-center gap-6 py-4">
                 <div className="relative">
-                  <Avatar className="h-28 w-28 ring-4 ring-white shadow-apple">
+                  <Avatar className="h-24 w-24 ring-4 ring-white shadow-apple-soft">
                     {avatarUrl && <AvatarImage src={avatarUrl} />}
-                    <AvatarFallback className="text-3xl font-black bg-slate-900 text-white">{initials}</AvatarFallback>
+                    <AvatarFallback className="text-3xl font-black bg-slate-800 text-white">{initials}</AvatarFallback>
                   </Avatar>
-                  <label htmlFor="av-up" className="absolute bottom-0 right-0 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-slate-900 text-white shadow-xl hover:scale-110 transition-transform">
-                    {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                  <label htmlFor="av-up" className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-white shadow-xl hover:scale-110 transition-transform">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   </label>
                   <input id="av-up" type="file" hidden accept="image/*" onChange={handleAvatarChange} />
                 </div>

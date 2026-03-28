@@ -19,9 +19,9 @@ interface RoutineCalendarProps {
 function statusColor(log: RoutineDayLog | undefined) {
     if (!log || log.status === "unlogged") return "";
     switch (log.status) {
-        case "completed": return "bg-slate-900 text-white shadow-apple";
-        case "partial": return "bg-amber-100 text-amber-700 font-black";
-        case "failed": return "bg-red-50 text-red-400 font-black";
+        case "completed": return "bg-green-50 text-green-600 shadow-sm";
+        case "partial": return "bg-amber-50 text-amber-600 font-bold";
+        case "failed": return "bg-red-50 text-red-500 font-bold";
         default: return "";
     }
 }
@@ -99,8 +99,8 @@ export function RoutineCalendar({
                                 !log?.status || log.status === "unlogged"
                                     ? "bg-transparent text-slate-900 hover:bg-slate-50"
                                     : "",
-                                isToday && !log?.status ? "text-primary ring-2 ring-primary/20 ring-offset-2" : "",
-                                isSelected && "ring-2 ring-slate-900 ring-offset-2",
+                                isToday && !log?.status ? "text-primary ring-2 ring-primary/10" : "",
+                                isSelected && "ring-2 ring-primary ring-offset-1 scale-105",
                             )}
                         >
                             {d}
@@ -112,13 +112,13 @@ export function RoutineCalendar({
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mt-8 text-[9px] font-black uppercase tracking-widest text-slate-300">
                 {!hideLegendStatus?.includes("completed") && (
-                    <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-slate-900" /> Completo</span>
+                    <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Completo</span>
                 )}
                 {!hideLegendStatus?.includes("partial") && (
-                    <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-amber-400" /> Parcial</span>
+                    <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Parcial</span>
                 )}
                 {!hideLegendStatus?.includes("failed") && (
-                    <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-red-400" /> Falhou</span>
+                    <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Falhou</span>
                 )}
             </div>
         </div>

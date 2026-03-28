@@ -78,10 +78,10 @@ function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
     const actDetails = data.activities?.map(a => ACTIVITIES.find(x => x.key === a)).filter(Boolean) as typeof ACTIVITIES;
 
     return (
-        <div className="p-6 space-y-4 hover:bg-slate-50/50 transition-colors duration-300">
+        <div className="p-5 space-y-4 hover:bg-slate-50/50 transition-colors duration-300">
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-full bg-white shadow-apple border border-slate-50 flex items-center justify-center text-3xl" title={`${data.mood_percent}%`}>
+                    <div className="h-12 w-12 rounded-full bg-white shadow-apple-soft border border-slate-50 flex items-center justify-center text-2xl" title={`${data.mood_percent}%`}>
                       {getMoodEmoji(data.mood_key)}
                     </div>
                     <div>
@@ -115,7 +115,7 @@ function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
             )}
 
             {data.note && (
-                <div className="mt-2 text-[12px] font-medium text-slate-500 bg-slate-50/80 p-4 rounded-2xl italic border border-slate-100/50 leading-relaxed shadow-inner">
+                <div className="mt-2 text-[12px] font-medium text-slate-500 bg-slate-50 p-4 rounded-xl italic border border-slate-100/50 leading-relaxed">
                     "{data.note}"
                 </div>
             )}

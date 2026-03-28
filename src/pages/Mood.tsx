@@ -193,16 +193,16 @@ export default function Mood() {
 
       {/* Tab Switcher - iOS Inspired */}
       <Tabs defaultValue="hoje" className="w-full space-y-8">
-        <TabsList className="p-1 h-auto rounded-[1.8rem] bg-slate-100 flex items-center border border-slate-200/20 w-full">
+        <TabsList className="p-1 h-auto rounded-[1.4rem] bg-slate-100 flex items-center border border-slate-200/20 w-full">
           <TabsTrigger 
             value="hoje" 
-            className="flex-1 py-3.5 rounded-[1.4rem] transition-all duration-300 font-black text-[11px] uppercase tracking-[0.2em] data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400"
+            className="flex-1 py-2.5 rounded-[1.1rem] transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400"
           >
             Hoje
           </TabsTrigger>
           <TabsTrigger 
             value="historico" 
-            className="flex-1 py-3.5 rounded-[1.4rem] transition-all duration-300 font-black text-[11px] uppercase tracking-[0.2em] data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400"
+            className="flex-1 py-2.5 rounded-[1.1rem] transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400"
           >
             Histórico e Par
           </TabsTrigger>
@@ -230,13 +230,13 @@ export default function Mood() {
       {showSuccessOverlay && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/60 backdrop-blur-xl animate-in fade-in duration-500">
           <div className="text-center space-y-6 scale-up-center">
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-apple border border-slate-50 flex flex-col items-center gap-4">
-              <div className="h-20 w-20 rounded-full bg-slate-900 flex items-center justify-center text-white shadow-2xl">
-                <CheckCircle2 className="w-10 h-10" />
+            <div className="bg-white p-6 rounded-[2rem] shadow-apple-soft border border-slate-50 flex flex-col items-center gap-4">
+              <div className="h-16 w-16 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Obrigado por partilhares 💛</h2>
-                <p className="text-sm font-bold text-slate-400 italic">O teu par vai valorizar saber como estás.</p>
+              <div className="space-y-1">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Obrigado por partilhares 💛</h2>
+                <p className="text-[11px] font-bold text-slate-400 italic">O teu par vai valorizar saber como estás.</p>
               </div>
             </div>
           </div>

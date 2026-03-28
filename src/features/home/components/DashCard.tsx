@@ -18,7 +18,7 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
     <button
       onClick={() => navigate(to)}
       className={cn(
-        "group relative flex flex-col gap-2 rounded-apple p-5 text-left w-full bg-white shadow-apple hover:shadow-xl transition-all duration-300 active:scale-[0.96]",
+        "group relative flex flex-col gap-2 rounded-2xl p-4 text-left w-full bg-white shadow-apple-soft hover:shadow-lg transition-all duration-300 active:scale-[0.98]",
         className
       )}
     >
