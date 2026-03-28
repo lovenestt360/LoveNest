@@ -24,27 +24,34 @@ export function MoodHistory({ history, userId }: MoodHistoryProps) {
 
     if (grouped.length === 0) {
         return (
-            <Card>
-                <CardContent className="pt-6">
-                    <p className="text-sm text-center text-muted-foreground">Sem registos recentes.</p>
-                </CardContent>
+            <Card className="py-20 flex flex-col items-center justify-center text-center space-y-4 opacity-40 grayscale">
+                <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                  <span className="text-3xl">😶</span>
+                </div>
+                <div className="space-y-1">
+                    <p className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Sem registos recentes</p>
+                    <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tight italic">Partilha o teu humor para veres o histórico! ✨</p>
+                </div>
             </Card>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {grouped.map(({ day, mine, partner }) => (
                 <Card key={day} className="overflow-hidden">
-                    <div className="bg-muted/30 px-4 py-2 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {format(parseISO(day), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            {format(parseISO(day), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                        </span>
+                        <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
                     </div>
-                    <CardContent className="p-0 divide-y">
+                    <div className="divide-y divide-slate-50">
                         {/* My Record */}
                         <RecordRow data={mine} isMe={true} />
                         {/* Partner Record */}
                         <RecordRow data={partner} isMe={false} />
-                    </CardContent>
+                    </div>
                 </Card>
             ))}
         </div>
@@ -54,9 +61,16 @@ export function MoodHistory({ history, userId }: MoodHistoryProps) {
 function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
     if (!data) {
         return (
-            <div className="p-4 flex items-center justify-between opacity-50 bg-muted/10">
-                <span className="text-sm font-medium">{isMe ? "O meu registo" : "Registo do par"}</span>
-                <span className="text-xs text-muted-foreground">Sem dados</span>
+            <div className="p-6 flex items-center justify-between opacity-30 grayscale transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-50">
+                    <span className="text-xl">😶</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isMe ? "Eu" : "Parceiro"}</p>
+                    <p className="text-[12px] font-bold text-slate-300 italic">Sem registo</p>
+                  </div>
+                </div>
             </div>
         );
     }
@@ -64,31 +78,36 @@ function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
     const actDetails = data.activities?.map(a => ACTIVITIES.find(x => x.key === a)).filter(Boolean) as typeof ACTIVITIES;
 
     return (
-        <div className="p-4 space-y-3">
+        <div className="p-6 space-y-4 hover:bg-slate-50/50 transition-colors duration-300">
             <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="text-3xl" title={`${data.mood_percent}%`}>{getMoodEmoji(data.mood_key)}</div>
+                <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-full bg-white shadow-apple border border-slate-50 flex items-center justify-center text-3xl" title={`${data.mood_percent}%`}>
+                      {getMoodEmoji(data.mood_key)}
+                    </div>
                     <div>
-                        <p className="text-sm font-semibold">{isMe ? "Eu" : "Parceiro"}</p>
-                        <p className="text-xs text-muted-foreground">Intensidade: {data.mood_percent}%</p>
+                        <p className="text-sm font-black text-slate-900 tracking-tight">{isMe ? "O Teu Humor" : "Humor do Par"}</p>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{data.mood_percent}% Intensidade</span>
+                           {data.sleep_quality && (
+                             <>
+                               <div className="h-1 w-1 rounded-full bg-slate-200" />
+                               <span className="text-[10px] font-black text-primary uppercase tracking-widest">Sono: {getSleepEmoji(data.sleep_quality)}</span>
+                             </>
+                           )}
+                        </div>
                     </div>
                 </div>
-                {data.sleep_quality && (
-                    <Badge variant="outline" className="text-xs font-normal" title="Qualidade de sono">
-                        {getSleepEmoji(data.sleep_quality)}
-                    </Badge>
-                )}
             </div>
 
             {(data.emotions?.length > 0 || actDetails?.length > 0) && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1 pl-1">
                     {data.emotions?.map(e => (
-                        <Badge key={e} variant="secondary" className="text-[10px] font-medium bg-secondary/50">
+                        <Badge key={e} variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[9px] uppercase tracking-widest px-3 py-1 border-none rounded-full">
                             {e}
                         </Badge>
                     ))}
                     {actDetails?.map(a => (
-                        <Badge key={a.key} variant="outline" className="text-[10px] font-medium opacity-80">
+                        <Badge key={a.key} variant="outline" className="border-slate-100 text-slate-400 font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-full">
                             {a.emoji} {a.label}
                         </Badge>
                     ))}
@@ -96,7 +115,7 @@ function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
             )}
 
             {data.note && (
-                <div className="mt-2 text-xs italic text-muted-foreground bg-muted/40 p-2 rounded-md border border-border/50">
+                <div className="mt-2 text-[12px] font-medium text-slate-500 bg-slate-50/80 p-4 rounded-2xl italic border border-slate-100/50 leading-relaxed shadow-inner">
                     "{data.note}"
                 </div>
             )}
