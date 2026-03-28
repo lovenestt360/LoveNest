@@ -13,6 +13,7 @@ interface RoutineCalendarProps {
     onChangeMonth: (y: number, m: number) => void;
     onSelectDay?: (day: string) => void;
     selectedDay?: string;
+    hideLegendStatus?: ("completed" | "partial" | "failed")[];
 }
 
 function statusColor(log: RoutineDayLog | undefined) {
@@ -26,7 +27,7 @@ function statusColor(log: RoutineDayLog | undefined) {
 }
 
 export function RoutineCalendar({
-    logs, year, month, onChangeMonth, onSelectDay, selectedDay,
+    logs, year, month, onChangeMonth, onSelectDay, selectedDay, hideLegendStatus,
 }: RoutineCalendarProps) {
     const logMap = useMemo(() => {
         const m = new Map<string, RoutineDayLog>();
@@ -110,9 +111,15 @@ export function RoutineCalendar({
 
             {/* Legend */}
             <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> Completo</span>
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Parcial</span>
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-400" /> Falhou</span>
+                {!hideLegendStatus?.includes("completed") && (
+                    <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> Completo</span>
+                )}
+                {!hideLegendStatus?.includes("partial") && (
+                    <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Parcial</span>
+                )}
+                {!hideLegendStatus?.includes("failed") && (
+                    <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-400" /> Falhou</span>
+                )}
             </div>
         </div>
     );

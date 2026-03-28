@@ -8,10 +8,11 @@ interface RoutineProgressCardsProps {
     streak: number;
     avgRate: number;
     completedDays: number;
+    hideStreak?: boolean;
 }
 
 export function RoutineProgressCards({
-    todayLog, todayDone, todayTotal, streak, avgRate, completedDays,
+    todayLog, todayDone, todayTotal, streak, avgRate, completedDays, hideStreak,
 }: RoutineProgressCardsProps) {
     const todayRate = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
 
@@ -35,15 +36,17 @@ export function RoutineProgressCards({
             </div>
 
             {/* Streak */}
-            <div className="rounded-2xl border bg-card p-3">
-                <div className="flex items-center gap-2 mb-1">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="text-xs font-medium text-muted-foreground">Streak</span>
+            {!hideStreak && (
+                <div className="rounded-2xl border bg-card p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-medium text-muted-foreground">Streak</span>
+                    </div>
+                    <p className="text-2xl font-bold">
+                        {streak} <span className="text-sm font-normal text-muted-foreground">{streak === 1 ? "dia" : "dias"}</span>
+                    </p>
                 </div>
-                <p className="text-2xl font-bold">
-                    {streak} <span className="text-sm font-normal text-muted-foreground">{streak === 1 ? "dia" : "dias"}</span>
-                </p>
-            </div>
+            )}
 
             {/* Average rate */}
             <div className="rounded-2xl border bg-card p-3">
