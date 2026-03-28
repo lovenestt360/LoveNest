@@ -26,10 +26,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const TABS = [
   { id: "rotina", label: "ROTINA", icon: Activity },
@@ -55,9 +53,8 @@ export default function Plano() {
   const stats = useRoutineStats(logs);
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Modal State
+  // Modal State (Now Inline Form State)
   const [newTitle, setNewTitle] = useState("");
   const [newTime, setNewTime] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -199,8 +196,49 @@ export default function Plano() {
 
         {activeTab === "agenda" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
-            <div className={cn("rounded-[2.5rem] overflow-hidden p-6 text-center space-y-4", glassStyle)}>
-               <h3 className="text-sm font-black tracking-widest uppercase text-slate-400">Calendário de Planos</h3>
+            {/* NOVO: Formulário Inline Estilo Rotina (Simples) */}
+            <div className={cn("rounded-2xl border bg-card p-4 space-y-4 shadow-sm", glassStyle)}>
+              <div className="flex p-1 bg-slate-100 rounded-xl">
+                {(["ambos", "me", "partner"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setForWhom(v)}
+                    className={cn(
+                      "flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                      forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400"
+                    )}
+                  >
+                    {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <Input 
+                  value={newTitle} 
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Novo plano..."
+                  className="flex-1 h-10 rounded-xl border-none bg-slate-50 font-medium text-sm"
+                  onKeyDown={e => e.key === "Enter" && handleAdd()}
+                />
+                <Input 
+                  type="time"
+                  value={newTime} 
+                  onChange={(e) => setNewTime(e.target.value)}
+                  className="w-24 h-10 rounded-xl border-none bg-slate-50 font-bold text-xs"
+                />
+                <Button 
+                  size="icon" 
+                  onClick={handleAdd}
+                  disabled={!newTitle.trim()}
+                  className="h-10 w-10 rounded-xl bg-slate-900 text-white shrink-0 shadow-lg active:scale-95 transition-all"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className={cn("rounded-[2.5rem] overflow-hidden bg-white/30", glassStyle)}>
                <RoutineCalendar 
                 logs={agendaLogs as any}
                 year={year} 
@@ -217,12 +255,6 @@ export default function Plano() {
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
                   {isSameDay(parseISO(selectedDate), new Date()) ? "Planos Hoje" : `Planos em ${format(parseISO(selectedDate), "d/MM")}`}
                 </p>
-                <Button 
-                    onClick={() => setIsModalOpen(true)}
-                    className="h-10 px-6 rounded-full bg-slate-900 text-white font-black text-[10px] uppercase tracking-wider transition-all active:scale-[0.98] shadow-lg shadow-slate-200"
-                >
-                    <Plus className="mr-1.5 h-4 w-4" /> NOVO
-                </Button>
               </div>
 
               {planoLoading ? (
@@ -233,22 +265,36 @@ export default function Plano() {
                   <p className="font-bold text-slate-500">Nenhum plano marcado</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="rounded-2xl border bg-card divide-y overflow-hidden shadow-sm">
                   {items.filter(i => i.plan_at && i.plan_at.startsWith(selectedDate)).map(item => (
-                    <div key={item.id} className={cn("flex items-center gap-4 p-5 rounded-[2.2rem] shadow-sm", glassStyle)}>
-                      <Checkbox 
-                        checked={item.completed} 
-                        onCheckedChange={(val) => toggleComplete(item.id, val as boolean)} 
-                        className="h-6 w-6 rounded-full border-2 border-slate-200"
-                      />
+                    <div key={item.id} className="flex items-center gap-3 w-full px-4 py-4 transition-colors hover:bg-slate-50/50">
+                      {/* Custom Checkbox as in RoutineChecklist */}
+                      <button
+                        type="button"
+                        onClick={() => toggleComplete(item.id, !item.completed)}
+                        className={cn(
+                            "flex items-center justify-center h-6 w-6 rounded-lg border-2 transition-all shrink-0",
+                            item.completed
+                                ? "bg-green-500 border-green-500 text-white"
+                                : "border-slate-200",
+                        )}
+                      >
+                        {item.completed && (
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        )}
+                      </button>
+
                       <div className="flex-1 min-w-0">
-                        <p className={cn("font-bold text-[16px]", item.completed && "line-through text-slate-400 text-sm")}>{item.title}</p>
-                        <div className="flex items-center gap-3 mt-1.5 text-[9px] font-black uppercase tracking-widest">
-                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 text-white">
+                        <p className={cn("font-bold text-sm", item.completed && "line-through text-slate-400")}>{item.title}</p>
+                        <div className="flex items-center gap-3 mt-1 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                           <div className="flex items-center gap-1 opacity-60">
                              <Clock className="h-2.5 w-2.5" />
                              {format(parseISO(item.plan_at!), "HH:mm")}
                            </div>
-                           <div className="text-slate-400">
+                           <span>•</span>
+                           <div>
                              {item.for_whom === 'ambos' ? "Para Ambos" : item.for_whom === 'me' ? "Só Eu" : "Só Amor"}
                            </div>
                         </div>
@@ -264,77 +310,6 @@ export default function Plano() {
           </div>
         )}
       </main>
-
-      {/* NOVO MODAL - ESTILO NATIVO iOS / CLEAN */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none rounded-[3.5rem] bg-white/95 backdrop-blur-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)]">
-          <div className="p-8 space-y-8">
-            <header className="text-center space-y-1">
-              <h2 className="text-2xl font-black tracking-tighter text-slate-900 uppercase">Novo Plano</h2>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">O que vamos planear para hoje?</p>
-            </header>
-            
-            <div className="space-y-6">
-              {/* Assignment Switcher */}
-              <div className="flex p-1 bg-slate-100/50 rounded-2xl border border-slate-200/20">
-                {(["ambos", "me", "partner"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setForWhom(v)}
-                    className={cn(
-                      "flex-1 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300",
-                      forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-500"
-                    )}
-                  >
-                    {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Input Title */}
-              <div className="space-y-4">
-                <Input 
-                  value={newTitle} 
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Título do plano..."
-                  className="h-16 rounded-3xl border-none bg-slate-50 text-center text-xl font-bold focus-visible:ring-2 focus-visible:ring-slate-100 placeholder:text-slate-200"
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative group">
-                    <Input 
-                      type="time"
-                      value={newTime} 
-                      onChange={(e) => setNewTime(e.target.value)}
-                      className="h-14 rounded-2xl border-none bg-slate-50 text-center font-bold focus-visible:ring-2 focus-visible:ring-slate-100 pl-8"
-                    />
-                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 pointer-events-none" />
-                  </div>
-                  <div className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm">
-                     <CalendarIcon className="h-4 w-4 text-slate-300" />
-                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Para Hoje</span>
-                  </div>
-                </div>
-
-                <Textarea 
-                  value={newDesc} 
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Mais detalhes..."
-                  className="rounded-[2rem] border-none bg-slate-50 min-h-[100px] p-6 focus-visible:ring-2 focus-visible:ring-slate-100 font-medium placeholder:text-slate-300"
-                />
-              </div>
-            </div>
-
-            <Button 
-              onClick={handleAdd} 
-              disabled={!newTitle.trim()}
-              className="w-full h-18 py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-lg transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
-            >
-              CRIAR PLANO ✨
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
