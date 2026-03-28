@@ -88,77 +88,76 @@ export function BottomTabs() {
 
   return (
     <nav
-      className="apple-dock"
+      className="fixed bottom-6 left-4 right-4 h-20 rounded-[2.5rem] bg-white/60 backdrop-blur-2xl border border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.08)] flex items-center justify-around px-4 z-50"
       aria-label="Navegação principal"
     >
-      <div className="w-full">
-        <div className="grid grid-cols-5 gap-0.5">
-          {mainTabs.map(({ to, label, Icon }) => (
-            <TabItem
-              key={to}
-              to={to}
-              label={label}
-              Icon={Icon}
-              badge={getBadge(to)}
-            />
-          ))}
+      <div className="flex w-full items-center justify-around gap-1">
+        {mainTabs.map(({ to, label, Icon }) => (
+          <TabItem
+            key={to}
+            to={to}
+            label={label}
+            Icon={Icon}
+            badge={getBadge(to)}
+          />
+        ))}
 
-          {/* More tab */}
-          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition-all duration-200 active:animate-tab-tap",
-                  isMoreActive && "text-primary"
-                )}
-                aria-label="Mais"
-              >
-                <span className="relative">
-                  <MoreHorizontal className="h-5 w-5" />
-                  {moreBadge > 0 && <Badge count={moreBadge} />}
-                </span>
-                <span className="leading-none">More</span>
-                {isMoreActive && <ActiveDot />}
-              </button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-[2.5rem] border-t border-border/50 pb-[max(env(safe-area-inset-bottom),1rem)]">
-              <SheetHeader>
-                <SheetTitle className="text-left text-lg font-bold">More</SheetTitle>
-              </SheetHeader>
-              <div className="grid grid-cols-3 gap-3 pt-4">
-                {moreItems
-                  .filter((item) => (freeMode ? item.to !== "/subscricao" : true))
-                  .map(({ to, label, Icon }) => {
-                    const badge = getMoreBadge(to);
-                    const active = location.pathname === to;
-                    return (
-                      <button
-                        key={to}
-                        type="button"
-                        onClick={() => {
-                          setMoreOpen(false);
-                          navigate(to);
-                        }}
-                        className={cn(
-                          "relative flex flex-col items-center gap-2 rounded-[1.5rem] border p-4 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
-                          active
-                            ? "border-primary/30 bg-primary/10 text-primary glow-primary"
-                            : "border-border/50 text-muted-foreground hover:bg-secondary"
-                        )}
-                      >
-                        <span className="relative">
-                          <Icon className="h-6 w-6" />
-                          {badge > 0 && <Badge count={badge} />}
-                        </span>
-                        <span className="leading-tight">{label}</span>
-                      </button>
-                    );
-                  })}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+        {/* More tab with Apple-style trigger */}
+        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "relative flex flex-col items-center justify-center h-16 w-16 rounded-[1.3rem] transition-all duration-300 active:scale-90",
+                isMoreActive 
+                  ? "bg-primary/5 text-primary" 
+                  : "text-slate-400 hover:text-slate-600"
+              )}
+              aria-label="Mais"
+            >
+              <span className="relative">
+                <MoreHorizontal className="h-6 w-6 stroke-[2.5px]" />
+                {moreBadge > 0 && <Badge count={moreBadge} />}
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest mt-1 opacity-60">Mais</span>
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="rounded-t-[3.5rem] bg-white/95 backdrop-blur-3xl border-none shadow-2xl p-8 pt-6 pb-[max(env(safe-area-inset-bottom),2rem)]">
+            <SheetHeader className="mb-8">
+              <SheetTitle className="text-center text-xs font-black uppercase tracking-[0.2em] text-slate-400">Opções Adicionais</SheetTitle>
+            </SheetHeader>
+            <div className="grid grid-cols-3 gap-6">
+              {moreItems
+                .filter((item) => (freeMode ? item.to !== "/subscricao" : true))
+                .map(({ to, label, Icon }) => {
+                  const badge = getMoreBadge(to);
+                  const active = location.pathname === to;
+                  return (
+                    <button
+                      key={to}
+                      type="button"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        navigate(to);
+                      }}
+                      className={cn(
+                        "relative flex flex-col items-center gap-3 py-6 rounded-[2.5rem] transition-all duration-300 active:scale-95",
+                        active
+                          ? "bg-slate-900 shadow-xl shadow-slate-200 text-white"
+                          : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                      )}
+                    >
+                      <span className="relative">
+                        <Icon className="h-7 w-7" />
+                        {badge > 0 && <Badge count={badge} />}
+                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );
@@ -172,9 +171,9 @@ function Badge({ count }: { count: number }) {
   );
 }
 
-function ActiveDot() {
+function ActiveHighlight() {
   return (
-    <span className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
+    <div className="absolute inset-0 bg-primary/5 rounded-[1.3rem] -z-10 animate-in fade-in zoom-in-95 duration-500" />
   );
 }
 
@@ -196,17 +195,17 @@ function TabItem({
     <NavLink
       to={to}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition-all duration-200 active:animate-tab-tap"
+        "relative flex flex-col items-center justify-center h-16 w-16 rounded-[1.3rem] transition-all duration-300 active:scale-90",
+        isActive ? "text-primary" : "text-slate-400 hover:text-slate-600"
       )}
-      activeClassName="text-primary"
       aria-label={label}
     >
       <span className="relative">
-        <Icon className="h-5 w-5" />
+        <Icon className={cn("h-6 w-6 stroke-[2.5px]", isActive ? "text-primary" : "text-slate-400")} />
         {badge > 0 && <Badge count={badge} />}
       </span>
-      <span className="leading-none">{label}</span>
-      {isActive && <ActiveDot />}
+      <span className="text-[9px] font-black uppercase tracking-widest mt-1 opacity-60">{label}</span>
+      {isActive && <ActiveHighlight />}
     </NavLink>
   );
 }

@@ -26,15 +26,15 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  GlassModal, 
+  GlassModalContent, 
+  GlassModalHeader, 
+  GlassModalTitle, 
+  GlassModalDescription 
+} from "@/components/ui/GlassModal";
 
-const TABS = [
-  { id: "rotina", label: "ROTINA", icon: Activity },
-  { id: "agenda", label: "AGENDA", icon: CalendarIcon },
-] as const;
+
 
 export default function Plano() {
   const { user } = useAuth();
@@ -266,75 +266,73 @@ export default function Plano() {
       </main>
 
       {/* NOVO MODAL - ESTILO NATIVO iOS / CLEAN */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none rounded-[3.5rem] bg-white/95 backdrop-blur-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)]">
-          <div className="p-8 space-y-8">
-            <header className="text-center space-y-1">
-              <h2 className="text-2xl font-black tracking-tighter text-slate-900 uppercase">Novo Plano</h2>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">O que vamos planear para hoje?</p>
-            </header>
-            
-            <div className="space-y-6">
-              {/* Assignment Switcher */}
-              <div className="flex p-1 bg-slate-100/50 rounded-2xl border border-slate-200/20">
-                {(["ambos", "me", "partner"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setForWhom(v)}
-                    className={cn(
-                      "flex-1 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300",
-                      forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-500"
-                    )}
-                  >
-                    {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Input Title */}
-              <div className="space-y-4">
-                <Input 
-                  value={newTitle} 
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Título do plano..."
-                  className="h-16 rounded-3xl border-none bg-slate-50 text-center text-xl font-bold focus-visible:ring-2 focus-visible:ring-slate-100 placeholder:text-slate-200"
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative group">
-                    <Input 
-                      type="time"
-                      value={newTime} 
-                      onChange={(e) => setNewTime(e.target.value)}
-                      className="h-14 rounded-2xl border-none bg-slate-50 text-center font-bold focus-visible:ring-2 focus-visible:ring-slate-100 pl-8"
-                    />
-                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 pointer-events-none" />
-                  </div>
-                  <div className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm">
-                     <CalendarIcon className="h-4 w-4 text-slate-300" />
-                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Para Hoje</span>
-                  </div>
-                </div>
-
-                <Textarea 
-                  value={newDesc} 
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Mais detalhes..."
-                  className="rounded-[2rem] border-none bg-slate-50 min-h-[100px] p-6 focus-visible:ring-2 focus-visible:ring-slate-100 font-medium placeholder:text-slate-300"
-                />
-              </div>
+      <GlassModal open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <GlassModalContent className="p-8 space-y-8">
+          <GlassModalHeader>
+            <GlassModalTitle>Novo Plano</GlassModalTitle>
+            <GlassModalDescription>O que vamos planear para hoje?</GlassModalDescription>
+          </GlassModalHeader>
+          
+          <div className="space-y-6">
+            {/* Assignment Switcher */}
+            <div className="flex p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200/20">
+              {(["ambos", "me", "partner"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setForWhom(v)}
+                  className={cn(
+                    "flex-1 py-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300",
+                    forWhom === v ? "bg-white shadow-lg text-slate-900 scale-[1.05]" : "text-slate-400 hover:text-slate-500"
+                  )}
+                >
+                  {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
+                </button>
+              ))}
             </div>
 
-            <Button 
-              onClick={handleAdd} 
-              disabled={!newTitle.trim()}
-              className="w-full h-18 py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-lg transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
-            >
-              CRIAR PLANO ✨
-            </Button>
+            {/* Input Title */}
+            <div className="space-y-4">
+              <Input 
+                value={newTitle} 
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Exemplo: Ver um filme..."
+                className="h-16 rounded-[2rem] border-none bg-slate-100/50 text-center text-xl font-bold focus-visible:ring-0 placeholder:text-slate-200"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative group">
+                  <Input 
+                    type="time"
+                    value={newTime} 
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="h-14 rounded-2xl border-none bg-slate-100/50 text-center font-bold focus-visible:ring-0 pl-8"
+                  />
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 pointer-events-none" />
+                </div>
+                <div className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                   <CalendarIcon className="h-4 w-4 text-slate-300" />
+                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Para Hoje</span>
+                </div>
+              </div>
+
+              <Textarea 
+                value={newDesc} 
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="Mais detalhes..."
+                className="rounded-[2rem] border-none bg-slate-100/50 min-h-[100px] p-6 focus-visible:ring-0 font-medium placeholder:text-slate-300"
+              />
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <Button 
+            onClick={handleAdd} 
+            disabled={!newTitle.trim()}
+            className="w-full h-18 py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-lg transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
+          >
+            CRIAR PLANO ✨
+          </Button>
+        </GlassModalContent>
+      </GlassModal>
     </div>
   );
 }
