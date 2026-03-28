@@ -19,9 +19,9 @@ interface RoutineCalendarProps {
 function statusColor(log: RoutineDayLog | undefined) {
     if (!log || log.status === "unlogged") return "";
     switch (log.status) {
-        case "completed": return "bg-green-500 text-white hover:bg-green-600";
-        case "partial": return "bg-amber-400 text-white hover:bg-amber-500";
-        case "failed": return "bg-red-400 text-white hover:bg-red-500";
+        case "completed": return "bg-slate-900 text-white shadow-apple";
+        case "partial": return "bg-amber-100 text-amber-700 font-black";
+        case "failed": return "bg-red-50 text-red-400 font-black";
         default: return "";
     }
 }
@@ -60,29 +60,29 @@ export function RoutineCalendar({
     const today = new Date().toISOString().slice(0, 10);
 
     return (
-        <div className="rounded-2xl border bg-card p-3">
+        <div className="p-2 w-full">
             {/* Header */}
-            <div className="flex items-center justify-between mb-2">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={prev}>
-                    <ChevronLeft className="h-4 w-4" />
+            <div className="flex items-center justify-between mb-6 px-2">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-slate-50 hover:bg-slate-100" onClick={prev}>
+                    <ChevronLeft className="h-5 w-5 text-slate-400" />
                 </Button>
-                <span className="text-sm font-semibold capitalize">{monthLabel}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={next}>
-                    <ChevronRight className="h-4 w-4" />
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 capitalize">{monthLabel}</span>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-slate-50 hover:bg-slate-100" onClick={next}>
+                    <ChevronRight className="h-5 w-5 text-slate-400" />
                 </Button>
             </div>
 
             {/* Week labels */}
-            <div className="grid grid-cols-7 mb-1">
+            <div className="grid grid-cols-7 mb-4">
                 {WEEK_LABELS.map((l, i) => (
-                    <span key={i} className="text-center text-[10px] font-medium text-muted-foreground">{l}</span>
+                    <span key={i} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">{l}</span>
                 ))}
             </div>
 
             {/* Days */}
-            <div className="grid grid-cols-7 gap-0.5">
+            <div className="grid grid-cols-7 gap-1">
                 {cells.map((d, i) => {
-                    if (d === null) return <div key={i} />;
+                    if (d === null) return <div key={i} className="h-10 w-full" />;
                     const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
                     const log = logMap.get(dayStr);
                     const isToday = dayStr === today;
@@ -94,13 +94,13 @@ export function RoutineCalendar({
                             type="button"
                             onClick={() => onSelectDay?.(dayStr)}
                             className={cn(
-                                "flex items-center justify-center h-9 w-full rounded-lg text-xs font-medium transition-all",
+                                "flex items-center justify-center h-10 w-full rounded-2xl text-[12px] font-black transition-all active:scale-90",
                                 statusColor(log),
                                 !log?.status || log.status === "unlogged"
-                                    ? "hover:bg-muted text-foreground"
+                                    ? "bg-transparent text-slate-900 hover:bg-slate-50"
                                     : "",
-                                isToday && !log?.status ? "ring-1 ring-primary" : "",
-                                isSelected && "ring-2 ring-primary ring-offset-1",
+                                isToday && !log?.status ? "text-primary ring-2 ring-primary/20 ring-offset-2" : "",
+                                isSelected && "ring-2 ring-slate-900 ring-offset-2",
                             )}
                         >
                             {d}
@@ -110,15 +110,15 @@ export function RoutineCalendar({
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex items-center justify-center gap-6 mt-8 text-[9px] font-black uppercase tracking-widest text-slate-300">
                 {!hideLegendStatus?.includes("completed") && (
-                    <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> Completo</span>
+                    <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-slate-900" /> Completo</span>
                 )}
                 {!hideLegendStatus?.includes("partial") && (
-                    <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Parcial</span>
+                    <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-amber-400" /> Parcial</span>
                 )}
                 {!hideLegendStatus?.includes("failed") && (
-                    <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-400" /> Falhou</span>
+                    <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-red-400" /> Falhou</span>
                 )}
             </div>
         </div>

@@ -32,35 +32,37 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, streak = 0, on
     return (
       <button
         onClick={onSetDate}
-        className="glass-card w-full rounded-[2rem] p-6 text-center active:scale-[0.98] transition-transform"
+        className="w-full bg-white border border-slate-100 rounded-[2rem] p-8 text-center active:scale-[0.98] transition-transform shadow-apple"
       >
-        <p className="text-sm font-bold text-primary underline underline-offset-4">
-          Definir data do início do namoro 💕
+        <p className="text-sm font-black text-primary uppercase tracking-widest">
+          Definir data do início ✨
         </p>
       </button>
     );
   }
 
   return (
-    <div className="glass-card rounded-[2rem] p-4 md:p-6 space-y-3 md:space-y-4 shadow-xl border-white/20">
-      <div className="flex items-center justify-between text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
-        <span>Tempo juntos</span>
+    <div className="bg-white border border-slate-50 rounded-apple p-8 space-y-6 shadow-apple flex flex-col items-center justify-center">
+      <div className="flex items-center justify-between w-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
+        <span>Tempo Juntos</span>
         {streak > 0 && (
-          <span className="flex items-center gap-1.5 text-orange-500 font-black bg-orange-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full border border-orange-500/20 animate-pulse">
-            <Flame className="w-3 h-3 md:w-3.5 md:h-3.5 fill-current" /> {streak} D{streak !== 1 ? "IAS" : "IA"}
-          </span>
+          <div className="flex items-center gap-1.5 text-orange-500 font-black bg-orange-50 px-3 py-1 rounded-full">
+            <Flame className="w-3.5 h-3.5 fill-current" /> {streak} DIAS
+          </div>
         )}
       </div>
       
-      <div className="flex items-center justify-center gap-3 md:gap-4">
+      <div className="flex items-center justify-center gap-6">
         <TimeUnit value={days} label="dias" />
-        <span className="text-xl md:text-2xl font-black text-muted-foreground/20 mt-1">:</span>
+        <div className="h-8 w-[1px] bg-slate-100 mt-2" />
         <TimeUnit value={hours} label="hrs" />
-        <span className="text-xl md:text-2xl font-black text-muted-foreground/20 mt-1">:</span>
+        <div className="h-8 w-[1px] bg-slate-100 mt-2" />
         <TimeUnit value={minutes} label="min" />
-        <span className="text-xl md:text-2xl font-black text-muted-foreground/20 mt-1">:</span>
+        <div className="h-8 w-[1px] bg-slate-100 mt-2" />
         <TimeUnit value={seconds} label="seg" />
       </div>
+
+      <div className="h-1 w-24 bg-slate-50 rounded-full" />
     </div>
   );
 }

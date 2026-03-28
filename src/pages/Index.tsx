@@ -413,135 +413,135 @@ const Index = () => {
     : 0;
 
   return (
-    <section className="space-y-8 animate-fade-in pb-10">
+    <section className="space-y-8 animate-fade-in pb-10 px-4 pt-4 max-w-2xl mx-auto">
       {/* ── Premium Apple Header ── */}
       <HomeHeader me={avatars.me} partner={avatars.partner} today={today} loading={avatars.loading} />
 
       {/* ── Highlights & Status ── */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <TimeTogetherCard 
           days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
           streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
         />
 
-        {/* Announcements */}
-        {announcements.map((ann) => (
-          <div key={ann.id} className="glass-card border-primary/20 bg-primary/5 text-primary p-4 rounded-3xl animate-fade-slide-up stagger-1 shadow-sm">
-            <h3 className="font-black text-xs flex items-center gap-2 mb-1 uppercase tracking-widest">
-              <Megaphone className="w-3 h-3" /> {ann.title}
-            </h3>
-            <p className="text-sm font-medium">{ann.content}</p>
-          </div>
-        ))}
+        {/* Announcements - Minimalist Style */}
+        <div className="space-y-3">
+          {announcements.map((ann) => (
+            <div key={ann.id} className="bg-slate-900 text-white p-6 rounded-apple shadow-xl animate-fade-slide-up stagger-1">
+              <h3 className="font-black text-[10px] flex items-center gap-2 mb-2 uppercase tracking-[0.2em] text-slate-400">
+                <Megaphone className="w-3 h-3" /> {ann.title}
+              </h3>
+              <p className="text-sm font-bold leading-relaxed">{ann.content}</p>
+            </div>
+          ))}
+        </div>
 
         <InstallBanner />
 
-        {/* Invite Partner Card - Only if no partner and NOT loading! */}
+        {/* Invite Partner Card - Redesigned to be clean and premium */}
         {!avatars.loading && !avatars.partner && houseInviteCode && (
-          <div className="glass-card bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/30 rounded-[2.5rem] p-6 shadow-glow transition-all animate-fade-slide-up stagger-1">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <HeartHandshake className="w-8 h-8" />
+          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-apple transition-all animate-fade-slide-up stagger-1">
+            <div className="flex items-center gap-5 mb-6">
+              <div className="h-16 w-16 rounded-[1.5rem] bg-primary/5 flex items-center justify-center text-primary">
+                <HeartHandshake className="w-9 h-9" />
               </div>
               <div className="flex-1">
-                <h3 className="text-[17px] font-black tracking-tight leading-tight">Convidar Par</h3>
-                <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">O teu ninho ainda está vazio!</p>
+                <h3 className="text-xl font-black tracking-tighter text-slate-900">Convidar Par</h3>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">O teu ninho espera por vocês!</p>
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <div className="flex-1 bg-white/50 border border-primary/20 rounded-2xl h-14 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
+            <div className="flex gap-3">
+              <div className="flex-1 bg-slate-50 rounded-2xl h-16 flex items-center justify-center font-black text-2xl tracking-[0.2em] text-slate-900">
                 {houseInviteCode}
               </div>
               <button 
                 onClick={handleShareHouse}
-                className="h-14 w-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                className="h-16 w-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center active:scale-90 transition-all shadow-lg"
               >
                 <Share2 className="w-6 h-6" />
               </button>
             </div>
-            <p className="text-[10px] text-muted-foreground font-black italic mt-3 text-center">Partilha este código com o teu amor para começarem a jornada juntos. 💕</p>
+            <p className="text-[10px] text-slate-400 font-bold italic mt-4 text-center">Partilha este código com o teu amor para começarem. 🤍</p>
           </div>
         )}
       </div>
 
       {/* ── Featured Destaques ── */}
-      <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2 animate-fade-slide-up stagger-1">
+      <div className="space-y-6">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 px-2 flex items-center gap-2">
            <Compass className="w-3 h-3" /> Em Destaque
         </h2>
         
-        <div className="space-y-3">
-          {/* LoveStreak Component */}
-          <div className="animate-fade-slide-up stagger-2">
-            <LoveStreakHomeCard />
-          </div>
+        <div className="space-y-4">
+          <LoveStreakHomeCard />
 
-          {/* Fasting Featured Card */}
+          {/* Fasting Featured Card - Clean Version */}
           <button
             onClick={() => navigate("/jejum")}
-            className="glass-card glass-card-hover group relative flex w-full flex-col rounded-[2.5rem] overflow-hidden text-left active:scale-[0.96] transition-transform duration-300 animate-fade-slide-up stagger-3"
+            className="group relative flex w-full flex-col rounded-[2.5rem] bg-white border border-slate-50 shadow-apple overflow-hidden text-left active:scale-[0.98] transition-all duration-300"
           >
-            <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-transparent p-5 space-y-3 w-full">
+            <div className="p-6 space-y-4 w-full">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[1.25rem] bg-amber-500/20 text-amber-600 transition-transform group-hover:scale-110 shadow-sm">
-                    <Flame className="h-5.5 w-5.5" />
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 transition-transform group-hover:rotate-12">
+                    <Flame className="h-6 w-6" />
                   </div>
                   <div>
-                    <span className="text-[15px] font-black text-foreground block tracking-tight">🕯️ Jejum (Páscoa)</span>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-0.5">
+                    <span className="text-lg font-black text-slate-900 block tracking-tight">Jejum da Páscoa</span>
+                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">
                       {fasting.plan ? fasting.plan.plan_name : "Iniciar percurso"}
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground/50 group-hover:translate-x-1 transition-transform" />
+                <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center">
+                  <ArrowRight className="h-4 w-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
 
               {fasting.plan ? (
-                <>
-                  <div className="flex items-center justify-between gap-2 text-xs font-bold mb-1">
-                    <div className="flex items-center gap-2">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                    <div className="flex items-center gap-3">
                       <span className="text-amber-600">Dia {fastingDayNumber}/{fasting.plan.total_days}</span>
-                      <span className="text-muted-foreground/30">•</span>
                       <span className={cn(
-                        "rounded-lg px-2 py-0.5 text-[9px] uppercase tracking-wider",
-                        fasting.todayResult === "cumprido" ? "bg-green-500/20 text-green-700" :
-                          fasting.todayResult === "parcial" ? "bg-yellow-400/20 text-yellow-700" :
-                            fasting.todayResult === "falhei" ? "bg-red-500/20 text-red-700" :
-                              "bg-muted/50 text-muted-foreground"
+                        "rounded-lg px-2 py-0.5 text-[9px] font-black",
+                        fasting.todayResult === "cumprido" ? "bg-green-50 text-green-600" :
+                          fasting.todayResult === "parcial" ? "bg-amber-50 text-amber-600" :
+                            fasting.todayResult === "falhei" ? "bg-red-50 text-red-600" :
+                              "bg-slate-50 text-slate-400"
                       )}>
                         {fasting.todayResult ? dayResultLabel(fasting.todayResult as any) : "Pendente"}
                       </span>
                     </div>
-                    <span className="text-amber-600 font-black">{fastingProgress}%</span>
+                    <span className="text-slate-900">{fastingProgress}%</span>
                   </div>
-                  <Progress value={fastingProgress} className="h-2 rounded-full overflow-hidden bg-amber-500/10" />
-                </>
+                  <Progress value={fastingProgress} className="h-2 rounded-full bg-slate-50" indicatorClassName="bg-amber-500" />
+                </div>
               ) : (
-                <p className="text-xs text-muted-foreground/80 font-medium">Faltam {daysToEaster} dias para a Páscoa. Prepara-te para a ressurreição! ✨</p>
+                <p className="text-xs text-slate-500 font-medium">Faltam {daysToEaster} dias para a Páscoa. Prepara-te! ✨</p>
               )}
             </div>
           </button>
 
-          {/* Chat Quick Access */}
+          {/* Chat Quick Access - Clean Version */}
           <button
             onClick={() => navigate("/chat")}
-            className="glass-card glass-card-hover group relative flex w-full items-center gap-4 rounded-[2.5rem] p-5 text-left active:scale-[0.96] transition-all duration-300 animate-fade-slide-up stagger-4"
+            className="group relative flex w-full items-center gap-4 rounded-[2.5rem] bg-white border border-slate-50 shadow-apple p-6 text-left active:scale-[0.98] transition-all duration-300"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
-              <MessageCircle className="h-6 w-6" />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.5rem] bg-indigo-50 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
+              <MessageCircle className="h-7 w-7" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-[15px] font-black text-foreground tracking-tight">Conversas</span>
+                <span className="text-lg font-black text-slate-900 tracking-tight">Conversas</span>
                 {chatUnread > 0 && (
-                  <span className="bg-destructive text-destructive-foreground text-[10px] font-black px-2 py-0.5 rounded-lg shadow-glow">
+                  <span className="bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg h-5 flex items-center">
                     {chatUnread}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground/80 font-medium line-clamp-1 mt-0.5 italic">
+              <p className="text-sm text-slate-400 font-medium line-clamp-1 mt-1 italic">
                 {chatPreview.preview ?? "Envia um beijinho agora..."}
               </p>
             </div>
@@ -549,11 +549,11 @@ const Index = () => {
         </div>
 
         {/* Small Gesture Nudge */}
-        <div className="flex justify-center">
+        <div className="flex justify-center pt-2">
           <Button 
             variant="ghost" 
             size="sm" 
-            className="rounded-full text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 hover:text-primary hover:bg-primary/5 transition-all gap-2 py-1 h-auto"
+            className="rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-primary hover:bg-primary/5 transition-all gap-2 py-3 h-auto"
             onClick={() => {
               notifyPartner({
                 couple_space_id: useCoupleSpaceId() || "",
@@ -563,9 +563,7 @@ const Index = () => {
                 type: "chat",
                 template_key: "small_gesture"
               });
-              toast.success("Enviado com sucesso! 💌", {
-                description: "O parceiro recebeu o teu convite para um pequeno gesto."
-              });
+              toast.success("Enviado com sucesso! 💌");
             }}
           >
             <Coffee className="w-3 h-3" />
@@ -575,103 +573,100 @@ const Index = () => {
       </div>
 
       {/* ── Nossa Vida Section ── */}
-      <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2">
+      <div className="space-y-6">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 px-2">
           🏠 Nossa Vida
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
-            icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
+            icon={<CheckSquare className="h-6 w-6 stroke-[3]" />}
             title="O Plano"
             lines={[
               plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo pronto ✨",
-              plano.next ? `Próximo: ${plano.next.time} ${plano.next.title}` : "Nada mais por hoje"
+              plano.next ? `Próximo: ${plano.next.time}` : "Fim do dia"
             ]}
             to="/plano"
             badge={tasksUnread + scheduleUnread}
-            accent="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
-            className="col-span-2"
+            accent="bg-slate-900 text-white"
+            className="col-span-2 py-8"
           />
           <DashCard
             icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
             title="Humor"
             lines={[
-              mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar hoje",
-              mood.partner ? `Par: ${mood.partner.emoji}` : "Esperando par...",
+              mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar",
+              mood.partner ? `Amor: ${mood.partner.emoji}` : "Pendente",
             ]}
             to="/humor"
             badge={moodUnread}
-            accent="bg-orange-500/20 text-orange-600 dark:text-orange-400"
+            accent="bg-orange-50 text-orange-500"
           />
           <DashCard
             icon={<Camera className="h-6 w-6 stroke-[2.5]" />}
             title="Memórias"
             lines={[
               photoCount > 0 ? `${photoCount} fotos` : "0 fotos",
-              "Novas recordações 📸"
+              "Novas fotos 📸"
             ]}
             to="/memorias"
             badge={memoriesUnread}
-            accent="bg-violet-500/20 text-violet-600 dark:text-violet-400"
+            accent="bg-violet-50 text-violet-500"
           />
         </div>
       </div>
 
       {/* ── Crescimento & Diversão ── */}
-      <div className="space-y-4 pb-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2">
+      <div className="space-y-6 pb-4">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 px-2">
           ✨ Crescimento
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <DashCard
             icon={<Trophy className="h-6 w-6 stroke-[2.5]" />}
             title="Desafios"
-            lines={["Concluir Desafios", "Ganhar Pontos 🎯"]}
+            lines={["Pontos 🎯"]}
             to="/desafios"
-            accent="bg-blue-600/20 text-blue-600 dark:text-blue-400"
+            accent="bg-blue-50 text-blue-500"
           />
           <DashCard
             icon={<Sparkles className="h-6 w-6 stroke-[2.5]" />}
             title="Wrapped"
-            lines={["Resumo Mensal", "Revive memórias"]}
+            lines={["Retrospectiva"]}
             to="/wrapped"
             badge={hasWrapped ? "Novo" : 0}
-            accent="bg-rose-500/20 text-rose-600 dark:text-rose-400"
+            accent="bg-rose-50 text-rose-500"
           />
           <DashCard
             icon={<BookHeart className="h-6 w-6 stroke-[2.5]" />}
             title="Oração"
-            lines={[
-              prayer.myPrayed ? "Tu: Rezei ✨" : "Não rezei",
-              prayer.partnerPrayed ? "Par: Rezo ✨" : "Par pendente",
-            ]}
+            lines={["Hoje ✨"]}
             to="/oracao"
             badge={prayerUnread}
-            accent="bg-amber-500/20 text-amber-600 dark:text-amber-400"
+            accent="bg-amber-50 text-amber-500"
           />
           <DashCard
             icon={<Clock className="h-6 w-6 stroke-[2.5]" />}
             title="Cápsula"
-            lines={["Mensagens 🔒", "Futuro Amor"]}
+            lines={["Futuro 🔒"]}
             to="/capsula"
-            accent="bg-primary/20 text-primary"
+            accent="bg-primary/5 text-primary"
           />
         </div>
 
-        {/* Invite Card */}
-        <div className="glass-card bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 rounded-[2.5rem] p-6 flex items-center justify-between gap-4 mt-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-[1.25rem] bg-white/50 flex items-center justify-center text-primary shadow-sm group-hover:rotate-12 transition-transform">
-              <Share2 className="w-6 h-6" />
+        {/* Invite Friends Card - Redesigned to be clean */}
+        <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] p-8 flex items-center justify-between gap-4 mt-8">
+          <div className="flex items-center gap-5">
+            <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center text-slate-900 shadow-sm transition-transform">
+              <Share2 className="w-7 h-7" />
             </div>
             <div>
-              <h4 className="text-sm font-black tracking-tight">Convidar Amigos</h4>
-              <p className="text-[10px] text-muted-foreground font-bold">50 Pontos por cada convite! 💰</p>
+              <h4 className="text-lg font-black tracking-tighter text-slate-900">Convidar Amigos</h4>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Ganha 50 Pontos! 💰</p>
             </div>
           </div>
           <button
             onClick={handleShareReferral}
-            className="bg-primary text-primary-foreground text-xs font-black px-5 py-2.5 rounded-full shadow-glow active:scale-95 transition-all"
+            className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider px-6 py-3 rounded-full shadow-lg active:scale-95 transition-all"
           >
             Partilhar
           </button>
