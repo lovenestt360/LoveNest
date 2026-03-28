@@ -9,6 +9,9 @@ import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
 import { RoutineProgressCards } from "@/components/routine/RoutineProgressCards";
 import { PartnerRoutinePanel } from "@/components/routine/PartnerRoutinePanel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Plus, 
   Loader2, 
