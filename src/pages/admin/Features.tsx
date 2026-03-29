@@ -156,19 +156,36 @@ export default function FeaturesControl() {
   };
 
   const enableOnlyForMe = async (key: string) => {
-    if (!userProfile?.user_id) return;
+    // Try to get ID from profile or current user session
+    const targetUserId = userProfile?.user_id || userProfile?.id;
+    
+    if (!targetUserId) {
+      toast({ title: "Erro de Perfil", description: "Não foi possível identificar o teu ID de utilizador.", variant: "destructive" });
+      return;
+    }
+
     try {
       const { error } = await adminClient.from("feature_flags").insert({
         key,
         scope: "user",
-        target_id: userProfile.user_id,
+        target_id: targetUserId,
         enabled: true
       });
-      if (error) throw error;
+      
+      if (error) {
+        // If it's a conflict error, just inform the user
+        if (error.code === '23505') {
+          toast({ title: "Já Ativado", description: "Já tens uma regra de teste para esta funcionalidade." });
+          return;
+        }
+        throw error;
+      }
+      
       fetchData();
-      toast({ title: "Modo Teste", description: `Ativado apenas para ti (${userProfile.display_name}).` });
+      toast({ title: "Modo Teste Ativado", description: `Ativado apenas para ti (${userProfile?.display_name || 'Admin'}).` });
     } catch (err: any) {
-      toast({ title: "Erro", description: "Já existe uma configuração de teste para esta chave ou erro na BD.", variant: "destructive" });
+      console.error("Error setting test mode:", err);
+      toast({ title: "Erro no Banco de Dados", description: err.message, variant: "destructive" });
     }
   };
 
