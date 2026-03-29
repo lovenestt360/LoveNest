@@ -59,8 +59,14 @@ export default function FeaturesControl() {
     }
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setUserProfile(profile);
+      // Use user.id as primary, but also try to get display name from profile
+      const { data: profile } = await supabase.from("profiles").select("*").or(`id.eq.${user.id},user_id.eq.${user.id}`).maybeSingle();
+      
+      setUserProfile({
+        ...profile,
+        user_id: user.id, // Ensure we have the ID from auth regardless of profile structure
+        display_name: profile?.display_name || user.email || "Admin"
+      });
     }
   };
 
