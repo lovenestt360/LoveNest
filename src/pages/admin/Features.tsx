@@ -32,10 +32,30 @@ export default function FeaturesControl() {
   const [selectedScope, setSelectedScope] = useState("global");
   const [searchTarget, setSearchTarget] = useState("");
   const [isAddingForFeature, setIsAddingForFeature] = useState<string | null>(null);
+  const [defaultTestUserId, setDefaultTestUserId] = useState<string | null>(localStorage.getItem("lovenest_default_test_user"));
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // ... (useMemo and useEffect stay same)
+  const adminToken = localStorage.getItem("lovenest_admin_token");
+  const adminClient = useMemo(() => {
+    if (!adminToken) return supabase;
+    return createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      {
+        global: {
+          headers: { 'x-admin-id': adminToken }
+        }
+      }
+    );
+  }, [adminToken]);
+
+  const saveDefaultTestUser = (id: string) => {
+    setDefaultTestUserId(id || null);
+    if (id) localStorage.setItem("lovenest_default_test_user", id);
+    else localStorage.removeItem("lovenest_default_test_user");
+    toast({ title: "Configuração Salva", description: "Usuário de teste padrão atualizado." });
+  };
 
   const filteredHouses = useMemo(() => {
     return houses.filter(h => 
@@ -106,11 +126,11 @@ export default function FeaturesControl() {
   };
 
   const enableOnlyForMe = async (key: string) => {
-    // Try to get ID from profile or current user session
-    const targetUserId = userProfile?.user_id || userProfile?.id;
+    // Priority: Default Test User ID > Profile ID > Auth ID
+    const targetUserId = defaultTestUserId || userProfile?.user_id || userProfile?.id;
     
     if (!targetUserId) {
-      toast({ title: "Erro de Perfil", description: "Não foi possível identificar o teu ID de utilizador.", variant: "destructive" });
+      toast({ title: "Erro de Perfil", description: "Não foi possível identificar o teu ID de utilizador ou usuário padrão.", variant: "destructive" });
       return;
     }
 
@@ -123,16 +143,16 @@ export default function FeaturesControl() {
       });
       
       if (error) {
-        // If it's a conflict error, just inform the user
         if (error.code === '23505') {
-          toast({ title: "Já Ativado", description: "Já tens uma regra de teste para esta funcionalidade." });
+          toast({ title: "Já Ativado", description: "O usuário selecionado já tem uma regra para esta funcionalidade." });
           return;
         }
         throw error;
       }
       
       fetchData();
-      toast({ title: "Modo Teste Ativado", description: `Ativado apenas para ti (${userProfile?.display_name || 'Admin'}).` });
+      const targetName = defaultTestUserId ? users.find(u => u.user_id === defaultTestUserId)?.display_name : (userProfile?.display_name || 'Admin');
+      toast({ title: "Modo Teste Ativado", description: `Ativado para o utilizador ${targetName}.` });
     } catch (err: any) {
       console.error("Error setting test mode:", err);
       toast({ title: "Erro no Banco de Dados", description: err.message, variant: "destructive" });
@@ -219,17 +239,32 @@ export default function FeaturesControl() {
               </div>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <span className={cn(
-                "text-[10px] font-black uppercase tracking-widest",
-                isSystemEnabled ? "text-emerald-600" : "text-rose-600"
-              )}>
-                {isSystemEnabled ? "Sistema Online" : "Bypass Ativo"}
-              </span>
-              <Switch 
-                checked={isSystemEnabled} 
-                onCheckedChange={toggleMasterSwitch}
-                className="scale-150 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-500"
-              />
+              <div className="flex flex-col items-end gap-1 mb-2">
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Destaque p/ Teste</Label>
+                 <select 
+                   className="h-8 px-2 rounded-lg bg-muted border-none text-[10px] font-bold outline-none ring-primary/20 focus:ring-2 max-w-[150px]"
+                   value={defaultTestUserId || ""}
+                   onChange={(e) => saveDefaultTestUser(e.target.value)}
+                 >
+                    <option value="">Meu Login (Admin)</option>
+                    {users.map(u => (
+                      <option key={u.user_id} value={u.user_id}>{u.display_name || u.user_id}</option>
+                    ))}
+                 </select>
+              </div>
+              <div className="flex flex-col items-center gap-2 border-t pt-4 w-full">
+                <span className={cn(
+                  "text-[10px] font-black uppercase tracking-widest",
+                  isSystemEnabled ? "text-emerald-600" : "text-rose-600"
+                )}>
+                  {isSystemEnabled ? "Sistema Online" : "Bypass Ativo"}
+                </span>
+                <Switch 
+                  checked={isSystemEnabled} 
+                  onCheckedChange={toggleMasterSwitch}
+                  className="scale-150 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-500"
+                />
+              </div>
             </div>
           </div>
         </section>
