@@ -345,13 +345,15 @@ export default function FeaturesControl() {
           </div>
 
           <div className="grid gap-4">
-            {flags.length === 0 && !loading && (
+            {flags.filter(f => f.key !== "system_enabled").length === 0 && !loading && (
               <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
                 <p className="text-muted-foreground italic">Nenhuma configuração encontrada.</p>
               </div>
             )}
 
-            {flags.map((flag) => (
+            {flags
+              .filter(f => f.key !== "system_enabled")
+              .map((flag) => (
               <div 
                 key={flag.id} 
                 className={cn(
