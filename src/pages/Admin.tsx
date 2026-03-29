@@ -196,7 +196,7 @@ export default function Admin() {
         try {
             // 1. Pagamentos
             const { data: paymentsData } = await adminClient
-                .from("subscription_payments")
+                .from("subscription_payments" as any)
                 .select(`
                     *,
                     couple_spaces (
@@ -684,7 +684,7 @@ export default function Admin() {
 
     const handleToggleFeature = async (id: string, currentStatus: boolean) => {
         try {
-            const { error } = await adminClient.from("feature_flags").update({ enabled: !currentStatus }).eq("id", id);
+            const { error } = await adminClient.from("feature_flags" as any).update({ enabled: !currentStatus } as any).eq("id", id);
             if (error) throw error;
             toast({ title: "Sucesso", description: "Estado da funcionalidade atualizado." });
             fetchFeatureFlags();
@@ -695,12 +695,12 @@ export default function Admin() {
 
     const handleCreateFeatureFlag = async (key: string, scope: string, targetId?: string) => {
         try {
-            const { error } = await adminClient.from("feature_flags").insert({
+            const { error } = await adminClient.from("feature_flags" as any).insert({
                 key,
                 scope,
                 target_id: targetId || null,
                 enabled: true
-            });
+            } as any);
             if (error) throw error;
             toast({ title: "Flag Criada", description: `Funcionalidade ${key} adicionada ao escopo ${scope}.` });
             fetchFeatureFlags();
@@ -1036,7 +1036,7 @@ export default function Admin() {
                                                                 (() => {
                                                                     const bothVerified = house.members?.length === 2 && house.members.every((m: any) => {
                                                                         const p = users.find(u => u.id === m.user_id);
-                                                                        return p?.verification_status === 'verified';
+                                                                        return (p as any)?.verification_status === 'verified';
                                                                     });
                                                                     if (bothVerified) {
                                                                         return (
@@ -2067,7 +2067,10 @@ export default function Admin() {
                                 </div>
                             </div>
                         )}
-        </main>
-    </div>
-  );
+                    </div>
+                </div>
+                )}
+            </main>
+        </div>
+    );
 }
