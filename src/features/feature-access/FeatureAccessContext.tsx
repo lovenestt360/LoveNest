@@ -50,6 +50,12 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const isEnabled = (key: string): boolean => {
+    // 0. Master Switch Check
+    const masterFlag = flags.find(f => f.key === "system_enabled" && f.scope === "global");
+    if (masterFlag && masterFlag.enabled === false) {
+      return true; // System is disabled, so all features are enabled (Bypass)
+    }
+
     // 1. User scope check
     const userFlag = flags.find(f => f.key === key && f.scope === "user" && f.target_id === user?.id);
     if (userFlag) return userFlag.enabled;
@@ -62,10 +68,8 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
     const globalFlag = flags.find(f => f.key === key && f.scope === "global");
     if (globalFlag) return globalFlag.enabled;
 
-    // Default to enabled if no flag found? Or disabled?
-    // Based on requirements, "Feature visibility must NEVER be hardcoded".
-    // This implies if a flag doesn't exist, it might be safer to default to false or have a default list.
-    return true; // For now, default to true if not specified globally.
+    // Default to enabled if no rule is found
+    return true;
   };
 
   const value = useMemo(() => ({

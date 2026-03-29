@@ -172,6 +172,38 @@ export default function FeaturesControl() {
     }
   };
 
+  const isSystemEnabled = useMemo(() => {
+    const master = flags.find(f => f.key === "system_enabled" && f.scope === "global");
+    return master ? master.enabled !== false : true;
+  }, [flags]);
+
+  const toggleMasterSwitch = async () => {
+    const master = flags.find(f => f.key === "system_enabled" && f.scope === "global");
+    const newStatus = !isSystemEnabled;
+
+    try {
+      if (master) {
+        const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", master.id);
+        if (error) throw error;
+      } else {
+        const { error } = await adminClient.from("feature_flags").insert({
+          key: "system_enabled",
+          scope: "global",
+          enabled: newStatus
+        });
+        if (error) throw error;
+      }
+      fetchData();
+      toast({ 
+        title: newStatus ? "Sistema Ativado" : "Sistema Desativado", 
+        description: newStatus ? "O controlo de funcionalidades está agora ativo." : "Todas as funcionalidades estão agora abertas para todos.",
+        variant: newStatus ? "default" : "destructive" 
+      });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
       <header className="bg-card border-b p-6 sticky top-0 z-10 shadow-sm backdrop-blur-md bg-card/80">
@@ -197,6 +229,44 @@ export default function FeaturesControl() {
 
       <main className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
+        {/* MASTER SWITCH */}
+        <section className={cn(
+          "bg-card border-2 rounded-[2.5rem] p-6 shadow-xl transition-all duration-500",
+          isSystemEnabled ? "border-emerald-500/20 bg-emerald-500/[0.02]" : "border-rose-500/40 bg-rose-500/[0.02]"
+        )}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className={cn(
+                "w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg transition-transform duration-500",
+                isSystemEnabled ? "bg-emerald-500 text-white rotate-0" : "bg-rose-500 text-white rotate-180"
+              )}>
+                <Power className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black tracking-tight italic">Master Switch</h2>
+                <p className="text-sm text-muted-foreground font-medium">
+                  {isSystemEnabled 
+                    ? "O sistema de controlo está ATIVO. As flags individuais serão respeitadas." 
+                    : "O sistema está DESATIVADO. Todas as funcionalidades estão abertas a todos."}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className={cn(
+                "text-[10px] font-black uppercase tracking-widest",
+                isSystemEnabled ? "text-emerald-600" : "text-rose-600"
+              )}>
+                {isSystemEnabled ? "Sistema Online" : "Bypass Ativo"}
+              </span>
+              <Switch 
+                checked={isSystemEnabled} 
+                onCheckedChange={toggleMasterSwitch}
+                className="scale-150 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-500"
+              />
+            </div>
+          </div>
+        </section>
+
         {/* NEW FLAG QUICK ACCESS */}
         <section className="bg-card border-2 border-primary/20 rounded-[2.5rem] p-6 shadow-lg shadow-primary/5">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
