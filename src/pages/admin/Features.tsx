@@ -32,7 +32,13 @@ export default function FeaturesControl() {
   const [selectedScope, setSelectedScope] = useState("global");
   const [searchTarget, setSearchTarget] = useState("");
   const [isAddingForFeature, setIsAddingForFeature] = useState<string | null>(null);
-  const [defaultTestUserId, setDefaultTestUserId] = useState<string | null>(localStorage.getItem("lovenest_default_test_user"));
+  
+  // Refactor: Store target as { id, scope }
+  const [defaultTestTarget, setDefaultTestTarget] = useState<{ id: string, scope: 'user' | 'couple' } | null>(() => {
+    const stored = localStorage.getItem("lovenest_default_test_target");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -50,11 +56,17 @@ export default function FeaturesControl() {
     );
   }, [adminToken]);
 
-  const saveDefaultTestUser = (id: string) => {
-    setDefaultTestUserId(id || null);
-    if (id) localStorage.setItem("lovenest_default_test_user", id);
-    else localStorage.removeItem("lovenest_default_test_user");
-    toast({ title: "Configuração Salva", description: "Usuário de teste padrão atualizado." });
+  const saveDefaultTestTarget = (id: string, scope: 'user' | 'couple' | '') => {
+    if (!id || !scope) {
+      setDefaultTestTarget(null);
+      localStorage.removeItem("lovenest_default_test_target");
+      toast({ title: "Configuração Removida", description: "O sistema usará o teu utilizador admin." });
+      return;
+    }
+    const target = { id, scope: scope as any };
+    setDefaultTestTarget(target);
+    localStorage.setItem("lovenest_default_test_target", JSON.stringify(target));
+    toast({ title: "Destaque Salvo", description: `Alvo de teste padrão: ${scope === 'user' ? 'Utilizador' : 'Casa'}.` });
   };
 
   const filteredHouses = useMemo(() => {
@@ -126,33 +138,37 @@ export default function FeaturesControl() {
   };
 
   const enableOnlyForMe = async (key: string) => {
-    // Priority: Default Test User ID > Profile ID > Auth ID
-    const targetUserId = defaultTestUserId || userProfile?.user_id || userProfile?.id;
+    // Priority: Default Test Target > Admin Profile ID
+    const targetId = defaultTestTarget?.id || userProfile?.user_id || userProfile?.id;
+    const scope = defaultTestTarget?.scope || "user";
     
-    if (!targetUserId) {
-      toast({ title: "Erro de Perfil", description: "Não foi possível identificar o teu ID de utilizador ou usuário padrão.", variant: "destructive" });
+    if (!targetId) {
+      toast({ title: "Erro de Alvo", description: "Não foi possível identificar um alvo para o modo teste.", variant: "destructive" });
       return;
     }
 
     try {
       const { error } = await adminClient.from("feature_flags").insert({
         key,
-        scope: "user",
-        target_id: targetUserId,
+        scope,
+        target_id: targetId,
         enabled: true
       });
       
       if (error) {
         if (error.code === '23505') {
-          toast({ title: "Já Ativado", description: "O usuário selecionado já tem uma regra para esta funcionalidade." });
+          toast({ title: "Já Ativado", description: "Este alvo já tem uma regra para esta funcionalidade." });
           return;
         }
         throw error;
       }
       
       fetchData();
-      const targetName = defaultTestUserId ? users.find(u => u.user_id === defaultTestUserId)?.display_name : (userProfile?.display_name || 'Admin');
-      toast({ title: "Modo Teste Ativado", description: `Ativado para o utilizador ${targetName}.` });
+      const targetName = defaultTestTarget 
+        ? getNameById(defaultTestTarget.id, defaultTestTarget.scope) 
+        : (userProfile?.display_name || 'Admin');
+        
+      toast({ title: "Modo Teste Ativado", description: `Ativado para ${targetName} (${scope === 'user' ? 'Utilizador' : 'Casa'}).` });
     } catch (err: any) {
       console.error("Error setting test mode:", err);
       toast({ title: "Erro no Banco de Dados", description: err.message, variant: "destructive" });
@@ -242,14 +258,30 @@ export default function FeaturesControl() {
               <div className="flex flex-col items-end gap-1 mb-2">
                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Destaque p/ Teste</Label>
                  <select 
-                   className="h-8 px-2 rounded-lg bg-muted border-none text-[10px] font-bold outline-none ring-primary/20 focus:ring-2 max-w-[150px]"
-                   value={defaultTestUserId || ""}
-                   onChange={(e) => saveDefaultTestUser(e.target.value)}
+                   className="h-8 px-2 rounded-lg bg-muted border-none text-[10px] font-bold outline-none ring-primary/20 focus:ring-2 max-w-[180px]"
+                   value={defaultTestTarget ? `${defaultTestTarget.scope}:${defaultTestTarget.id}` : ""}
+                   onChange={(e) => {
+                     const [scope, id] = e.target.value.split(":");
+                     saveDefaultTestTarget(id, scope as any);
+                   }}
                  >
-                    <option value="">Meu Login (Admin)</option>
-                    {users.map(u => (
-                      <option key={u.user_id} value={u.user_id}>{u.display_name || u.user_id}</option>
-                    ))}
+                    <option value="">Admin (Atual)</option>
+                    
+                    {users.length > 0 && (
+                      <optgroup label="Utilizadores">
+                        {users.map(u => (
+                          <option key={u.user_id} value={`user:${u.user_id}`}>👤 {u.display_name || u.user_id}</option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {houses.length > 0 && (
+                      <optgroup label="Casas (Casais)">
+                        {houses.map(h => (
+                          <option key={h.id} value={`couple:${h.id}`}>🏠 {h.house_name || `${h.partner1_name} & ${h.partner2_name}`}</option>
+                        ))}
+                      </optgroup>
+                    )}
                  </select>
               </div>
               <div className="flex flex-col items-center gap-2 border-t pt-4 w-full">
