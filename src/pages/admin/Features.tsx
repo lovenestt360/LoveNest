@@ -27,6 +27,9 @@ export default function FeaturesControl() {
   const [loading, setLoading] = useState(true);
   const [flags, setFlags] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [houses, setHouses] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedScope, setSelectedScope] = useState("global");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -64,14 +67,37 @@ export default function FeaturesControl() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await adminClient.from("feature_flags").select("*").order("key");
-      if (error) throw error;
-      setFlags(data || []);
+      // Fetch flags
+      const { data: flagsData, error: flagsError } = await adminClient.from("feature_flags").select("*").order("key");
+      if (flagsError) throw flagsError;
+      setFlags(flagsData || []);
+
+      // Fetch Houses for selection
+      const { data: housesData } = await adminClient.from("couple_spaces").select("id, house_name, partner1_name, partner2_name").order("house_name");
+      setHouses(housesData || []);
+
+      // Fetch Users for selection
+      const { data: usersData } = await adminClient.from("profiles").select("user_id, display_name").order("display_name");
+      setUsers(usersData || []);
+
     } catch (err: any) {
-      toast({ title: "Erro ao carregar flags", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao carregar dados", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const getNameById = (id: string, scope: string) => {
+    if (scope === "global") return "Todos";
+    if (scope === "couple") {
+      const house = houses.find(h => h.id === id);
+      return house ? house.house_name || `${house.partner1_name} & ${house.partner2_name}` : id;
+    }
+    if (scope === "user") {
+      const user = users.find(u => u.user_id === id);
+      return user ? user.display_name : id;
+    }
+    return id;
   };
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
@@ -172,7 +198,7 @@ export default function FeaturesControl() {
       <main className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* NEW FLAG QUICK ACCESS */}
-        <section className="bg-card border-2 border-primary/20 rounded-[2rem] p-6 shadow-lg shadow-primary/5">
+        <section className="bg-card border-2 border-primary/20 rounded-[2.5rem] p-6 shadow-lg shadow-primary/5">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5 text-primary" />
             Criar Novo Override
@@ -187,15 +213,36 @@ export default function FeaturesControl() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] font-black uppercase ml-1 opacity-60">Escopo (Scope)</Label>
-              <select name="scope" className="w-full h-11 px-3 rounded-xl bg-muted/30 border-none shadow-inner text-sm font-bold appearance-none">
+              <select 
+                name="scope" 
+                value={selectedScope}
+                onChange={(e) => setSelectedScope(e.target.value)}
+                className="w-full h-11 px-3 rounded-xl bg-muted/30 border-none shadow-inner text-sm font-bold appearance-none outline-none ring-primary/20 focus:ring-2"
+              >
                 <option value="global">Global</option>
                 <option value="couple">Couple</option>
                 <option value="user">User</option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase ml-1 opacity-60">Target ID (Opcional)</Label>
-              <Input name="target_id" placeholder="UUID do User/Casal" className="h-11 rounded-xl bg-muted/30 border-none shadow-inner font-mono text-xs" />
+              <Label className="text-[10px] font-black uppercase ml-1 opacity-60">Target (Alvo)</Label>
+              {selectedScope === "global" ? (
+                <Input disabled placeholder="Todos" className="h-11 rounded-xl bg-muted/20 border-none opacity-50" />
+              ) : selectedScope === "couple" ? (
+                <select name="target_id" required className="w-full h-11 px-3 rounded-xl bg-muted/30 border-none shadow-inner text-sm font-bold appearance-none outline-none ring-primary/20 focus:ring-2">
+                   <option value="">Selecionar Casal...</option>
+                   {houses.map(h => (
+                     <option key={h.id} value={h.id}>{h.house_name || `${h.partner1_name} & ${h.partner2_name}`}</option>
+                   ))}
+                </select>
+              ) : (
+                <select name="target_id" required className="w-full h-11 px-3 rounded-xl bg-muted/30 border-none shadow-inner text-sm font-bold appearance-none outline-none ring-primary/20 focus:ring-2">
+                   <option value="">Selecionar Utilizador...</option>
+                   {users.map(u => (
+                     <option key={u.user_id} value={u.user_id}>{u.display_name || u.user_id}</option>
+                   ))}
+                </select>
+              )}
             </div>
             <Button type="submit" className="h-11 rounded-xl font-bold bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
               Salvar Flag
@@ -250,7 +297,9 @@ export default function FeaturesControl() {
                         </div>
                       </h3>
                       <div className="flex flex-col gap-1">
-                        <p className="text-[10px] text-muted-foreground font-mono truncate max-w-xs">{flag.target_id || "Acesso Global"}</p>
+                        <p className="text-sm font-bold text-primary tracking-tight">
+                          {getNameById(flag.target_id, flag.scope)}
+                        </p>
                         <time className="text-[9px] text-muted-foreground opacity-50 font-bold uppercase">Criado em: {new Date(flag.created_at).toLocaleDateString()}</time>
                       </div>
                     </div>
