@@ -116,6 +116,7 @@ const AppRoutes = () => (
     {/* Protected Admin routes */}
     <Route element={<AdminRoute />}>
       <Route path="/admin" element={<Admin />} />
+      <Route path="/admin/features" element={<FeaturesControl />} />
     </Route>
 
     {/* 404 */}
