@@ -43,6 +43,7 @@ const Ranking = lazy(() => import("./pages/Ranking"));
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const Admin = lazy(() => import("./pages/Admin"));
+const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminRegister = lazy(() => import("./pages/admin/AdminRegister"));
 
