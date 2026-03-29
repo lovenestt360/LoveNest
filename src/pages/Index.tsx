@@ -345,6 +345,41 @@ function useGlobalAnnouncements() {
   return announcements;
 }
 
+const AppIconButton = ({ 
+  icon, 
+  label, 
+  to, 
+  badge, 
+  color 
+}: { 
+  icon: React.ReactNode; 
+  label: string; 
+  to: string; 
+  badge?: number | string; 
+  color: string;
+}) => {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => navigate(to)}
+      className="flex flex-col items-center gap-2 p-2 relative group"
+    >
+      <div className={cn(
+        "w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all group-active:scale-90",
+        color
+      )}>
+        {icon}
+        {badge && badge !== 0 ? (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black h-5 min-w-5 px-1 rounded-full flex items-center justify-center border-2 border-background shadow-sm animate-in zoom-in duration-300">
+            {badge}
+          </span>
+        ) : null}
+      </div>
+      <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">{label}</span>
+    </button>
+  );
+};
+
 const Index = () => {
   const time = useTimeTogether();
   const navigate = useNavigate();
