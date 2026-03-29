@@ -350,19 +350,22 @@ const Index = () => {
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
   const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
   const streak = streakData?.current_streak ?? 0;
+  const { isEnabled } = useFeatureAccess();
+  
   useIntelligentNotifs(useCoupleSpaceId());
 
-  const { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread } = useAppNotifContext();
+  const { 
+    chatUnread, moodUnread, tasksUnread, memoriesUnread, 
+    scheduleUnread, prayerUnread, complaintsUnread 
+  } = useAppNotifContext();
 
   const avatars = useCoupleAvatars();
   const plano = usePlanoStats();
   const mood = useMoodToday();
   const photoCount = usePhotoCount();
   const prayer = usePrayerStatus();
-  const complaints = useOpenComplaints();
   const chatPreview = useMessagePreview();
   const fasting = useFastingHome();
-  const cycle = useCycleHome();
   const hasWrapped = useWrappedStatus();
   const announcements = useGlobalAnnouncements();
   const referralCode = useReferralCode();
@@ -374,11 +377,7 @@ const Index = () => {
     const message = `Estamos a usar o LoveNest 💛\num espaço só nosso…\ncria o teu também ✨\n\nCódigo: ${referralCode}`;
 
     if (navigator.share) {
-      navigator.share({ 
-        title: 'Convite LoveNest', 
-        text: message, 
-        url: shareUrl 
-      }).catch(() => {});
+      navigator.share({ title: 'Convite LoveNest', text: message, url: shareUrl }).catch(() => {});
     } else {
       navigator.clipboard.writeText(`${message}\n${shareUrl}`);
       toast.success("Convite copiado! Partilha com amigos. ✨");
@@ -388,37 +387,25 @@ const Index = () => {
   const handleShareHouse = () => {
     if (!houseInviteCode) return;
     const message = `Vem construir o nosso ninho no LoveNest! 🏠❤️ Usa o código do nosso espaço: ${houseInviteCode}`;
-    
     if (navigator.share) {
-      navigator.share({ 
-        title: 'Nosso Ninho no LoveNest', 
-        text: message,
-        url: window.location.origin 
-      }).catch(() => {});
+      navigator.share({ title: 'Nosso Ninho no LoveNest', text: message, url: window.location.origin }).catch(() => {});
     } else {
       navigator.clipboard.writeText(`${message}\n${window.location.origin}`);
       toast.success("Código e link copiados! 🏠");
     }
   };
 
-  const easterStr = getEasterDate();
-  const easterDate = new Date(easterStr + "T00:00:00");
-  const daysToEaster = Math.max(0, differenceInDays(easterDate, new Date()));
-
-  const fastingDayNumber = fasting.plan
-    ? Math.max(1, differenceInDays(new Date(), new Date(fasting.plan.start_date + "T00:00:00")) + 1)
-    : 0;
   const fastingProgress = fasting.plan
     ? Math.min(100, Math.round((fasting.loggedDays / fasting.plan.total_days) * 100))
     : 0;
 
   return (
-    <section className="space-y-8 animate-fade-in pb-10">
+    <section className="space-y-6 animate-fade-in pb-20">
       {/* ── Premium Apple Header ── */}
       <HomeHeader me={avatars.me} partner={avatars.partner} today={today} loading={avatars.loading} />
 
       {/* ── Highlights & Status ── */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <TimeTogetherCard 
           days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
           streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
@@ -426,8 +413,8 @@ const Index = () => {
 
         {/* Announcements */}
         {announcements.map((ann) => (
-          <div key={ann.id} className="glass-card border-primary/20 bg-primary/5 text-primary p-4 rounded-3xl animate-fade-slide-up stagger-1 shadow-sm">
-            <h3 className="font-black text-xs flex items-center gap-2 mb-1 uppercase tracking-widest">
+          <div key={ann.id} className="glass-card border-primary/20 bg-primary/5 text-primary p-4 rounded-3xl animate-fade-slide-up shadow-sm">
+            <h3 className="font-black text-[10px] flex items-center gap-2 mb-1 uppercase tracking-widest">
               <Megaphone className="w-3 h-3" /> {ann.title}
             </h3>
             <p className="text-sm font-medium">{ann.content}</p>
@@ -436,246 +423,180 @@ const Index = () => {
 
         <InstallBanner />
 
-        {/* Invite Partner Card - Only if no partner and NOT loading! */}
-        {!avatars.loading && !avatars.partner && houseInviteCode && (
-          <div className="glass-card bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/30 rounded-[2.5rem] p-6 shadow-glow transition-all animate-fade-slide-up stagger-1">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <HeartHandshake className="w-8 h-8" />
+        {/* LoveStreak Component */}
+        <div className="animate-fade-slide-up">
+          <LoveStreakHomeCard />
+        </div>
+      </div>
+
+      {/* ── Primary Grid (2 Columns) ── */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* O Plano - Full Width */}
+        <DashCard
+          icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
+          title="Agenda"
+          lines={[
+            plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo pronto ✨",
+            plano.next ? `${plano.next.time} ${plano.next.title}` : "Nada mais por hoje"
+          ]}
+          to="/plano"
+          badge={tasksUnread + scheduleUnread}
+          accent="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
+          className="col-span-2 py-6"
+        />
+
+        {isEnabled("home_conversas") && (
+          <button
+            onClick={() => navigate("/chat")}
+            className="glass-card glass-card-hover group flex flex-col items-center justify-center gap-2 rounded-[2rem] p-4 text-center active:scale-[0.96] transition-all bg-gradient-to-br from-indigo-500/5 to-transparent border-indigo-500/10"
+          >
+            <div className="relative">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
+                <MessageCircle className="h-6 w-6" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-[17px] font-black tracking-tight leading-tight">Convidar Par</h3>
-                <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">O teu ninho ainda está vazio!</p>
-              </div>
+              {chatUnread > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-black text-white shadow-lg">
+                  {chatUnread}
+                </span>
+              )}
             </div>
-            
-            <div className="flex gap-2">
-              <div className="flex-1 bg-white/50 border border-primary/20 rounded-2xl h-14 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
-                {houseInviteCode}
-              </div>
-              <button 
-                onClick={handleShareHouse}
-                className="h-14 w-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
-              >
-                <Share2 className="w-6 h-6" />
-              </button>
+            <span className="text-[14px] font-black tracking-tight">Conversas</span>
+            <p className="text-[10px] text-muted-foreground font-medium italic line-clamp-1 h-3">
+              {chatPreview.preview ? "Nova mensagem!" : "Abrir chat"}
+            </p>
+          </button>
+        )}
+
+        <DashCard
+          icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
+          title="Humor"
+          lines={[
+            mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar hoje",
+            mood.partner ? `Par: ${mood.partner.emoji}` : "Esperando par...",
+          ]}
+          to="/humor"
+          badge={moodUnread}
+          accent="bg-orange-500/20 text-orange-600 dark:text-orange-400"
+        />
+
+        {isEnabled("home_jejum") && (
+          <button
+            onClick={() => navigate("/jejum")}
+            className="glass-card glass-card-hover group flex flex-col items-center justify-center gap-2 rounded-[2rem] p-4 text-center active:scale-[0.96] transition-all bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/10"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 group-hover:scale-110 transition-transform shadow-sm">
+              <Flame className="h-6 w-6" />
             </div>
-            <p className="text-[10px] text-muted-foreground font-black italic mt-3 text-center">Partilha este código com o teu amor para começarem a jornada juntos. 💕</p>
-          </div>
+            <span className="text-[14px] font-black tracking-tight">Jejum</span>
+            <div className="w-full h-1 bg-amber-500/10 rounded-full overflow-hidden mt-1">
+              <div className="bg-amber-500 h-full" style={{ width: `${fastingProgress}%` }} />
+            </div>
+          </button>
         )}
       </div>
 
-      {/* ── Featured Destaques ── */}
-      <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2 flex items-center gap-2 animate-fade-slide-up stagger-1">
-           <Compass className="w-3 h-3" /> Em Destaque
+      {/* ── Apps & Tools Grid (3 Columns) ── */}
+      <div className="space-y-3">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-2 flex items-center justify-center gap-2">
+            Ferramentas do Casal
         </h2>
         
-        <div className="space-y-3">
-          {/* LoveStreak Component */}
-          <div className="animate-fade-slide-up stagger-2">
-            <LoveStreakHomeCard />
-          </div>
+        <div className="grid grid-cols-3 gap-3">
+          {isEnabled("home_memories") && (
+            <AppIconButton 
+              icon={<Camera className="w-6 h-6" />} 
+              label="Memórias" 
+              badge={memoriesUnread} 
+              to="/memorias" 
+              color="text-violet-500 bg-violet-500/10" 
+            />
+          )}
 
-          {/* Fasting Featured Card */}
-          <button
-            onClick={() => navigate("/jejum")}
-            className="glass-card glass-card-hover group relative flex w-full flex-col rounded-[2.5rem] overflow-hidden text-left active:scale-[0.96] transition-transform duration-300 animate-fade-slide-up stagger-3"
-          >
-            <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-transparent p-5 space-y-3 w-full">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[1.25rem] bg-amber-500/20 text-amber-600 transition-transform group-hover:scale-110 shadow-sm">
-                    <Flame className="h-5.5 w-5.5" />
-                  </div>
-                  <div>
-                    <span className="text-[15px] font-black text-foreground block tracking-tight">🕯️ Jejum (Páscoa)</span>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-0.5">
-                      {fasting.plan ? fasting.plan.plan_name : "Iniciar percurso"}
-                    </p>
-                  </div>
+          {isEnabled("home_desafios") && (
+            <AppIconButton 
+              icon={<Trophy className="w-6 h-6" />} 
+              label="Desafios" 
+              to="/desafios" 
+              color="text-blue-500 bg-blue-500/10" 
+            />
+          )}
+
+          {isEnabled("home_wrapped") && (
+            <AppIconButton 
+              icon={<Sparkles className="w-6 h-6" />} 
+              label="Wrapped" 
+              badge={hasWrapped ? "!" : 0} 
+              to="/wrapped" 
+              color="text-rose-500 bg-rose-500/10" 
+            />
+          )}
+
+          {isEnabled("home_oracao") && (
+            <AppIconButton 
+              icon={<BookHeart className="w-6 h-6" />} 
+              label="Oração" 
+              badge={prayerUnread} 
+              to="/oracao" 
+              color="text-amber-500 bg-amber-500/10" 
+            />
+          )}
+
+          {isEnabled("home_capsula") && (
+            <AppIconButton 
+              icon={<Clock className="w-6 h-6" />} 
+              label="Cápsula" 
+              to="/capsula" 
+              color="text-primary bg-primary/10" 
+            />
+          )}
+
+          <AppIconButton 
+            icon={<Flower2 className="w-6 h-6" />} 
+            label="Ciclo" 
+            to="/ciclo" 
+            color="text-pink-500 bg-pink-500/10" 
+          />
+        </div>
+      </div>
+
+      {/* Share / Invite Section */}
+      <div className="space-y-4 pt-4">
+        {!avatars.partner && houseInviteCode && (
+          <div className="glass-card bg-gradient-to-br from-primary/15 to-transparent border-primary/20 rounded-[2.5rem] p-5 shadow-sm">
+             <div className="flex items-center gap-3 mb-4 text-center justify-center flex-col">
+                <HeartHandshake className="w-8 h-8 text-primary" />
+                <h3 className="text-sm font-black tracking-tight">O teu ninho está vazio!</h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Partilha o código com o teu par</p>
+             </div>
+             <div className="flex gap-2">
+                <div className="flex-1 bg-white/50 border border-primary/10 rounded-2xl h-12 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
+                  {houseInviteCode}
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground/50 group-hover:translate-x-1 transition-transform" />
-              </div>
-
-              {fasting.plan ? (
-                <>
-                  <div className="flex items-center justify-between gap-2 text-xs font-bold mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-amber-600">Dia {fastingDayNumber}/{fasting.plan.total_days}</span>
-                      <span className="text-muted-foreground/30">•</span>
-                      <span className={cn(
-                        "rounded-lg px-2 py-0.5 text-[9px] uppercase tracking-wider",
-                        fasting.todayResult === "cumprido" ? "bg-green-500/20 text-green-700" :
-                          fasting.todayResult === "parcial" ? "bg-yellow-400/20 text-yellow-700" :
-                            fasting.todayResult === "falhei" ? "bg-red-500/20 text-red-700" :
-                              "bg-muted/50 text-muted-foreground"
-                      )}>
-                        {fasting.todayResult ? dayResultLabel(fasting.todayResult as any) : "Pendente"}
-                      </span>
-                    </div>
-                    <span className="text-amber-600 font-black">{fastingProgress}%</span>
-                  </div>
-                  <Progress value={fastingProgress} className="h-2 rounded-full overflow-hidden bg-amber-500/10" />
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground/80 font-medium">Faltam {daysToEaster} dias para a Páscoa. Prepara-te para a ressurreição! ✨</p>
-              )}
-            </div>
-          </button>
-
-          {/* Chat Quick Access */}
-          <button
-            onClick={() => navigate("/chat")}
-            className="glass-card glass-card-hover group relative flex w-full items-center gap-4 rounded-[2.5rem] p-5 text-left active:scale-[0.96] transition-all duration-300 animate-fade-slide-up stagger-4"
-          >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
-              <MessageCircle className="h-6 w-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-black text-foreground tracking-tight">Conversas</span>
-                {chatUnread > 0 && (
-                  <span className="bg-destructive text-destructive-foreground text-[10px] font-black px-2 py-0.5 rounded-lg shadow-glow">
-                    {chatUnread}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-muted-foreground/80 font-medium line-clamp-1 mt-0.5 italic">
-                {chatPreview.preview ?? "Envia um beijinho agora..."}
-              </p>
-            </div>
-          </button>
-        </div>
-
-        {/* Small Gesture Nudge */}
-        <div className="flex justify-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="rounded-full text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 hover:text-primary hover:bg-primary/5 transition-all gap-2 py-1 h-auto"
-            onClick={() => {
-              notifyPartner({
-                couple_space_id: useCoupleSpaceId() || "",
-                title: "Hora de um mimo 💌",
-                body: "Hora de um pequeno gesto 💌",
-                url: "/chat",
-                type: "chat",
-                template_key: "small_gesture"
-              });
-              toast.success("Enviado com sucesso! 💌", {
-                description: "O parceiro recebeu o teu convite para um pequeno gesto."
-              });
-            }}
-          >
-            <Coffee className="w-3 h-3" />
-            Enviar um pequeno gesto
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Nossa Vida Section ── */}
-      <div className="space-y-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2">
-          🏠 Nossa Vida
-        </h2>
-        <div className="grid grid-cols-2 gap-4">
-          <DashCard
-            icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
-            title="O Plano"
-            lines={[
-              plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo pronto ✨",
-              plano.next ? `Próximo: ${plano.next.time} ${plano.next.title}` : "Nada mais por hoje"
-            ]}
-            to="/plano"
-            badge={tasksUnread + scheduleUnread}
-            accent="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
-            className="col-span-2"
-          />
-          <DashCard
-            icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
-            title="Humor"
-            lines={[
-              mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar hoje",
-              mood.partner ? `Par: ${mood.partner.emoji}` : "Esperando par...",
-            ]}
-            to="/humor"
-            badge={moodUnread}
-            accent="bg-orange-500/20 text-orange-600 dark:text-orange-400"
-          />
-          <DashCard
-            icon={<Camera className="h-6 w-6 stroke-[2.5]" />}
-            title="Memórias"
-            lines={[
-              photoCount > 0 ? `${photoCount} fotos` : "0 fotos",
-              "Novas recordações 📸"
-            ]}
-            to="/memorias"
-            badge={memoriesUnread}
-            accent="bg-violet-500/20 text-violet-600 dark:text-violet-400"
-          />
-        </div>
-      </div>
-
-      {/* ── Crescimento & Diversão ── */}
-      <div className="space-y-4 pb-4">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 px-2">
-          ✨ Crescimento
-        </h2>
-        <div className="grid grid-cols-2 gap-4">
-          <DashCard
-            icon={<Trophy className="h-6 w-6 stroke-[2.5]" />}
-            title="Desafios"
-            lines={["Concluir Desafios", "Ganhar Pontos 🎯"]}
-            to="/desafios"
-            accent="bg-blue-600/20 text-blue-600 dark:text-blue-400"
-          />
-          <DashCard
-            icon={<Sparkles className="h-6 w-6 stroke-[2.5]" />}
-            title="Wrapped"
-            lines={["Resumo Mensal", "Revive memórias"]}
-            to="/wrapped"
-            badge={hasWrapped ? "Novo" : 0}
-            accent="bg-rose-500/20 text-rose-600 dark:text-rose-400"
-          />
-          <DashCard
-            icon={<BookHeart className="h-6 w-6 stroke-[2.5]" />}
-            title="Oração"
-            lines={[
-              prayer.myPrayed ? "Tu: Rezei ✨" : "Não rezei",
-              prayer.partnerPrayed ? "Par: Rezo ✨" : "Par pendente",
-            ]}
-            to="/oracao"
-            badge={prayerUnread}
-            accent="bg-amber-500/20 text-amber-600 dark:text-amber-400"
-          />
-          <DashCard
-            icon={<Clock className="h-6 w-6 stroke-[2.5]" />}
-            title="Cápsula"
-            lines={["Mensagens 🔒", "Futuro Amor"]}
-            to="/capsula"
-            accent="bg-primary/20 text-primary"
-          />
-        </div>
-
-        {/* Invite Card */}
-        <div className="glass-card bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 rounded-[2.5rem] p-6 flex items-center justify-between gap-4 mt-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-[1.25rem] bg-white/50 flex items-center justify-center text-primary shadow-sm group-hover:rotate-12 transition-transform">
-              <Share2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black tracking-tight">Convidar Amigos</h4>
-              <p className="text-[10px] text-muted-foreground font-bold">50 Pontos por cada convite! 💰</p>
-            </div>
+                <button 
+                  onClick={handleShareHouse}
+                  className="h-12 w-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+             </div>
           </div>
-          <button
-            onClick={handleShareReferral}
-            className="bg-primary text-primary-foreground text-xs font-black px-5 py-2.5 rounded-full shadow-glow active:scale-95 transition-all"
-          >
-            Partilhar
-          </button>
-        </div>
+        )}
+
+        <button
+          onClick={handleShareReferral}
+          className="w-full glass-card bg-gradient-to-r from-primary/5 to-accent/5 border-primary/10 rounded-[2rem] p-4 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+             <div className="h-10 w-10 rounded-xl bg-white/50 flex items-center justify-center text-primary shadow-sm">
+                <Share2 className="w-5 h-5" />
+             </div>
+             <div className="text-left">
+                <h4 className="text-[13px] font-black tracking-tight">Convidar Amigos</h4>
+                <p className="text-[10px] text-muted-foreground font-bold">Ganha 50 Pontos! 💰</p>
+             </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
+        </button>
       </div>
     </section>
   );

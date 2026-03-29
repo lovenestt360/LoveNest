@@ -90,7 +90,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped" | "pwa" | "verifications">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped" | "pwa" | "verifications" | "feature_flags">("overview");
     const [verifications, setVerifications] = useState<any[]>([]);
     const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
@@ -143,6 +143,8 @@ export default function Admin() {
     const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth() || 12);
     const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
     const [searchHouse, setSearchHouse] = useState("");
+    const [allFeatureFlags, setAllFeatureFlags] = useState<any[]>([]);
+    const [fetchingFlags, setFetchingFlags] = useState(false);
 
     const [pwaSettings, setPwaSettings] = useState<any>(null);
     const [savingPwa, setSavingPwa] = useState(false);
@@ -301,6 +303,9 @@ export default function Admin() {
                 .select("*")
                 .order("created_at", { ascending: false });
             setVerifications(verData || []);
+
+            // 10. Feature Flags
+            fetchFeatureFlags();
 
         } catch (error: any) {
             console.error("Admin: Erro crítico ao carregar dados", error);
@@ -664,6 +669,46 @@ export default function Admin() {
         }
     };
 
+    const fetchFeatureFlags = async () => {
+        try {
+            setFetchingFlags(true);
+            const { data, error } = await adminClient.from("feature_flags").select("*").order("key");
+            if (error) throw error;
+            setAllFeatureFlags(data || []);
+        } catch (error: any) {
+            console.error("Error fetching flags:", error);
+        } finally {
+            setFetchingFlags(false);
+        }
+    };
+
+    const handleToggleFeature = async (id: string, currentStatus: boolean) => {
+        try {
+            const { error } = await adminClient.from("feature_flags").update({ enabled: !currentStatus }).eq("id", id);
+            if (error) throw error;
+            toast({ title: "Sucesso", description: "Estado da funcionalidade atualizado." });
+            fetchFeatureFlags();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
+
+    const handleCreateFeatureFlag = async (key: string, scope: string, targetId?: string) => {
+        try {
+            const { error } = await adminClient.from("feature_flags").insert({
+                key,
+                scope,
+                target_id: targetId || null,
+                enabled: true
+            });
+            if (error) throw error;
+            toast({ title: "Flag Criada", description: `Funcionalidade ${key} adicionada ao escopo ${scope}.` });
+            fetchFeatureFlags();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
+
     if (loading && payments.length === 0) {
         return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
     }
@@ -778,6 +823,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
                         <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
+                    </Button>
+                    <Button variant={tab === "feature_flags" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("feature_flags")}>
+                        <Hash className="w-4 h-4" /> <span className="hidden md:inline">Feature Flags</span>
                     </Button>
                 </nav>
 
@@ -2018,7 +2066,108 @@ export default function Admin() {
                                     </Button>
                                 </div>
                             </div>
-                        )}
+                        {tab === "feature_flags" && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto pb-10">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    <Hash className="w-6 h-6 text-primary" />
+                                    Feature Flags & Access Control
+                                </h2>
+                                <p className="text-sm text-muted-foreground mt-1">Controla o que os utilizadores podem ver e usar em tempo real.</p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={fetchFeatureFlags} disabled={fetchingFlags}>
+                                <RefreshCw className={cn("w-4 h-4 mr-2", fetchingFlags && "animate-spin")} />
+                                Atualizar
+                            </Button>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {allFeatureFlags.map((flag) => (
+                                <div 
+                                    key={flag.id} 
+                                    className={cn(
+                                        "bg-card border-2 rounded-2xl p-5 flex items-center justify-between transition-all",
+                                        flag.enabled ? "border-primary/20 bg-primary/5" : "border-muted opacity-80"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-xl flex items-center justify-center",
+                                            flag.enabled ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                                        )}>
+                                            <ShieldCheck className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-base flex items-center gap-2">
+                                                <code>{flag.key}</code>
+                                                <span className={cn(
+                                                    "text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-tighter",
+                                                    flag.scope === 'global' ? "bg-indigo-100 text-indigo-700" :
+                                                    flag.scope === 'couple' ? "bg-amber-100 text-amber-700" :
+                                                    "bg-blue-100 text-blue-700"
+                                                )}>
+                                                    {flag.scope}
+                                                </span>
+                                            </h4>
+                                            {flag.target_id && (
+                                                <p className="text-[10px] text-muted-foreground font-mono mt-1">Target ID: {flag.target_id}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-right hidden sm:block">
+                                            <p className="text-[10px] uppercase font-black opacity-40">Estado</p>
+                                            <p className={cn("text-xs font-bold", flag.enabled ? "text-primary" : "text-muted-foreground")}>
+                                                {flag.enabled ? "ATIVADO" : "DESATIVADO"}
+                                            </p>
+                                        </div>
+                                        <Switch 
+                                            checked={flag.enabled} 
+                                            onCheckedChange={() => handleToggleFeature(flag.id, flag.enabled)} 
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Quick Action: New Flag */}
+                        <div className="glass-card rounded-[2rem] p-6 border-dashed border-primary/30">
+                            <h3 className="font-bold text-lg mb-4">Criar Novo Override</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold uppercase ml-1">Chave (Key)</Label>
+                                    <Input id="new-flag-key" placeholder="ex: home_memories" className="h-10 rounded-xl" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold uppercase ml-1">Escopo (Scope)</Label>
+                                    <select id="new-flag-scope" className="w-full h-10 px-3 rounded-xl border bg-background text-sm font-medium">
+                                        <option value="global">Global</option>
+                                        <option value="couple">Couple</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold uppercase ml-1">Target ID (Opcional)</Label>
+                                    <Input id="new-flag-target" placeholder="UUID do Casal/User" className="h-10 rounded-xl" />
+                                </div>
+                                <div className="flex items-end">
+                                    <Button 
+                                        className="w-full h-10 rounded-xl font-bold" 
+                                        onClick={() => {
+                                            const k = (document.getElementById('new-flag-key') as HTMLInputElement).value;
+                                            const s = (document.getElementById('new-flag-scope') as HTMLSelectElement).value;
+                                            const t = (document.getElementById('new-flag-target') as HTMLInputElement).value;
+                                            if (k) handleCreateFeatureFlag(k, s, t);
+                                        }}
+                                    >
+                                        Adicionar Flag
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                     </div>
                 </div>
             )}

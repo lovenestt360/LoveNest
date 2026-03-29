@@ -11,6 +11,7 @@ import { AuthOnlyRoute } from "@/features/auth/AuthOnlyRoute";
 import { AdminRoute } from "@/features/auth/AdminRoute";
 import { PremiumGuard } from "@/features/auth/PremiumGuard";
 import { AppNotifProvider } from "@/features/notifications/AppNotifContext";
+import { FeatureAccessProvider } from "@/features/feature-access/FeatureAccessContext";
 import { SplashGate } from "@/features/splash/SplashScreen";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
@@ -131,17 +132,19 @@ const App = () => (
       <BrowserRouter>
         <SplashGate>
           <AuthProvider>
-            <PWATutorialProvider>
-              <AppNotifProvider>
-                <ErrorBoundary>
-                  <Suspense fallback={<PageLoader />}>
-                    <AppRoutes />
-                  </Suspense>
-                </ErrorBoundary>
-              </AppNotifProvider>
-              <PWAInstallButton />
-              <PWATutorialModal />
-            </PWATutorialProvider>
+            <FeatureAccessProvider>
+              <PWATutorialProvider>
+                <AppNotifProvider>
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <AppRoutes />
+                    </Suspense>
+                  </ErrorBoundary>
+                </AppNotifProvider>
+                <PWAInstallButton />
+                <PWATutorialModal />
+              </PWATutorialProvider>
+            </FeatureAccessProvider>
           </AuthProvider>
         </SplashGate>
       </BrowserRouter>

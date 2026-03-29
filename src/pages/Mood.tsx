@@ -115,12 +115,18 @@ export default function Mood() {
     };
 
     if (existingId) {
-      await supabase
+      const { error } = await supabase
         .from("mood_checkins")
         .update(payload)
         .eq("id", existingId);
+      
+      if (error) {
+        setSaving(false);
+        toast.error("Erro ao atualizar humor: " + error.message);
+        return;
+      }
     } else {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("mood_checkins")
         .insert({
           couple_space_id: spaceId,
@@ -130,6 +136,12 @@ export default function Mood() {
         })
         .select("id")
         .maybeSingle();
+      
+      if (error) {
+        setSaving(false);
+        toast.error("Erro ao guardar humor: " + error.message);
+        return;
+      }
       if (data) setExistingId(data.id);
     }
 

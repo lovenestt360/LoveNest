@@ -76,32 +76,45 @@ export function LoveStreakHomeCard() {
           </div>
 
           {/* Today status */}
-          <div className="flex items-center gap-3 text-xs">
-            <div className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-              dailyStatus?.me_active
-                ? "bg-green-500/15 text-green-700"
-                : "bg-muted text-muted-foreground"
-            )}>
-              {dailyStatus?.me_active ? "✓" : "○"} Tu
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-xs">
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+                dailyStatus?.me_active
+                  ? "bg-green-500/15 text-green-700"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {dailyStatus?.me_active ? "✓" : "○"} Tu
+              </div>
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
+                dailyStatus?.partner_active
+                  ? "bg-green-500/15 text-green-700"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {dailyStatus?.partner_active ? "✓" : "○"} Par
+              </div>
+              
+              {bothToday ? (
+                <span className="text-green-600 font-bold flex items-center gap-1 animate-fade-slide-up">
+                  <Sparkles className="w-3 h-3" /> Seguro!
+                </span>
+              ) : (
+                <span className="text-amber-600 font-bold flex items-center gap-1 animate-pulse">
+                  <Flame className="w-3 h-3" /> Pendente
+                </span>
+              )}
             </div>
-            <div className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full font-bold",
-              dailyStatus?.partner_active
-                ? "bg-green-500/15 text-green-700"
-                : "bg-muted text-muted-foreground"
-            )}>
-              {dailyStatus?.partner_active ? "✓" : "○"} Par
-            </div>
-            
-            {bothToday ? (
-              <span className="text-green-600 font-bold flex items-center gap-1 animate-fade-slide-up">
-                <Sparkles className="w-3 h-3" /> Streak Seguro! 💛
-              </span>
-            ) : (
-              <span className="text-amber-600 font-bold flex items-center gap-1 animate-pulse">
-                <Flame className="w-3 h-3" /> Falta pouco 🔥
-              </span>
+
+            {/* Compact Action Confirmation */}
+            {!dailyStatus?.me_active && dailyStatus?.mission_title && (
+              <Button 
+                onClick={handleConfirm}
+                size="sm"
+                className="h-7 px-3 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-pulse-glow"
+              >
+                Confirmar Missão
+              </Button>
             )}
           </div>
 
@@ -111,58 +124,10 @@ export function LoveStreakHomeCard() {
             <span className="font-bold text-blue-600 bg-blue-500/10 px-1.5 rounded-full">
               {data.loveshield_count}
             </span>
-            <span className="ml-1">LoveShields disponíveis</span>
+            <span className="ml-1">LoveShields</span>
           </div>
         </div>
       </button>
-
-      {/* Daily Love Mission Card */}
-      {dailyStatus && dailyStatus.mission_title && (
-        <div 
-          className="glass-card rounded-2xl p-4 space-y-3 border-primary/10 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5" /> MISSÃO DO DIA 📸✨
-            </span>
-            <span className="text-xs font-bold text-primary">+{dailyStatus.mission_points} pts</span>
-          </div>
-          
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">
-              {dailyStatus.mission_emoji} {dailyStatus.mission_title}
-            </p>
-            <p className="text-[11px] text-muted-foreground leading-tight italic">
-              {dailyStatus.mission_description}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 pt-1">
-            {dailyStatus.me_active ? (
-              <div className="flex items-center gap-1.5 text-xs font-bold text-green-600 bg-green-500/10 px-3 py-1.5 rounded-xl w-full justify-center">
-                <CheckCircle2 className="w-4 h-4" /> Ação Confirmada
-              </div>
-            ) : (
-              <Button 
-                onClick={handleConfirm}
-                className="w-full text-xs font-bold h-9 rounded-xl shadow-lg shadow-primary/20"
-              >
-                Confirmar Ação
-              </Button>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/50">
-            <span>Status do Par:</span>
-            <span className={cn(
-              "font-bold",
-              dailyStatus.partner_active ? "text-green-600" : "text-amber-500"
-            )}>
-              {dailyStatus.partner_active ? "✓ Concluído" : "○ Pendente"}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
