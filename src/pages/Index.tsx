@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { Button } from "@/components/ui/button";
+import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
