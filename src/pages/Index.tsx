@@ -192,6 +192,8 @@ function useIntelligentNotifs(spaceId: string | null) {
     const currentHour = now.getHours();
 
     // 1. Streak Reminder (if after 19h and partner hasn't interacted)
+    // DISABLED: Preventing notification spam during deploy/refresh
+    /*
     const partnerInteracted = isPartner1 ? streakData.partner2_interacted_today : streakData.partner1_interacted_today;
     if (currentHour >= 19 && !partnerInteracted && !sentRef.current.has("streak_reminder")) {
       notifyPartner({
@@ -204,8 +206,11 @@ function useIntelligentNotifs(spaceId: string | null) {
       });
       sentRef.current.add("streak_reminder");
     }
+    */
 
     // 1b. Mission Reminder (if after 17h and mission not done)
+    // DISABLED: Preventing notification spam
+    /*
     const meMission = isPartner1 ? dailyStatus?.is_completed_p1 : dailyStatus?.is_completed_p2;
     if (currentHour >= 17 && !meMission && dailyStatus?.mission_title && !sentRef.current.has("mission_reminder")) {
       notifyPartner({
@@ -218,8 +223,11 @@ function useIntelligentNotifs(spaceId: string | null) {
       });
       sentRef.current.add("mission_reminder");
     }
+    */
 
     // 2. Chat Inactivity (if last message > 8 hours ago during day)
+    // DISABLED: Preventing notification spam
+    /*
     if (lastMsg.lastTime && currentHour > 10 && currentHour < 22) {
       const lastTime = new Date(lastMsg.lastTime);
       const diffHours = (now.getTime() - lastTime.getTime()) / (1000 * 60 * 60);
@@ -235,6 +243,7 @@ function useIntelligentNotifs(spaceId: string | null) {
         sentRef.current.add("chat_inactivity");
       }
     }
+    */
   }, [spaceId, user, streakData, lastMsg.lastTime, isPartner1]);
 }
 
