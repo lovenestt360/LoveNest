@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 export interface PlanoItem {
   id: string;
@@ -111,12 +112,25 @@ export function usePlano() {
       toast({ title: "Erro ao adicionar", description: error.message, variant: "destructive" });
       return null;
     }
+
+    // Notificar parceiro
+    await notifyPartner({
+      couple_space_id: spaceId,
+      title: "Novo Plano! 📅",
+      body: `O teu amor adicionou: ${title}`,
+      url: "/plano?tab=agenda",
+      type: "plano"
+    });
+
     return data;
   };
 
   const toggleComplete = async (id: string, completed: boolean) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
     // Optimistic UI update
-    setItems(prev => prev.map(item => item.id === id ? { ...item, completed } : item));
+    setItems(prev => prev.map(i => i.id === id ? { ...i, completed } : i));
 
     const { error } = await supabase
       .from("plano_items")
@@ -126,6 +140,15 @@ export function usePlano() {
     if (error) {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       fetchItems(); // Rollback
+    } else if (completed) {
+      // Notificar conclusão
+      await notifyPartner({
+        couple_space_id: spaceId!,
+        title: "Plano Concluído! ✅",
+        body: `O teu amor concluiu: ${item.title}`,
+        url: "/plano?tab=agenda",
+        type: "plano"
+      });
     }
   };
 
