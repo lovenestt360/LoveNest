@@ -20,7 +20,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="space-y-4 pt-2 text-center w-full">
+    <header className="pt-2 text-center w-full">
       <div className="flex items-center justify-center gap-3 md:gap-8 px-2">
         {/* Me Avatar */}
         <div className="relative shrink-0">
@@ -50,22 +50,10 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
 
         <div className="flex flex-col items-center gap-1 md:gap-1.5 px-2 shrink-0 min-w-0">
           <div className="flex items-center gap-1">
-            <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
+            <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
             <span className="text-2xl md:text-3xl font-black tracking-tighter gradient-text">LoveNest</span>
-            <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary fill-primary animate-pulse" />
+            <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
           </div>
-          <p className="text-[10px] md:text-xs font-bold text-primary/80 italic animate-in fade-in slide-in-from-bottom-1 duration-700">
-            {(() => {
-              const messages = [
-                "Hoje é mais um capítulo da vossa história 💛",
-                "Cuidem um do outro hoje ✨",
-                "O amor também se constrói nos pequenos momentos",
-                "Não deixem o vosso streak cair hoje 🔥"
-              ];
-              const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-              return messages[dayOfYear % messages.length];
-            })()}
-          </p>
         </div>
 
         {/* Partner Avatar */}
