@@ -305,7 +305,7 @@ export default function FeaturesControl() {
                     </div>
                   </div>
 
-                  {/* CENTER: EDITABLE */}
+                  {/* CENTER: EDITABLE (SCOPE & TARGET) */}
                   <div className="flex flex-col sm:flex-row items-center gap-3">
                     <div className="flex flex-col gap-2 w-full sm:w-auto">
                        <Label className="text-[9px] font-black uppercase opacity-40 px-1">Scope</Label>
@@ -320,14 +320,35 @@ export default function FeaturesControl() {
                        </select>
                     </div>
 
-                    <div className="flex-1 w-full sm:min-w-[180px]">
-                      <Label className="text-[9px] font-black uppercase opacity-40 px-1">Target ID</Label>
-                      <Input 
-                        placeholder="N/A"
-                        value={flag.target_id || ""}
-                        onChange={(e) => handleUpdate(flag.id, { target_id: e.target.value || null })}
-                        className="h-9 rounded-xl border-none bg-muted font-mono text-[10px]"
-                      />
+                    <div className="flex flex-col gap-2 flex-1 w-full sm:min-w-[180px]">
+                      <Label className="text-[9px] font-black uppercase opacity-40 px-1">Target (Alvo)</Label>
+                      {flag.scope === "global" ? (
+                        <div className="h-9 rounded-xl bg-muted flex items-center px-4 text-[10px] text-muted-foreground opacity-50 font-black">
+                          TODOS
+                        </div>
+                      ) : flag.scope === "couple" ? (
+                        <select 
+                          value={flag.target_id || ""}
+                          onChange={(e) => handleUpdate(flag.id, { target_id: e.target.value || null })}
+                          className="h-9 px-3 rounded-xl bg-muted border-none text-[11px] font-bold outline-none ring-primary/20 focus:ring-2"
+                        >
+                          <option value="">Selecionar Casal...</option>
+                          {houses.map(h => (
+                             <option key={h.id} value={h.id}>{h.house_name || `${h.partner1_name} & ${h.partner2_name}`}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select 
+                          value={flag.target_id || ""}
+                          onChange={(e) => handleUpdate(flag.id, { target_id: e.target.value || null })}
+                          className="h-9 px-3 rounded-xl bg-muted border-none text-[11px] font-bold outline-none ring-primary/20 focus:ring-2"
+                        >
+                          <option value="">Selecionar Utilizador...</option>
+                          {users.map(u => (
+                             <option key={u.user_id} value={u.user_id}>{u.display_name || u.user_id}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
 
