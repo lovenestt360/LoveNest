@@ -85,11 +85,13 @@ Deno.serve(async (req) => {
         // Reset now for rules
         const rulesTimestamp = new Date();
 
-        // --- RULE ENGINE ---
+        // --- RULE ENGINE (DISABLED TO STOP SPAM) ---
         let triggeredRule: string | null = null;
         let notifTitle = "";
         let notifBody = "";
 
+        // Temporary return to prevent any rules from firing
+        /*
         // Preference mapping helper
         const isEnabled = (cat: string) => {
           const s = settings?.find(i => i.category === cat);
@@ -138,6 +140,7 @@ Deno.serve(async (req) => {
             notifBody = `Há algo que vocês começaram... que tal terminarem juntos hoje?`;
           }
         }
+        */
 
         // --- SEND PUSH ---
         if (triggeredRule) {
