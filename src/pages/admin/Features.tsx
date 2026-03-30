@@ -119,14 +119,20 @@ export default function FeaturesControl() {
     fetchData();
   }, []);
 
-  const getGlobalStatus = (key: string) => {
-    const flag = flags.find(f => f.key === key && f.scope === "global");
-    return flag ? flag.enabled : true;
-  };
-
-  const getOverrides = (key: string) => {
-    return flags.filter(f => f.key === key && f.scope !== "global");
-  };
+  const features = useMemo(() => {
+    return featureKeys.map(key => {
+      const keyFlags = flags.filter(f => f.key === key);
+      const globalFlag = keyFlags.find(f => f.key === key && f.scope === "global");
+      const overrides = keyFlags.filter(f => f.scope !== "global");
+      
+      return {
+        key,
+        globalEnabled: globalFlag ? globalFlag.enabled : true,
+        globalId: globalFlag?.id,
+        overrides
+      };
+    });
+  }, [flags, featureKeys]);
 
   const getTargetName = (id: string, scope: string) => {
     if (scope === "couple") {
