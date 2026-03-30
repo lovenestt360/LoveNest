@@ -1,17 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { Flame, Shield, Trophy, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
-import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
-import { Button } from "@/components/ui/button";
+import { useLoveStreak, getStreakLevel } from "@/hooks/useLoveStreak";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 export function LoveStreakHomeCard() {
   const { data, dailyStatus, loading, streakIncreased } = useLoveStreak();
   const navigate = useNavigate();
 
   if (loading) return (
-    <div className="h-44 w-full bg-muted/10 animate-pulse rounded-[2.5rem] border border-dashed border-primary/20 flex items-center justify-center">
-      <span className="text-[10px] font-black uppercase tracking-widest opacity-20">A carregar chama...</span>
+    <div className="h-24 w-full bg-muted/5 animate-pulse rounded-[2rem] border border-dashed border-primary/10 flex items-center justify-center">
+      <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-20">A carregar chama...</span>
     </div>
   );
 
@@ -20,168 +18,136 @@ export function LoveStreakHomeCard() {
   const level = getStreakLevel(data.current_streak);
   const bothToday = dailyStatus?.day_complete;
   
-  // Emotional Feedback Text
-  const getStatusMessage = () => {
-    if (bothToday) return "🔥 Streak mantida! A vossa chama está viva.";
-    if (dailyStatus?.me_active || dailyStatus?.partner_active) return "⚡ Falta pouco para manter a chama hoje!";
-    return "💛 Vocês continuam conectados. Vamos interagir?";
-  };
-
   return (
-    <div className="space-y-3">
+    <div className="relative group px-0.5">
       {/* Streak Animation Overlay */}
       {streakIncreased && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-500 pointer-events-none">
-          <div className="text-center space-y-3 animate-in zoom-in duration-500">
-            <div className="text-7xl animate-bounce">🔥</div>
-            <h2 className="text-3xl font-black text-white">Streak aumentado!</h2>
-            <p className="text-lg text-white/80">
-              Vocês estão juntos há <span className="font-bold text-amber-400">{data.current_streak}</span> dias consecutivos.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md animate-in fade-in duration-500 pointer-events-none">
+          <div className="text-center space-y-4 animate-in zoom-in duration-500 scale-110">
+            <div className="text-8xl drop-shadow-[0_0_30px_rgba(249,115,22,0.8)] animate-bounce">🔥</div>
+            <h2 className="text-4xl font-black text-white tracking-tighter">Streak UP! 🔥</h2>
+            <p className="text-xl text-white/90 font-bold">
+              <span className="text-amber-400">{data.current_streak}</span> dias de pura conexão!
             </p>
           </div>
         </div>
       )}
 
-      {/* Main Streak Card */}
+      {/* NEW COMPACT PREMIUM CARD */}
       <button
         onClick={() => navigate("/ranking?tab=streak")}
         className={cn(
-          "glass-card glass-card-hover relative flex w-full flex-col rounded-3xl overflow-hidden text-left active:scale-[0.98] transition-all duration-300 shadow-xl border border-white/10",
-          bothToday && "ring-2 ring-orange-500/50 shadow-orange-500/20"
+          "relative w-full overflow-hidden rounded-[2.5rem] transition-all duration-500 group active:scale-[0.97]",
+          "border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]",
+          bothToday 
+            ? "bg-gradient-to-br from-orange-500/10 via-red-500/5 to-pink-500/10" 
+            : "bg-white/40 dark:bg-black/40 backdrop-blur-xl"
         )}
       >
-        <div className={cn(
-          "p-5 space-y-4 w-full transition-colors duration-500",
-          bothToday ? "bg-gradient-to-br from-orange-500/20 via-red-500/10 to-pink-500/20" : "bg-gradient-to-br from-muted/50 to-background/50"
-        )}>
-          {/* Header with Streak & Shields */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
+        <div className="p-4 sm:p-5 flex flex-col gap-4">
+          {/* Main Info Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* VIBRANT FLAME BOX */}
               <div className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-500 shadow-lg",
+                "relative flex h-16 w-16 items-center justify-center rounded-3xl transition-all duration-700 shadow-xl overflow-hidden",
                 bothToday 
-                  ? "bg-orange-500 text-white animate-pulse shadow-orange-500/40 rotate-3" 
-                  : "bg-muted text-muted-foreground rotate-0"
+                  ? "bg-gradient-to-tr from-orange-500 via-orange-400 to-red-500 scale-105 rotate-3 shadow-orange-500/40" 
+                  : "bg-muted/30 border border-white/10"
               )}>
-                <Flame className={cn("h-8 w-8", bothToday && "animate-pulse")} />
+                {/* Glow effect for flame */}
+                <div className={cn(
+                  "absolute inset-0 opacity-40 blur-xl transition-all duration-1000",
+                  bothToday ? "bg-white animate-pulse" : "bg-orange-500/20"
+                )} />
+                
+                <Flame className={cn(
+                  "h-9 w-9 z-10 transition-all duration-500 drop-shadow-md",
+                  bothToday 
+                    ? "text-white fill-white/20 animate-pulse scale-110" 
+                    : "text-orange-500/40 fill-orange-500/10"
+                )} />
               </div>
-              <div className="space-y-1">
+
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-black tracking-tighter text-foreground">
-                    {data.current_streak} dias
-                  </span>
+                  <h3 className="text-3xl font-black tracking-tighter leading-none text-foreground drop-shadow-sm">
+                    {data.current_streak}
+                    <span className="text-base font-bold ml-1 text-muted-foreground/60 tracking-tight">dias</span>
+                  </h3>
                   {data.loveshield_count > 0 && (
-                    <div className="flex items-center gap-1 bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full border border-blue-500/20">
+                    <div className="flex items-center gap-1 bg-blue-500/10 text-blue-500 px-2.5 py-1 rounded-full border border-blue-500/20 animate-in fade-in zoom-in">
                       <Shield className="w-3 h-3 fill-current" />
                       <span className="text-[10px] font-black">{data.loveshield_count}</span>
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 opacity-80">
-                  <Trophy className="w-3 h-3" /> {level.title} • {data.total_points || 0} pts
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest flex items-center gap-1">
+                    <Trophy className="w-3 h-3" /> {level.title}
+                  </span>
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+                  <span className="text-[10px] font-black text-primary/60 uppercase tracking-widest">
+                    {data.total_points || 0} pts
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="bg-white/10 p-2 rounded-full backdrop-blur-md">
-              <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
+
+            <div className="bg-white/20 dark:bg-white/5 p-2.5 rounded-2xl backdrop-blur-md border border-white/10 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+              <ArrowRight className="h-4 w-4" />
             </div>
           </div>
 
-          {/* Activity Status Indicators */}
-          <div className="flex items-center justify-between gap-4 p-3 rounded-2xl bg-white/5 border border-white/5">
-            <div className="flex items-center gap-6">
-              {/* Me Status */}
-              <div className="flex flex-col items-center gap-1.5">
+          {/* STATUS INTEGRATED ROW */}
+          <div className="flex items-center justify-between gap-3 bg-white/20 dark:bg-black/20 p-2.5 rounded-[1.75rem] border border-white/10 shadow-inner">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {/* Me Status Mini */}
                 <div className={cn(
-                  "relative h-10 w-10 rounded-full flex items-center justify-center transition-all duration-500 border-2",
+                  "h-9 w-9 rounded-full flex items-center justify-center border-2 transition-all duration-500 relative bg-background",
                   dailyStatus?.me_active 
-                    ? "bg-green-500/20 border-green-500 text-green-500 shadow-lg shadow-green-500/20" 
-                    : "bg-muted/50 border-white/10 text-muted-foreground"
+                    ? "border-green-500 text-green-500 shadow-sm shadow-green-500/30" 
+                    : "border-white/10 text-muted-foreground/30 opacity-40"
                 )}>
-                  <CheckCircle2 className={cn("w-5 h-5", dailyStatus?.me_active && "animate-in zoom-in duration-300")} />
-                  {dailyStatus?.me_active && (
-                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-ping" />
-                  )}
+                  <CheckCircle2 className="w-5 h-5" />
+                  {dailyStatus?.me_active && <span className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />}
                 </div>
-                <span className="text-[10px] font-black uppercase opacity-60">Tu</span>
-              </div>
-
-              {/* Connector Line */}
-              <div className={cn(
-                "h-0.5 w-8 rounded-full transition-colors duration-1000",
-                bothToday ? "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" : "bg-white/10"
-              )} />
-
-              {/* Partner Status */}
-              <div className="flex flex-col items-center gap-1.5">
+                {/* Partner Status Mini */}
                 <div className={cn(
-                  "relative h-10 w-10 rounded-full flex items-center justify-center transition-all duration-500 border-2",
+                  "h-9 w-9 rounded-full flex items-center justify-center border-2 transition-all duration-500 relative bg-background",
                   dailyStatus?.partner_active 
-                    ? "bg-green-500/20 border-green-500 text-green-500 shadow-lg shadow-green-500/20" 
-                    : "bg-muted/50 border-white/10 text-muted-foreground"
+                    ? "border-green-500 text-green-500 shadow-sm shadow-green-500/30" 
+                    : "border-white/10 text-muted-foreground/30 opacity-40"
                 )}>
-                  <CheckCircle2 className={cn("w-5 h-5", dailyStatus?.partner_active && "animate-in zoom-in duration-300")} />
-                  {dailyStatus?.partner_active && (
-                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-ping" />
-                  )}
+                  <CheckCircle2 className="w-5 h-5" />
+                  {dailyStatus?.partner_active && <span className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />}
                 </div>
-                <span className="text-[10px] font-black uppercase opacity-60">Amor</span>
               </div>
-            </div>
-
-            {/* Emotional Text Badge */}
-            <div className="flex-1 flex justify-end">
               <span className={cn(
-                "text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all duration-500 text-center animate-in fade-in slide-in-from-right-2",
-                bothToday 
-                  ? "bg-orange-500/10 border-orange-500/20 text-orange-600" 
-                  : "bg-white/5 border-white/10 text-muted-foreground"
+                "text-[10px] font-black uppercase tracking-widest",
+                bothToday ? "text-orange-500" : "text-muted-foreground/40"
               )}>
-                {getStatusMessage()}
+                {bothToday ? "A vossa chama arde! 🔥" : "Mantenham a chama ✨"}
               </span>
             </div>
-          </div>
 
-          {/* Missions Mini Tracker */}
-          <div className="space-y-2 pt-1">
-            {dailyStatus?.missions && dailyStatus.missions.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2">
-                {dailyStatus.missions.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between gap-3 bg-white/5 p-2 rounded-xl border border-white/5 group hover:bg-white/10 transition-colors">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="text-sm">{m.emoji}</span>
-                      <span className={cn(
-                        "text-[10px] font-bold truncate transition-all",
-                        m.completed ? "text-green-600/60 line-through" : "text-muted-foreground"
-                      )}>
-                        {m.title}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="h-1 w-16 bg-white/10 rounded-full overflow-hidden shadow-inner">
-                        <div 
-                          className={cn(
-                            "h-full transition-all duration-1000 ease-out", 
-                            m.completed ? "bg-green-500" : "bg-orange-400"
-                          )}
-                          style={{ width: `${Math.min(100, (m.current / m.target) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-black tabular-nums opacity-40">
-                        {m.current}/{m.target}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-muted-foreground/60 py-1">
+            {/* Missions Bubble - Now much smaller */}
+            {dailyStatus?.missions && dailyStatus.missions.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-2xl border border-primary/10">
                 <Sparkles className="w-3 h-3" />
-                <p className="text-[10px] font-bold italic tracking-wide uppercase">Prontos para novas aventuras juntos?</p>
+                <span className="text-[9px] font-black uppercase tracking-tight">
+                  {dailyStatus.missions.filter(m => m.completed).length}/{dailyStatus.missions.length} Missões
+                </span>
               </div>
             )}
           </div>
         </div>
+        
+        {/* Progress Background Shimmer if not complete */}
+        {!bothToday && (
+           <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-orange-500/30 to-transparent w-full animate-shimmer" />
+        )}
       </button>
     </div>
   );
