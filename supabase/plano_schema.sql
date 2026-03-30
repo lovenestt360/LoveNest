@@ -47,3 +47,9 @@ CREATE POLICY "Users can delete their couple's plans"
 
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE public.plano_items;
+
+-- Trigger for Love Engine Automation (v4)
+DROP TRIGGER IF EXISTS tr_streak_plano_v4 ON public.plano_items;
+CREATE TRIGGER tr_streak_plano_v4 AFTER INSERT OR UPDATE OF completed ON public.plano_items 
+FOR EACH ROW WHEN (NEW.completed = true AND (OLD.completed IS NULL OR OLD.completed = false))
+EXECUTE FUNCTION public.update_streak_interaction_v4();

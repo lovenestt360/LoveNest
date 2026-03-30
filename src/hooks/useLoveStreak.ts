@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { format } from "date-fns";
+import { format, isSameDay, parseISO } from "date-fns";
+import { toast } from "@/hooks/use-toast";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 export interface LoveStreakData {
   current_streak: number;
@@ -11,25 +13,7 @@ export interface LoveStreakData {
   loveshield_count: number;
   total_points: number;
   level_title?: string;
-}
-
-export interface DailyMission {
-  id: string;
-  title: string;
-  description: string;
-  emoji: string;
-  type: string;
-  target: number;
-  current: number;
-  completed: boolean;
-  reward: number;
-}
-
-export interface DailyCompletion {
-  me_active: boolean;
-  partner_active: boolean;
-  missions: DailyMission[];
-  day_complete: boolean;
+  last_shield_used_at?: string | null;
 }
 
 const STREAK_LEVELS = [
@@ -63,6 +47,9 @@ export function useLoveStreak() {
   const [loading, setLoading] = useState(true);
   const [streakIncreased, setStreakIncreased] = useState(false);
   const [isPartner1, setIsPartner1] = useState(true);
+  
+  const shieldToastShown = useRef(false);
+  const alertToastShown = useRef(false);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
@@ -70,55 +57,80 @@ export function useLoveStreak() {
     if (!spaceId || !user) return;
     
     try {
-      // 1. Load streak data
+      // 1. Determinar se o utilizador é o parceiro 1 ou 2 (Baseado nos membros)
+      const { data: members } = await supabase
+        .from("members")
+        .select("user_id")
+        .eq("couple_space_id", spaceId)
+        .order("joined_at", { ascending: true });
+      
+      let isP1 = true;
+      if (members && members.length > 0) {
+        isP1 = members[0].user_id === user.id;
+        setIsPartner1(isP1);
+      }
+
+      // 2. Carregar dados do streak (Tabela Singular: love_streak)
       const { data: streak } = await (supabase
         .from("love_streak" as any)
         .select("*")
         .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
-      // 1b. Load individual user points
-      const { data: userPoints } = await (supabase
+      // 2b. Carregar pontos individuais (Tabela Singular: love_points)
+      const { data: points } = await (supabase
         .from("love_points" as any)
         .select("points")
         .eq("user_id", user.id)
         .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
-      // 2. Load user items (shields)
-      const { data: items } = await (supabase
-        .from("user_items" as any)
-        .select("loveshield_count")
-        .eq("user_id", user.id)
+      // 2c. Carregar Escudos (Tabela: love_shields)
+      const { data: shieldData } = await (supabase
+        .from("love_shields" as any)
+        .select("shields, last_shield_used_at")
+        .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
       if (streak) {
-        const s = streak as any;
-        setData({
-          ...s,
-          last_streak_date: s.last_active_date, 
-          loveshield_count: (items as any)?.loveshield_count || 0,
-          total_points: (userPoints as any)?.points || 0,
-          level_title: getStreakLevel(s.current_streak).title
-        } as LoveStreakData);
+        const streakData = {
+          current_streak: streak.current_streak,
+          best_streak: streak.current_streak, 
+          last_streak_date: streak.last_active_date,
+          loveshield_count: (shieldData as any)?.shields || 0,
+          total_points: (points as any)?.points || 0,
+          level_title: getStreakLevel(streak.current_streak).title,
+          last_shield_used_at: (shieldData as any)?.last_shield_used_at
+        };
+        setData(streakData as any);
+
+        // Feedback Emocional: Escudo usado hoje
+        if (streakData.last_shield_used_at && 
+            isSameDay(parseISO(streakData.last_shield_used_at), new Date()) && 
+            !shieldToastShown.current) {
+          toast({
+            title: "Proteção Ativa 🛡️",
+            description: "Um escudo protegeu o vosso streak hoje 💛",
+          });
+          shieldToastShown.current = true;
+        }
       }
 
-      // 3. Load daily interactions (only the 'real' ones)
+      // 3. Carregar interações diárias (Tabela Singular: interactions)
       const { data: interactionRecords } = await (supabase
         .from("interactions" as any)
         .select("user_id, type")
         .eq("couple_id", spaceId)
-        .gte("created_at", `${todayStr}T00:00:00` as any)
-        .lte("created_at", `${todayStr}T23:59:59` as any) as any);
+        .gte("created_at", `${todayStr}T00:00:00`)
+        .lte("created_at", `${todayStr}T23:59:59`) as any);
 
-      const realInteractionTypes = ['message_sent', 'task_completed', 'mood_logged', 'plan_completed'];
-      const meActive = (interactionRecords as any[])?.some(a => a.user_id === user.id && realInteractionTypes.includes(a.type)) || false;
-      const partnerActive = (interactionRecords as any[])?.some(a => a.user_id !== user.id && realInteractionTypes.includes(a.type)) || false;
+      const meActive = (interactionRecords as any[])?.some(a => a.user_id === user.id) || false;
+      const partnerActive = (interactionRecords as any[])?.some(a => a.user_id !== user.id) || false;
 
-      // 4. Load 3 missions assigned for today
+      // 4. Carregar missões diárias (Tabela: couple_daily_missions)
       const { data: dailyMissions } = await (supabase
         .from("couple_daily_missions" as any)
-        .select("mission_id, love_missions!inner(*)")
+        .select("*, love_missions(*)")
         .eq("couple_id", spaceId)
         .eq("assignment_date", todayStr) as any);
 
@@ -126,25 +138,25 @@ export function useLoveStreak() {
       if (dailyMissions && (dailyMissions as any[]).length > 0) {
         for (const dm of (dailyMissions as any[])) {
           const m = dm.love_missions;
-          const currentCount = (interactionRecords as any[])?.filter(a => a.user_id === user.id && a.type === m.mission_type).length || 0;
-          
-          // Check if completed
+          if (!m) continue;
+
+          // Verificar completação individual (Tabela: mission_completions)
           const { data: isCompleted } = await (supabase
             .from("mission_completions" as any)
             .select("*")
             .eq("user_id", user.id)
             .eq("mission_id", m.id)
-            .eq("completed_at" as any, todayStr)
+            .eq("completed_at", todayStr)
             .maybeSingle() as any);
-
+          
           missions.push({
             id: m.id,
             title: m.title,
             description: m.description,
             emoji: m.emoji || "✨",
-            type: m.mission_type,
+            type: m.mission_type || "daily",
             target: m.target_count || 1,
-            current: currentCount,
+            current: isCompleted ? (m.target_count || 1) : 0, // Simplificado
             completed: !!isCompleted,
             reward: m.reward_points || 0
           });
@@ -158,18 +170,8 @@ export function useLoveStreak() {
         day_complete: meActive && partnerActive
       });
 
-      // 5. Determine if I am partner 1
-      const { data: members } = await supabase
-        .from("members")
-        .select("user_id")
-        .eq("couple_space_id", spaceId)
-        .order("joined_at");
-      
-      if (members && members.length > 0) {
-        setIsPartner1(members[0].user_id === user.id);
-      }
     } catch (err) {
-      console.error("Error in useLoveStreak.load:", err);
+      console.error("Erro no useLoveStreak.load:", err);
     } finally {
       setLoading(false);
     }
@@ -178,6 +180,37 @@ export function useLoveStreak() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Alerta de Prevenção (Após as 20h)
+  useEffect(() => {
+    if (!dailyStatus || dailyStatus.day_complete || alertToastShown.current || !spaceId) return;
+
+    const checkAlert = () => {
+      const now = new Date();
+      if (now.getHours() >= 20) {
+        toast({
+          title: "Atenção Casal! 🔥",
+          description: "Hoje ainda não interagiram… não deixem o streak cair",
+          variant: "destructive"
+        });
+        
+        // Também tentar notificação push (silenciosa/background se possível via utility)
+        notifyPartner({
+          couple_space_id: spaceId,
+          title: "Streak em Risco! 🔥",
+          body: "O vosso streak diário está em perigo. Interajam agora!",
+          type: "streak_alert",
+          url: "/"
+        });
+
+        alertToastShown.current = true;
+      }
+    };
+
+    checkAlert();
+    const timer = setInterval(checkAlert, 1000 * 60 * 30); // Check every 30 mins
+    return () => clearInterval(timer);
+  }, [dailyStatus, spaceId]);
 
   // Realtime updates
   useEffect(() => {
@@ -210,7 +243,15 @@ export function useLoveStreak() {
       .on("postgres_changes", {
         event: "*",
         schema: "public",
-        table: "mission_completions" as any,
+        table: "love_shields" as any,
+        filter: `couple_id=eq.${spaceId}`,
+      }, () => {
+        load();
+      })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "couple_daily_missions" as any,
         filter: `couple_id=eq.${spaceId}`,
       }, () => {
         load();
@@ -220,12 +261,12 @@ export function useLoveStreak() {
   }, [spaceId, load]);
 
   const confirmAction = useCallback(async () => {
-    if (!spaceId) return false;
+    if (!spaceId || !user) return false;
     
     const { error } = await (supabase
       .from("interactions" as any)
       .insert({
-        user_id: user?.id,
+        user_id: user.id,
         couple_id: spaceId,
         type: 'manual_checkin'
       }) as any);
@@ -238,7 +279,7 @@ export function useLoveStreak() {
   }, [spaceId, user, load]);
 
   const useShield = useCallback(async () => {
-    const { error } = await (supabase.rpc('fn_use_loveshield' as any) as any);
+    const { error } = await (supabase.rpc('fn_use_loveshield_v4' as any) as any);
     if (!error) {
       load();
       return true;
@@ -247,7 +288,7 @@ export function useLoveStreak() {
   }, [load]);
 
   const buyShield = useCallback(async (cost: number = 200) => {
-    const { error } = await (supabase.rpc('fn_purchase_loveshield' as any, { p_cost: cost }) as any);
+    const { error } = await (supabase.rpc('fn_purchase_loveshield_v4' as any, { p_cost: cost }) as any);
     if (!error) {
       load();
       return true;
@@ -270,7 +311,7 @@ export function useLoveStreak() {
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error("Error recording interaction:", err);
+      console.error("Erro ao registrar interação:", err);
       return false;
     }
   }, [spaceId, user]);
