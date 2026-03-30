@@ -63,33 +63,26 @@ export default function Ranking() {
       setLoading(true);
       const rankType = activeTab === "points" ? "total_points" : "current_streak";
       
-      const { data: streaks } = await supabase
-        .from("love_streaks")
-        .select("couple_space_id, current_streak, total_points")
-        .order(rankType, { ascending: false })
-        .limit(50);
+      const { data: rankedData, error } = await supabase.rpc('fn_get_global_ranking', {
+        p_rank_type: rankType
+      });
 
-      if (!streaks) {
+      if (error || !rankedData) {
+        console.error("Erro no fetch do ranking:", error);
         setLoading(false);
         return;
       }
 
-      const spaceIds = streaks.map(s => s.couple_space_id);
-      const { data: spaces } = await supabase
-        .from("couple_spaces")
-        .select("id, house_name, house_image, is_verified")
-        .in("id", spaceIds) as any;
-
-      const spaceMap = new Map((spaces || []).map(s => [s.id, s]));
-
-      const ranked: RankEntry[] = streaks.map(s => {
-        const space = spaceMap.get(s.couple_space_id) as any;
+      const ranked: RankEntry[] = (rankedData as any[]).map(s => {
         return {
-          ...s,
+          couple_space_id: s.couple_space_id,
+          current_streak: s.current_streak,
+          best_streak: s.current_streak,
           total_points: s.total_points || 0,
-          house_name: space?.house_name || "LoveNest",
-          house_image: space?.house_image || null,
-          is_verified: space?.is_verified || false,
+          house_name: s.house_name || "LoveNest",
+          house_image: s.house_image || null,
+          is_verified: s.is_verified || false,
+          level_title: getStreakLevel(s.current_streak).title
         };
       });
 
