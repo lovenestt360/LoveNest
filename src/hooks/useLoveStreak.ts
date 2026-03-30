@@ -77,6 +77,14 @@ export function useLoveStreak() {
         .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
+      // 1b. Load individual user points
+      const { data: userPoints } = await (supabase
+        .from("love_points" as any)
+        .select("points")
+        .eq("user_id", user.id)
+        .eq("couple_id", spaceId)
+        .maybeSingle() as any);
+
       // 2. Load user items (shields)
       const { data: items } = await (supabase
         .from("user_items" as any)
@@ -90,6 +98,7 @@ export function useLoveStreak() {
           ...s,
           last_streak_date: s.last_active_date, 
           loveshield_count: (items as any)?.loveshield_count || 0,
+          total_points: (userPoints as any)?.points || 0,
           level_title: getStreakLevel(s.current_streak).title
         } as LoveStreakData);
       }

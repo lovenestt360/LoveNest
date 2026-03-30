@@ -105,9 +105,9 @@ FOR EACH ROW EXECUTE FUNCTION public.tr_on_interaction_for_missions();
 -- 6. SEED REAL MISSIONS
 DELETE FROM public.love_missions WHERE mission_type != 'general';
 
-INSERT INTO public.love_missions (title, description, reward_points, mission_type, target_count, emoji) VALUES
-('Tagarelas 💬', 'Enviem 5 mensagens no chat um ao outro hoje.', 20, 'message_sent', 5, '💬'),
-('Transparência 😊', 'Registe o seu humor de hoje para o seu parceiro ver.', 15, 'mood_logged', 1, '😊'),
-('Foco no Par 📅', 'Conclua um item da sua Agenda/Plano hoje.', 25, 'plan_completed', 1, '📅'),
-('Hábitos Fortes 📋', 'Marque 3 hábitos como concluídos na sua rotina.', 30, 'task_completed', 3, '📋'),
-('Carinhos Virtuais 💖', 'Envie 2 mensagens de carinho ou toques hoje.', 15, 'message_sent', 2, '💖');
+INSERT INTO public.love_missions (title, description, reward_points, mission_type, target_count, emoji, category) VALUES
+('Tagarelas 💬', 'Enviem 5 mensagens no chat um ao outro hoje.', 20, 'message_sent', 5, '💬', 'interaction'),
+('Transparência 😊', 'Registe o seu humor de hoje para o seu parceiro ver.', 15, 'mood_logged', 1, '😊', 'mood'),
+('Foco no Par 📅', 'Conclua um item da sua Agenda/Plano hoje.', 25, 'plan_completed', 1, '📅', 'task'),
+('Hábitos Fortes 📋', 'Marque 3 hábitos como concluídos na sua rotina.', 30, 'task_completed', 3, '📋', 'task'),
+('Carinhos Virtuais 💖', 'Envie 2 mensagens de carinho ou toques hoje.', 15, 'message_sent', 2, '💖', 'interaction');
