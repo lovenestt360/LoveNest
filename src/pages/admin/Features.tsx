@@ -138,28 +138,48 @@ export default function FeaturesControl() {
   };
 
   const toggleGlobal = async (key: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    
+    // Optimistic Update
+    setFlags(prev => {
+      const existingIdx = prev.findIndex(f => f.key === key && f.scope === "global");
+      if (existingIdx > -1) {
+        const newFlags = [...prev];
+        newFlags[existingIdx] = { ...newFlags[existingIdx], enabled: newStatus };
+        return newFlags;
+      }
+      // If no global flag exists, we'll wait for fetchData to show the new one, 
+      // but we can add a temporary one for UI
+      return [...prev, { id: 'temp', key, scope: 'global', enabled: newStatus }];
+    });
+
     try {
       const existing = flags.find(f => f.key === key && f.scope === "global");
-      if (existing) {
-        const { error } = await adminClient.from("feature_flags").update({ enabled: !currentStatus }).eq("id", existing.id);
+      if (existing && existing.id !== 'temp') {
+        const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", existing.id);
         if (error) throw error;
       } else {
-        const { error } = await adminClient.from("feature_flags").insert({ key, scope: "global", enabled: !currentStatus });
+        const { error } = await adminClient.from("feature_flags").insert({ key, scope: "global", enabled: newStatus });
         if (error) throw error;
       }
       fetchData();
       toast({ title: "Atualizado", description: `Estado global de ${key} alterado.` });
     } catch (err: any) {
+      // Revert on error
+      fetchData();
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
 
   const toggleOverride = async (flag: any, newStatus: boolean) => {
+    // Optimistic Update
+    setFlags(prev => prev.map(f => f.id === flag.id ? { ...f, enabled: newStatus } : f));
+
     try {
       const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", flag.id);
       if (error) throw error;
-      setFlags(prev => prev.map(f => f.id === flag.id ? { ...f, enabled: newStatus } : f));
     } catch (err: any) {
+      fetchData(); // Sync back
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
