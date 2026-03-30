@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_FEATURE_KEYS = [
+  "home_lovestreak",
   "home_memories",
   "home_capsula",
   "home_desafios",

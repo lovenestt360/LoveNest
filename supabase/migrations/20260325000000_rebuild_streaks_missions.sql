@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.mission_completions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     mission_id UUID REFERENCES public.love_missions(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    couple_id UUID REFERENCES public.couple_spaces(id) ON DELETE CASCADE NOT NULL,
+    couple_space_id UUID REFERENCES public.couple_spaces(id) ON DELETE CASCADE NOT NULL,
     completed_at DATE DEFAULT CURRENT_DATE NOT NULL,
     UNIQUE(user_id, mission_id, completed_at)
 );

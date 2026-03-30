@@ -16,6 +16,25 @@ export interface LoveStreakData {
   last_shield_used_at?: string | null;
 }
 
+export interface DailyMission {
+  id: string;
+  title: string;
+  description: string;
+  emoji: string;
+  type: "daily" | "weekly" | "special";
+  target: number;
+  current: number;
+  completed: boolean;
+  reward: number;
+}
+
+export interface DailyCompletion {
+  me_active: boolean;
+  partner_active: boolean;
+  missions: DailyMission[];
+  day_complete: boolean;
+}
+
 const STREAK_LEVELS = [
   { min: 0, title: "Iniciante" },
   { min: 7, title: "Casal Dedicado" },
@@ -54,7 +73,10 @@ export function useLoveStreak() {
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
   const load = useCallback(async () => {
-    if (!spaceId || !user) return;
+    if (!spaceId || !user) {
+      setLoading(false);
+      return;
+    }
     
     try {
       // 1. Determinar se o utilizador é o parceiro 1 ou 2 (Baseado nos membros)
@@ -70,11 +92,11 @@ export function useLoveStreak() {
         setIsPartner1(isP1);
       }
 
-      // 2. Carregar dados do streak (Tabela Singular: love_streak)
+      // 2. Carregar dados do streak (Tabela Plural: love_streaks)
       const { data: streak } = await (supabase
-        .from("love_streak" as any)
+        .from("love_streaks" as any)
         .select("*")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .maybeSingle() as any);
 
       // 2b. Carregar pontos individuais (Tabela Singular: love_points)
@@ -82,14 +104,14 @@ export function useLoveStreak() {
         .from("love_points" as any)
         .select("points")
         .eq("user_id", user.id)
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .maybeSingle() as any);
 
       // 2c. Carregar Escudos (Tabela: love_shields)
       const { data: shieldData } = await (supabase
         .from("love_shields" as any)
         .select("shields, last_shield_used_at")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .maybeSingle() as any);
 
       if (streak) {
@@ -114,13 +136,23 @@ export function useLoveStreak() {
           });
           shieldToastShown.current = true;
         }
+      } else {
+        // Se não existir registro (casal novo ou migração de hoje), mostramos 0
+        setData({
+          current_streak: 0,
+          best_streak: 0,
+          last_streak_date: null,
+          loveshield_count: (shieldData as any)?.shields || 1, // Casal novo começa com 1 escudo
+          total_points: (points as any)?.points || 0,
+          level_title: getStreakLevel(0).title,
+        });
       }
 
       // 3. Carregar interações diárias (Tabela Singular: interactions)
       const { data: interactionRecords } = await (supabase
         .from("interactions" as any)
         .select("user_id, type")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .gte("created_at", `${todayStr}T00:00:00`)
         .lte("created_at", `${todayStr}T23:59:59`) as any);
 
@@ -131,7 +163,7 @@ export function useLoveStreak() {
       const { data: dailyMissions } = await (supabase
         .from("couple_daily_missions" as any)
         .select("*, love_missions(*)")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .eq("assignment_date", todayStr) as any);
 
       const missions: DailyMission[] = [];
@@ -172,6 +204,15 @@ export function useLoveStreak() {
 
     } catch (err) {
       console.error("Erro no useLoveStreak.load:", err);
+      // Fallback em caso de erro (tabelas não criadas ou erro de rede)
+      setData({
+        current_streak: 0,
+        best_streak: 0,
+        last_streak_date: null,
+        loveshield_count: 0,
+        total_points: 0,
+        level_title: getStreakLevel(0).title,
+      });
     } finally {
       setLoading(false);
     }
@@ -220,8 +261,8 @@ export function useLoveStreak() {
       .on("postgres_changes", {
         event: "*",
         schema: "public",
-        table: "love_streak" as any,
-        filter: `couple_id=eq.${spaceId}`,
+        table: "love_streaks" as any,
+        filter: `couple_space_id=eq.${spaceId}`,
       }, (payload) => {
         const newData = payload.new as any;
         setData((prev) => {
@@ -236,7 +277,7 @@ export function useLoveStreak() {
         event: "*",
         schema: "public",
         table: "interactions" as any,
-        filter: `couple_id=eq.${spaceId}`,
+        filter: `couple_space_id=eq.${spaceId}`,
       }, () => {
         load();
       })
@@ -244,7 +285,7 @@ export function useLoveStreak() {
         event: "*",
         schema: "public",
         table: "love_shields" as any,
-        filter: `couple_id=eq.${spaceId}`,
+        filter: `couple_space_id=eq.${spaceId}`,
       }, () => {
         load();
       })
@@ -252,7 +293,7 @@ export function useLoveStreak() {
         event: "*",
         schema: "public",
         table: "couple_daily_missions" as any,
-        filter: `couple_id=eq.${spaceId}`,
+        filter: `couple_space_id=eq.${spaceId}`,
       }, () => {
         load();
       })
@@ -267,7 +308,7 @@ export function useLoveStreak() {
       .from("interactions" as any)
       .insert({
         user_id: user.id,
-        couple_id: spaceId,
+        couple_space_id: spaceId,
         type: 'manual_checkin'
       }) as any);
       
@@ -304,7 +345,7 @@ export function useLoveStreak() {
         .from("interactions" as any)
         .insert({
           user_id: user.id,
-          couple_id: spaceId,
+          couple_space_id: spaceId,
           type: actionType
         }) as any);
       

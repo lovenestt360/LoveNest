@@ -61,13 +61,13 @@ export default function Ranking() {
   useEffect(() => {
     const fetchRanking = async () => {
       setLoading(true);
-      const rankType = activeTab === "points" ? "points" : "streak";
+      const rankType = activeTab === "points" ? "total_points" : "current_streak";
       
       const { data: streaks } = await supabase
         .from("love_streaks")
-        .select("couple_space_id, current_streak, best_streak, total_points, level_title")
-        .order(rankType === "streak" ? "current_streak" : "total_points", { ascending: false })
-        .limit(50) as any;
+        .select("couple_space_id, current_streak, total_points")
+        .order(rankType, { ascending: false })
+        .limit(50);
 
       if (!streaks) {
         setLoading(false);
@@ -145,9 +145,12 @@ export default function Ranking() {
       toast.error("Pontos insuficientes (Mínimo 200 pts)");
       return;
     }
-    const ok = await buyShield();
+    const ok = await buyShield(200);
     if (ok) {
       toast.success("LoveShield adquirido com sucesso! 🛡️");
+    } else {
+      toast.error("Erro ao adquirir LoveShield");
+    }
     } else {
       toast.error("Erro ao adquirir escudo");
     }

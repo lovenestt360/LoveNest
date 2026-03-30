@@ -1,6 +1,6 @@
 -- 1. LOVE SHIELDS TABLE (NEW SOURCE OF TRUTH)
 CREATE TABLE IF NOT EXISTS public.love_shields (
-    couple_id UUID PRIMARY KEY REFERENCES public.couple_spaces(id) ON DELETE CASCADE,
+    couple_space_id UUID PRIMARY KEY REFERENCES public.couple_spaces(id) ON DELETE CASCADE,
     shields INTEGER DEFAULT 1 NOT NULL, -- Couples start with 1
     last_shield_used_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -10,16 +10,17 @@ CREATE TABLE IF NOT EXISTS public.love_shields (
 -- Enable RLS for love_shields
 ALTER TABLE public.love_shields ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Members can view their own love_shields" ON public.love_shields;
 CREATE POLICY "Members can view their own love_shields"
     ON public.love_shields FOR SELECT
     USING (
-        couple_id IN (
+        couple_space_id IN (
             SELECT couple_space_id FROM public.members WHERE user_id = auth.uid()
         )
     );
 
 -- 2. FUNCTION TO PROCESS SHIELD REWARDS (PROGRESSIVE MILESTONES)
-CREATE OR REPLACE FUNCTION public.fn_process_shield_rewards(p_couple_id UUID, p_new_streak INTEGER)
+CREATE OR REPLACE FUNCTION public.fn_process_shield_rewards(p_couple_space_id UUID, p_new_streak INTEGER)
 RETURNS VOID AS $$
 DECLARE
     v_bonus_shields INTEGER := 0;
@@ -33,9 +34,9 @@ BEGIN
 
     -- Award shields if milestone reached, respecting max = 5
     IF v_bonus_shields > 0 THEN
-        INSERT INTO public.love_shields (couple_id, shields)
-        VALUES (p_couple_id, LEAST(1 + v_bonus_shields, 5)) -- Handles initial + bonus
-        ON CONFLICT (couple_id) 
+        INSERT INTO public.love_shields (couple_space_id, shields)
+        VALUES (p_couple_space_id, LEAST(1 + v_bonus_shields, 5)) -- Handles initial + bonus
+        ON CONFLICT (couple_space_id) 
         DO UPDATE SET 
             shields = LEAST(public.love_shields.shields + v_bonus_shields, 5),
             updated_at = now();
@@ -44,7 +45,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 3. UPDATED STREAK ENGINE FUNCTION (WITH SHIELD PROTECTION)
-CREATE OR REPLACE FUNCTION public.fn_check_streak(p_couple_id UUID)
+CREATE OR REPLACE FUNCTION public.fn_check_streak(p_couple_space_id UUID)
 RETURNS VOID AS $$
 DECLARE
     v_is_active_today BOOLEAN;
@@ -54,22 +55,22 @@ DECLARE
     v_shields INTEGER;
 BEGIN
     -- 1. Check if both partners are active today using our interaction helper
-    SELECT public.checkDailyInteraction(p_couple_id) INTO v_is_active_today;
+    SELECT public.checkDailyInteraction(p_couple_space_id) INTO v_is_active_today;
 
-    -- 2. Get current streak data
+    -- 2. Get current streak data (Standardized to plural: love_streaks)
     SELECT last_active_date, current_streak 
     INTO v_last_active, v_current_streak
-    FROM public.love_streak
-    WHERE couple_id = p_couple_id;
+    FROM public.love_streaks
+    WHERE couple_space_id = p_couple_space_id;
 
     -- 3. If no streak record exists, create one
     IF NOT FOUND THEN
-        INSERT INTO public.love_streak (couple_id, current_streak, last_active_date)
-        VALUES (p_couple_id, 0, NULL);
+        INSERT INTO public.love_streaks (couple_space_id, current_streak, last_active_date)
+        VALUES (p_couple_space_id, 0, NULL);
         
         -- Also ensure shields record exists with initial 1
-        INSERT INTO public.love_shields (couple_id, shields)
-        VALUES (p_couple_id, 1) ON CONFLICT DO NOTHING;
+        INSERT INTO public.love_shields (couple_space_id, shields)
+        VALUES (p_couple_space_id, 1) ON CONFLICT DO NOTHING;
         
         v_last_active := NULL;
         v_current_streak := 0;
@@ -80,7 +81,7 @@ BEGIN
     IF v_is_active_today = TRUE AND v_last_active IS NOT NULL AND v_last_active < (v_today - INTERVAL '1 day')::DATE THEN
         
         -- Check for available shields
-        SELECT shields INTO v_shields FROM public.love_shields WHERE couple_id = p_couple_id;
+        SELECT shields INTO v_shields FROM public.love_shields WHERE couple_space_id = p_couple_space_id;
         
         IF v_shields > 0 THEN
             -- CONSUME SHIELD
@@ -88,16 +89,15 @@ BEGIN
             SET shields = shields - 1, 
                 last_shield_used_at = now(),
                 updated_at = now()
-            WHERE couple_id = p_couple_id;
+            WHERE couple_space_id = p_couple_space_id;
             
             -- FIX STREAK: Set last_active to YESTERDAY so the current interaction continues it
             v_last_active := (v_today - INTERVAL '1 day')::DATE;
             
-            UPDATE public.love_streak 
+            UPDATE public.love_streaks 
             SET last_active_date = v_last_active
-            WHERE couple_id = p_couple_id;
+            WHERE couple_space_id = p_couple_space_id;
             
-            -- Optional: Log point deduction or notification here if needed
         END IF;
     END IF;
 
@@ -108,35 +108,108 @@ BEGIN
         IF v_last_active = (v_today - INTERVAL '1 day')::DATE THEN
             v_current_streak := v_current_streak + 1;
             
-            UPDATE public.love_streak 
+            UPDATE public.love_streaks 
             SET current_streak = v_current_streak,
                 last_active_date = v_today,
                 updated_at = now()
-            WHERE couple_id = p_couple_id;
+            WHERE couple_space_id = p_couple_space_id;
             
             -- Check for rewards
-            PERFORM public.fn_process_shield_rewards(p_couple_id, v_current_streak);
+            PERFORM public.fn_process_shield_rewards(p_couple_space_id, v_current_streak);
             
         ELSE
             -- Start new streak (last active was NULL or too long ago and no shields)
-            UPDATE public.love_streak 
+            UPDATE public.love_streaks 
             SET current_streak = 1,
                 last_active_date = v_today,
                 updated_at = now()
-            WHERE couple_id = p_couple_id;
+            WHERE couple_space_id = p_couple_space_id;
         END IF;
 
     END IF;
     
     -- 6. Logic: STREAK BREAK (Absolute Reset if no protection was possible)
     IF v_last_active IS NOT NULL AND v_last_active < (v_today - INTERVAL '1 day')::DATE THEN
-        UPDATE public.love_streak 
+        UPDATE public.love_streaks 
         SET current_streak = 0
-        WHERE couple_id = p_couple_id AND last_active_date < (v_today - INTERVAL '1 day')::DATE;
+        WHERE couple_space_id = p_couple_space_id AND last_active_date < (v_today - INTERVAL '1 day')::DATE;
     END IF;
 
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. RE-NOTIFY POSTGREST
+-- 4. FUNCTION TO PURCHASE SHIELD
+CREATE OR REPLACE FUNCTION public.fn_purchase_loveshield_v4(p_cost INTEGER)
+RETURNS VOID AS $$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_couple_space_id UUID;
+    v_points BIGINT;
+BEGIN
+    -- Get couple id
+    SELECT couple_space_id INTO v_couple_space_id FROM public.members WHERE user_id = v_user_id LIMIT 1;
+    
+    -- Check points
+    SELECT points INTO v_points FROM public.love_points WHERE user_id = v_user_id AND couple_space_id = v_couple_space_id;
+    
+    IF COALESCE(v_points, 0) < p_cost THEN
+        RAISE EXCEPTION 'Pontos insuficientes para comprar LoveShield';
+    END IF;
+    
+    -- Deduct points
+    PERFORM public.fn_award_points(v_user_id, v_couple_space_id, -p_cost, 'shield_purchase');
+    
+    -- Award shield to the couple
+    INSERT INTO public.love_shields (couple_space_id, shields)
+    VALUES (v_couple_space_id, 1)
+    ON CONFLICT (couple_space_id) 
+    DO UPDATE SET 
+        shields = LEAST(public.love_shields.shields + 1, 5),
+        updated_at = now();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. FUNCTION TO MANUALLY USE SHIELD (REPAIR STREAK)
+CREATE OR REPLACE FUNCTION public.fn_use_loveshield_v4()
+RETURNS VOID AS $$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_couple_space_id UUID;
+    v_shields INTEGER;
+    v_last_active DATE;
+    v_today DATE := CURRENT_DATE;
+BEGIN
+    SELECT couple_space_id INTO v_couple_space_id FROM public.members WHERE user_id = v_user_id LIMIT 1;
+    SELECT shields INTO v_shields FROM public.love_shields WHERE couple_space_id = v_couple_space_id;
+    
+    IF COALESCE(v_shields, 0) < 1 THEN
+        RAISE EXCEPTION 'O casal não possui LoveShields';
+    END IF;
+    
+    -- Check if streak is actually broken (last active was before yesterday)
+    SELECT last_active_date INTO v_last_active FROM public.love_streaks WHERE couple_space_id = v_couple_space_id;
+    
+    -- Consume shield
+    UPDATE public.love_shields SET shields = shields - 1, updated_at = now(), last_shield_used_at = now() WHERE couple_space_id = v_couple_space_id;
+    
+    -- Restore streak: Set last_active to YESTERDAY. 
+    UPDATE public.love_streaks 
+    SET last_active_date = (v_today - INTERVAL '1 day')::DATE,
+        updated_at = now()
+    WHERE couple_space_id = v_couple_space_id;
+    
+    -- Recalculate
+    PERFORM public.fn_check_streak(v_couple_space_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 6. ENSURE FEATURE FLAG EXISTS
+INSERT INTO public.feature_flags (key, scope, enabled)
+SELECT 'home_lovestreak', 'global', true
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.feature_flags 
+    WHERE key = 'home_lovestreak' AND scope = 'global' AND target_id IS NULL
+);
+
+-- 5. RE-NOTIFY POSTGREST
 NOTIFY pgrst, 'reload schema';

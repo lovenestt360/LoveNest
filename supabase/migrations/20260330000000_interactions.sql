@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.interactions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    couple_id UUID REFERENCES public.couple_spaces(id) ON DELETE CASCADE NOT NULL,
+    couple_space_id UUID REFERENCES public.couple_spaces(id) ON DELETE CASCADE NOT NULL,
     type TEXT NOT NULL, -- 'message_sent', 'task_completed', 'mood_logged', 'plan_completed'
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
@@ -17,14 +17,14 @@ CREATE POLICY "Users can insert their own interactions"
 CREATE POLICY "Users can view their own and partner interactions"
     ON public.interactions FOR SELECT
     USING (
-        couple_id IN (
+        couple_space_id IN (
             SELECT couple_space_id FROM public.members WHERE user_id = auth.uid()
         )
     );
 
 -- 2. STREAK VALIDATION FUNCTION
 -- Returns TRUE if both users in the couple have at least one interaction today
-CREATE OR REPLACE FUNCTION public.checkDailyInteraction(p_couple_id UUID)
+CREATE OR REPLACE FUNCTION public.checkDailyInteraction(p_couple_space_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
     v_user1_id UUID;
@@ -34,8 +34,8 @@ DECLARE
     v_today DATE := CURRENT_DATE;
 BEGIN
     -- Get both user IDs for the couple
-    SELECT user_id INTO v_user1_id FROM public.members WHERE couple_space_id = p_couple_id ORDER BY joined_at LIMIT 1;
-    SELECT user_id INTO v_user2_id FROM public.members WHERE couple_space_id = p_couple_id ORDER BY joined_at OFFSET 1 LIMIT 1;
+    SELECT user_id INTO v_user1_id FROM public.members WHERE couple_space_id = p_couple_space_id ORDER BY joined_at LIMIT 1;
+    SELECT user_id INTO v_user2_id FROM public.members WHERE couple_space_id = p_couple_space_id ORDER BY joined_at OFFSET 1 LIMIT 1;
 
     -- Check if user 1 has any real interaction today
     SELECT EXISTS (

@@ -40,10 +40,10 @@ function usePlanoStats() {
 
   useEffect(() => {
     if (!spaceId) return;
-    supabase.from("plano_items")
+    (supabase.from("plano_items" as any)
       .select("title,plan_at,completed")
-      .eq("couple_space_id", spaceId)
-      .then(({ data }) => {
+      .eq("couple_space_id", spaceId) as any)
+      .then(({ data }: any) => {
         if (!data) return;
         setPending(data.filter(t => !t.completed).length);
         const upcoming = data
@@ -74,9 +74,9 @@ function useMoodToday() {
   useEffect(() => {
     if (!spaceId || !user) return;
     const today = new Date().toISOString().slice(0, 10);
-    supabase.from("mood_checkins").select("mood_key,mood_percent,user_id")
-      .eq("couple_space_id", spaceId).eq("day_key", today)
-      .then(({ data }) => {
+    (supabase.from("mood_checkins" as any).select("mood_key,mood_percent,user_id")
+      .eq("couple_space_id", spaceId).eq("day_key", today) as any)
+      .then(({ data }: any) => {
         if (!data) return;
         const myCheckin = data.find(d => d.user_id === user.id);
         if (myCheckin) {
@@ -98,9 +98,9 @@ function usePhotoCount() {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!spaceId) return;
-    supabase.from("photos").select("id", { count: "exact", head: true })
-      .eq("couple_space_id", spaceId)
-      .then(({ count: c }) => setCount(c ?? 0));
+    (supabase.from("photos" as any).select("id", { count: "exact", head: true })
+      .eq("couple_space_id", spaceId) as any)
+      .then(({ count: c }: any) => setCount(c ?? 0));
   }, [spaceId]);
   return count;
 }
@@ -112,9 +112,9 @@ function usePrayerStatus() {
   useEffect(() => {
     if (!spaceId || !user) return;
     const today = format(new Date(), "yyyy-MM-dd");
-    supabase.from("daily_spiritual_logs").select("prayed_today,user_id")
-      .eq("couple_space_id", spaceId).eq("day_key", today)
-      .then(({ data }) => {
+    (supabase.from("daily_spiritual_logs" as any).select("prayed_today,user_id")
+      .eq("couple_space_id", spaceId).eq("day_key", today) as any)
+      .then(({ data }: any) => {
         if (!data) return;
         setMyPrayed(data.some(d => d.user_id === user.id && d.prayed_today));
         setPartnerPrayed(data.some(d => d.user_id !== user.id && d.prayed_today));
@@ -486,7 +486,7 @@ const Index = () => {
         ))}
 
         <InstallBanner />
-
+        
         {/* Compact Streak */}
         <LoveStreakHomeCard />
       </div>
@@ -557,7 +557,6 @@ const Index = () => {
           {/* Integration of "Ciclo" into main grid */}
           <DashCard 
             icon={<Flower2 className="h-6 w-6 stroke-[2.5]" />} 
-            label="Ciclo" 
             title="Cuidado"
             lines={["Ciclo & Saúde", "Ver detalhes"]}
             to="/ciclo" 
@@ -626,10 +625,7 @@ const Index = () => {
             <AppIconButton 
               icon={<Compass className="w-5 h-5" />} 
               label="Descobrir" 
-              onClick={() => toast({
-                title: "Brevemente ✨",
-                description: "Esta área de dicas e comunidade para casais está em construção!"
-              })}
+              to="/descobrir"
               color="text-emerald-500 bg-emerald-500/10" 
             />
           )}

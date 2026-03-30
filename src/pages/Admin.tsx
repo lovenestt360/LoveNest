@@ -1434,7 +1434,7 @@ export default function Admin() {
                                                     </td>
                                                     <td className="p-4 font-medium">{s.best_streak}</td>
                                                     <td className="p-4 text-xs font-bold">{s.level_title}</td>
-                                                    <td className="p-4 text-xs">{s.shield_remaining}/3 🛡️</td>
+                                                    <td className="p-4 text-xs">{s.shield_remaining}/5 🛡️</td>
                                                 </tr>
                                             );
                                         })}

@@ -9,7 +9,13 @@ export function LoveStreakHomeCard() {
   const { data, dailyStatus, loading, streakIncreased } = useLoveStreak();
   const navigate = useNavigate();
 
-  if (loading || !data) return null;
+  if (loading) return (
+    <div className="h-44 w-full bg-muted/10 animate-pulse rounded-[2.5rem] border border-dashed border-primary/20 flex items-center justify-center">
+      <span className="text-[10px] font-black uppercase tracking-widest opacity-20">A carregar chama...</span>
+    </div>
+  );
+
+  if (!data) return null;
 
   const level = getStreakLevel(data.current_streak);
   const bothToday = dailyStatus?.day_complete;

@@ -6,11 +6,11 @@ ALTER TABLE public.love_missions ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT 'âœ
 -- 2. COUPLE DAILY MISSIONS (The 3 assigned missions for today)
 CREATE TABLE IF NOT EXISTS public.couple_daily_missions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    couple_id UUID REFERENCES public.couple_spaces(id) ON DELETE CASCADE,
+    couple_space_id UUID REFERENCES public.couple_spaces(id) ON DELETE CASCADE,
     mission_id UUID REFERENCES public.love_missions(id) ON DELETE CASCADE,
     assignment_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(couple_id, mission_id, assignment_date)
+    UNIQUE(couple_space_id, mission_id, assignment_date)
 );
 
 -- Enable RLS for couple_daily_missions
@@ -19,23 +19,23 @@ ALTER TABLE public.couple_daily_missions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Members can view their daily missions"
     ON public.couple_daily_missions FOR SELECT
     USING (
-        couple_id IN (
+        couple_space_id IN (
             SELECT couple_space_id FROM public.members WHERE user_id = auth.uid()
         )
     );
 
 -- 3. GENERATE MISSIONS FUNCTION
-CREATE OR REPLACE FUNCTION public.generateDailyMissions(p_couple_id UUID)
+CREATE OR REPLACE FUNCTION public.generateDailyMissions(p_couple_space_id UUID)
 RETURNS VOID AS $$
 BEGIN
     -- Check if we already have missions for today
     IF NOT EXISTS (
         SELECT 1 FROM public.couple_daily_missions 
-        WHERE couple_id = p_couple_id AND assignment_date = CURRENT_DATE
+        WHERE couple_space_id = p_couple_space_id AND assignment_date = CURRENT_DATE
     ) THEN
         -- Assign 3 random missions from the library
-        INSERT INTO public.couple_daily_missions (couple_id, mission_id, assignment_date)
-        SELECT p_couple_id, id, CURRENT_DATE
+        INSERT INTO public.couple_daily_missions (couple_space_id, mission_id, assignment_date)
+        SELECT p_couple_space_id, id, CURRENT_DATE
         FROM public.love_missions
         WHERE mission_type != 'general'
         ORDER BY random()
@@ -45,7 +45,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 4. CHECK MISSION COMPLETION ENGINE
-CREATE OR REPLACE FUNCTION public.checkMissionCompletion(p_couple_id UUID, p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.checkMissionCompletion(p_couple_space_id UUID, p_user_id UUID)
 RETURNS VOID AS $$
 DECLARE
     v_mission RECORD;
@@ -56,14 +56,14 @@ BEGIN
         SELECT lm.*, cdm.id as couple_mission_id
         FROM public.couple_daily_missions cdm
         JOIN public.love_missions lm ON cdm.mission_id = lm.id
-        WHERE cdm.couple_id = p_couple_id 
+        WHERE cdm.couple_space_id = p_couple_space_id 
         AND cdm.assignment_date = CURRENT_DATE
     LOOP
         -- Count how many interactions of this type the user has today
         SELECT COUNT(*) INTO v_current_count
         FROM public.interactions
         WHERE user_id = p_user_id
-        AND couple_id = p_couple_id
+        AND couple_space_id = p_couple_space_id
         AND type = v_mission.mission_type
         AND created_at::DATE = CURRENT_DATE;
 
@@ -75,8 +75,8 @@ BEGIN
                 AND mission_id = v_mission.id
                 AND completed_at::DATE = CURRENT_DATE
             ) THEN
-                INSERT INTO public.mission_completions (user_id, mission_id, couple_id, completed_at)
-                VALUES (p_user_id, v_mission.id, p_couple_id, CURRENT_DATE);
+                INSERT INTO public.mission_completions (user_id, mission_id, couple_space_id, completed_at)
+                VALUES (p_user_id, v_mission.id, p_couple_space_id, CURRENT_DATE);
             END IF;
         END IF;
     END LOOP;
@@ -88,10 +88,10 @@ CREATE OR REPLACE FUNCTION public.tr_on_interaction_for_missions()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Ensure missions are generated for the day if not yet done
-    PERFORM public.generateDailyMissions(NEW.couple_id);
+    PERFORM public.generateDailyMissions(NEW.couple_space_id);
     
     -- Check if this interaction completes any mission
-    PERFORM public.checkMissionCompletion(NEW.couple_id, NEW.user_id);
+    PERFORM public.checkMissionCompletion(NEW.couple_space_id, NEW.user_id);
     
     RETURN NEW;
 END;
