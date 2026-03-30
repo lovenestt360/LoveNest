@@ -14,7 +14,6 @@ export interface LoveStreakData {
   total_points: number;
   level_title?: string;
   last_shield_used_at?: string | null;
-  streak_message?: string;
 }
 
 export interface DailyMission {
@@ -57,13 +56,6 @@ export function getNextLevel(streak: number) {
     if (streak < l.min) return l;
   }
   return null;
-}
-
-export function getEmotionalMessage(streak: number) {
-  if (streak <= 3) return "Vamos começar algo bonito 💫";
-  if (streak <= 10) return "Vocês estão a construir consistência 💛";
-  if (streak <= 30) return "Incrível! Vocês estão conectados 🔥";
-  return "Vocês são imparáveis ❤️🔥";
 }
 
 export function useLoveStreak() {
@@ -130,8 +122,7 @@ export function useLoveStreak() {
           loveshield_count: (shieldData as any)?.shields || 0,
           total_points: (points as any)?.points || 0,
           level_title: getStreakLevel(streak.current_streak).title,
-          last_shield_used_at: (shieldData as any)?.last_shield_used_at,
-          streak_message: getEmotionalMessage(streak.current_streak)
+          last_shield_used_at: (shieldData as any)?.last_shield_used_at
         };
         setData(streakData as any);
 
@@ -154,7 +145,6 @@ export function useLoveStreak() {
           loveshield_count: (shieldData as any)?.shields || 1, // Casal novo começa com 1 escudo
           total_points: (points as any)?.points || 0,
           level_title: getStreakLevel(0).title,
-          streak_message: getEmotionalMessage(0)
         });
       }
 
@@ -344,7 +334,6 @@ export function useLoveStreak() {
     loading,
     isPartner1,
     streakIncreased,
-    dailyProgressRate: dailyStatus ? (dailyStatus.day_complete ? 100 : (dailyStatus.me_active || dailyStatus.partner_active ? 50 : 0)) : 0,
     confirmAction,
     recordInteraction,
     useShield,

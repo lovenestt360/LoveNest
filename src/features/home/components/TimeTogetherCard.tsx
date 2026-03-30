@@ -22,11 +22,12 @@ interface TimeTogetherCardProps {
   hours: number;
   minutes: number;
   seconds: number;
+  streak?: number;
   onSetDate?: () => void;
   hasDate: boolean;
 }
 
-export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, hasDate }: TimeTogetherCardProps) {
+export function TimeTogetherCard({ days, hours, minutes, seconds, streak = 0, onSetDate, hasDate }: TimeTogetherCardProps) {
   if (!hasDate) {
     return (
       <button
@@ -41,18 +42,23 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
   }
 
   return (
-    <div className="glass-card rounded-[2.5rem] p-5 space-y-3 shadow-xl border-white/20 bg-white/40 backdrop-blur-md">
-      <div className="flex items-center justify-center text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/30">
-        <span>O nosso tempo juntos</span>
+    <div className="glass-card rounded-[2rem] p-4 space-y-2 shadow-xl border-white/20">
+      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
+        <span>Tempo juntos</span>
+        {streak > 0 && (
+          <span className="flex items-center gap-1.5 text-orange-500 font-black bg-orange-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full border border-orange-500/20 animate-pulse">
+            <Flame className="w-3 h-3 md:w-3.5 md:h-3.5 fill-current" /> {streak} D{streak !== 1 ? "IAS" : "IA"}
+          </span>
+        )}
       </div>
       
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-3 md:gap-4">
         <TimeUnit value={days} label="dias" />
-        <span className="text-2xl font-black text-muted-foreground/10 mt-1">:</span>
+        <span className="text-xl md:text-2xl font-black text-muted-foreground/20 mt-1">:</span>
         <TimeUnit value={hours} label="hrs" />
-        <span className="text-2xl font-black text-muted-foreground/10 mt-1">:</span>
+        <span className="text-xl md:text-2xl font-black text-muted-foreground/20 mt-1">:</span>
         <TimeUnit value={minutes} label="min" />
-        <span className="text-2xl font-black text-muted-foreground/10 mt-1">:</span>
+        <span className="text-xl md:text-2xl font-black text-muted-foreground/20 mt-1">:</span>
         <TimeUnit value={seconds} label="seg" />
       </div>
     </div>
