@@ -151,9 +151,6 @@ export default function Ranking() {
     } else {
       toast.error("Erro ao adquirir LoveShield");
     }
-    } else {
-      toast.error("Erro ao adquirir escudo");
-    }
   };
 
   // Legacy confirmAction handle removed for Missions as they are now automatic
