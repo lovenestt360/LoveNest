@@ -153,12 +153,7 @@ export default function Ranking() {
     }
   };
 
-  const handleConfirm = async () => {
-    const ok = await confirmAction();
-    if (ok) {
-      toast.success("Ação confirmada! ✨");
-    }
-  };
+  // Legacy confirmAction handle removed for Missions as they are now automatic
 
   const handleUseShield = async () => {
     if (streakData && streakData.loveshield_count < 1) {
@@ -276,60 +271,56 @@ export default function Ranking() {
                   <Star className="w-4 h-4" /> Missão do Dia (+ Pontos)
                 </div>
                 
-                {dailyStatus && dailyStatus.mission_title ? (
-                  <div className="glass-card rounded-2xl p-5 border-primary/20 bg-primary/[0.03] space-y-4 relative overflow-hidden">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold">{dailyStatus.mission_emoji} {dailyStatus.mission_title}</span>
-                      <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">+{dailyStatus.mission_points} PTS</span>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground leading-relaxed italic">
-                      {dailyStatus.mission_description}
-                    </p>
-
-                    <div className="flex flex-col gap-3">
-                      <div className="flex gap-2">
-                        {dailyStatus.me_active ? (
-                          <div className="flex-1 h-11 rounded-xl flex items-center justify-center font-black text-sm bg-green-500/10 text-green-600 border border-green-500/20">
-                            <CheckCircle2 className="w-4 h-4 mr-2" /> Missão Concluída
+                {dailyStatus && dailyStatus.missions && dailyStatus.missions.length > 0 ? (
+                  <div className="grid gap-3">
+                    {dailyStatus.missions.map((m) => (
+                      <div key={m.id} className="glass-card rounded-2xl p-4 border-primary/20 bg-primary/[0.03] space-y-3 relative overflow-hidden group">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl shrink-0">{m.emoji}</span>
+                            <div className="min-w-0">
+                              <h4 className={cn(
+                                "text-sm font-bold truncate",
+                                m.completed && "text-green-600 line-through opacity-50"
+                              )}>
+                                {m.title}
+                              </h4>
+                              <p className="text-[10px] text-muted-foreground line-clamp-1">{m.description}</p>
+                            </div>
                           </div>
-                        ) : (
-                          <>
-                            <Button 
-                              variant="outline"
-                              className="flex-1 h-11 rounded-xl font-black text-xs"
-                              onClick={() => {
-                                navigate("/chat");
-                              }}
-                            >
-                              <ExternalLink className="w-4 h-4 mr-1.5" /> Ir para Missão
-                            </Button>
-                            <Button 
-                              className="flex-1 h-11 rounded-xl font-black text-xs"
-                              onClick={handleConfirm}
-                            >
-                              Confirmar Ação
-                            </Button>
-                          </>
+                          <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0">+{m.reward} PTS</span>
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                            <span className={cn(m.completed ? "text-green-600" : "text-primary/60")}>
+                              {m.completed ? "Concluído ✨" : "Em progresso..."}
+                            </span>
+                            <span className="tabular-nums">{m.current} / {m.target}</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className={cn("h-full transition-all duration-1000", m.completed ? "bg-green-500" : "bg-primary")}
+                              style={{ width: `${Math.min(100, (m.current / m.target) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {!m.completed && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full h-8 text-[10px] font-black uppercase tracking-widest mt-1 hover:bg-primary/5 border border-dashed border-primary/20"
+                            onClick={() => {
+                              const url = getChallengeUrl(m.type);
+                              if (url) navigate(url);
+                            }}
+                          >
+                            <ExternalLink className="w-3 h-3 mr-1" /> Abrir Ferramenta
+                          </Button>
                         )}
                       </div>
-                      
-                      {!dailyStatus.me_active && (
-                        <p className="text-[10px] text-center text-primary font-bold animate-pulse">
-                          Realiza a missão e clica em confirmar para manter o streak! ✨
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-3 border-t border-border/50">
-                        <span>Status do Par hoje:</span>
-                        <span className={cn(
-                          "font-black uppercase",
-                          dailyStatus.partner_active ? "text-green-600" : "text-amber-500"
-                        )}>
-                          {dailyStatus.partner_active ? "Concluído ✨" : "Pendente ⏳"}
-                        </span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="glass-card rounded-2xl p-8 text-center border-dashed border-2">

@@ -15,13 +15,7 @@ export function LoveStreakHomeCard() {
   const nextLevel = getNextLevel(data.current_streak);
   const bothToday = dailyStatus?.day_complete;
 
-  const handleConfirm = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const ok = await confirmAction();
-    if (ok) {
-      toast.success("Ação confirmada! ✨");
-    }
-  };
+  // Manual confirm is now deprecated for missions, but kept in hook for other uses if needed
 
   return (
     <div className="space-y-3">
@@ -84,15 +78,35 @@ export function LoveStreakHomeCard() {
                 {dailyStatus?.partner_active ? <CheckCircle2 className="w-2.5 h-2.5" /> : "○"} PAR
               </div>
             </div>
-
-            {!dailyStatus?.me_active && dailyStatus?.mission_title && (
-              <Button 
-                onClick={handleConfirm}
-                size="sm"
-                className="h-6 px-3 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 bg-primary animate-pulse-glow"
-              >
-                Missão
-              </Button>
+          </div>
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-foreground/5 text-left">
+            {dailyStatus?.missions && dailyStatus.missions.length > 0 ? (
+              dailyStatus.missions.map((m) => (
+                <div key={m.id} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="text-[10px] grayscale-[0.5]">{m.emoji}</span>
+                    <span className={cn(
+                      "text-[9px] font-bold truncate",
+                      m.completed ? "text-green-600 line-through opacity-50" : "text-muted-foreground"
+                    )}>
+                      {m.title}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="h-1 w-12 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={cn("h-full transition-all duration-500", m.completed ? "bg-green-500" : "bg-primary")}
+                        style={{ width: `${Math.min(100, (m.current / m.target) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[8px] font-black tabular-nums opacity-60">
+                      {m.current}/{m.target}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-[9px] text-muted-foreground italic">Sem missões hoje...</p>
             )}
           </div>
         </div>
