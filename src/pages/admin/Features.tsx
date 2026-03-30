@@ -140,7 +140,7 @@ export default function FeaturesControl() {
   const toggleGlobal = async (key: string, currentStatus: boolean) => {
     const newStatus = !currentStatus;
     
-    // Optimistic Update
+    // 1. Optimistic UI Update (Immediate visual feedback)
     setFlags(prev => {
       const existingIdx = prev.findIndex(f => f.key === key && f.scope === "global");
       if (existingIdx > -1) {
@@ -148,38 +148,48 @@ export default function FeaturesControl() {
         newFlags[existingIdx] = { ...newFlags[existingIdx], enabled: newStatus };
         return newFlags;
       }
-      // If no global flag exists, we'll wait for fetchData to show the new one, 
-      // but we can add a temporary one for UI
-      return [...prev, { id: 'temp', key, scope: 'global', enabled: newStatus }];
+      return [...prev, { id: `temp-${key}`, key, scope: 'global', enabled: newStatus }];
     });
 
     try {
+      // 2. Perform Database Operation
       const existing = flags.find(f => f.key === key && f.scope === "global");
-      if (existing && existing.id !== 'temp') {
+      
+      if (existing) {
         const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", existing.id);
         if (error) throw error;
       } else {
-        const { error } = await adminClient.from("feature_flags").insert({ key, scope: "global", enabled: newStatus });
+        const { error } = await adminClient.from("feature_flags").insert({ 
+          key, 
+          scope: "global", 
+          enabled: newStatus 
+        });
         if (error) throw error;
       }
-      fetchData();
-      toast({ title: "Atualizado", description: `Estado global de ${key} alterado.` });
+      
+      // 3. Notify success (Don't call fetchData immediately to avoid race conditions with stale Selects)
+      toast({ title: "Atualizado", description: `Estado de ${key} alterado para ${newStatus ? 'ATIVO' : 'DESLIGADO'}.` });
+      
+      // Sync back after a short delay to ensure DB propagation
+      setTimeout(fetchData, 1000);
+      
     } catch (err: any) {
-      // Revert on error
+      // Revert if error
       fetchData();
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
 
   const toggleOverride = async (flag: any, newStatus: boolean) => {
-    // Optimistic Update
     setFlags(prev => prev.map(f => f.id === flag.id ? { ...f, enabled: newStatus } : f));
 
     try {
       const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", flag.id);
       if (error) throw error;
+      
+      setTimeout(fetchData, 1000);
     } catch (err: any) {
-      fetchData(); // Sync back
+      fetchData();
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
@@ -292,14 +302,33 @@ export default function FeaturesControl() {
               </div>
             </div>
             <Switch checked={isSystemEnabled} onCheckedChange={async () => {
-              const existing = flags.find(f => f.key === "system_enabled" && f.scope === "global");
-              if (existing) {
-                await adminClient.from("feature_flags").update({ enabled: !isSystemEnabled }).eq("id", existing.id);
-              } else {
-                await adminClient.from("feature_flags").insert({ key: "system_enabled", scope: "global", enabled: !isSystemEnabled });
+              const newStatus = !isSystemEnabled;
+              
+              // Optimistic Update
+              setFlags(prev => {
+                const existingIdx = prev.findIndex(f => f.key === "system_enabled" && f.scope === "global");
+                if (existingIdx > -1) {
+                  const newFlags = [...prev];
+                  newFlags[existingIdx] = { ...newFlags[existingIdx], enabled: newStatus };
+                  return newFlags;
+                }
+                return [...prev, { id: 'temp-master', key: 'system_enabled', scope: 'global', enabled: newStatus }];
+              });
+
+              try {
+                const existing = flags.find(f => f.key === "system_enabled" && f.scope === "global");
+                if (existing && existing.id !== 'temp-master') {
+                  await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", existing.id);
+                } else {
+                  await adminClient.from("feature_flags").insert({ key: "system_enabled", scope: "global", enabled: newStatus });
+                }
+                fetchData();
+                toast({ title: "Master Switch", description: `Sistema agora está ${newStatus ? 'ONLINE' : 'EM BYPASS'}.` });
+              } catch (err: any) {
+                fetchData();
+                toast({ title: "Erro", description: err.message, variant: "destructive" });
               }
-              fetchData();
-            }} className="scale-125" />
+            }} className="scale-125 data-[state=checked]:bg-emerald-500" />
           </section>
 
           <section className="bg-white border-2 border-slate-200 rounded-[2.5rem] p-6 shadow-xl flex flex-col justify-center gap-3">
