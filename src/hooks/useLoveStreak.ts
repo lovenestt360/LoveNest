@@ -222,36 +222,7 @@ export function useLoveStreak() {
     load();
   }, [load]);
 
-  // Alerta de Prevenção (Após as 20h)
-  useEffect(() => {
-    if (!dailyStatus || dailyStatus.day_complete || alertToastShown.current || !spaceId) return;
-
-    const checkAlert = () => {
-      const now = new Date();
-      if (now.getHours() >= 20) {
-        toast({
-          title: "Atenção Casal! 🔥",
-          description: "Hoje ainda não interagiram… não deixem o streak cair",
-          variant: "destructive"
-        });
-        
-        // Também tentar notificação push (silenciosa/background se possível via utility)
-        notifyPartner({
-          couple_space_id: spaceId,
-          title: "Streak em Risco! 🔥",
-          body: "O vosso streak diário está em perigo. Interajam agora!",
-          type: "streak_alert",
-          url: "/"
-        });
-
-        alertToastShown.current = true;
-      }
-    };
-
-    checkAlert();
-    const timer = setInterval(checkAlert, 1000 * 60 * 30); // Check every 30 mins
-    return () => clearInterval(timer);
-  }, [dailyStatus, spaceId]);
+  // Alerta de Prevenção removido a pedido do utilizador (atrapalhava a visão)
 
   // Realtime updates
   useEffect(() => {
