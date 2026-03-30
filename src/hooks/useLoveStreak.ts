@@ -70,46 +70,50 @@ export function useLoveStreak() {
     if (!spaceId || !user) return;
     
     // 1. Load streak data
-    const { data: streak } = await supabase
-      .from("love_streaks")
+    const { data: streak } = await (supabase
+      .from("love_streak" as any)
       .select("*")
-      .eq("couple_space_id", spaceId)
-      .maybeSingle();
+      .eq("couple_id", spaceId)
+      .maybeSingle() as any);
 
     // 2. Load user items (shields)
-    const { data: items } = await supabase
-      .from("user_items")
+    const { data: items } = await (supabase
+      .from("user_items" as any)
       .select("loveshield_count")
       .eq("user_id", user.id)
-      .maybeSingle();
+      .maybeSingle() as any);
 
     if (streak) {
+      const s = streak as any;
       setData({
-        ...streak,
-        loveshield_count: items?.loveshield_count || 0,
-        level_title: getStreakLevel(streak.current_streak).title
-      });
+        ...s,
+        last_streak_date: s.last_active_date, // Map field name
+        loveshield_count: (items as any)?.loveshield_count || 0,
+        level_title: getStreakLevel(s.current_streak).title
+      } as LoveStreakData);
     }
 
-    // 3. Load daily activity
-    const { data: activities } = await supabase
-      .from("daily_activity")
-      .select("user_id, did_action")
+    // 3. Load daily interactions (only the 'real' ones)
+    const { data: interactionRecords } = await (supabase
+      .from("interactions" as any)
+      .select("user_id, type")
       .eq("couple_id", spaceId)
-      .eq("date", todayStr);
+      .gte("created_at", `${todayStr}T00:00:00` as any)
+      .lte("created_at", `${todayStr}T23:59:59` as any) as any);
 
-    const meActive = activities?.some(a => a.user_id === user.id && a.did_action) || false;
-    const partnerActive = activities?.some(a => a.user_id !== user.id && a.did_action) || false;
+    const validInteractionTypes = ['message_sent', 'task_completed', 'mood_logged', 'plan_completed'];
+    const meActive = (interactionRecords as any[])?.some(a => a.user_id === user.id && validInteractionTypes.includes(a.type)) || false;
+    const partnerActive = (interactionRecords as any[])?.some(a => a.user_id !== user.id && validInteractionTypes.includes(a.type)) || false;
 
     // 4. Load all missions to pick one for the day
-    const { data: allMissions } = await supabase
-      .from("love_missions")
-      .select("*");
+    const { data: allMissions } = await (supabase
+      .from("love_missions" as any)
+      .select("*") as any);
 
     let mission = null;
-    if (allMissions && allMissions.length > 0) {
+    if (allMissions && (allMissions as any[]).length > 0) {
       const dayOfMonth = new Date().getDate();
-      mission = allMissions[dayOfMonth % allMissions.length];
+      mission = (allMissions as any[])[dayOfMonth % (allMissions as any[]).length];
     } else {
       // Fallback if DB is empty
       const dayOfMonth = new Date().getDate();
@@ -117,12 +121,12 @@ export function useLoveStreak() {
     }
 
     // 5. Check if mission completed today
-    const { data: completion } = await supabase
-      .from("mission_completions")
+    const { data: completion } = await (supabase
+      .from("mission_completions" as any)
       .select("*")
       .eq("user_id", user.id)
       .eq("date" as any, todayStr) // Assuming date field names might vary slightly, but following SQL plan
-      .maybeSingle();
+      .maybeSingle() as any);
 
     setDailyStatus({
       me_active: meActive,
@@ -130,8 +134,8 @@ export function useLoveStreak() {
       mission_completed: !!completion,
       mission_title: mission?.title || null,
       mission_description: mission?.description || null,
-      mission_emoji: mission?.emoji || "✨",
-      mission_points: mission?.points_reward || null,
+      mission_emoji: (mission as any)?.emoji || "✨",
+      mission_points: (mission as any)?.points_reward || null,
       day_complete: meActive && partnerActive
     });
 
@@ -161,8 +165,8 @@ export function useLoveStreak() {
       .on("postgres_changes", {
         event: "*",
         schema: "public",
-        table: "love_streaks",
-        filter: `couple_space_id=eq.${spaceId}`,
+        table: "love_streak" as any,
+        filter: `couple_id=eq.${spaceId}`,
       }, (payload) => {
         const newData = payload.new as any;
         setData((prev) => {
@@ -176,7 +180,7 @@ export function useLoveStreak() {
       .on("postgres_changes", {
         event: "*",
         schema: "public",
-        table: "daily_activity",
+        table: "interactions" as any,
         filter: `couple_id=eq.${spaceId}`,
       }, () => {
         load();
@@ -187,16 +191,26 @@ export function useLoveStreak() {
 
   const confirmAction = useCallback(async () => {
     if (!spaceId) return false;
-    const { error } = await supabase.rpc('fn_confirm_daily_action', { p_couple_id: spaceId });
+    
+    // Legacy manual action no longer bumps streak directly.
+    // It now only records a 'manual_checkin' interaction.
+    const { error } = await (supabase
+      .from("interactions" as any)
+      .insert({
+        user_id: user?.id,
+        couple_id: spaceId,
+        type: 'manual_checkin'
+      }) as any);
+      
     if (!error) {
       load();
       return true;
     }
     return false;
-  }, [spaceId, load]);
+  }, [spaceId, user, load]);
 
   const useShield = useCallback(async () => {
-    const { error } = await supabase.rpc('fn_use_loveshield');
+    const { error } = await (supabase.rpc('fn_use_loveshield' as any) as any);
     if (!error) {
       load();
       return true;
@@ -205,7 +219,7 @@ export function useLoveStreak() {
   }, [load]);
 
   const buyShield = useCallback(async (cost: number = 200) => {
-    const { error } = await supabase.rpc('fn_purchase_loveshield', { p_cost: cost });
+    const { error } = await (supabase.rpc('fn_purchase_loveshield' as any, { p_cost: cost }) as any);
     if (!error) {
       load();
       return true;
@@ -219,19 +233,19 @@ export function useLoveStreak() {
     console.log(`Recording interaction: ${actionType}`);
     
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from("interactions" as any)
         .insert({
           user_id: user.id,
           couple_id: spaceId,
           type: actionType
-        });
+        }) as any);
       
       if (error) throw error;
       
-      // We still call confirmAction for now to maintain backward compatibility 
-      // with the existing manual streak logic until we fully migrate.
-      return confirmAction();
+      // We no longer need manually trigger checkStreak from here 
+      // as the DB Trigger tr_interactions_streak_trigger handles it automatically!
+      return true;
     } catch (err: any) {
       console.error("Error recording interaction:", err);
       return false;

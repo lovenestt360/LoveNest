@@ -37,16 +37,20 @@ BEGIN
     SELECT user_id INTO v_user1_id FROM public.members WHERE couple_space_id = p_couple_id ORDER BY joined_at LIMIT 1;
     SELECT user_id INTO v_user2_id FROM public.members WHERE couple_space_id = p_couple_id ORDER BY joined_at OFFSET 1 LIMIT 1;
 
-    -- Check if user 1 has any interaction today
+    -- Check if user 1 has any real interaction today
     SELECT EXISTS (
         SELECT 1 FROM public.interactions 
-        WHERE user_id = v_user1_id AND created_at::DATE = v_today
+        WHERE user_id = v_user1_id 
+        AND created_at::DATE = v_today
+        AND type IN ('message_sent', 'task_completed', 'mood_logged', 'plan_completed')
     ) INTO v_user1_active;
 
-    -- Check if user 2 has any interaction today
+    -- Check if user 2 has any real interaction today
     SELECT EXISTS (
         SELECT 1 FROM public.interactions 
-        WHERE user_id = v_user2_id AND created_at::DATE = v_today
+        WHERE user_id = v_user2_id 
+        AND created_at::DATE = v_today
+        AND type IN ('message_sent', 'task_completed', 'mood_logged', 'plan_completed')
     ) INTO v_user2_active;
 
     RETURN v_user1_active AND v_user2_active;
