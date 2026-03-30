@@ -359,76 +359,90 @@ export default function FeaturesControl() {
           </section>
         </div>
 
-        {/* Dynamic Features Grid */}
+        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
-          {featureKeys.map(key => (
-            <div key={key} className="bg-card rounded-[2.5rem] border border-border/50 p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+          {features.map(feature => (
+            <div key={feature.key} className="bg-card rounded-[2.5rem] border border-border/50 p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
               <div className="flex items-start justify-between mb-8">
                 <div>
                   <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-1">
-                    {key.replace(/^home_/, '').replace('_', ' ')}
+                    {feature.key.replace(/^home_/, '').replace('_', ' ')}
                   </h3>
                   <code className="text-[10px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded uppercase">
-                    {key}
+                    {feature.key}
                   </code>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className={cn(
                     "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                    getGlobalStatus(key) ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                    feature.globalEnabled ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
                   )}>
-                    {getGlobalStatus(key) ? "Ativo em Todos" : "Privado"}
+                    {feature.globalEnabled ? "Ativo em Todos" : "Privado/Restrito"}
                   </div>
-                  <Switch checked={getGlobalStatus(key)} onCheckedChange={(c) => toggleGlobal(key, c)} className="data-[state=checked]:bg-emerald-500" />
+                  <Switch 
+                    checked={feature.globalEnabled} 
+                    onCheckedChange={(c) => toggleGlobal(feature.key, feature.globalEnabled)} 
+                    className={cn(
+                      "scale-110",
+                      feature.globalEnabled ? "data-[state=checked]:bg-emerald-500" : "data-[state=unchecked]:bg-rose-500"
+                    )}
+                  />
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   <span>Excepções</span>
-                  <span className="bg-muted px-2 rounded-full font-mono">{getOverrides(key).length}</span>
+                  <span className="bg-muted px-2 rounded-full font-mono">{feature.overrides.length}</span>
                 </div>
                 
                 <div className="min-h-[100px] flex flex-col gap-2 p-4 bg-muted/20 rounded-2xl border border-dashed border-border/60">
-                  {getOverrides(key).map(f => (
+                  {feature.overrides.map(f => (
                     <div key={f.id} className="flex items-center justify-between bg-card p-2.5 rounded-xl border border-border/50 shadow-sm">
                       <div className="flex flex-col">
                         <span className="text-xs font-bold">{getTargetName(f.target_id, f.scope)}</span>
                         <span className="text-[8px] text-muted-foreground font-mono uppercase tracking-tighter">{f.target_id.slice(0, 10)}...</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch checked={f.enabled} onCheckedChange={(c) => toggleOverride(f, c)} className="scale-75" />
+                        <Switch 
+                          checked={f.enabled} 
+                          onCheckedChange={(c) => toggleOverride(f, c)} 
+                          className={cn(
+                            "scale-75",
+                            f.enabled ? "data-[state=checked]:bg-emerald-500" : "data-[state=unchecked]:bg-rose-500"
+                          )}
+                        />
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 hover:bg-rose-50" onClick={() => deleteFlag(f.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
                   ))}
-                  {getOverrides(key).length === 0 && (
+                  {feature.overrides.length === 0 && (
                     <div className="flex-1 flex items-center justify-center text-[10px] font-bold italic text-muted-foreground opacity-40">Nenhuma excepção</div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-rose-100 hover:bg-rose-50 text-rose-500" onClick={() => handleFastAdd(key)}>
+                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-rose-100 hover:bg-rose-50 text-rose-500" onClick={() => handleFastAdd(feature.key)}>
                      <Zap className="h-3.5 w-3.5 mr-2 fill-rose-500" /> Teste Rápido
                    </Button>
-                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-emerald-100 hover:bg-emerald-50 text-emerald-500" onClick={() => setIsAddingForFeature(key)}>
+                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-emerald-100 hover:bg-emerald-50 text-emerald-500" onClick={() => setIsAddingForFeature(feature.key)}>
                      <Plus className="h-3.5 w-3.5 mr-2" /> Novo Alvo
                    </Button>
                 </div>
               </div>
 
               {/* Add Override Modal Overlay */}
-              {isAddingForFeature === key && (
+              {isAddingForFeature === feature.key && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col p-8 animate-in zoom-in-95">
                   <div className="flex items-center justify-between mb-6">
-                    <h4 className="text-lg font-black uppercase italic italic tracking-tighter">Novo Alvo para {key.split('_').pop()}</h4>
+                    <h4 className="text-lg font-black uppercase italic tracking-tighter">Novo Alvo para {feature.key.split('_').pop()}</h4>
                     <Button variant="ghost" size="sm" onClick={() => setIsAddingForFeature(null)} className="rounded-full h-8 w-8 p-0">X</Button>
                   </div>
                   <div className="space-y-4">
                     <Input placeholder="Filtrar..." value={searchTarget} onChange={(e) => setSearchTarget(e.target.value)} className="h-10 rounded-xl" />
-                    <select id={`target-${key}`} className="w-full h-11 px-4 rounded-xl bg-slate-50 border-none font-bold text-sm">
+                    <select id={`target-${feature.key}`} className="w-full h-11 px-4 rounded-xl bg-slate-50 border-none font-bold text-sm">
                       <option value="">Selecionar...</option>
                       <optgroup label="Casas">
                         {filteredHouses.map(h => <option key={h.id} value={`couple:${h.id}`}>🏠 {h.house_name}</option>)}
@@ -438,10 +452,10 @@ export default function FeaturesControl() {
                       </optgroup>
                     </select>
                     <Button className="w-full h-12 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/25" onClick={() => {
-                      const sel = document.getElementById(`target-${key}`) as HTMLSelectElement;
+                      const sel = document.getElementById(`target-${feature.key}`) as HTMLSelectElement;
                       if (!sel.value) return;
                       const [scope, id] = sel.value.split(":");
-                      createFlag(key, scope, id);
+                      createFlag(feature.key, scope, id);
                     }}>Confirmar Regra</Button>
                   </div>
                 </div>
@@ -450,7 +464,7 @@ export default function FeaturesControl() {
           ))}
 
           {/* Add Manual Feature Card */}
-          <div className="bg-slate-200/30 rounded-[2.5rem] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-8 transition-all hover:bg-slate-200/50">
+          <div className="bg-slate-200/30 rounded-[2.5rem] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-8 transition-all hover:bg-slate-200/50 min-h-[400px]">
             {isAddingFeature ? (
               <div className="w-full space-y-4 animate-in fade-in zoom-in-95">
                 <div className="space-y-2">
