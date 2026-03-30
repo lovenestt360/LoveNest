@@ -622,12 +622,17 @@ const Index = () => {
             />
           )}
           
-          <AppIconButton 
-            icon={<Compass className="w-5 h-5" />} 
-            label="Descobrir" 
-            to="/casais" 
-            color="text-emerald-500 bg-emerald-500/10" 
-          />
+           {isEnabled("home_descobrir") && (
+            <AppIconButton 
+              icon={<Compass className="w-5 h-5" />} 
+              label="Descobrir" 
+              onClick={() => toast({
+                title: "Brevemente ✨",
+                description: "Esta área de dicas e comunidade para casais está em construção!"
+              })}
+              color="text-emerald-500 bg-emerald-500/10" 
+            />
+          )}
         </div>
       </section>
 

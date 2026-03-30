@@ -146,7 +146,7 @@ export default function Mood() {
     }
 
     // Record interaction for LoveStreak
-    recordInteraction("mood_update");
+    recordInteraction("mood_logged");
 
     setSaving(false);
     loadData();

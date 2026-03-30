@@ -456,7 +456,7 @@ export default function Chat() {
   const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
-  const { confirmAction } = useLoveStreak();
+  const { confirmAction, recordInteraction } = useLoveStreak();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const { partner, loading: loadingPartner } = usePartnerProfile();
@@ -682,8 +682,7 @@ export default function Chat() {
         setSending(false);
         return;
       }
-
-      confirmAction();
+      recordInteraction("message_sent");
 
       // ── Non-blocking Notification ──
       let body = currentInput;
@@ -723,9 +722,8 @@ export default function Chat() {
       });
 
       if (insertError) throw insertError;
-
       // Interaction for LoveStreak
-      confirmAction();
+      recordInteraction("message_sent");
 
       // Notify partner
       notifyPartner({

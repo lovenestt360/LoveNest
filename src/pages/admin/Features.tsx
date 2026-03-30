@@ -26,6 +26,7 @@ const DEFAULT_FEATURE_KEYS = [
   "home_rotina",
   "home_conflitos",
   "home_ranking",
+  "home_descobrir",
   "system_premium"
 ];
 

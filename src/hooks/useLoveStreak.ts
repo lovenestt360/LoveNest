@@ -213,10 +213,30 @@ export function useLoveStreak() {
     return false;
   }, [load]);
 
-  const recordInteraction = useCallback(async (actionType?: string) => {
-    console.log(`Recording interaction: ${actionType || 'general'}`);
-    return confirmAction();
-  }, [confirmAction]);
+  const recordInteraction = useCallback(async (actionType: string = 'general') => {
+    if (!spaceId || !user) return false;
+    
+    console.log(`Recording interaction: ${actionType}`);
+    
+    try {
+      const { error } = await supabase
+        .from("interactions" as any)
+        .insert({
+          user_id: user.id,
+          couple_id: spaceId,
+          type: actionType
+        });
+      
+      if (error) throw error;
+      
+      // We still call confirmAction for now to maintain backward compatibility 
+      // with the existing manual streak logic until we fully migrate.
+      return confirmAction();
+    } catch (err: any) {
+      console.error("Error recording interaction:", err);
+      return false;
+    }
+  }, [spaceId, user, confirmAction]);
 
   return {
     data,

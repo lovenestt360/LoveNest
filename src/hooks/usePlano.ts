@@ -4,6 +4,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 
 export interface PlanoItem {
   id: string;
@@ -22,6 +23,7 @@ export interface PlanoItem {
 export function usePlano() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
+  const { recordInteraction } = useLoveStreak();
   const [items, setItems] = useState<PlanoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -141,6 +143,9 @@ export function usePlano() {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       fetchItems(); // Rollback
     } else if (completed) {
+      // Record interaction for LoveStreak
+      recordInteraction("plan_completed");
+      
       // Notificar conclusão
       await notifyPartner({
         couple_space_id: spaceId!,

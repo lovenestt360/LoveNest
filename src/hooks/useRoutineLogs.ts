@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { useLoveStreak } from "@/hooks/useLoveStreak";
 
 export interface RoutineDayLog {
     id: string;
@@ -29,6 +30,7 @@ export function computeStatus(checkedCount: number, totalActive: number): { stat
 export function useRoutineLogs(userId?: string) {
     const { user } = useAuth();
     const spaceId = useCoupleSpaceId();
+    const { recordInteraction } = useLoveStreak();
     const [logs, setLogs] = useState<RoutineDayLog[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -87,6 +89,9 @@ export function useRoutineLogs(userId?: string) {
         }
 
         if (status !== oldStatus && status !== "unlogged") {
+            // Record interaction for LoveStreak
+            recordInteraction("task_completed");
+
             let msg = "";
             let emoji = "📋";
             if (status === "completed") { msg = "completou toda a sua rotina de hoje!"; emoji = "🎉"; }
