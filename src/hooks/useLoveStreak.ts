@@ -166,9 +166,29 @@ export function useLoveStreak() {
         .eq("couple_space_id", spaceId)
         .eq("assignment_date", todayStr) as any);
 
+      let fetchedMissions = dailyMissions;
+
+      // Se não existirem missões, despoletar a sua criação no backend
+      if (!fetchedMissions || fetchedMissions.length === 0) {
+        await supabase.from("interactions" as any).insert({
+          user_id: user.id,
+          couple_space_id: spaceId,
+          type: 'app_opened' 
+        });
+
+        // Procurar as missões que foram acabadas de gerar pelo Trigger
+        const { data: retryMissions } = await (supabase
+          .from("couple_daily_missions" as any)
+          .select("*, love_missions(*)")
+          .eq("couple_space_id", spaceId)
+          .eq("assignment_date", todayStr) as any);
+        
+        fetchedMissions = retryMissions;
+      }
+
       const missions: DailyMission[] = [];
-      if (dailyMissions && (dailyMissions as any[]).length > 0) {
-        for (const dm of (dailyMissions as any[])) {
+      if (fetchedMissions && (fetchedMissions as any[]).length > 0) {
+        for (const dm of (fetchedMissions as any[])) {
           const m = dm.love_missions;
           if (!m) continue;
 
