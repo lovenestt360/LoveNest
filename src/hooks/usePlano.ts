@@ -143,9 +143,6 @@ export function usePlano() {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       fetchItems(); // Rollback
     } else if (completed) {
-      // Record interaction for LoveStreak
-      recordInteraction("plan_completed");
-      
       // Notificar conclusão
       await notifyPartner({
         couple_space_id: spaceId!,

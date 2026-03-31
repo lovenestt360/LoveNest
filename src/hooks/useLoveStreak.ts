@@ -174,7 +174,7 @@ export function useLoveStreak() {
 
       let fetchedMissions = dailyMissions;
 
-      // Se não existirem missões, despoletar a sua criação no backend
+      // Eager Loading: Se não existirem missões, força a geração instantânea no backend
       if (!fetchedMissions || fetchedMissions.length === 0) {
         await supabase.from("interactions" as any).insert({
           user_id: user.id,
@@ -182,7 +182,6 @@ export function useLoveStreak() {
           type: 'app_opened' 
         });
 
-        // Procurar as missões que foram acabadas de gerar pelo Trigger
         const { data: retryMissions } = await (supabase
           .from("couple_daily_missions" as any)
           .select("*, love_missions(*)")
@@ -215,7 +214,9 @@ export function useLoveStreak() {
             emoji: m.emoji || "✨",
             type: m.mission_type || "daily",
             target: m.target_count || 1,
-            current: isCompleted ? (m.target_count || 1) : 0, // Simplificado
+            current: isCompleted 
+                ? (m.target_count || 1) 
+                : ((interactionRecords as any[]) || []).filter(r => r.user_id === user.id && r.type === m.mission_type).length,
             completed: !!isCompleted,
             reward: m.reward_points || 0
           });
