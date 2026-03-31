@@ -344,7 +344,7 @@ export default function Ranking() {
             </div>
 
             {/* Shield Protection Area */}
-            {streakData?.current_streak === 0 && streakData?.loveshield_count > 0 && (
+            {streakData?.current_streak === 0 && streakData?.last_streak_date && streakData?.loveshield_count > 0 && (
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 space-y-3 animate-pulse">
                 <div className="flex items-center gap-3">
                   <Shield size={24} className="text-amber-600" />
