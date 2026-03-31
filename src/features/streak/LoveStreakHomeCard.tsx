@@ -85,7 +85,7 @@ export function LoveStreakHomeCard() {
            {/* Shields Section */}
            <div className="flex items-center gap-2">
               <div className="flex gap-0.5">
-                 {Array.from({ length: 3 }).map((_, i) => (
+                 {Array.from({ length: 5 }).map((_, i) => (
                    <Shield key={i} className={cn(
                      "w-3.5 h-3.5 transition-all duration-500",
                      i < data.loveshield_count 
