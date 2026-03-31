@@ -722,9 +722,7 @@ export default function Chat() {
       });
 
       if (insertError) throw insertError;
-      // Interaction for LoveStreak
-      recordInteraction("message_sent");
-
+      
       // Notify partner
       notifyPartner({
         couple_space_id: spaceId,
