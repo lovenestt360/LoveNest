@@ -230,6 +230,8 @@ export function useLoveStreak() {
         day_complete: meActive && partnerActive
       });
 
+      console.log("LoveStreak: Sync complete for", todayStr);
+
     } catch (err) {
       console.error("Erro no useLoveStreak.load:", err);
       // Fallback em caso de erro (tabelas não criadas ou erro de rede)
