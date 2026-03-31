@@ -148,13 +148,18 @@ export function useLoveStreak() {
         });
       }
 
+      const startOfLocalDay = new Date();
+      startOfLocalDay.setHours(0, 0, 0, 0);
+      const endOfLocalDay = new Date();
+      endOfLocalDay.setHours(23, 59, 59, 999);
+
       // 3. Carregar interações diárias (Tabela Singular: interactions)
       const { data: interactionRecords } = await (supabase
         .from("interactions" as any)
         .select("user_id, type")
         .eq("couple_space_id", spaceId)
-        .gte("created_at", `${todayStr}T00:00:00`)
-        .lte("created_at", `${todayStr}T23:59:59`) as any);
+        .gte("created_at", startOfLocalDay.toISOString())
+        .lte("created_at", endOfLocalDay.toISOString()) as any);
 
       const meActive = (interactionRecords as any[])?.some(a => a.user_id === user.id) || false;
       const partnerActive = (interactionRecords as any[])?.some(a => a.user_id !== user.id) || false;
@@ -164,7 +169,8 @@ export function useLoveStreak() {
         .from("couple_daily_missions" as any)
         .select("*, love_missions(*)")
         .eq("couple_space_id", spaceId)
-        .eq("assignment_date", todayStr) as any);
+        .order("created_at", { ascending: false })
+        .limit(3) as any);
 
       let fetchedMissions = dailyMissions;
 
@@ -181,7 +187,8 @@ export function useLoveStreak() {
           .from("couple_daily_missions" as any)
           .select("*, love_missions(*)")
           .eq("couple_space_id", spaceId)
-          .eq("assignment_date", todayStr) as any);
+          .order("created_at", { ascending: false })
+          .limit(3) as any);
         
         fetchedMissions = retryMissions;
       }
@@ -198,7 +205,7 @@ export function useLoveStreak() {
             .select("*")
             .eq("user_id", user.id)
             .eq("mission_id", m.id)
-            .eq("completed_at", todayStr)
+            .eq("completed_at", dm.assignment_date)
             .maybeSingle() as any);
           
           missions.push({
