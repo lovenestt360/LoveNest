@@ -299,21 +299,8 @@ export default function Ranking() {
                           </div>
                         </div>
 
-                        {!m.completed && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full h-8 text-[10px] font-black uppercase tracking-widest mt-1 hover:bg-primary/5 border border-dashed border-primary/20"
-                            onClick={() => {
-                              const url = getChallengeUrl(m.type);
-                              if (url) navigate(url);
-                            }}
-                          >
-                            <ExternalLink className="w-3 h-3 mr-1" /> Abrir Ferramenta
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                     ))}
                   </div>
                 ) : (
                   <div className="glass-card rounded-2xl p-8 text-center border-dashed border-2">

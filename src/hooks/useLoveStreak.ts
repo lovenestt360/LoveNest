@@ -108,7 +108,7 @@ export function useLoveStreak() {
               title: detail?.title || "Missão",
               description: detail?.description || "",
               emoji: detail?.emoji || "✨",
-              type: "daily",
+              type: detail?.mission_type || "daily",
               target: detail?.target_count || 1,
               current: m.progress || 0,
               completed: m.completed || false,
