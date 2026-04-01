@@ -456,7 +456,7 @@ export default function Chat() {
   const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
-  const { confirmAction, recordInteraction } = useLoveStreak();
+  const { recordInteraction } = useLoveStreak();
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const { partner, loading: loadingPartner } = usePartnerProfile();
@@ -732,6 +732,8 @@ export default function Chat() {
         type: "chat",
       });
 
+      recordInteraction("message_sent");
+
       // Animation timeout
       setTimeout(() => setShowCarinhoAnim(false), 2000);
       
@@ -740,7 +742,7 @@ export default function Chat() {
     } finally {
       setSending(false);
     }
-  }, [spaceId, user, sending, confirmAction, toast]);
+  }, [spaceId, user, sending, recordInteraction, toast]);
 
   /* ── Edit message ── */
   const handleEditSave = useCallback(async () => {

@@ -148,6 +148,9 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
+    // Registrar interação para o Streak
+    recordInteraction("mood_logged");
+
     // Push to partner
     if (spaceId) {
       const moodInfo = MOOD_OPTIONS.find(m => m.key === moodKey);

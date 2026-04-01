@@ -151,6 +151,9 @@ export function usePlano() {
         url: "/plano?tab=agenda",
         type: "plano"
       });
+      
+      // Registrar atividade para o Streak
+      recordInteraction("plan_completed");
     }
   };
 
