@@ -1,6 +1,10 @@
--- 1. UNIFY INTERACTION LOGIC (daily_activity -> missions)
--- Redefine checkMissionCompletion to use daily_activity instead of interactions
+-- 1. PREPARE TABLE SCHEMA
+ALTER TABLE public.love_missions ADD COLUMN IF NOT EXISTS mission_type TEXT DEFAULT 'general';
+ALTER TABLE public.love_missions ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 1;
+ALTER TABLE public.love_missions ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT '✨';
+ALTER TABLE public.love_missions ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'interaction';
 
+-- 2. UNIFY INTERACTION LOGIC (daily_activity -> missions)
 CREATE OR REPLACE FUNCTION public.checkMissionCompletion(p_couple_space_id UUID, p_user_id UUID)
 RETURNS VOID AS $$
 DECLARE
@@ -16,7 +20,6 @@ BEGIN
         AND cdm.assignment_date = CURRENT_DATE
     LOOP
         -- Count how many activities of this type the user has today
-        -- Using daily_activity which is the primary unified table
         SELECT COUNT(*) INTO v_current_count
         FROM public.daily_activity
         WHERE user_id = p_user_id
@@ -34,11 +37,9 @@ BEGIN
             ) THEN
                 INSERT INTO public.mission_completions (user_id, mission_id, couple_space_id, completed_at)
                 VALUES (p_user_id, v_mission.id, p_couple_space_id, CURRENT_DATE);
-                
-                -- Points are already awarded via tr_mission_completion_points_trigger
             END IF;
         END IF;
-    LOOP END;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -48,8 +49,8 @@ CREATE TRIGGER tr_daily_activity_mission_trigger
 AFTER INSERT ON public.daily_activity
 FOR EACH ROW EXECUTE FUNCTION public.tr_on_interaction_for_missions();
 
--- 2. EXPAND MISSION LIBRARY (LEQUE DE MISSÕES)
-DELETE FROM public.love_missions WHERE mission_type != 'general';
+-- 3. EXPAND MISSION LIBRARY (LEQUE DE MISSÕES)
+DELETE FROM public.love_missions WHERE mission_type != 'general' OR mission_type IS NULL;
 
 INSERT INTO public.love_missions (title, description, reward_points, mission_type, target_count, emoji, category) VALUES
 -- Chat / Interaction
@@ -76,12 +77,12 @@ INSERT INTO public.love_missions (title, description, reward_points, mission_typ
 ('Gratidão 🙌', 'Registe algo pelo qual é grato no dia de hoje.', 20, 'gratitude_logged', 1, '🙌', 'spiritual'),
 ('Momento Versículo 📖', 'Partilhe um versículo ou frase inspiradora no chat.', 15, 'message_sent', 1, '📖', 'spiritual');
 
--- 3. SHIELD SHOP LOGIC (PONTOS -> ESCUDOS)
+-- 4. SHIELD SHOP LOGIC (PONTOS -> ESCUDOS)
 CREATE OR REPLACE FUNCTION public.fn_purchase_loveshield_v5(p_user_id UUID, p_couple_id UUID)
 RETURNS JSONB AS $$
 DECLARE
     v_points BIGINT;
-    v_cost INTEGER := 100; -- Custo sugerido no plano
+    v_cost INTEGER := 100;
 BEGIN
     -- Check points
     SELECT points INTO v_points FROM public.love_points 
@@ -96,7 +97,7 @@ BEGIN
     SET points = points - v_cost, updated_at = now()
     WHERE user_id = p_user_id AND couple_space_id = p_couple_id;
     
-    -- Add entry to history
+    -- Log history
     INSERT INTO public.love_points_history (user_id, couple_space_id, amount, reason)
     VALUES (p_user_id, p_couple_id, -v_cost, 'purchase_shield');
     
