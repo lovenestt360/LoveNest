@@ -103,11 +103,13 @@ export function useLoveStreak() {
         { p_couple_id: spaceId }
       );
 
+      console.log("MISSIONS RAW:", missionsRaw);
+
       if (missionsError) {
         console.error("Erro ao carregar missões:", missionsError);
       }
 
-      const missions: DailyMission[] = ((missionsRaw as any[]) || []).map((m) => ({
+      const missions: DailyMission[] = (Array.isArray(missionsRaw) ? missionsRaw : []).map((m) => ({
         id: m.cdm_id || m.id,
         mission_id: m.mission_id,
         title: m.title || "Missão",
@@ -226,6 +228,10 @@ export function useLoveStreak() {
           type: actionType,
         }) as any);
       if (error) throw error;
+      
+      // Forçar recarregamento para feedback imediato
+      load();
+      
       return true;
     } catch (err: any) {
       console.error("Erro ao registrar atividade:", err);

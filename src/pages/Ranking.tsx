@@ -30,7 +30,7 @@ export default function Ranking() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { data: streakData, buyShield, confirmAction, useShield, dailyStatus, reload: reloadStreak } = useLoveStreak();
+  const { data: streakData, buyShield, confirmAction, useShield, dailyStatus, loading: streakLoading, reload: reloadStreak } = useLoveStreak();
   
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -282,7 +282,11 @@ export default function Ranking() {
                   <Star className="w-4 h-4" /> Missão do Dia (+ Pontos)
                 </div>
                 
-                {dailyStatus && dailyStatus.missions && dailyStatus.missions.length > 0 ? (
+                {streakLoading ? (
+                  <div className="glass-card rounded-2xl p-8 text-center border-dashed border-2 animate-pulse">
+                    <p className="text-sm text-primary font-bold uppercase tracking-widest">A carregar missões... ✨</p>
+                  </div>
+                ) : dailyStatus && dailyStatus.missions && dailyStatus.missions.length > 0 ? (
                   <div className="grid gap-3">
                     {dailyStatus.missions.map((m) => (
                       <div key={m.id} className="glass-card rounded-2xl p-4 border-primary/20 bg-primary/[0.03] space-y-3 relative overflow-hidden group">
@@ -307,7 +311,7 @@ export default function Ranking() {
                             <div className="bg-white/50 p-2 rounded-xl border border-dashed border-primary/20 flex items-center gap-2">
                               <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
                               <p className="text-[9px] font-bold text-muted-foreground leading-snug">
-                                {getMissionAction((m as any).mission_type || (m as any).type).instruction}
+                                {getMissionAction(m.mission_type).instruction}
                               </p>
                             </div>
                             
@@ -316,12 +320,12 @@ export default function Ranking() {
                               size="sm" 
                               className="w-full h-9 text-[11px] font-black tracking-wide hover:bg-primary/10 border border-primary/20 shadow-sm rounded-xl"
                               onClick={() => {
-                                const action = getMissionAction((m as any).mission_type || (m as any).type);
+                                const action = getMissionAction(m.mission_type);
                                 if (action.url) navigate(action.url);
                               }}
                             >
                               <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                              {getMissionAction((m as any).mission_type || (m as any).type).label}
+                              {getMissionAction(m.mission_type).label}
                             </Button>
                           </div>
                         )}
@@ -346,7 +350,7 @@ export default function Ranking() {
                   </div>
                 ) : (
                   <div className="glass-card rounded-2xl p-8 text-center border-dashed border-2">
-                    <p className="text-sm text-muted-foreground italic">Estamos a preparar a vossa missão de hoje... ✨</p>
+                    <p className="text-sm text-muted-foreground italic">Sem missões disponíveis para hoje... ✨</p>
                   </div>
                 )}
               </div>
