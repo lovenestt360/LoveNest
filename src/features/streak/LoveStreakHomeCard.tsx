@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Flame, Shield, ArrowRight, Heart } from "lucide-react";
+import { Flame, Shield, ArrowRight, Heart, Sparkles } from "lucide-react";
 import { useLoveStreak, getStreakLevel, getNextLevel } from "@/hooks/useLoveStreak";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +97,72 @@ export function LoveStreakHomeCard() {
               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">
                  Shields
               </span>
+           </div>
+        </div>
+        {/* Missions Section - Realtime Progress */}
+        <div className="flex flex-col gap-2 mt-1">
+           <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+                 Missões do Dia
+              </span>
+              <Sparkles className="w-3 h-3 text-pink-400 animate-pulse" />
+           </div>
+           
+           <div className="grid grid-cols-1 gap-2">
+              {dailyStatus?.missions && dailyStatus.missions.length > 0 ? (
+                dailyStatus.missions.map((mission) => (
+                  <div 
+                    key={mission.id}
+                    className={cn(
+                      "flex flex-col gap-1.5 p-3 rounded-2xl border transition-all duration-300",
+                      mission.completed 
+                        ? "bg-green-50/50 border-green-100 dark:bg-green-950/20 dark:border-green-900/30" 
+                        : "bg-white/40 border-white/60 dark:bg-white/5 dark:border-white/10"
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                          <span className="text-base">{mission.emoji}</span>
+                          <span className={cn(
+                            "text-[11px] font-bold leading-none tracking-tight",
+                            mission.completed ? "text-green-600 dark:text-green-400" : "text-foreground/80"
+                          )}>
+                             {mission.title}
+                          </span>
+                       </div>
+                       <span className="text-[9px] font-black text-muted-foreground/40 tabular-nums">
+                          {mission.current} / {mission.target}
+                       </span>
+                    </div>
+
+                    <div className="relative h-1.5 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                       <div 
+                         className={cn(
+                           "absolute inset-y-0 left-0 transition-all duration-500 rounded-full",
+                           mission.completed ? "bg-green-500" : "bg-pink-500"
+                         )}
+                         style={{ width: `${Math.min(100, (mission.current / mission.target) * 100)}%` }}
+                       />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-tighter opacity-60">
+                       <span className={mission.completed ? "text-green-600" : "text-muted-foreground"}>
+                          {mission.completed ? "Concluída! ✨" : "Em progresso..."}
+                       </span>
+                       <span className="flex items-center gap-0.5">
+                          <Sparkles className="w-2 h-2" />
+                          {mission.reward} pts
+                       </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center border border-dashed rounded-2xl border-muted-foreground/20">
+                   <p className="text-[10px] font-bold text-muted-foreground/40 italic">
+                      Preparando novos desafios para vocês... ✨
+                   </p>
+                </div>
+              )}
            </div>
         </div>
       </button>

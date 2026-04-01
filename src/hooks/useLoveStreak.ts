@@ -65,7 +65,7 @@ export function useLoveStreak() {
   const [dailyStatus, setDailyStatus] = useState<DailyCompletion | null>(null);
   const [loading, setLoading] = useState(true);
   const [streakIncreased, setStreakIncreased] = useState(false);
-  
+
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
   const load = useCallback(async () => {
@@ -73,7 +73,7 @@ export function useLoveStreak() {
       setLoading(false);
       return;
     }
-    
+
     try {
       // 1. Carregar Dados do Streak (Nova Tabela: streaks)
       const { data: streak } = await (supabase
@@ -155,15 +155,15 @@ export function useLoveStreak() {
       }, (payload) => {
         const newData = payload.new as any;
         setData((prev) => {
-           if (prev && newData.current_streak > prev.current_streak) {
-             setStreakIncreased(true);
-             setTimeout(() => setStreakIncreased(false), 3000);
-           }
-           return { 
-             ...prev, 
-             current_streak: newData.current_streak,
-             last_streak_date: newData.last_valid_day 
-           } as any;
+          if (prev && newData.current_streak > prev.current_streak) {
+            setStreakIncreased(true);
+            setTimeout(() => setStreakIncreased(false), 3000);
+          }
+          return {
+            ...prev,
+            current_streak: newData.current_streak,
+            last_streak_date: newData.last_valid_day
+          } as any;
         });
       })
       .on("postgres_changes", {
@@ -180,7 +180,7 @@ export function useLoveStreak() {
 
   const recordInteraction = useCallback(async (actionType: string = 'general') => {
     if (!spaceId || !user) return false;
-    
+
     try {
       const { error } = await (supabase
         .from("daily_activity" as any)
@@ -189,7 +189,7 @@ export function useLoveStreak() {
           couple_id: spaceId,
           type: actionType
         }) as any);
-      
+
       if (error) throw error;
       return true;
     } catch (err: any) {
