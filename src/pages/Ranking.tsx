@@ -208,6 +208,17 @@ export default function Ranking() {
             </header>
 
             <div className="space-y-6">
+              {/* Nota Esclarecedora */}
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex gap-3">
+                <Flame className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-orange-700 uppercase tracking-tight">O Fogo vs Missões</p>
+                  <p className="text-[10px] text-orange-600 font-medium leading-relaxed">
+                    Mantenham a vossa chama acesa (Streak) através de qualquer interação diária. As missões em baixo são <b>desafios bónus</b> que dão pontos extra para a vossa jornada!
+                  </p>
+                </div>
+              </div>
+
               {/* Missões Love Streak */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600">
@@ -283,6 +294,18 @@ export default function Ranking() {
                           </div>
                           <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0">+{m.reward} PTS</span>
                         </div>
+
+                        {!m.completed && (
+                          <div className="bg-white/50 p-2 rounded-xl border border-dashed border-primary/20 flex items-center gap-2">
+                            <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
+                            <p className="text-[9px] font-bold text-muted-foreground leading-none">
+                              DICA: {m.type === 'message_sent' ? 'Conversem no Chat' : 
+                                    m.type === 'mood_logged' ? 'Registe o seu Humor' : 
+                                    m.type === 'task_completed' ? 'Marque hábitos ou agenda' : 
+                                    'Conversem ou partilhem tarefas hoje'} para cumprir.
+                            </p>
+                          </div>
+                        )}
                         
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">

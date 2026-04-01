@@ -95,16 +95,17 @@ export function useLoveStreak() {
       });
 
       // Carregar os detalhes das missões
-      const missionIds = (missionsRaw as any[])?.map(m => m.mission_id) || [];
+      const missionIds = (missionsRaw as any[])?.filter(m => m.mission_id || m.id).map(m => m.mission_id || m.id) || [];
       const { data: missionDetails } = await supabase
           .from('love_missions')
           .select('*')
           .in('id', missionIds);
 
       const missions: DailyMission[] = (missionsRaw as any[])?.map(m => {
-          const detail = missionDetails?.find(d => d.id === m.mission_id);
+          const mId = m.mission_id || m.id;
+          const detail = missionDetails?.find(d => d.id === mId);
           return {
-              id: m.id,
+              id: m.id || m.mission_id, 
               title: detail?.title || "Missão",
               description: detail?.description || "",
               emoji: detail?.emoji || "✨",
