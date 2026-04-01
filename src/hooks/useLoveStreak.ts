@@ -89,13 +89,16 @@ export function useLoveStreak() {
         .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
-      // 3. Pontos
-      const { data: pointsData } = await (supabase
+      // 3. Pontos (Individuais do Utilizador)
+      const { data: pointsData, error: pointsError } = await (supabase
         .from("love_points" as any)
         .select("points")
         .eq("couple_space_id", spaceId)
         .eq("user_id", user.id)
         .maybeSingle() as any);
+
+      if (pointsError) console.error("Erro ao carregar pontos:", pointsError);
+      console.log("LOVE POINTS DATA:", pointsData);
 
       // 4. Missões do Dia — RPC retorna TUDO (title, description, emoji, type, target, progress, completed)
       const { data: missionsRaw, error: missionsError } = await supabase.rpc(
