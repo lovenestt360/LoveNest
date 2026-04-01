@@ -3,7 +3,11 @@
 -- Garantir que cada interação apenas completa missões do mesmo tipo.
 -- ============================================================
 
--- 1. Redefinir a função principal de verificação
+-- 1. Eliminar assinaturas antigas para evitar erro de "is not unique"
+DROP FUNCTION IF EXISTS public.checkmissioncompletion(uuid, uuid);
+DROP FUNCTION IF EXISTS public.checkmissioncompletion(uuid, uuid, text);
+
+-- 2. Redefinir a função principal de verificação
 CREATE OR REPLACE FUNCTION public.checkMissionCompletion(
     p_couple_space_id UUID, 
     p_user_id UUID, 
