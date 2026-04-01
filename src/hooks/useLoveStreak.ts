@@ -89,6 +89,14 @@ export function useLoveStreak() {
         .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
+      // 2b. Carregar Pontos Reais (Nova Tabela: love_points)
+      const { data: pointsData } = await (supabase
+        .from("love_points" as any)
+        .select("points")
+        .eq("couple_space_id", spaceId)
+        .eq("user_id", user.id)
+        .maybeSingle() as any);
+
       // 3. Carregar Missões do Dia (Novo Motor V5)
       const { data: missionsRaw } = await supabase.rpc('fn_get_or_create_daily_missions_v5', {
         p_couple_id: spaceId
@@ -129,7 +137,7 @@ export function useLoveStreak() {
           best_streak: streak.current_streak,
           last_streak_date: streak.last_valid_day,
           loveshield_count: (shieldData as any)?.quantity || 0,
-          total_points: 0,
+          total_points: (pointsData as any)?.points || 0,
           level_title: getStreakLevel(streak.current_streak).title
         });
       } else {
@@ -138,7 +146,7 @@ export function useLoveStreak() {
           best_streak: 0,
           last_streak_date: null,
           loveshield_count: (shieldData as any)?.quantity || 1,
-          total_points: 0
+          total_points: (pointsData as any)?.points || 0
         });
       }
 
@@ -200,6 +208,14 @@ export function useLoveStreak() {
       }, () => {
         load();
       })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "love_points" as any,
+        filter: `couple_space_id=eq.${spaceId}`,
+      }, () => {
+        load();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [spaceId, load]);
@@ -224,12 +240,39 @@ export function useLoveStreak() {
     }
   }, [spaceId, user]);
 
+  const buyShield = useCallback(async () => {
+    if (!spaceId || !user) return { success: false, message: "Não autenticado." };
+    
+    try {
+      const { data: res, error } = await supabase.rpc('fn_purchase_loveshield_v5', {
+        p_user_id: user.id,
+        p_couple_id: spaceId
+      });
+
+      if (error) throw error;
+      
+      const response = res as any;
+      if (response.success) {
+        toast({ title: "Sucesso!", description: response.message });
+        load();
+      } else {
+        toast({ title: "Ops!", description: response.message, variant: "destructive" });
+      }
+      return response;
+    } catch (err: any) {
+      console.error("Erro ao comprar escudo:", err);
+      toast({ title: "Erro", description: "Falha na comunicação com o servidor.", variant: "destructive" });
+      return { success: false, message: err.message };
+    }
+  }, [spaceId, user, load]);
+
   return {
     data,
     dailyStatus,
     loading,
     streakIncreased,
     recordInteraction,
+    buyShield,
     reload: load,
   };
 }

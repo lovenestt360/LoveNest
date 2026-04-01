@@ -138,15 +138,13 @@ export default function Ranking() {
   };
 
   const handleBuyShield = async () => {
-    if (!streakData || streakData.total_points < 200) {
-      toast.error("Pontos insuficientes (Mínimo 200 pts)");
+    if (!streakData || streakData.total_points < 100) {
+      toast.error("Pontos insuficientes (Mínimo 100 pts)");
       return;
     }
-    const ok = await buyShield(200);
-    if (ok) {
-      toast.success("LoveShield adquirido com sucesso! 🛡️");
-    } else {
-      toast.error("Erro ao adquirir LoveShield");
+    const res = await (buyShield as any)();
+    if (res?.success) {
+      // Sucesso já disparado pelo toast no hook
     }
   };
 
@@ -407,11 +405,11 @@ export default function Ranking() {
                 </div>
                 <Button 
                   size="sm" 
-                  className={cn("h-9 text-[11px] font-black px-4 rounded-xl shadow-lg transition-all", streakData?.total_points && streakData.total_points >= 200 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20" : "bg-muted text-muted-foreground")}
+                  className={cn("h-9 text-[11px] font-black px-4 rounded-xl shadow-lg transition-all", streakData?.total_points && streakData.total_points >= 100 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20" : "bg-muted text-muted-foreground")}
                   onClick={handleBuyShield}
-                  disabled={!streakData || streakData.total_points < 200}
+                  disabled={!streakData || streakData.total_points < 100}
                 >
-                  200 PTS
+                  100 PTS
                 </Button>
               </div>
             </div>
