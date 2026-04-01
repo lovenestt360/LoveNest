@@ -5,6 +5,9 @@
 --   2. Adiciona colunas type e created_at à daily_activity
 -- ============================================================
 
+-- FASE 0: Limpar funções antigas para evitar erro de tipo de retorno (42P13)
+DROP FUNCTION IF EXISTS public.fn_get_or_create_daily_missions_v5(uuid);
+
 -- FASE 1: Corrigir a tabela daily_activity
 ALTER TABLE public.daily_activity ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'general';
 ALTER TABLE public.daily_activity ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
