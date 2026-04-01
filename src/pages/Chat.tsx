@@ -705,7 +705,7 @@ export default function Chat() {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [input, spaceId, user, sending, imageFile, uploadMedia, toast, replyTo, confirmAction]);
+  }, [input, spaceId, user, sending, imageFile, uploadMedia, toast, replyTo]);
 
   /* ── Send Carinho ── */
   const handleSendCarinho = useCallback(async () => {
