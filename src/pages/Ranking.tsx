@@ -40,18 +40,23 @@ export default function Ranking() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [attemptedChallenges, setAttemptedChallenges] = useState<Record<string, boolean>>({});
 
-  const getMissionAction = (type: string) => {
-    switch (type) {
-      case "message": 
-      case "message_sent": return { label: "Ir para o Chat", url: "/chat", instruction: "Envie mais mensagens para o seu par hoje." };
-      case "mood": 
-      case "mood_logged": return { label: "Registar Humor", url: "/humor", instruction: "Partilhe como se sente agora." };
-      case "memory": return { label: "Ver Memórias", url: "/memorias", instruction: "Recorde um momento especial." };
-      case "prayer": return { label: "Ver Oração", url: "/oracao", instruction: "Rezem juntos hoje." };
-      case "fasting": return { label: "Ver Jejum", url: "/jejum", instruction: "Acompanhe o vosso jejum." };
+  // Mapear mission_type para ação, label e URL específicos
+  const getMissionAction = (missionType: string) => {
+    switch (missionType) {
+      case "message_sent":
+        return { label: "💬 Ir para o Chat", url: "/chat", instruction: "Abra o chat e envie mensagens carinhosas para o seu par." };
+      case "mood_logged":
+        return { label: "😊 Registar Humor", url: "/humor", instruction: "Vá ao Humor e diga como se está a sentir hoje." };
+      case "plan_completed":
+        return { label: "📅 Abrir Agenda", url: "/plano", instruction: "Abra a Agenda e marque um item como concluído." };
       case "task_completed":
-      case "plan_completed": return { label: "Ver Agenda", url: "/plano", instruction: "Conclua uma tarefa ou hábito pendente." };
-      default: return { label: "Ir para a Tarefa", url: "/", instruction: "Interaja com o seu par hoje." };
+        return { label: "📋 Ver Rotina", url: "/rotina", instruction: "Abra a Rotina e marque os seus hábitos de hoje." };
+      case "prayer_completed":
+        return { label: "🙏 Momento de Oração", url: "/", instruction: "Dedique tempo a uma oração ou reflexão." };
+      case "gratitude_logged":
+        return { label: "🙌 Expressar Gratidão", url: "/chat", instruction: "Partilhe uma mensagem de gratidão no chat." };
+      default:
+        return { label: "🎯 Ir para a App", url: "/", instruction: "Interaja com o seu par em qualquer secção da App." };
     }
   };
 
@@ -301,21 +306,22 @@ export default function Ranking() {
                           <div className="space-y-2 pt-1">
                             <div className="bg-white/50 p-2 rounded-xl border border-dashed border-primary/20 flex items-center gap-2">
                               <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
-                              <p className="text-[9px] font-bold text-muted-foreground leading-none lowercase first-letter:uppercase">
-                                OBJETIVO: {m.description && m.description.length > 10 ? m.description : getMissionAction(m.type).instruction}
+                              <p className="text-[9px] font-bold text-muted-foreground leading-snug">
+                                {getMissionAction((m as any).mission_type || (m as any).type).instruction}
                               </p>
                             </div>
                             
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="w-full h-8 text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 border border-primary/10 shadow-sm"
+                              className="w-full h-9 text-[11px] font-black tracking-wide hover:bg-primary/10 border border-primary/20 shadow-sm rounded-xl"
                               onClick={() => {
-                                const action = getMissionAction(m.type);
+                                const action = getMissionAction((m as any).mission_type || (m as any).type);
                                 if (action.url) navigate(action.url);
                               }}
                             >
-                              <ExternalLink className="w-3 h-3 mr-1" /> {getMissionAction(m.type).label}
+                              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                              {getMissionAction((m as any).mission_type || (m as any).type).label}
                             </Button>
                           </div>
                         )}
