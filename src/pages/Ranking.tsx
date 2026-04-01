@@ -42,11 +42,15 @@ export default function Ranking() {
 
   const getChallengeUrl = (type: string) => {
     switch (type) {
-      case "message": return "/chat";
-      case "mood": return "/humor";
+      case "message": 
+      case "message_sent": return "/chat";
+      case "mood": 
+      case "mood_logged": return "/humor";
       case "memory": return "/memorias";
       case "prayer": return "/oracao";
       case "fasting": return "/jejum";
+      case "task_completed":
+      case "plan_completed": return "/plano";
       default: return null;
     }
   };
@@ -296,14 +300,25 @@ export default function Ranking() {
                         </div>
 
                         {!m.completed && (
-                          <div className="bg-white/50 p-2 rounded-xl border border-dashed border-primary/20 flex items-center gap-2">
-                            <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
-                            <p className="text-[9px] font-bold text-muted-foreground leading-none">
-                              DICA: {m.type === 'message_sent' ? 'Conversem no Chat' : 
-                                    m.type === 'mood_logged' ? 'Registe o seu Humor' : 
-                                    m.type === 'task_completed' ? 'Marque hábitos ou agenda' : 
-                                    'Conversem ou partilhem tarefas hoje'} para cumprir.
-                            </p>
+                          <div className="space-y-2 pt-1">
+                            <div className="bg-white/50 p-2 rounded-xl border border-dashed border-primary/20 flex items-center gap-2">
+                              <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
+                              <p className="text-[9px] font-bold text-muted-foreground leading-none lowercase first-letter:uppercase">
+                                OBJETIVO: {m.description || 'Interagir regularmente.'}
+                              </p>
+                            </div>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full h-8 text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 border border-primary/10 shadow-sm"
+                              onClick={() => {
+                                const url = getChallengeUrl(m.type);
+                                if (url) navigate(url);
+                              }}
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" /> Ir para a Tarefa
+                            </Button>
                           </div>
                         )}
                         
