@@ -331,17 +331,17 @@ export default function Ranking() {
                         )}
                         
                         <div className="space-y-1.5">
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className={cn("h-full transition-all duration-1000", m.completed ? "bg-green-500" : "bg-primary")}
+                              style={{ width: `${m.completed ? 100 : Math.min(100, (m.current / m.target) * 100)}%` }}
+                            />
+                          </div>
                           <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                             <span className={cn(m.completed ? "text-green-600" : "text-primary/60")}>
                               {m.completed ? "Concluído ✨" : "Em progresso..."}
                             </span>
                             <span className="tabular-nums">{m.current} / {m.target}</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className={cn("h-full transition-all duration-1000", m.completed ? "bg-green-500" : "bg-primary")}
-                              style={{ width: `${Math.min(100, (m.current / m.target) * 100)}%` }}
-                            />
                           </div>
                         </div>
 

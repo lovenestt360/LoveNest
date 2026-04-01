@@ -88,10 +88,12 @@ export function useRoutineLogs(userId?: string) {
             await supabase.from("routine_day_logs").insert(payload);
         }
 
-        if (status !== oldStatus && status !== "unlogged") {
-            // Record interaction for LoveStreak
+        // Sempre registar a interação na daily_activity para contar para as missões
+        if (status !== "unlogged") {
             recordInteraction("task_completed");
+        }
 
+        if (status !== oldStatus && status !== "unlogged") {
             let msg = "";
             let emoji = "📋";
             if (status === "completed") { msg = "completou toda a sua rotina de hoje!"; emoji = "🎉"; }
