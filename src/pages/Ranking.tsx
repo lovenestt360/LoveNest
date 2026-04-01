@@ -40,18 +40,18 @@ export default function Ranking() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [attemptedChallenges, setAttemptedChallenges] = useState<Record<string, boolean>>({});
 
-  const getChallengeUrl = (type: string) => {
+  const getMissionAction = (type: string) => {
     switch (type) {
       case "message": 
-      case "message_sent": return "/chat";
+      case "message_sent": return { label: "Ir para o Chat", url: "/chat", instruction: "Envie mais mensagens para o seu par hoje." };
       case "mood": 
-      case "mood_logged": return "/humor";
-      case "memory": return "/memorias";
-      case "prayer": return "/oracao";
-      case "fasting": return "/jejum";
+      case "mood_logged": return { label: "Registar Humor", url: "/humor", instruction: "Partilhe como se sente agora." };
+      case "memory": return { label: "Ver Memórias", url: "/memorias", instruction: "Recorde um momento especial." };
+      case "prayer": return { label: "Ver Oração", url: "/oracao", instruction: "Rezem juntos hoje." };
+      case "fasting": return { label: "Ver Jejum", url: "/jejum", instruction: "Acompanhe o vosso jejum." };
       case "task_completed":
-      case "plan_completed": return "/plano";
-      default: return null;
+      case "plan_completed": return { label: "Ver Agenda", url: "/plano", instruction: "Conclua uma tarefa ou hábito pendente." };
+      default: return { label: "Ir para a Tarefa", url: "/", instruction: "Interaja com o seu par hoje." };
     }
   };
 
@@ -304,7 +304,7 @@ export default function Ranking() {
                             <div className="bg-white/50 p-2 rounded-xl border border-dashed border-primary/20 flex items-center gap-2">
                               <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
                               <p className="text-[9px] font-bold text-muted-foreground leading-none lowercase first-letter:uppercase">
-                                OBJETIVO: {m.description || 'Interagir regularmente.'}
+                                OBJETIVO: {m.description && m.description.length > 10 ? m.description : getMissionAction(m.type).instruction}
                               </p>
                             </div>
                             
@@ -313,11 +313,11 @@ export default function Ranking() {
                               size="sm" 
                               className="w-full h-8 text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 border border-primary/10 shadow-sm"
                               onClick={() => {
-                                const url = getChallengeUrl(m.type);
-                                if (url) navigate(url);
+                                const action = getMissionAction(m.type);
+                                if (action.url) navigate(action.url);
                               }}
                             >
-                              <ExternalLink className="w-3 h-3 mr-1" /> Ir para a Tarefa
+                              <ExternalLink className="w-3 h-3 mr-1" /> {getMissionAction(m.type).label}
                             </Button>
                           </div>
                         )}
