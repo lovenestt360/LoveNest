@@ -89,29 +89,46 @@ export function useLoveStreak() {
         .eq("couple_id", spaceId)
         .maybeSingle() as any);
 
-      // 3. Carregar Atividade Diária (Fonte Única: daily_activity)
-      const startOfLocalDay = new Date();
-      startOfLocalDay.setHours(0, 0, 0, 0);
-      const endOfLocalDay = new Date();
-      endOfLocalDay.setHours(23, 59, 59, 999);
+      // 3. Carregar Missões do Dia (Novo Motor V5)
+      const { data: missionsRaw } = await supabase.rpc('fn_get_or_create_daily_missions_v5', {
+        p_couple_id: spaceId
+      });
 
-      const { data: activities } = await (supabase
-        .from("daily_activity" as any)
-        .select("user_id")
-        .eq("couple_id", spaceId)
-        .gte("created_at", startOfLocalDay.toISOString())
-        .lte("created_at", endOfLocalDay.toISOString()) as any);
+      // Carregar os detalhes das missões
+      const missionIds = (missionsRaw as any[])?.map(m => m.mission_id) || [];
+      const { data: missionDetails } = await supabase
+          .from('love_missions')
+          .select('*')
+          .in('id', missionIds);
 
-      const meActive = (activities as any[])?.some(a => a.user_id === user.id) || false;
-      const partnerActive = (activities as any[])?.some(a => a.user_id !== user.id) || false;
+      const missions: DailyMission[] = (missionsRaw as any[])?.map(m => {
+          const detail = missionDetails?.find(d => d.id === m.mission_id);
+          return {
+              id: m.id,
+              title: detail?.title || "Missão",
+              description: detail?.description || "",
+              emoji: detail?.emoji || "✨",
+              type: "daily",
+              target: detail?.target_count || 1,
+              current: m.progress || 0,
+              completed: m.completed || false,
+              reward: (detail as any)?.points_reward || (detail as any)?.reward_points || 20
+          };
+      }) || [];
+
+      // 4. Carregar Status Diário (Timezone Aware)
+      const { data: dailyStatusRaw } = await supabase.rpc('get_couple_daily_status', {
+        p_couple_id: spaceId
+      });
+      const status = (dailyStatusRaw as any)?.[0];
 
       if (streak) {
         setData({
           current_streak: streak.current_streak,
-          best_streak: streak.current_streak, // For now keeping same
+          best_streak: streak.current_streak,
           last_streak_date: streak.last_valid_day,
           loveshield_count: (shieldData as any)?.quantity || 0,
-          total_points: 0, // Simplified out for now
+          total_points: 0,
           level_title: getStreakLevel(streak.current_streak).title
         });
       } else {
@@ -125,10 +142,10 @@ export function useLoveStreak() {
       }
 
       setDailyStatus({
-        me_active: meActive,
-        partner_active: partnerActive,
-        missions: [], // Missões removidas a pedido por simplicidade
-        day_complete: meActive && partnerActive
+        me_active: status?.me_active || false,
+        partner_active: status?.partner_active || false,
+        missions: missions,
+        day_complete: (status?.me_active && status?.partner_active) || false
       });
 
     } catch (err) {
@@ -170,6 +187,14 @@ export function useLoveStreak() {
         event: "*",
         schema: "public",
         table: "daily_activity" as any,
+        filter: `couple_id=eq.${spaceId}`,
+      }, () => {
+        load();
+      })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "couple_missions" as any,
         filter: `couple_id=eq.${spaceId}`,
       }, () => {
         load();
