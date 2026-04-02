@@ -279,7 +279,7 @@ export default function Admin() {
 
             // 7. Streaks
             const { data: streaksData } = await adminClient
-                .from("love_streaks")
+                .from("streaks" as any)
                 .select("*")
                 .order("current_streak", { ascending: false });
             setStreaks(streaksData || []);
