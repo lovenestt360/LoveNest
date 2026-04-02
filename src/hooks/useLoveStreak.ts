@@ -232,15 +232,17 @@ export function useLoveStreak() {
         }) as any);
       if (error) throw error;
       
-      // Forçar recarregamento para feedback imediato
-      load();
+      // Pequeno delay para garantir que o Trigger do Postgres terminou o processamento v10
+      setTimeout(() => {
+        load();
+      }, 300);
       
       return true;
     } catch (err: any) {
       console.error("Erro ao registrar atividade:", err);
       return false;
     }
-  }, [spaceId, user]);
+  }, [spaceId, user, load]);
 
   // Comprar escudo
   const buyShield = useCallback(async () => {
