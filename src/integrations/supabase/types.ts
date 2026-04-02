@@ -1084,53 +1084,32 @@ export type Database = {
         }
         Relationships: []
       }
-      love_streaks: {
+      streaks: {
         Row: {
-          best_streak: number
-          couple_space_id: string
-          created_at: string
+          couple_id: string
           current_streak: number
           id: string
-          interaction_date: string | null
-          last_streak_date: string | null
-          level_title: string
-          shield_monthly_reset: string
-          shield_remaining: number
-          total_points: number
-          updated_at: string
+          last_valid_day: string | null
+          updated_at: string | null
         }
         Insert: {
-          best_streak?: number
-          couple_space_id: string
-          created_at?: string
+          couple_id: string
           current_streak?: number
           id?: string
-          interaction_date?: string | null
-          last_streak_date?: string | null
-          level_title?: string
-          shield_monthly_reset?: string
-          shield_remaining?: number
-          total_points?: number
-          updated_at?: string
+          last_valid_day?: string | null
+          updated_at?: string | null
         }
         Update: {
-          best_streak?: number
-          couple_space_id?: string
-          created_at?: string
+          couple_id?: string
           current_streak?: number
           id?: string
-          interaction_date?: string | null
-          last_streak_date?: string | null
-          level_title?: string
-          shield_monthly_reset?: string
-          shield_remaining?: number
-          total_points?: number
-          updated_at?: string
+          last_valid_day?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "love_streaks_couple_space_id_fkey"
-            columns: ["couple_space_id"]
+            foreignKeyName: "streaks_couple_id_fkey"
+            columns: ["couple_id"]
             isOneToOne: true
             referencedRelation: "couple_spaces"
             referencedColumns: ["id"]
