@@ -23,7 +23,7 @@ export interface PlanoItem {
 export function usePlano() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const { recordInteraction } = useLoveStreak();
+  // Removed useLoveStreak for daily_activity
   const [items, setItems] = useState<PlanoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -152,8 +152,13 @@ export function usePlano() {
         type: "plano"
       });
       
-      // Registrar atividade para o Streak
-      await recordInteraction("plan_completed");
+      // Registrar atividade para o Streak bypass
+      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+        couple_id: spaceId,
+        user_id: user?.id,
+        type: "plan_completed"
+      });
+      if (actErr) console.error(actErr);
     }
   };
 

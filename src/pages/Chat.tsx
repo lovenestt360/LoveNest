@@ -456,7 +456,7 @@ export default function Chat() {
   const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
-  const { recordInteraction } = useLoveStreak();
+  // Removed useLoveStreak for daily_activity
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const { partner, loading: loadingPartner } = usePartnerProfile();
@@ -682,7 +682,12 @@ export default function Chat() {
         setSending(false);
         return;
       }
-      await recordInteraction("message_sent");
+      const { error: actErr } = await supabase.from('daily_activity' as any).insert({
+        couple_id: spaceId,
+        user_id: user.id,
+        type: "message_sent"
+      });
+      if (actErr) console.error(actErr);
 
       // ── Non-blocking Notification ──
       let body = currentInput;
@@ -732,7 +737,12 @@ export default function Chat() {
         type: "chat",
       });
 
-      await recordInteraction("message_sent");
+      const { error: actErr } = await supabase.from('daily_activity' as any).insert({
+        couple_id: spaceId,
+        user_id: user.id,
+        type: "message_sent"
+      });
+      if (actErr) console.error(actErr);
 
       // Animation timeout
       setTimeout(() => setShowCarinhoAnim(false), 2000);
@@ -742,7 +752,7 @@ export default function Chat() {
     } finally {
       setSending(false);
     }
-  }, [spaceId, user, sending, recordInteraction, toast]);
+  }, [spaceId, user, sending, toast]);
 
   /* ── Edit message ── */
   const handleEditSave = useCallback(async () => {

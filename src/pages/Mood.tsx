@@ -22,7 +22,7 @@ export default function Mood() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
-  const { recordInteraction } = useLoveStreak();
+  // Removed useLoveStreak for daily_activity
   const navigate = useNavigate();
 
   const [partnerRespondedToday, setPartnerRespondedToday] = useState(false);
@@ -149,7 +149,13 @@ export default function Mood() {
     loadData();
 
     // Registrar interação para o Streak (com await para garantir no banco)
-    await recordInteraction("mood_logged");
+    // Registrar interação atómicamente direct bypassing old hooks
+    const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+      couple_id: spaceId,
+      user_id: user.id,
+      type: "mood_logged"
+    });
+    if (actErr) console.error(actErr);
 
     // Push to partner
     if (spaceId) {

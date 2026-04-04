@@ -24,7 +24,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
   const [caption, setCaption] = useState("");
   const [takenOn, setTakenOn] = useState("");
   const [uploading, setUploading] = useState(false);
-  const { recordInteraction } = useLoveStreak();
+  // Removed useLoveStreak for daily_activity
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +70,12 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
       if (insertErr) throw insertErr;
 
       toast({ title: "📸 Memória guardada!" });
-      await recordInteraction("memory_upload");
+      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+        couple_id: spaceId,
+        user_id: userId,
+        type: "memory_upload"
+      });
+      if (actErr) console.error(actErr);
       if (spaceId) {
         notifyPartner({
           couple_space_id: spaceId,

@@ -30,7 +30,7 @@ export function computeStatus(checkedCount: number, totalActive: number): { stat
 export function useRoutineLogs(userId?: string) {
     const { user } = useAuth();
     const spaceId = useCoupleSpaceId();
-    const { recordInteraction } = useLoveStreak();
+    // Removed useLoveStreak for daily_activity
     const [logs, setLogs] = useState<RoutineDayLog[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -90,7 +90,12 @@ export function useRoutineLogs(userId?: string) {
 
         // Sempre registar a interação na daily_activity para contar para as missões
         if (status !== "unlogged") {
-            await recordInteraction("task_completed");
+            const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+              couple_id: spaceId,
+              user_id: user.id,
+              type: "task_completed"
+            });
+            if (actErr) console.error(actErr);
         }
 
         if (status !== oldStatus && status !== "unlogged") {
