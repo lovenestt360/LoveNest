@@ -148,8 +148,8 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // Registrar interação para o Streak
-    recordInteraction("mood_logged");
+    // Registrar interação para o Streak (com await para garantir no banco)
+    await recordInteraction("mood_logged");
 
     // Push to partner
     if (spaceId) {

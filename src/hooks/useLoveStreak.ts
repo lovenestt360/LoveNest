@@ -240,6 +240,7 @@ export function useLoveStreak() {
       return true;
     } catch (err: any) {
       console.error("Erro ao registrar atividade:", err);
+      toast({ title: "Erro nas missões", description: "Falha ao registar atividade. Tente novamente.", variant: "destructive" });
       return false;
     }
   }, [spaceId, user, load]);

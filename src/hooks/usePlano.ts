@@ -153,7 +153,7 @@ export function usePlano() {
       });
       
       // Registrar atividade para o Streak
-      recordInteraction("plan_completed");
+      await recordInteraction("plan_completed");
     }
   };
 

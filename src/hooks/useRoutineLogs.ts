@@ -90,7 +90,7 @@ export function useRoutineLogs(userId?: string) {
 
         // Sempre registar a interação na daily_activity para contar para as missões
         if (status !== "unlogged") {
-            recordInteraction("task_completed");
+            await recordInteraction("task_completed");
         }
 
         if (status !== oldStatus && status !== "unlogged") {

@@ -682,7 +682,7 @@ export default function Chat() {
         setSending(false);
         return;
       }
-      recordInteraction("message_sent");
+      await recordInteraction("message_sent");
 
       // ── Non-blocking Notification ──
       let body = currentInput;
@@ -732,7 +732,7 @@ export default function Chat() {
         type: "chat",
       });
 
-      recordInteraction("message_sent");
+      await recordInteraction("message_sent");
 
       // Animation timeout
       setTimeout(() => setShowCarinhoAnim(false), 2000);
