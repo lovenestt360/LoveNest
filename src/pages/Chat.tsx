@@ -688,6 +688,7 @@ export default function Chat() {
         type: "message_sent"
       });
       if (actErr) console.error(actErr);
+      else window.dispatchEvent(new CustomEvent("refetch-streak"));
 
       // ── Non-blocking Notification ──
       let body = currentInput;
@@ -743,6 +744,7 @@ export default function Chat() {
         type: "message_sent"
       });
       if (actErr) console.error(actErr);
+      else window.dispatchEvent(new CustomEvent("refetch-streak"));
 
       // Animation timeout
       setTimeout(() => setShowCarinhoAnim(false), 2000);

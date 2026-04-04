@@ -159,6 +159,7 @@ export function usePlano() {
         type: "plan_completed"
       });
       if (actErr) console.error(actErr);
+      else window.dispatchEvent(new CustomEvent("refetch-streak"));
     }
   };
 

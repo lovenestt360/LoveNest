@@ -76,11 +76,13 @@ export function useLoveStreak() {
 
     try {
       // 1. Streak
-      const { data: streak } = await (supabase
+      const { data: streak, error: streakErr } = await (supabase
         .from("streaks" as any)
         .select("*")
         .eq("couple_id", spaceId)
-        .maybeSingle() as any);
+        .single() as any);
+        
+      if (streakErr) console.error("Erro Streak:", streakErr);
 
       // 2. Escudos
       const { data: shieldData } = await (supabase
@@ -171,6 +173,12 @@ export function useLoveStreak() {
 
   useEffect(() => {
     load();
+    const handleRefetch = () => {
+      console.log("Forcing streak refetch via custom event...");
+      load();
+    };
+    window.addEventListener("refetch-streak", handleRefetch);
+    return () => window.removeEventListener("refetch-streak", handleRefetch);
   }, [load]);
 
   // Realtime

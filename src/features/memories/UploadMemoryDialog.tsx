@@ -76,6 +76,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
         type: "memory_upload"
       });
       if (actErr) console.error(actErr);
+      else window.dispatchEvent(new CustomEvent("refetch-streak"));
       if (spaceId) {
         notifyPartner({
           couple_space_id: spaceId,

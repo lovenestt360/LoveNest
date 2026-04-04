@@ -156,6 +156,7 @@ export default function Mood() {
       type: "mood_logged"
     });
     if (actErr) console.error(actErr);
+    else window.dispatchEvent(new CustomEvent("refetch-streak"));
 
     // Push to partner
     if (spaceId) {

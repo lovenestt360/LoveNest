@@ -96,6 +96,7 @@ export function useRoutineLogs(userId?: string) {
               type: "task_completed"
             });
             if (actErr) console.error(actErr);
+            else window.dispatchEvent(new CustomEvent("refetch-streak"));
         }
 
         if (status !== oldStatus && status !== "unlogged") {
