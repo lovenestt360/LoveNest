@@ -203,7 +203,14 @@ export default function CoupleSpace() {
         user_id: session.user.id,
       });
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        // Se chocar no novo Constraint Unique do user_id, apagamos a sala fantasma para não haver lixo
+        if (memberError.code === "23505" || memberError.message.includes("duplicate key")) {
+           await supabase.from("couple_spaces").delete().eq("id", space.id);
+           throw new Error("Você já está associado a um casal! Ação bloqueada.");
+        }
+        throw memberError;
+      }
 
       toast({
         title: "LoveNest criado!",
@@ -271,9 +278,12 @@ export default function CoupleSpace() {
       });
 
       if (joinError) {
-        const msg = joinError.message.includes("couple_space_full") 
-          ? "Este LoveNest já está completo (máximo 2 membros)."
-          : "Não foi possível entrar no LoveNest.";
+        let msg = "Não foi possível entrar no LoveNest.";
+        if (joinError.message.includes("couple_space_full")) {
+          msg = "Este LoveNest já está completo (máximo 2 membros).";
+        } else if (joinError.code === "23505" || joinError.message.includes("duplicate key")) {
+          msg = "Você já pertence a um LoveNest! Bloqueio ativo. Saia do atual primeiro se quiser entrar neste.";
+        }
         
         toast({
           variant: "destructive",
