@@ -683,7 +683,7 @@ export default function Chat() {
         return;
       }
       const { error: actErr } = await supabase.from('daily_activity' as any).insert({
-        couple_id: spaceId,
+        couple_space_id: spaceId,
         user_id: user.id,
         type: "message_sent"
       });
@@ -739,7 +739,7 @@ export default function Chat() {
       });
 
       const { error: actErr } = await supabase.from('daily_activity' as any).insert({
-        couple_id: spaceId,
+        couple_space_id: spaceId,
         user_id: user.id,
         type: "message_sent"
       });

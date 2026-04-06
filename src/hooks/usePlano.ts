@@ -154,7 +154,7 @@ export function usePlano() {
       
       // Registrar atividade para o Streak bypass
       const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_id: spaceId,
+        couple_space_id: spaceId,
         user_id: user?.id,
         type: "plan_completed"
       });

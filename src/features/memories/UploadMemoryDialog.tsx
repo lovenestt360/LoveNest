@@ -71,7 +71,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
 
       toast({ title: "📸 Memória guardada!" });
       const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_id: spaceId,
+        couple_space_id: spaceId,
         user_id: userId,
         type: "memory_upload"
       });

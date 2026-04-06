@@ -110,7 +110,7 @@ export default function Ranking() {
       supabase
         .from("daily_activity")
         .select("id", { count: "exact", head: true })
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .then(({ count }) => setTasksCompleted(count || 0));
     }
   }, [spaceId]);

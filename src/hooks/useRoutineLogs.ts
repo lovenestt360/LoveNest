@@ -91,7 +91,7 @@ export function useRoutineLogs(userId?: string) {
         // Sempre registar a interação na daily_activity para contar para as missões
         if (status !== "unlogged") {
             const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-              couple_id: spaceId,
+              couple_space_id: spaceId,
               user_id: user.id,
               type: "task_completed"
             });

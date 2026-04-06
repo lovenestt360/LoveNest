@@ -79,7 +79,7 @@ export function useLoveStreak() {
       const { data: streak, error: streakErr } = await (supabase
         .from("streaks" as any)
         .select("*")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .single() as any);
         
       if (streakErr) console.error("Erro Streak:", streakErr);
@@ -88,7 +88,7 @@ export function useLoveStreak() {
       const { data: shieldData } = await (supabase
         .from("shields" as any)
         .select("quantity")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .maybeSingle() as any);
 
       // 3. Pontos (Individuais do Utilizador)
@@ -105,7 +105,7 @@ export function useLoveStreak() {
       // 4. Missões do Dia — RPC retorna TUDO (title, description, emoji, type, target, progress, completed)
       const { data: missionsRaw, error: missionsError } = await supabase.rpc(
         'fn_get_or_create_daily_missions_v5' as any,
-        { p_couple_id: spaceId }
+        { p_couple_space_id: spaceId }
       );
 
       console.log("MISSIONS RAW:", missionsRaw);
@@ -144,7 +144,7 @@ export function useLoveStreak() {
 
       // 6. Status diário
       const { data: dailyStatusRaw } = await supabase.rpc('get_couple_daily_status' as any, {
-        p_couple_id: spaceId,
+        p_couple_space_id: spaceId,
       });
       const status = (dailyStatusRaw as any)?.[0];
 
@@ -190,7 +190,7 @@ export function useLoveStreak() {
         event: "*",
         schema: "public",
         table: "streaks" as any,
-        filter: `couple_id=eq.${spaceId}`,
+        filter: `couple_space_id=eq.${spaceId}`,
       }, (payload) => {
         const newData = payload.new as any;
         setData((prev) => {
@@ -209,7 +209,7 @@ export function useLoveStreak() {
         event: "INSERT",
         schema: "public",
         table: "daily_activity" as any,
-        filter: `couple_id=eq.${spaceId}`,
+        filter: `couple_space_id=eq.${spaceId}`,
       }, () => { load(); })
       .on("postgres_changes", {
         event: "INSERT",
@@ -235,7 +235,7 @@ export function useLoveStreak() {
         .from("daily_activity" as any)
         .insert({
           user_id: user.id,
-          couple_id: spaceId,
+          couple_space_id: spaceId,
           type: actionType,
         }) as any);
       if (error) throw error;
@@ -259,7 +259,7 @@ export function useLoveStreak() {
     try {
       const { data: res, error } = await supabase.rpc('fn_purchase_loveshield_v5' as any, {
         p_user_id: user.id,
-        p_couple_id: spaceId,
+        p_couple_space_id: spaceId,
       });
       if (error) throw error;
       const response = res as any;
