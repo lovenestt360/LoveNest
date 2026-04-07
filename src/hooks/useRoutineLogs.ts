@@ -64,11 +64,27 @@ export function useRoutineLogs(userId?: string) {
         totalActive: number,
         notes?: string,
     ) => {
-        if (!user || !spaceId) return;
+        if (!user) return;
+        
+        let sp = spaceId;
+        if (!sp) {
+            const { data: member } = await supabase
+                .from('members')
+                .select('couple_space_id')
+                .eq('user_id', user.id)
+                .single();
+            sp = member?.couple_space_id;
+        }
+        
+        if (!sp) {
+            console.error("useRoutineLogs: Could not determine couple_space_id.");
+            return;
+        }
+
         const { status, rate } = computeStatus(checkedItemIds.length, totalActive);
         const payload = {
             user_id: user.id,
-            couple_space_id: spaceId,
+            couple_space_id: sp,
             day,
             checked_item_ids: checkedItemIds,
             status,
@@ -90,13 +106,15 @@ export function useRoutineLogs(userId?: string) {
 
         // Sempre registar a interação na daily_activity para contar para as missões
         if (status !== "unlogged") {
-            const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-              couple_space_id: spaceId,
-              user_id: user.id,
-              type: "task_completed"
-            });
-            if (actErr) console.error(actErr);
-            else window.dispatchEvent(new CustomEvent("refetch-streak"));
+            if (sp && user) {
+                const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+                    couple_space_id: sp,
+                    user_id: user.id,
+                    type: "task_completed"
+                });
+                if (actErr) console.error("Routine Activity Error:", actErr);
+                else window.dispatchEvent(new CustomEvent("refetch-streak"));
+            }
         }
 
         if (status !== oldStatus && status !== "unlogged") {

@@ -84,8 +84,23 @@ export function usePlano() {
     isImportant?: boolean;
     forWhom?: "ambos" | "me" | "partner";
   }) => {
-    if (!spaceId || !user) return null;
+    if (!user) return null;
     
+    let sp = spaceId;
+    if (!sp) {
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', user.id)
+        .single();
+      sp = member?.couple_space_id;
+    }
+
+    if (!sp) {
+      toast({ title: "Erro", description: "Não identificamos o teu ninho.", variant: "destructive" });
+      return null;
+    }
+
     let planAt = null;
     if (date) {
       planAt = time ? `${date}T${time}:00` : `${date}T00:00:00`;
@@ -97,7 +112,7 @@ export function usePlano() {
     const { data, error } = await supabase
       .from("plano_items")
       .insert({
-        couple_space_id: spaceId,
+        couple_space_id: sp,
         user_id: user.id,
         title,
         description,
@@ -116,18 +131,21 @@ export function usePlano() {
     }
 
     // Notificar parceiro
-    await notifyPartner({
-      couple_space_id: spaceId,
-      title: "Novo Plano! 📅",
-      body: `O teu amor adicionou: ${title}`,
-      url: "/plano?tab=agenda",
-      type: "plano"
-    });
+    if (sp) {
+      await notifyPartner({
+        couple_space_id: sp,
+        title: "Novo Plano! 📅",
+        body: `O teu amor adicionou: ${title}`,
+        url: "/plano?tab=agenda",
+        type: "plano"
+      });
+    }
 
     return data;
   };
 
   const toggleComplete = async (id: string, completed: boolean) => {
+    if (!user) return;
     const item = items.find(i => i.id === id);
     if (!item) return;
 
@@ -143,23 +161,47 @@ export function usePlano() {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       fetchItems(); // Rollback
     } else if (completed) {
+      let sp = spaceId;
+      if (!sp && user) {
+        const { data: member } = await supabase
+          .from('members')
+          .select('couple_space_id')
+          .eq('user_id', user.id)
+          .single();
+        sp = member?.couple_space_id;
+      }
+
       // Notificar conclusão
-      await notifyPartner({
-        couple_space_id: spaceId!,
-        title: "Plano Concluído! ✅",
-        body: `O teu amor concluiu: ${item.title}`,
-        url: "/plano?tab=agenda",
-        type: "plano"
-      });
+      if (sp) {
+        await notifyPartner({
+          couple_space_id: sp,
+          title: "Plano Concluído! ✅",
+          body: `O teu amor concluiu: ${item.title}`,
+          url: "/plano?tab=agenda",
+          type: "plano"
+        });
+      }
       
       // Registrar atividade para o Streak bypass
-      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_space_id: spaceId,
-        user_id: user?.id,
-        type: "plan_completed"
-      });
-      if (actErr) console.error(actErr);
-      else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      if (sp && user) {
+      if (!sp && user) {
+        const { data: member } = await supabase
+          .from('members')
+          .select('couple_space_id')
+          .eq('user_id', user.id)
+          .single();
+        sp = member?.couple_space_id;
+      }
+
+      if (sp && user) {
+        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+          couple_space_id: sp,
+          user_id: user.id,
+          type: "plan_completed"
+        });
+        if (actErr) console.error("Plano Activity Error:", actErr);
+        else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      }
     }
   };
 

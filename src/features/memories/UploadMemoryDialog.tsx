@@ -44,14 +44,30 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
   };
 
   const handleSave = async () => {
-    if (!file || !spaceId || !userId) {
-      toast({ title: "Dados em falta", description: "Não foi possível identificar o teu utilizador ou casa.", variant: "destructive" });
+    if (!file || !userId) {
+      toast({ title: "Dados em falta", description: "Não foi possível identificar o teu utilizador ou ficheiro.", variant: "destructive" });
       return;
     }
+
+    let sp = spaceId;
+    if (!sp) {
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', userId)
+        .single();
+      sp = member?.couple_space_id;
+    }
+
+    if (!sp) {
+      toast({ title: "Dados em falta", description: "Não foi possível identificar a tua casa.", variant: "destructive" });
+      return;
+    }
+
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${spaceId}/${crypto.randomUUID()}.${ext}`;
+      const path = `${sp}/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("memories")
@@ -60,7 +76,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
       if (uploadErr) throw uploadErr;
 
       const { error: insertErr } = await supabase.from("photos").insert({
-        couple_space_id: spaceId,
+        couple_space_id: sp,
         uploaded_by: userId,
         file_path: path,
         caption: caption.trim() || null,
@@ -70,16 +86,19 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
       if (insertErr) throw insertErr;
 
       toast({ title: "📸 Memória guardada!" });
-      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_space_id: spaceId,
-        user_id: userId,
-        type: "memory_upload"
-      });
-      if (actErr) console.error(actErr);
-      else window.dispatchEvent(new CustomEvent("refetch-streak"));
-      if (spaceId) {
+
+      if (sp && userId) {
+        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+          couple_space_id: sp,
+          user_id: userId,
+          type: "memory_upload"
+        });
+        if (actErr) console.error("Memory Activity Error:", actErr);
+        else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      }
+      if (sp) {
         notifyPartner({
-          couple_space_id: spaceId,
+          couple_space_id: sp,
           title: "📸 Nova memória",
           body: caption.trim() || "Nova foto adicionada",
           url: "/memorias",

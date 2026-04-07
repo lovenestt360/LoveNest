@@ -609,7 +609,22 @@ export default function Chat() {
   }, [user]);
 
   const handleSend = useCallback(async (blobOverride?: Blob) => {
-    if (!spaceId || !user || sending) return;
+    if (!user || sending) return;
+    
+    let sp = spaceId;
+    if (!sp) {
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', user.id)
+        .single();
+      sp = member?.couple_space_id;
+    }
+
+    if (!sp) {
+      toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço de casal.", variant: "destructive" });
+      return;
+    }
 
     // ── Pre-calculate values ──
     const currentInput = input;
@@ -682,26 +697,30 @@ export default function Chat() {
         setSending(false);
         return;
       }
-      const { error: actErr } = await supabase.from('daily_activity' as any).insert({
-        couple_space_id: spaceId,
-        user_id: user.id,
-        type: "message_sent"
-      });
-      if (actErr) console.error(actErr);
-      else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      if (sp && user) {
+        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+          couple_space_id: sp,
+          user_id: user.id,
+          type: "message_sent"
+        });
+        if (actErr) console.error("Chat Activity Error:", actErr);
+        else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      }
 
       // ── Non-blocking Notification ──
       let body = currentInput;
       if (!body && imageUrl) body = "📷 Enviou uma foto";
       if (!body && audioUrl) body = "🎤 Enviou um áudio";
       
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "💬 Nova mensagem no Chat",
-        body: body.length > 50 ? body.slice(0, 50) + "…" : body,
-        url: "/chat",
-        type: "chat",
-      }).catch(err => console.error("Notification fail (silent):", err));
+      if (sp) {
+        notifyPartner({
+          couple_space_id: sp,
+          title: "💬 Nova mensagem no Chat",
+          body: body.length > 50 ? body.slice(0, 50) + "…" : body,
+          url: "/chat",
+          type: "chat",
+        }).catch(err => console.error("Notification fail (silent):", err));
+      }
 
     } catch (err: any) {
       // Remove temp message on error
@@ -715,14 +734,29 @@ export default function Chat() {
 
   /* ── Send Carinho ── */
   const handleSendCarinho = useCallback(async () => {
-    if (!spaceId || !user || sending) return;
+    if (!user || sending) return;
+
+    let sp = spaceId;
+    if (!sp) {
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', user.id)
+        .single();
+      sp = member?.couple_space_id;
+    }
+
+    if (!sp) {
+      toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço.", variant: "destructive" });
+      return;
+    }
     
     setSending(true);
     setShowCarinhoAnim(true);
     
     try {
       const { error: insertError } = await supabase.from("messages").insert({
-        couple_space_id: spaceId,
+        couple_space_id: sp,
         sender_user_id: user.id,
         content: "Só para te lembrar que te amo 💛",
       });
@@ -730,21 +764,25 @@ export default function Chat() {
       if (insertError) throw insertError;
       
       // Notify partner
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "💖 Recebeste carinho!",
-        body: "Só para te lembrar que te amo 💛",
-        url: "/chat",
-        type: "chat",
-      });
+      if (sp) {
+        notifyPartner({
+          couple_space_id: sp,
+          title: "💖 Recebeste carinho!",
+          body: "Só para te lembrar que te amo 💛",
+          url: "/chat",
+          type: "chat",
+        });
+      }
 
-      const { error: actErr } = await supabase.from('daily_activity' as any).insert({
-        couple_space_id: spaceId,
-        user_id: user.id,
-        type: "message_sent"
-      });
-      if (actErr) console.error(actErr);
-      else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      if (sp && user) {
+        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+          couple_space_id: sp,
+          user_id: user.id,
+          type: "message_sent"
+        });
+        if (actErr) console.error("Carinho Activity Error:", actErr);
+        else window.dispatchEvent(new CustomEvent("refetch-streak"));
+      }
 
       // Animation timeout
       setTimeout(() => setShowCarinhoAnim(false), 2000);

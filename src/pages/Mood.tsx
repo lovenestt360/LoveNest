@@ -102,8 +102,25 @@ export default function Mood() {
   }, [spaceId, loadData]);
 
   const handleSave = async () => {
-    if (!spaceId || !user) return;
+    if (!user) return;
     setSaving(true);
+
+    let sp = spaceId;
+    if (!sp) {
+      console.log("Mood: spaceId null at start, fetching fallback...");
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', user.id)
+        .single();
+      sp = member?.couple_space_id;
+    }
+
+    if (!sp) {
+      setSaving(false);
+      toast.error("Não foi possível identificar o teu espaço de casal.");
+      return;
+    }
 
     const payload = {
       mood_key: moodKey,
@@ -129,7 +146,7 @@ export default function Mood() {
       const { data, error } = await supabase
         .from("mood_checkins")
         .insert({
-          couple_space_id: spaceId,
+          couple_space_id: sp,
           user_id: user.id,
           day_key: today,
           ...payload
@@ -148,21 +165,24 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // Registrar interação para o Streak (com await para garantir no banco)
-    // Registrar interação atómicamente direct bypassing old hooks
+    // Registrar interação para o Streak
+    console.log("Mood: Sending activity with spaceId:", sp);
     const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-      couple_space_id: spaceId,
+      couple_space_id: sp,
       user_id: user.id,
       type: "mood_logged"
     });
-    if (actErr) console.error(actErr);
-    else window.dispatchEvent(new CustomEvent("refetch-streak"));
+    if (actErr) console.error("Mood Activity Entry Error:", actErr);
+    else {
+      console.log("Mood Activity Entry Success");
+      window.dispatchEvent(new CustomEvent("refetch-streak"));
+    }
 
     // Push to partner
-    if (spaceId) {
+    if (sp) {
       const moodInfo = MOOD_OPTIONS.find(m => m.key === moodKey);
       notifyPartner({
-        couple_space_id: spaceId,
+        couple_space_id: sp,
         title: `${moodInfo?.emoji ?? "😶"} Novo Humor (${moodPercent}%)`,
         body: emotions.length > 0 ? `Sentindo-se: ${emotions.join(", ")}` : (note ? `Houve uma actualização no humor de hoje.` : (moodInfo?.label ?? moodKey)),
         url: "/humor",
