@@ -612,16 +612,18 @@ export default function Chat() {
     if (!user || sending) return;
     
     let sp = spaceId;
-    if (!sp) {
+    if (!sp && user) {
       const { data: member } = await supabase
         .from('members')
         .select('couple_space_id')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       sp = member?.couple_space_id;
     }
 
     if (!sp) {
+      console.error("CRITICAL: couple_space_id ainda null no Chat", user?.id);
       toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço de casal.", variant: "destructive" });
       return;
     }
@@ -683,7 +685,7 @@ export default function Chat() {
       }
 
       const { error: insertError } = await supabase.from("messages").insert({
-        couple_space_id: spaceId,
+        couple_space_id: sp,
         sender_user_id: user.id,
         content: currentInput,
         reply_to_id: currentReplyTo?.id ?? null,
@@ -737,16 +739,18 @@ export default function Chat() {
     if (!user || sending) return;
 
     let sp = spaceId;
-    if (!sp) {
+    if (!sp && user) {
       const { data: member } = await supabase
         .from('members')
         .select('couple_space_id')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       sp = member?.couple_space_id;
     }
 
     if (!sp) {
+      console.error("CRITICAL: couple_space_id ainda null no Carinho", user?.id);
       toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço.", variant: "destructive" });
       return;
     }

@@ -50,16 +50,18 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
     }
 
     let sp = spaceId;
-    if (!sp) {
+    if (!sp && userId) {
       const { data: member } = await supabase
         .from('members')
         .select('couple_space_id')
         .eq('user_id', userId)
-        .single();
+        .limit(1)
+        .maybeSingle();
       sp = member?.couple_space_id;
     }
 
     if (!sp) {
+      console.error("CRITICAL: couple_space_id ainda null nas Memórias", userId);
       toast({ title: "Dados em falta", description: "Não foi possível identificar a tua casa.", variant: "destructive" });
       return;
     }

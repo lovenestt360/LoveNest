@@ -67,17 +67,18 @@ export function useRoutineLogs(userId?: string) {
         if (!user) return;
         
         let sp = spaceId;
-        if (!sp) {
+        if (!sp && user) {
             const { data: member } = await supabase
                 .from('members')
                 .select('couple_space_id')
                 .eq('user_id', user.id)
-                .single();
+                .limit(1)
+                .maybeSingle();
             sp = member?.couple_space_id;
         }
         
         if (!sp) {
-            console.error("useRoutineLogs: Could not determine couple_space_id.");
+            console.error("CRITICAL: couple_space_id ainda null nas Rotinas", user?.id);
             return;
         }
 

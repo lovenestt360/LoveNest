@@ -87,16 +87,18 @@ export function usePlano() {
     if (!user) return null;
     
     let sp = spaceId;
-    if (!sp) {
+    if (!sp && user) {
       const { data: member } = await supabase
         .from('members')
         .select('couple_space_id')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       sp = member?.couple_space_id;
     }
 
     if (!sp) {
+      console.error("CRITICAL: couple_space_id ainda null ao Adicionar Plano", user?.id);
       toast({ title: "Erro", description: "Não identificamos o teu ninho.", variant: "destructive" });
       return null;
     }
@@ -167,8 +169,14 @@ export function usePlano() {
           .from('members')
           .select('couple_space_id')
           .eq('user_id', user.id)
-          .single();
+          .limit(1)
+          .maybeSingle();
         sp = member?.couple_space_id;
+      }
+
+      if (!sp) {
+        console.error("CRITICAL: couple_space_id ainda null ao Concluir Plano", user?.id);
+        return;
       }
 
       // Notificar conclusão
@@ -183,16 +191,6 @@ export function usePlano() {
       }
       
       // Registrar atividade para o Streak bypass
-      if (sp && user) {
-      if (!sp && user) {
-        const { data: member } = await supabase
-          .from('members')
-          .select('couple_space_id')
-          .eq('user_id', user.id)
-          .single();
-        sp = member?.couple_space_id;
-      }
-
       if (sp && user) {
         const { error: actErr } = await (supabase as any).from('daily_activity').insert({
           couple_space_id: sp,

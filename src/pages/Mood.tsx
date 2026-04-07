@@ -106,17 +106,19 @@ export default function Mood() {
     setSaving(true);
 
     let sp = spaceId;
-    if (!sp) {
+    if (!sp && user) {
       console.log("Mood: spaceId null at start, fetching fallback...");
       const { data: member } = await supabase
         .from('members')
         .select('couple_space_id')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       sp = member?.couple_space_id;
     }
 
     if (!sp) {
+      console.error("CRITICAL: couple_space_id ainda null no Mood", user?.id);
       setSaving(false);
       toast.error("Não foi possível identificar o teu espaço de casal.");
       return;
