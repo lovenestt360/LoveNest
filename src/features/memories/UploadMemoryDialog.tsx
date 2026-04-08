@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { useLoveStreak } from "@/hooks/useLoveStreak";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,6 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
   const [caption, setCaption] = useState("");
   const [takenOn, setTakenOn] = useState("");
   const [uploading, setUploading] = useState(false);
-  // Removed useLoveStreak for daily_activity
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [isReady, setIsReady] = useState(false);
@@ -103,38 +102,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
 
       toast({ title: "📸 Memória guardada!" });
 
-      // Registrar interação na daily_activity (Padrão Unificado v12.8)
-      if (!userId) return;
-      let finalSp = sp;
-
-      if (!finalSp && userId) {
-        console.log("MemoryUpload: spaceId nulo, tentando fallback via members...");
-        const { data: member } = await supabase
-          .from('members')
-          .select('couple_space_id')
-          .eq('user_id', userId)
-          .limit(1)
-          .maybeSingle();
-        finalSp = member?.couple_space_id;
-      }
-
-      if (!finalSp) {
-        console.error("CRITICAL: MemoryUpload sem couple_space_id", userId);
-        return;
-      }
-
-      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_space_id: finalSp,
-        user_id: userId,
-        type: "memory_upload"
-      });
-
-      if (actErr) {
-        console.error("ACTIVITY ERROR (MemoryUpload):", actErr);
-      } else {
-        console.log("ACTIVITY OK (MemoryUpload): memory_upload");
-        window.dispatchEvent(new CustomEvent("refetch-streak"));
-      }
+      // Notificação e lógica de streak removidas para purga total
       if (sp) {
         notifyPartner({
           couple_space_id: sp,

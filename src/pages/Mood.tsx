@@ -5,7 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { useLoveStreak } from "@/hooks/useLoveStreak";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
 import { MoodCheckin } from "@/features/mood/types";
@@ -22,7 +22,6 @@ export default function Mood() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
-  // Removed useLoveStreak for daily_activity
   const navigate = useNavigate();
 
   const [partnerRespondedToday, setPartnerRespondedToday] = useState(false);
@@ -180,40 +179,7 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // Registrar interação para o Streak (Padrão Unificado v12.8)
-    if (!user) return;
-    let finalSp = sp;
-
-    if (!finalSp && user) {
-      console.log("Mood: spaceId nulo, tentando fallback via members...");
-      const { data: member } = await supabase
-        .from('members')
-        .select('couple_space_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle();
-      finalSp = member?.couple_space_id;
-    }
-
-    if (!finalSp) {
-      console.error("CRITICAL: Mood sem couple_space_id", user?.id);
-      return;
-    }
-
-    const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-      couple_space_id: finalSp,
-      user_id: user.id,
-      type: "mood_logged"
-    });
-
-    if (actErr) {
-      console.error("ACTIVITY ERROR (Mood):", actErr);
-    } else {
-      console.log("ACTIVITY OK (Mood): mood_logged");
-      window.dispatchEvent(new CustomEvent("refetch-streak"));
-    }
-
-    // Push to partner
+    // Notificação ao parceiro (Daily activity e Streak removidos para purga)
     if (sp) {
       const moodInfo = MOOD_OPTIONS.find(m => m.key === moodKey);
       notifyPartner({

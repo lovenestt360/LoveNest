@@ -91,9 +91,8 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "streaks" | "points" | "wrapped" | "pwa" | "verifications" | "feature_flags">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "feature_flags">("overview");
     const [verifications, setVerifications] = useState<any[]>([]);
-    const [streaks, setStreaks] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
@@ -278,12 +277,6 @@ export default function Admin() {
                 }
             }
 
-            // 7. Streaks
-            const { data: streaksData } = await adminClient
-                .from("streaks" as any)
-                .select("*")
-                .order("current_streak", { ascending: false });
-            setStreaks(streaksData || []);
 
             // 8. PWA Settings (Garded against missing table)
             try {
@@ -816,12 +809,6 @@ export default function Admin() {
                     <Button variant={tab === "pwa" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("pwa")}>
                         <Smartphone className="w-4 h-4" /> <span className="hidden md:inline">Tutorial PWA</span>
                     </Button>
-                    <Button variant={tab === "streaks" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("streaks")}>
-                        <Flame className="w-4 h-4" /> <span className="hidden md:inline">Streaks</span>
-                    </Button>
-                    <Button variant={tab === "points" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("points")}>
-                        <Coins className="w-4 h-4" /> <span className="hidden md:inline">Pontos</span>
-                    </Button>
                     <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
                         <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
                     </Button>
@@ -878,11 +865,6 @@ export default function Admin() {
                                 <FileText className="w-6 h-6 text-yellow-500 mb-4" />
                                 <span className="text-3xl font-black">{pendingPayments.length}</span>
                                 <span className="text-sm text-yellow-600/70 font-bold uppercase tracking-wider mt-1">Pendentes</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-purple-500/20 bg-purple-500/5">
-                                <Flame className="w-6 h-6 text-purple-500 mb-4" />
-                                <span className="text-3xl font-black">{streaks.length}</span>
-                                <span className="text-sm text-purple-600/70 font-bold uppercase tracking-wider mt-1">Streaks</span>
                             </div>
                         </div>
 
@@ -1379,157 +1361,7 @@ export default function Admin() {
                     </div>
                 )}
 
-                {/* STREAKS TAB */}
-                {tab === "streaks" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Flame className="w-6 h-6 text-orange-500" /> LoveStreak - Ranking Global</h2>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Flame className="w-6 h-6 text-orange-500 mb-4" />
-                                <span className="text-3xl font-black">{streaks.filter(s => s.current_streak > 0).length}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Streaks Ativos</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Trophy className="w-6 h-6 text-amber-500 mb-4" />
-                                <span className="text-3xl font-black">{streaks.length > 0 ? Math.max(...streaks.map(s => s.current_streak)) : 0}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Maior Streak</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Trophy className="w-6 h-6 text-primary mb-4" />
-                                <span className="text-3xl font-black">{streaks.length > 0 ? Math.max(...streaks.map(s => s.best_streak)) : 0}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Recorde Absoluto</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Users className="w-6 h-6 text-blue-500 mb-4" />
-                                <span className="text-3xl font-black">{streaks.length}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Total Casais</span>
-                            </div>
-                        </div>
-
-                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-muted/50 border-b">
-                                        <tr>
-                                            <th className="p-4 font-bold text-muted-foreground">#</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Casa</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Streak Atual</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Melhor Streak</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Nível</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Shields</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {(streaks || []).map((s, i) => {
-                                            const house = houses?.find(h => h.id === s.couple_space_id);
-                                            const medals = ["🥇", "🥈", "🥉"];
-                                            return (
-                                                <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                                                    <td className="p-4 font-bold">{i < 3 ? medals[i] : i + 1}</td>
-                                                    <td className="p-4 font-medium">{house?.house_name || "LoveNest"}</td>
-                                                    <td className="p-4">
-                                                        <span className="font-bold text-orange-500 flex items-center gap-1">
-                                                            <Flame className="w-4 h-4" /> {s.current_streak}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4 font-medium">{s.best_streak}</td>
-                                                    <td className="p-4 text-xs font-bold">{s.level_title}</td>
-                                                    <td className="p-4 text-xs">{s.shield_remaining}/5 🛡️</td>
-                                                </tr>
-                                            );
-                                        })}
-                                        {streaks.length === 0 && (
-                                            <tr>
-                                                <td colSpan={6} className="p-4 text-center text-muted-foreground">Nenhum streak registado ainda.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* POINTS TAB */}
-                {tab === "points" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Coins className="w-6 h-6 text-primary" /> LovePoints - Ranking Global</h2>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Coins className="w-6 h-6 text-primary mb-4" />
-                                <span className="text-3xl font-black">
-                                    {streaks.reduce((acc, s) => acc + (s.total_points || 0), 0)}
-                                </span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Total de Pontos</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <TrendingUp className="w-6 h-6 text-green-500 mb-4" />
-                                <span className="text-3xl font-black">
-                                    {streaks.length > 0 ? Math.round(streaks.reduce((acc, s) => acc + (s.total_points || 0), 0) / streaks.length) : 0}
-                                </span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Média / Casal</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Trophy className="w-6 h-6 text-primary mb-4" />
-                                <span className="text-3xl font-black">
-                                    {streaks.length > 0 ? Math.max(...streaks.map(s => s.total_points || 0)) : 0}
-                                </span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Recorde Pontos</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Target className="w-6 h-6 text-blue-500 mb-4" />
-                                <span className="text-3xl font-black">
-                                    {streaks.filter(s => (s.total_points || 0) > 100).length}
-                                </span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Casais +100 Pts</span>
-                            </div>
-                        </div>
-
-                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-muted/50 border-b">
-                                        <tr>
-                                            <th className="p-4 font-bold text-muted-foreground">#</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Casa</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Pontos Totais</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Nível Atual</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Melhor Streak</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {[...(streaks || [])]
-                                            .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
-                                            .map((s, i) => {
-                                                const house = houses?.find(h => h.id === s.couple_space_id);
-                                                const medals = ["🥇", "🥈", "🥉"];
-                                                return (
-                                                    <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                                                        <td className="p-4 font-bold">{i < 3 ? medals[i] : i + 1}</td>
-                                                        <td className="p-4 font-medium">{house?.house_name || "LoveNest"}</td>
-                                                        <td className="p-4">
-                                                            <span className="font-bold text-primary flex items-center gap-1">
-                                                                <Coins className="w-4 h-4" /> {s.total_points || 0}
-                                                            </span>
-                                                        </td>
-                                                        <td className="p-4 text-xs font-bold">{s.level_title}</td>
-                                                        <td className="p-4 text-xs font-medium text-muted-foreground">{s.best_streak} Dias</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        {streaks.length === 0 && (
-                                            <tr>
-                                                <td colSpan={5} className="p-4 text-center text-muted-foreground">Nenhum registo de pontos disponível.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* LOVEWRAPPED TAB */}
                 {tab === "wrapped" && (

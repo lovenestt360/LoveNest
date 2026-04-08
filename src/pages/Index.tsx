@@ -17,8 +17,8 @@ import {
   ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
-import { useLoveStreak } from "@/hooks/useLoveStreak";
-import { LoveStreakHomeCard } from "@/features/streak/LoveStreakHomeCard";
+
+
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { notifyPartner } from "@/lib/notifyPartner";
@@ -179,73 +179,7 @@ function useMessagePreview() {
   return data;
 }
 
-function useIntelligentNotifs(spaceId: string | null) {
-  const { user } = useAuth();
-  const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
-  const lastMsg = useMessagePreview();
-  const sentRef = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (!spaceId || !user || !streakData) return;
-
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    // 1. Streak Reminder (if after 19h and partner hasn't interacted)
-    // DISABLED: Preventing notification spam during deploy/refresh
-    /*
-    const partnerInteracted = isPartner1 ? streakData.partner2_interacted_today : streakData.partner1_interacted_today;
-    if (currentHour >= 19 && !partnerInteracted && !sentRef.current.has("streak_reminder")) {
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "Quase lá! 🔥",
-        body: "Não deixem o streak cair hoje 🔥",
-        url: "/",
-        type: "routine",
-        template_key: "streak_reminder"
-      });
-      sentRef.current.add("streak_reminder");
-    }
-    */
-
-    // 1b. Mission Reminder (if after 17h and mission not done)
-    // DISABLED: Preventing notification spam
-    /*
-    const meMission = isPartner1 ? dailyStatus?.is_completed_p1 : dailyStatus?.is_completed_p2;
-    if (currentHour >= 17 && !meMission && dailyStatus?.mission_title && !sentRef.current.has("mission_reminder")) {
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "Missão Especial! 📸",
-        body: `Já viste a missão do dia? "${dailyStatus.mission_title}" ✨`,
-        url: "/plano",
-        type: "plano",
-        template_key: "mission_reminder"
-      });
-      sentRef.current.add("mission_reminder");
-    }
-    */
-
-    // 2. Chat Inactivity (if last message > 8 hours ago during day)
-    // DISABLED: Preventing notification spam
-    /*
-    if (lastMsg.lastTime && currentHour > 10 && currentHour < 22) {
-      const lastTime = new Date(lastMsg.lastTime);
-      const diffHours = (now.getTime() - lastTime.getTime()) / (1000 * 60 * 60);
-      if (diffHours > 8 && !sentRef.current.has("chat_inactivity")) {
-        notifyPartner({
-          couple_space_id: spaceId,
-          title: "Falta um brilho aqui... 💛",
-          body: "Hoje ainda não falaram muito… tudo bem por aí? 💛",
-          url: "/chat",
-          type: "chat",
-          template_key: "chat_inactivity"
-        });
-        sentRef.current.add("chat_inactivity");
-      }
-    }
-    */
-  }, [spaceId, user, streakData, lastMsg.lastTime, isPartner1]);
-}
 
 function useReferralCode() {
   const { user } = useAuth();
@@ -393,11 +327,9 @@ const Index = () => {
   const time = useTimeTogether();
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
-  const { data: streakData, dailyStatus, isPartner1 } = useLoveStreak();
-  const streak = streakData?.current_streak ?? 0;
   const { isEnabled } = useFeatureAccess();
   
-  useIntelligentNotifs(useCoupleSpaceId());
+
 
   const { 
     chatUnread, moodUnread, tasksUnread, memoriesUnread, 
@@ -472,7 +404,7 @@ const Index = () => {
       <div className="space-y-4 px-1">
         <TimeTogetherCard 
           days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
-          streak={streak} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
+          streak={0} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
         />
 
         {/* Global Announcements */}
@@ -487,8 +419,7 @@ const Index = () => {
 
         <InstallBanner />
         
-        {/* Compact Streak */}
-        <LoveStreakHomeCard />
+
       </div>
 
       {/* ── MAIN TOOL GRID (2 Columns) ── */}

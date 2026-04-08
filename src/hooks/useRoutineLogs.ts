@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { useLoveStreak } from "@/hooks/useLoveStreak";
+
 
 export interface RoutineDayLog {
     id: string;
@@ -30,7 +30,6 @@ export function computeStatus(checkedCount: number, totalActive: number): { stat
 export function useRoutineLogs(userId?: string) {
     const { user } = useAuth();
     const spaceId = useCoupleSpaceId();
-    // Removed useLoveStreak for daily_activity
     const [logs, setLogs] = useState<RoutineDayLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [isReady, setIsReady] = useState(false);
@@ -113,40 +112,7 @@ export function useRoutineLogs(userId?: string) {
             await supabase.from("routine_day_logs").insert(payload);
         }
 
-        // Sempre registar a interação na daily_activity (Padrão Unificado v12.8)
-        if (status !== "unlogged") {
-            if (!user) return;
-            let finalSp = sp;
-
-            if (!finalSp && user) {
-                console.log("useRoutineLogs: spaceId nulo, tentando fallback via members...");
-                const { data: member } = await supabase
-                    .from('members')
-                    .select('couple_space_id')
-                    .eq('user_id', user.id)
-                    .limit(1)
-                    .maybeSingle();
-                finalSp = member?.couple_space_id;
-            }
-
-            if (!finalSp) {
-                console.error("CRITICAL: useRoutineLogs sem couple_space_id", user?.id);
-                return;
-            }
-
-            const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-                couple_space_id: finalSp,
-                user_id: user.id,
-                type: "task_completed"
-            });
-
-            if (actErr) {
-                console.error("ACTIVITY ERROR (useRoutineLogs):", actErr);
-            } else {
-                console.log("ACTIVITY OK (useRoutineLogs): task_completed");
-                window.dispatchEvent(new CustomEvent("refetch-streak"));
-            }
-        }
+        // Notificação e lógica de streak removidas para purga total
 
         if (status !== oldStatus && status !== "unlogged") {
             let msg = "";

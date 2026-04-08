@@ -6,7 +6,6 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { useLoveStreak } from "@/hooks/useLoveStreak";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -456,7 +455,6 @@ export default function Chat() {
   const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
   const { resetChatUnread } = useAppNotifContext();
-  // Removed useLoveStreak for daily_activity
   const { toast } = useToast();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const { partner, loading: loadingPartner } = usePartnerProfile();
@@ -714,36 +712,6 @@ export default function Chat() {
         setSending(false);
         return;
       }
-      // Registrar atividade na daily_activity (Padrão Unificado v12.8)
-      if (!user) return;
-      let finalSp = sp;
-
-      if (!finalSp && user) {
-        console.log("Chat: spaceId nulo em handleSend, tentando fallback via members...");
-        const { data: member } = await supabase
-          .from('members')
-          .select('couple_space_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-        finalSp = member?.couple_space_id;
-      }
-
-      if (!finalSp) {
-        console.error("CRITICAL: handleSend sem couple_space_id", user?.id);
-      } else {
-        console.log("ACTIVITY OK (Chat handleSend): message_sent", { spaceId: finalSp });
-        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-          couple_space_id: finalSp,
-          user_id: user.id,
-          type: "message_sent"
-        });
-        if (actErr) {
-          console.error("ACTIVITY ERROR (Chat handleSend):", actErr);
-        } else {
-          window.dispatchEvent(new CustomEvent("refetch-streak"));
-        }
-      }
 
       // ── Non-blocking Notification ──
       let body = currentInput;
@@ -833,22 +801,7 @@ export default function Chat() {
         throw msgErr;
       }
       
-      // 2. Registar na daily_activity
-      console.log("INSERT HEART EXECUTADO", { spaceId: sp, userId: user.id });
-      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_space_id: sp,
-        user_id: user.id,
-        type: "heart"
-      });
-
-      if (actErr) {
-        console.error("DEBUG CARINHO ERROR [2/2]: Falha ao registar na daily_activity:", actErr);
-      } else {
-        console.log("DEBUG CARINHO SUCCESS [2/2]: Registado na daily_activity com sucesso.");
-        window.dispatchEvent(new CustomEvent("refetch-streak"));
-      }
-
-      // 3. Notificar o parceiro
+      // 2. Notificação (Daily activity e Streak removidos para purga)
       notifyPartner({
         couple_space_id: sp,
         title: "💖 Recebeste carinho!",

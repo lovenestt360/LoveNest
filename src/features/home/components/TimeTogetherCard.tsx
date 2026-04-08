@@ -1,4 +1,3 @@
-import { Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TimeUnitProps {
@@ -22,12 +21,11 @@ interface TimeTogetherCardProps {
   hours: number;
   minutes: number;
   seconds: number;
-  streak?: number;
   onSetDate?: () => void;
   hasDate: boolean;
 }
 
-export function TimeTogetherCard({ days, hours, minutes, seconds, streak = 0, onSetDate, hasDate }: TimeTogetherCardProps) {
+export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, hasDate }: TimeTogetherCardProps) {
   if (!hasDate) {
     return (
       <button
@@ -45,11 +43,6 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, streak = 0, on
     <div className="glass-card rounded-[2rem] p-4 space-y-2 shadow-xl border-white/20">
       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
         <span>Tempo juntos</span>
-        {streak > 0 && (
-          <span className="flex items-center gap-1.5 text-orange-500 font-black bg-orange-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full border border-orange-500/20 animate-pulse">
-            <Flame className="w-3 h-3 md:w-3.5 md:h-3.5 fill-current" /> {streak} D{streak !== 1 ? "IAS" : "IA"}
-          </span>
-        )}
       </div>
       
       <div className="flex items-center justify-center gap-3 md:gap-4">
@@ -64,3 +57,4 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, streak = 0, on
     </div>
   );
 }
+

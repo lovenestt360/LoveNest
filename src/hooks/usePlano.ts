@@ -4,7 +4,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { useLoveStreak } from "@/hooks/useLoveStreak";
+
 
 export interface PlanoItem {
   id: string;
@@ -23,7 +23,6 @@ export interface PlanoItem {
 export function usePlano() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  // Removed useLoveStreak for daily_activity
   const [items, setItems] = useState<PlanoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
@@ -191,38 +190,7 @@ export function usePlano() {
         return;
       }
 
-      // Registrar atividade para o Streak (Padrão Unificado v12.8)
-      if (!user) return;
-      let finalSp = sp;
-
-      if (!finalSp && user) {
-        console.log("usePlano: spaceId nulo, tentando fallback via members...");
-        const { data: member } = await supabase
-          .from('members')
-          .select('couple_space_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-        finalSp = member?.couple_space_id;
-      }
-
-      if (!finalSp) {
-        console.error("CRITICAL: usePlano sem couple_space_id", user?.id);
-        return;
-      }
-
-      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-        couple_space_id: finalSp,
-        user_id: user.id,
-        type: "plan_completed"
-      });
-
-      if (actErr) {
-        console.error("ACTIVITY ERROR (usePlano):", actErr);
-      } else {
-        console.log("ACTIVITY OK (usePlano): plan_completed");
-        window.dispatchEvent(new CustomEvent("refetch-streak"));
-      }
+      // Notificação e lógica de streak removidas para purga total
     }
   };
 
