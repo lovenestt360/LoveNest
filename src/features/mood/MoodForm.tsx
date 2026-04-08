@@ -24,6 +24,7 @@ interface MoodFormProps {
     saving: boolean;
     onSave: () => void;
     isUpdate: boolean;
+    isReady: boolean;
 }
 
 export function MoodForm({
@@ -34,7 +35,8 @@ export function MoodForm({
     sleepQuality, setSleepQuality,
     note, setNote,
     saving, onSave,
-    isUpdate
+    isUpdate,
+    isReady
 }: MoodFormProps) {
 
     const toggleEmotion = (e: string) => {
@@ -181,7 +183,7 @@ export function MoodForm({
                         className="min-h-[80px] resize-none"
                         maxLength={500}
                     />
-                    <Button onClick={onSave} disabled={saving} className="w-full">
+                    <Button onClick={onSave} disabled={!isReady || saving} className="w-full">
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdate ? "Actualizar Registo" : "Guardar Humor"}
                     </Button>

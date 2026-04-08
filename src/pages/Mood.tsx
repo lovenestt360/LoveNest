@@ -38,6 +38,15 @@ export default function Mood() {
   const [saving, setSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (spaceId) {
+      console.log("Mood READY: spaceId obtained", spaceId);
+      setIsReady(true);
+    }
+  }, [spaceId]);
+
   // We fetch history over last 14 days minimum
   const [history, setHistory] = useState<MoodCheckin[]>([]);
 
@@ -102,7 +111,11 @@ export default function Mood() {
   }, [spaceId, loadData]);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || saving) return;
+    if (!isReady) {
+      console.warn("Mood: Tentativa de guardar humor antes do sistema estar pronto.");
+      return;
+    }
     setSaving(true);
 
     let sp = spaceId;
@@ -167,16 +180,36 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // Registrar interação para o Streak
-    console.log("Mood: Sending activity with spaceId:", sp);
+    // Registrar interação para o Streak (Padrão Unificado v12.8)
+    if (!user) return;
+    let finalSp = sp;
+
+    if (!finalSp && user) {
+      console.log("Mood: spaceId nulo, tentando fallback via members...");
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      finalSp = member?.couple_space_id;
+    }
+
+    if (!finalSp) {
+      console.error("CRITICAL: Mood sem couple_space_id", user?.id);
+      return;
+    }
+
     const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-      couple_space_id: sp,
+      couple_space_id: finalSp,
       user_id: user.id,
       type: "mood_logged"
     });
-    if (actErr) console.error("Mood Activity Entry Error:", actErr);
-    else {
-      console.log("Mood Activity Entry Success");
+
+    if (actErr) {
+      console.error("ACTIVITY ERROR (Mood):", actErr);
+    } else {
+      console.log("ACTIVITY OK (Mood): mood_logged");
       window.dispatchEvent(new CustomEvent("refetch-streak"));
     }
 
@@ -239,6 +272,7 @@ export default function Mood() {
             note={note} setNote={setNote}
             saving={saving} onSave={handleSave}
             isUpdate={!!existingId}
+            isReady={isReady}
           />
         </TabsContent>
 

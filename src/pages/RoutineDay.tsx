@@ -16,7 +16,7 @@ export default function RoutineDay() {
     const { toast } = useToast();
 
     const { activeItems, loading: itemsLoading } = useRoutineItems();
-    const { logs, fetchMonth, upsertLog, getLogForDay, loading: logsLoading } = useRoutineLogs();
+    const { logs, fetchMonth, upsertLog, getLogForDay, loading: logsLoading, isReady } = useRoutineLogs();
 
     const [checkedIds, setCheckedIds] = useState<string[]>([]);
     const [notes, setNotes] = useState("");
@@ -59,6 +59,7 @@ export default function RoutineDay() {
     }, [autoSave]);
 
     const handleSave = useCallback(async () => {
+        if (!isReady) return;
         setSaving(true);
         clearTimeout(debounceRef.current);
         await upsertLog(day, checkedIds, activeItems.length, notes);
@@ -80,7 +81,7 @@ export default function RoutineDay() {
                     <h1 className="text-lg font-semibold capitalize">{dayLabel}</h1>
                     <p className="text-xs text-muted-foreground">{done}/{activeItems.length} completados</p>
                 </div>
-                <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving}>
+                <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving || !isReady}>
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     Guardar
                 </Button>
@@ -95,16 +96,18 @@ export default function RoutineDay() {
                     <RoutineChecklist
                         items={activeItems}
                         checkedIds={checkedIds}
-                        onToggle={handleToggle}
+                        onToggle={(id) => isReady && handleToggle(id)}
+                        readOnly={!isReady}
                     />
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground px-1">Notas (só para ti)</label>
                         <Textarea
                             value={notes}
+                            disabled={!isReady}
                             onChange={(e) => {
                                 setNotes(e.target.value);
-                                autoSave(checkedIds, e.target.value);
+                                isReady && autoSave(checkedIds, e.target.value);
                             }}
                             placeholder="Observações do dia…"
                             className="min-h-[80px]"

@@ -461,6 +461,17 @@ export default function Chat() {
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
   const { partner, loading: loadingPartner } = usePartnerProfile();
 
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (spaceId) {
+      console.log("Chat: spaceId obtido com sucesso ->", spaceId);
+      setIsReady(true);
+    } else {
+      console.log("Chat: aguardando spaceId...");
+    }
+  }, [spaceId]);
+
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -610,6 +621,10 @@ export default function Chat() {
 
   const handleSend = useCallback(async (blobOverride?: Blob) => {
     if (!user || sending) return;
+    if (!isReady) {
+      console.warn("Chat: Tentativa de envio antes do sistema estar pronto.");
+      return;
+    }
     
     let sp = spaceId;
     if (!sp && user) {
@@ -699,14 +714,35 @@ export default function Chat() {
         setSending(false);
         return;
       }
-      if (sp && user) {
+      // Registrar atividade na daily_activity (Padrão Unificado v12.8)
+      if (!user) return;
+      let finalSp = sp;
+
+      if (!finalSp && user) {
+        console.log("Chat: spaceId nulo em handleSend, tentando fallback via members...");
+        const { data: member } = await supabase
+          .from('members')
+          .select('couple_space_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+        finalSp = member?.couple_space_id;
+      }
+
+      if (!finalSp) {
+        console.error("CRITICAL: handleSend sem couple_space_id", user?.id);
+      } else {
+        console.log("ACTIVITY OK (Chat handleSend): message_sent", { spaceId: finalSp });
         const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-          couple_space_id: sp,
+          couple_space_id: finalSp,
           user_id: user.id,
           type: "message_sent"
         });
-        if (actErr) console.error("Chat Activity Error:", actErr);
-        else window.dispatchEvent(new CustomEvent("refetch-streak"));
+        if (actErr) {
+          console.error("ACTIVITY ERROR (Chat handleSend):", actErr);
+        } else {
+          window.dispatchEvent(new CustomEvent("refetch-streak"));
+        }
       }
 
       // ── Non-blocking Notification ──
@@ -736,67 +772,105 @@ export default function Chat() {
 
   /* ── Send Carinho ── */
   const handleSendCarinho = useCallback(async () => {
-    if (!user || sending) return;
+    console.log("DEBUG: HEART CLICK - Início da função");
+    
+    if (!user) {
+      console.error("DEBUG CARINHO: Falha - Utilizador não autenticado");
+      return;
+    }
+    
+    if (sending) {
+      console.warn("DEBUG CARINHO: Abortado - Já existe um envio em curso (sending = true)");
+      return;
+    }
 
+    if (!isReady) {
+      console.warn("DEBUG CARINHO: Alerta - Sistema ainda não está pronto (isReady = false)");
+      // Vamos tentar continuar se tivermos o spaceId local
+    }
+
+    console.log("DEBUG CARINHO: Autorizado - Iniciando processo de inserção...");
+    
     let sp = spaceId;
     if (!sp && user) {
-      const { data: member } = await supabase
+      console.log("DEBUG CARINHO: spaceId nulo, tentando fallback via members...");
+      const { data: member, error: memberErr } = await supabase
         .from('members')
         .select('couple_space_id')
         .eq('user_id', user.id)
         .limit(1)
         .maybeSingle();
+      
+      if (memberErr) console.error("DEBUG CARINHO: Erro no fallback de member:", memberErr);
       sp = member?.couple_space_id;
     }
 
     if (!sp) {
-      console.error("CRITICAL: couple_space_id ainda null no Carinho", user?.id);
+      console.error("CRITICAL DEBUG: couple_space_id ainda null no Carinho", user?.id);
       toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço.", variant: "destructive" });
       return;
     }
     
+    console.log("DEBUG CARINHO: Usando couple_space_id ->", sp);
     setSending(true);
     setShowCarinhoAnim(true);
     
     try {
-      const { error: insertError } = await supabase.from("messages").insert({
+      // 1. Inserir mensagem para o par no Chat
+      const messagePayload = {
         couple_space_id: sp,
         sender_user_id: user.id,
-        content: "Só para te lembrar que te amo 💛",
+        content: "Só para te lembrar que te amo 💛"
+      };
+
+      console.log("MESSAGE PAYLOAD:", messagePayload);
+      console.log("DEBUG CARINHO: [1/2] Inserindo mensagem no chat...");
+      
+      const { error: msgErr } = await supabase.from("messages").insert(messagePayload);
+
+      if (msgErr) {
+        console.error("MESSAGE ERROR:", msgErr);
+        throw msgErr;
+      }
+      
+      // 2. Registar na daily_activity
+      console.log("INSERT HEART EXECUTADO", { spaceId: sp, userId: user.id });
+      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+        couple_space_id: sp,
+        user_id: user.id,
+        type: "heart"
       });
 
-      if (insertError) throw insertError;
-      
-      // Notify partner
-      if (sp) {
-        notifyPartner({
-          couple_space_id: sp,
-          title: "💖 Recebeste carinho!",
-          body: "Só para te lembrar que te amo 💛",
-          url: "/chat",
-          type: "chat",
-        });
+      if (actErr) {
+        console.error("DEBUG CARINHO ERROR [2/2]: Falha ao registar na daily_activity:", actErr);
+      } else {
+        console.log("DEBUG CARINHO SUCCESS [2/2]: Registado na daily_activity com sucesso.");
+        window.dispatchEvent(new CustomEvent("refetch-streak"));
       }
 
-      if (sp && user) {
-        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-          couple_space_id: sp,
-          user_id: user.id,
-          type: "message_sent"
-        });
-        if (actErr) console.error("Carinho Activity Error:", actErr);
-        else window.dispatchEvent(new CustomEvent("refetch-streak"));
-      }
+      // 3. Notificar o parceiro
+      notifyPartner({
+        couple_space_id: sp,
+        title: "💖 Recebeste carinho!",
+        body: "Só para te lembrar que te amo 💛",
+        url: "/chat",
+        type: "chat",
+      }).catch((e) => console.warn("DEBUG CARINHO: Push falhou (não crítico):", e));
 
       // Animation timeout
-      setTimeout(() => setShowCarinhoAnim(false), 2000);
+      setTimeout(() => {
+        setShowCarinhoAnim(false);
+        console.log("DEBUG CARINHO: Animação finalizada");
+      }, 2000);
       
     } catch (err: any) {
+      console.error("DEBUG CARINHO CRITICAL ERROR:", err);
       toast({ title: "Erro ao enviar carinho", description: err?.message, variant: "destructive" });
     } finally {
       setSending(false);
+      console.log("DEBUG CARINHO: Processo concluído (sending set to false)");
     }
-  }, [spaceId, user, sending, toast]);
+  }, [spaceId, user, sending, isReady, toast]);
 
   /* ── Edit message ── */
   const handleEditSave = useCallback(async () => {
@@ -1147,7 +1221,7 @@ export default function Chat() {
                             handleSend(audio.audioBlob);
                           }
                         }}
-                        disabled={sending}
+                        disabled={!isReady || sending}
                       >
                         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
                       </Button>
@@ -1179,7 +1253,10 @@ export default function Chat() {
                         variant="ghost"
                         size="icon"
                         className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-[1.3] duration-300"
-                        onClick={handleSendCarinho}
+                        onClick={() => {
+                          console.log("DEBUG: HEART CLICK - Botão clicado via UI");
+                          handleSendCarinho();
+                        }}
                         disabled={sending}
                         title="Enviar Carinho"
                       >
@@ -1190,7 +1267,8 @@ export default function Chat() {
                         variant="ghost"
                         size="icon"
                         className="h-10 w-10 rounded-full transition-all text-muted-foreground hover:bg-muted/50"
-                        onClick={() => audio.start()}
+                        onClick={() => isReady && audio.start()}
+                        disabled={!isReady}
                         title="Gravar Áudio"
                       >
                         <Mic className="h-5 w-5" />
@@ -1201,7 +1279,7 @@ export default function Chat() {
                       type="submit"
                       size="icon"
                       className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
-                      disabled={sending}
+                      disabled={!isReady || sending}
                     >
                       {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
                     </Button>

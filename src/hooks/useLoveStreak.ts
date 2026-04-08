@@ -227,20 +227,47 @@ export function useLoveStreak() {
     return () => { supabase.removeChannel(channel); };
   }, [spaceId, load]);
 
-  // Registar uma interação na daily_activity
+  // Registar uma interação na daily_activity (Padrão Unificado v12.8)
   const recordInteraction = useCallback(async (actionType: string = 'general') => {
-    if (!spaceId || !user) return false;
+    if (!user) return false;
+    
+    let sp = spaceId;
+
+    if (!sp && user) {
+      console.log("useLoveStreak: spaceId nulo, tentando fallback via members...");
+      const { data: member } = await supabase
+        .from('members')
+        .select('couple_space_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      sp = member?.couple_space_id;
+    }
+
+    if (!sp) {
+      console.error("CRITICAL: useLoveStreak sem couple_space_id", user?.id);
+      return false;
+    }
+
     try {
       const { error } = await (supabase
         .from("daily_activity" as any)
         .insert({
           user_id: user.id,
-          couple_space_id: spaceId,
+          couple_space_id: sp,
           type: actionType,
         }) as any);
-      if (error) throw error;
       
-      // Pequeno delay para garantir que o Trigger do Postgres terminou o processamento v10
+      if (error) {
+        console.error("ACTIVITY ERROR (useLoveStreak):", error);
+        throw error;
+      }
+
+      console.log("ACTIVITY OK (useLoveStreak):", actionType);
+      window.dispatchEvent(new CustomEvent("refetch-streak"));
+      
+      // Pequeno delay para garantir que o Trigger do Postgres terminou o processamento
       setTimeout(() => {
         load();
       }, 300);
@@ -248,7 +275,7 @@ export function useLoveStreak() {
       return true;
     } catch (err: any) {
       console.error("Erro ao registrar atividade:", err);
-      toast({ title: "Erro nas missões", description: "Falha ao registar atividade. Tente novamente.", variant: "destructive" });
+      toast({ title: "Erro nas missões", description: "Falha ao registar atividade.", variant: "destructive" });
       return false;
     }
   }, [spaceId, user, load]);

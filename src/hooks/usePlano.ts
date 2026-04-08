@@ -26,6 +26,14 @@ export function usePlano() {
   // Removed useLoveStreak for daily_activity
   const [items, setItems] = useState<PlanoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (spaceId) {
+      console.log("usePlano READY: spaceId obtained", spaceId);
+      setIsReady(true);
+    }
+  }, [spaceId]);
 
   const fetchItems = useCallback(async () => {
     if (!spaceId) return;
@@ -85,6 +93,10 @@ export function usePlano() {
     forWhom?: "ambos" | "me" | "partner";
   }) => {
     if (!user) return null;
+    if (!isReady) {
+      console.warn("usePlano: Tentativa de adicionar plano antes do sistema estar pronto.");
+      return null;
+    }
     
     let sp = spaceId;
     if (!sp && user) {
@@ -147,7 +159,7 @@ export function usePlano() {
   };
 
   const toggleComplete = async (id: string, completed: boolean) => {
-    if (!user) return;
+    if (!user || !isReady) return;
     const item = items.find(i => i.id === id);
     if (!item) return;
 
@@ -179,26 +191,37 @@ export function usePlano() {
         return;
       }
 
-      // Notificar conclusão
-      if (sp) {
-        await notifyPartner({
-          couple_space_id: sp,
-          title: "Plano Concluído! ✅",
-          body: `O teu amor concluiu: ${item.title}`,
-          url: "/plano?tab=agenda",
-          type: "plano"
-        });
+      // Registrar atividade para o Streak (Padrão Unificado v12.8)
+      if (!user) return;
+      let finalSp = sp;
+
+      if (!finalSp && user) {
+        console.log("usePlano: spaceId nulo, tentando fallback via members...");
+        const { data: member } = await supabase
+          .from('members')
+          .select('couple_space_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+        finalSp = member?.couple_space_id;
       }
-      
-      // Registrar atividade para o Streak bypass
-      if (sp && user) {
-        const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-          couple_space_id: sp,
-          user_id: user.id,
-          type: "plan_completed"
-        });
-        if (actErr) console.error("Plano Activity Error:", actErr);
-        else window.dispatchEvent(new CustomEvent("refetch-streak"));
+
+      if (!finalSp) {
+        console.error("CRITICAL: usePlano sem couple_space_id", user?.id);
+        return;
+      }
+
+      const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+        couple_space_id: finalSp,
+        user_id: user.id,
+        type: "plan_completed"
+      });
+
+      if (actErr) {
+        console.error("ACTIVITY ERROR (usePlano):", actErr);
+      } else {
+        console.log("ACTIVITY OK (usePlano): plan_completed");
+        window.dispatchEvent(new CustomEvent("refetch-streak"));
       }
     }
   };
@@ -236,6 +259,7 @@ export function usePlano() {
   return {
     items,
     loading,
+    isReady,
     addPlan,
     toggleComplete,
     updatePlan,

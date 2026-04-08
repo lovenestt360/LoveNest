@@ -33,6 +33,14 @@ export function useRoutineLogs(userId?: string) {
     // Removed useLoveStreak for daily_activity
     const [logs, setLogs] = useState<RoutineDayLog[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isReady, setIsReady] = useState(false);
+
+    useEffect(() => {
+        if (spaceId) {
+            console.log("useRoutineLogs READY: spaceId obtained", spaceId);
+            setIsReady(true);
+        }
+    }, [spaceId]);
 
     const targetUserId = userId ?? user?.id;
 
@@ -105,16 +113,38 @@ export function useRoutineLogs(userId?: string) {
             await supabase.from("routine_day_logs").insert(payload);
         }
 
-        // Sempre registar a interação na daily_activity para contar para as missões
+        // Sempre registar a interação na daily_activity (Padrão Unificado v12.8)
         if (status !== "unlogged") {
-            if (sp && user) {
-                const { error: actErr } = await (supabase as any).from('daily_activity').insert({
-                    couple_space_id: sp,
-                    user_id: user.id,
-                    type: "task_completed"
-                });
-                if (actErr) console.error("Routine Activity Error:", actErr);
-                else window.dispatchEvent(new CustomEvent("refetch-streak"));
+            if (!user) return;
+            let finalSp = sp;
+
+            if (!finalSp && user) {
+                console.log("useRoutineLogs: spaceId nulo, tentando fallback via members...");
+                const { data: member } = await supabase
+                    .from('members')
+                    .select('couple_space_id')
+                    .eq('user_id', user.id)
+                    .limit(1)
+                    .maybeSingle();
+                finalSp = member?.couple_space_id;
+            }
+
+            if (!finalSp) {
+                console.error("CRITICAL: useRoutineLogs sem couple_space_id", user?.id);
+                return;
+            }
+
+            const { error: actErr } = await (supabase as any).from('daily_activity').insert({
+                couple_space_id: finalSp,
+                user_id: user.id,
+                type: "task_completed"
+            });
+
+            if (actErr) {
+                console.error("ACTIVITY ERROR (useRoutineLogs):", actErr);
+            } else {
+                console.log("ACTIVITY OK (useRoutineLogs): task_completed");
+                window.dispatchEvent(new CustomEvent("refetch-streak"));
             }
         }
 
@@ -141,5 +171,5 @@ export function useRoutineLogs(userId?: string) {
         await fetchMonth(now.getFullYear(), now.getMonth() + 1);
     }, [user, spaceId, logs, fetchMonth]);
 
-    return { logs, loading, fetchMonth, getLogForDay, upsertLog };
+    return { logs, loading, isReady, fetchMonth, getLogForDay, upsertLog };
 }

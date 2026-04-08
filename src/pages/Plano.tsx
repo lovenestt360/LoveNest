@@ -42,14 +42,16 @@ export default function Plano() {
   const [routineSubTab, setRoutineSubTab] = useState<"mine" | "partner">("mine");
 
   // Plano Data
-  const { items, loading: planoLoading, addPlan, deletePlan, toggleComplete } = usePlano();
+  const { items, loading: planoLoading, isReady: isPlanoReady, addPlan, deletePlan, toggleComplete } = usePlano();
   
   // Routine Data
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const { activeItems, loading: itemsLoading } = useRoutineItems();
-  const { logs, loading: logsLoading, fetchMonth, upsertLog, getLogForDay } = useRoutineLogs();
+  const { logs, loading: logsLoading, isReady: isRoutineReady, fetchMonth, upsertLog, getLogForDay } = useRoutineLogs();
+  
+  const isReady = isPlanoReady && isRoutineReady;
   const stats = useRoutineStats(logs);
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
@@ -76,7 +78,7 @@ export default function Plano() {
   const todayDone = todayChecked.filter(id => activeItems.some(i => i.id === id)).length;
 
   const handleAdd = async () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !isReady) return;
     await addPlan({ 
       title: newTitle, 
       description: newDesc, 
@@ -188,7 +190,8 @@ export default function Plano() {
                       <RoutineChecklist 
                         items={activeItems} 
                         checkedIds={todayChecked} 
-                        onToggle={handleToggleRoutine} 
+                        onToggle={(id) => isReady && handleToggleRoutine(id)} 
+                        readOnly={!isReady}
                       />
                     </div>
                   </>
@@ -248,7 +251,7 @@ export default function Plano() {
                 <Button 
                   size="icon" 
                   onClick={handleAdd}
-                  disabled={!newTitle.trim()}
+                  disabled={!newTitle.trim() || !isReady}
                   className="h-10 w-10 rounded-xl bg-slate-900 text-white shrink-0 shadow-lg active:scale-95 transition-all hover:bg-slate-800"
                 >
                   <Plus className="h-5 w-5" />
@@ -289,7 +292,8 @@ export default function Plano() {
                       {/* Custom Checkbox as in RoutineChecklist */}
                       <button
                         type="button"
-                        onClick={() => toggleComplete(item.id, !item.completed)}
+                        disabled={!isReady}
+                        onClick={() => isReady && toggleComplete(item.id, !item.completed)}
                         className={cn(
                             "flex items-center justify-center h-6 w-6 rounded-lg border-2 transition-all shrink-0",
                             item.completed
@@ -317,7 +321,7 @@ export default function Plano() {
                            </div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deletePlan(item.id)} className="text-slate-200 hover:text-red-500 rounded-full h-8 w-8">
+                      <Button variant="ghost" size="icon" onClick={() => isReady && deletePlan(item.id)} disabled={!isReady} className="text-slate-200 hover:text-red-500 rounded-full h-8 w-8">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
