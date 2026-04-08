@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { RoutineCalendar } from "./RoutineCalendar";
 import { RoutineChecklist } from "./RoutineChecklist";
 import { Loader2, Heart, UserRound } from "lucide-react";
@@ -14,12 +13,46 @@ export function PartnerRoutinePanel() {
     const { user } = useAuth();
     const spaceId = useCoupleSpaceId();
 
-    // Usa o hook já existente — consistente com o resto da app
-    const { partner, loading: loadingPartner } = usePartnerProfile();
-    const partnerId = partner?.user_id ?? null;
-    const partnerName = partner?.display_name ?? "Amor";
-    const partnerAvatar = partner?.avatar_url ?? null;
+    // ── Fase 1: obter partnerId direto da tabela members (fonte de verdade)
+    const [partnerId, setPartnerId] = useState<string | null>(null);
+    const [partnerName, setPartnerName] = useState<string>("Amor");
+    const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null);
+    const [loadingPartner, setLoadingPartner] = useState(true);
 
+    useEffect(() => {
+        if (!spaceId || !user) return;
+        setLoadingPartner(true);
+
+        // Consulta directa a members — independente de profiles
+        supabase
+            .from("members")
+            .select("user_id")
+            .eq("couple_space_id", spaceId)
+            .neq("user_id", user.id)
+            .maybeSingle()
+            .then(({ data, error }) => {
+                if (error) console.error("PartnerRoutinePanel: erro members:", error);
+
+                if (data?.user_id) {
+                    setPartnerId(data.user_id);
+
+                    // Tenta obter o nome/avatar do profile — com fallback, não bloqueia
+                    supabase
+                        .from("profiles")
+                        .select("display_name, avatar_url")
+                        .eq("user_id", data.user_id)
+                        .maybeSingle()
+                        .then(({ data: profile }) => {
+                            if (profile?.display_name) setPartnerName(profile.display_name.split(" ")[0]);
+                            if (profile?.avatar_url)   setPartnerAvatar(profile.avatar_url);
+                        });
+                }
+
+                setLoadingPartner(false);
+            });
+    }, [spaceId, user]);
+
+    // ── Fase 2: hábitos e logs do parceiro
     const [items, setItems] = useState<RoutineItem[]>([]);
     const [logs, setLogs] = useState<RoutineDayLog[]>([]);
     const [loadingItems, setLoadingItems] = useState(false);
@@ -29,24 +62,22 @@ export function PartnerRoutinePanel() {
     const [year, setYear] = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth() + 1);
 
-    // ── Buscar hábitos do parceiro (filtrando por partner.user_id)
     useEffect(() => {
         if (!partnerId) return;
         setLoadingItems(true);
         supabase
             .from("routine_items")
             .select("*")
-            .eq("user_id", partnerId)   // ← parceiro, NÃO o utilizador atual
+            .eq("user_id", partnerId)  // ← parceiro, NÃO o utilizador atual
             .eq("active", true)
             .order("position")
             .then(({ data, error }) => {
-                if (error) console.error("PartnerRoutinePanel: erro ao buscar hábitos:", error);
+                if (error) console.error("PartnerRoutinePanel: erro items:", error);
                 setItems((data as RoutineItem[]) ?? []);
                 setLoadingItems(false);
             });
     }, [partnerId]);
 
-    // ── Buscar logs mensais do parceiro
     useEffect(() => {
         if (!partnerId) return;
         setLoadingLogs(true);
@@ -58,12 +89,12 @@ export function PartnerRoutinePanel() {
         supabase
             .from("routine_day_logs")
             .select("*")
-            .eq("user_id", partnerId)   // ← parceiro, NÃO o utilizador atual
+            .eq("user_id", partnerId)  // ← parceiro, NÃO o utilizador atual
             .gte("day", startDate)
             .lt("day", endDate)
             .order("day")
             .then(({ data, error }) => {
-                if (error) console.error("PartnerRoutinePanel: erro ao buscar logs:", error);
+                if (error) console.error("PartnerRoutinePanel: erro logs:", error);
                 setLogs((data as RoutineDayLog[]) ?? []);
                 setLoadingLogs(false);
             });
@@ -73,7 +104,7 @@ export function PartnerRoutinePanel() {
     const todayLog = logs.find(l => l.day === today);
     const todayChecked = (todayLog?.checked_item_ids ?? []) as string[];
 
-    // ── Estado: a carregar partner
+    // ── Loading inicial (à espera do partnerId)
     if (loadingPartner) {
         return (
             <div className="flex justify-center py-12">
@@ -82,7 +113,7 @@ export function PartnerRoutinePanel() {
         );
     }
 
-    // ── Estado: parceiro não ligado
+    // ── Parceiro não encontrado em members
     if (!partnerId) {
         return (
             <div className="rounded-3xl border border-dashed border-slate-200 bg-white/40 backdrop-blur-sm p-10 text-center space-y-3">
@@ -95,7 +126,7 @@ export function PartnerRoutinePanel() {
         );
     }
 
-    // ── Estado: a carregar dados
+    // ── Loading dos dados
     if (loadingItems || loadingLogs) {
         return (
             <div className="flex justify-center py-12">
@@ -109,15 +140,11 @@ export function PartnerRoutinePanel() {
             {/* ── Header: identidade do parceiro ── */}
             <div className="flex items-center gap-3 px-1">
                 <div className={cn(
-                    "h-9 w-9 rounded-full flex items-center justify-center text-sm font-black shrink-0 ring-2 ring-white shadow-sm",
+                    "h-9 w-9 rounded-full flex items-center justify-center text-sm font-black shrink-0 ring-2 ring-white shadow-sm overflow-hidden",
                     "bg-gradient-to-br from-rose-300 to-pink-400 text-white"
                 )}>
                     {partnerAvatar ? (
-                        <img
-                            src={partnerAvatar}
-                            alt={partnerName}
-                            className="h-full w-full object-cover rounded-full"
-                        />
+                        <img src={partnerAvatar} alt={partnerName} className="h-full w-full object-cover" />
                     ) : (
                         <span>{partnerName.charAt(0).toUpperCase()}</span>
                     )}
@@ -126,7 +153,7 @@ export function PartnerRoutinePanel() {
                     <p className="text-xs font-black uppercase tracking-widest text-slate-400">Rotina de</p>
                     <p className="font-black text-slate-800 leading-tight">{partnerName} 💛</p>
                 </div>
-                <div className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-100">
+                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
                         {todayChecked.length}/{items.length} hoje
@@ -135,7 +162,7 @@ export function PartnerRoutinePanel() {
             </div>
 
             {/* ── Calendário de progresso ── */}
-            <div className="rounded-[2.5rem] overflow-hidden bg-white/30 bg-white/40 backdrop-blur-xl border border-white/20 shadow-sm">
+            <div className="rounded-[2.5rem] overflow-hidden bg-white/40 backdrop-blur-xl border border-white/20 shadow-sm">
                 <RoutineCalendar
                     logs={logs}
                     year={year}
