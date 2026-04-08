@@ -1,49 +1,15 @@
 -- =============================================================================
--- 🧨 PURGA DEFINITIVA DA GAMIFICAÇÃO — LOVENEST (V2 — ARQUITETURA COMPLETA)
+-- 🧨 PURGA COMPLEMENTAR — LOVENEST (V3 — SAFE COMPLEMENT)
 -- =============================================================================
--- Cobre TODOS os triggers, funções, tabelas e políticas RLS criados em:
---   20260325000000_rebuild_streaks_missions.sql
---   20260330000001_lovestreak_engine.sql
---   20260330000002_real_missions.sql
---   20260330000003_real_love_points.sql
---   20260330000004_love_shields_v2.sql
---   20260330000005_sync_total_points.sql
---   20260330000006_global_ranking_rpc.sql
---   20260401000000 → 20260403000001 (repair iterations)
---   20260402000001_nuclear_cleanup_streaks.sql
+-- Este script é seguro para executar DEPOIS do SQL do ChatGPT já ter corrido.
+-- Cobre tudo o que esse SQL deixou para trás, sem causar erros em tabelas
+-- ou triggers que já não existem.
 -- =============================================================================
 
 
 -- =============================================================================
--- 🔥 BLOCO 1: REMOVER TODOS OS TRIGGERS EXPLÍCITOS (POR NOME + TABELA)
--- Garante que nenhum trigger fica ativo, mesmo que as tabelas estejam vazias.
--- =============================================================================
-
--- Triggers em daily_activity
-DROP TRIGGER IF EXISTS tr_daily_activity_master_v5         ON public.daily_activity;
-DROP TRIGGER IF EXISTS tr_daily_activity_mission_trigger   ON public.daily_activity;
-DROP TRIGGER IF EXISTS tr_update_streak_on_activity        ON public.daily_activity;
-DROP TRIGGER IF EXISTS tr_on_interaction_v5                ON public.daily_activity;
-
--- Triggers em messages
-DROP TRIGGER IF EXISTS tr_on_message_mission               ON public.messages;
-
--- Triggers em mission_completions
-DROP TRIGGER IF EXISTS tr_mission_completion_points_trigger ON public.mission_completions;
-
--- Triggers em love_streaks (nome legado) e streaks (nome atual)
-DROP TRIGGER IF EXISTS tr_sync_total_points                ON public.love_streaks;
-DROP TRIGGER IF EXISTS tr_streak_increment_points_trigger  ON public.love_streaks;
-DROP TRIGGER IF EXISTS tr_sync_total_points                ON public.streaks;
-DROP TRIGGER IF EXISTS tr_streak_increment_points_trigger  ON public.streaks;
-
--- Triggers em interactions
-DROP TRIGGER IF EXISTS tr_interactions_mission_trigger     ON public.interactions;
-
-
--- =============================================================================
--- 🔥 BLOCO 2: REMOVER TODOS OS TRIGGERS DINÂMICOS RESTANTES (SEGURANÇA TOTAL)
--- Este bloco apanha qualquer trigger residual que não tenha nome explícito acima.
+-- 🔥 BLOCO 1: REMOVER TRIGGERS RESIDUAIS (DINÂMICO + TOLERANTE A ERROS)
+-- Usa IF EXISTS seguro dentro de um bloco de exceção.
 -- =============================================================================
 
 DO $$
@@ -63,7 +29,7 @@ BEGIN
                 r.event_object_table
             );
         EXCEPTION WHEN OTHERS THEN
-            RAISE NOTICE 'Aviso ao remover trigger % na tabela %: %',
+            RAISE NOTICE 'Aviso ao remover trigger % em %: %',
                 r.trigger_name, r.event_object_table, SQLERRM;
         END;
     END LOOP;
@@ -71,52 +37,8 @@ END $$;
 
 
 -- =============================================================================
--- 🔥 BLOCO 3: REMOVER TODAS AS FUNÇÕES DE GAMIFICAÇÃO (POR NOME EXATO)
--- Inclui funções de triggers, RPCs chamadas pelo frontend e helpers internos.
--- =============================================================================
-
--- Funções de Streak Engine
-DROP FUNCTION IF EXISTS public.fn_update_streak_v5()                              CASCADE;
-DROP FUNCTION IF EXISTS public.fn_check_streak(UUID)                               CASCADE;
-DROP FUNCTION IF EXISTS public.fn_confirm_daily_action(UUID)                       CASCADE;
-DROP FUNCTION IF EXISTS public.fn_process_shield_rewards(UUID, INTEGER)            CASCADE;
-DROP FUNCTION IF EXISTS public.fn_sync_points_to_streak()                          CASCADE;
-DROP FUNCTION IF EXISTS public.checkDailyInteraction(UUID)                         CASCADE;
-
--- Funções de Missões
-DROP FUNCTION IF EXISTS public.tr_on_interaction_v5()                              CASCADE;
-DROP FUNCTION IF EXISTS public.tr_on_interaction_for_missions()                    CASCADE;
-DROP FUNCTION IF EXISTS public.fn_get_or_create_daily_missions_v5(UUID)            CASCADE;
-DROP FUNCTION IF EXISTS public.get_couple_daily_status(UUID)                       CASCADE;
-DROP FUNCTION IF EXISTS public.generateDailyMissions(UUID)                         CASCADE;
-DROP FUNCTION IF EXISTS public.checkMissionCompletion(UUID, UUID)                  CASCADE;
-DROP FUNCTION IF EXISTS public.checkMissionCompletion(UUID, UUID, TEXT)            CASCADE;
-DROP FUNCTION IF EXISTS public.checkmissioncompletion(UUID, UUID, TEXT)            CASCADE;
-
--- Funções de Points
-DROP FUNCTION IF EXISTS public.fn_award_points(UUID, UUID, INTEGER, TEXT)          CASCADE;
-DROP FUNCTION IF EXISTS public.tr_fn_on_mission_completion_award()                 CASCADE;
-DROP FUNCTION IF EXISTS public.tr_fn_on_streak_increment_award()                   CASCADE;
-
--- Funções de Shields
-DROP FUNCTION IF EXISTS public.fn_purchase_loveshield(INTEGER)                     CASCADE;
-DROP FUNCTION IF EXISTS public.fn_purchase_loveshield_v4(INTEGER)                  CASCADE;
-DROP FUNCTION IF EXISTS public.fn_purchase_loveshield_v5(UUID, UUID)               CASCADE;
-DROP FUNCTION IF EXISTS public.fn_use_loveshield()                                 CASCADE;
-DROP FUNCTION IF EXISTS public.fn_use_loveshield_v4()                              CASCADE;
-
--- Funções de Ranking
-DROP FUNCTION IF EXISTS public.fn_get_global_ranking()                             CASCADE;
-DROP FUNCTION IF EXISTS public.fn_get_global_ranking(TEXT)                         CASCADE;
-
--- Funções de missions trigger repair (iterações)
-DROP FUNCTION IF EXISTS public.tr_fn_on_master_activity_v5()                      CASCADE;
-
-
--- =============================================================================
--- 🔥 BLOCO 4: VARREDURA DINÂMICA — ELIMINA QUALQUER FUNÇÃO PUBLIC COM NOME
---              QUE CONTENHA PALAVRAS-CHAVE DE GAMIFICAÇÃO
--- Apanha versões futuras ou renomeadas que tenham escapado ao bloco 3.
+-- 🔥 BLOCO 2: REMOVER FUNÇÕES DE GAMIFICAÇÃO (VARREDURA COMPLETA)
+-- Inclui 'shield' e 'loveshield' que o ChatGPT não cobriu.
 -- =============================================================================
 
 DO $$
@@ -129,12 +51,14 @@ BEGIN
         JOIN pg_namespace n ON p.pronamespace = n.oid
         WHERE n.nspname = 'public'
           AND (
-              p.proname ILIKE '%streak%'   OR
-              p.proname ILIKE '%mission%'  OR
-              p.proname ILIKE '%point%'    OR
-              p.proname ILIKE '%ranking%'  OR
-              p.proname ILIKE '%shield%'   OR
-              p.proname ILIKE '%loveshield%'
+              p.proname ILIKE '%streak%'    OR
+              p.proname ILIKE '%mission%'   OR
+              p.proname ILIKE '%point%'     OR
+              p.proname ILIKE '%ranking%'   OR
+              p.proname ILIKE '%shield%'    OR
+              p.proname ILIKE '%loveshield%'OR
+              p.proname ILIKE '%daily_action%' OR
+              p.proname ILIKE '%daily_interaction%'
           )
     )
     LOOP
@@ -153,93 +77,114 @@ END $$;
 
 
 -- =============================================================================
--- 🔥 BLOCO 5: LIMPAR DADOS DE TODAS AS TABELAS DE GAMIFICAÇÃO
--- Usamos TRUNCATE com CASCADE para consistência total.
--- As tabelas são mantidas (não DROP) para permitir uma V2 limpa no futuro.
+-- 🔥 BLOCO 3: LIMPAR TABELAS (SEGURO — VERIFICA EXISTÊNCIA ANTES DE LIMPAR)
+-- Cobre as tabelas que o ChatGPT ignorou.
 -- =============================================================================
 
--- Streaks (nome atual + nome legado)
-TRUNCATE TABLE public.streaks              CASCADE;
-
--- Missões
-TRUNCATE TABLE public.daily_activity       CASCADE;
-TRUNCATE TABLE public.mission_completions  CASCADE;
-TRUNCATE TABLE public.couple_daily_missions CASCADE;
-TRUNCATE TABLE public.love_missions        CASCADE;
-
--- Pontos
-TRUNCATE TABLE public.love_points          CASCADE;
-
--- Escudos / Shields
-TRUNCATE TABLE public.love_shields         CASCADE;
-
--- Tabelas legadas (podem ou não existir — sem erro se não existirem)
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_streaks') THEN
-        TRUNCATE TABLE public.love_streaks CASCADE;
+    -- Tabelas cobertas pelo ChatGPT (garantia de limpeza total)
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'daily_activity') THEN
+        DELETE FROM public.daily_activity;
     END IF;
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_points_history') THEN
-        TRUNCATE TABLE public.love_points_history CASCADE;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'streaks') THEN
+        DELETE FROM public.streaks;
     END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_missions') THEN
+        DELETE FROM public.love_missions;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'couple_daily_missions') THEN
+        DELETE FROM public.couple_daily_missions;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'mission_completions') THEN
+        DELETE FROM public.mission_completions;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_points') THEN
+        DELETE FROM public.love_points;
+    END IF;
+
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'shields') THEN
-        TRUNCATE TABLE public.shields CASCADE;
+        DELETE FROM public.shields;
     END IF;
+
+    -- ✅ TABELAS QUE O CHATGPT NÃO COBRIU:
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_streaks') THEN
+        DELETE FROM public.love_streaks;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_shields') THEN
+        DELETE FROM public.love_shields;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'love_points_history') THEN
+        DELETE FROM public.love_points_history;
+    END IF;
+
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_items') THEN
-        TRUNCATE TABLE public.user_items CASCADE;
+        DELETE FROM public.user_items;
+    END IF;
+
+END $$;
+
+
+-- =============================================================================
+-- 🔥 BLOCO 4: FEATURE FLAGS — DESATIVAR FLAGS DE GAMIFICAÇÃO
+-- Evita que a UI reative funcionalidades de gamificação acidentalmente.
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'feature_flags') THEN
+        UPDATE public.feature_flags
+        SET enabled = false
+        WHERE key IN (
+            'home_lovestreak',
+            'ranking',
+            'missions',
+            'love_points',
+            'love_shields',
+            'daily_missions',
+            'gamification'
+        );
     END IF;
 END $$;
 
 
 -- =============================================================================
--- 🔥 BLOCO 6: FEATURE FLAGS — DESATIVAR FLAGS DE GAMIFICAÇÃO
--- Garante que qualquer nova feature que use feature_flags não ativa funcionalidades
--- de gamificação acidentalmente.
+-- ✅ BLOCO 5: VERIFICAÇÃO DE SANIDADE
+-- Descomenta para confirmar que tudo foi limpo.
 -- =============================================================================
 
-UPDATE public.feature_flags
-SET enabled = false
-WHERE key IN (
-    'home_lovestreak',
-    'ranking',
-    'missions',
-    'love_points',
-    'love_shields',
-    'daily_missions',
-    'gamification'
-);
-
-
--- =============================================================================
--- ✅ BLOCO 7: VERIFICAÇÃO DE SANIDADE (OPCIONAL — EXECUTAR NO SQL EDITOR)
--- Descomenta as linhas abaixo para confirmar que a purga foi bem-sucedida.
--- =============================================================================
-
--- -- Deve retornar 0 linhas (nenhum trigger restante):
+-- -- Triggers restantes (deve retornar 0 linhas):
 -- SELECT trigger_name, event_object_table
 -- FROM information_schema.triggers
 -- WHERE trigger_schema = 'public';
 
--- -- Deve retornar 0 linhas (nenhuma função de gamificação restante):
+-- -- Funções de gamificação restantes (deve retornar 0 linhas):
 -- SELECT routine_name
 -- FROM information_schema.routines
 -- WHERE routine_schema = 'public'
---   AND (
---     routine_name ILIKE '%streak%' OR routine_name ILIKE '%mission%' OR
---     routine_name ILIKE '%point%'  OR routine_name ILIKE '%ranking%' OR
---     routine_name ILIKE '%shield%'
---   );
+--   AND (routine_name ILIKE '%streak%' OR routine_name ILIKE '%mission%'
+--     OR routine_name ILIKE '%point%'  OR routine_name ILIKE '%ranking%'
+--     OR routine_name ILIKE '%shield%');
 
--- -- Deve retornar 0 linhas (dados limpos):
--- SELECT (SELECT COUNT(*) FROM public.streaks)        AS streaks,
---        (SELECT COUNT(*) FROM public.daily_activity) AS daily_activity,
---        (SELECT COUNT(*) FROM public.love_points)    AS love_points,
---        (SELECT COUNT(*) FROM public.love_shields)   AS love_shields,
---        (SELECT COUNT(*) FROM public.love_missions)  AS love_missions;
+-- -- Contagem de dados (todos devem ser 0):
+-- SELECT
+--   (SELECT COUNT(*) FROM public.daily_activity)      AS daily_activity,
+--   (SELECT COUNT(*) FROM public.streaks)             AS streaks,
+--   (SELECT COUNT(*) FROM public.love_points)         AS love_points,
+--   (SELECT COUNT(*) FROM public.love_missions)       AS love_missions,
+--   (SELECT COUNT(*) FROM public.mission_completions) AS mission_completions;
 
 
 -- =============================================================================
--- 🔔 RECARREGAR SCHEMA DO POSTGREST (OBRIGATÓRIO)
+-- 🔔 RECARREGAR SCHEMA DO POSTGREST
 -- =============================================================================
 
 NOTIFY pgrst, 'reload schema';
