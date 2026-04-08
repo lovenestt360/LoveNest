@@ -61,6 +61,7 @@ export default function Plano() {
   const [newTime, setNewTime] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [forWhom, setForWhom] = useState<'ambos' | 'me' | 'partner'>('ambos');
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => { fetchMonth(year, month); }, [year, month, fetchMonth]);
 
@@ -86,7 +87,7 @@ export default function Plano() {
       time: newTime,
       forWhom: forWhom 
     });
-    setNewTitle(""); setNewTime(""); setNewDesc("");
+    setNewTitle(""); setNewTime(""); setNewDesc(""); setIsAdding(false);
   };
 
   const glassStyle = "bg-white/40 backdrop-blur-xl border border-white/20 shadow-sm";
@@ -204,58 +205,94 @@ export default function Plano() {
 
         {activeTab === "agenda" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
-            {/* NOVO: Formulário Inline Estilo Rotina (Simples e Completo) */}
-            <div className={cn("rounded-2xl border bg-card p-4 space-y-3 shadow-sm", glassStyle)}>
-              <div className="flex p-0.5 bg-slate-100 rounded-lg w-fit">
-                {(["ambos", "me", "partner"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setForWhom(v)}
-                    className={cn(
-                      "px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-md transition-all",
-                      forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400"
-                    )}
-                  >
-                    {v === 'ambos' ? "Ambos" : v === 'me' ? "Eu" : "Amor"}
-                  </button>
-                ))}
+            {/* ── Card de Input da Agenda ── */}
+            <div
+              className={cn(
+                "rounded-2xl overflow-hidden transition-all duration-200 ease-in-out",
+                glassStyle
+              )}
+              style={{ display: "flex", flexDirection: "column", gap: 0 }}
+            >
+              {/* Linha 1: Input principal + botão de ação */}
+              <div className="flex items-center gap-2 p-3">
+                <Input
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="O que vais fazer?"
+                  className="flex-1 h-11 rounded-xl border-none bg-slate-50 font-bold text-sm focus-visible:ring-1 focus-visible:ring-slate-100 placeholder:text-slate-300"
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      if (isAdding) handleAdd();
+                      else setIsAdding(true);
+                    }
+                  }}
+                />
+                <Button
+                  size="icon"
+                  onClick={() => {
+                    if (isAdding) handleAdd();
+                    else setIsAdding(true);
+                  }}
+                  disabled={isAdding && (!newTitle.trim() || !isReady)}
+                  className={cn(
+                    "h-11 rounded-xl shrink-0 shadow-md active:scale-95 transition-all font-black text-xs",
+                    isAdding
+                      ? "w-24 bg-emerald-500 hover:bg-emerald-600 text-white px-3"
+                      : "w-11 bg-slate-900 hover:bg-slate-800 text-white"
+                  )}
+                >
+                  {isAdding ? (
+                    <span className="flex items-center gap-1">✔ Guardar</span>
+                  ) : (
+                    <Plus className="h-5 w-5" />
+                  )}
+                </Button>
               </div>
-              
-              <Input 
-                value={newTitle} 
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="O que vais fazer?"
-                className="h-12 rounded-xl border-none bg-slate-50 font-bold text-base focus-visible:ring-1 focus-visible:ring-slate-100 placeholder:text-slate-300"
-                onKeyDown={e => e.key === "Enter" && handleAdd()}
-              />
 
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                    <Input 
+              {/* Linha 2 (colapsável): Para quem + Data + Hora */}
+              <div
+                className={cn(
+                  "flex flex-col gap-2 px-3 transition-all duration-200 ease-in-out overflow-hidden",
+                  isAdding ? "pb-3 max-h-[120px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+                )}
+              >
+                {/* Selector de destinatário */}
+                <div className="flex p-0.5 bg-slate-100 rounded-lg w-fit">
+                  {(["ambos", "me", "partner"] as const).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setForWhom(v)}
+                      className={cn(
+                        "px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-md transition-all",
+                        forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400"
+                      )}
+                    >
+                      {v === "ambos" ? "Ambos" : v === "me" ? "Eu" : "Amor"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Data + Hora na mesma row */}
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Input
                       type="date"
-                      value={selectedDate} 
+                      value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       className="h-10 rounded-xl border-none bg-slate-50 font-bold text-xs pl-8 appearance-none focus-visible:ring-1 focus-visible:ring-slate-100"
                     />
                     <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300 pointer-events-none" />
-                </div>
-                <div className="w-28 relative">
-                    <Input 
+                  </div>
+                  <div className="w-28 relative">
+                    <Input
                       type="time"
-                      value={newTime} 
+                      value={newTime}
                       onChange={(e) => setNewTime(e.target.value)}
                       className="h-10 rounded-xl border-none bg-slate-50 font-bold text-xs pl-8 focus-visible:ring-1 focus-visible:ring-slate-100"
                     />
                     <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300 pointer-events-none" />
+                  </div>
                 </div>
-                <Button 
-                  size="icon" 
-                  onClick={handleAdd}
-                  disabled={!newTitle.trim() || !isReady}
-                  className="h-10 w-10 rounded-xl bg-slate-900 text-white shrink-0 shadow-lg active:scale-95 transition-all hover:bg-slate-800"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
               </div>
             </div>
 
