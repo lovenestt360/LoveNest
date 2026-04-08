@@ -4,6 +4,7 @@ import { useRoutineItems } from "@/hooks/useRoutineItems";
 import { useRoutineLogs } from "@/hooks/useRoutineLogs";
 import { useRoutineStats } from "@/hooks/useRoutineStats";
 import { useAuth } from "@/features/auth/AuthContext";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { RoutineCalendar } from "@/components/routine/RoutineCalendar";
 import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
 import { RoutineProgressCards } from "@/components/routine/RoutineProgressCards";
@@ -36,6 +37,8 @@ const TABS = [
 
 export default function Plano() {
   const { user } = useAuth();
+  const { partner } = usePartnerProfile();
+  const partnerFirstName = partner?.display_name?.split(" ")[0] ?? "Amor";
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const activeTab = searchParams.get("tab") || "rotina";
@@ -147,12 +150,22 @@ export default function Plano() {
                 <div className="flex p-1 bg-slate-100 rounded-2xl">
                     <button
                         onClick={() => setRoutineSubTab("mine")}
-                        className={cn("px-4 py-2 text-[10px] font-black uppercase rounded-xl transition-all", routineSubTab === "mine" ? "bg-white shadow text-slate-900" : "text-slate-400")}
-                    >Minha</button>
+                        className={cn(
+                          "flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase rounded-xl transition-all",
+                          routineSubTab === "mine" ? "bg-white shadow text-slate-900" : "text-slate-400"
+                        )}
+                    >
+                        <span>👤</span> Minha
+                    </button>
                     <button
                         onClick={() => setRoutineSubTab("partner")}
-                        className={cn("px-4 py-2 text-[10px] font-black uppercase rounded-xl transition-all", routineSubTab === "partner" ? "bg-white shadow text-slate-900" : "text-slate-400")}
-                    >Do Amor</button>
+                        className={cn(
+                          "flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase rounded-xl transition-all",
+                          routineSubTab === "partner" ? "bg-white shadow text-slate-900" : "text-slate-400"
+                        )}
+                    >
+                        <span>💛</span> {partnerFirstName}
+                    </button>
                 </div>
                 <Button variant="ghost" size="sm" className="rounded-full text-slate-400 font-bold text-xs" onClick={() => navigate("/rotina/gerir")}>
                     <Settings2 className="h-4 w-4 mr-1.5" /> GERIR
