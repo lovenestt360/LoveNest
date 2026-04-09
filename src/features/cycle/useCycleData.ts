@@ -1,7 +1,18 @@
+/**
+ * useCycleData — Camada de dados do ciclo menstrual.
+ * Toda a lógica de cálculo está em engine.ts.
+ * Este hook trata apenas de: fetch, estado e operações de escrita.
+ */
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { runCycleEngineFromProfile } from "./engine";
+import type { CycleEngineOutput } from "./engine";
+
+// ─────────────────────────────────────────────
+// TIPOS DA BASE DE DADOS (sem alteração de schema)
+// ─────────────────────────────────────────────
 
 export interface CycleProfile {
   id: string;
@@ -72,17 +83,18 @@ export interface DailySymptom {
   notes: string | null;
 }
 
-export type CyclePhase = "Menstruação" | "Fértil" | "TPM" | "Folicular" | "Lútea" | "sem dados";
+/** Todos os campos booleanos de sintomas para iteração */
+export const ALL_SYMPTOM_BOOLEANS = [
+  "cramps", "headache", "nausea", "back_pain", "leg_pain", "fatigue", "dizziness",
+  "breast_tenderness", "bloating", "weakness",
+  "mood_swings", "irritability", "anxiety", "sadness", "sensitivity", "crying",
+  "diarrhea", "constipation", "gas",
+  "acne", "cravings", "increased_appetite",
+] as const;
 
-export interface CycleInfo {
-  phase: CyclePhase;
-  cycleDay: number;
-  nextPeriod: string | null;
-  fertileStart: string | null;
-  fertileEnd: string | null;
-  pmsStart: string | null;
-  ovulationDate: string | null;
-}
+// ─────────────────────────────────────────────
+// UTILITÁRIOS (mantidos para compatibilidade)
+// ─────────────────────────────────────────────
 
 export function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T12:00:00");
@@ -96,48 +108,43 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((db.getTime() - da.getTime()) / 86400000);
 }
 
-export function computeCycleInfo(profile: CycleProfile | null, lastPeriod: PeriodEntry | null): CycleInfo {
-  const empty: CycleInfo = { phase: "sem dados", cycleDay: 0, nextPeriod: null, fertileStart: null, fertileEnd: null, pmsStart: null, ovulationDate: null };
-  if (!profile || !lastPeriod) return empty;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const cycleDay = daysBetween(lastPeriod.start_date, today) + 1;
-  const nextPeriod = addDays(lastPeriod.start_date, profile.avg_cycle_length);
-  const ovDay = profile.avg_cycle_length - profile.luteal_length;
-  const ovulationDate = addDays(lastPeriod.start_date, ovDay);
-  const fertileStart = addDays(lastPeriod.start_date, ovDay - 5);
-  const fertileEnd = addDays(lastPeriod.start_date, ovDay + 1);
-  const pmsDays = profile.pms_days ?? 5;
-  const pmsStart = addDays(nextPeriod, -pmsDays);
-
-  let phase: CyclePhase;
-  const inPeriod =
-    (lastPeriod.end_date === null && today >= lastPeriod.start_date) ||
-    (lastPeriod.end_date !== null && today >= lastPeriod.start_date && today <= lastPeriod.end_date);
-
-  if (inPeriod) {
-    phase = "Menstruação";
-  } else if (today >= fertileStart && today <= fertileEnd) {
-    phase = "Fértil";
-  } else if (today >= pmsStart && today < nextPeriod) {
-    phase = "TPM";
-  } else if (cycleDay > ovDay + 1) {
-    phase = "Lútea";
-  } else {
-    phase = "Folicular";
+/**
+ * @deprecated Use runCycleEngineFromProfile do engine.ts em vez disso.
+ * Mantido apenas para compatibilidade com Index.tsx e CycleHomeCard.tsx.
+ */
+export function computeCycleInfo(
+  profile: CycleProfile | null,
+  lastPeriod: PeriodEntry | null
+): {
+  phase: string;
+  cycleDay: number;
+  nextPeriod: string | null;
+  fertileStart: string | null;
+  fertileEnd: string | null;
+  pmsStart: string | null;
+  ovulationDate: string | null;
+} {
+  const engine = runCycleEngineFromProfile(profile, lastPeriod);
+  if (!engine) {
+    return { phase: "sem dados", cycleDay: 0, nextPeriod: null, fertileStart: null, fertileEnd: null, pmsStart: null, ovulationDate: null };
   }
-
-  return { phase, cycleDay, nextPeriod, fertileStart, fertileEnd, pmsStart, ovulationDate };
+  return {
+    phase: engine.phaseLabel,
+    cycleDay: engine.cycleDay,
+    nextPeriod: engine.nextPeriodStr,
+    fertileStart: engine.fertileStartStr,
+    fertileEnd: engine.fertileEndStr,
+    pmsStart: engine.pmsStartStr,
+    ovulationDate: engine.ovulationDateStr,
+  };
 }
 
-/** All boolean symptom keys for iteration */
-export const ALL_SYMPTOM_BOOLEANS = [
-  "cramps", "headache", "nausea", "back_pain", "leg_pain", "fatigue", "dizziness",
-  "breast_tenderness", "bloating", "weakness",
-  "mood_swings", "irritability", "anxiety", "sadness", "sensitivity", "crying",
-  "diarrhea", "constipation", "gas",
-  "acne", "cravings", "increased_appetite",
-] as const;
+
+// ─────────────────────────────────────────────
+// HOOK: useCycleTarget
+// Determina qual utilizador cujos dados devemos mostrar
+// (a própria utilizadora ou a parceira, no caso do utilizador ser homem)
+// ─────────────────────────────────────────────
 
 export function useCycleTarget() {
   const { user } = useAuth();
@@ -152,29 +159,40 @@ export function useCycleTarget() {
       setLoadingTarget(false);
       return;
     }
-    supabase.from("profiles").select("gender").eq("user_id", user.id).maybeSingle()
+
+    supabase
+      .from("profiles")
+      .select("gender")
+      .eq("user_id", user.id)
+      .maybeSingle()
       .then(async ({ data: profile }) => {
-        const myGender = (profile as any)?.gender;
-        if (myGender === "male") {
+        const gender = (profile as any)?.gender;
+
+        if (gender === "male") {
           setIsMale(true);
-          const { data: cycleProfiles } = await supabase.from("cycle_profiles").select("user_id").eq("couple_space_id", spaceId);
-          const partnerProfile = cycleProfiles?.find(p => p.user_id !== user.id);
-          if (partnerProfile) {
-            setTargetUserId(partnerProfile.user_id);
-          } else {
-            // Se a namorada ainda não tem ciclo, mantem o proprio só para não quebrar
-            setTargetUserId(user.id);
-          }
+          // Homem vê dados da parceira
+          const { data: cycleProfiles } = await supabase
+            .from("cycle_profiles")
+            .select("user_id")
+            .eq("couple_space_id", spaceId);
+
+          const partnerProfile = cycleProfiles?.find((p) => p.user_id !== user.id);
+          setTargetUserId(partnerProfile?.user_id ?? user.id);
         } else {
           setIsMale(false);
           setTargetUserId(user.id);
         }
+
         setLoadingTarget(false);
       });
   }, [user, spaceId]);
 
   return { targetUserId, isMale, loadingTarget };
 }
+
+// ─────────────────────────────────────────────
+// HOOK PRINCIPAL: useCycleData
+// ─────────────────────────────────────────────
 
 export function useCycleData() {
   const { user } = useAuth();
@@ -191,10 +209,13 @@ export function useCycleData() {
   const reload = useCallback(async () => {
     if (!targetUserId || !spaceId) return;
 
+    setLoading(true);
     const [profileRes, periodsRes, symptomsRes] = await Promise.all([
       supabase.from("cycle_profiles").select("*").eq("user_id", targetUserId).maybeSingle(),
-      supabase.from("period_entries").select("*").eq("user_id", targetUserId).order("start_date", { ascending: false }).limit(50),
-      supabase.from("daily_symptoms").select("*").eq("user_id", targetUserId).eq("day_key", today).maybeSingle(),
+      supabase.from("period_entries").select("*").eq("user_id", targetUserId)
+        .order("start_date", { ascending: false }).limit(50),
+      supabase.from("daily_symptoms").select("*").eq("user_id", targetUserId)
+        .eq("day_key", today).maybeSingle(),
     ]);
 
     setProfile((profileRes.data as CycleProfile | null) ?? null);
@@ -209,29 +230,73 @@ export function useCycleData() {
     }
   }, [loadingTarget, targetUserId, reload]);
 
+  // ── Garante que um CycleProfile existe para a utilizadora
   const ensureProfile = useCallback(async () => {
     if (!user || !spaceId) return null;
     if (profile) return profile;
-    if (isMale) return null; // Men don't create cycle profiles
+    if (isMale) return null;
 
     const { data } = await supabase
       .from("cycle_profiles")
       .insert({ user_id: user.id, couple_space_id: spaceId })
       .select("*")
       .single();
+
     const p = data as CycleProfile;
     setProfile(p);
     return p;
   }, [user, spaceId, profile, isMale]);
 
+  // ── Motor de inteligência (fonte única de verdade)
   const lastPeriod = periods[0] ?? null;
-  const cycleInfo = computeCycleInfo(profile, lastPeriod);
   const openPeriod = lastPeriod && !lastPeriod.end_date ? lastPeriod : null;
 
+  // Usar o engine para todos os cálculos
+  const engineOutput: CycleEngineOutput | null = runCycleEngineFromProfile(profile, lastPeriod);
+
   return {
-    profile, periods, todaySymptoms,
+    // Dados brutos
+    profile,
+    periods,
+    todaySymptoms,
     loading: loadingTarget || loading,
-    reload, ensureProfile, cycleInfo, openPeriod, lastPeriod, spaceId,
-    user, today, isMale, targetUserId
+    // Operações
+    reload,
+    ensureProfile,
+    // Contexto
+    lastPeriod,
+    openPeriod,
+    spaceId,
+    user,
+    today,
+    isMale,
+    targetUserId,
+    // ── Output do engine (toda a lógica calculada)
+    engine: engineOutput,
+    /**
+     * @deprecated Use `engine` em vez de `cycleInfo`.
+     * Mantido para compatibilidade temporária.
+     */
+    cycleInfo: engineOutput
+      ? {
+          phase: engineOutput.phaseLabel,
+          cycleDay: engineOutput.cycleDay,
+          nextPeriod: engineOutput.nextPeriodStr,
+          fertileStart: engineOutput.fertileStartStr,
+          fertileEnd: engineOutput.fertileEndStr,
+          pmsStart: engineOutput.pmsStartStr,
+          ovulationDate: engineOutput.ovulationDateStr,
+        }
+      : {
+          phase: "sem dados" as const,
+          cycleDay: 0,
+          nextPeriod: null,
+          fertileStart: null,
+          fertileEnd: null,
+          pmsStart: null,
+          ovulationDate: null,
+        },
   };
 }
+
+export type CycleData = ReturnType<typeof useCycleData>;

@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils";
 import { Loader2, Droplets, Calendar, StopCircle, PlayCircle, AlertTriangle, Info, Flower2 } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { CyclePartnerSummary } from "./CyclePartnerSummary";
-import { format, differenceInDays } from "date-fns";
-import { pt } from "date-fns/locale";
-import type { useCycleData } from "./useCycleData";
+import { differenceInDays } from "date-fns";
+import { formatShortDate, formatLongDate } from "./engine";
+import type { CycleData } from "./useCycleData";
 
-type CycleData = ReturnType<typeof useCycleData>;
+type CycleData = ReturnType<typeof useCycleData> & { engine: import("./engine").CycleEngineOutput | null };
 
 const PHASE_COLORS: Record<string, string> = {
   "Menstruação": "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
@@ -91,7 +91,9 @@ function formatDateLong(d: string) {
 }
 
 export function CycleToday({ data }: { data: CycleData }) {
-  const { profile, cycleInfo, openPeriod, todaySymptoms, reload, ensureProfile, spaceId, user, today, lastPeriod } = data;
+  // Usar engine para todos os dados calculados
+  const { profile, engine, openPeriod, todaySymptoms, reload, ensureProfile, spaceId, user, today, lastPeriod } = data;
+  const cycleInfo = data.cycleInfo; // compatibilidade
   const [saving, setSaving] = useState(false);
   const [flowLevel, setFlowLevel] = useState<string>("medium");
 
@@ -211,7 +213,7 @@ export function CycleToday({ data }: { data: CycleData }) {
       discharge_type: dischargeType,
       discharge: "none",
       notes: notes || null,
-      tpm: cycleInfo.phase === "TPM",
+      tpm: engine?.phase === "luteal" || cycleInfo.phase === "TPM",
       ...symptoms,
     } as any;
 
@@ -226,10 +228,28 @@ export function CycleToday({ data }: { data: CycleData }) {
     reload();
   };
 
-  // Period duration (if open)
+  // Formatar datas — usa helpers do engine
+  function formatDate(d: string) {
+    return formatShortDate(d);
+  }
+  function formatDateLong(d: string) {
+    return formatLongDate(d);
+  }
+
+  // Período duration
   const periodDays = openPeriod
     ? differenceInDays(new Date(), new Date(openPeriod.start_date + "T12:00:00")) + 1
     : 0;
+
+  // Fase para exibição — usar engine se disponível
+  const displayPhase = engine?.phaseLabel ?? cycleInfo.phase;
+  const displayCycleDay = engine?.cycleDay ?? cycleInfo.cycleDay;
+  const displayNextPeriod = engine?.nextPeriodStr ?? cycleInfo.nextPeriod;
+  const displayOvulation = engine?.ovulationDateStr ?? cycleInfo.ovulationDate;
+  const displayFertileStart = engine?.fertileStartStr ?? cycleInfo.fertileStart;
+  const displayFertileEnd = engine?.fertileEndStr ?? cycleInfo.fertileEnd;
+  const displayPmsStart = engine?.pmsStartStr ?? cycleInfo.pmsStart;
+  const hasData = !!engine || cycleInfo.phase !== "sem dados";
 
   if (data.isMale && !profile) {
     return (
@@ -252,15 +272,15 @@ export function CycleToday({ data }: { data: CycleData }) {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             Fase actual
-            {cycleInfo.phase !== "sem dados" && (
-              <Badge className={cn("text-xs", PHASE_COLORS[cycleInfo.phase] ?? "bg-muted text-muted-foreground")}>
-                {cycleInfo.phase}
+            {hasData && (
+              <Badge className={cn("text-xs", PHASE_COLORS[displayPhase] ?? "bg-muted text-muted-foreground")}>
+                {displayPhase}
               </Badge>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {cycleInfo.phase === "sem dados" ? (
+          {!hasData ? (
             <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3">
               <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
@@ -270,37 +290,37 @@ export function CycleToday({ data }: { data: CycleData }) {
           ) : (
             <>
               <div className="flex items-center gap-3 flex-wrap">
-                {cycleInfo.cycleDay > 0 && (
-                  <span className="text-sm text-muted-foreground">Dia <strong className="text-foreground">{cycleInfo.cycleDay}</strong> do ciclo</span>
+                {displayCycleDay > 0 && (
+                  <span className="text-sm text-muted-foreground">Dia <strong className="text-foreground">{displayCycleDay}</strong> do ciclo</span>
                 )}
               </div>
 
               {/* Key dates */}
               <div className="grid grid-cols-2 gap-2">
-                {cycleInfo.nextPeriod && (
+                {displayNextPeriod && (
                   <div className="rounded-xl bg-red-50 dark:bg-red-950/20 p-2.5 space-y-0.5">
                     <p className="text-[10px] text-muted-foreground uppercase font-medium">Próx. menstruação</p>
-                    <p className="text-sm font-bold text-red-600">{formatDate(cycleInfo.nextPeriod)}</p>
+                    <p className="text-sm font-bold text-red-600">{formatDate(displayNextPeriod)}</p>
                   </div>
                 )}
-                {cycleInfo.ovulationDate && (
+                {displayOvulation && (
                   <div className="rounded-xl bg-green-50 dark:bg-green-950/20 p-2.5 space-y-0.5">
                     <p className="text-[10px] text-muted-foreground uppercase font-medium">Ovulação estimada</p>
-                    <p className="text-sm font-bold text-green-600">{formatDate(cycleInfo.ovulationDate)}</p>
+                    <p className="text-sm font-bold text-green-600">{formatDate(displayOvulation)}</p>
                   </div>
                 )}
-                {cycleInfo.fertileStart && cycleInfo.fertileEnd && (
+                {displayFertileStart && displayFertileEnd && (
                   <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 p-2.5 space-y-0.5">
                     <p className="text-[10px] text-muted-foreground uppercase font-medium">Janela fértil</p>
                     <p className="text-sm font-bold text-emerald-600">
-                      {formatDate(cycleInfo.fertileStart)} – {formatDate(cycleInfo.fertileEnd)}
+                      {formatDate(displayFertileStart)} – {formatDate(displayFertileEnd)}
                     </p>
                   </div>
                 )}
-                {cycleInfo.pmsStart && (
+                {displayPmsStart && (
                   <div className="rounded-xl bg-purple-50 dark:bg-purple-950/20 p-2.5 space-y-0.5">
                     <p className="text-[10px] text-muted-foreground uppercase font-medium">Início TPM</p>
-                    <p className="text-sm font-bold text-purple-600">{formatDate(cycleInfo.pmsStart)}</p>
+                    <p className="text-sm font-bold text-purple-600">{formatDate(displayPmsStart)}</p>
                   </div>
                 )}
               </div>
@@ -309,7 +329,7 @@ export function CycleToday({ data }: { data: CycleData }) {
               <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  {PHASE_TIPS[cycleInfo.phase] ?? ""}
+                  {PHASE_TIPS[displayPhase] ?? PHASE_TIPS["sem dados"]}
                 </p>
               </div>
             </>
