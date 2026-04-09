@@ -16,7 +16,7 @@ export default function RoutineDay() {
     const { toast } = useToast();
 
     const { activeItems, loading: itemsLoading } = useRoutineItems();
-    const { logs, fetchMonth, upsertLog, getLogForDay, loading: logsLoading, isReady } = useRoutineLogs();
+    const { logs, fetchMonth, upsertLog, getLogForDay, loading: logsLoading, isReady, canWrite } = useRoutineLogs();
 
     const [checkedIds, setCheckedIds] = useState<string[]>([]);
     const [notes, setNotes] = useState("");
@@ -59,13 +59,13 @@ export default function RoutineDay() {
     }, [autoSave]);
 
     const handleSave = useCallback(async () => {
-        if (!isReady) return;
+        if (!canWrite) return;
         setSaving(true);
         clearTimeout(debounceRef.current);
         await upsertLog(day, checkedIds, activeItems.length, notes);
         toast({ title: "Rotina salva ✓" });
         setSaving(false);
-    }, [day, checkedIds, activeItems, notes, upsertLog, toast]);
+    }, [day, checkedIds, activeItems, notes, upsertLog, toast, canWrite]);
 
     const done = checkedIds.filter(id => activeItems.some(i => i.id === id)).length;
     const loading = itemsLoading || logsLoading;
@@ -81,7 +81,7 @@ export default function RoutineDay() {
                     <h1 className="text-lg font-semibold capitalize">{dayLabel}</h1>
                     <p className="text-xs text-muted-foreground">{done}/{activeItems.length} completados</p>
                 </div>
-                <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving || !isReady}>
+                <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving || !canWrite}>
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     Guardar
                 </Button>
@@ -96,8 +96,8 @@ export default function RoutineDay() {
                     <RoutineChecklist
                         items={activeItems}
                         checkedIds={checkedIds}
-                        onToggle={(id) => isReady && handleToggle(id)}
-                        readOnly={!isReady}
+                        onToggle={(id) => canWrite && handleToggle(id)}
+                        readOnly={!canWrite}
                     />
 
                     <div className="space-y-2">

@@ -24,7 +24,7 @@ export default function Routine() {
     const [month, setMonth] = useState(now.getMonth() + 1);
 
     const { activeItems, loading: itemsLoading } = useRoutineItems();
-    const { logs, loading: logsLoading, isReady, fetchMonth, upsertLog, getLogForDay } = useRoutineLogs();
+    const { logs, loading: logsLoading, isReady, canWrite, fetchMonth, upsertLog, getLogForDay } = useRoutineLogs();
     const stats = useRoutineStats(logs);
 
     // Fetch current month on mount and when month changes
@@ -102,8 +102,8 @@ export default function Routine() {
                             <RoutineChecklist
                                 items={activeItems}
                                 checkedIds={todayChecked}
-                                onToggle={(id) => isReady && handleToggle(id)}
-                                readOnly={!isReady}
+                                onToggle={(id) => canWrite && handleToggle(id)}
+                                readOnly={!canWrite}
                             />
                         </div>
                     </>

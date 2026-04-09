@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -32,16 +32,13 @@ export function useRoutineLogs(userId?: string) {
     const spaceId = useCoupleSpaceId();
     const [logs, setLogs] = useState<RoutineDayLog[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isReady, setIsReady] = useState(false);
-
-    useEffect(() => {
-        if (spaceId) {
-            console.log("useRoutineLogs READY: spaceId obtained", spaceId);
-            setIsReady(true);
-        }
-    }, [spaceId]);
 
     const targetUserId = userId ?? user?.id;
+
+    // isReady: pode ler dados (só precisa de userId)
+    // canWrite: pode guardar logs (precisa de spaceId)
+    const isReady = !!targetUserId;
+    const canWrite = !!spaceId;
 
     const fetchMonth = useCallback(async (year: number, month: number) => {
         if (!targetUserId) return;
@@ -137,5 +134,5 @@ export function useRoutineLogs(userId?: string) {
         await fetchMonth(now.getFullYear(), now.getMonth() + 1);
     }, [user, spaceId, logs, fetchMonth]);
 
-    return { logs, loading, isReady, fetchMonth, getLogForDay, upsertLog };
+    return { logs, loading, isReady, canWrite, fetchMonth, getLogForDay, upsertLog };
 }

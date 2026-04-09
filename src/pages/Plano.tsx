@@ -52,9 +52,9 @@ export default function Plano() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const { activeItems, loading: itemsLoading } = useRoutineItems();
-  const { logs, loading: logsLoading, isReady: isRoutineReady, fetchMonth, upsertLog, getLogForDay } = useRoutineLogs();
+  const { logs, loading: logsLoading, isReady: isRoutineReady, canWrite: canWriteRoutine, fetchMonth, upsertLog, getLogForDay } = useRoutineLogs();
   
-  const isReady = isPlanoReady && isRoutineReady;
+  const isReady = isPlanoReady;
   const stats = useRoutineStats(logs);
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
@@ -204,8 +204,8 @@ export default function Plano() {
                       <RoutineChecklist 
                         items={activeItems} 
                         checkedIds={todayChecked} 
-                        onToggle={(id) => isReady && handleToggleRoutine(id)} 
-                        readOnly={!isReady}
+                        onToggle={(id) => canWriteRoutine && handleToggleRoutine(id)} 
+                        readOnly={!canWriteRoutine}
                       />
                     </div>
                   </>
