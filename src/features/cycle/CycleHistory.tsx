@@ -22,7 +22,7 @@ const SYMPTOM_LABEL_MAP: Record<string, string> = {
   gas: "Gases", increased_appetite: "Apetite+",
 };
 
-export function CycleHistory({ data }: { data: CycleData }) {
+export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () => void }) {
   const { profile, periods, reload, ensureProfile, user } = data;
   const [saving, setSaving] = useState(false);
   const [avgCycle, setAvgCycle] = useState(profile?.avg_cycle_length ?? 28);
@@ -247,6 +247,22 @@ export function CycleHistory({ data }: { data: CycleData }) {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Data management – minimal */}
+      {onReset && (
+        <div className="rounded-2xl border border-muted p-4 space-y-3">
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+            ⚙️ Gestão de dados
+          </p>
+          <button
+            type="button"
+            onClick={onReset}
+            className="text-xs text-destructive/70 hover:text-destructive underline underline-offset-2 transition-colors"
+          >
+            Apagar todos os dados do ciclo
+          </button>
+        </div>
       )}
     </div>
   );

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getDayType, formatShortDate } from "./engine";
@@ -10,25 +10,21 @@ import type { DayType } from "./engine";
 import type { DailySymptom, CycleData } from "./useCycleData";
 
 // ─────────────────────────────────────────────
-// ESTILOS POR TIPO DE DIA (do engine)
+// DOT COLOR MAP
 // ─────────────────────────────────────────────
 
-const DAY_STYLES: Record<DayType, string> = {
-  period: "bg-red-200 dark:bg-red-900/40 text-red-800 dark:text-red-200 font-semibold",
-  ovulation: "bg-green-300 dark:bg-green-700/60 text-green-900 dark:text-green-100 font-bold ring-1 ring-green-400",
-  fertile: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200",
-  pms: "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200",
-  luteal: "",
-  folicular: "",
-  today: "",
-  none: "hover:bg-accent",
+const DOT_COLORS: Partial<Record<DayType, string>> = {
+  period: "bg-rose-500",
+  ovulation: "bg-green-500 ring-1 ring-green-600",
+  fertile: "bg-green-400",
+  pms: "bg-purple-500",
 };
 
-const DAY_BADGE_LABELS: Partial<Record<DayType, string>> = {
-  period: "Menstruação",
-  ovulation: "Ovulação",
-  fertile: "Período fértil",
-  pms: "TPM",
+const BADGE_LABELS: Partial<Record<DayType, { label: string; className: string }>> = {
+  period: { label: "Menstruação", className: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" },
+  ovulation: { label: "Ovulação", className: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+  fertile: { label: "Período fértil", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  pms: { label: "TPM", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
 };
 
 const SYMPTOM_LABELS: Record<string, string> = {
@@ -36,17 +32,17 @@ const SYMPTOM_LABELS: Record<string, string> = {
   leg_pain: "Pernas", fatigue: "Fadiga", dizziness: "Tontura", breast_tenderness: "Seios",
   mood_swings: "Humor", acne: "Acne", cravings: "Desejos", bloating: "Inchaço", weakness: "Fraqueza",
   irritability: "Irritabilidade", anxiety: "Ansiedade", sadness: "Tristeza",
-  sensitivity: "Sensibilidade", crying: "Choro",
-  diarrhea: "Diarreia", constipation: "Obstipação", gas: "Gases",
-  increased_appetite: "Apetite+",
+  sensitivity: "Sensibilidade", crying: "Choro", diarrhea: "Diarreia",
+  constipation: "Obstipação", gas: "Gases", increased_appetite: "Apetite+",
 };
 
 // ─────────────────────────────────────────────
-// COMPONENTE
+// COMPONENT
 // ─────────────────────────────────────────────
 
 export function CycleCalendar({ data }: { data: CycleData }) {
   const { periods, user, engine } = data;
+  const today = new Date().toISOString().slice(0, 10);
 
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth());
@@ -54,89 +50,76 @@ export function CycleCalendar({ data }: { data: CycleData }) {
   const [daySymptoms, setDaySymptoms] = useState<DailySymptom | null>(null);
   const [loggedDays, setLoggedDays] = useState<Set<string>>(new Set());
 
-  const today = new Date().toISOString().slice(0, 10);
-
   const prevMonth = () => {
-    if (month === 0) { setMonth(11); setYear((y) => y - 1); }
-    else setMonth((m) => m - 1);
+    setMonth((m) => { if (m === 0) { setYear((y) => y - 1); return 11; } return m - 1; });
   };
   const nextMonth = () => {
-    if (month === 11) { setMonth(0); setYear((y) => y + 1); }
-    else setMonth((m) => m + 1);
+    setMonth((m) => { if (m === 11) { setYear((y) => y + 1); return 0; } return m + 1; });
   };
 
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startWeekday = firstDay.getDay();
-  const daysInMonth = lastDay.getDate();
 
-  // Fetch dias com registo de sintomas no mês
+  // Fetch logged days this month
   useEffect(() => {
     if (!data.targetUserId) return;
     const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
-
+    const to   = `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
     supabase
       .from("daily_symptoms")
       .select("day_key")
       .eq("user_id", data.targetUserId)
-      .gte("day_key", from)
-      .lte("day_key", to)
-      .then(({ data }) => {
-        setLoggedDays(new Set((data ?? []).map((d: any) => d.day_key)));
-      });
+      .gte("day_key", from).lte("day_key", to)
+      .then(({ data }) => setLoggedDays(new Set((data ?? []).map((d: any) => d.day_key))));
   }, [data.targetUserId, year, month, daysInMonth]);
 
-  // Carregar sintomas do dia seleccionado
+  // Fetch symptoms for selected day
   useEffect(() => {
     if (!selectedDay || !user) { setDaySymptoms(null); return; }
-
     supabase
-      .from("daily_symptoms")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("day_key", selectedDay)
-      .maybeSingle()
+      .from("daily_symptoms").select("*")
+      .eq("user_id", user.id).eq("day_key", selectedDay).maybeSingle()
       .then(({ data }) => setDaySymptoms(data as DailySymptom | null));
   }, [selectedDay, user]);
 
   const monthName = new Date(year, month).toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
+    month: "long", year: "numeric",
   });
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="icon" onClick={prevMonth}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <CardTitle className="text-base capitalize">{monthName}</CardTitle>
-            <Button variant="ghost" size="icon" onClick={nextMonth}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Cabeçalho dos dias */}
-          <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-            {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
-              <span key={i} className="text-muted-foreground font-medium py-1">{d}</span>
+      {/* ── Calendar card ── */}
+      <div className="rounded-3xl border bg-card overflow-hidden shadow-sm">
+        {/* Month nav */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/40">
+          <Button variant="ghost" size="icon" onClick={prevMonth} className="rounded-xl h-8 w-8">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-sm font-black capitalize">{monthName}</h2>
+          <Button variant="ghost" size="icon" onClick={nextMonth} className="rounded-xl h-8 w-8">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="p-3">
+          {/* Week header */}
+          <div className="grid grid-cols-7 text-center mb-1">
+            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d, i) => (
+              <span key={i} className="text-[9px] font-black uppercase tracking-wider text-muted-foreground/50 py-1">
+                {d}
+              </span>
             ))}
           </div>
 
-          {/* Grade de dias */}
-          <div className="grid grid-cols-7 gap-1">
+          {/* Day cells */}
+          <div className="grid grid-cols-7 gap-0">
             {Array.from({ length: startWeekday }).map((_, i) => <div key={`e-${i}`} />)}
-
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-              // Usar o engine para determinar o tipo de dia
               const dayType = getDayType(dayStr, engine, periods, today);
+              const dotColor = DOT_COLORS[dayType];
               const isToday = dayStr === today;
               const isSelected = dayStr === selectedDay;
               const hasLog = loggedDays.has(dayStr);
@@ -147,112 +130,113 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   type="button"
                   onClick={() => setSelectedDay(dayStr === selectedDay ? null : dayStr)}
                   className={cn(
-                    "relative aspect-square flex items-center justify-center rounded-md text-sm transition-colors",
-                    isToday && "ring-2 ring-primary",
-                    isSelected && "ring-2 ring-foreground",
-                    DAY_STYLES[dayType],
-                    !DAY_STYLES[dayType] && "hover:bg-accent",
+                    "relative flex flex-col items-center justify-center py-2 rounded-xl transition-all duration-150",
+                    isSelected && "bg-foreground/8 scale-110 shadow-sm ring-1 ring-foreground/15",
+                    isToday && !isSelected && "ring-2 ring-primary ring-offset-1",
+                    !isSelected && !isToday && "hover:bg-muted/40",
                   )}
                 >
-                  {day}
-                  {hasLog && (
-                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-foreground/50" />
-                  )}
-                  {dayType === "ovulation" && (
-                    <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                  )}
+                  <span className={cn(
+                    "text-[13px] leading-none font-medium",
+                    isToday && "font-black text-primary",
+                    isSelected && "font-black",
+                  )}>
+                    {day}
+                  </span>
+
+                  {/* Dot row */}
+                  <div className="h-1.5 mt-0.5 flex gap-0.5 items-center">
+                    {dotColor ? (
+                      <span className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
+                    ) : hasLog ? (
+                      <span className="h-1 w-1 rounded-full bg-foreground/20" />
+                    ) : null}
+                  </div>
                 </button>
               );
             })}
           </div>
 
-          {/* Legenda */}
-          <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded-sm bg-red-300 dark:bg-red-800" /> Menstruação
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded-sm bg-green-300 dark:bg-green-800" /> Fértil
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded-full bg-green-500" /> Ovulação
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded-sm bg-purple-300 dark:bg-purple-800" /> TPM
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-foreground/50" /> Registo
-            </span>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-border/30 px-1">
+            {[
+              { color: "bg-rose-500", label: "Menstruação" },
+              { color: "bg-green-400", label: "Fértil" },
+              { color: "bg-green-500 ring-1 ring-green-600", label: "Ovulação" },
+              { color: "bg-purple-500", label: "TPM" },
+              { color: "bg-foreground/20", label: "Registo" },
+            ].map(({ color, label }) => (
+              <span key={label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                <span className={cn("h-2 w-2 rounded-full shrink-0", color)} />
+                {label}
+              </span>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Detalhe do dia seleccionado */}
+      {/* ── Selected day detail ── */}
       {selectedDay && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
+        <Card className="rounded-2xl border shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 pt-4">
+            <CardTitle className="text-sm font-black">
               {new Date(selectedDay + "T12:00:00").toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
+                weekday: "long", day: "numeric", month: "long",
               })}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Badge da fase */}
+          <CardContent className="space-y-3 pb-4">
+            {/* Phase badge */}
             {(() => {
               const dayType = getDayType(selectedDay, engine, periods, today);
-              const label = DAY_BADGE_LABELS[dayType];
-              if (!label) return null;
-              return (
-                <Badge className={cn("text-xs", {
-                  "bg-red-100 text-red-700": dayType === "period",
-                  "bg-green-100 text-green-700": dayType === "fertile" || dayType === "ovulation",
-                  "bg-purple-100 text-purple-700": dayType === "pms",
-                })}>
-                  {label}
-                </Badge>
-              );
+              const badge = BADGE_LABELS[dayType];
+              if (!badge) return null;
+              return <Badge className={cn("text-xs font-bold rounded-full px-3", badge.className)}>{badge.label}</Badge>;
             })()}
 
             {daySymptoms ? (
-              <div className="space-y-2">
-                {/* Métricas */}
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {daySymptoms.pain_level > 0 && <span>Dor: {daySymptoms.pain_level}/10</span>}
-                  {daySymptoms.energy_level !== undefined && (
-                    <span>Energia: {daySymptoms.energy_level}/10</span>
-                  )}
-                  {daySymptoms.stress > 0 && <span>Stress: {daySymptoms.stress}/10</span>}
-                  {daySymptoms.libido !== 5 && <span>Libido: {daySymptoms.libido}/10</span>}
+              <div className="space-y-3">
+                {/* Key metrics */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Dor", value: daySymptoms.pain_level, suffix: "/10", show: daySymptoms.pain_level > 0 },
+                    { label: "Energia", value: (daySymptoms as any).energy_level, suffix: "/10", show: (daySymptoms as any).energy_level !== undefined },
+                    { label: "Stress", value: (daySymptoms as any).stress, suffix: "/10", show: (daySymptoms as any).stress > 0 },
+                    { label: "Libido", value: daySymptoms.libido, suffix: "/10", show: daySymptoms.libido !== 5 },
+                  ].filter(m => m.show).map(m => (
+                    <div key={m.label} className="rounded-xl bg-muted/40 p-2.5 space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase">{m.label}</p>
+                      <p className="text-sm font-black">{m.value}{m.suffix}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Sono */}
-                {daySymptoms.sleep_hours && (
-                  <p className="text-sm text-muted-foreground">
-                    Sono: {daySymptoms.sleep_hours}h ({daySymptoms.sleep_quality})
-                  </p>
+                {/* Sleep */}
+                {(daySymptoms as any).sleep_hours && (
+                  <div className="rounded-xl bg-muted/40 p-2.5 space-y-0.5">
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase">Sono</p>
+                    <p className="text-sm font-black">{(daySymptoms as any).sleep_hours}h · {(daySymptoms as any).sleep_quality}</p>
+                  </div>
                 )}
 
-                {/* Badges de sintomas */}
-                <div className="flex flex-wrap gap-1">
-                  {Object.entries(SYMPTOM_LABELS).map(([k, v]) =>
-                    (daySymptoms as any)[k]
-                      ? <Badge key={k} variant="secondary" className="text-xs">{v}</Badge>
-                      : null
-                  )}
-                </div>
+                {/* Symptom badges */}
+                {Object.entries(SYMPTOM_LABELS).some(([k]) => (daySymptoms as any)[k]) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(SYMPTOM_LABELS).map(([k, v]) =>
+                      (daySymptoms as any)[k]
+                        ? <span key={k} className="px-2.5 py-1 rounded-full bg-muted text-xs font-bold">{v}</span>
+                        : null
+                    )}
+                  </div>
+                )}
 
-                {/* Corrimento */}
-                {daySymptoms.discharge_type && daySymptoms.discharge_type !== "seco" && (
-                  <p className="text-xs text-muted-foreground">
-                    Corrimento: {daySymptoms.discharge_type.replace("_", " ")}
-                  </p>
+                {/* Discharge */}
+                {(daySymptoms as any).discharge_type && (daySymptoms as any).discharge_type !== "seco" && (
+                  <p className="text-xs text-muted-foreground">Corrimento: {(daySymptoms as any).discharge_type.replace("_", " ")}</p>
                 )}
 
                 {daySymptoms.notes && (
-                  <p className="text-sm text-muted-foreground italic">{daySymptoms.notes}</p>
+                  <p className="text-sm text-muted-foreground italic leading-relaxed">"{daySymptoms.notes}"</p>
                 )}
               </div>
             ) : (
