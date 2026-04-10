@@ -15,15 +15,53 @@ import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
 
 // ─────────────────────────────────────────────
-// DESIGN SYSTEM
+// DESIGN SYSTEM — Soft Pastel (Flo-style)
 // ─────────────────────────────────────────────
 
-const PHASE_GRADIENTS: Record<string, string> = {
-  menstrual: "from-rose-400 via-pink-500 to-red-500",
-  folicular: "from-sky-400 via-blue-400 to-cyan-500",
-  ovulacao: "from-emerald-400 via-green-400 to-teal-500",
-  luteal: "from-purple-400 via-violet-500 to-indigo-500",
-  sem_dados: "from-slate-400 via-slate-400 to-slate-500",
+const PHASE_SOFT: Record<string, {
+  bg: string; border: string; accent: string; pill: string;
+  progressFill: string; progressBg: string;
+}> = {
+  menstrual: {
+    bg: "bg-rose-50/70 dark:bg-rose-950/20",
+    border: "border-rose-100 dark:border-rose-900/30",
+    accent: "text-rose-500 dark:text-rose-400",
+    pill: "bg-rose-100/80 text-rose-600 dark:bg-rose-900/30 dark:text-rose-300",
+    progressFill: "bg-rose-300 dark:bg-rose-500",
+    progressBg: "bg-rose-100 dark:bg-rose-900/40",
+  },
+  folicular: {
+    bg: "bg-sky-50/70 dark:bg-sky-950/20",
+    border: "border-sky-100 dark:border-sky-900/30",
+    accent: "text-sky-500 dark:text-sky-400",
+    pill: "bg-sky-100/80 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300",
+    progressFill: "bg-sky-300 dark:bg-sky-500",
+    progressBg: "bg-sky-100 dark:bg-sky-900/40",
+  },
+  ovulacao: {
+    bg: "bg-emerald-50/70 dark:bg-emerald-950/20",
+    border: "border-emerald-100 dark:border-emerald-900/30",
+    accent: "text-emerald-600 dark:text-emerald-400",
+    pill: "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    progressFill: "bg-emerald-300 dark:bg-emerald-500",
+    progressBg: "bg-emerald-100 dark:bg-emerald-900/40",
+  },
+  luteal: {
+    bg: "bg-purple-50/70 dark:bg-purple-950/20",
+    border: "border-purple-100 dark:border-purple-900/30",
+    accent: "text-purple-500 dark:text-purple-400",
+    pill: "bg-purple-100/80 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300",
+    progressFill: "bg-purple-300 dark:bg-purple-500",
+    progressBg: "bg-purple-100 dark:bg-purple-900/40",
+  },
+  sem_dados: {
+    bg: "bg-muted/30",
+    border: "border-border/50",
+    accent: "text-muted-foreground",
+    pill: "bg-muted text-muted-foreground",
+    progressFill: "bg-muted-foreground/30",
+    progressBg: "bg-muted/50",
+  },
 };
 
 const PHASE_EMOJIS: Record<string, string> = {
@@ -331,82 +369,72 @@ export function CycleToday({ data }: { data: CycleData }) {
   }
 
   const phaseKey = engine?.phase ?? "sem_dados";
+  const colors = PHASE_SOFT[phaseKey] ?? PHASE_SOFT.sem_dados;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 pb-10">
 
       {/* ══════════════════════════════════════
-          PHASE HERO CARD
+          PHASE HERO CARD — calm, elegant
       ══════════════════════════════════════ */}
       {engine ? (
         <div className={cn(
-          "rounded-3xl p-5 text-white shadow-lg bg-gradient-to-br",
-          PHASE_GRADIENTS[phaseKey] ?? PHASE_GRADIENTS.sem_dados
+          "rounded-[32px] border p-6 space-y-5 shadow-sm transition-all duration-500",
+          colors.bg, colors.border
         )}>
           {/* Phase + Day */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Fase actual</p>
-              <h2 className="text-2xl font-black leading-tight">
+          <div className="flex items-start justify-between">
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
+                Fase actual
+              </p>
+              <h2 className={cn("text-2xl font-black tracking-tight", colors.accent)}>
                 {PHASE_EMOJIS[phaseKey]} {engine.phaseLabel}
               </h2>
             </div>
-            <div className="text-right bg-white/15 rounded-2xl px-3.5 py-2.5">
-              <p className="text-[9px] opacity-70 font-black uppercase tracking-wider">Dia</p>
-              <p className="text-3xl font-black leading-none">{engine.cycleDay}</p>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">Dia</p>
+              <p className={cn("text-4xl font-black leading-none tracking-tighter", colors.accent)}>{engine.cycleDay}</p>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="space-y-1.5 mb-4">
-            <div className="h-1.5 bg-white/25 rounded-full overflow-hidden">
+          {/* Insight — human, emotional */}
+          <p className="text-[15px] text-foreground/70 leading-relaxed font-medium italic">
+            "{engine.insights[0]}"
+          </p>
+
+          {/* Progress */}
+          <div className="space-y-2">
+            <div className={cn("h-1.5 rounded-full overflow-hidden", colors.progressBg)}>
               <div
-                className="h-full bg-white/80 rounded-full transition-all duration-700"
+                className={cn("h-full rounded-full transition-all duration-1000", colors.progressFill)}
                 style={{ width: `${engine.cycleProgress}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] opacity-60 font-medium">
-              <span>Início do ciclo</span>
+            <div className="flex justify-between text-[10px] text-muted-foreground/40 font-bold uppercase tracking-wider">
+              <span>Dia 1</span>
               <span>
                 {engine.daysUntilNextPeriod > 0
                   ? `${engine.daysUntilNextPeriod}d até menstruação`
-                  : engine.daysUntilNextPeriod === 0
-                    ? "Menstruação prevista hoje"
-                    : "Menstruação prevista"}
+                  : engine.daysUntilNextPeriod === 0 ? "Chega hoje" : ""}
               </span>
             </div>
           </div>
 
-          {/* Status chips */}
-          <div className="flex gap-2 flex-wrap mb-4">
+          {/* Status pills — subtle */}
+          <div className="flex gap-2 flex-wrap pt-1">
             {engine.isInPeriod && (
-              <span className="px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-black backdrop-blur-sm">
-                🔴 Em período
-              </span>
+              <span className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight", colors.pill)}>Em período</span>
             )}
             {engine.isInFertileWindow && (
-              <span className="px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-black backdrop-blur-sm">
-                🌿 Janela fértil
-              </span>
+              <span className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight", colors.pill)}>Janela fértil</span>
             )}
             {engine.isInPmsWindow && !engine.isInPeriod && (
-              <span className="px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-black backdrop-blur-sm">
-                💜 TPM
-              </span>
+              <span className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight", colors.pill)}>TPM</span>
             )}
-            <span className="px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-black backdrop-blur-sm">
-              📅 Próx. {formatShortDate(engine.nextPeriodStr)}
+            <span className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight", colors.pill)}>
+              Próx. {formatShortDate(engine.nextPeriodStr)}
             </span>
-            <span className="px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-black backdrop-blur-sm">
-              🥚 Ovulação {formatShortDate(engine.ovulationDateStr)}
-            </span>
-          </div>
-
-          {/* Primary insight */}
-          <div className="border-t border-white/20 pt-3.5">
-            <p className="text-sm opacity-90 font-medium leading-relaxed">
-              {engine.insights[0]}
-            </p>
           </div>
         </div>
       ) : (
@@ -417,17 +445,15 @@ export function CycleToday({ data }: { data: CycleData }) {
         </div>
       )}
 
-      {/* ══════════════════════════════════════
-          INSIGHTS DE HOJE (alertas extra)
-      ══════════════════════════════════════ */}
+      {/* Insights adicionais — suave */}
       {engine && engine.insights.length > 1 && (
-        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/30 p-4 space-y-2.5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3" /> Insights de hoje
+        <div className="rounded-2xl border border-border/30 bg-muted/20 px-4 py-3.5 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" /> Para hoje
           </p>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {engine.insights.slice(1).map((insight, i) => (
-              <p key={i} className="text-sm text-foreground/80 leading-snug">{insight}</p>
+              <p key={i} className="text-sm text-foreground/65 leading-snug">{insight}</p>
             ))}
           </div>
         </div>
@@ -436,13 +462,13 @@ export function CycleToday({ data }: { data: CycleData }) {
       {/* ══════════════════════════════════════
           PERIOD MANAGEMENT
       ══════════════════════════════════════ */}
-      <div className="rounded-2xl border bg-card overflow-hidden">
-        <div className="px-4 pt-4 pb-3 border-b border-border/50">
-          <p className="text-sm font-black flex items-center gap-2">
-            <Droplets className="h-4 w-4 text-rose-500" /> Menstruação
+      <div className="rounded-[32px] border border-border/40 bg-card overflow-hidden shadow-sm">
+        <div className="px-6 pt-5 pb-3 border-b border-border/30">
+          <p className="text-[11px] font-black uppercase tracking-[0.1em] text-muted-foreground/60 flex items-center gap-2">
+            <Droplets className="h-4 w-4 text-rose-400" /> Menstruação
           </p>
         </div>
-        <div className="p-4 space-y-3">
+        <div className="p-6 space-y-4">
           {openPeriod ? (
             <>
               <div className="rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-900/40 p-3">
@@ -550,11 +576,11 @@ export function CycleToday({ data }: { data: CycleData }) {
       {/* ══════════════════════════════════════
           COMO ME SINTO HOJE (chips)
       ══════════════════════════════════════ */}
-      <div className="rounded-2xl border bg-card overflow-hidden">
-        <div className="px-4 pt-4 pb-3 border-b border-border/50">
-          <p className="text-sm font-black">Como me sinto hoje</p>
+      <div className="rounded-[32px] border border-border/40 bg-card overflow-hidden shadow-sm">
+        <div className="px-6 pt-5 pb-3 border-b border-border/30">
+          <p className="text-[11px] font-black uppercase tracking-[0.1em] text-muted-foreground/60">Como me sinto hoje</p>
         </div>
-        <div className="p-4 space-y-5">
+        <div className="p-6 space-y-6">
           <ChipSelector label="Dor" emoji="😣" options={PAIN_OPTIONS} value={painLevel} onChange={setPainLevel} disabled={data.isMale || saving} />
           <ChipSelector label="Energia" emoji="⚡" options={ENERGY_OPTIONS} value={energyLevel} onChange={setEnergyLevel} disabled={data.isMale || saving} />
           <ChipSelector label="Stress" emoji="😤" options={STRESS_OPTIONS} value={stress} onChange={setStress} disabled={data.isMale || saving} />
@@ -596,16 +622,16 @@ export function CycleToday({ data }: { data: CycleData }) {
       {/* ══════════════════════════════════════
           SINTOMAS
       ══════════════════════════════════════ */}
-      <div className="rounded-2xl border bg-card overflow-hidden">
-        <div className="px-4 pt-4 pb-3 border-b border-border/50 flex items-center justify-between">
-          <p className="text-sm font-black">Sintomas</p>
+      <div className="rounded-[32px] border border-border/40 bg-card overflow-hidden shadow-sm">
+        <div className="px-6 pt-5 pb-3 border-b border-border/30 flex items-center justify-between">
+          <p className="text-[11px] font-black uppercase tracking-[0.1em] text-muted-foreground/60">Sintomas</p>
           {activeSymptoms > 0 && (
-            <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-black">
+            <span className="px-2.5 py-0.5 rounded-full bg-primary/5 text-primary/70 text-[10px] font-black uppercase tracking-wider">
               {activeSymptoms} activos
             </span>
           )}
         </div>
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6">
           {SYMPTOM_SECTIONS.map((section) => (
             <div key={section.title}>
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">{section.title}</p>

@@ -14,10 +14,10 @@ import type { DailySymptom, CycleData } from "./useCycleData";
 // ─────────────────────────────────────────────
 
 const DOT_COLORS: Partial<Record<DayType, string>> = {
-  period: "bg-rose-500",
-  ovulation: "bg-green-500 ring-1 ring-green-600",
-  fertile: "bg-green-400",
-  pms: "bg-purple-500",
+  period: "bg-rose-300 dark:bg-rose-500",
+  ovulation: "bg-emerald-400 dark:bg-emerald-400 ring-1 ring-emerald-500/40",
+  fertile: "bg-green-200 dark:bg-green-600",
+  pms: "bg-purple-300 dark:bg-purple-500",
 };
 
 const BADGE_LABELS: Partial<Record<DayType, { label: string; className: string }>> = {
@@ -112,8 +112,8 @@ export function CycleCalendar({ data }: { data: CycleData }) {
             ))}
           </div>
 
-          {/* Day cells */}
-          <div className="grid grid-cols-7 gap-0">
+          {/* Days grid - more breathing room */}
+          <div className="grid grid-cols-7 gap-px">
             {Array.from({ length: startWeekday }).map((_, i) => <div key={`e-${i}`} />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
@@ -130,26 +130,26 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   type="button"
                   onClick={() => setSelectedDay(dayStr === selectedDay ? null : dayStr)}
                   className={cn(
-                    "relative flex flex-col items-center justify-center py-2 rounded-xl transition-all duration-150",
-                    isSelected && "bg-foreground/8 scale-110 shadow-sm ring-1 ring-foreground/15",
-                    isToday && !isSelected && "ring-2 ring-primary ring-offset-1",
-                    !isSelected && !isToday && "hover:bg-muted/40",
+                    "relative flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-150",
+                    isSelected && "bg-foreground/5 scale-105 ring-1 ring-foreground/10",
+                    isToday && !isSelected && "ring-2 ring-primary/40 ring-offset-1",
+                    !isSelected && !isToday && "hover:bg-muted/30",
                   )}
                 >
                   <span className={cn(
-                    "text-[13px] leading-none font-medium",
-                    isToday && "font-black text-primary",
+                    "text-[13px] leading-none",
+                    isToday ? "font-black text-primary" : "font-medium text-foreground/80",
                     isSelected && "font-black",
                   )}>
                     {day}
                   </span>
 
-                  {/* Dot row */}
-                  <div className="h-1.5 mt-0.5 flex gap-0.5 items-center">
+                  {/* Dot */}
+                  <div className="h-1.5 mt-1 flex gap-0.5 items-center">
                     {dotColor ? (
-                      <span className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
+                      <span className={cn("h-1.5 w-1.5 rounded-full transition-all", dotColor)} />
                     ) : hasLog ? (
-                      <span className="h-1 w-1 rounded-full bg-foreground/20" />
+                      <span className="h-1 w-1 rounded-full bg-foreground/15" />
                     ) : null}
                   </div>
                 </button>
@@ -157,16 +157,16 @@ export function CycleCalendar({ data }: { data: CycleData }) {
             })}
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-border/30 px-1">
+          {/* Legend — soft */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-border/25 px-1">
             {[
-              { color: "bg-rose-500", label: "Menstruação" },
-              { color: "bg-green-400", label: "Fértil" },
-              { color: "bg-green-500 ring-1 ring-green-600", label: "Ovulação" },
-              { color: "bg-purple-500", label: "TPM" },
-              { color: "bg-foreground/20", label: "Registo" },
+              { color: "bg-rose-300 dark:bg-rose-500", label: "Menstruação" },
+              { color: "bg-green-200 dark:bg-green-600", label: "Fértil" },
+              { color: "bg-emerald-400 dark:bg-emerald-400 ring-1 ring-emerald-500/40", label: "Ovulação" },
+              { color: "bg-purple-300 dark:bg-purple-500", label: "TPM" },
+              { color: "bg-foreground/15", label: "Registo" },
             ].map(({ color, label }) => (
-              <span key={label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+              <span key={label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 font-medium">
                 <span className={cn("h-2 w-2 rounded-full shrink-0", color)} />
                 {label}
               </span>

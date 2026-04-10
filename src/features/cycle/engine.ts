@@ -208,27 +208,27 @@ export function getPmsWindow(
 
 const PHASE_INSIGHTS: Record<CyclePhase, string[]> = {
   menstrual: [
-    "Tempo de descanso — o teu corpo merece cuidado extra 🌹",
-    "Hidrata-te bem e evita esforços intensos. Estás no teu momento de renovação.",
-    "Cólicas? Calor local e chá de gengibre podem ajudar.",
+    "Hoje o teu corpo pede descanso e gentileza. Cuida de ti.",
+    "É tempo de abrandar. O teu corpo renova-se — honra esse processo.",
+    "Dores são normais agora. Calor do saco de agua quente e chá podem ajudar.",
   ],
   folicular: [
-    "Energia a subir! 🌱 Excelente momento para novos projetos.",
-    "O teu corpo está em modo de reconstrução — aproveita a vitalidade.",
-    "Ótima fase para exercício e actividades sociais.",
+    "A tua energia está a despertar. Sentes que estás a voltar a ser tu.",
+    "É um bom momento para começar algo novo — estás cheia de potencial.",
+    "O teu corpo está em modo de reconstrução. Aproveita esta leveza.",
   ],
   ovulacao: [
-    "Alta energia e conexão ✨ — és irresistível hoje.",
-    "Pico de fertilidade e comunicação. Ideal para conversas importantes.",
-    "Momento de máxima energia física e emocional.",
+    "Sentes-te radiante e cheia de vitalidade. Aprecia este momento.",
+    "A tua energia está no pico. Ideal para conexão, criatividade e movimento.",
+    "Hoje a tua confiança está no máximo — é o melhor momento do ciclo.",
   ],
   luteal: [
-    "Sensibilidade emocional — é normal precisar de mais calma e carinho 💜",
-    "Reduz o stress e prioriza o descanso nestas próximas semanas.",
-    "O teu corpo pede atenção e cuidado. Respeita-o.",
+    "Hoje podes sentir mais sensibilidade emocional. Cuida de ti.",
+    "É normal precisar de mais calma e atenção nesta fase. Sê gentil contigo.",
+    "O teu corpo está a preparar-se. Respeita o descanso e a emoção.",
   ],
   sem_dados: [
-    "Regista o teu ciclo para receber insights personalizados 🌸",
+    "Regista o teu ciclo para começares a receber mensagens personalizadas. 🌸",
   ],
 };
 
@@ -242,20 +242,19 @@ function getInsights(
   const extras: string[] = [];
 
   if (daysUntilNextPeriod === 1) {
-    extras.push("⚠️ A tua menstruação prevista é amanhã — prepara-te.");
+    extras.push("A menstruação está prevista para amanhã. Tens tudo o que precisas?");
   } else if (daysUntilNextPeriod > 0 && daysUntilNextPeriod <= 3) {
-    extras.push(`📅 Menstruação prevista em ${daysUntilNextPeriod} dias.`);
+    extras.push(`A menstruação estará aqui em ${daysUntilNextPeriod} dias. Prepara-te com carinho.`);
   }
 
   if (isInFertileWindow) {
-    extras.push("🌿 Estás na janela fértil — maior probabilidade de concepção.");
+    extras.push("Estás na janela fértil — os dias de maior probabilidade de conceção.");
   }
 
   if (isInPmsWindow && phase !== "menstrual") {
-    extras.push("💜 Período de TPM — mais paciência e auto-cuidado.");
+    extras.push("A TPM pode estar a influenciar o teu humor. Tudo bem sentir.");
   }
 
-  // Return a single primary insight + extras (avoid repetition)
   return [base[0], ...extras].filter(Boolean);
 }
 

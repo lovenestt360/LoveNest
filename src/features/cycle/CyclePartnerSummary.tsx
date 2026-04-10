@@ -18,11 +18,12 @@ interface PartnerSummary {
 }
 
 const PHASE_COLORS: Record<string, string> = {
-  "Menstruação": "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-  "Fértil": "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  "TPM": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-  "Folicular": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  "Lútea": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+  "Menstruação": "bg-rose-100/80 text-rose-600 dark:bg-rose-900/40 dark:text-rose-300",
+  "Fértil": "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+  "Ovulação": "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+  "TPM": "bg-purple-100/80 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300",
+  "Folicular": "bg-sky-100/80 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
+  "Lútea": "bg-purple-100/80 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300",
 };
 
 export function CyclePartnerSummary() {
@@ -70,31 +71,41 @@ export function CyclePartnerSummary() {
     new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Resumo do teu par</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <div className="rounded-3xl border border-border/40 bg-card/40 overflow-hidden shadow-sm">
+      <div className="px-4 pt-4 pb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Resumo do teu par</p>
+      </div>
+      <div className="p-4 pt-2 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge className={cn("text-xs", PHASE_COLORS[summary.phase ?? ""] ?? "bg-muted text-muted-foreground")}>
+          <Badge variant="secondary" className={cn("text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 border-none", PHASE_COLORS[summary.phase ?? ""] ?? "bg-muted text-muted-foreground")}>
             {summary.phase ?? "—"}
           </Badge>
           {summary.cycle_day && summary.cycle_day > 0 && (
-            <span className="text-xs text-muted-foreground">Dia {summary.cycle_day}</span>
+            <span className="text-[11px] font-bold text-muted-foreground">Dia {summary.cycle_day}</span>
           )}
         </div>
         {summary.next_period && (
-          <p className="text-xs text-muted-foreground">
-            Próxima menstruação: <span className="font-medium text-foreground">{formatDate(summary.next_period)}</span>
+          <p className="text-xs text-muted-foreground/70">
+            Próxima menstruação: <span className="font-bold text-foreground/80">{formatDate(summary.next_period)}</span>
           </p>
         )}
         {(summary.pain_level || summary.energy_level) && (
-          <div className="flex gap-3 text-xs text-muted-foreground">
-            {summary.pain_level && <span>Dor: {summary.pain_level}</span>}
-            {summary.energy_level && <span>Energia: {summary.energy_level}</span>}
+          <div className="flex gap-4 pt-1">
+            {summary.pain_level && (
+              <div className="space-y-0.5">
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Dor</p>
+                <p className="text-xs font-bold text-foreground/70">{summary.pain_level}</p>
+              </div>
+            )}
+            {summary.energy_level && (
+              <div className="space-y-0.5">
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Energia</p>
+                <p className="text-xs font-bold text-foreground/70">{summary.energy_level}</p>
+              </div>
+            )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
