@@ -90,9 +90,9 @@ export default function Cycle() {
 
         {/* ── Badge de role ── */}
         {isPartner && (
-          <div className="flex items-center gap-1.5 px-1 pt-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-500/80">
+          <div className="flex items-center gap-1.5 px-1 pt-1 opacity-80">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E94E77]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#E94E77]">
               Modo observador — apenas leitura
             </span>
           </div>
@@ -101,10 +101,7 @@ export default function Cycle() {
 
       {/* ── Tabs premium ── */}
       <div className={cn(
-        "flex p-1 rounded-3xl border backdrop-blur-sm",
-        isPartner
-          ? "bg-amber-50/50 dark:bg-amber-950/10 border-amber-100/40"
-          : "bg-rose-50/60 dark:bg-rose-950/10 border-rose-100/40"
+        "flex p-1 rounded-3xl border backdrop-blur-sm bg-rose-50/60 dark:bg-rose-950/10 border-rose-100/40"
       )}>
         {tabs.map((t) => {
           const isActive = activeTab === t.id;
@@ -115,9 +112,7 @@ export default function Cycle() {
               className={cn(
                 "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-[1.3rem] transition-all duration-300 text-[10px] font-black uppercase tracking-widest",
                 isActive
-                  ? isPartner
-                    ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-white shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30 scale-[1.02]"
-                    : "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-200/50 dark:shadow-rose-900/30 scale-[1.02]"
+                  ? "bg-gradient-to-r from-[#E94E77] to-[#F06292] text-white shadow-lg shadow-rose-200/50 dark:shadow-rose-900/30 scale-[1.02]"
                   : "text-muted-foreground/60 hover:text-rose-400"
               )}
             >
