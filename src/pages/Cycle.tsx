@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCycleData } from "@/features/cycle/useCycleData";
 import { CycleToday } from "@/features/cycle/CycleToday";
+import { CyclePartnerView } from "@/features/cycle/CyclePartnerView";
 import { CycleCalendar } from "@/features/cycle/CycleCalendar";
 import { CycleHistory } from "@/features/cycle/CycleHistory";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -9,17 +10,35 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-const TABS = [
+// ─────────────────────────────────────────────
+// TABS por role
+// ─────────────────────────────────────────────
+
+const OWNER_TABS = [
   { id: "hoje", label: "Hoje", emoji: "🌸" },
   { id: "calendario", label: "Calendário", emoji: "📅" },
   { id: "historico", label: "Histórico", emoji: "📊" },
 ] as const;
 
+const PARTNER_TABS = [
+  { id: "hoje", label: "Resumo", emoji: "💛" },
+  { id: "calendario", label: "Calendário", emoji: "📅" },
+] as const;
+
+// ─────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────
+
 export default function Cycle() {
   const data = useCycleData();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"hoje" | "calendario" | "historico">("hoje");
+
+  // isPartner = utilizador a ver o ciclo da parceira (was: isMale)
+  const isPartner = data.isMale;
+
+  const tabs = isPartner ? PARTNER_TABS : OWNER_TABS;
+  const [activeTab, setActiveTab] = useState<string>("hoje");
 
   const handleReset = async () => {
     if (!user || !confirm("Apagar todos os dados do ciclo? Esta acção é irreversível.")) return;
@@ -34,6 +53,7 @@ export default function Cycle() {
     }
   };
 
+  // ── Loading state feminino ──
   if (data.loading) {
     return (
       <section className="flex items-center justify-center py-20">
@@ -49,29 +69,44 @@ export default function Cycle() {
 
   return (
     <section className="space-y-5 pb-28">
-      {/* ── Header premium ── */}
+      {/* ── Header — diferenciado por role ── */}
       <header className="space-y-1 pt-1">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/20 flex items-center justify-center shadow-sm border border-rose-100/50">
-            <span className="text-lg">🌸</span>
+            <span className="text-lg">{isPartner ? "💛" : "🌸"}</span>
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-foreground">
-              Ciclo
-              {data.isMale && (
-                <span className="text-base text-muted-foreground font-normal ml-2">(Da Parceira)</span>
-              )}
+            <h1 className="text-2xl font-black tracking-tight">
+              {isPartner ? "Ciclo da Parceira" : "Ciclo"}
             </h1>
             <p className="text-xs text-muted-foreground/70">
-              {data.isMale ? "Acompanhamento do ciclo da tua parceira." : "O teu rastreio menstrual privado."}
+              {isPartner
+                ? "Estás a acompanhar o ciclo da tua parceira."
+                : "O teu rastreio menstrual privado."
+              }
             </p>
           </div>
         </div>
+
+        {/* ── Badge de role ── */}
+        {isPartner && (
+          <div className="flex items-center gap-1.5 px-1 pt-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-500/80">
+              Modo observador — apenas leitura
+            </span>
+          </div>
+        )}
       </header>
 
-      {/* ── Tabs premium — custom (sem Radix Tabs para controlo total) ── */}
-      <div className="flex p-1 rounded-3xl bg-rose-50/60 dark:bg-rose-950/10 border border-rose-100/40 backdrop-blur-sm">
-        {TABS.map((t) => {
+      {/* ── Tabs premium ── */}
+      <div className={cn(
+        "flex p-1 rounded-3xl border backdrop-blur-sm",
+        isPartner
+          ? "bg-amber-50/50 dark:bg-amber-950/10 border-amber-100/40"
+          : "bg-rose-50/60 dark:bg-rose-950/10 border-rose-100/40"
+      )}>
+        {tabs.map((t) => {
           const isActive = activeTab === t.id;
           return (
             <button
@@ -80,7 +115,9 @@ export default function Cycle() {
               className={cn(
                 "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-[1.3rem] transition-all duration-300 text-[10px] font-black uppercase tracking-widest",
                 isActive
-                  ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-200/50 dark:shadow-rose-900/30 scale-[1.02]"
+                  ? isPartner
+                    ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-white shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30 scale-[1.02]"
+                    : "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-200/50 dark:shadow-rose-900/30 scale-[1.02]"
                   : "text-muted-foreground/60 hover:text-rose-400"
               )}
             >
@@ -91,11 +128,18 @@ export default function Cycle() {
         })}
       </div>
 
-      {/* ── Tab content with fade transition ── */}
-      <div className="animate-in fade-in slide-in-from-bottom-1 duration-300" key={activeTab}>
-        {activeTab === "hoje" && <CycleToday data={data} />}
+      {/* ── Tab content ── */}
+      <div className="animate-in fade-in slide-in-from-bottom-1 duration-300" key={activeTab + String(isPartner)}>
+        {activeTab === "hoje" && (
+          // ← SEPARAÇÃO DE ROLES AQUI
+          isPartner
+            ? <CyclePartnerView data={data} />    // Partner: dashboard read-only
+            : <CycleToday data={data} />           // Owner: UI completa editável
+        )}
         {activeTab === "calendario" && <CycleCalendar data={data} />}
-        {activeTab === "historico" && <CycleHistory data={data} onReset={!data.isMale ? handleReset : undefined} />}
+        {activeTab === "historico" && !isPartner && (
+          <CycleHistory data={data} onReset={handleReset} />
+        )}
       </div>
     </section>
   );
