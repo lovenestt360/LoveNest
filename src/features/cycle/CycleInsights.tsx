@@ -1,110 +1,99 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Heart, Info, AlertCircle } from "lucide-react";
+import { Sparkles, Heart, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CycleData } from "./useCycleData";
 
-// ── Mapeamento de fase para ícone/cores (parceiro masculino)
+// ─────────────────────────────────────────────
+// PREMIUM PINK — todos os insights usam
+// variações de rosa/neutro. Sem verde, roxo, âmbar.
+// ─────────────────────────────────────────────
+
 const PARTNER_PHASE_CONFIG: Record<string, {
   message: string;
-  icon: React.ReactNode;
-  bg: string;
-  border: string;
+  emoji: string;
 }> = {
   Menstruação: {
-    message: "Ela pode estar mais sensível hoje — um abraço vale mais do que mil palavras 💗",
-    icon: <Heart className="h-5 w-5 text-pink-500 fill-pink-500/20" />,
-    bg: "bg-pink-500/5",
-    border: "border-pink-500/10",
+    emoji: "🌹",
+    message: "Ela pode estar mais sensível hoje — um abraço vale mais do que mil palavras 💖",
   },
   Lútea: {
-    message: "Fase lútea — um pouco mais de paciência e atenção fazem toda a diferença 💜",
-    icon: <Heart className="h-5 w-5 text-purple-400" />,
-    bg: "bg-purple-400/5",
-    border: "border-purple-400/10",
+    emoji: "💜",
+    message: "Fase pré-menstrual — um pouco mais de paciência e atenção faz toda a diferença 🤍",
   },
   Folicular: {
+    emoji: "🌸",
     message: "Ela está com energia em alta — bom momento para planos a dois! ✨",
-    icon: <Sparkles className="h-5 w-5 text-green-500" />,
-    bg: "bg-green-500/5",
-    border: "border-green-500/10",
   },
   Ovulação: {
-    message: "Alta energia e conexão — ela está no melhor momento do ciclo! ⭐",
-    icon: <Sparkles className="h-5 w-5 text-amber-500" />,
-    bg: "bg-amber-500/5",
-    border: "border-amber-500/10",
+    emoji: "✨",
+    message: "Alta energia e conexão — ela está no melhor momento do ciclo! 🌸",
   },
 };
 
 export function CycleInsights({ data }: { data: CycleData }) {
   const { isMale, engine } = data;
 
-  // Sem dados do engine — nada a mostrar
   if (!engine) return null;
 
-  const { phaseLabel, insights, daysUntilNextPeriod, isInPeriod, isInFertileWindow } = engine;
+  const { phaseLabel, insights, daysUntilNextPeriod, isInFertileWindow } = engine;
 
-  // ── Vista do PARCEIRO (homem)
+  // ── Vista do PARCEIRO ──────────────────────────────────
   if (isMale) {
     const config = PARTNER_PHASE_CONFIG[phaseLabel] ?? {
-      message: "Mantém o apoio e a compreensão — é sempre o momento certo 💛",
-      icon: <Info className="h-5 w-5 text-blue-500" />,
-      bg: "bg-blue-500/5",
-      border: "border-blue-500/10",
+      emoji: "💗",
+      message: "Mantém o apoio e a compreensão — é sempre o momento certo 🤍",
     };
 
     return (
-      <Card className={cn("border shadow-sm overflow-hidden", config.bg, config.border)}>
-        <CardContent className="p-4 flex items-start gap-3">
-          <div className="shrink-0 mt-0.5">{config.icon}</div>
-          <p className="text-sm font-medium leading-snug text-foreground/90">
-            {config.message}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-[#F8BBD0]/40 bg-[#FADADD]/20 px-5 py-4 flex items-start gap-3 shadow-sm">
+        <span className="text-xl shrink-0">{config.emoji}</span>
+        <p className="text-sm font-medium leading-relaxed text-[#E94E77]">
+          {config.message}
+        </p>
+      </div>
     );
   }
 
-  // ── Vista da UTILIZADORA (mulher)
-  // Exibe o primeiro insight do engine + alertas urgentes
+  // ── Vista da OWNER ─────────────────────────────────────
   const primaryInsight = insights[0];
-  const urgentAlerts = insights.slice(1); // alertas de dias até menstruação, janela fértil, etc.
+  const urgentAlerts = insights.slice(1);
+
+  // Alerta urgente: próxima menstruação ≤ 3 dias
+  const isUrgent = daysUntilNextPeriod <= 3 && daysUntilNextPeriod >= 0;
 
   return (
     <div className="space-y-2">
-      {/* Insight principal da fase */}
-      <Card className="border border-amber-500/10 bg-amber-500/5 shadow-sm overflow-hidden">
-        <CardContent className="p-4 flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-amber-500 shrink-0 mt-0.5 animate-pulse" />
-          <div className="space-y-1 flex-1">
-            <p className="text-sm font-semibold text-foreground/90">{phaseLabel}</p>
-            <p className="text-sm text-foreground/70 leading-snug">{primaryInsight}</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Insight principal — rosa suave */}
+      <div className="rounded-2xl border border-[#F8BBD0]/50 bg-[#FADADD]/25 px-5 py-4 flex items-start gap-3 shadow-sm">
+        <Sparkles className="h-4 w-4 text-[#E94E77] shrink-0 mt-0.5" />
+        <div className="space-y-0.5 flex-1">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#E94E77]/60">{phaseLabel}</p>
+          <p className="text-sm leading-relaxed text-[#777777]">{primaryInsight}</p>
+        </div>
+      </div>
 
-      {/* Alertas contextuais */}
+      {/* Alertas contextuais — todos em tons de pink/neutro */}
       {urgentAlerts.map((alert, i) => (
-        <Card key={i} className={cn(
-          "border shadow-sm overflow-hidden",
-          daysUntilNextPeriod <= 3 && daysUntilNextPeriod >= 0
-            ? "border-red-500/15 bg-red-500/5"
-            : isInFertileWindow
-              ? "border-green-500/15 bg-green-500/5"
-              : "border-purple-500/15 bg-purple-500/5",
-        )}>
-          <CardContent className="p-3 flex items-center gap-2.5">
-            <AlertCircle className={cn(
-              "h-4 w-4 shrink-0",
-              daysUntilNextPeriod <= 3 && daysUntilNextPeriod >= 0
-                ? "text-red-500"
-                : isInFertileWindow
-                  ? "text-green-500"
-                  : "text-purple-500",
-            )} />
-            <p className="text-xs font-medium text-foreground/80">{alert}</p>
-          </CardContent>
-        </Card>
+        <div
+          key={i}
+          className={cn(
+            "rounded-2xl border px-4 py-3 flex items-center gap-2.5 shadow-sm",
+            isUrgent
+              ? "border-[#E94E77]/20 bg-[#FADADD]/30"      // próx. menstruação: pink mais forte
+              : "border-[#F8BBD0]/30 bg-[#F5F5F5]/60"     // outros: neutro suave
+          )}
+        >
+          <AlertCircle className={cn(
+            "h-4 w-4 shrink-0",
+            isUrgent ? "text-[#E94E77]" : "text-[#777777]/50"
+          )} />
+          <p className={cn(
+            "text-xs font-medium leading-snug",
+            isUrgent ? "text-[#E94E77]" : "text-[#777777]"
+          )}>
+            {alert}
+          </p>
+        </div>
       ))}
     </div>
   );
