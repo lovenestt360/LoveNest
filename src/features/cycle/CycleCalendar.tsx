@@ -10,7 +10,13 @@ import type { DayType } from "./engine";
 import type { DailySymptom, CycleData } from "./useCycleData";
 
 // ─────────────────────────────────────────────
-// PREMIUM PINK DAY STYLES — minimal & cohesive
+// CALENDAR DAY STYLES
+// Cores semânticas preservadas (regra de design):
+//   Menstruação → pink
+//   Fértil      → verde claro
+//   Ovulação    → verde escuro
+//   TPM         → roxo
+//   Registo     → cinza
 // ─────────────────────────────────────────────
 
 const DAY_STYLES: Partial<Record<DayType, {
@@ -19,33 +25,37 @@ const DAY_STYLES: Partial<Record<DayType, {
   text: string;
 }>> = {
   period: {
-    bg: "bg-gradient-to-b from-[#FADADD]/80 to-[#F8BBD0]/60 dark:from-rose-800/40 dark:to-rose-900/30",
+    bg: "bg-gradient-to-b from-[#FADADD]/80 to-[#F8BBD0]/60",
     dot: "bg-gradient-to-br from-[#E94E77] to-[#F06292]",
     text: "text-[#E94E77] font-black",
   },
   ovulation: {
-    bg: "bg-[#FADADD]/30 dark:from-emerald-800/40 dark:to-emerald-900/30",
-    dot: "bg-[#F06292] ring-1 ring-[#F8BBD0]/40",
-    text: "text-[#F06292] font-black",
+    // Verde escuro — ovulação
+    bg: "bg-gradient-to-b from-emerald-100/80 to-emerald-200/50",
+    dot: "bg-emerald-500 ring-1 ring-emerald-400/40",
+    text: "text-emerald-700 font-black",
   },
   fertile: {
-    bg: "bg-[#FADADD]/10 dark:from-green-900/20 dark:to-emerald-900/10",
-    dot: "bg-[#F8BBD0]",
-    text: "text-[#777777]/80 font-bold",
+    // Verde claro — janela fértil
+    bg: "bg-green-50/70",
+    dot: "bg-green-300",
+    text: "text-green-700 font-bold",
   },
   pms: {
-    bg: "bg-slate-50/50 dark:from-purple-900/30 dark:to-violet-900/20",
-    dot: "bg-slate-300",
-    text: "text-slate-500",
+    // Roxo — TPM
+    bg: "bg-purple-50/70",
+    dot: "bg-purple-400",
+    text: "text-purple-600",
   },
 };
 
 const BADGE_LABELS: Partial<Record<DayType, { label: string; className: string }>> = {
-  period: { label: "Menstruação", className: "bg-[#FADADD] text-[#E94E77] border-none" },
-  ovulation: { label: "Ovulação", className: "bg-[#FADADD]/40 text-[#F06292] border-none" },
-  fertile: { label: "Período fértil", className: "bg-[#F5F5F5] text-[#777777] border-none" },
-  pms: { label: "TPM", className: "bg-slate-50 text-slate-500 border-none" },
+  period:    { label: "Menstruação",   className: "bg-[#FADADD] text-[#E94E77] border-none" },
+  ovulation: { label: "Ovulação",      className: "bg-emerald-100 text-emerald-700 border-none" },
+  fertile:   { label: "Período fértil",className: "bg-green-100 text-green-700 border-none" },
+  pms:       { label: "TPM",           className: "bg-purple-100 text-purple-600 border-none" },
 };
+
 
 const SYMPTOM_LABELS: Record<string, string> = {
   cramps: "Cólicas", headache: "Dor de cabeça", nausea: "Náusea", back_pain: "Dor lombar",
@@ -169,8 +179,9 @@ export function CycleCalendar({ data }: { data: CycleData }) {
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-slate-50 px-1">
             {[
               { bg: "bg-gradient-to-br from-[#E94E77] to-[#F06292]", label: "Menstruação" },
-              { bg: "bg-[#F8BBD0]", label: "Fértil" },
-              { bg: "bg-[#F06292] ring-1 ring-[#F8BBD0]/40", label: "Ovulação" },
+              { bg: "bg-green-300", label: "Fértil" },
+              { bg: "bg-emerald-500", label: "Ovulação" },
+              { bg: "bg-purple-400", label: "TPM" },
               { bg: "bg-slate-300", label: "Registo" },
             ].map(({ bg, label }) => (
               <span key={label} className="flex items-center gap-1.5 text-[10px] text-[#777777]/50 font-black uppercase tracking-widest">
