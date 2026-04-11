@@ -160,31 +160,41 @@ export function useCycleTarget() {
       return;
     }
 
-    supabase
-      .from("profiles")
-      .select("gender")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(async ({ data: profile }) => {
-        const gender = (profile as any)?.gender;
+    (async () => {
+      // 1. Verificar género do utilizador autenticado
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("gender")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-        if (gender === "male") {
-          setIsMale(true);
-          // Homem vê dados da parceira
-          const { data: cycleProfiles } = await supabase
-            .from("cycle_profiles")
-            .select("user_id")
-            .eq("couple_space_id", spaceId);
+      const gender = (profileData as any)?.gender;
 
-          const partnerProfile = cycleProfiles?.find((p) => p.user_id !== user.id);
-          setTargetUserId(partnerProfile?.user_id ?? user.id);
-        } else {
-          setIsMale(false);
-          setTargetUserId(user.id);
-        }
+      if (gender === "male") {
+        setIsMale(true);
 
-        setLoadingTarget(false);
-      });
+        // 2. Encontrar partnerId via MEMBERS (sempre acessível — RLS garante visibilidade)
+        //    NÃO usar cycle_profiles: a RLS pode bloquear se couple_space_id for NULL
+        const { data: members, error: membersErr } = await supabase
+          .from("members")
+          .select("user_id")
+          .eq("couple_space_id", spaceId)
+          .neq("user_id", user.id)
+          .maybeSingle();
+
+        if (membersErr) console.error("useCycleTarget: erro ao buscar parceira", membersErr);
+
+        // 3. Usar o ID da parceira. Se null → sem parceira ligada.
+        //    NUNCA fazer fallback para user.id (parceiro não tem dados de ciclo)
+        const partnerId = members?.user_id ?? null;
+        setTargetUserId(partnerId);
+      } else {
+        setIsMale(false);
+        setTargetUserId(user.id);
+      }
+
+      setLoadingTarget(false);
+    })();
   }, [user, spaceId]);
 
   return { targetUserId, isMale, loadingTarget };
@@ -225,10 +235,17 @@ export function useCycleData() {
   }, [targetUserId, spaceId, today]);
 
   useEffect(() => {
-    if (!loadingTarget && targetUserId) {
-      reload();
+    if (!loadingTarget) {
+      if (targetUserId) {
+        reload();
+      } else {
+        // Partner sem par ligado OU parceira sem couple_space_id nos dados
+        // Parar o loading para não ficar em spinner infinito
+        setLoading(false);
+      }
     }
   }, [loadingTarget, targetUserId, reload]);
+
 
   // ── Garante que um CycleProfile existe para a utilizadora
   const ensureProfile = useCallback(async () => {
