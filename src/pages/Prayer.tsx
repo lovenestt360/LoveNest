@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { logActivity } from "@/features/streak/useStreak";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -129,6 +130,9 @@ export default function Prayer() {
     }
     setEditingPrayer(false);
 
+    // LoveStreak: registar atividade (fire-and-forget)
+    if (spaceId) logActivity(spaceId, "prayer").catch(() => {});
+
     if (spaceId) {
       notifyPartner({
         couple_space_id: spaceId,
@@ -169,6 +173,9 @@ export default function Prayer() {
       await supabase.from("daily_spiritual_logs").insert(payload);
     }
     setLogDirty(false);
+
+    // LoveStreak: registar atividade (fire-and-forget)
+    if (spaceId) logActivity(spaceId, "prayer").catch(() => {});
 
     if (spaceId) {
       notifyPartner({

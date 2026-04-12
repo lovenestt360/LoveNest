@@ -7,6 +7,7 @@ import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
+import { logActivity } from "@/features/streak/useStreak";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -713,6 +714,9 @@ export default function Chat() {
         return;
       }
 
+      // ── LoveStreak: registar atividade (fire-and-forget) ──
+      if (sp) logActivity(sp, "message").catch(() => {});
+
       // ── Non-blocking Notification ──
       let body = currentInput;
       if (!body && imageUrl) body = "📷 Enviou uma foto";
@@ -800,8 +804,11 @@ export default function Chat() {
         console.error("MESSAGE ERROR:", msgErr);
         throw msgErr;
       }
-      
-      // 2. Notificação (Daily activity e Streak removidos para purga)
+
+      // 2. LoveStreak: registar atividade do carinho (fire-and-forget)
+      logActivity(sp, "message").catch(() => {});
+
+      // 3. Notificação
       notifyPartner({
         couple_space_id: sp,
         title: "💖 Recebeste carinho!",
