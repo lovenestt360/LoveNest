@@ -5,6 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { logActivity } from "@/features/streak/useStreak";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
@@ -179,7 +180,10 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // Notificação ao parceiro (Daily activity e Streak removidos para purga)
+    // LoveStreak: registar atividade (fire-and-forget — não bloqueia UI)
+    if (sp) logActivity(sp, "mood").catch(() => {});
+
+    // Notificação ao parceiro
     if (sp) {
       const moodInfo = MOOD_OPTIONS.find(m => m.key === moodKey);
       notifyPartner({
