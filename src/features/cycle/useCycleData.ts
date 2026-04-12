@@ -151,14 +151,30 @@ export function useCycleTarget() {
   const spaceId = useCoupleSpaceId();
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [isMale, setIsMale] = useState(false);
+  // Inicia como true — bloqueia qualquer render até o role estar determinado
   const [loadingTarget, setLoadingTarget] = useState(true);
 
   useEffect(() => {
-    if (!user || !spaceId) {
+    // ── Caso 1: sem utilizador autenticado → parar definitivamente ──────────
+    if (!user) {
+      setIsMale(false);
       setTargetUserId(null);
       setLoadingTarget(false);
       return;
     }
+
+    // ── Caso 2: spaceId ainda nulo (useCoupleSpaceId fetch pendente) ─────────
+    // NÃO parar o loading aqui — manter loadingTarget=true e aguardar.
+    // Este era o root cause do flicker: o '!user || !spaceId' anterior
+    // parava o loading com isMale=false (default), causando um render
+    // prematuro do CycleToday antes do género ser conhecido.
+    if (spaceId === null) {
+      setLoadingTarget(true); // garantir true enquanto aguarda
+      return;
+    }
+
+    // ── Caso 3: user + spaceId disponíveis → determinar role ────────────────
+    setLoadingTarget(true); // reset para true enquanto o fetch async corre
 
     (async () => {
       // 1. Verificar género do utilizador autenticado
@@ -173,8 +189,8 @@ export function useCycleTarget() {
       if (gender === "male") {
         setIsMale(true);
 
-        // 2. Encontrar partnerId via MEMBERS (sempre acessível — RLS garante visibilidade)
-        //    NÃO usar cycle_profiles: a RLS pode bloquear se couple_space_id for NULL
+        // 2. Encontrar partnerId via MEMBERS (RLS sempre acessível)
+        //    NÃO usar cycle_profiles: pode ter couple_space_id NULL em registos antigos
         const { data: members, error: membersErr } = await supabase
           .from("members")
           .select("user_id")
@@ -182,17 +198,18 @@ export function useCycleTarget() {
           .neq("user_id", user.id)
           .maybeSingle();
 
-        if (membersErr) console.error("useCycleTarget: erro ao buscar parceira", membersErr);
+        if (membersErr) {
+          console.error("useCycleTarget: erro ao buscar parceira", membersErr);
+        }
 
-        // 3. Usar o ID da parceira. Se null → sem parceira ligada.
-        //    NUNCA fazer fallback para user.id (parceiro não tem dados de ciclo)
-        const partnerId = members?.user_id ?? null;
-        setTargetUserId(partnerId);
+        // 3. ID da parceira — NUNCA fallback para user.id
+        setTargetUserId(members?.user_id ?? null);
       } else {
         setIsMale(false);
         setTargetUserId(user.id);
       }
 
+      // ← Só aqui o loading para: isMale e targetUserId já estão corretos
       setLoadingTarget(false);
     })();
   }, [user, spaceId]);
@@ -203,6 +220,7 @@ export function useCycleTarget() {
 // ─────────────────────────────────────────────
 // HOOK PRINCIPAL: useCycleData
 // ─────────────────────────────────────────────
+
 
 export function useCycleData() {
   const { user } = useAuth();
