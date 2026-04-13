@@ -42,6 +42,7 @@ const Challenges = lazy(() => import("./pages/Challenges"));
 
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
+const LoveStreak = lazy(() => import("./pages/LoveStreak"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -106,6 +107,7 @@ const AppRoutes = () => (
           <Route path="capsula" element={<TimeCapsule />} />
         </Route>
         <Route path="wrapped" element={<LoveWrapped />} />
+        <Route path="lovestreak" element={<LoveStreak />} />
       </Route>
     </Route>
 

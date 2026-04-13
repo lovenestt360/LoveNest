@@ -2,9 +2,11 @@ import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import { Flame, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 export function LoveStreakCard() {
   const { streak, loading } = useStreak();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -37,11 +39,14 @@ export function LoveStreakCard() {
   const isZero = streak.currentStreak === 0;
 
   return (
-    <div className={cn(
-      "glass-card rounded-[2rem] p-5 space-y-3 shadow-md transition-all duration-300",
-      isAtRisk ? "border-amber-500/30 bg-amber-50/10" : "border-primary/10",
-      (!bothActive && !isZero) ? "opacity-90" : "opacity-100"
-    )}>
+    <div 
+      onClick={() => navigate("/lovestreak")}
+      className={cn(
+        "cursor-pointer active:scale-[0.98] glass-card rounded-[2rem] p-5 space-y-3 shadow-md transition-all duration-300 hover:shadow-lg",
+        isAtRisk ? "border-amber-500/30 bg-amber-50/10" : "border-primary/10 hover:border-primary/20",
+        (!bothActive && !isZero) ? "opacity-90 hover:opacity-100" : "opacity-100"
+      )}
+    >
       {/* HEADER */}
       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
         <div className="flex items-center gap-1.5 text-primary/80">
