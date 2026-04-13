@@ -20,7 +20,7 @@ RETURNS TABLE(
     target_count INTEGER,
     reward_points INTEGER,
     progress    BIGINT,
-    completed   BOOLEAN
+    completed   BOOLEAN 
 ) AS $$
 DECLARE
     v_user_id UUID := auth.uid();

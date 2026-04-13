@@ -408,9 +408,7 @@ const Index = () => {
           streak={0} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
         />
 
-        {isEnabled("home_lovestreak") && (
-          <LoveStreakCard />
-        )}
+        <LoveStreakCard />
 
         {/* Global Announcements */}
         {announcements.map((ann) => (
