@@ -29,6 +29,7 @@ import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext
 import { DashCard } from "@/features/home/components/DashCard";
 import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
+import { LoveStreakCard } from "@/components/LoveStreakCard";
 import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
@@ -406,6 +407,10 @@ const Index = () => {
           days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
           streak={0} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
         />
+
+        {isEnabled("home_lovestreak") && (
+          <LoveStreakCard />
+        )}
 
         {/* Global Announcements */}
         {announcements.map((ann) => (
