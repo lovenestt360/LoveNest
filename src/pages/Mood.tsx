@@ -5,7 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { logActivity } from "@/features/streak/useStreak";
+import { logActivity } from "@/lib/logActivity";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
@@ -181,7 +181,7 @@ export default function Mood() {
     loadData();
 
     // LoveStreak: registar atividade (fire-and-forget — não bloqueia UI)
-    if (sp) logActivity(sp, "mood").catch(() => {});
+    if (sp) logActivity(sp, "mood");
 
     // Notificação ao parceiro
     if (sp) {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStreak, logActivity } from "@/features/streak/useStreak";
+import { useStreak } from "@/features/streak/useStreak";
+import { logActivity } from "@/lib/logActivity";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { Button } from "@/components/ui/button";
 import { Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2 } from "lucide-react";
@@ -48,9 +49,13 @@ export default function LoveStreak() {
 
     setCheckingIn(true);
     try {
-      await logActivity(spaceId, "checkin");
+      logActivity(spaceId, "checkin");
       toast.success("Boa! Estás a cuidar do vosso streak 💖");
-      await refresh();
+      
+      // Delay to allow RPC to complete before refresh
+      setTimeout(() => {
+        refresh();
+      }, 500);
     } catch (error) {
       toast.error("Ocorreu um erro ao registar o check-in.");
     } finally {

@@ -60,24 +60,4 @@ export function useStreak() {
   return { streak, loading, refresh };
 }
 
-// ─────────────────────────────────────────────
-// logActivity — Chamar de qualquer módulo
-//
-// Uso:
-//   import { logActivity } from "@/features/streak/useStreak";
-//   await logActivity(spaceId, "message");
-// ─────────────────────────────────────────────
-
-export async function logActivity(
-  coupleId: string,
-  type: "message" | "mood" | "checkin" | "cycle" | "fasting" | "prayer" | "general" = "general"
-): Promise<void> {
-  if (!coupleId) return;
-  const { error } = await supabase.rpc("log_daily_activity", {
-    p_couple_id: coupleId,
-    p_type: type,
-  });
-  if (error) {
-    console.error("logActivity: error", error.message);
-  }
-}
+// logActivity movido para @/lib/logActivity.ts

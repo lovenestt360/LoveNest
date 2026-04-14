@@ -6,8 +6,9 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useStreak } from "@/features/streak/useStreak";
+import { logActivity } from "@/lib/logActivity";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
-import { logActivity } from "@/features/streak/useStreak";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -715,7 +716,8 @@ export default function Chat() {
       }
 
       // ── LoveStreak: registar atividade (fire-and-forget) ──
-      if (sp) logActivity(sp, "message").catch(() => {});
+      console.log("[DEBUG] Chat: Message sent successfully. Calling logActivity...");
+      if (sp) logActivity(sp, "message");
 
       // ── Non-blocking Notification ──
       let body = currentInput;
@@ -806,7 +808,8 @@ export default function Chat() {
       }
 
       // 2. LoveStreak: registar atividade do carinho (fire-and-forget)
-      logActivity(sp, "message").catch(() => {});
+      console.log("[DEBUG] Chat: Carinho sent successfully. Calling logActivity...");
+      if (sp) logActivity(sp, "message");
 
       // 3. Notificação
       notifyPartner({
