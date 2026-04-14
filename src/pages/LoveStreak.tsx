@@ -49,13 +49,10 @@ export default function LoveStreak() {
 
     setCheckingIn(true);
     try {
-      logActivity(spaceId, "checkin");
+      await logActivity(spaceId, "checkin");
       toast.success("Boa! Estás a cuidar do vosso streak 💖");
       
-      // Delay to allow RPC to complete before refresh
-      setTimeout(() => {
-        refresh();
-      }, 500);
+      await refresh();
     } catch (error) {
       toast.error("Ocorreu um erro ao registar o check-in.");
     } finally {
