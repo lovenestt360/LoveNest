@@ -30,7 +30,6 @@ import { DashCard } from "@/features/home/components/DashCard";
 import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
 import { LoveStreakCard } from "@/components/LoveStreakCard";
-import { RankingCard } from "@/components/RankingCard";
 import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
@@ -410,9 +409,6 @@ const Index = () => {
         />
 
         <LoveStreakCard />
-
-        {/* Ranking Global */}
-        <RankingCard compact={true} />
 
         {/* Global Announcements */}
         {announcements.map((ann) => (

@@ -138,11 +138,15 @@ function ListRow({ entry, rankType }: { entry: RankEntry; rankType: RankType }) 
 interface RankingCardProps {
   /** Se true, mostra versão compacta (apenas top 3 + link "ver mais") para o Home */
   compact?: boolean;
+  /** Tipo inicial do ranking (controla a aba em que é inserido) */
+  initialRankType?: RankType;
+  /** Se true, esconde o toggle (quando o contexto já define o tipo) */
+  hideToggle?: boolean;
 }
 
-export function RankingCard({ compact = false }: RankingCardProps) {
+export function RankingCard({ compact = false, initialRankType = "streak", hideToggle = false }: RankingCardProps) {
   const navigate = useNavigate();
-  const [rankType, setRankType] = useState<RankType>("streak");
+  const [rankType, setRankType] = useState<RankType>(initialRankType);
   const [entries, setEntries]   = useState<RankEntry[]>([]);
   const [loading, setLoading]   = useState(true);
 
@@ -183,31 +187,33 @@ export function RankingCard({ compact = false }: RankingCardProps) {
           </span>
         </div>
 
-        {/* Toggle streak / pontos */}
-        <div className="flex items-center gap-1 bg-muted/60 rounded-xl p-0.5">
-          <button
-            onClick={() => setRankType("streak")}
-            className={cn(
-              "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-              rankType === "streak"
-                ? "bg-background text-primary shadow-sm"
-                : "text-muted-foreground/60 hover:text-foreground"
-            )}
-          >
-            <Flame className="w-3 h-3" /> Streak
-          </button>
-          <button
-            onClick={() => setRankType("points")}
-            className={cn(
-              "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-              rankType === "points"
-                ? "bg-background text-primary shadow-sm"
-                : "text-muted-foreground/60 hover:text-foreground"
-            )}
-          >
-            <Coins className="w-3 h-3" /> Pontos
-          </button>
-        </div>
+        {/* Toggle streak / pontos — opcional */}
+        {!hideToggle && (
+          <div className="flex items-center gap-1 bg-muted/60 rounded-xl p-0.5">
+            <button
+              onClick={() => setRankType("streak")}
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
+                rankType === "streak"
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground/60 hover:text-foreground"
+              )}
+            >
+              <Flame className="w-3 h-3" /> Streak
+            </button>
+            <button
+              onClick={() => setRankType("points")}
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
+                rankType === "points"
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground/60 hover:text-foreground"
+              )}
+            >
+              <Coins className="w-3 h-3" /> Pontos
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
