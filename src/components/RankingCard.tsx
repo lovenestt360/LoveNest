@@ -15,7 +15,6 @@ interface RankEntry {
   house_image: string | null;
   is_verified: boolean;
   current_streak: number;
-  longest_streak: number;
   total_points: number;
 }
 
