@@ -103,15 +103,17 @@ export default function LoveStreak() {
 
   // ── Helpers ───────────────────────────────
 
-  const currentStreak  = streak?.currentStreak  ?? 0;
-  const longestStreak  = streak?.longestStreak  ?? 0;
-  const bothActive     = streak?.bothActiveToday ?? false;
-  const streakAtRisk   = streak?.streakAtRisk   ?? false;
-  const activeCount    = streak?.activeCount    ?? 0;
-  const totalMembers   = streak?.totalMembers   ?? 2;
-  const progress       = streak?.progressPercentage ?? 0;
-  const isZero         = currentStreak === 0;
-  const pointsToday    = bothActive ? 10 : 0;
+  const currentStreak    = streak?.currentStreak  ?? 0;
+  const longestStreak    = streak?.longestStreak  ?? 0;
+  const bothActive       = streak?.bothActiveToday ?? false;
+  const streakAtRisk     = streak?.streakAtRisk   ?? false;
+  const activeCount      = streak?.activeCount    ?? 0;
+  const totalMembers     = streak?.totalMembers   ?? 2;
+  const progress         = streak?.progressPercentage ?? 0;
+  const isZero           = currentStreak === 0;
+  const pointsToday      = bothActive ? 10 : 0;
+  const shieldUsedToday  = streak?.shieldUsedToday   ?? false;
+  const shieldsRemaining = streak?.shieldsRemaining  ?? 0;
   const missionsDone   = missions.filter(m => m.completed).length;
   const missionsPts    = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
   const canBuyShield   = totalPoints >= 200;
@@ -279,7 +281,7 @@ export default function LoveStreak() {
           </section>
 
           {/* Risk warning */}
-          {streakAtRisk && (
+          {streakAtRisk && !shieldUsedToday && (
             <div className="glass-card rounded-3xl p-4 border-amber-500/30 bg-amber-50/40 flex items-start gap-3">
               <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
                 <AlertCircle className="w-4 h-4 text-amber-600" />
@@ -287,6 +289,22 @@ export default function LoveStreak() {
               <div>
                 <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-0.5">Streak em risco</p>
                 <p className="text-sm font-bold text-amber-900/70 leading-snug">Hoje é decisivo. Não deixem o streak cair!</p>
+                {shieldsRemaining > 0 && (
+                  <p className="text-xs text-amber-700/60 font-bold mt-1">🛡️ Tens {shieldsRemaining} shield{shieldsRemaining > 1 ? 's' : ''} — serão usados automaticamente se falharem hoje.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Shield used banner */}
+          {shieldUsedToday && (
+            <div className="glass-card rounded-3xl p-4 border-blue-500/30 bg-blue-50/40 flex items-start gap-3">
+              <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Shield className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-blue-600 uppercase tracking-widest mb-0.5">🛡️ LoveShield Activado!</p>
+                <p className="text-sm font-bold text-blue-900/70 leading-snug">O shield protegeu a vossa chama ontem. Resta{shieldsRemaining === 1 ? " 1 shield" : `m ${shieldsRemaining} shields`}.</p>
               </div>
             </div>
           )}

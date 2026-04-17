@@ -19,11 +19,13 @@ export interface StreakState {
   progressPercentage: number;
   streakAtRisk:       boolean;
   daysSinceLast:      number | null;
+  // LoveShield
+  shieldsRemaining:   number;
+  shieldUsedToday:    boolean;
 }
 
 function mapStreak(data: Record<string, any>): StreakState {
   return {
-    // Suporta tanto os nomes novos (current) como antigos (current_streak)
     currentStreak:      data.current      ?? data.current_streak      ?? 0,
     longestStreak:      data.longest      ?? data.longest_streak      ?? 0,
     lastActiveDate:     data.last_date    ?? data.last_active_date    ?? null,
@@ -34,6 +36,9 @@ function mapStreak(data: Record<string, any>): StreakState {
     progressPercentage: data.progress_percentage ?? 0,
     streakAtRisk:       data.streak_at_risk      ?? false,
     daysSinceLast:      data.days_since_last_activity ?? null,
+    // LoveShield
+    shieldsRemaining:   data.shields_remaining   ?? 0,
+    shieldUsedToday:    data.shield_used_today   ?? false,
   };
 }
 
