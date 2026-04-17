@@ -5,7 +5,6 @@ import { logActivity } from "@/lib/logActivity";
 
 // ─────────────────────────────────────────────
 // StreakState — interface completa
-// Inclui campos novos (V3) e aliases antigos
 // ─────────────────────────────────────────────
 
 export interface StreakState {
@@ -24,6 +23,22 @@ export interface StreakState {
   shieldUsedToday:    boolean;
 }
 
+// Estado seguro por defeito — nunca retorna null ao componente
+const EMPTY_STREAK: StreakState = {
+  currentStreak:      0,
+  longestStreak:      0,
+  lastActiveDate:     null,
+  status:             "active",
+  bothActiveToday:    false,
+  activeCount:        0,
+  totalMembers:       0,
+  progressPercentage: 0,
+  streakAtRisk:       false,
+  daysSinceLast:      null,
+  shieldsRemaining:   0,
+  shieldUsedToday:    false,
+};
+
 function mapStreak(data: Record<string, any>): StreakState {
   return {
     currentStreak:      data.current      ?? data.current_streak      ?? 0,
@@ -36,7 +51,6 @@ function mapStreak(data: Record<string, any>): StreakState {
     progressPercentage: data.progress_percentage ?? 0,
     streakAtRisk:       data.streak_at_risk      ?? false,
     daysSinceLast:      data.days_since_last_activity ?? null,
-    // LoveShield
     shieldsRemaining:   data.shields_remaining   ?? 0,
     shieldUsedToday:    data.shield_used_today   ?? false,
   };
@@ -44,26 +58,47 @@ function mapStreak(data: Record<string, any>): StreakState {
 
 // ─────────────────────────────────────────────
 // useStreak — hook principal
+// GARANTIA: nunca devolve streak === null
+//           em caso de erro, usa EMPTY_STREAK
 // ─────────────────────────────────────────────
 
 export function useStreak() {
   const spaceId = useCoupleSpaceId();
-  const [streak, setStreak]   = useState<StreakState | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // Inicializa com EMPTY_STREAK — nunca null
+  const [streak, setStreak]     = useState<StreakState>(EMPTY_STREAK);
+  const [loading, setLoading]   = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!spaceId) return;
+    if (!spaceId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("get_streak", {
         p_couple_id: spaceId,
       });
+
+      console.log("[useStreak] streak data:", data, "error:", error);
+
       if (error) {
         console.error("[useStreak] Erro get_streak:", error.message);
+        // Manter EMPTY_STREAK — não quebrar UI
+        setStreak(EMPTY_STREAK);
         return;
       }
-      if (data) setStreak(mapStreak(data as Record<string, any>));
+
+      if (data) {
+        setStreak(mapStreak(data as Record<string, any>));
+      } else {
+        // RPC retornou null (casal sem streak ainda)
+        setStreak(EMPTY_STREAK);
+      }
+    } catch (err) {
+      console.error("[useStreak] Excepção inesperada:", err);
+      setStreak(EMPTY_STREAK);
     } finally {
       setLoading(false);
     }
@@ -74,16 +109,14 @@ export function useStreak() {
   }, [refresh]);
 
   // ──────────────────────────────────────────
-  // checkIn — ação principal (botão "Começar agora")
-  // Busca user_id → chama RPC → refresh
+  // checkIn — ação principal
   // ──────────────────────────────────────────
   const checkIn = useCallback(async (): Promise<boolean> => {
     if (!spaceId || checkingIn) return false;
 
-    // Verificar se já fez check-in hoje
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.warn("[useStreak.checkIn] Sem utilizador");
+      console.warn("[useStreak.checkIn] Sem utilizador autenticado");
       return false;
     }
 
@@ -97,7 +130,7 @@ export function useStreak() {
       });
 
       if (error) {
-        console.error("[useStreak.checkIn] Erro:", error.message);
+        console.error("[useStreak.checkIn] Erro RPC:", error.message);
         return false;
       }
 
@@ -105,7 +138,7 @@ export function useStreak() {
       console.log("[useStreak.checkIn] Resposta:", data);
 
       if (status === "invalid_user") {
-        console.warn("[useStreak.checkIn] Utilizador não é membro");
+        console.warn("[useStreak.checkIn] Utilizador não é membro do casal");
         return false;
       }
 
