@@ -77,25 +77,22 @@ export function useStreak() {
     }
     setLoading(true);
     try {
+      console.log("[useStreak] RPC get_streak a iniciar para:", spaceId);
       const { data, error } = await supabase.rpc("get_streak", {
         p_couple_id: spaceId,
       });
 
-      console.log("[useStreak] streak data:", data, "error:", error);
+      console.log("[useStreak] Resposta get_streak:", data, "Erro:", error);
 
       if (error) {
         console.error("[useStreak] Erro get_streak:", error.message);
-        // Manter EMPTY_STREAK — não quebrar UI
         setStreak(EMPTY_STREAK);
         return;
       }
 
-      if (data) {
-        setStreak(mapStreak(data as Record<string, any>));
-      } else {
-        // RPC retornou null (casal sem streak ainda)
-        setStreak(EMPTY_STREAK);
-      }
+      const streakData = data ? mapStreak(data as Record<string, any>) : EMPTY_STREAK;
+      console.log("[useStreak] Estado mapeado:", streakData);
+      setStreak(streakData);
     } catch (err) {
       console.error("[useStreak] Excepção inesperada:", err);
       setStreak(EMPTY_STREAK);

@@ -101,7 +101,17 @@ export default function LoveStreak() {
   const [missions, setMissions]         = useState<Mission[]>([]);
   const [loadingMissions, setLoadingMissions] = useState(false);
 
+  // Sincronização
+  const [refreshKey, setRefreshKey] = useState(0);
+
   // ── Helpers ───────────────────────────────
+  const getTodayStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const currentStreak    = streak?.currentStreak  ?? 0;
   const longestStreak    = streak?.longestStreak  ?? 0;
@@ -129,7 +139,7 @@ export default function LoveStreak() {
         .select("total_points")
         .eq("couple_space_id", spaceId)
         .maybeSingle();
-      console.log("[LoveStreak] points:", data, error);
+      console.log("[LoveStreak] Fetched points:", data, error);
       setTotalPoints((data as any)?.total_points ?? 0);
     } finally {
       setLoadingPoints(false);
@@ -142,7 +152,8 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingShield(true);
     try {
-      const { data } = await supabase.rpc("fn_get_shields", { p_couple_id: spaceId });
+      const { data, error } = await supabase.rpc("fn_get_shields", { p_couple_id: spaceId });
+      console.log("[LoveStreak] Fetched shields:", data, error);
       setShields((data as any) ?? 0);
     } catch {
       setShields(0);
@@ -157,12 +168,14 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingMissions(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
-      const { data } = await supabase
+      const today = getTodayStr();
+      const { data, error } = await supabase
         .from("daily_activity" as any)
         .select("type, user_id")
         .eq("couple_id", spaceId)
         .eq("activity_date", today);
+
+      console.log("[LoveStreak] Fetched missions (daily_activity):", data, error);
 
       // Count distinct users per type
       const typeUsers: Record<string, Set<string>> = {};
@@ -179,6 +192,31 @@ export default function LoveStreak() {
       setLoadingMissions(false);
     }
   }, [spaceId, totalMembers]);
+
+  // Novas funções exigidas pela sincronização robusta
+  const fetchTodayActivity = useCallback(async () => {
+    console.log("[LoveStreak] fetchTodayActivity - ja coberto por fetchMissions");
+    return fetchMissions();
+  }, [fetchMissions]);
+
+  const fetchRanking = useCallback(async () => {
+    console.log("[LoveStreak] fetchRanking - sinalizando RankingCard via refreshKey");
+    // O RankingCard ja tem useEffect que dispara quando montado ou quando props mudam.
+    // O handleCheckIn ja faz setRefreshKey.
+  }, []);
+
+  const fetchAllData = useCallback(async () => {
+    console.log("[LoveStreak] fetchAllData em curso (Promise.all)...");
+    await Promise.all([
+      streak.refresh(),
+      fetchPoints(),
+      fetchShields(),
+      fetchMissions(),
+      fetchTodayActivity(),
+      fetchRanking()
+    ]);
+    console.log("[LoveStreak] fetchAllData concluido ✓");
+  }, [streak, fetchPoints, fetchShields, fetchMissions, fetchTodayActivity, fetchRanking]);
 
   // ── Buy shield ────────────────────────────
 
@@ -206,16 +244,22 @@ export default function LoveStreak() {
   // ── Check-in ─────────────────────────────
 
   const handleCheckIn = async () => {
-    const ok = await checkIn();
+    console.log("[LoveStreak] Iniciando handleCheckIn...");
+    const ok = await checkIn(); // useStreak ja faz refresh interno
     if (ok) {
       toast.success("Boa! Estás a cuidar do vosso streak 💖");
-      if (activeTab === "missoes") fetchMissions();
+      await fetchAllData();
+      setRefreshKey(prev => prev + 1);
     } else {
       toast.error("Não foi possível registar o check-in.");
     }
   };
 
   // ── Load by tab ───────────────────────────
+  useEffect(() => {
+    fetchAllData();
+  }, []); // Initial load obrigatório
+
   useEffect(() => {
     if (activeTab === "pontos")  { fetchPoints(); fetchShields(); }
     if (activeTab === "missoes") fetchMissions();
@@ -351,7 +395,13 @@ export default function LoveStreak() {
 
           {/* Ranking streak */}
           <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ranking Global — Streak" />
-          <RankingCard compact={false} initialRankType="streak" hideToggle myCoupleId={spaceId ?? undefined} />
+          <RankingCard 
+            key={`streak-${refreshKey}`} 
+            compact={false} 
+            initialRankType="streak" 
+            hideToggle 
+            myCoupleId={spaceId ?? undefined} 
+          />
         </div>
       )}
 
@@ -450,7 +500,13 @@ export default function LoveStreak() {
 
           {/* Ranking pontos */}
           <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ranking Global — Pontos" />
-          <RankingCard compact={false} initialRankType="points" hideToggle myCoupleId={spaceId ?? undefined} />
+          <RankingCard 
+            key={`points-${refreshKey}`} 
+            compact={false} 
+            initialRankType="points" 
+            hideToggle 
+            myCoupleId={spaceId ?? undefined} 
+          />
         </div>
       )}
 
