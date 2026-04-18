@@ -109,27 +109,7 @@ export function useStreak() {
   // checkIn — ação principal
   // ──────────────────────────────────────────
   const checkIn = useCallback(async (): Promise<boolean> => {
-    console.log("[CHECKIN] START");
-
-    if (!spaceId) {
-      console.log("[CHECKIN] ❌ spaceId missing");
-      return false;
-    }
-
-    if (checkingIn) {
-      console.log("[CHECKIN] ❌ already checking");
-      return false;
-    }
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      console.log("[CHECKIN] ❌ no user");
-      return false;
-    }
-
-    console.log("[CHECKIN] user:", user.id);
-    console.log("[CHECKIN] spaceId:", spaceId);
+    if (!spaceId || checkingIn) return false;
 
     setCheckingIn(true);
 
@@ -139,25 +119,30 @@ export function useStreak() {
         p_type: "checkin"
       });
 
-      console.log("[CHECKIN] response:", data, error);
-
       if (error) {
-        console.log("[CHECKIN] ❌ RPC error:", error.message);
+        console.error("[CHECKIN ERROR]:", error.message);
         return false;
       }
 
       const status = (data as any)?.status;
 
-      console.log("[CHECKIN] status:", status);
+      // ❌ erro real
+      if (status === "invalid_user") {
+        console.warn("Utilizador inválido");
+        return false;
+      }
 
-      await refresh();
+      // ✅ SUCESSO (mesmo se já fez hoje)
+      if (status === "success" || status === "already_checked_in") {
+        await refresh(); // 🔥 ATUALIZA UI IMEDIATO
+        window.dispatchEvent(new Event("streak-updated"));
+        return true;
+      }
 
-      window.dispatchEvent(new Event("streak-updated"));
-
-      return true;
+      return false;
 
     } catch (err) {
-      console.log("[CHECKIN] ❌ exception:", err);
+      console.error("[CHECKIN EXCEPTION]:", err);
       return false;
     } finally {
       setCheckingIn(false);

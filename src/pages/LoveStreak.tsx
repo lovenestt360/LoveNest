@@ -103,7 +103,13 @@ export default function LoveStreak() {
 
   // Sincronização
   const [refreshKey, setRefreshKey] = useState(0);
+  const [localCompleted, setLocalCompleted] = useState(false);
 
+  useEffect(() => {
+    if (streak?.bothActiveToday) {
+      setLocalCompleted(true);
+    }
+  }, [streak?.bothActiveToday]);
   // ── Helpers ───────────────────────────────
 
   const currentStreak    = streak?.currentStreak  ?? 0;
@@ -237,15 +243,9 @@ export default function LoveStreak() {
   // ── Check-in ─────────────────────────────
 
   const handleCheckIn = async () => {
-    console.log("[LoveStreak] Iniciando handleCheckIn...");
-    const ok = await checkIn(); // useStreak ja faz refresh interno
+    const ok = await checkIn();
     
-    console.log("[UI] checkIn result:", ok);
-
-    if (ok) {
-      toast.success("Boa! Estás a cuidar do vosso streak 💖");
-      setRefreshKey(prev => prev + 1);
-    } else {
+    if (!ok) {
       toast.error("Não foi possível registar o check-in.");
     }
   };
@@ -608,22 +608,33 @@ export default function LoveStreak() {
       )}
 
       {/* ── CTA FIXO ─────────────────────────────────── */}
-      {!bothActive && (
+      {!(bothActive || localCompleted) && (
         <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
           <div className="max-w-md mx-auto">
-            <Button
-              className="w-full h-14 rounded-2xl text-[15px] font-bold shadow-xl shadow-primary/20 active:scale-[0.98] transition-transform relative overflow-hidden group"
-              onClick={handleCheckIn}
+            <button
+              onClick={async () => {
+                const ok = await checkIn();
+
+                if (ok) {
+                  setLocalCompleted(true); // 🔥 UI reage instantaneamente
+                } else {
+                  toast.error("Não foi possível registar o check-in.");
+                }
+              }}
               disabled={checkingIn}
+              style={{
+                width: "100%",
+                padding: "14px",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #ff6b81, #ff4757)",
+                color: "white",
+                fontWeight: "600",
+                border: "none",
+                opacity: checkingIn ? 0.6 : 1
+              }}
             >
-              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              {checkingIn
-                ? <Loader2 className="w-5 h-5 animate-spin" />
-                : <span className="relative z-10 flex items-center gap-2">
-                    👉 {isZero ? "Começar agora" : "Fazer check-in agora"}
-                  </span>
-              }
-            </Button>
+              {checkingIn ? "A registar..." : "👉 Fazer check-in agora"}
+            </button>
           </div>
         </div>
       )}
