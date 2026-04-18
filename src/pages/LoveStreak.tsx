@@ -239,6 +239,9 @@ export default function LoveStreak() {
   const handleCheckIn = async () => {
     console.log("[LoveStreak] Iniciando handleCheckIn...");
     const ok = await checkIn(); // useStreak ja faz refresh interno
+    
+    console.log("[UI] checkIn result:", ok);
+
     if (ok) {
       toast.success("Boa! Estás a cuidar do vosso streak 💖");
       setRefreshKey(prev => prev + 1);

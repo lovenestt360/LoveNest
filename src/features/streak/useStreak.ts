@@ -109,47 +109,55 @@ export function useStreak() {
   // checkIn — ação principal
   // ──────────────────────────────────────────
   const checkIn = useCallback(async (): Promise<boolean> => {
-    if (!spaceId || checkingIn) return false;
+    console.log("[CHECKIN] START");
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.warn("[useStreak.checkIn] Sem utilizador autenticado");
+    if (!spaceId) {
+      console.log("[CHECKIN] ❌ spaceId missing");
       return false;
     }
 
-    setCheckingIn(true);
-    try {
-      console.log("[CHECKIN] calling RPC...");
+    if (checkingIn) {
+      console.log("[CHECKIN] ❌ already checking");
+      return false;
+    }
 
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.log("[CHECKIN] ❌ no user");
+      return false;
+    }
+
+    console.log("[CHECKIN] user:", user.id);
+    console.log("[CHECKIN] spaceId:", spaceId);
+
+    setCheckingIn(true);
+
+    try {
       const { data, error } = await supabase.rpc("log_daily_activity", {
         p_couple_id: spaceId,
         p_type: "checkin"
       });
 
-      console.log("[CHECKIN] response:", data);
+      console.log("[CHECKIN] response:", data, error);
 
       if (error) {
-        console.error("[useStreak.checkIn] Erro RPC:", error.message);
+        console.log("[CHECKIN] ❌ RPC error:", error.message);
         return false;
       }
 
       const status = (data as any)?.status;
 
-      if (status === "invalid_user") {
-        console.warn("[useStreak.checkIn] Utilizador não é membro do casal");
-        return false;
-      }
-
-      // Já fez o check-in hoje, consideramos a ação do botão inofensiva e continuamos
-      if (status === "already_checked_in") {
-        console.log("[useStreak.checkIn] Utilizador já fez check-in hoje.");
-      }
+      console.log("[CHECKIN] status:", status);
 
       await refresh();
+
       window.dispatchEvent(new Event("streak-updated"));
+
       return true;
+
     } catch (err) {
-      console.error("[useStreak.checkIn] Excepção:", err);
+      console.log("[CHECKIN] ❌ exception:", err);
       return false;
     } finally {
       setCheckingIn(false);
