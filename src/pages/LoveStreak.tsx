@@ -110,11 +110,17 @@ export default function LoveStreak() {
       setLocalCompleted(true);
     }
   }, [streak?.bothActiveToday]);
+
+  useEffect(() => {
+    if (!streak?.bothActiveToday) {
+      setLocalCompleted(false);
+    }
+  }, [streak?.bothActiveToday]);
   // ── Helpers ───────────────────────────────
 
   const currentStreak    = streak?.currentStreak  ?? 0;
   const longestStreak    = streak?.longestStreak  ?? 0;
-  const bothActive       = streak?.bothActiveToday ?? false;
+  const bothActive       = (streak?.bothActiveToday ?? false) || localCompleted;
   const streakAtRisk     = streak?.streakAtRisk   ?? false;
   const activeCount      = streak?.activeCount    ?? 0;
   const totalMembers     = streak?.totalMembers   ?? 2;
@@ -608,7 +614,7 @@ export default function LoveStreak() {
       )}
 
       {/* ── CTA FIXO ─────────────────────────────────── */}
-      {!(bothActive || localCompleted) && (
+      {!bothActive && (
         <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
           <div className="max-w-md mx-auto">
             <button
