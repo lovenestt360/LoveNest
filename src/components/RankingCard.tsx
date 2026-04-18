@@ -75,9 +75,9 @@ function PodiumRow({
 
   return (
     <div className={cn(
-      "rounded-3xl p-4 flex items-center gap-3 border bg-gradient-to-br shadow-sm transition-all",
+      "rounded-3xl p-4 flex items-center gap-3 border bg-gradient-to-br transition-all duration-300",
       medal.bg, medal.border,
-      isMe && "ring-2 ring-primary/30 shadow-primary/10"
+      isMe && "bg-primary/10 border-primary shadow-md shadow-primary/20 ring-2 ring-primary/40 scale-[1.02]"
     )}>
       <span className={cn("text-xl shrink-0", medal.size === "h-11 w-11" ? "text-2xl" : "text-lg")}>{medal.label}</span>
       <HouseAvatar name={entry.house_name} image={entry.house_image} size="md" isMe={isMe} />
@@ -85,7 +85,11 @@ function PodiumRow({
         <div className="flex items-center gap-1.5">
           <span className="font-black text-sm tracking-tight truncate text-foreground">
             {entry.house_name}
-            {isMe && <span className="ml-1 text-[9px] text-primary font-black"> (vós)</span>}
+            {isMe && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded border border-primary/20 text-[9px] font-black uppercase tracking-wider bg-primary text-primary-foreground shadow-sm">
+                Tu
+              </span>
+            )}
           </span>
           {entry.is_verified && <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" />}
         </div>
@@ -108,8 +112,8 @@ function ListRow({
 
   return (
     <div className={cn(
-      "flex items-center gap-3 py-2.5 border-b border-border/25 last:border-0",
-      isMe && "bg-primary/5 -mx-4 px-4 rounded-xl"
+      "flex items-center gap-3 py-2.5 border-b border-border/25 transition-all",
+      isMe ? "bg-primary/10 -mx-4 px-4 rounded-xl border border-primary/30 shadow-sm ring-1 ring-primary/20 scale-[1.01]" : "last:border-0"
     )}>
       <span className="text-[11px] font-black text-muted-foreground/40 w-6 text-right shrink-0">
         #{entry.rank}
@@ -118,7 +122,11 @@ function ListRow({
       <span className="flex-1 text-sm font-bold truncate text-foreground/80 flex items-center gap-1.5">
         {entry.house_name}
         {entry.is_verified && <BadgeCheck className="w-3 h-3 text-primary shrink-0" />}
-        {isMe && <span className="text-[9px] text-primary font-black">(vós)</span>}
+        {isMe && (
+          <span className="ml-1 flex items-center px-1.5 py-0.5 rounded border border-primary/20 text-[8px] font-black uppercase tracking-wider bg-primary text-primary-foreground">
+            Tu
+          </span>
+        )}
       </span>
       <span className="text-sm font-black tabular-nums text-primary shrink-0">{value} {suffix}</span>
     </div>
@@ -153,9 +161,23 @@ export function RankingCard({
   const fetchRanking = useCallback(async (type: RankType) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("fn_get_global_ranking", { p_rank_type: type });
+      const { data, error } = await supabase.rpc("get_ranking", { p_type: type });
+      console.log(`[RankingCard - ${type}] Dados recebidos:`, data);
+      
       if (error) { console.error("[RankingCard]", error.message); return; }
-      setEntries((data as RankEntry[]) || []);
+      if (!data) return;
+
+      // Adaptacao caso o backend retorne chaves diferentes (ex: rank_position em vez de rank)
+      const mappedEntries = data.map((d: any) => ({
+        ...d,
+        rank: d.rank_position ?? d.rank,
+        couple_space_id: d.couple_id ?? d.couple_space_id,
+        house_name: d.house_name ?? "Casal Mistério",
+        house_image: d.house_image ?? null,
+        is_verified: d.is_verified ?? false
+      }));
+
+      setEntries(mappedEntries as RankEntry[]);
     } catch (err) {
       console.error("[RankingCard] Excepção:", err);
     } finally {
@@ -163,10 +185,12 @@ export function RankingCard({
     }
   }, []);
 
-  useEffect(() => { fetchRanking(rankType); }, [rankType, fetchRanking, refreshTrigger]);
+  useEffect(() => { 
+    fetchRanking(rankType); 
+  }, [rankType, fetchRanking, refreshTrigger]);
 
-  const top3 = entries.slice(0, 3);
-  const rest  = compact ? [] : entries.slice(3);
+  const top3 = entries.filter(e => e.rank <= 3);
+  const rest  = compact ? [] : entries.filter(e => e.rank > 3);
 
   return (
     <div className="glass-card rounded-[1.75rem] overflow-hidden shadow-sm border-primary/10">

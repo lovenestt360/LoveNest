@@ -119,12 +119,14 @@ export function useStreak() {
 
     setCheckingIn(true);
     try {
-      console.log(`[useStreak.checkIn] → couple=${spaceId} user=${user.id}`);
+      console.log("[CHECKIN] calling RPC...");
 
       const { data, error } = await supabase.rpc("log_daily_activity", {
         p_couple_id: spaceId,
-        p_user_id:   user.id,
+        p_type: "checkin"
       });
+
+      console.log("[CHECKIN] response:", data);
 
       if (error) {
         console.error("[useStreak.checkIn] Erro RPC:", error.message);
@@ -132,13 +134,18 @@ export function useStreak() {
       }
 
       const status = (data as any)?.status;
-      console.log("[useStreak.checkIn] Resposta:", data);
 
       if (status === "invalid_user") {
         console.warn("[useStreak.checkIn] Utilizador não é membro do casal");
         return false;
       }
 
+      // Já fez o check-in hoje, consideramos a ação do botão inofensiva e continuamos
+      if (status === "already_checked_in") {
+        console.log("[useStreak.checkIn] Utilizador já fez check-in hoje.");
+      }
+
+      await refresh();
       window.dispatchEvent(new Event("streak-updated"));
       return true;
     } catch (err) {
