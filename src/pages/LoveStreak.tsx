@@ -85,7 +85,7 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 export default function LoveStreak() {
   const navigate   = useNavigate();
   const spaceId    = useCoupleSpaceId();
-  const { streak, loading, checkIn, checkingIn } = useStreak();
+  const { streak, loading, checkIn, checkingIn, refresh } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>("streaks");
 
   // — Points state —
@@ -619,13 +619,19 @@ export default function LoveStreak() {
           <div className="max-w-md mx-auto">
             <button
               onClick={async () => {
-                const ok = await checkIn();
+                await checkIn();
 
-                if (ok) {
-                  setLocalCompleted(true); // 🔥 UI reage instantaneamente
-                } else {
-                  toast.error("Não foi possível registar o check-in.");
+                // 🔥 força atualização real do estado
+                await refresh();
+
+                // 🔥 verifica estado REAL (não o retorno da função)
+                if ((streak?.bothActiveToday ?? false) || localCompleted) {
+                  setLocalCompleted(true);
+                  return;
                 }
+
+                // ❌ só mostra erro se realmente não mudou
+                toast.error("Não foi possível registar o check-in.");
               }}
               disabled={checkingIn}
               style={{
