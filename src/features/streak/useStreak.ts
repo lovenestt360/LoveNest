@@ -114,10 +114,26 @@ export function useStreak() {
     setCheckingIn(true);
 
     try {
-      const { data, error } = await supabase.rpc("log_daily_activity", {
-        p_couple_id: spaceId,
-        p_type: "checkin"
-      });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        console.error("Utilizador não autenticado");
+        return false;
+      }
+
+      const { data, error } = await supabase.rpc(
+        "log_daily_activity",
+        {
+          p_couple_id: spaceId,
+          p_type: "checkin"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        } as any
+      );
 
       if (error) {
         console.error("[CHECKIN ERROR]:", error.message);
