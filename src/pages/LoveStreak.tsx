@@ -248,7 +248,6 @@ export default function LoveStreak() {
     const ok = await checkIn(); // useStreak ja faz refresh interno
     if (ok) {
       toast.success("Boa! Estás a cuidar do vosso streak 💖");
-      await fetchAllData();
       setRefreshKey(prev => prev + 1);
     } else {
       toast.error("Não foi possível registar o check-in.");
@@ -264,6 +263,20 @@ export default function LoveStreak() {
     if (activeTab === "pontos")  { fetchPoints(); fetchShields(); }
     if (activeTab === "missoes") fetchMissions();
   }, [activeTab, fetchPoints, fetchShields, fetchMissions]);
+
+  // Sincronização Global via Evento
+  useEffect(() => {
+    const handleUpdate = () => {
+      console.log("🔄 [LoveStreak] streak-updated recebido");
+      fetchAllData();
+    };
+
+    window.addEventListener("streak-updated", handleUpdate);
+
+    return () => {
+      window.removeEventListener("streak-updated", handleUpdate);
+    };
+  }, [fetchAllData]);
 
   // ── Loading guard ─────────────────────────
   if (loading && !streak) {
@@ -396,11 +409,11 @@ export default function LoveStreak() {
           {/* Ranking streak */}
           <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ranking Global — Streak" />
           <RankingCard 
-            key={`streak-${refreshKey}`} 
             compact={false} 
             initialRankType="streak" 
             hideToggle 
-            myCoupleId={spaceId ?? undefined} 
+            myCoupleId={spaceId ?? undefined}
+            refreshTrigger={refreshKey}
           />
         </div>
       )}
@@ -501,11 +514,11 @@ export default function LoveStreak() {
           {/* Ranking pontos */}
           <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ranking Global — Pontos" />
           <RankingCard 
-            key={`points-${refreshKey}`} 
             compact={false} 
             initialRankType="points" 
             hideToggle 
-            myCoupleId={spaceId ?? undefined} 
+            myCoupleId={spaceId ?? undefined}
+            refreshTrigger={refreshKey}
           />
         </div>
       )}

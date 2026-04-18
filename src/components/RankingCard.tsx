@@ -135,6 +135,7 @@ interface RankingCardProps {
   hideToggle?     : boolean;
   /** couple_space_id do utilizador actual — destaca no ranking */
   myCoupleId?     : string;
+  refreshTrigger?  : number;
 }
 
 export function RankingCard({
@@ -142,6 +143,7 @@ export function RankingCard({
   initialRankType = "streak",
   hideToggle      = false,
   myCoupleId,
+  refreshTrigger,
 }: RankingCardProps) {
   const navigate = useNavigate();
   const [rankType, setRankType] = useState<RankType>(initialRankType);
@@ -161,7 +163,7 @@ export function RankingCard({
     }
   }, []);
 
-  useEffect(() => { fetchRanking(rankType); }, [rankType, fetchRanking]);
+  useEffect(() => { fetchRanking(rankType); }, [rankType, fetchRanking, refreshTrigger]);
 
   const top3 = entries.slice(0, 3);
   const rest  = compact ? [] : entries.slice(3);

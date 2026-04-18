@@ -139,7 +139,7 @@ export function useStreak() {
         return false;
       }
 
-      await refresh();
+      window.dispatchEvent(new Event("streak-updated"));
       return true;
     } catch (err) {
       console.error("[useStreak.checkIn] Excepção:", err);
