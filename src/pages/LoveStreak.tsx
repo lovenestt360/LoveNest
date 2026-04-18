@@ -105,13 +105,6 @@ export default function LoveStreak() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // ── Helpers ───────────────────────────────
-  const getTodayStr = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
   const currentStreak    = streak?.currentStreak  ?? 0;
   const longestStreak    = streak?.longestStreak  ?? 0;
@@ -168,14 +161,14 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingMissions(true);
     try {
-      const today = getTodayStr();
+      const today = new Date().toISOString().split("T")[0];
       const { data, error } = await supabase
         .from("daily_activity" as any)
         .select("type, user_id")
         .eq("couple_id", spaceId)
         .eq("activity_date", today);
 
-      console.log("[LoveStreak] Fetched missions (daily_activity):", data, error);
+      console.log("[LoveStreak] Missions raw data (daily_activity):", data, "Error:", error);
 
       // Count distinct users per type
       const typeUsers: Record<string, Set<string>> = {};
