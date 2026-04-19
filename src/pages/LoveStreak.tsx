@@ -213,7 +213,7 @@ export default function LoveStreak() {
   const fetchAllData = useCallback(async () => {
     console.log("[LoveStreak] fetchAllData em curso (Promise.all)...");
     await Promise.all([
-      streak.refresh(),
+      refresh(),
       fetchPoints(),
       fetchShields(),
       fetchMissions(),
@@ -221,7 +221,7 @@ export default function LoveStreak() {
       fetchRanking()
     ]);
     console.log("[LoveStreak] fetchAllData concluido ✓");
-  }, [streak, fetchPoints, fetchShields, fetchMissions, fetchTodayActivity, fetchRanking]);
+  }, [refresh, fetchPoints, fetchShields, fetchMissions, fetchTodayActivity, fetchRanking]);
 
   // ── Buy shield ────────────────────────────
 
@@ -619,19 +619,13 @@ export default function LoveStreak() {
           <div className="max-w-md mx-auto">
             <button
               onClick={async () => {
-                await checkIn();
+                const ok = await checkIn();
 
-                // 🔥 força atualização real do estado
-                await refresh();
-
-                // 🔥 verifica estado REAL (não o retorno da função)
-                if ((streak?.bothActiveToday ?? false) || localCompleted) {
+                if (ok) {
                   setLocalCompleted(true);
-                  return;
+                } else {
+                  toast.error("Não foi possível registar o check-in.");
                 }
-
-                // ❌ só mostra erro se realmente não mudou
-                toast.error("Não foi possível registar o check-in.");
               }}
               disabled={checkingIn}
               style={{

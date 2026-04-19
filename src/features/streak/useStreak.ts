@@ -125,6 +125,8 @@ export function useStreak() {
         p_couple_id: spaceId,
         p_type: "checkin"
       });
+      console.log("[CHECKIN RESULT]:", data);
+      
       if (error) {
         console.error("[CHECKIN ERROR]:", error.message);
         return false;
