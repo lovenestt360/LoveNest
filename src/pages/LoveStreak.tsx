@@ -245,10 +245,10 @@ export default function LoveStreak() {
   // ── Check-in ─────────────────────────────
 
   const handleCheckIn = async () => {
-    const ok = await checkIn();
+    const { ok, message } = await checkIn();
     
     if (!ok) {
-      toast.error("Não foi possível registar o check-in.");
+      toast.error(message || "Não foi possível registar o check-in.");
     }
   };
 

@@ -37,6 +37,7 @@ BEGIN
   -- ✅ insert correto
   INSERT INTO daily_activity (
     couple_id,
+    couple_space_id,
     user_id,
     type,
     activity_date,
@@ -44,11 +45,17 @@ BEGIN
   )
   VALUES (
     p_couple_id,
+    p_couple_id,
     v_user_id,
     p_type,
     v_today,
     NOW()
   );
+
+  -- 🔥 ATUALIZAR STREAK MANUALMENTE
+  -- A partir da v3 os triggers foram removidos por questões de performance/locks.
+  -- É imperativo chamar a função de cálculo de streak diretamente!
+  PERFORM public.update_streak(p_couple_id);
 
   RETURN json_build_object('status', 'success');
 

@@ -108,8 +108,8 @@ export function useStreak() {
   // ──────────────────────────────────────────
   // checkIn — ação principal
   // ──────────────────────────────────────────
-  const checkIn = useCallback(async (): Promise<boolean> => {
-    if (!spaceId || checkingIn) return false;
+  const checkIn = useCallback(async (): Promise<{ ok: boolean, message?: string }> => {
+    if (!spaceId || checkingIn) return { ok: false, message: "A aguardar processamento..." };
 
     setCheckingIn(true);
 
@@ -118,7 +118,7 @@ export function useStreak() {
 
       if (!userData?.user) {
         console.error("User not authenticated");
-        return false;
+        return { ok: false, message: "Sessão expirada. Recarregue a página." };
       }
 
       const { data, error } = await supabase.rpc("log_daily_activity", {
@@ -129,29 +129,29 @@ export function useStreak() {
 
       if (error) {
         console.error("[CHECKIN ERROR]:", error.message);
-        return false;
+        return { ok: false, message: error.message };
       }
 
       const status = (data as any)?.status;
 
-      // ❌ erro real
       if (status === "invalid_user") {
-        console.warn("Utilizador inválido");
-        return false;
+        return { ok: false, message: "Utilizador rejeitado no servidor." };
+      }
+      if (status === "unauthenticated") {
+         return { ok: false, message: "Backend detectou auth nulo (auth.uid=null)." };
       }
 
-      // ✅ SUCESSO (mesmo se já fez hoje)
       if (status === "success" || status === "already_checked_in") {
-        await refresh(); // 🔥 ATUALIZA UI IMEDIATO
+        await refresh();
         window.dispatchEvent(new Event("streak-updated"));
-        return true;
+        return { ok: true };
       }
 
-      return false;
+      return { ok: false, message: `Status inesperado: ${status}` };
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("[CHECKIN EXCEPTION]:", err);
-      return false;
+      return { ok: false, message: err?.message || "Excepção inesperada" };
     } finally {
       setCheckingIn(false);
     }
