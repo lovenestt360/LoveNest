@@ -8,51 +8,51 @@ import { logActivity } from "@/lib/logActivity";
 // ─────────────────────────────────────────────
 
 export interface StreakState {
-  currentStreak:      number;
-  longestStreak:      number;
-  lastActiveDate:     string | null;
-  status:             "active" | "broken" | "frozen" | "invalid";
-  bothActiveToday:    boolean;
-  activeCount:        number;
-  totalMembers:       number;
+  currentStreak: number;
+  longestStreak: number;
+  lastActiveDate: string | null;
+  status: "active" | "broken" | "frozen" | "invalid";
+  bothActiveToday: boolean;
+  activeCount: number;
+  totalMembers: number;
   progressPercentage: number;
-  streakAtRisk:       boolean;
-  daysSinceLast:      number | null;
+  streakAtRisk: boolean;
+  daysSinceLast: number | null;
   // LoveShield
-  shieldsRemaining:   number;
-  shieldUsedToday:    boolean;
+  shieldsRemaining: number;
+  shieldUsedToday: boolean;
 }
 
 // Estado seguro por defeito — nunca retorna null ao componente
 const EMPTY_STREAK: StreakState = {
-  currentStreak:      0,
-  longestStreak:      0,
-  lastActiveDate:     null,
-  status:             "active",
-  bothActiveToday:    false,
-  activeCount:        0,
-  totalMembers:       0,
+  currentStreak: 0,
+  longestStreak: 0,
+  lastActiveDate: null,
+  status: "active",
+  bothActiveToday: false,
+  activeCount: 0,
+  totalMembers: 0,
   progressPercentage: 0,
-  streakAtRisk:       false,
-  daysSinceLast:      null,
-  shieldsRemaining:   0,
-  shieldUsedToday:    false,
+  streakAtRisk: false,
+  daysSinceLast: null,
+  shieldsRemaining: 0,
+  shieldUsedToday: false,
 };
 
 function mapStreak(data: Record<string, any>): StreakState {
   return {
-    currentStreak:      data.current      ?? data.current_streak      ?? 0,
-    longestStreak:      data.longest      ?? data.longest_streak      ?? 0,
-    lastActiveDate:     data.last_date    ?? data.last_active_date    ?? null,
-    status:             data.status       ?? "active",
-    bothActiveToday:    data.both_active_today   ?? false,
-    activeCount:        data.active_today_count  ?? 0,
-    totalMembers:       data.total_members       ?? 0,
+    currentStreak: data.current ?? data.current_streak ?? 0,
+    longestStreak: data.longest ?? data.longest_streak ?? 0,
+    lastActiveDate: data.last_date ?? data.last_active_date ?? null,
+    status: data.status ?? "active",
+    bothActiveToday: data.both_active_today ?? false,
+    activeCount: data.active_today_count ?? 0,
+    totalMembers: data.total_members ?? 0,
     progressPercentage: data.progress_percentage ?? 0,
-    streakAtRisk:       data.streak_at_risk      ?? false,
-    daysSinceLast:      data.days_since_last_activity ?? null,
-    shieldsRemaining:   data.shields_remaining   ?? 0,
-    shieldUsedToday:    data.shield_used_today   ?? false,
+    streakAtRisk: data.streak_at_risk ?? false,
+    daysSinceLast: data.days_since_last_activity ?? null,
+    shieldsRemaining: data.shields_remaining ?? 0,
+    shieldUsedToday: data.shield_used_today ?? false,
   };
 }
 
@@ -66,8 +66,8 @@ export function useStreak() {
   const spaceId = useCoupleSpaceId();
 
   // Inicializa com EMPTY_STREAK — nunca null
-  const [streak, setStreak]     = useState<StreakState>(EMPTY_STREAK);
-  const [loading, setLoading]   = useState(true);
+  const [streak, setStreak] = useState<StreakState>(EMPTY_STREAK);
+  const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -126,7 +126,7 @@ export function useStreak() {
         p_type: "checkin"
       });
       console.log("[CHECKIN RESULT]:", data);
-      
+
       if (error) {
         console.error("[CHECKIN ERROR]:", error.message);
         return false;

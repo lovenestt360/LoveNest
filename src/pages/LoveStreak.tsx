@@ -106,15 +106,7 @@ export default function LoveStreak() {
   const [localCompleted, setLocalCompleted] = useState(false);
 
   useEffect(() => {
-    if (streak?.bothActiveToday) {
-      setLocalCompleted(true);
-    }
-  }, [streak?.bothActiveToday]);
-
-  useEffect(() => {
-    if (!streak?.bothActiveToday) {
-      setLocalCompleted(false);
-    }
+    setLocalCompleted(!!streak?.bothActiveToday);
   }, [streak?.bothActiveToday]);
   // ── Helpers ───────────────────────────────
 
@@ -211,16 +203,20 @@ export default function LoveStreak() {
   }, []);
 
   const fetchAllData = useCallback(async () => {
-    console.log("[LoveStreak] fetchAllData em curso (Promise.all)...");
-    await Promise.all([
-      refresh(),
-      fetchPoints(),
-      fetchShields(),
-      fetchMissions(),
-      fetchTodayActivity(),
-      fetchRanking()
-    ]);
-    console.log("[LoveStreak] fetchAllData concluido ✓");
+    try {
+      console.log("[LoveStreak] fetchAllData em curso (Promise.all)...");
+      await Promise.all([
+        refresh(),
+        fetchPoints(),
+        fetchShields(),
+        fetchMissions(),
+        fetchTodayActivity(),
+        fetchRanking()
+      ]);
+      console.log("[LoveStreak] fetchAllData concluido ✓");
+    } catch (err) {
+      console.error("[fetchAllData ERROR]:", err);
+    }
   }, [refresh, fetchPoints, fetchShields, fetchMissions, fetchTodayActivity, fetchRanking]);
 
   // ── Buy shield ────────────────────────────
@@ -618,15 +614,7 @@ export default function LoveStreak() {
         <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
           <div className="max-w-md mx-auto">
             <button
-              onClick={async () => {
-                const ok = await checkIn();
-
-                if (ok) {
-                  setLocalCompleted(true);
-                } else {
-                  toast.error("Não foi possível registar o check-in.");
-                }
-              }}
+              onClick={handleCheckIn}
               disabled={checkingIn}
               style={{
                 width: "100%",
