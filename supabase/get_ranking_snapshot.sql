@@ -26,8 +26,8 @@ BEGIN
     SELECT jsonb_build_object(
       'rank',           ROW_NUMBER() OVER (ORDER BY COALESCE(s.current_streak,0) DESC, s.last_active_date DESC NULLS LAST),
       'couple_space_id', cs.id,
-      'house_name',     COALESCE(cs.name, 'Casal Mistério'),
-      'house_image',    cs.image_url,
+      'house_name',     cs.house_name,
+      'house_image',    cs.house_image,
       'is_verified',    COALESCE(cs.is_verified, false),
       'current_streak', COALESCE(s.current_streak, 0),
       'total_points',   COALESCE(p.total_points, 0)
@@ -48,8 +48,8 @@ BEGIN
     SELECT jsonb_build_object(
       'rank',           ROW_NUMBER() OVER (ORDER BY COALESCE(p.total_points,0) DESC, s.last_active_date DESC NULLS LAST),
       'couple_space_id', cs.id,
-      'house_name',     COALESCE(cs.name, 'Casal Mistério'),
-      'house_image',    cs.image_url,
+      'house_name',     cs.house_name,
+      'house_image',    cs.house_image,
       'is_verified',    COALESCE(cs.is_verified, false),
       'current_streak', COALESCE(s.current_streak, 0),
       'total_points',   COALESCE(p.total_points, 0)

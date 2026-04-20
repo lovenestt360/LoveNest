@@ -22,8 +22,8 @@ BEGIN
           )::INT AS rank,
 
           cs.id AS couple_space_id,
-          COALESCE(cs.name, 'Casal Mistério') AS house_name,
-          cs.image_url AS house_image,
+          cs.house_name AS house_name,
+          cs.house_image AS house_image,
           COALESCE(cs.is_verified, false) AS is_verified,
 
           s.current_streak,
@@ -57,8 +57,8 @@ BEGIN
         )::INT AS rank,
 
         cs.id AS couple_space_id,
-        COALESCE(cs.name, 'Casal Mistério') AS house_name,
-        cs.image_url AS house_image,
+        cs.house_name AS house_name,
+        cs.house_image AS house_image,
         COALESCE(cs.is_verified, false) AS is_verified,
 
         COALESCE(s.current_streak, 0) AS current_streak,
