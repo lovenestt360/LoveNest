@@ -11,6 +11,11 @@ DECLARE
   v_today   DATE := (NOW() AT TIME ZONE 'Africa/Maputo')::DATE;
   v_streak  JSON;
   v_ranking JSONB;
+  
+  -- ✅ Variáveis para missões
+  v_mission_count INT;
+  v_members INT;
+  v_pts INT := 0;
 BEGIN
   -- 🔐 utilizador autenticado REAL
   v_user_id := auth.uid();
@@ -60,6 +65,30 @@ BEGIN
     v_today,
     NOW()
   );
+
+  -- 🔥 Calcular Missões em tempo real! (Se ambos completaram)
+  v_members := public.fn_count_active_members(p_couple_id);
+  IF v_members >= 2 THEN
+    SELECT COUNT(DISTINCT user_id) INTO v_mission_count
+    FROM daily_activity
+    WHERE couple_id = p_couple_id AND type = p_type AND activity_date = v_today;
+
+    IF v_mission_count = v_members THEN
+       CASE p_type
+         WHEN 'checkin' THEN v_pts := 10;
+         WHEN 'message' THEN v_pts := 10;
+         WHEN 'mood'    THEN v_pts := 5;
+         WHEN 'prayer'  THEN v_pts := 5;
+         ELSE v_pts := 0;
+       END CASE;
+
+       IF v_pts > 0 THEN
+         UPDATE public.points 
+         SET total_points = total_points + v_pts, updated_at = now() 
+         WHERE couple_space_id = p_couple_id;
+       END IF;
+    END IF;
+  END IF;
 
   -- 🔥 recalcular streak (trigger removido na v3 — chamada manual obrigatória)
   PERFORM public.update_streak(p_couple_id);
