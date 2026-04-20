@@ -131,13 +131,11 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingPoints(true);
     try {
-      const { data, error } = await supabase
-        .from("points" as any)
-        .select("total_points")
-        .eq("couple_space_id", spaceId)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_total_points", { p_couple_id: spaceId });
       console.log("[LoveStreak] Fetched points:", data, error);
-      setTotalPoints((data as any)?.total_points ?? 0);
+      setTotalPoints((data as number) ?? 0);
+    } catch {
+      setTotalPoints(0);
     } finally {
       setLoadingPoints(false);
     }
