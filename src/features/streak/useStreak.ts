@@ -21,6 +21,7 @@ export interface StreakState {
   // LoveShield
   shieldsRemaining: number;
   shieldUsedToday: boolean;
+  shieldsPurchasedThisMonth: number;
 }
 
 // Estado seguro por defeito — nunca retorna null ao componente
@@ -37,6 +38,7 @@ const EMPTY_STREAK: StreakState = {
   daysSinceLast: null,
   shieldsRemaining: 0,
   shieldUsedToday: false,
+  shieldsPurchasedThisMonth: 0,
 };
 
 function mapStreak(data: Record<string, any>): StreakState {
@@ -51,8 +53,9 @@ function mapStreak(data: Record<string, any>): StreakState {
     progressPercentage: data.progress_percentage ?? 0,
     streakAtRisk: data.streak_at_risk ?? false,
     daysSinceLast: data.days_since_last_activity ?? null,
-    shieldsRemaining: data.shields_remaining ?? 0,
+    shieldsRemaining: data.shields_remaining ?? 3,
     shieldUsedToday: data.shield_used_today ?? false,
+    shieldsPurchasedThisMonth: data.shields_purchased_this_month ?? 0,
   };
 }
 

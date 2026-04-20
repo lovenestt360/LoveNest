@@ -92,9 +92,7 @@ export default function LoveStreak() {
   const [totalPoints, setTotalPoints]   = useState(0);
   const [loadingPoints, setLoadingPoints] = useState(false);
 
-  // — Shields state —
-  const [shields, setShields]         = useState(0);
-  const [loadingShield, setLoadingShield] = useState(false);
+  // — Shields state (reduzido, dados no hook) —
   const [buyingShield, setBuyingShield] = useState(false);
 
   // — Missions state —
@@ -121,6 +119,7 @@ export default function LoveStreak() {
   const pointsToday      = bothActive ? 10 : 0;
   const shieldUsedToday  = streak?.shieldUsedToday   ?? false;
   const shieldsRemaining = streak?.shieldsRemaining  ?? 0;
+  const shieldsPurchased = streak?.shieldsPurchasedThisMonth ?? 0;
   const missionsDone   = missions.filter(m => m.completed).length;
   const missionsPts    = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
   const canBuyShield   = totalPoints >= 200;
@@ -143,21 +142,7 @@ export default function LoveStreak() {
 
   // ── Fetch shields ─────────────────────────
 
-  const fetchShields = useCallback(async () => {
-    if (!spaceId) return;
-    setLoadingShield(true);
-    try {
-      const { data, error } = await supabase.rpc("fn_get_shields", { p_couple_id: spaceId });
-      console.log("[LoveStreak] Fetched shields:", data, error);
-      setShields((data as any) ?? 0);
-    } catch {
-      setShields(0);
-    } finally {
-      setLoadingShield(false);
-    }
-  }, [spaceId]);
-
-  // ── Fetch missions ────────────────────────
+  // Fetch shields removido (usamos o estado do streak)
 
   const fetchMissions = useCallback(async () => {
     if (!spaceId) return;
@@ -206,7 +191,6 @@ export default function LoveStreak() {
       await Promise.all([
         refresh(),
         fetchPoints(),
-        fetchShields(),
         fetchMissions(),
         fetchTodayActivity(),
         fetchRanking()
@@ -215,7 +199,7 @@ export default function LoveStreak() {
     } catch (err) {
       console.error("[fetchAllData ERROR]:", err);
     }
-  }, [refresh, fetchPoints, fetchShields, fetchMissions, fetchTodayActivity, fetchRanking]);
+  }, [refresh, fetchPoints, fetchMissions, fetchTodayActivity, fetchRanking]);
 
   // ── Buy shield ────────────────────────────
 
@@ -223,17 +207,22 @@ export default function LoveStreak() {
     if (!spaceId || buyingShield || !canBuyShield) return;
     setBuyingShield(true);
     try {
-      const { data, error } = await supabase.rpc("fn_buy_loveshield", {
-        p_couple_id: spaceId,
-        p_cost: 200,
+      const { data, error } = await supabase.rpc("buy_monthly_shield", {
+        p_couple_id: spaceId
       });
       if (error) { toast.error("Erro ao comprar LoveShield."); return; }
+      
       const status = (data as any)?.status;
-      if (status === "insufficient_points") {
+      if (status === "error_insufficient_points") {
         toast.error("Pontos insuficientes para comprar LoveShield.");
+      } else if (status === "error_limit_reached") {
+        toast.error("Só podes comprar 1 escudo extra por mês.");
+      } else if (status === "error_has_free_shields") {
+        toast.error("Não podes comprar enquanto tiveres escudos gratuitos.");
       } else {
-        toast.success("LoveShield comprado! 🛡️ A vossa chama está protegida por 1 dia.");
-        await Promise.all([fetchPoints(), fetchShields()]);
+        toast.success("LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
+        await Promise.all([fetchPoints(), refresh()]);
+        window.dispatchEvent(new CustomEvent("streak-updated"));
       }
     } finally {
       setBuyingShield(false);
@@ -256,9 +245,9 @@ export default function LoveStreak() {
   }, []); // Initial load obrigatório
 
   useEffect(() => {
-    if (activeTab === "pontos")  { fetchPoints(); fetchShields(); }
+    if (activeTab === "pontos")  { fetchPoints(); }
     if (activeTab === "missoes") fetchMissions();
-  }, [activeTab, fetchPoints, fetchShields, fetchMissions]);
+  }, [activeTab, fetchPoints, fetchMissions]);
 
   // Sincronização Global via Evento
   useEffect(() => {
@@ -465,46 +454,67 @@ export default function LoveStreak() {
           {/* ── LOJA: LOVE SHIELD ─────────────────────── */}
           <SectionHeader icon={<ShoppingBag className="w-4 h-4" />} title="Loja de Itens" />
 
-          <div className="glass-card rounded-3xl p-5 border-primary/10 space-y-4">
-            <div className="flex items-start gap-4">
-              {/* Shield icon */}
+          <div className="glass-card rounded-[20px] p-4 border-primary/10 flex flex-col gap-3">
+            <div className="flex items-center gap-4">
               <div className={cn(
-                "h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 text-2xl",
-                "bg-gradient-to-br from-blue-500/20 to-indigo-500/10"
+                "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0",
+                shieldsPurchased > 0 
+                  ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/10 text-amber-500" 
+                  : "bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-blue-500"
               )}>
-                🛡️
+                <ShieldHalf className="w-6 h-6" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-black text-foreground">LoveShield</h3>
-                  <span className="text-[9px] font-black bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                    Tens {loadingShield ? "…" : shields} 🛡️
-                  </span>
+                  <h3 className="text-[15px] font-black text-foreground leading-none">LoveShield</h3>
+                  {shieldsPurchased > 0 && (
+                     <span className="text-[9px] font-black bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                       EXTRA 💎
+                     </span>
+                  )}
                 </div>
-                <p className="text-[11px] text-muted-foreground/70 font-medium leading-snug">
-                  Protege a vossa chama por 1 dia mesmo se falharem
+                
+                <p className="text-[11px] font-medium text-muted-foreground/80 leading-snug">
+                  {shieldsRemaining > 1 && shieldsPurchased === 0 ? (
+                    `Tens ${shieldsRemaining} proteções este mês 🛡️`
+                  ) : shieldsRemaining === 1 && shieldsPurchased === 0 ? (
+                    `Última proteção este mês 🛡️⚠️`
+                  ) : shieldsRemaining === 1 && shieldsPurchased > 0 ? (
+                    `Proteção extra ativa`
+                  ) : shieldsRemaining === 0 && shieldsPurchased === 0 ? (
+                    `Podes comprar 1 proteção extra.`
+                  ) : (
+                    `Sem proteções restantes este mês`
+                  )}
                 </p>
-                <p className="text-[10px] font-black text-amber-600 mt-1">Máximo: 5 shields</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-border/30">
-              <div className="flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-sm font-black tabular-nums">200 pts</span>
+            {/* Ação (Botão) — Só aparece se puder comprar (remaining=0 e purchased=0) */}
+            {shieldsRemaining === 0 && shieldsPurchased === 0 ? (
+              <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <div className="flex items-center gap-1.5">
+                  <Coins className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-sm font-black tabular-nums">200 pts</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant={canBuyShield ? "default" : "outline"}
+                  className="h-8 px-4 rounded-[10px] text-xs font-black shadow-sm"
+                  onClick={buyShield}
+                  disabled={buyingShield || !canBuyShield}
+                >
+                  {buyingShield ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                   canBuyShield ? "Comprar Extra" : "Saldo Insuficiente"}
+                </Button>
               </div>
-              <Button
-                size="sm"
-                variant={canBuyShield ? "default" : "outline"}
-                className="h-9 px-4 rounded-xl text-xs font-black"
-                onClick={buyShield}
-                disabled={buyingShield || !canBuyShield || shields >= 5}
-              >
-                {buyingShield ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-                 shields >= 5 ? "Máximo atingido" :
-                 canBuyShield ? "Comprar 🛡️" : `Faltam ${200 - totalPoints} pts`}
-              </Button>
-            </div>
+            ) : shieldsRemaining === 0 && shieldsPurchased > 0 ? (
+              <div className="flex justify-end pt-2 border-t border-border/30">
+                 <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
+                    Esgotado por este mês
+                 </span>
+              </div>
+            ) : null}
           </div>
 
           {/* Ranking pontos */}
