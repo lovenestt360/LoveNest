@@ -143,14 +143,19 @@ export function useStreak() {
 
       if (status === "success" || status === "already_checked_in") {
         
-        // 🔥 Atualização IMEDIATA baseada no backend (CQRS/Mutate-and-Return)
+        // 🔥 Atualização IMEDIATA do streak (CQRS / Mutate-and-Return)
         if (data?.streak) {
           setStreak(mapStreak(data.streak as Record<string, any>));
         } else {
           await refresh(); // fallback de segurança
         }
 
-        window.dispatchEvent(new Event("streak-updated"));
+        // 🔥 Propagar ranking atualizado via CustomEvent (sem fetch extra no RankingCard)
+        window.dispatchEvent(
+          new CustomEvent("streak-updated", {
+            detail: { ranking: (data as any)?.ranking ?? null },
+          })
+        );
         return { ok: true };
       }
 

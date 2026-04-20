@@ -8,8 +8,9 @@ SET search_path = public
 AS $$
 DECLARE
   v_user_id UUID;
-  v_today DATE := (NOW() AT TIME ZONE 'Africa/Maputo')::DATE;
-  v_streak JSON;
+  v_today   DATE := (NOW() AT TIME ZONE 'Africa/Maputo')::DATE;
+  v_streak  JSON;
+  v_ranking JSONB;
 BEGIN
   -- 🔐 utilizador autenticado REAL
   v_user_id := auth.uid();
@@ -23,25 +24,26 @@ BEGIN
     RETURN json_build_object('status', 'invalid_user');
   END IF;
 
-  -- ❌ evitar duplicação (se já fez check-in, ignoramos para não dar erro)
+  -- ❌ evitar duplicação — mas mesmo assim devolve estado atualizado
   IF EXISTS (
     SELECT 1
     FROM daily_activity
-    WHERE couple_id = p_couple_id
-      AND user_id = v_user_id
-      AND type = p_type
+    WHERE couple_id    = p_couple_id
+      AND user_id      = v_user_id
+      AND type         = p_type
       AND activity_date = v_today
   ) THEN
-    -- 🔥 mesmo assim devolve estado atualizado
-    SELECT public.get_streak(p_couple_id) INTO v_streak;
+    SELECT public.get_streak(p_couple_id)          INTO v_streak;
+    SELECT public.get_ranking_snapshot(p_couple_id) INTO v_ranking;
 
     RETURN json_build_object(
-      'status', 'already_checked_in',
-      'streak', v_streak
+      'status',  'already_checked_in',
+      'streak',  v_streak,
+      'ranking', v_ranking
     );
   END IF;
 
-  -- ✅ insert correto
+  -- ✅ insert correto (com as duas colunas)
   INSERT INTO daily_activity (
     couple_id,
     couple_space_id,
@@ -59,17 +61,17 @@ BEGIN
     NOW()
   );
 
-  -- 🔥 ATUALIZAR STREAK (O ELO PERDIDO)
-  -- A partir da modificação estrutural os triggers de daily_activity desapareceram
-  -- Sendo imperativo chamar o calculador de fogos manualmente!
+  -- 🔥 recalcular streak (trigger removido na v3 — chamada manual obrigatória)
   PERFORM public.update_streak(p_couple_id);
 
-  -- 🔥 buscar estado atualizado REAL
-  SELECT public.get_streak(p_couple_id) INTO v_streak;
+  -- 🔥 buscar estado REAL atualizado (streak + ranking juntos)
+  SELECT public.get_streak(p_couple_id)          INTO v_streak;
+  SELECT public.get_ranking_snapshot(p_couple_id) INTO v_ranking;
 
   RETURN json_build_object(
-    'status', 'success',
-    'streak', v_streak
+    'status',  'success',
+    'streak',  v_streak,
+    'ranking', v_ranking
   );
 
 END;

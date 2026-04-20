@@ -167,7 +167,6 @@ export function RankingCard({
       if (error) { console.error("[RankingCard]", error.message); return; }
       if (!data) return;
 
-      // Adaptacao caso o backend retorne chaves diferentes (ex: rank_position em vez de rank)
       const mappedEntries = data.map((d: any) => ({
         ...d,
         rank: d.rank_position ?? d.rank,
@@ -184,6 +183,35 @@ export function RankingCard({
       setLoading(false);
     }
   }, []);
+
+  // ── Normaliza entradas vindas do get_ranking_snapshot ──────────────────
+  const applySnapshotEntries = useCallback((raw: any[], type: RankType) => {
+    if (!raw?.length) return;
+    const mapped = raw.map((d: any) => ({
+      rank:            d.rank ?? 0,
+      couple_space_id: d.couple_space_id ?? d.couple_id ?? "",
+      house_name:      d.house_name ?? "Casal Mistério",
+      house_image:     d.house_image ?? null,
+      is_verified:     d.is_verified ?? false,
+      current_streak:  d.current_streak ?? 0,
+      total_points:    d.total_points ?? 0,
+    }));
+    setEntries(mapped as RankEntry[]);
+    setLoading(false);
+    console.log(`[RankingCard] 🔥 Ranking injetado via evento (${type}):`, mapped.length, "entradas");
+  }, []);
+
+  // ── Escuta o evento do check-in — atualiza SEM fetch extra ────────────
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const payload = (e as CustomEvent).detail?.ranking;
+      if (!payload) return;
+      const list = rankType === "streak" ? payload.streak : payload.points;
+      applySnapshotEntries(list, rankType);
+    };
+    window.addEventListener("streak-updated", handler);
+    return () => window.removeEventListener("streak-updated", handler);
+  }, [rankType, applySnapshotEntries]);
 
   useEffect(() => { 
     fetchRanking(rankType); 
