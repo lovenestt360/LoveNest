@@ -462,7 +462,7 @@ export default function LoveStreak() {
                   ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/10 text-amber-500" 
                   : "bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-blue-500"
               )}>
-                <ShieldHalf className="w-6 h-6" />
+                <Shield className="w-6 h-6" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
