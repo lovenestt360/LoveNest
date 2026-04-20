@@ -148,7 +148,9 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingMissions(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
+      // Fix timezone bug: Evitar que toISOString() atrase o dia para bater com (Africa/Maputo) do DB
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const { data, error } = await supabase
         .from("daily_activity" as any)
         .select("type, user_id")
