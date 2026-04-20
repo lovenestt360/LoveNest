@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function logActivity(
   coupleId: string | null | undefined,
-  _type?: string  // mantido por compatibilidade com callers existentes, ignorado pelo novo backend
+  type: string = "checkin"
 ): Promise<void> {
   if (!coupleId) {
     console.log("[logActivity] Ignorado: coupleId em falta");
@@ -33,7 +33,7 @@ export async function logActivity(
 
     const { data, error } = await supabase.rpc("log_daily_activity", {
       p_couple_id: coupleId,
-      p_user_id:   user.id,     // EXPLÍCITO — resolve "status: invalid_user"
+      p_type: type,
     });
 
     if (error) {
