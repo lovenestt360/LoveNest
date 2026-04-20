@@ -9,6 +9,7 @@ AS $$
 DECLARE
   v_user_id UUID;
   v_today DATE := (NOW() AT TIME ZONE 'Africa/Maputo')::DATE;
+  v_streak JSON;
 BEGIN
   -- 🔐 utilizador autenticado REAL
   v_user_id := auth.uid();
@@ -22,7 +23,7 @@ BEGIN
     RETURN json_build_object('status', 'invalid_user');
   END IF;
 
-  -- ❌ evitar duplicação
+  -- ❌ evitar duplicação (se já fez check-in, ignoramos para não dar erro)
   IF EXISTS (
     SELECT 1
     FROM daily_activity
@@ -31,7 +32,13 @@ BEGIN
       AND type = p_type
       AND activity_date = v_today
   ) THEN
-    RETURN json_build_object('status', 'already_checked_in');
+    -- 🔥 mesmo assim devolve estado atualizado
+    SELECT public.get_streak(p_couple_id) INTO v_streak;
+
+    RETURN json_build_object(
+      'status', 'already_checked_in',
+      'streak', v_streak
+    );
   END IF;
 
   -- ✅ insert correto
@@ -52,12 +59,18 @@ BEGIN
     NOW()
   );
 
-  -- 🔥 ATUALIZAR STREAK MANUALMENTE
-  -- A partir da v3 os triggers foram removidos por questões de performance/locks.
-  -- É imperativo chamar a função de cálculo de streak diretamente!
+  -- 🔥 ATUALIZAR STREAK (O ELO PERDIDO)
+  -- A partir da modificação estrutural os triggers de daily_activity desapareceram
+  -- Sendo imperativo chamar o calculador de fogos manualmente!
   PERFORM public.update_streak(p_couple_id);
 
-  RETURN json_build_object('status', 'success');
+  -- 🔥 buscar estado atualizado REAL
+  SELECT public.get_streak(p_couple_id) INTO v_streak;
+
+  RETURN json_build_object(
+    'status', 'success',
+    'streak', v_streak
+  );
 
 END;
 $$;

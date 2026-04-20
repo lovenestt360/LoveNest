@@ -142,7 +142,14 @@ export function useStreak() {
       }
 
       if (status === "success" || status === "already_checked_in") {
-        await refresh();
+        
+        // 🔥 Atualização IMEDIATA baseada no backend (CQRS/Mutate-and-Return)
+        if (data?.streak) {
+          setStreak(mapStreak(data.streak as Record<string, any>));
+        } else {
+          await refresh(); // fallback de segurança
+        }
+
         window.dispatchEvent(new Event("streak-updated"));
         return { ok: true };
       }
