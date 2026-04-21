@@ -36,7 +36,7 @@ export function AuthOnlyRoute() {
   }
 
   if (!verifiedUser) {
-    return <Navigate to="/entrar" replace />;
+    return <Navigate to="/entrar" state={{ bounced: "A sua sessão expirou automaticamente. Verifique se a Data e Hora do seu computador estão corretas ou limpe o cache do navegador." }} replace />;
   }
 
   return <Outlet />;

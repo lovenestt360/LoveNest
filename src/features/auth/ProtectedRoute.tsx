@@ -124,7 +124,7 @@ export function ProtectedRoute() {
   }
 
   if (!verifiedUser) {
-    return <Navigate to="/entrar" replace />;
+    return <Navigate to="/entrar" state={{ bounced: "A sua sessão expirou automaticamente ou o dispositivo barrou a leitura. Verifique a Data/Hora do PC." }} replace />;
   }
 
   if (checkError) {

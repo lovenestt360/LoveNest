@@ -14,6 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -21,6 +22,19 @@ export default function Login() {
       if (session) navigate("/casa", { replace: true });
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (location.state && (location.state as any).bounced) {
+      toast({
+        variant: "destructive",
+        title: "Sessão Expirada Precocemente",
+        description: (location.state as any).bounced,
+        duration: 8000,
+      });
+      // clear state so it doesn't loop
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, toast]);
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();

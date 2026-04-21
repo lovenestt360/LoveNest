@@ -50,7 +50,7 @@ export default function CoupleSpace() {
 
     if (!session) {
       // Rota está em AuthOnlyRoute, mas mantemos fallback.
-      navigate("/entrar", { replace: true });
+      navigate("/entrar", { replace: true, state: { bounced: "O seu dispositivo perdeu a sessão durante o carregamento. O relógio/fuso horário do PC está correto?" } });
       return;
     }
 
