@@ -11,18 +11,20 @@ export function ProtectedRoute() {
   const { freeMode, loading: freeModeLoading } = useFreeMode();
   
   // Anti-Lag Verification
-  const [isVerifying, setIsVerifying] = useState(false);
+  // isVerifying = true desde o mount se n houver user para dar tempo à leitura
+  const [isVerifying, setIsVerifying] = useState(!user);
   const [verifiedUser, setVerifiedUser] = useState<any>(user);
 
   useEffect(() => {
     if (!loading && !user) {
-      setIsVerifying(true);
+      if (!isVerifying) setIsVerifying(true);
       supabase.auth.getSession().then(({ data }) => {
         setVerifiedUser(data.session?.user ?? null);
         setIsVerifying(false);
       });
     } else {
       setVerifiedUser(user);
+      setIsVerifying(false);
     }
   }, [user, loading]);
 

@@ -5,18 +5,22 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function AuthOnlyRoute() {
   const { user, loading } = useAuth();
-  const [isVerifying, setIsVerifying] = useState(false);
+  
+  // Anti-Lag Verification
+  // Inicia isVerifying = true se não houver user, para bloquear o navigate prematuro antes do useEffect
+  const [isVerifying, setIsVerifying] = useState(!user);
   const [verifiedUser, setVerifiedUser] = useState<any>(user);
 
   useEffect(() => {
     if (!loading && !user) {
-      setIsVerifying(true);
+      if (!isVerifying) setIsVerifying(true);
       supabase.auth.getSession().then(({ data }) => {
         setVerifiedUser(data.session?.user ?? null);
         setIsVerifying(false);
       });
     } else {
       setVerifiedUser(user);
+      setIsVerifying(false);
     }
   }, [user, loading]);
 
