@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.log_daily_activity(
 )
 RETURNS JSON
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
