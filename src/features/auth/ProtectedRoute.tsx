@@ -9,6 +9,23 @@ export function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { freeMode, loading: freeModeLoading } = useFreeMode();
+  
+  // Anti-Lag Verification
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifiedUser, setVerifiedUser] = useState<any>(user);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      setIsVerifying(true);
+      supabase.auth.getSession().then(({ data }) => {
+        setVerifiedUser(data.session?.user ?? null);
+        setIsVerifying(false);
+      });
+    } else {
+      setVerifiedUser(user);
+    }
+  }, [user, loading]);
+
   const [hasCoupleSpace, setHasCoupleSpace] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
   const [checkError, setCheckError] = useState<string | null>(null);
@@ -17,7 +34,7 @@ export function ProtectedRoute() {
   const [savingTrial, setSavingTrial] = useState(false);
 
   const runCheck = async () => {
-    if (!user) {
+    if (!verifiedUser) {
       setChecking(false);
       return;
     }
@@ -29,7 +46,7 @@ export function ProtectedRoute() {
       const { data, error } = await supabase
         .from("members")
         .select("couple_space_id")
-        .eq("user_id", user.id)
+        .eq("user_id", verifiedUser.id)
         .maybeSingle();
 
       if (error) {
@@ -42,7 +59,7 @@ export function ProtectedRoute() {
       setHasCoupleSpace(!!data?.couple_space_id);
 
       // Check Suspension & Trial Status
-      const { data: houseMember } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
+      const { data: houseMember } = await supabase.from("members").select("couple_space_id").eq("user_id", verifiedUser.id).maybeSingle();
       if (houseMember) {
         const { data: house } = await supabase.from("couple_spaces").select("*").eq("id", houseMember.couple_space_id).maybeSingle();
         if (house) {
@@ -65,7 +82,7 @@ export function ProtectedRoute() {
   useEffect(() => {
     runCheck();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, location.pathname]);
+  }, [verifiedUser, location.pathname]);
 
   const handleActivateTrial = async () => {
     if (!houseData?.id) return;
@@ -93,7 +110,7 @@ export function ProtectedRoute() {
     }
   };
 
-  if (loading || checking || freeModeLoading) {
+  if (loading || checking || freeModeLoading || isVerifying) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -104,7 +121,7 @@ export function ProtectedRoute() {
     );
   }
 
-  if (!user) {
+  if (!verifiedUser) {
     return <Navigate to="/entrar" replace />;
   }
 
