@@ -10,6 +10,10 @@
 --   3. Marca a recompensa como entregue.
 -- ══════════════════════════════════════════════════════════════════════
 
+-- Garantir que a coluna "reward_given" existe na tabela referrals para evitar erros "column does not exist"
+ALTER TABLE IF EXISTS public.referrals 
+ADD COLUMN IF NOT EXISTS reward_given boolean NOT NULL DEFAULT false;
+
 CREATE OR REPLACE FUNCTION public.trg_process_referral_reward()
 RETURNS TRIGGER AS $$
 DECLARE
