@@ -32,7 +32,7 @@ export async function logActivity(
     console.log(`[logActivity] → couple=${coupleId} | user=${user.id}`);
 
     const { data, error } = await supabase.rpc("log_daily_activity", {
-      p_couple_id: coupleId,
+      p_couple_space_id: coupleId,
       p_type: type,
     });
 

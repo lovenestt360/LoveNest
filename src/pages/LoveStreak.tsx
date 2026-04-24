@@ -130,7 +130,7 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingPoints(true);
     try {
-      const { data, error } = await supabase.rpc("get_total_points", { p_couple_id: spaceId });
+      const { data, error } = await supabase.rpc("get_total_points", { p_couple_space_id: spaceId });
       console.log("[LoveStreak] Fetched points:", data, error);
       setTotalPoints((data as number) ?? 0);
     } catch {
@@ -154,7 +154,7 @@ export default function LoveStreak() {
       const { data, error } = await supabase
         .from("daily_activity" as any)
         .select("type, user_id")
-        .eq("couple_id", spaceId)
+        .eq("couple_space_id", spaceId)
         .eq("activity_date", today);
 
       console.log("[LoveStreak] Missions raw data (daily_activity):", data, "Error:", error);
@@ -209,8 +209,8 @@ export default function LoveStreak() {
     if (!spaceId || buyingShield || !canBuyShield) return;
     setBuyingShield(true);
     try {
-      const { data, error } = await supabase.rpc("buy_monthly_shield", {
-        p_couple_id: spaceId
+      const { data, error } = await supabase.rpc("fn_buy_loveshield", {
+        p_couple_space_id: spaceId
       });
       if (error) { toast.error("Erro ao comprar LoveShield."); return; }
       

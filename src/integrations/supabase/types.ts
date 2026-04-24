@@ -2089,9 +2089,60 @@ export type Database = {
         Returns: boolean
       }
       current_couple_space_id: { Args: never; Returns: string }
+      fn_buy_loveshield: {
+        Args: { p_couple_space_id: string; p_cost?: number }
+        Returns: Json
+      }
+      fn_count_active_members: {
+        Args: { p_couple_space_id: string }
+        Returns: number
+      }
+      fn_get_global_ranking: {
+        Args: { p_rank_type?: string }
+        Returns: {
+          rank: number
+          couple_space_id: string
+          house_name: string
+          house_image: string | null
+          is_verified: boolean
+          current_streak: number
+          total_points: number
+        }[]
+      }
+      fn_get_or_create_daily_missions_v5: {
+        Args: { p_couple_space_id: string }
+        Returns: {
+          cdm_id: string
+          mission_id: string
+          title: string
+          description: string
+          emoji: string
+          mission_type: string
+          target_count: number
+          reward_points: number
+          progress: number
+          completed: boolean
+        }[]
+      }
+      fn_get_shields: {
+        Args: { p_couple_space_id: string }
+        Returns: number
+      }
       get_partner_cycle_summary: {
         Args: { _partner_user_id: string }
         Returns: Json
+      }
+      get_ranking_snapshot: {
+        Args: { p_couple_space_id: string }
+        Returns: Json
+      }
+      get_streak: {
+        Args: { p_couple_space_id: string }
+        Returns: Json
+      }
+      get_total_points: {
+        Args: { p_couple_space_id: string }
+        Returns: number
       }
       get_user_couple_space_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
@@ -2099,9 +2150,17 @@ export type Database = {
         Args: { _couple_space_id: string }
         Returns: boolean
       }
+      log_daily_activity: {
+        Args: { p_couple_space_id: string; p_type?: string }
+        Returns: Json
+      }
       sync_streak_v3: {
         Args: { p_couple_space_id: string }
         Returns: Json
+      }
+      update_streak: {
+        Args: { p_couple_space_id: string }
+        Returns: undefined
       }
     }
     Enums: {

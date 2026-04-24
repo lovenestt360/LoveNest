@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { logActivity } from "@/lib/logActivity";
 
 // ─────────────────────────────────────────────
 // StreakState — interface completa
@@ -82,7 +81,7 @@ export function useStreak() {
     try {
       console.log("[useStreak] RPC get_streak a iniciar para:", spaceId);
       const { data, error } = await supabase.rpc("get_streak", {
-        p_couple_id: spaceId,
+        p_couple_space_id: spaceId,
       });
 
       console.log("[useStreak] Resposta get_streak:", data, "Erro:", error);
@@ -125,7 +124,7 @@ export function useStreak() {
       }
 
       const { data, error } = await supabase.rpc("log_daily_activity", {
-        p_couple_id: spaceId,
+        p_couple_space_id: spaceId,
         p_type: "checkin"
       });
       console.log("[CHECKIN RESULT]:", data);
@@ -135,7 +134,8 @@ export function useStreak() {
         return { ok: false, message: error.message };
       }
 
-      const status = (data as any)?.status;
+      const result = data as Record<string, any> | null;
+      const status = result?.status;
 
       if (status === "invalid_user") {
         return { ok: false, message: "Utilizador rejeitado no servidor." };
@@ -145,12 +145,11 @@ export function useStreak() {
       }
 
       if (status === "success" || status === "already_checked_in") {
-        
-        // 🔥 Atualização IMEDIATA do streak (CQRS / Mutate-and-Return)
-        if (data?.streak) {
-          setStreak(mapStreak(data.streak as Record<string, any>));
+        // Atualização imediata se o servidor devolver streak embutido, senão refresca
+        if (result?.streak) {
+          setStreak(mapStreak(result.streak as Record<string, any>));
         } else {
-          await refresh(); // fallback de segurança
+          await refresh();
         }
 
         // 🔥 Propagar ranking atualizado via CustomEvent (sem fetch extra no RankingCard)
