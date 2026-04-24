@@ -41,18 +41,19 @@ const EMPTY_STREAK: StreakState = {
 };
 
 function mapStreak(data: Record<string, any>): StreakState {
+  const current = data.streak ?? data.current ?? data.current_streak ?? 0;
   return {
-    currentStreak: data.current ?? data.current_streak ?? 0,
-    longestStreak: data.longest ?? data.longest_streak ?? 0,
+    currentStreak: current,
+    longestStreak: data.longest ?? data.longest_streak ?? current,
     lastActiveDate: data.last_date ?? data.last_active_date ?? null,
     status: data.status ?? "active",
-    bothActiveToday: data.both_active_today ?? false,
-    activeCount: data.active_today_count ?? 0,
+    bothActiveToday: data.both_active_today ?? (data.active_today ?? 0) >= 2,
+    activeCount: data.active_today_count ?? data.active_today ?? 0,
     totalMembers: data.total_members ?? 0,
-    progressPercentage: data.progress_percentage ?? 0,
+    progressPercentage: data.progress_percentage ?? Math.min(Math.round((current / 28) * 100), 100),
     streakAtRisk: data.streak_at_risk ?? false,
     daysSinceLast: data.days_since_last_activity ?? null,
-    shieldsRemaining: data.shields_remaining ?? 3,
+    shieldsRemaining: data.shields_remaining ?? 0,
     shieldUsedToday: data.shield_used_today ?? false,
     shieldsPurchasedThisMonth: data.shields_purchased_this_month ?? 0,
   };
@@ -136,18 +137,21 @@ export function useStreak() {
 
       const result = data as Record<string, any> | null;
       const status = result?.status;
+      const success = result?.success === true || status === "success" || status === "already_checked_in";
 
       if (status === "invalid_user") {
         return { ok: false, message: "Utilizador rejeitado no servidor." };
       }
       if (status === "unauthenticated") {
-         return { ok: false, message: "Backend detectou auth nulo (auth.uid=null)." };
+        return { ok: false, message: "Backend detectou auth nulo (auth.uid=null)." };
       }
 
-      if (status === "success" || status === "already_checked_in") {
-        // Atualização imediata se o servidor devolver streak embutido, senão refresca
-        if (result?.streak) {
-          setStreak(mapStreak(result.streak as Record<string, any>));
+      if (success) {
+        // V5 devolve {success, streak, active_today} — mapear directamente
+        if (result && ("streak" in result || "current_streak" in result)) {
+          setStreak(mapStreak(result));
+        } else if (result?.streak_data) {
+          setStreak(mapStreak(result.streak_data as Record<string, any>));
         } else {
           await refresh();
         }

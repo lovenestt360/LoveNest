@@ -41,11 +41,12 @@ export async function logActivity(
       return;
     }
 
-    const status = (data as any)?.status;
-    if (status === "invalid_user") {
+    const res = data as any;
+    if (res?.status === "invalid_user") {
       console.warn("[logActivity] Utilizador não é membro do casal:", coupleId);
     } else {
-      console.log("[logActivity] ✓ Registo ok — streak:", (data as any)?.current_streak ?? "?");
+      const streak = res?.streak ?? res?.current_streak ?? "?";
+      console.log("[logActivity] ✓ Registo ok — streak:", streak);
     }
   } catch (err) {
     console.error("[logActivity] Excepção inesperada:", err);
