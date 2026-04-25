@@ -1,54 +1,34 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * ─────────────────────────────────────────────────────────────────
- * logActivity — Single source of truth para registo de actividade
- *
- * REGRAS:
- *   1. Busca o user_id explicitamente (nunca depende de auth.uid() no SQL)
- *   2. Fire-and-forget seguro (pode ser chamado sem await)
- *   3. Nunca lança erros — nunca bloqueia a UI
- *   4. Logs de debug para diagnóstico em produção
- * ─────────────────────────────────────────────────────────────────
+ * Fire-and-forget activity log — called from Chat, Mood, Prayer, etc.
+ * Never throws, never blocks the UI.
+ * V5 backend uses auth.uid() internally — no need to pass user_id.
  */
 export async function logActivity(
   coupleId: string | null | undefined,
-  type: string = "checkin"
+  type: string = "general"
 ): Promise<void> {
-  if (!coupleId) {
-    console.log("[logActivity] Ignorado: coupleId em falta");
-    return;
-  }
+  if (!coupleId) return;
 
   try {
-    // CRÍTICO: buscar user_id explicitamente
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      console.warn("[logActivity] Sem utilizador autenticado:", authError?.message);
-      return;
-    }
-
-    console.log(`[logActivity] → couple=${coupleId} | user=${user.id}`);
-
     const { data, error } = await supabase.rpc("log_daily_activity", {
       p_couple_space_id: coupleId,
       p_type: type,
     });
 
     if (error) {
-      console.error("[logActivity] Erro RPC:", error.message);
+      console.error("[logActivity] RPC error:", error.message);
       return;
     }
 
     const res = data as any;
-    if (res?.status === "invalid_user") {
-      console.warn("[logActivity] Utilizador não é membro do casal:", coupleId);
+    if (!res?.success) {
+      console.warn("[logActivity] Unexpected response:", res);
     } else {
-      const streak = res?.streak ?? res?.current_streak ?? "?";
-      console.log("[logActivity] ✓ Registo ok — streak:", streak);
+      console.log(`[logActivity] ✓ type=${type} streak=${res.streak ?? "?"} active_today=${res.active_today ?? "?"}`);
     }
-  } catch (err) {
-    console.error("[logActivity] Excepção inesperada:", err);
+  } catch (err: any) {
+    console.error("[logActivity] Exception:", err?.message);
   }
 }

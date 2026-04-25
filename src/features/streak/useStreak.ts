@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 
 // ─────────────────────────────────────────────
-// StreakState — interface completa
+// StreakState
 // ─────────────────────────────────────────────
 
 export interface StreakState {
@@ -12,24 +12,24 @@ export interface StreakState {
   lastActiveDate: string | null;
   status: "active" | "broken" | "frozen" | "invalid";
   bothActiveToday: boolean;
-  activeCount: number;
-  totalMembers: number;
+  myCheckedIn: boolean;       // current user checked in today
+  activeCount: number;        // how many members checked in today
+  totalMembers: number;       // total members in couple_space
   progressPercentage: number;
   streakAtRisk: boolean;
   daysSinceLast: number | null;
-  // LoveShield
   shieldsRemaining: number;
   shieldUsedToday: boolean;
   shieldsPurchasedThisMonth: number;
 }
 
-// Estado seguro por defeito — nunca retorna null ao componente
-const EMPTY_STREAK: StreakState = {
+const EMPTY: StreakState = {
   currentStreak: 0,
   longestStreak: 0,
   lastActiveDate: null,
   status: "active",
   bothActiveToday: false,
+  myCheckedIn: false,
   activeCount: 0,
   totalMembers: 0,
   progressPercentage: 0,
@@ -40,140 +40,176 @@ const EMPTY_STREAK: StreakState = {
   shieldsPurchasedThisMonth: 0,
 };
 
-function mapStreak(data: Record<string, any>): StreakState {
-  const current = data.streak ?? data.current ?? data.current_streak ?? 0;
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function todayLocalISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function buildState(
+  raw: Record<string, any>,
+  memberCount: number,
+  activeUserIds: Set<string>,
+  currentUserId: string | undefined
+): StreakState {
+  const current = raw.streak ?? raw.current ?? raw.current_streak ?? 0;
+  const activeCount = activeUserIds.size;
+  const bothActive = memberCount >= 2 && activeCount >= memberCount;
+  const myCheckedIn = !!currentUserId && activeUserIds.has(currentUserId);
+  const lastDate: string | null = raw.last_date ?? raw.last_active_date ?? null;
+
+  const today = todayLocalISO();
+  const yesterday = (() => {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
+  const streakAtRisk =
+    !bothActive &&
+    memberCount >= 2 &&
+    current > 0 &&
+    lastDate === yesterday;
+
+  const daysSinceLast = lastDate
+    ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86_400_000)
+    : null;
+
   return {
     currentStreak: current,
-    longestStreak: data.longest ?? data.longest_streak ?? current,
-    lastActiveDate: data.last_date ?? data.last_active_date ?? null,
-    status: data.status ?? "active",
-    bothActiveToday: data.both_active_today ?? (data.active_today ?? 0) >= 2,
-    activeCount: data.active_today_count ?? data.active_today ?? 0,
-    totalMembers: data.total_members ?? 0,
-    progressPercentage: data.progress_percentage ?? Math.min(Math.round((current / 28) * 100), 100),
-    streakAtRisk: data.streak_at_risk ?? false,
-    daysSinceLast: data.days_since_last_activity ?? null,
-    shieldsRemaining: data.shields_remaining ?? 0,
-    shieldUsedToday: data.shield_used_today ?? false,
-    shieldsPurchasedThisMonth: data.shields_purchased_this_month ?? 0,
+    longestStreak: raw.longest ?? raw.longest_streak ?? current,
+    lastActiveDate: lastDate,
+    status: raw.status ?? (current === 0 ? "active" : "active"),
+    bothActiveToday: bothActive,
+    myCheckedIn,
+    activeCount,
+    totalMembers: memberCount,
+    progressPercentage: Math.min(Math.round((current / 28) * 100), 100),
+    streakAtRisk,
+    daysSinceLast,
+    shieldsRemaining: raw.shields_remaining ?? 0,
+    shieldUsedToday: raw.shield_used_today ?? false,
+    shieldsPurchasedThisMonth: raw.shields_purchased_this_month ?? 0,
   };
 }
 
 // ─────────────────────────────────────────────
-// useStreak — hook principal
-// GARANTIA: nunca devolve streak === null
-//           em caso de erro, usa EMPTY_STREAK
+// useStreak
 // ─────────────────────────────────────────────
 
 export function useStreak() {
   const spaceId = useCoupleSpaceId();
 
-  // Inicializa com EMPTY_STREAK — nunca null
-  const [streak, setStreak] = useState<StreakState>(EMPTY_STREAK);
+  const [streak, setStreak] = useState<StreakState>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
 
+  // ── refresh: 3 parallel queries ────────────
   const refresh = useCallback(async () => {
-    if (!spaceId) {
-      setLoading(false);
-      return;
-    }
+    if (!spaceId) { setLoading(false); return; }
+
     setLoading(true);
+    setError(null);
+
     try {
-      console.log("[useStreak] RPC get_streak a iniciar para:", spaceId);
-      const { data, error } = await supabase.rpc("get_streak", {
-        p_couple_space_id: spaceId,
-      });
+      const today = todayLocalISO();
 
-      console.log("[useStreak] Resposta get_streak:", data, "Erro:", error);
+      const [streakRes, membersRes, activityRes, userRes] = await Promise.all([
+        supabase.rpc("get_streak", { p_couple_space_id: spaceId }),
 
-      if (error) {
-        console.error("[useStreak] Erro get_streak:", error.message);
-        setStreak(EMPTY_STREAK);
+        supabase
+          .from("members")
+          .select("user_id", { count: "exact", head: true })
+          .eq("couple_space_id", spaceId),
+
+        supabase
+          .from("daily_activity" as any)
+          .select("user_id")
+          .eq("couple_space_id", spaceId)
+          .eq("activity_date", today),
+
+        supabase.auth.getUser(),
+      ]);
+
+      // Errors that must surface
+      if (streakRes.error) {
+        setError(`get_streak falhou: ${streakRes.error.message}`);
+        setStreak(EMPTY);
+        return;
+      }
+      if (membersRes.error) {
+        setError(`members query falhou: ${membersRes.error.message}`);
+        setStreak(EMPTY);
         return;
       }
 
-      const streakData = data ? mapStreak(data as Record<string, any>) : EMPTY_STREAK;
-      console.log("[useStreak] Estado mapeado:", streakData);
-      setStreak(streakData);
-    } catch (err) {
-      console.error("[useStreak] Excepção inesperada:", err);
-      setStreak(EMPTY_STREAK);
+      const memberCount = membersRes.count ?? 0;
+      const rows = (activityRes.data as { user_id: string }[] | null) ?? [];
+      const activeUserIds = new Set(rows.map((r) => r.user_id));
+      const currentUserId = userRes.data?.user?.id;
+      const raw = (streakRes.data as Record<string, any> | null) ?? {};
+
+      setStreak(buildState(raw, memberCount, activeUserIds, currentUserId));
+    } catch (err: any) {
+      const msg = err?.message ?? "Erro inesperado em useStreak.refresh";
+      setError(msg);
+      setStreak(EMPTY);
     } finally {
       setLoading(false);
     }
   }, [spaceId]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  // ──────────────────────────────────────────
-  // checkIn — ação principal
-  // ──────────────────────────────────────────
-  const checkIn = useCallback(async (): Promise<{ ok: boolean, message?: string }> => {
+  // ── checkIn ────────────────────────────────
+  const checkIn = useCallback(async (): Promise<{ ok: boolean; message?: string }> => {
     if (!spaceId || checkingIn) return { ok: false, message: "A aguardar processamento..." };
 
     setCheckingIn(true);
 
     try {
-      const { data: userData } = await supabase.auth.getUser();
-
-      if (!userData?.user) {
-        console.error("User not authenticated");
-        return { ok: false, message: "Sessão expirada. Recarregue a página." };
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) {
+        return { ok: false, message: "Sessão expirada. Recarrega a página." };
       }
 
-      const { data, error } = await supabase.rpc("log_daily_activity", {
+      const { data, error: rpcError } = await supabase.rpc("log_daily_activity", {
         p_couple_space_id: spaceId,
-        p_type: "checkin"
+        p_type: "checkin",
       });
-      console.log("[CHECKIN RESULT]:", data);
 
-      if (error) {
-        console.error("[CHECKIN ERROR]:", error.message);
-        return { ok: false, message: error.message };
+      // RPC-level error (network, auth, etc.)
+      if (rpcError) {
+        return { ok: false, message: `Erro do servidor: ${rpcError.message}` };
       }
 
-      const result = data as Record<string, any> | null;
-      const status = result?.status;
-      const success = result?.success === true || status === "success" || status === "already_checked_in";
+      const res = data as Record<string, any> | null;
 
-      if (status === "invalid_user") {
-        return { ok: false, message: "Utilizador rejeitado no servidor." };
-      }
-      if (status === "unauthenticated") {
-        return { ok: false, message: "Backend detectou auth nulo (auth.uid=null)." };
-      }
-
-      if (success) {
-        // V5 devolve {success, streak, active_today} — mapear directamente
-        if (result && ("streak" in result || "current_streak" in result)) {
-          setStreak(mapStreak(result));
-        } else if (result?.streak_data) {
-          setStreak(mapStreak(result.streak_data as Record<string, any>));
-        } else {
-          await refresh();
+      // Application-level errors returned in payload
+      if (!res?.success) {
+        if (res?.status === "invalid_user") {
+          return { ok: false, message: "Não és membro deste espaço." };
         }
-
-        // 🔥 Propagar ranking atualizado via CustomEvent (sem fetch extra no RankingCard)
-        window.dispatchEvent(
-          new CustomEvent("streak-updated", {
-            detail: { ranking: (data as any)?.ranking ?? null },
-          })
-        );
-        return { ok: true };
+        if (res?.status === "unauthenticated") {
+          return { ok: false, message: "Sessão inválida. Recarrega a página." };
+        }
+        return { ok: false, message: "Resposta inesperada do servidor." };
       }
 
-      return { ok: false, message: `Status inesperado: ${status}` };
+      // Refresh state from DB (source of truth)
+      await refresh();
 
+      window.dispatchEvent(new CustomEvent("streak-updated", { detail: { spaceId } }));
+      return { ok: true };
     } catch (err: any) {
-      console.error("[CHECKIN EXCEPTION]:", err);
-      return { ok: false, message: err?.message || "Excepção inesperada" };
+      return { ok: false, message: err?.message ?? "Erro inesperado" };
     } finally {
       setCheckingIn(false);
     }
   }, [spaceId, checkingIn, refresh]);
 
-  return { streak, loading, refresh, checkIn, checkingIn };
+  return { streak, loading, error, refresh, checkIn, checkingIn };
 }

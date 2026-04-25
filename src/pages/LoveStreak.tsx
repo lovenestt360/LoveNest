@@ -85,7 +85,7 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 export default function LoveStreak() {
   const navigate   = useNavigate();
   const spaceId    = useCoupleSpaceId();
-  const { streak, loading, checkIn, checkingIn, refresh } = useStreak();
+  const { streak, loading, error: streakError, checkIn, checkingIn, refresh } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>("streaks");
 
   // — Points state —
@@ -101,19 +101,21 @@ export default function LoveStreak() {
 
   // Sincronização
   const [refreshKey, setRefreshKey] = useState(0);
-  const [localCompleted, setLocalCompleted] = useState(false);
 
+  // Show streak error non-silently
   useEffect(() => {
-    setLocalCompleted(!!streak?.bothActiveToday);
-  }, [streak?.bothActiveToday]);
+    if (streakError) toast.error(`Streak: ${streakError}`);
+  }, [streakError]);
+
   // ── Helpers ───────────────────────────────
 
   const currentStreak    = streak?.currentStreak  ?? 0;
   const longestStreak    = streak?.longestStreak  ?? 0;
-  const bothActive       = (streak?.bothActiveToday ?? false) || localCompleted;
+  const bothActive       = streak?.bothActiveToday ?? false;
+  const myCheckedIn      = streak?.myCheckedIn     ?? false;
   const streakAtRisk     = streak?.streakAtRisk   ?? false;
   const activeCount      = streak?.activeCount    ?? 0;
-  const totalMembers     = streak?.totalMembers   ?? 2;
+  const totalMembers     = streak?.totalMembers   ?? 0;
   const progress         = streak?.progressPercentage ?? 0;
   const isZero           = currentStreak === 0;
   const pointsToday      = bothActive ? 10 : 0;
@@ -235,8 +237,9 @@ export default function LoveStreak() {
 
   const handleCheckIn = async () => {
     const { ok, message } = await checkIn();
-    
-    if (!ok) {
+    if (ok) {
+      toast.success("Check-in registado! 🔥");
+    } else {
       toast.error(message || "Não foi possível registar o check-in.");
     }
   };
@@ -361,13 +364,26 @@ export default function LoveStreak() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-black text-foreground/90">
-                    {bothActive ? "Hoje completo 💕" : isZero ? "À espera do primeiro gesto" : "Ainda falta alguém"}
+                    {bothActive
+                      ? "Hoje completo 💕"
+                      : myCheckedIn
+                      ? "O teu check-in está feito ✅"
+                      : isZero
+                      ? "À espera do primeiro gesto"
+                      : "Ainda falta alguém"}
                   </h2>
                   <p className="text-xs text-muted-foreground/60 font-medium mt-0.5">
-                    {activeCount}/{totalMembers} {activeCount === 1 ? "pessoa activa" : "pessoas activas"} hoje
+                    {totalMembers > 0
+                      ? `${activeCount}/${totalMembers} ${activeCount === 1 ? "pessoa activa" : "pessoas activas"} hoje`
+                      : "A carregar membros..."}
                   </p>
+                  {myCheckedIn && !bothActive && totalMembers >= 2 && (
+                    <p className="text-xs text-amber-600 font-bold mt-1">
+                      ⏳ Aguarda que o teu parceiro faça check-in
+                    </p>
+                  )}
                 </div>
-                <Heart className={cn("w-5 h-5 shrink-0 transition-all duration-700", bothActive ? "fill-primary text-primary scale-110" : "text-muted-foreground/20")} />
+                <Heart className={cn("w-5 h-5 shrink-0 transition-all duration-700", bothActive ? "fill-primary text-primary scale-110" : myCheckedIn ? "text-primary/40" : "text-muted-foreground/20")} />
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
@@ -620,7 +636,7 @@ export default function LoveStreak() {
       )}
 
       {/* ── CTA FIXO ─────────────────────────────────── */}
-      {!bothActive && (
+      {!myCheckedIn && !bothActive && (
         <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
           <div className="max-w-md mx-auto">
             <button
@@ -639,6 +655,28 @@ export default function LoveStreak() {
             >
               {checkingIn ? "A registar..." : "👉 Fazer check-in agora"}
             </button>
+          </div>
+        </div>
+      )}
+      {/* Aguarda parceiro — só visível se eu fiz check-in mas ambos ainda não */}
+      {myCheckedIn && !bothActive && (
+        <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
+          <div className="max-w-md mx-auto">
+            <div
+              style={{
+                width: "100%",
+                padding: "14px",
+                borderRadius: "12px",
+                background: "rgba(0,0,0,0.05)",
+                color: "#888",
+                fontWeight: "600",
+                border: "1px solid rgba(0,0,0,0.08)",
+                textAlign: "center",
+                fontSize: "14px"
+              }}
+            >
+              ✅ Check-in feito · Aguarda o teu parceiro
+            </div>
           </div>
         </div>
       )}
