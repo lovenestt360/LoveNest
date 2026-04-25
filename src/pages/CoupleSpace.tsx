@@ -44,17 +44,16 @@ export default function CoupleSpace() {
   const refresh = async () => {
     setState({ status: "loading" });
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    // getUser() validates the token with Supabase server and auto-refreshes
+    // it if expired — more reliable than getSession() which only reads cache.
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!session) {
-      // Rota está em AuthOnlyRoute, mas mantemos fallback.
-      navigate("/entrar", { replace: true, state: { bounced: "O seu dispositivo perdeu a sessão durante o carregamento. O relógio/fuso horário do PC está correto?" } });
+    if (!user || authError) {
+      navigate("/entrar", { replace: true });
       return;
     }
 
-    setCurrentUserId(session.user.id);
+    setCurrentUserId(user.id);
 
     // Use SECURITY DEFINER RPC to bypass RLS recursion on members table
     const { data: coupleSpaceId, error: memberErr } = await supabase
@@ -96,7 +95,7 @@ export default function CoupleSpace() {
 
     const rawUserIds = (membersRows ?? []).map((m: { user_id: string }) => m.user_id);
     // Fallback: always show at least the current user
-    const userIds = rawUserIds.length > 0 ? rawUserIds : [session.user.id];
+    const userIds = rawUserIds.length > 0 ? rawUserIds : [user.id];
 
     let profiles: MemberProfile[] = [];
     if (userIds.length > 0) {
@@ -140,11 +139,9 @@ export default function CoupleSpace() {
     setLoadingAction(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (!session) {
+      if (!user) {
         toast({
           variant: "destructive",
           title: "Você precisa entrar",
@@ -158,7 +155,7 @@ export default function CoupleSpace() {
       const { data: existingMember } = await supabase
         .from("members")
         .select("couple_space_id")
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (existingMember) {
@@ -185,7 +182,7 @@ export default function CoupleSpace() {
       // Adicionar o criador como membro
       const { error: memberError } = await supabase.from("members").insert({
         couple_space_id: space.id,
-        user_id: session.user.id,
+        user_id: user.id,
       });
 
       if (memberError) {
@@ -220,11 +217,9 @@ export default function CoupleSpace() {
     setLoadingAction(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (!session) {
+      if (!user) {
         toast({
           variant: "destructive",
           title: "Você precisa entrar",
@@ -259,7 +254,7 @@ export default function CoupleSpace() {
       // O trigger no banco (tr_check_member_limit) vai barrar se já houver 2 membros
       const { error: joinError } = await supabase.from("members").insert({
         couple_space_id: space.id,
-        user_id: session.user.id,
+        user_id: user.id,
       });
 
       if (joinError) {
