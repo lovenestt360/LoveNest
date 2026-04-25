@@ -56,14 +56,12 @@ export default function CoupleSpace() {
 
     setCurrentUserId(session.user.id);
 
-    const { data: memberRow, error: memberErr } = await supabase
-      .from("members")
-      .select("couple_space_id")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
+    // Use SECURITY DEFINER RPC to bypass RLS recursion on members table
+    const { data: coupleSpaceId, error: memberErr } = await supabase
+      .rpc("get_user_couple_space_id");
 
     if (memberErr) {
-      console.error("Error loading membership:", memberErr);
+      console.error("Error loading membership via RPC:", memberErr);
       toast({
         variant: "destructive",
         title: "Erro ao carregar seu LoveNest",
@@ -73,12 +71,10 @@ export default function CoupleSpace() {
       return;
     }
 
-    if (!memberRow?.couple_space_id) {
+    if (!coupleSpaceId) {
       setState({ status: "no_house" });
       return;
     }
-
-    const coupleSpaceId = memberRow.couple_space_id;
 
     const { data: spaceRow, error: spaceErr } = await supabase
       .from("couple_spaces")
@@ -96,19 +92,8 @@ export default function CoupleSpace() {
       .eq("couple_space_id", coupleSpaceId);
 
     if (membersErr) {
-      console.error("Error loading members:", membersErr);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar membros",
-        description: "Não foi possível carregar os membros do seu LoveNest.",
-      });
-      setState({
-        status: "has_house",
-        coupleSpaceId,
-        inviteCode: spaceRow?.invite_code ?? null,
-        members: [],
-      });
-      return;
+      // Non-fatal: log and continue with empty members list
+      console.error("Error loading members (non-fatal):", membersErr);
     }
 
     const userIds = (membersRows ?? []).map((m) => m.user_id);
