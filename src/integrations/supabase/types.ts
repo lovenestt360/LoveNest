@@ -2089,6 +2089,10 @@ export type Database = {
         Returns: boolean
       }
       current_couple_space_id: { Args: never; Returns: string }
+      get_couple_member_ids: {
+        Args: { p_couple_space_id: string }
+        Returns: { user_id: string }[]
+      }
       fn_buy_loveshield: {
         Args: { p_couple_space_id: string; p_cost?: number }
         Returns: Json

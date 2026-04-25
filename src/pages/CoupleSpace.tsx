@@ -86,21 +86,17 @@ export default function CoupleSpace() {
       console.error("Error loading couple space:", spaceErr);
     }
 
+    // Use SECURITY DEFINER RPC — bypasses RLS recursion, returns all couple members
     const { data: membersRows, error: membersErr } = await supabase
-      .from("members")
-      .select("user_id")
-      .eq("couple_space_id", coupleSpaceId);
+      .rpc("get_couple_member_ids", { p_couple_space_id: coupleSpaceId });
 
     if (membersErr) {
-      console.warn("Members query failed (RLS issue), falling back to current user:", membersErr.message);
+      console.warn("get_couple_member_ids failed, falling back to current user:", membersErr.message);
     }
 
-    // Fallback: if query fails or returns empty, at minimum show the current user
-    // (we know they are a member because get_user_couple_space_id confirmed it)
-    const rawUserIds = (membersRows ?? []).map((m) => m.user_id);
-    const userIds = rawUserIds.length > 0
-      ? rawUserIds
-      : [session.user.id];
+    const rawUserIds = (membersRows ?? []).map((m: { user_id: string }) => m.user_id);
+    // Fallback: always show at least the current user
+    const userIds = rawUserIds.length > 0 ? rawUserIds : [session.user.id];
 
     let profiles: MemberProfile[] = [];
     if (userIds.length > 0) {

@@ -159,11 +159,9 @@ export function useStreak() {
         // 1. Streak from couple_spaces via RPC
         supabase.rpc("get_streak", { p_couple_space_id: spaceId }),
 
-        // 2. Members — real row select, not head (head+count unreliable with RLS)
+        // 2. Members via SECURITY DEFINER RPC (bypasses RLS recursion)
         supabase
-          .from("members")
-          .select("user_id")
-          .eq("couple_space_id", spaceId),
+          .rpc("get_couple_member_ids", { p_couple_space_id: spaceId }),
 
         // 3. Today's activity — who has logged today
         supabase
