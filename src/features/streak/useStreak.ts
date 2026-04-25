@@ -14,7 +14,8 @@ export interface StreakState {
   bothActiveToday: boolean;
   myCheckedIn: boolean;
   activeCount: number;
-  totalMembers: number;
+  totalMembers: number;       // UI-safe: Math.max(realMembersCount, 2)
+  realMembersCount: number;   // raw DB value — for logic requiring accuracy
   progressPercentage: number;
   streakAtRisk: boolean;
   daysSinceLast: number | null;
@@ -32,6 +33,7 @@ const EMPTY: StreakState = {
   myCheckedIn: false,
   activeCount: 0,
   totalMembers: 0,
+  realMembersCount: 0,
   progressPercentage: 0,
   streakAtRisk: false,
   daysSinceLast: null,
@@ -71,25 +73,30 @@ function yesterdayLocalISO(): string {
 
 function buildState(
   raw: Record<string, any>,
-  memberCount: number,
+  rawMemberCount: number,          // direct from DB (may be 0 on RLS timing)
   activeUserIds: Set<string>,
   currentUserId: string | undefined
 ): StreakState {
+  const realMembersCount = rawMemberCount;
+  const totalMembers = Math.max(realMembersCount, 2); // UI-safe fallback
+
   const current = Number(raw.streak ?? raw.current ?? raw.current_streak ?? 0);
   const activeCount = activeUserIds.size;
-  const bothActive = memberCount >= 2 && activeCount >= memberCount;
+  const bothActive = totalMembers >= 2 && activeCount >= totalMembers;
   const myCheckedIn = !!currentUserId && activeUserIds.has(currentUserId);
   const lastDate: string | null = raw.last_date ?? raw.last_active_date ?? null;
 
   const streakAtRisk =
     !bothActive &&
-    memberCount >= 2 &&
+    totalMembers >= 2 &&
     current > 0 &&
     lastDate === yesterdayLocalISO();
 
   const daysSinceLast = lastDate
     ? Math.floor((Date.now() - new Date(lastDate + "T00:00:00").getTime()) / 86_400_000)
     : null;
+
+  console.log("[useStreak]", { realMembersCount, totalMembers });
 
   return {
     currentStreak: current,
@@ -99,7 +106,8 @@ function buildState(
     bothActiveToday: bothActive,
     myCheckedIn,
     activeCount,
-    totalMembers: memberCount,
+    totalMembers,
+    realMembersCount,
     progressPercentage: calculateMonthlyProgress(current),
     streakAtRisk,
     daysSinceLast,
@@ -175,15 +183,13 @@ export function useStreak() {
         return;
       }
 
-      // members — fallback to 2 on error OR empty result
-      // A couple_space always has at least 2 members; empty = RLS timing issue
-      let memberCount: number;
+      // members — pass raw count to buildState; Math.max is applied inside
+      let rawMemberCount: number;
       if (membersRes.error) {
-        console.warn("[useStreak] members query failed:", membersRes.error.message, "— using fallback 2");
-        memberCount = 2;
+        console.warn("[useStreak] members query failed:", membersRes.error.message, "— using raw 0, buildState will apply fallback");
+        rawMemberCount = 0;
       } else {
-        const rawCount = (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
-        memberCount = Math.max(rawCount, 2);
+        rawMemberCount = (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
       }
 
       // activity — if it fails, assume nobody checked in yet (safe)
@@ -191,14 +197,14 @@ export function useStreak() {
       if (activityRes.error) {
         console.warn("[useStreak] daily_activity query failed:", activityRes.error.message);
       } else {
-        const rows = (activityRes.data as { user_id: string }[] | null) ?? [];
+        const rows = (activityRes.data as unknown as { user_id: string }[] | null) ?? [];
         activeUserIds = new Set(rows.map((r) => r.user_id));
       }
 
       const currentUserId = userRes.data?.user?.id;
       const raw = (streakRes.data as Record<string, any> | null) ?? {};
 
-      setStreak(buildState(raw, memberCount, activeUserIds, currentUserId));
+      setStreak(buildState(raw, rawMemberCount, activeUserIds, currentUserId));
     } catch (err: any) {
       setError(err?.message ?? "Erro inesperado em useStreak");
       // Do NOT reset to EMPTY — keep the last known good state
