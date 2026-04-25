@@ -133,10 +133,13 @@ export default function LoveStreak() {
     setLoadingPoints(true);
     try {
       const { data, error } = await supabase.rpc("get_total_points", { p_couple_space_id: spaceId });
-      console.log("[LoveStreak] Fetched points:", data, error);
+      if (error) {
+        console.error("[LoveStreak] get_total_points error:", error.message);
+        return;
+      }
       setTotalPoints((data as number) ?? 0);
-    } catch {
-      setTotalPoints(0);
+    } catch (err: any) {
+      console.error("[LoveStreak] fetchPoints exception:", err?.message);
     } finally {
       setLoadingPoints(false);
     }
@@ -150,7 +153,6 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingMissions(true);
     try {
-      // Fix timezone bug: Evitar que toISOString() atrase o dia para bater com (Africa/Maputo) do DB
       const d = new Date();
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const { data, error } = await supabase
@@ -159,18 +161,23 @@ export default function LoveStreak() {
         .eq("couple_space_id", spaceId)
         .eq("activity_date", today);
 
-      console.log("[LoveStreak] Missions raw data (daily_activity):", data, "Error:", error);
+      if (error) {
+        console.error("[LoveStreak] fetchMissions error:", error.message);
+        return;
+      }
 
-      // Count distinct users per type
       const typeUsers: Record<string, Set<string>> = {};
       for (const row of (data as any[]) || []) {
         if (!typeUsers[row.type]) typeUsers[row.type] = new Set();
         typeUsers[row.type].add(row.user_id);
       }
 
+      // Use streak.totalMembers if available, otherwise 2 (couple = 2 people)
+      const threshold = Math.max(totalMembers, 2);
+
       setMissions(MISSION_DEFS.map(m => {
         const count = typeUsers[m.activityType]?.size ?? 0;
-        return { ...m, completedCount: count, completed: count >= totalMembers };
+        return { ...m, completedCount: count, completed: count >= threshold };
       }));
     } finally {
       setLoadingMissions(false);
