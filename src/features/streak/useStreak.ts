@@ -175,13 +175,15 @@ export function useStreak() {
         return;
       }
 
-      // members — if it fails, fall back to 2 (couple = 2 people)
-      let memberCount = 0;
+      // members — fallback to 2 on error OR empty result
+      // A couple_space always has at least 2 members; empty = RLS timing issue
+      let memberCount: number;
       if (membersRes.error) {
         console.warn("[useStreak] members query failed:", membersRes.error.message, "— using fallback 2");
         memberCount = 2;
       } else {
-        memberCount = (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
+        const rawCount = (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
+        memberCount = Math.max(rawCount, 2);
       }
 
       // activity — if it fails, assume nobody checked in yet (safe)
