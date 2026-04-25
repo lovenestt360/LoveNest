@@ -92,11 +92,15 @@ export default function CoupleSpace() {
       .eq("couple_space_id", coupleSpaceId);
 
     if (membersErr) {
-      // Non-fatal: log and continue with empty members list
-      console.error("Error loading members (non-fatal):", membersErr);
+      console.warn("Members query failed (RLS issue), falling back to current user:", membersErr.message);
     }
 
-    const userIds = (membersRows ?? []).map((m) => m.user_id);
+    // Fallback: if query fails or returns empty, at minimum show the current user
+    // (we know they are a member because get_user_couple_space_id confirmed it)
+    const rawUserIds = (membersRows ?? []).map((m) => m.user_id);
+    const userIds = rawUserIds.length > 0
+      ? rawUserIds
+      : [session.user.id];
 
     let profiles: MemberProfile[] = [];
     if (userIds.length > 0) {
