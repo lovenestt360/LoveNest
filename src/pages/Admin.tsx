@@ -472,12 +472,27 @@ export default function Admin() {
         e.preventDefault();
         try {
             setSavingSettings(true);
-            const { error } = await adminClient.from("payment_settings").upsert({
-                id: paymentSettings?.id || 'd16ba2d0-0f2c-497d-acf6-c6bd2a8d5469', // Upsert using explicit ID or fallback
-                ...settingsForm,
-                updated_at: new Date().toISOString()
-            });
-            if (error) throw error;
+            const payload = { ...settingsForm, updated_at: new Date().toISOString() };
+
+            if (paymentSettings?.id) {
+                // Registo já existe — UPDATE pelo ID real da BD
+                const { error } = await adminClient
+                    .from("payment_settings")
+                    .update(payload)
+                    .eq("id", paymentSettings.id);
+                if (error) throw error;
+            } else {
+                // Primeiro registo — INSERT e deixar a BD gerar o UUID
+                const { data: inserted, error } = await adminClient
+                    .from("payment_settings")
+                    .insert(payload)
+                    .select()
+                    .single();
+                if (error) throw error;
+                // Guardar em memória para edições futuras na mesma sessão
+                if (inserted) setPaymentSettings(inserted);
+            }
+
             toast({ title: "Configurações Guardadas", description: "As configurações foram atualizadas com sucesso." });
             fetchAllData();
         } catch (error: any) {
