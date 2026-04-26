@@ -130,6 +130,27 @@ export default function Prayer() {
     }
     setEditingPrayer(false);
 
+    // Marcar automaticamente "Orei hoje" no diário espiritual
+    // Assim o parceiro vê em tempo real que já rezou
+    const logPayload = {
+      couple_space_id: spaceId,
+      user_id: user.id,
+      day_key: todayKey,
+      prayed_today: true,
+      cried_today: criedToday,
+      gratitude_note: gratitude.trim() || null,
+      reflection_note: reflection.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+    if (myLog) {
+      await supabase.from("daily_spiritual_logs")
+        .update({ prayed_today: true, updated_at: logPayload.updated_at })
+        .eq("id", myLog.id);
+    } else {
+      await supabase.from("daily_spiritual_logs").insert(logPayload);
+    }
+    setPrayedToday(true);
+
     // LoveStreak: registar atividade (fire-and-forget)
     if (spaceId) logActivity(spaceId, "prayer");
 
