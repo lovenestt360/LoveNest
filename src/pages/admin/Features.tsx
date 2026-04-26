@@ -105,15 +105,22 @@ export default function FeaturesControl() {
       navigate("/admin-login");
       return;
     }
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      const { data: profile } = await supabase.from("profiles").select("*").or(`id.eq.${authUser.id},user_id.eq.${authUser.id}`).maybeSingle();
-      setUserProfile({
-        ...profile,
-        user_id: authUser.id,
-        display_name: profile?.display_name || authUser.email || "Admin"
-      });
+    // Verificar admin na tabela admin_users (bypass RLS via adminClient)
+    const { data: adminUser, error } = await adminClient
+      .from("admin_users" as any)
+      .select("id, username")
+      .eq("id", adminToken)
+      .maybeSingle();
+
+    if (error || !adminUser) {
+      navigate("/admin-login");
+      return;
     }
+
+    setUserProfile({
+      user_id: adminUser.id,
+      display_name: adminUser.username || "Admin",
+    });
   };
 
   useEffect(() => {
