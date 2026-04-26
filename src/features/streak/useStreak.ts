@@ -14,8 +14,8 @@ export interface StreakState {
   bothActiveToday: boolean;
   myCheckedIn: boolean;
   activeCount: number;
-  totalMembers: number;       // UI-safe: Math.max(realMembersCount, 2)
-  realMembersCount: number;   // raw DB value — for logic requiring accuracy
+  totalMembers: number;
+  realMembersCount: number;
   progressPercentage: number;
   streakAtRisk: boolean;
   daysSinceLast: number | null;
@@ -46,73 +46,68 @@ const EMPTY: StreakState = {
 // Helpers
 // ─────────────────────────────────────────────
 
-/** progress = (streak / 28) * 100, capped at 100 */
 export function calculateMonthlyProgress(streak: number): number {
   if (streak <= 0) return 0;
   return Math.min(Math.round((streak / 28) * 100), 100);
 }
 
-function todayLocalISO(): string {
+function yesterdayServerISO(lastDate: string | null): boolean {
+  // Compare lastDate against yesterday in UTC (same timezone as server)
+  if (!lastDate) return false;
   const d = new Date();
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0"),
+  d.setUTCDate(d.getUTCDate() - 1);
+  const yesterday = [
+    d.getUTCFullYear(),
+    String(d.getUTCMonth() + 1).padStart(2, "0"),
+    String(d.getUTCDate()).padStart(2, "0"),
   ].join("-");
+  return lastDate === yesterday;
 }
 
-function yesterdayLocalISO(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0"),
-  ].join("-");
-}
+// ─────────────────────────────────────────────
+// buildState — single source of truth is get_streak response
+// All activity data comes from server (CURRENT_DATE, no timezone mismatch)
+// ─────────────────────────────────────────────
 
 function buildState(
   raw: Record<string, any>,
-  rawMemberCount: number,          // direct from DB (may be 0 on RLS timing)
-  activeUserIds: Set<string>,
-  currentUserId: string | undefined
+  memberListCount: number // from get_couple_member_ids (for UI display)
 ): StreakState {
-  const realMembersCount = rawMemberCount;
-  const totalMembers = Math.max(realMembersCount, 2); // UI-safe fallback
+  const current      = Number(raw.streak ?? 0);
+  const lastDate     = (raw.last_date as string | null) ?? null;
+  const activeToday  = Number(raw.active_today ?? 0);
+  const myCheckedIn  = Boolean(raw.my_checked_in ?? false);
+  const bothActive   = Boolean(raw.both_active ?? false);
 
-  const current = Number(raw.streak ?? raw.current ?? raw.current_streak ?? 0);
-  const activeCount = activeUserIds.size;
-  const bothActive = totalMembers >= 2 && activeCount >= totalMembers;
-  const myCheckedIn = !!currentUserId && activeUserIds.has(currentUserId);
-  const lastDate: string | null = raw.last_date ?? raw.last_active_date ?? null;
+  // member_count from get_streak is the authoritative DB count
+  // memberListCount from get_couple_member_ids is for member profile display
+  const realMembersCount = Number(raw.member_count ?? memberListCount ?? 0);
+  const totalMembers     = Math.max(realMembersCount, 2);
 
   const streakAtRisk =
-    !bothActive &&
-    totalMembers >= 2 &&
-    current > 0 &&
-    lastDate === yesterdayLocalISO();
+    !bothActive && totalMembers >= 2 && current > 0 && yesterdayServerISO(lastDate);
 
   const daysSinceLast = lastDate
-    ? Math.floor((Date.now() - new Date(lastDate + "T00:00:00").getTime()) / 86_400_000)
+    ? Math.floor(
+        (Date.now() - new Date(lastDate + "T00:00:00Z").getTime()) / 86_400_000
+      )
     : null;
 
-  console.log("[useStreak]", { realMembersCount, totalMembers });
-
   return {
-    currentStreak: current,
-    longestStreak: Number(raw.longest ?? raw.longest_streak ?? current),
-    lastActiveDate: lastDate,
-    status: raw.status ?? "active",
-    bothActiveToday: bothActive,
+    currentStreak:            current,
+    longestStreak:            Number(raw.longest ?? raw.longest_streak ?? current),
+    lastActiveDate:           lastDate,
+    status:                   raw.status ?? "active",
+    bothActiveToday:          bothActive,
     myCheckedIn,
-    activeCount,
+    activeCount:              activeToday,
     totalMembers,
     realMembersCount,
-    progressPercentage: calculateMonthlyProgress(current),
+    progressPercentage:       calculateMonthlyProgress(current),
     streakAtRisk,
     daysSinceLast,
-    shieldsRemaining: raw.shields_remaining ?? 0,
-    shieldUsedToday: raw.shield_used_today ?? false,
+    shieldsRemaining:         raw.shields_remaining ?? 0,
+    shieldUsedToday:          raw.shield_used_today ?? false,
     shieldsPurchasedThisMonth: raw.shields_purchased_this_month ?? 0,
   };
 }
@@ -125,103 +120,71 @@ export function useStreak() {
   const spaceId = useCoupleSpaceId();
 
   const [streak, setStreak] = useState<StreakState>(EMPTY);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [error,   setError]       = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
 
-  // ────────────────────────────────────────────
-  // refresh — 3 parallel queries
+  // ─────────────────────────────────────────────────────────────────────
+  // refresh
   //
-  // Query order:
-  //   1. get_streak        → streak count + last_date
-  //   2. members (rows)    → total members (real fetch, not head)
-  //   3. daily_activity    → who checked in today
-  //   4. auth.getUser      → current user id
+  // Only 2 queries now (was 4):
+  //   1. get_streak  → streak + activity data (server-side CURRENT_DATE)
+  //   2. get_couple_member_ids → member list for UI
   //
-  // Failure strategy:
-  //   - get_streak error   → surface error, keep previous state
-  //   - members error      → warn, fall back to last known or 2
-  //   - activity error     → warn, assume 0 active (safe)
-  // ────────────────────────────────────────────
+  // The daily_activity query was REMOVED because it used todayLocalISO()
+  // (browser date) which mismatched the server's CURRENT_DATE (UTC),
+  // causing active_today to always read as 0 after refresh.
+  // ─────────────────────────────────────────────────────────────────────
   const refresh = useCallback(async () => {
-    if (!spaceId) {
-      setLoading(false);
-      return;
-    }
+    if (!spaceId) { setLoading(false); return; }
 
     setLoading(true);
     setError(null);
 
     try {
-      const today = todayLocalISO();
-
-      const [streakRes, membersRes, activityRes, userRes] = await Promise.all([
-        // 1. Streak from couple_spaces via RPC
+      const [streakRes, membersRes] = await Promise.all([
         supabase.rpc("get_streak", { p_couple_space_id: spaceId }),
-
-        // 2. Members via SECURITY DEFINER RPC (bypasses RLS recursion)
-        supabase
-          .rpc("get_couple_member_ids", { p_couple_space_id: spaceId }),
-
-        // 3. Today's activity — who has logged today
-        supabase
-          .from("daily_activity" as any)
-          .select("user_id")
-          .eq("couple_space_id", spaceId)
-          .eq("activity_date", today),
-
-        // 4. Current user id
-        supabase.auth.getUser(),
+        supabase.rpc("get_couple_member_ids", { p_couple_space_id: spaceId }),
       ]);
 
-      // get_streak is critical — surface error but keep previous state
       if (streakRes.error) {
         setError(`get_streak: ${streakRes.error.message}`);
-        setLoading(false);
         return;
       }
 
-      // members — pass raw count to buildState; Math.max is applied inside
-      let rawMemberCount: number;
-      if (membersRes.error) {
-        console.warn("[useStreak] members query failed:", membersRes.error.message, "— using raw 0, buildState will apply fallback");
-        rawMemberCount = 0;
-      } else {
-        rawMemberCount = (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
-      }
-
-      // activity — if it fails, assume nobody checked in yet (safe)
-      let activeUserIds = new Set<string>();
-      if (activityRes.error) {
-        console.warn("[useStreak] daily_activity query failed:", activityRes.error.message);
-      } else {
-        const rows = (activityRes.data as unknown as { user_id: string }[] | null) ?? [];
-        activeUserIds = new Set(rows.map((r) => r.user_id));
-      }
-
-      const currentUserId = userRes.data?.user?.id;
       const raw = (streakRes.data as Record<string, any> | null) ?? {};
 
-      setStreak(buildState(raw, rawMemberCount, activeUserIds, currentUserId));
+      const memberListCount = membersRes.error
+        ? 0
+        : (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
+
+      if (membersRes.error) {
+        console.warn("[useStreak] get_couple_member_ids failed:", membersRes.error.message);
+      }
+
+      setStreak(buildState(raw, memberListCount));
     } catch (err: any) {
       setError(err?.message ?? "Erro inesperado em useStreak");
-      // Do NOT reset to EMPTY — keep the last known good state
+      // Keep previous state — do not reset to EMPTY
     } finally {
       setLoading(false);
     }
   }, [spaceId]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  // ────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
   // checkIn
-  // ────────────────────────────────────────────
+  //
+  // 1. Call log_daily_activity (server inserts with CURRENT_DATE)
+  // 2. Mark myCheckedIn: true immediately (optimistic — always correct)
+  // 3. Call refresh() → get_streak returns authoritative state from server
+  //
+  // No complex optimistic update for bothActive/activeCount —
+  // those come from server after refresh() and are always correct.
+  // ─────────────────────────────────────────────────────────────────────
   const checkIn = useCallback(async (): Promise<{ ok: boolean; message?: string }> => {
-    if (!spaceId || checkingIn) {
-      return { ok: false, message: "A aguardar processamento..." };
-    }
+    if (!spaceId || checkingIn) return { ok: false, message: "A aguardar processamento..." };
 
     setCheckingIn(true);
 
@@ -242,49 +205,17 @@ export function useStreak() {
 
       const res = data as Record<string, any> | null;
 
-      // Application-level error from V5 backend
       if (!res?.success) {
-        if (res?.status === "invalid_user") {
-          return { ok: false, message: "Não és membro deste espaço." };
-        }
-        if (res?.status === "unauthenticated") {
-          return { ok: false, message: "Sessão inválida. Recarrega a página." };
-        }
+        if (res?.status === "invalid_user")    return { ok: false, message: "Não és membro deste espaço." };
+        if (res?.status === "unauthenticated") return { ok: false, message: "Sessão inválida. Recarrega a página." };
         return { ok: false, message: "Resposta inesperada do servidor." };
       }
 
-      // V5 returns { success, streak, active_today }
-      // Optimistically update from response before DB refresh
-      const newStreak = Number(res.streak ?? 0);
-      const newActiveToday = Number(res.active_today ?? 0);
+      // Minimal optimistic update — only what we know for certain:
+      // current user checked in. Everything else comes from refresh().
+      setStreak(prev => ({ ...prev, myCheckedIn: true }));
 
-      setStreak((prev) => {
-        const activeUserIds = new Set<string>();
-        // We know current user is now active
-        if (authData.user?.id) activeUserIds.add(authData.user.id);
-        // Preserve partner's active status if we knew they were active
-        if (prev.activeCount > 1 && prev.totalMembers >= 2) {
-          // Partner was already active — fill up to activeCount
-          activeUserIds.add("__partner__");
-        }
-        // If backend says more people are active, trust backend
-        const activeCount = Math.max(activeUserIds.size, newActiveToday);
-        const memberCount = prev.totalMembers || 2;
-        const bothActive = memberCount >= 2 && activeCount >= memberCount;
-
-        return {
-          ...prev,
-          currentStreak: newStreak,
-          longestStreak: Math.max(prev.longestStreak, newStreak),
-          progressPercentage: calculateMonthlyProgress(newStreak),
-          activeCount,
-          bothActiveToday: bothActive,
-          myCheckedIn: true,
-          streakAtRisk: false,
-        };
-      });
-
-      // Then do a full refresh from DB to get authoritative state
+      // Authoritative state from server (uses CURRENT_DATE — no timezone issues)
       await refresh();
 
       window.dispatchEvent(new CustomEvent("streak-updated", { detail: { spaceId } }));
