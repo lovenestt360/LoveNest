@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
 
     console.log(`Generating LoveWrapped for ${month}/${year}`);
 
-    // Get all couple spaces
-    const { data: spaces, error: fetchError } = await sb.from("couple_spaces").select("id, house_name");
+    // Get all couple spaces (streak_count comes from couple_spaces after V5 refactor)
+    const { data: spaces, error: fetchError } = await sb.from("couple_spaces").select("id, house_name, streak_count");
     
     if (fetchError) {
       console.error("Error fetching spaces:", fetchError.message);
@@ -111,14 +111,9 @@ Deno.serve(async (req) => {
         if (challErr) throw new Error(`Challenges check failed: ${challErr.message}`);
         console.log(`  - Challenges: ${challengesCount}`);
 
-        // Get streak days
-        const { data: streakData, error: streakErr } = await sb
-          .from("love_streaks")
-          .select("current_streak")
-          .eq("couple_space_id", spaceId)
-          .maybeSingle();
-        if (streakErr) throw new Error(`Streak check failed: ${streakErr.message}`);
-        console.log(`  - Streak: ${streakData?.current_streak ?? 0}`);
+        // Streak comes from couple_spaces.streak_count (love_streaks was dropped in V5)
+        const streakDays = (space as any).streak_count ?? 0;
+        console.log(`  - Streak: ${streakDays}`);
 
         // Count mood checkins
         const { data: moodEntries, error: moodErr } = await sb
@@ -161,7 +156,7 @@ Deno.serve(async (req) => {
               messages_count: messagesCount ?? 0,
               memories_count: memoriesCount ?? 0,
               challenges_completed: challengesCount ?? 0,
-              streak_days: streakData?.current_streak ?? 0,
+              streak_days: streakDays,
               mood_checkins: moodCount,
               top_mood: topMood,
               generated_at: new Date().toISOString(),
@@ -181,7 +176,7 @@ Deno.serve(async (req) => {
               messages_count: messagesCount ?? 0,
               memories_count: memoriesCount ?? 0,
               challenges_completed: challengesCount ?? 0,
-              streak_days: streakData?.current_streak ?? 0,
+              streak_days: streakDays,
               mood_checkins: moodCount,
               top_mood: topMood,
             });
