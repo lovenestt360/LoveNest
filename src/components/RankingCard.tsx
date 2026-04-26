@@ -253,7 +253,7 @@ export function RankingCard({
   const fetchRanking = useCallback(async (type: RankType) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("get_ranking", { p_type: type });
+      const { data, error } = await supabase.rpc("fn_get_global_ranking", { p_rank_type: type });
       if (error) { console.error("[RankingCard]", error.message); return; }
       if (!data) return;
 
