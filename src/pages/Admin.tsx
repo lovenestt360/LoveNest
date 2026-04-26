@@ -320,15 +320,34 @@ export default function Admin() {
 
     const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
         try {
-            // Update payment status
-            const { error: pErr } = await adminClient.from("payments").update({ status: 'approved' }).eq("id", paymentId);
+            // 1. Marcar pagamento como aprovado (tabela correcta: subscription_payments)
+            const { error: pErr } = await adminClient
+                .from("subscription_payments" as any)
+                .update({ status: 'approved' })
+                .eq("id", paymentId);
             if (pErr) throw pErr;
 
-            // Update house subscription
-            const { error: hErr } = await adminClient.from("couple_spaces").update({ subscription_status: 'active' }).eq("id", houseId);
+            // 2. Encontrar o plan_id correspondente ao nome do plano (se existir)
+            const matchedPlan = plans.find(
+                p => p.name?.toLowerCase() === planName?.toLowerCase()
+            );
+
+            // 3. Activar subscrição da casa + atribuir plano
+            const houseUpdate: any = { subscription_status: 'active' };
+            if (matchedPlan?.id) houseUpdate.plan_id = matchedPlan.id;
+
+            const { error: hErr } = await adminClient
+                .from("couple_spaces")
+                .update(houseUpdate)
+                .eq("id", houseId);
             if (hErr) throw hErr;
 
-            toast({ title: "Sucesso", description: "Pagamento aprovado e plano ativo!" });
+            toast({
+                title: "✅ Pagamento Aprovado",
+                description: matchedPlan
+                    ? `Plano "${matchedPlan.name}" ativado para a casa.`
+                    : "Subscrição ativada.",
+            });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
