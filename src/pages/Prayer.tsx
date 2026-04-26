@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Pencil, Save, BookOpen, Heart, Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { format, subDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
