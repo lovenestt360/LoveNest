@@ -155,24 +155,38 @@ export default function LoveStreak() {
     try {
       const d = new Date();
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const { data, error } = await supabase
-        .from("daily_activity" as any)
-        .select("type, user_id")
-        .eq("couple_space_id", spaceId)
-        .eq("activity_date", today);
 
-      if (error) {
-        console.error("[LoveStreak] fetchMissions error:", error.message);
-        return;
+      // Fetch activity + spiritual logs in parallel
+      const [activityRes, spiritualRes] = await Promise.all([
+        supabase
+          .from("daily_activity" as any)
+          .select("type, user_id")
+          .eq("couple_space_id", spaceId)
+          .eq("activity_date", today),
+        supabase
+          .from("daily_spiritual_logs")
+          .select("user_id, prayed_today")
+          .eq("couple_space_id", spaceId)
+          .eq("day_key", today),
+      ]);
+
+      if (activityRes.error) {
+        console.error("[LoveStreak] fetchMissions error:", activityRes.error.message);
       }
 
       const typeUsers: Record<string, Set<string>> = {};
-      for (const row of (data as any[]) || []) {
+      for (const row of (activityRes.data as any[]) || []) {
         if (!typeUsers[row.type]) typeUsers[row.type] = new Set();
         typeUsers[row.type].add(row.user_id);
       }
 
-      // Use streak.totalMembers if available, otherwise 2 (couple = 2 people)
+      // Prayer mission: also count users with prayed_today=true in spiritual logs
+      // (covers users who marked "Orei hoje" before the activity log fix)
+      if (!typeUsers["prayer"]) typeUsers["prayer"] = new Set();
+      for (const log of (spiritualRes.data as any[]) || []) {
+        if (log.prayed_today) typeUsers["prayer"].add(log.user_id);
+      }
+
       const threshold = Math.max(totalMembers, 2);
 
       setMissions(MISSION_DEFS.map(m => {
