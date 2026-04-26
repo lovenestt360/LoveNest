@@ -266,6 +266,8 @@ export default function Prayer() {
     } else {
       await supabase.from("daily_spiritual_logs").insert(payload);
     }
+    // Registar atividade para missões quando marca "Orei hoje"
+    if (val && spaceId) logActivity(spaceId, "prayer");
   };
 
   return (
