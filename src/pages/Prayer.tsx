@@ -104,14 +104,23 @@ export default function Prayer() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Realtime
+  // Realtime — canal único por casal, sem filtro server-side
+  // (filtro client-side via fetchAll garante que só dados do casal são lidos)
   useEffect(() => {
     if (!spaceId) return;
-    const ch = supabase.channel("prayer-room")
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_prayers", filter: `couple_space_id=eq.${spaceId}` }, () => fetchAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, () => fetchAll())
+    const ch = supabase.channel(`prayer-room-${spaceId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_prayers" }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_spiritual_logs" }, () => fetchAll())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+
+    // Polling de segurança: re-fetch a cada 20 segundos
+    // (garante atualização mesmo se real-time falhar)
+    const poll = setInterval(() => fetchAll(), 20_000);
+
+    return () => {
+      supabase.removeChannel(ch);
+      clearInterval(poll);
+    };
   }, [spaceId, fetchAll]);
 
   const savePrayer = async () => {
@@ -197,6 +206,9 @@ export default function Prayer() {
 
     // LoveStreak: registar atividade (fire-and-forget)
     if (spaceId) logActivity(spaceId, "prayer");
+
+    // Re-fetch para garantir estado atualizado (inclui partnerLog)
+    fetchAll();
 
     if (spaceId) {
       notifyPartner({
