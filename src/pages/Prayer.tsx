@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -61,18 +61,12 @@ export default function Prayer() {
   const [reflection, setReflection] = useState("");
   const [logDirty, setLogDirty] = useState(false);
 
-  // Refs para evitar que o polling sobrescreva campos que o utilizador está a editar
-  const editingPrayerRef = useRef(false);
-  const logDirtyRef = useRef(false);
-
-  // Manter refs sincronizados com o estado (sem re-criar fetchAll)
-  useEffect(() => { editingPrayerRef.current = editingPrayer; }, [editingPrayer]);
-  useEffect(() => { logDirtyRef.current = logDirty; }, [logDirty]);
-
   // History
   const [historyPrayers, setHistoryPrayers] = useState<DailyPrayer[]>([]);
   const [historyLogs, setHistoryLogs] = useState<SpiritualLog[]>([]);
 
+  // fetchAll — usado apenas no carregamento inicial e após guardar.
+  // Preenche TODOS os campos do formulário com os dados da BD.
   const fetchAll = useCallback(async () => {
     if (!spaceId || !user) return;
     const sevenDaysAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
@@ -86,17 +80,12 @@ export default function Prayer() {
 
     if (pRes.data) {
       setPrayer(pRes.data as DailyPrayer);
-      // Não sobrescrever se o utilizador está a editar o formulário de oração
-      if (!editingPrayerRef.current) {
-        setPrayerText(pRes.data.prayer_text);
-        setVerseRef(pRes.data.verse_ref ?? "");
-      }
+      setPrayerText(pRes.data.prayer_text);
+      setVerseRef(pRes.data.verse_ref ?? "");
     } else {
       setPrayer(null);
-      if (!editingPrayerRef.current) {
-        setPrayerText("");
-        setVerseRef("");
-      }
+      setPrayerText("");
+      setVerseRef("");
     }
 
     if (logRes.data) {
@@ -107,11 +96,8 @@ export default function Prayer() {
       if (mine) {
         setPrayedToday(mine.prayed_today);
         setCriedToday(mine.cried_today);
-        // Não sobrescrever campos de texto se o utilizador está a escrever
-        if (!logDirtyRef.current) {
-          setGratitude(mine.gratitude_note ?? "");
-          setReflection(mine.reflection_note ?? "");
-        }
+        setGratitude(mine.gratitude_note ?? "");
+        setReflection(mine.reflection_note ?? "");
       }
     }
 
@@ -119,26 +105,53 @@ export default function Prayer() {
     if (hlRes.data) setHistoryLogs(hlRes.data as SpiritualLog[]);
   }, [spaceId, user, todayKey]);
 
+  // fetchBackground — usado pelo polling e realtime.
+  // Actualiza APENAS dados do parceiro e estado de fundo.
+  // NUNCA toca nos campos que o utilizador pode estar a editar.
+  const fetchBackground = useCallback(async () => {
+    if (!spaceId || !user) return;
+
+    const [pRes, logRes] = await Promise.all([
+      supabase.from("daily_prayers").select("*").eq("couple_space_id", spaceId).eq("day_key", todayKey).maybeSingle(),
+      supabase.from("daily_spiritual_logs").select("*").eq("couple_space_id", spaceId).eq("day_key", todayKey),
+    ]);
+
+    // Actualizar oração do dia (só para exibição, não toca no textarea)
+    if (pRes.data) setPrayer(pRes.data as DailyPrayer);
+    else setPrayer(null);
+
+    if (logRes.data) {
+      const mine = (logRes.data as SpiritualLog[]).find(l => l.user_id === user.id) ?? null;
+      const partner = (logRes.data as SpiritualLog[]).find(l => l.user_id !== user.id) ?? null;
+      setMyLog(mine);
+      setPartnerLog(partner);
+      // prayedToday e criedToday são checkboxes — safe para actualizar
+      if (mine) {
+        setPrayedToday(mine.prayed_today);
+        setCriedToday(mine.cried_today);
+        // gratitude e reflection NÃO são actualizados aqui
+        // (o utilizador pode estar a escrever nestes campos)
+      }
+    }
+  }, [spaceId, user, todayKey]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Realtime — canal único por casal, sem filtro server-side
-  // (filtro client-side via fetchAll garante que só dados do casal são lidos)
+  // Realtime + polling — usa fetchBackground (nunca toca nos campos do formulário)
   useEffect(() => {
     if (!spaceId) return;
     const ch = supabase.channel(`prayer-room-${spaceId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_prayers" }, () => fetchAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_spiritual_logs" }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_prayers" }, () => fetchBackground())
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_spiritual_logs" }, () => fetchBackground())
       .subscribe();
 
-    // Polling de segurança: re-fetch a cada 20 segundos
-    // (garante atualização mesmo se real-time falhar)
-    const poll = setInterval(() => fetchAll(), 20_000);
+    const poll = setInterval(() => fetchBackground(), 20_000);
 
     return () => {
       supabase.removeChannel(ch);
       clearInterval(poll);
     };
-  }, [spaceId, fetchAll]);
+  }, [spaceId, fetchBackground]);
 
   const savePrayer = async () => {
     if (!spaceId || !user || !prayerText.trim()) return;
