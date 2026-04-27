@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -40,37 +40,40 @@ input, textarea, [contenteditable="true"] {
 
 @layer base {
   :root {
-    --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
+    /* ── Inter — one font, clear hierarchy ── */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-    --background: 0 0% 100%;
-    --foreground: 250 20% 15%;
+    /* ── Airbnb-inspired tokens ── */
+    --background: 0 0% 100%;           /* pure white */
+    --foreground: 0 0% 9%;             /* near-black #171717 */
 
     --card: 0 0% 100%;
-    --card-foreground: 250 20% 15%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 250 20% 15%;
+    --popover-foreground: 0 0% 9%;
 
-    --primary: 345 60% 65%;
+    /* Rose accent — used sparingly, only for active/CTA */
+    --primary: 347 77% 58%;            /* #F43F5E → rose-500 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 345 40% 97%;
-    --secondary-foreground: 345 60% 40%;
+    --secondary: 0 0% 96%;             /* #F5F5F5 — light gray */
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 230 15% 96%;
-    --muted-foreground: 230 10% 42%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;      /* #737373 */
 
-    --accent: 345 60% 65%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 345 20% 90%;
-    --input: 345 20% 90%;
-    --ring: 345 60% 65%;
+    --border: 0 0% 89%;                /* #E3E3E3 */
+    --input: 0 0% 89%;
+    --ring: 347 77% 58%;
 
-    --radius: 1.5rem;
+    --radius: 1rem;                    /* 16px — Airbnb standard */
 
     /* Apple-style shadows refined */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -143,28 +146,22 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
-/* ── Liquid Glass — requires colored background to be visible ── */
+/* ── Cards — Airbnb style: white, subtle shadow, clean border ── */
 @layer utilities {
   .glass-card {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(32px) saturate(180%) brightness(1.03);
-    -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.03);
-    border: 1px solid rgba(255, 255, 255, 0.80);
-    box-shadow:
-      0 2px 16px rgba(0,0,0,0.06),
-      inset 0 1px 0 rgba(255,255,255,0.95);
-    border-radius: 2rem;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+    border-radius: 1.25rem;
   }
 
   .glass-card-hover {
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
   }
   .glass-card-hover:hover {
-    transform: translateY(-3px);
-    box-shadow:
-      0 12px 32px rgba(0,0,0,0.09),
-      inset 0 1px 0 rgba(255,255,255,0.95);
-    border-color: rgba(255,255,255,0.95);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    transform: translateY(-1px);
   }
 
   .glass-btn {
@@ -204,29 +201,9 @@ input, textarea, [contenteditable="true"] {
     background-color: hsl(var(--background));
   }
 
+  /* No decorative blobs — pure white background like Airbnb */
   .bg-mesh::before, .bg-mesh::after {
-    content: "";
-    position: absolute;
-    width: 100vw;
-    height: 100vw;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.28;
-    z-index: -1;
-    animation: mesh-float 18s infinite alternate ease-in-out;
-  }
-
-  .bg-mesh::before {
-    background: radial-gradient(circle, #fda4af 0%, #fecdd3 40%, transparent 70%);
-    top: -30%;
-    left: -10%;
-  }
-
-  .bg-mesh::after {
-    background: radial-gradient(circle, #fed7aa 0%, #fde68a 40%, transparent 70%);
-    bottom: -30%;
-    right: -10%;
-    animation-delay: -9s;
+    display: none;
   }
 
   @keyframes mesh-float {

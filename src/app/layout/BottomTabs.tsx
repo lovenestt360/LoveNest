@@ -88,11 +88,11 @@ export function BottomTabs() {
 
   return (
     <nav
-      className="apple-dock"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e5e5e5] pb-[env(safe-area-inset-bottom)]"
       aria-label="Navegação principal"
     >
       <div className="w-full">
-        <div className="grid grid-cols-5 gap-0.5">
+        <div className="grid grid-cols-5 h-14">
           {mainTabs.map(({ to, label, Icon }) => (
             <TabItem
               key={to}
@@ -109,22 +109,21 @@ export function BottomTabs() {
               <button
                 type="button"
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition-all duration-200 active:animate-tab-tap",
-                  isMoreActive && "text-primary"
+                  "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors duration-150 active:opacity-60",
+                  isMoreActive ? "text-rose-500" : "text-[#717171]"
                 )}
                 aria-label="Mais"
               >
                 <span className="relative">
-                  <MoreHorizontal className="h-5 w-5" />
+                  <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={isMoreActive ? 2 : 1.5} />
                   {moreBadge > 0 && <Badge count={moreBadge} />}
                 </span>
                 <span className="leading-none">More</span>
-                {isMoreActive && <ActiveDot />}
               </button>
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="rounded-t-[2rem] border-t-0 bg-white/90 backdrop-blur-2xl pb-[max(env(safe-area-inset-bottom),1.5rem)] shadow-2xl"
+              className="rounded-t-[2rem] border-t border-[#e5e5e5] bg-white pb-[max(env(safe-area-inset-bottom),1.5rem)] shadow-xl"
             >
               {/* Drag handle */}
               <div className="flex justify-center pt-1 pb-4">
@@ -207,17 +206,16 @@ function TabItem({
     <NavLink
       to={to}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition-all duration-200 active:animate-tab-tap"
+        "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-[#717171] transition-colors duration-150 active:opacity-60"
       )}
-      activeClassName="text-primary"
+      activeClassName="text-rose-500"
       aria-label={label}
     >
       <span className="relative">
-        <Icon className="h-5 w-5" />
+        <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2 : 1.5} />
         {badge > 0 && <Badge count={badge} />}
       </span>
       <span className="leading-none">{label}</span>
-      {isActive && <ActiveDot />}
     </NavLink>
   );
 }

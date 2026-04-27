@@ -19,17 +19,12 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
     <div
       ref={ref}
       className={cn(
-        // Base glass — matches .glass-card
-        "rounded-3xl border border-white/80 backdrop-blur-3xl",
-        "bg-white/55",
-        // Shadow
+        "rounded-[1.25rem] border border-[#e5e5e5] bg-white",
         elevated
-          ? "shadow-xl shadow-black/8 [box-shadow:0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.95)]"
-          : "[box-shadow:0_2px_16px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.9)]",
-        // Padding
+          ? "shadow-md shadow-black/8"
+          : "shadow-sm shadow-black/5",
         paddingMap[padding],
-        // Hover
-        hover && "transition-all duration-300 cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/8 active:scale-[0.98]",
+        hover && "transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]",
         className
       )}
       {...props}

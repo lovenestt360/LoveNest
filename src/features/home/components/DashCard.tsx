@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
 interface DashCardProps {
   icon: React.ReactNode;
@@ -20,40 +19,34 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
     <button
       onClick={() => navigate(to)}
       className={cn(
-        "glass-card glass-card-hover group relative flex flex-col gap-3 p-4 text-left w-full active:scale-[0.97] transition-all duration-300",
+        "glass-card glass-card-hover group relative flex flex-col gap-3 p-4 text-left w-full active:scale-[0.98]",
         className
       )}
     >
-      {/* Icon + badge */}
+      {/* Top: icon + badge */}
       <div className="flex items-start justify-between">
         <div className={cn(
-          "w-10 h-10 rounded-2xl flex items-center justify-center bg-white shadow-sm shadow-black/8 border border-white/80 transition-transform duration-200 group-active:scale-95",
+          "w-9 h-9 rounded-xl flex items-center justify-center",
+          accent ?? "text-rose-500"
         )}>
-          <span className={cn("flex items-center justify-center", accent ?? "text-rose-400")}>
-            {icon}
-          </span>
+          {icon}
         </div>
-
         {hasBadge && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-400 px-1.5 text-[9px] font-black text-white shadow-sm animate-in zoom-in duration-200">
+          <span className="h-5 min-w-5 flex items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold text-white">
             {typeof badge === "number" && badge > 99 ? "99+" : badge}
           </span>
         )}
       </div>
 
       {/* Text */}
-      <div className="space-y-0.5">
-        <p className="text-[12px] font-black text-foreground/80 tracking-tight">{title}</p>
-        {lines.map((line, i) => (
-          <p key={i} className={cn(
-            "text-[11px] leading-tight line-clamp-1",
-            i === 0
-              ? "text-foreground/50 font-semibold"
-              : "text-foreground/35 font-medium"
-          )}>
-            {line}
-          </p>
-        ))}
+      <div>
+        <p className="text-[13px] font-semibold text-foreground leading-tight">{title}</p>
+        {lines[0] && (
+          <p className="text-[12px] text-muted-foreground mt-0.5 leading-tight line-clamp-1">{lines[0]}</p>
+        )}
+        {lines[1] && (
+          <p className="text-[11px] text-muted-foreground/70 leading-tight line-clamp-1">{lines[1]}</p>
+        )}
       </div>
     </button>
   );
