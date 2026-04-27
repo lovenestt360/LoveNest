@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -61,6 +61,14 @@ export default function Prayer() {
   const [reflection, setReflection] = useState("");
   const [logDirty, setLogDirty] = useState(false);
 
+  // Refs para evitar que o polling sobrescreva campos que o utilizador está a editar
+  const editingPrayerRef = useRef(false);
+  const logDirtyRef = useRef(false);
+
+  // Manter refs sincronizados com o estado (sem re-criar fetchAll)
+  useEffect(() => { editingPrayerRef.current = editingPrayer; }, [editingPrayer]);
+  useEffect(() => { logDirtyRef.current = logDirty; }, [logDirty]);
+
   // History
   const [historyPrayers, setHistoryPrayers] = useState<DailyPrayer[]>([]);
   const [historyLogs, setHistoryLogs] = useState<SpiritualLog[]>([]);
@@ -78,12 +86,17 @@ export default function Prayer() {
 
     if (pRes.data) {
       setPrayer(pRes.data as DailyPrayer);
-      setPrayerText(pRes.data.prayer_text);
-      setVerseRef(pRes.data.verse_ref ?? "");
+      // Não sobrescrever se o utilizador está a editar o formulário de oração
+      if (!editingPrayerRef.current) {
+        setPrayerText(pRes.data.prayer_text);
+        setVerseRef(pRes.data.verse_ref ?? "");
+      }
     } else {
       setPrayer(null);
-      setPrayerText("");
-      setVerseRef("");
+      if (!editingPrayerRef.current) {
+        setPrayerText("");
+        setVerseRef("");
+      }
     }
 
     if (logRes.data) {
@@ -94,8 +107,11 @@ export default function Prayer() {
       if (mine) {
         setPrayedToday(mine.prayed_today);
         setCriedToday(mine.cried_today);
-        setGratitude(mine.gratitude_note ?? "");
-        setReflection(mine.reflection_note ?? "");
+        // Não sobrescrever campos de texto se o utilizador está a escrever
+        if (!logDirtyRef.current) {
+          setGratitude(mine.gratitude_note ?? "");
+          setReflection(mine.reflection_note ?? "");
+        }
       }
     }
 
