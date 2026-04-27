@@ -122,13 +122,24 @@ export function BottomTabs() {
                 {isMoreActive && <ActiveDot />}
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-[2.5rem] border-t border-border/50 pb-[max(env(safe-area-inset-bottom),1rem)]">
-              <SheetHeader>
-                <SheetTitle className="text-left text-lg font-bold">More</SheetTitle>
+            <SheetContent
+              side="bottom"
+              className="rounded-t-[2rem] border-t-0 bg-white/90 backdrop-blur-2xl pb-[max(env(safe-area-inset-bottom),1.5rem)] shadow-2xl"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-1 pb-4">
+                <div className="w-10 h-1 rounded-full bg-slate-200" />
+              </div>
+
+              <SheetHeader className="px-1 pb-4">
+                <SheetTitle className="text-left text-base font-black text-foreground/70 uppercase tracking-widest text-[11px]">
+                  Mais
+                </SheetTitle>
               </SheetHeader>
-              <div className="grid grid-cols-3 gap-3 pt-4">
+
+              <div className="grid grid-cols-4 gap-3">
                 {moreItems
-                  .filter((item) => (freeMode ? item.to !== "/subscricao" : true))
+                  .filter(item => freeMode ? item.to !== "/subscricao" : true)
                   .map(({ to, label, Icon }) => {
                     const badge = getMoreBadge(to);
                     const active = location.pathname === to;
@@ -136,22 +147,22 @@ export function BottomTabs() {
                       <button
                         key={to}
                         type="button"
-                        onClick={() => {
-                          setMoreOpen(false);
-                          navigate(to);
-                        }}
+                        onClick={() => { setMoreOpen(false); navigate(to); }}
                         className={cn(
-                          "relative flex flex-col items-center gap-2 rounded-[1.5rem] border p-4 text-sm font-medium transition-all duration-200 active:scale-[0.97]",
+                          "relative flex flex-col items-center gap-2 rounded-2xl p-3 transition-all duration-200 active:scale-[0.95]",
                           active
-                            ? "border-primary/30 bg-primary/10 text-primary glow-primary"
-                            : "border-border/50 text-muted-foreground hover:bg-secondary"
+                            ? "bg-rose-50 text-rose-400"
+                            : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                         )}
                       >
-                        <span className="relative">
-                          <Icon className="h-6 w-6" />
+                        <div className={cn(
+                          "w-11 h-11 rounded-2xl flex items-center justify-center relative",
+                          active ? "bg-rose-100" : "bg-white shadow-sm shadow-black/5"
+                        )}>
+                          <Icon className="h-5 w-5" strokeWidth={1.5} />
                           {badge > 0 && <Badge count={badge} />}
-                        </span>
-                        <span className="leading-tight">{label}</span>
+                        </div>
+                        <span className="text-[10px] font-semibold leading-tight text-center">{label}</span>
                       </button>
                     );
                   })}
