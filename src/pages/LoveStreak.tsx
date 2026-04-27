@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
-  Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star
+  Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star,
+  MessageCircle, CheckSquare, Smile, BookOpen,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -30,36 +31,43 @@ interface Mission {
 }
 
 const MISSION_DEFS: Omit<Mission, "completed" | "completedCount">[] = [
-  { id: "message",  title: "Conversar",   description: "Ambos enviam uma mensagem no chat",   emoji: "💬", activityType: "message",  points: 10 },
-  { id: "checkin",  title: "Check-in",    description: "Ambos fazem o check-in diário",        emoji: "✅", activityType: "checkin",  points: 10 },
-  { id: "mood",     title: "Humor",       description: "Ambos registam o humor de hoje",        emoji: "😊", activityType: "mood",     points: 5  },
-  { id: "prayer",   title: "Oração",      description: "Ambos partilham uma oração",            emoji: "🙏", activityType: "prayer",   points: 5  },
+  { id: "message",  title: "Conversar",   description: "Ambos enviam uma mensagem no chat",   emoji: "message",  activityType: "message",  points: 10 },
+  { id: "checkin",  title: "Check-in",    description: "Ambos fazem o check-in diário",        emoji: "checkin",  activityType: "checkin",  points: 10 },
+  { id: "mood",     title: "Humor",       description: "Ambos registam o humor de hoje",        emoji: "mood",     activityType: "mood",     points: 5  },
+  { id: "prayer",   title: "Oração",      description: "Ambos partilham uma oração",            emoji: "prayer",   activityType: "prayer",   points: 5  },
 ];
+
+const MISSION_ICONS: Record<string, React.ReactNode> = {
+  message: <MessageCircle className="w-4 h-4" strokeWidth={1.5} />,
+  checkin: <CheckSquare className="w-4 h-4" strokeWidth={1.5} />,
+  mood:    <Smile className="w-4 h-4" strokeWidth={1.5} />,
+  prayer:  <BookOpen className="w-4 h-4" strokeWidth={1.5} />,
+};
 
 // ─────────────────────────────────────────────
 // TAB BAR
 // ─────────────────────────────────────────────
-const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "streaks", label: "Streak",  emoji: "🔥" },
-  { id: "pontos",  label: "Pontos",  emoji: "💰" },
-  { id: "missoes", label: "Missões", emoji: "🎯" },
+const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "streaks", label: "Streak",  icon: <Flame   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
+  { id: "pontos",  label: "Pontos",  icon: <Coins   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
+  { id: "missoes", label: "Missões", icon: <Target  className="w-3.5 h-3.5" strokeWidth={1.5} /> },
 ];
 
 function TabBar({ activeTab, onChange }: { activeTab: Tab; onChange: (t: Tab) => void }) {
   return (
-    <div className="flex bg-muted/50 rounded-2xl p-1 gap-0.5">
+    <div className="flex bg-white/50 backdrop-blur-sm border border-white/70 rounded-2xl p-1 gap-1 shadow-sm">
       {TABS.map(tab => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
           className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200",
+            "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200",
             activeTab === tab.id
-              ? "bg-background text-primary shadow-md shadow-primary/10"
-              : "text-muted-foreground/50 hover:text-foreground/70 active:scale-95"
+              ? "bg-white text-foreground/80 shadow-sm"
+              : "text-foreground/30 hover:text-foreground/60 active:scale-95"
           )}
         >
-          <span className="text-sm">{tab.emoji}</span>
+          {tab.icon}
           {tab.label}
         </button>
       ))}
@@ -618,19 +626,23 @@ export default function LoveStreak() {
                       : "border-border/20 hover:border-primary/15"
                   )}
                 >
-                  <span className="text-2xl shrink-0">{m.emoji}</span>
+                  <div className={cn(
+                    "w-9 h-9 rounded-2xl flex items-center justify-center shrink-0",
+                    m.completed ? "bg-rose-50 text-rose-400" : "bg-white shadow-sm text-foreground/40"
+                  )}>
+                    {MISSION_ICONS[m.emoji] ?? <Target className="w-4 h-4" strokeWidth={1.5} />}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "text-sm font-black tracking-tight",
-                      m.completed ? "line-through text-foreground/40" : "text-foreground"
+                      "text-sm font-semibold tracking-tight",
+                      m.completed ? "line-through text-foreground/30" : "text-foreground/80"
                     )}>
                       {m.title}
                     </p>
-                    <p className="text-xs text-muted-foreground/60 font-medium truncate">{m.description}</p>
-                    {/* Mini progress (1/2 ou 2/2) */}
+                    <p className="text-[11px] text-foreground/40 font-medium truncate">{m.description}</p>
                     {!m.completed && m.completedCount > 0 && (
-                      <p className="text-[10px] font-black text-amber-600 mt-0.5">
-                        {m.completedCount}/{totalMembers} já completou ⏳
+                      <p className="text-[10px] font-semibold text-amber-500 mt-0.5">
+                        {m.completedCount}/{totalMembers} já completou
                       </p>
                     )}
                   </div>
