@@ -1,6 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomTabs } from "@/app/layout/BottomTabs";
-import { Fab } from "@/app/layout/Fab";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { WifiOff } from "lucide-react";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -50,7 +49,6 @@ export function AppShell() {
         </PageTransition>
       </main>
 
-      {!isChat && <Fab />}
       {!isChat && <BottomTabs />}
       
       {/* System Components */}
