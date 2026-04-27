@@ -154,43 +154,33 @@ export default function FeaturesControl() {
 
   const toggleGlobal = async (key: string, currentStatus: boolean) => {
     const newStatus = !currentStatus;
-    
-    // 1. Optimistic UI Update (Immediate visual feedback)
+
+    // Optimistic update imediato
     setFlags(prev => {
-      const existingIdx = prev.findIndex(f => f.key === key && f.scope === "global");
+      const existingIdx = prev.findIndex(f => f.key === key && f.scope === "global" && !f.target_id);
       if (existingIdx > -1) {
-        const newFlags = [...prev];
-        newFlags[existingIdx] = { ...newFlags[existingIdx], enabled: newStatus };
-        return newFlags;
+        const updated = [...prev];
+        updated[existingIdx] = { ...updated[existingIdx], enabled: newStatus };
+        return updated;
       }
-      return [...prev, { id: `temp-${key}`, key, scope: 'global', enabled: newStatus }];
+      return [...prev, { id: `temp-${key}`, key, scope: 'global', target_id: null, enabled: newStatus }];
     });
 
     try {
-      // 2. Perform Database Operation
-      const existing = flags.find(f => f.key === key && f.scope === "global");
-      
-      if (existing) {
-        const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await adminClient.from("feature_flags").insert({ 
-          key, 
-          scope: "global", 
-          enabled: newStatus 
-        });
-        if (error) throw error;
-      }
-      
-      // 3. Notify success (Don't call fetchData immediately to avoid race conditions with stale Selects)
-      toast({ title: "Atualizado", description: `Estado de ${key} alterado para ${newStatus ? 'ATIVO' : 'DESLIGADO'}.` });
-      
-      // Sync back after a short delay to ensure DB propagation
-      setTimeout(fetchData, 1000);
-      
-    } catch (err: any) {
-      // Revert if error
+      // UPSERT via RPC — evita duplicados (UNIQUE index garante 1 linha por key+scope)
+      const { error } = await adminClient.rpc("upsert_feature_flag", {
+        p_key: key,
+        p_scope: "global",
+        p_enabled: newStatus,
+        p_target_id: null,
+      });
+      if (error) throw error;
+
+      toast({ title: "Atualizado", description: `${key} → ${newStatus ? 'ATIVO' : 'DESLIGADO'}` });
+      // Re-fetch para sincronizar IDs reais (sem setTimeout — fetch directo)
       fetchData();
+    } catch (err: any) {
+      fetchData(); // revert
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
@@ -199,10 +189,14 @@ export default function FeaturesControl() {
     setFlags(prev => prev.map(f => f.id === flag.id ? { ...f, enabled: newStatus } : f));
 
     try {
-      const { error } = await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", flag.id);
+      const { error } = await adminClient.rpc("upsert_feature_flag", {
+        p_key: flag.key,
+        p_scope: flag.scope,
+        p_enabled: newStatus,
+        p_target_id: flag.target_id,
+      });
       if (error) throw error;
-      
-      setTimeout(fetchData, 1000);
+      fetchData();
     } catch (err: any) {
       fetchData();
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -331,12 +325,13 @@ export default function FeaturesControl() {
               });
 
               try {
-                const existing = flags.find(f => f.key === "system_enabled" && f.scope === "global");
-                if (existing && existing.id !== 'temp-master') {
-                  await adminClient.from("feature_flags").update({ enabled: newStatus }).eq("id", existing.id);
-                } else {
-                  await adminClient.from("feature_flags").insert({ key: "system_enabled", scope: "global", enabled: newStatus });
-                }
+                const { error } = await adminClient.rpc("upsert_feature_flag", {
+                  p_key: "system_enabled",
+                  p_scope: "global",
+                  p_enabled: newStatus,
+                  p_target_id: null,
+                });
+                if (error) throw error;
                 fetchData();
                 toast({ title: "Master Switch", description: `Sistema agora está ${newStatus ? 'ONLINE' : 'EM BYPASS'}.` });
               } catch (err: any) {
