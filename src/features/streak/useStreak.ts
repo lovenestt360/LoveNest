@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 
@@ -124,6 +124,9 @@ export function useStreak() {
   const [error,   setError]       = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
 
+  // UTC date string at mount — used to detect day rollover
+  const todayUTCRef = useRef(new Date().toISOString().slice(0, 10));
+
   // ─────────────────────────────────────────────────────────────────────
   // refresh
   //
@@ -172,6 +175,25 @@ export function useStreak() {
   }, [spaceId]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  // Polling: refresh every 5 minutes to prevent stale UI
+  useEffect(() => {
+    const interval = setInterval(refresh, 5 * 60_000);
+    return () => clearInterval(interval);
+  }, [refresh]);
+
+  // Day-change detection: check every minute for UTC date rollover
+  // This ensures the UI resets when midnight passes (server CURRENT_DATE changes)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const todayUTC = new Date().toISOString().slice(0, 10);
+      if (todayUTC !== todayUTCRef.current) {
+        todayUTCRef.current = todayUTC;
+        refresh();
+      }
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [refresh]);
 
   // ─────────────────────────────────────────────────────────────────────
   // checkIn
