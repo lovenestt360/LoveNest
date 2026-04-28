@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Mail, Lock, Sparkles, ArrowRight } from "lucide-react";
+import { Heart, Loader2, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
+  const [tab, setTab]               = useState<"password" | "magic">("password");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [magicSent, setMagicSent]   = useState(false);
+
+  const navigate    = useNavigate();
+  const location    = useLocation();
+  const { toast }   = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,194 +24,178 @@ export default function Login() {
   }, [navigate]);
 
   useEffect(() => {
-    if (location.state && (location.state as any).bounced) {
-      toast({
-        variant: "destructive",
-        title: "Sessão Expirada Precocemente",
-        description: (location.state as any).bounced,
-        duration: 8000,
-      });
-      // clear state so it doesn't loop
+    if ((location.state as any)?.bounced) {
+      toast({ variant: "destructive", title: "Sessão Expirada", description: (location.state as any).bounced });
       window.history.replaceState({}, document.title);
     }
   }, [location.state, toast]);
 
-  const handlePasswordLogin = async (e: React.FormEvent) => {
+  const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const cleanEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
+        email: email.trim().toLowerCase(), password,
       });
-
       if (error) throw error;
       navigate("/casa");
-    } catch (error: any) {
-      let msg = error.message;
-      if (msg.includes("Invalid login credentials")) {
-        msg = "Email ou senha incorretos.";
-      }
-      toast({
-        variant: "destructive",
-        title: "Erro ao entrar",
-        description: msg,
-      });
+    } catch (err: any) {
+      const msg = err.message.includes("Invalid login credentials")
+        ? "Email ou senha incorretos."
+        : err.message;
+      toast({ variant: "destructive", title: "Erro ao entrar", description: msg });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  const handleMagic = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const cleanEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signInWithOtp({
-        email: cleanEmail,
-        options: {
-          emailRedirectTo: window.location.origin + "/casa",
-        },
+        email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: window.location.origin + "/casa" },
       });
-
       if (error) throw error;
-
-      setMagicLinkSent(true);
-      toast({
-        title: "Link mágico enviado!",
-        description: "Verifica o teu e-mail.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao enviar",
-        description: error.message,
-      });
+      setMagicSent(true);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao enviar", description: err.message });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 overflow-hidden bg-white">
-      {/* Mesh Background with more vibrant colors */}
-      <div className="bg-mesh opacity-30" />
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm space-y-8">
 
-      <div className="w-full max-w-md animate-fade-in space-y-8 relative z-10">
-        <div className="text-center space-y-4">
-            <div className="inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-2xl mb-2 border-2 border-primary/20">
-                <Heart className="h-10 w-10 text-primary fill-primary animate-pulse" />
-            </div>
-            <div className="space-y-1">
-                <h1 className="text-5xl font-black tracking-tighter text-foreground">Bem-vindo</h1>
-                <p className="text-xs font-black text-primary uppercase tracking-[0.3em]">O teu Hub de Casal privado</p>
-            </div>
+        {/* Brand */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-50 border border-rose-100 mx-auto">
+            <Heart className="h-8 w-8 text-rose-400 fill-rose-400" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Bem-vindo</h1>
+            <p className="text-sm text-[#717171] mt-1">O teu espaço privado de casal</p>
+          </div>
         </div>
 
-        <div className="glass-card rounded-[3rem] p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border-white/80 bg-white/70 backdrop-blur-3xl">
-          <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-zinc-200/50 p-1.5 rounded-2xl mb-8">
-              <TabsTrigger value="password" className="rounded-xl font-black text-[10px] uppercase tracking-widest py-2.5">Senha</TabsTrigger>
-              <TabsTrigger value="magic" className="rounded-xl font-black text-[10px] uppercase tracking-widest py-2.5">Mágico</TabsTrigger>
-            </TabsList>
+        {/* Card */}
+        <div className="glass-card p-7 space-y-6">
 
-            <TabsContent value="password">
-              <form onSubmit={handlePasswordLogin} className="space-y-6">
-                <div className="space-y-2.5">
-                  <Label htmlFor="email-pwd" title="E-mail" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary px-1">
-                    <Mail className="w-3.5 h-3.5" /> E-mail
-                  </Label>
+          {/* Tabs */}
+          <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+            {(["password", "magic"] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
+                  tab === t ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
+                )}
+              >
+                {t === "password" ? "Senha" : "Link Mágico"}
+              </button>
+            ))}
+          </div>
+
+          {/* Password form */}
+          {tab === "password" && (
+            <form onSubmit={handlePassword} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">E-mail</label>
+                <Input
+                  type="email"
+                  placeholder="teu@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Senha</label>
+                <Input
+                  type="password"
+                  placeholder="A tua senha"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2"
+              >
+                {loading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <> Entrar <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
+                }
+              </button>
+            </form>
+          )}
+
+          {/* Magic link form */}
+          {tab === "magic" && (
+            magicSent ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
+                  <Heart className="w-8 h-8 text-rose-400 fill-rose-400" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-foreground">Link enviado!</p>
+                  <p className="text-sm text-[#717171] mt-1">
+                    Verifica o teu e-mail em <span className="font-medium text-foreground">{email}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setMagicSent(false)}
+                  className="text-sm font-medium text-rose-500 hover:underline"
+                >
+                  Tentar outro e-mail
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleMagic} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">E-mail</label>
                   <Input
-                    id="email-pwd"
                     type="email"
                     placeholder="teu@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={e => setEmail(e.target.value)}
                     required
-                    className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
+                    className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
                   />
                 </div>
-                <div className="space-y-2.5">
-                  <Label htmlFor="password" title="Senha" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary px-1">
-                     <Lock className="w-3.5 h-3.5" /> Senha
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Insere a tua senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
-                  />
-                </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={loading}
-                  className="glass-btn-primary w-full h-16 flex items-center justify-center gap-3 font-black tracking-tight text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                  className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2"
                 >
-                  {loading ? "A entrar..." : <>Entrar agora <ArrowRight className="w-5 h-5" /></>}
+                  {loading
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <> Enviar Link <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
+                  }
                 </button>
               </form>
-            </TabsContent>
+            )
+          )}
 
-            <TabsContent value="magic">
-              {magicLinkSent ? (
-                <div className="space-y-8 pt-4 text-center anim-fade-in">
-                    <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-                        <Sparkles className="w-10 h-10 animate-pulse" />
-                    </div>
-                    <div className="space-y-3">
-                        <p className="text-lg font-black text-foreground">Link enviado!</p>
-                        <p className="text-sm text-zinc-600 font-bold leading-relaxed px-4">Verifica a tua caixa de e-mail em <br/><strong className="text-primary">{email}</strong>.</p>
-                    </div>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setMagicLinkSent(false)}
-                    className="w-full font-black text-primary hover:bg-primary/5 rounded-2xl h-14 uppercase tracking-widest text-[10px]"
-                  >
-                    Tentar outro e-mail
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleMagicLink} className="space-y-6">
-                  <div className="space-y-2.5">
-                    <Label htmlFor="email-magic" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary px-1">
-                      <Mail className="w-3.5 h-3.5" /> E-mail para Link Rápido
-                    </Label>
-                    <Input
-                      id="email-magic"
-                      type="email"
-                      placeholder="teu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-14 rounded-2xl bg-white border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold placeholder:text-zinc-400 text-foreground"
-                    />
-                  </div>
-                  <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="glass-btn-primary w-full h-16 flex items-center justify-center gap-3 font-black tracking-tight text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                  >
-                    {loading ? "A enviar..." : <>Enviar Link <ArrowRight className="w-5 h-5" /></>}
-                  </button>
-                </form>
-              )}
-            </TabsContent>
-          </Tabs>
-
-          <div className="mt-10 text-center border-t border-zinc-100 pt-8">
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Novo por aqui?</p>
-            <button 
+          {/* Sign up link */}
+          <div className="pt-4 border-t border-[#f5f5f5] text-center">
+            <p className="text-sm text-[#717171]">
+              Novo por aqui?{" "}
+              <button
                 onClick={() => navigate("/criar-conta")}
-                className="group flex items-center justify-center mx-auto gap-2 text-sm font-black text-primary hover:scale-105 transition-transform"
-            >
-              Cria o teu Ninho Grátis <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-            </button>
+                className="font-semibold text-rose-500 hover:underline"
+              >
+                Cria a tua conta
+              </button>
+            </p>
           </div>
         </div>
       </div>
