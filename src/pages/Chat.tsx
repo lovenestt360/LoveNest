@@ -924,45 +924,34 @@ export default function Chat() {
     <section className="relative flex flex-col overflow-hidden h-[100dvh]">
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 px-4 pt-4 pb-2 bg-background/40 backdrop-blur-md border-b border-white/10">
+      <header className="relative z-20 shrink-0 px-4 pt-3 pb-3 bg-white border-b border-[#e5e5e5]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 rounded-2xl mr-1 hover:bg-white/10" 
+          <div className="flex items-center gap-3">
+            <button
               onClick={() => navigate("/")}
+              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0"
             >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-primary/20 backdrop-blur-lg flex items-center justify-center shadow-inner border border-white/20">
-                <span className="text-xl">💬</span>
-              </div>
+              <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+            </button>
             <div className="min-w-0">
-              <h1 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/80 uppercase mb-0.5">Chat</h1>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-black text-foreground truncate max-w-[150px]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-base font-semibold text-foreground truncate max-w-[160px]">
                   {partner?.display_name || "Amor"}
                 </span>
                 {partner?.verification_status === 'verified' && (
-                  <ShieldCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/20" />
+                  <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" strokeWidth={1.5} />
                 )}
               </div>
+              <p className="text-[11px] text-[#717171]">Chat privado</p>
             </div>
           </div>
-        </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-foreground hover:bg-white/20 transition-all active:scale-90"
-              onClick={() => navigate("/configuracoes#customization")}
-            >
-              <Palette className="h-5 w-5" />
-            </Button>
-          </div>
+          <button
+            onClick={() => navigate("/configuracoes#customization")}
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
+          >
+            <Palette className="h-5 w-5 text-[#717171]" strokeWidth={1.5} />
+          </button>
         </div>
       </header>
 
@@ -1175,7 +1164,7 @@ export default function Chat() {
                       <Button
                         type="button"
                         size="icon"
-                        className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
+                        className="h-10 w-10 shrink-0 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-sm transition-transform active:scale-95"
                         onClick={async () => {
                           if (audio.recording) {
                             const blob = await audio.stop();
@@ -1241,7 +1230,7 @@ export default function Chat() {
                     <Button
                       type="submit"
                       size="icon"
-                      className="h-10 w-10 shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
+                      className="h-10 w-10 shrink-0 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-sm transition-transform active:scale-95"
                       disabled={!isReady || sending}
                     >
                       {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
@@ -1323,8 +1312,8 @@ function MessageBubble({
           className={cn(
             "px-4 py-2.5 text-[15px] select-none transition-all shadow-sm max-w-full",
             isMine
-              ? "rounded-[22px] rounded-br-[6px] bg-primary text-primary-foreground font-medium bg-gradient-to-br from-primary to-primary/95 shadow-primary/20"
-              : "rounded-[22px] rounded-bl-[6px] bg-background border border-border/50 text-foreground font-medium shadow-border/10",
+              ? "rounded-[22px] rounded-br-[6px] bg-rose-500 text-white font-medium shadow-sm"
+              : "rounded-[22px] rounded-bl-[6px] bg-white border border-[#e5e5e5] text-foreground font-medium shadow-sm",
             isDeleted && "opacity-50 italic",
             msg.id.startsWith("temp-") && "opacity-70 grayscale-[0.5] animate-pulse"
           )}
@@ -1338,8 +1327,8 @@ function MessageBubble({
               className={cn(
                 "flex items-center gap-1 rounded-lg px-2 py-1 mb-1 text-[10px] border-l-2",
                 isMine
-                  ? "bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground/70"
-                  : "bg-foreground/5 border-foreground/20 text-muted-foreground"
+                  ? "bg-white/20 border-white/40 text-white/80"
+                  : "bg-[#f5f5f5] border-[#e5e5e5] text-[#717171]"
               )}
             >
               <CornerDownRight className="h-2.5 w-2.5 shrink-0" />
