@@ -425,86 +425,76 @@ const Index = () => {
 
       </div>
 
-      {/* ── MAIN TOOL GRID (2 Columns) ── */}
+      {/* ── MAIN TOOL GRID ── */}
       <section className="space-y-3 px-1">
-        <div className="flex items-center justify-between px-2">
-           <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30">
-              Gestão Diária
-           </h2>
-        </div>
-        
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">
+          Gestão Diária
+        </h2>
         <div className="grid grid-cols-2 gap-3">
-          {/* Agenda - Spans 2 if needed or stays 1? User said "equal card sizes". 
-              I'll keep Agenda as 1 column now to match the "equal size" rule. 
-          */}
           <DashCard
-            icon={<CheckSquare className="h-6 w-6 stroke-[2.5]" />}
+            icon={<CheckSquare className="h-5 w-5" strokeWidth={1.5} />}
             title="Agenda"
             lines={[
-              plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo pronto ✨",
-              plano.next ? `${plano.next.time} ${plano.next.title}` : "Livre"
+              plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo em dia",
+              plano.next ? `${plano.next.time} · ${plano.next.title}` : "Sem eventos",
             ]}
             to="/plano"
             badge={tasksUnread + scheduleUnread}
-            accent="bg-indigo-500/15 text-indigo-600 dark:text-indigo-400"
           />
 
           <DashCard
-            icon={<Smile className="h-6 w-6 stroke-[2.5]" />}
+            icon={<Smile className="h-5 w-5" strokeWidth={1.5} />}
             title="Humor"
             lines={[
-              mood.mine ? `Tu: ${mood.mine.emoji}` : "Registar",
-              mood.partner ? `Par: ${mood.partner.emoji}` : "Aguardando...",
+              mood.mine ? `Tu: ${mood.mine.label}` : "Registar humor",
+              mood.partner ? `Par: ${mood.partner.label}` : "A aguardar par",
             ]}
             to="/humor"
             badge={moodUnread}
-            accent="bg-orange-500/15 text-orange-600 dark:text-orange-400"
           />
 
           {isEnabled("home_conversas") && (
             <DashCard
-              icon={<MessageCircle className="h-6 w-6 stroke-[2.5]" />}
+              icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
               title="Chat"
               lines={[
-                chatUnread > 0 ? `${chatUnread} novas` : "Abrir conversa",
-                chatPreview.preview ? "Nova mensagem!" : "Sem mensagens"
+                chatUnread > 0 ? `${chatUnread} novas mensagens` : "Abrir conversa",
+                chatPreview.preview ?? "Sem mensagens recentes",
               ]}
               to="/chat"
               badge={chatUnread}
-              accent="bg-sky-500/15 text-sky-600"
             />
           )}
 
           {isEnabled("home_jejum") && (
             <DashCard
-              icon={<Flame className="h-6 w-6 stroke-[2.5]" />}
+              icon={<Flame className="h-5 w-5" strokeWidth={1.5} />}
               title="Jejum"
               lines={[
-                `${fasting.streak} dias 🔥`,
-                `${fastingProgress}% completo`
+                `${fasting.streak} dias consecutivos`,
+                `${fastingProgress}% completo`,
               ]}
               to="/jejum"
-              accent="bg-amber-500/15 text-amber-600"
             />
           )}
 
-          {/* Integration of "Ciclo" into main grid */}
-          <DashCard 
-            icon={<Flower2 className="h-6 w-6 stroke-[2.5]" />} 
-            title="Cuidado"
+          <DashCard
+            icon={<Flower2 className="h-5 w-5" strokeWidth={1.5} />}
+            title="Ciclo"
             lines={["Ciclo & Saúde", "Ver detalhes"]}
-            to="/ciclo" 
-            accent="bg-pink-500/15 text-pink-500" 
+            to="/ciclo"
           />
-          
+
           {isEnabled("home_oracao") && (
-            <DashCard 
-              icon={<BookHeart className="h-6 w-6 stroke-[2.5]" />} 
-              title="Oração" 
-              lines={[prayer.myPrayed ? "Tu: ✓" : "Tu: ○", prayer.partnerPrayed ? "Par: ✓" : "Par: ○"]}
-              to="/oracao" 
+            <DashCard
+              icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
+              title="Oração"
+              lines={[
+                prayer.myPrayed ? "Tu: registado" : "Tu: por registar",
+                prayer.partnerPrayed ? "Par: registado" : "Par: a aguardar",
+              ]}
+              to="/oracao"
               badge={prayerUnread}
-              accent="bg-blue-500/15 text-blue-500" 
             />
           )}
         </div>
