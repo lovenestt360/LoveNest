@@ -136,45 +136,39 @@ export function PartnerRoutinePanel() {
     }
 
     return (
-        <div className="space-y-4 animate-in fade-in duration-300">
-            {/* ── Header: identidade do parceiro ── */}
-            <div className="flex items-center gap-3 px-1">
-                <div className={cn(
-                    "h-9 w-9 rounded-full flex items-center justify-center text-sm font-black shrink-0 ring-2 ring-white shadow-sm overflow-hidden",
-                    "bg-gradient-to-br from-rose-300 to-pink-400 text-white"
-                )}>
-                    {partnerAvatar ? (
-                        <img src={partnerAvatar} alt={partnerName} className="h-full w-full object-cover" />
-                    ) : (
-                        <span>{partnerName.charAt(0).toUpperCase()}</span>
-                    )}
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 border border-[#e5e5e5] bg-rose-50 flex items-center justify-center text-sm font-semibold text-rose-400 shadow-sm">
+                    {partnerAvatar
+                        ? <img src={partnerAvatar} alt={partnerName} className="h-full w-full object-cover" />
+                        : <span>{partnerName.charAt(0).toUpperCase()}</span>
+                    }
                 </div>
                 <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Rotina de</p>
-                    <p className="font-black text-slate-800 leading-tight">{partnerName} 💛</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Rotina de</p>
+                    <p className="text-sm font-semibold text-foreground leading-tight">{partnerName}</p>
                 </div>
-                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#e5e5e5] bg-white">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    <span className="text-[11px] font-medium text-[#717171]">
                         {todayChecked.length}/{items.length} hoje
                     </span>
                 </div>
             </div>
 
-            {/* ── Calendário de progresso ── */}
-            <div className="rounded-[2.5rem] overflow-hidden bg-white/40 backdrop-blur-xl border border-white/20 shadow-sm">
-                <RoutineCalendar
-                    logs={logs}
-                    year={year}
-                    month={month}
-                    onChangeMonth={(y, m) => { setYear(y); setMonth(m); }}
-                />
-            </div>
+            {/* Calendário */}
+            <RoutineCalendar
+                logs={logs}
+                year={year}
+                month={month}
+                onChangeMonth={(y, m) => { setYear(y); setMonth(m); }}
+            />
 
-            {/* ── Checklist de hoje (read-only) ── */}
+            {/* Checklist read-only */}
             {items.length > 0 ? (
                 <div className="space-y-2">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-[0.1em] px-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">
                         Hábitos de hoje
                     </p>
                     <RoutineChecklist
@@ -185,11 +179,9 @@ export function PartnerRoutinePanel() {
                     />
                 </div>
             ) : (
-                <div className="rounded-2xl bg-slate-50/60 border border-slate-100 py-10 text-center space-y-1">
-                    <UserRound className="mx-auto h-8 w-8 text-slate-200" />
-                    <p className="text-sm font-bold text-slate-400">
-                        {partnerName} ainda não criou hábitos
-                    </p>
+                <div className="glass-card py-10 text-center space-y-2">
+                    <UserRound className="mx-auto h-7 w-7 text-[#c4c4c4]" strokeWidth={1.5} />
+                    <p className="text-sm text-[#717171]">{partnerName} ainda não criou hábitos</p>
                 </div>
             )}
         </div>
