@@ -214,13 +214,7 @@ export default function Plano() {
         {activeTab === "agenda" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
             {/* ── Card de Input da Agenda ── */}
-            <div
-              className={cn(
-                "rounded-2xl overflow-hidden transition-all duration-200 ease-in-out",
-                glassStyle
-              )}
-              style={{ display: "flex", flexDirection: "column", gap: 0 }}
-            >
+            <div className="glass-card overflow-hidden transition-all duration-200 ease-in-out flex flex-col">
               {/* Linha 1: Input principal + botão de ação */}
               <div className="flex items-center gap-2 p-3">
                 <Input
