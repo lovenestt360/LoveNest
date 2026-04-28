@@ -20,6 +20,7 @@ import {
   Flame,
   ClipboardList,
   CreditCard,
+  Heart,
 } from "lucide-react";
 import {
   Sheet,
@@ -130,11 +131,11 @@ export function BottomTabs() {
                 <div className="w-10 h-1 rounded-full bg-[#e5e5e5]" />
               </div>
 
-              {/* Header — LoveNest brand */}
+              {/* Header */}
               <div className="flex items-center justify-between px-1 pb-5">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-                    <span className="text-sm">💛</span>
+                    <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" strokeWidth={1.5} />
                   </div>
                   <span className="text-base font-bold text-foreground">LoveNest</span>
                 </div>
@@ -152,7 +153,7 @@ export function BottomTabs() {
                         key={to}
                         type="button"
                         onClick={() => { setMoreOpen(false); navigate(to); }}
-                        className="relative flex flex-col items-center gap-2 active:scale-[0.95] transition-all duration-150"
+                        className="relative flex flex-col items-center gap-2 active:scale-[0.95] transition-all duration-150 outline-none"
                       >
                         <div className={cn(
                           "w-14 h-14 rounded-2xl flex items-center justify-center relative border transition-colors",
