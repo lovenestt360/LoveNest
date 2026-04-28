@@ -18,7 +18,7 @@ interface RoutineCalendarProps {
 // Status → small dot color only (not full cell bg)
 function dotColor(status: string | undefined) {
   switch (status) {
-    case "completed": return "bg-rose-400";
+    case "completed": return "bg-green-500";
     case "partial":   return "bg-amber-400";
     case "failed":    return "bg-red-400";
     default:          return "";
@@ -121,7 +121,7 @@ export function RoutineCalendar({
       <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-[#717171]">
         {!hideLegendStatus?.includes("completed") && (
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-rose-400" /> Completo
+            <span className="h-2 w-2 rounded-full bg-green-500" /> Completo
           </span>
         )}
         {!hideLegendStatus?.includes("partial") && (

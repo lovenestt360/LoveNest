@@ -328,7 +328,7 @@ export default function Plano() {
                         className={cn(
                             "flex items-center justify-center h-6 w-6 rounded-lg border-2 transition-all shrink-0",
                             item.completed
-                                ? "bg-rose-500 border-rose-500 text-white"
+                                ? "bg-green-500 border-green-500 text-white"
                                 : "border-[#e5e5e5]",
                         )}
                       >
