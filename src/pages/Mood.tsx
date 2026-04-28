@@ -6,8 +6,8 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { logActivity } from "@/lib/logActivity";
+import { cn } from "@/lib/utils";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
 import { MoodCheckin } from "@/features/mood/types";
 import { MoodForm } from "@/features/mood/MoodForm";
@@ -219,48 +219,65 @@ export default function Mood() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<"hoje" | "historico">("hoje");
+
   return (
-    <section className="space-y-6 pb-8 text-foreground">
+    <section className="space-y-5 pb-8">
+      {/* Header */}
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Humor do dia</h1>
-        <p className="text-sm text-muted-foreground">Regista as tuas emoções, atividades e sono.</p>
+        <h1 className="text-2xl font-bold text-foreground">Humor do dia</h1>
+        <p className="text-sm text-[#717171] mt-0.5">Regista as tuas emoções, atividades e sono.</p>
       </header>
 
-      <Tabs defaultValue="hoje" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="hoje">Hoje</TabsTrigger>
-          <TabsTrigger value="historico">Histórico e Par</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+        {([
+          { id: "hoje",      label: "Hoje" },
+          { id: "historico", label: "Histórico e Par" },
+        ] as const).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
+              activeTab === tab.id
+                ? "bg-white text-foreground shadow-sm"
+                : "text-[#717171]"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="hoje" className="mt-4">
-          <MoodForm
-            moodKey={moodKey} setMoodKey={setMoodKey}
-            moodPercent={moodPercent} setMoodPercent={setMoodPercent}
-            emotions={emotions} setEmotions={setEmotions}
-            activities={activities} setActivities={setActivities}
-            sleepQuality={sleepQuality} setSleepQuality={setSleepQuality}
-            note={note} setNote={setNote}
-            saving={saving} onSave={handleSave}
-            isUpdate={!!existingId}
-            isReady={isReady}
-          />
-        </TabsContent>
+      {activeTab === "hoje" && (
+        <MoodForm
+          moodKey={moodKey} setMoodKey={setMoodKey}
+          moodPercent={moodPercent} setMoodPercent={setMoodPercent}
+          emotions={emotions} setEmotions={setEmotions}
+          activities={activities} setActivities={setActivities}
+          sleepQuality={sleepQuality} setSleepQuality={setSleepQuality}
+          note={note} setNote={setNote}
+          saving={saving} onSave={handleSave}
+          isUpdate={!!existingId}
+          isReady={isReady}
+        />
+      )}
 
-        <TabsContent value="historico" className="mt-4">
-          <MoodHistory history={history} userId={user?.id || ""} />
-        </TabsContent>
-      </Tabs>
+      {activeTab === "historico" && (
+        <MoodHistory history={history} userId={user?.id || ""} />
+      )}
 
       {/* Success Overlay */}
       {showSuccessOverlay && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="text-center space-y-4 animate-bounce-in">
-            <div className="bg-primary/20 p-6 rounded-full inline-block shadow-glow">
-              <CheckCircle2 className="w-20 h-20 text-primary" />
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-10 h-10 text-rose-500" strokeWidth={1.5} />
             </div>
-            <div className="space-y-1">
-              <h2 className="text-2xl font-black text-foreground">Obrigado por partilhares 💛</h2>
-              <p className="text-sm text-muted-foreground font-medium italic">O teu par vai valorizar saber como estás.</p>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Obrigado por partilhares</h2>
+              <p className="text-sm text-[#717171] mt-1">O teu par vai valorizar saber como estás.</p>
             </div>
           </div>
         </div>
