@@ -307,25 +307,21 @@ export default function LoveStreak() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 animate-in fade-in duration-300">
+    <div className="min-h-screen bg-white pb-32">
 
-      {/* ── HEADER ─────────────────────────────────── */}
-      <div className="sticky top-0 z-20 frosted-glass shadow-sm px-4 py-3 space-y-3">
-        <div className="flex items-center gap-3">
+      {/* ── HEADER ── */}
+      <div className="sticky top-0 z-20 bg-white border-b border-[#e5e5e5] px-4 pt-3 pb-0">
+        <div className="flex items-center gap-3 mb-3">
           <button
             onClick={() => navigate(-1)}
-            className="h-9 w-9 flex items-center justify-center rounded-2xl bg-muted/50 hover:bg-muted active:scale-95 transition-all"
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] active:scale-95 transition-all"
           >
-            <ArrowLeft className="w-4 h-4 text-foreground" />
+            <ArrowLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
           </button>
-          <div className="flex items-center gap-2 flex-1">
-            <Flame className="w-5 h-5 text-primary" />
-            <h1 className="text-lg font-black tracking-tight text-foreground">LoveStreak</h1>
-          </div>
-          {/* Mini streak badge */}
-          <div className="flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-            <Flame className="w-3 h-3 fill-primary" />
-            <span className="text-xs font-black tabular-nums">{currentStreak}</span>
+          <h1 className="text-lg font-semibold text-foreground flex-1">LoveStreak</h1>
+          <div className="flex items-center gap-1 text-rose-500">
+            <Flame className="w-4 h-4" strokeWidth={1.5} />
+            <span className="text-sm font-semibold tabular-nums">{currentStreak}</span>
           </div>
         </div>
         <TabBar activeTab={activeTab} onChange={setActiveTab} />
@@ -335,94 +331,92 @@ export default function LoveStreak() {
       {/* ABA: STREAKS                                   */}
       {/* ══════════════════════════════════════════════ */}
       {activeTab === "streaks" && (
-        <div className="max-w-md mx-auto px-4 py-6 space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
-          {/* HERO */}
-          <section className="text-center pt-2 pb-4 space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 flex items-center justify-center gap-1.5">
-              {isZero ? "Comecem hoje" : "Chama acesa"} <Sparkles className="w-3 h-3" />
+          {/* Hero — número grande */}
+          <section className="text-center py-8">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">
+              {isZero ? "Comecem hoje" : "Chama acesa"}
             </p>
-            <div className="relative inline-block">
-              {/* Glow detrás do número */}
-              <div className="absolute inset-0 m-auto w-32 h-32 bg-primary/15 blur-[50px] rounded-full" />
-              <div className="flex items-end justify-center gap-2 relative z-10">
-                <span className="text-[7rem] font-black tabular-nums tracking-tighter text-foreground leading-none">
-                  {currentStreak}
-                </span>
-                <span className="text-2xl font-bold text-muted-foreground/40 uppercase tracking-widest mb-5">d</span>
-              </div>
+            <div className="flex items-baseline justify-center gap-2">
+              <span className={cn(
+                "text-8xl font-bold tabular-nums leading-none",
+                bothActive ? "text-rose-500" : shieldUsedToday ? "text-blue-500" : "text-foreground"
+              )}>
+                {currentStreak}
+              </span>
+              <span className="text-3xl font-light text-[#c4c4c4]">d</span>
             </div>
-            <p className="text-xs font-semibold text-muted-foreground/60 max-w-[220px] mx-auto leading-tight">
-              {isZero ? "O vosso streak começa hoje 🌱" : `${currentStreak} dias a cuidar um do outro 💕`}
+            <p className="text-sm text-[#717171] mt-3">
+              {isZero ? "O vosso streak começa hoje" : `${currentStreak} dias a cuidar um do outro`}
             </p>
           </section>
 
-          {/* Risk warning */}
+          {/* Alertas */}
           {streakAtRisk && !shieldUsedToday && (
-            <div className="glass-card rounded-3xl p-4 border-amber-500/30 bg-amber-50/40 flex items-start gap-3">
-              <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-              </div>
+            <div className="glass-card p-4 flex items-start gap-3 border-amber-200">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" strokeWidth={1.5} />
               <div>
-                <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-0.5">Streak em risco</p>
-                <p className="text-sm font-bold text-amber-900/70 leading-snug">Hoje é decisivo. Não deixem o streak cair!</p>
+                <p className="text-sm font-semibold text-amber-600">Streak em risco</p>
+                <p className="text-sm text-[#717171] mt-0.5">Hoje é decisivo. Não deixem o streak cair.</p>
                 {shieldsRemaining > 0 && (
-                  <p className="text-xs text-amber-700/60 font-bold mt-1">🛡️ Tens {shieldsRemaining} shield{shieldsRemaining > 1 ? 's' : ''} — serão usados automaticamente se falharem hoje.</p>
+                  <p className="text-[11px] text-[#717171] mt-1">
+                    Tens {shieldsRemaining} shield{shieldsRemaining > 1 ? "s" : ""} disponíveis.
+                  </p>
                 )}
               </div>
             </div>
           )}
 
-          {/* Shield used banner */}
           {shieldUsedToday && (
-            <div className="glass-card rounded-3xl p-4 border-blue-500/30 bg-blue-50/40 flex items-start gap-3">
-              <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Shield className="w-4 h-4 text-blue-600" />
-              </div>
+            <div className="glass-card p-4 flex items-start gap-3 border-blue-200">
+              <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" strokeWidth={1.5} />
               <div>
-                <p className="text-xs font-black text-blue-600 uppercase tracking-widest mb-0.5">🛡️ LoveShield Activado!</p>
-                <p className="text-sm font-bold text-blue-900/70 leading-snug">O shield protegeu a vossa chama ontem. Resta{shieldsRemaining === 1 ? " 1 shield" : `m ${shieldsRemaining} shields`}.</p>
+                <p className="text-sm font-semibold text-blue-600">LoveShield activado</p>
+                <p className="text-sm text-[#717171] mt-0.5">
+                  O shield protegeu a vossa chama.{" "}
+                  {shieldsRemaining > 0 ? `Restam ${shieldsRemaining}.` : "Sem shields restantes."}
+                </p>
               </div>
             </div>
           )}
 
           {/* Status card */}
-          <section className="glass-card rounded-[2.5rem] p-5 space-y-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-primary/5 pointer-events-none" />
-            <div className="relative z-10 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-black text-foreground/90">
-                    {bothActive
-                      ? "Hoje completo 💕"
-                      : myCheckedIn
-                      ? "O teu check-in está feito ✅"
-                      : isZero
-                      ? "À espera do primeiro gesto"
-                      : "Ainda falta alguém"}
-                  </h2>
-                  <p className="text-xs text-muted-foreground/60 font-medium mt-0.5">
-                    {totalMembers > 0
-                      ? `${activeCount}/${totalMembers} ${activeCount === 1 ? "pessoa activa" : "pessoas activas"} hoje`
-                      : "A carregar membros..."}
+          <div className="glass-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">
+                  {bothActive ? "Hoje completo"
+                    : myCheckedIn ? "Check-in feito"
+                    : isZero ? "À espera do primeiro gesto"
+                    : "Falta alguém"}
+                </h2>
+                <p className="text-sm text-[#717171] mt-0.5">
+                  {totalMembers > 0
+                    ? `${activeCount}/${totalMembers} pessoas activas hoje`
+                    : "A carregar..."}
+                </p>
+                {myCheckedIn && !bothActive && totalMembers >= 2 && (
+                  <p className="text-[11px] text-amber-500 mt-1">
+                    Aguarda que o teu parceiro faça check-in
                   </p>
-                  {myCheckedIn && !bothActive && totalMembers >= 2 && (
-                    <p className="text-xs text-amber-600 font-bold mt-1">
-                      ⏳ Aguarda que o teu parceiro faça check-in
-                    </p>
-                  )}
-                </div>
-                <Heart className={cn("w-5 h-5 shrink-0 transition-all duration-700", bothActive ? "fill-primary text-primary scale-110" : myCheckedIn ? "text-primary/40" : "text-muted-foreground/20")} />
+                )}
               </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  <span>Progresso mensal (28d)</span>
-                  <span>{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2 bg-muted" />
-              </div>
+              <Heart
+                className={cn("w-5 h-5 shrink-0 transition-all duration-500",
+                  bothActive ? "fill-rose-500 text-rose-500" : "text-[#e5e5e5]"
+                )}
+                strokeWidth={1.5}
+              />
             </div>
-          </section>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[11px] font-medium text-[#717171]">
+                <span>Progresso mensal (28d)</span>
+                <span>{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-1.5 bg-[#f5f5f5]" />
+            </div>
+          </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
@@ -430,23 +424,17 @@ export default function LoveStreak() {
               { label: "Recorde", value: longestStreak, unit: "dias" },
               { label: "Atividade", value: totalMembers > 0 ? Math.round((activeCount / totalMembers) * 100) : 0, unit: "% hoje" },
             ].map(s => (
-              <div key={s.label} className="glass-card rounded-[1.5rem] p-4 flex flex-col items-center text-center shadow-sm">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">{s.label}</span>
-                <span className="text-3xl font-black tabular-nums">{s.value}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 mt-0.5">{s.unit}</span>
+              <div key={s.label} className="glass-card p-4 text-center">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">{s.label}</p>
+                <p className="text-3xl font-bold text-foreground tabular-nums">{s.value}</p>
+                <p className="text-[11px] text-[#717171] mt-0.5">{s.unit}</p>
               </div>
             ))}
           </div>
 
-          {/* Ranking streak */}
-          <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ranking Global — Streak" />
-          <RankingCard 
-            compact={false} 
-            initialRankType="streak" 
-            hideToggle 
-            myCoupleId={spaceId ?? undefined}
-            refreshTrigger={refreshKey}
-          />
+          {/* Ranking */}
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Ranking Global — Streak</p>
+          <RankingCard compact={false} initialRankType="streak" hideToggle myCoupleId={spaceId ?? undefined} refreshTrigger={refreshKey} />
         </div>
       )}
 
@@ -454,47 +442,42 @@ export default function LoveStreak() {
       {/* ABA: PONTOS                                    */}
       {/* ══════════════════════════════════════════════ */}
       {activeTab === "pontos" && (
-        <div className="max-w-md mx-auto px-4 py-6 space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
-          {/* HERO pontos */}
-          <section className="text-center pt-2 pb-2 space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 flex items-center justify-center gap-1.5">
-              Total acumulado <Star className="w-3 h-3" />
-            </p>
-            <div className="relative inline-block">
-              <div className="absolute inset-0 m-auto w-32 h-32 bg-amber-400/10 blur-[50px] rounded-full" />
-              {loadingPoints ? (
-                <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
-              ) : (
-                <div className="flex items-end justify-center gap-2 relative z-10">
-                  <span className="text-[5.5rem] font-black tabular-nums tracking-tighter text-foreground leading-none">
-                    {totalPoints.toLocaleString("pt-PT")}
-                  </span>
-                  <span className="text-xl font-bold text-muted-foreground/40 uppercase mb-4">pts</span>
-                </div>
-              )}
-            </div>
+          {/* Hero pontos */}
+          <section className="text-center py-8">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">Total acumulado</p>
+            {loadingPoints ? (
+              <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
+            ) : (
+              <div className="flex items-baseline justify-center gap-2">
+                <span className="text-7xl font-bold tabular-nums text-foreground leading-none">
+                  {totalPoints.toLocaleString("pt-PT")}
+                </span>
+                <span className="text-2xl font-light text-[#c4c4c4]">pts</span>
+              </div>
+            )}
           </section>
 
           {/* Stats pontos */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="glass-card rounded-[1.5rem] p-4 flex flex-col items-center text-center shadow-sm">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">Hoje</span>
-              <span className="text-3xl font-black tabular-nums text-primary">+{pointsToday}</span>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 mt-0.5">Pontos</span>
+            <div className="glass-card p-4 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Hoje</p>
+              <p className="text-3xl font-bold tabular-nums text-rose-500">+{pointsToday}</p>
+              <p className="text-[11px] text-[#717171] mt-0.5">Pontos</p>
             </div>
-            <div className="glass-card rounded-[1.5rem] p-4 flex flex-col items-center text-center shadow-sm">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">Por dia</span>
-              <span className="text-3xl font-black tabular-nums">10</span>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 mt-0.5">Se ambos ativos</span>
+            <div className="glass-card p-4 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Por dia</p>
+              <p className="text-3xl font-bold tabular-nums text-foreground">10</p>
+              <p className="text-[11px] text-[#717171] mt-0.5">Se ambos ativos</p>
             </div>
           </div>
 
-          {/* Info*/}
-          <div className="glass-card rounded-2xl p-4 flex items-start gap-3 bg-primary/5 border-primary/15">
-            <Coins className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-            <p className="text-xs font-bold text-foreground/60 leading-snug">
-              Ganham <span className="text-primary font-black">+10 pontos</span> por cada dia em que ambos fazem atividade. Acumulem para comprar itens na loja!
+          {/* Info */}
+          <div className="glass-card p-4 flex items-start gap-3">
+            <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
+            <p className="text-sm text-[#717171] leading-relaxed">
+              Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia em que ambos fazem atividade. Acumulem para comprar itens na loja!
             </p>
           </div>
 
@@ -580,77 +563,64 @@ export default function LoveStreak() {
       {/* ABA: MISSÕES                                   */}
       {/* ══════════════════════════════════════════════ */}
       {activeTab === "missoes" && (
-        <div className="max-w-md mx-auto px-4 py-6 space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
-          {/* Progress hero */}
-          <section className="glass-card rounded-[2.5rem] p-6 space-y-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-primary/5 pointer-events-none" />
-            <div className="relative z-10 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-black text-foreground/90">Missões de Hoje</h2>
-                  <p className="text-xs text-muted-foreground/60 font-medium mt-0.5">
-                    {missionsDone}/{MISSION_DEFS.length} completas · {missionsPts} pts ganhos
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-primary" />
-                </div>
+          {/* Progress header */}
+          <div className="glass-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Missões de Hoje</h2>
+                <p className="text-sm text-[#717171] mt-0.5">
+                  {missionsDone}/{MISSION_DEFS.length} completas · {missionsPts} pts ganhos
+                </p>
               </div>
-              <Progress
-                value={MISSION_DEFS.length > 0 ? (missionsDone / MISSION_DEFS.length) * 100 : 0}
-                className="h-3 bg-muted rounded-full"
-              />
-              <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">
-                As missões contam quando AMBOS as completam 💑
-              </p>
+              <Target className="w-5 h-5 text-rose-400 shrink-0" strokeWidth={1.5} />
             </div>
-          </section>
+            <Progress
+              value={MISSION_DEFS.length > 0 ? (missionsDone / MISSION_DEFS.length) * 100 : 0}
+              className="h-1.5 bg-[#f5f5f5]"
+            />
+            <p className="text-[11px] text-[#717171] mt-3">
+              As missões contam quando ambos as completam
+            </p>
+          </div>
 
           {/* Missions list */}
-          <SectionHeader icon={<Star className="w-4 h-4" />} title="Lista de Missões" />
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Lista de Missões</p>
 
           {loadingMissions ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <Loader2 className="w-5 h-5 text-rose-400 animate-spin" />
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="glass-card divide-y divide-[#f5f5f5] overflow-hidden">
               {missions.map(m => (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "glass-card rounded-2xl p-4 flex items-center gap-4 border transition-all duration-300",
-                    m.completed
-                      ? "border-primary/20 bg-primary/5"
-                      : "border-border/20 hover:border-primary/15"
-                  )}
-                >
+                <div key={m.id} className="flex items-center gap-4 p-4">
                   <div className={cn(
-                    "w-9 h-9 rounded-2xl flex items-center justify-center shrink-0",
-                    m.completed ? "bg-rose-50 text-rose-400" : "bg-white shadow-sm text-foreground/40"
+                    "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0",
+                    m.completed ? "bg-rose-50 text-rose-500" : "bg-[#f5f5f5] text-[#717171]"
                   )}>
                     {MISSION_ICONS[m.emoji] ?? <Target className="w-4 h-4" strokeWidth={1.5} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "text-sm font-semibold tracking-tight",
-                      m.completed ? "line-through text-foreground/30" : "text-foreground/80"
+                      "text-sm font-medium",
+                      m.completed ? "line-through text-[#c4c4c4]" : "text-foreground"
                     )}>
                       {m.title}
                     </p>
-                    <p className="text-[11px] text-foreground/40 font-medium truncate">{m.description}</p>
+                    <p className="text-[11px] text-[#717171] truncate">{m.description}</p>
                     {!m.completed && m.completedCount > 0 && (
-                      <p className="text-[10px] font-semibold text-amber-500 mt-0.5">
+                      <p className="text-[11px] text-amber-500 mt-0.5">
                         {m.completedCount}/{totalMembers} já completou
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-[10px] font-black text-primary/60">+{m.points} pts</span>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="text-[11px] font-medium text-rose-400">+{m.points}</span>
                     {m.completed
-                      ? <CheckCircle2 className="w-5 h-5 text-primary" />
-                      : <Circle className="w-5 h-5 text-muted-foreground/25" />
+                      ? <CheckCircle2 className="w-5 h-5 text-rose-500" strokeWidth={1.5} />
+                      : <Circle className="w-5 h-5 text-[#e5e5e5]" strokeWidth={1.5} />
                     }
                   </div>
                 </div>
@@ -659,57 +629,32 @@ export default function LoveStreak() {
           )}
 
           {/* Dica */}
-          <div className="glass-card rounded-2xl p-4 flex items-start gap-3 bg-muted/30">
-            <Sparkles className="w-4 h-4 text-primary/50 mt-0.5 shrink-0" />
-            <p className="text-xs font-bold text-foreground/50 leading-snug">
-              Usa o chat, regista o humor, faz orações e check-in para completar todas as missões com o teu par!
+          <div className="glass-card p-4 flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" strokeWidth={1.5} />
+            <p className="text-sm text-[#717171] leading-relaxed">
+              Usa o chat, regista o humor, faz orações e check-in para completar todas as missões.
             </p>
           </div>
         </div>
       )}
 
-      {/* ── CTA FIXO ─────────────────────────────────── */}
-      {!myCheckedIn && !bothActive && (
-        <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
+      {/* ── CTA fixo ── */}
+      {!bothActive && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e5e5] px-4 py-4 z-40">
           <div className="max-w-md mx-auto">
-            <button
-              onClick={handleCheckIn}
-              disabled={checkingIn}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #ff6b81, #ff4757)",
-                color: "white",
-                fontWeight: "600",
-                border: "none",
-                opacity: checkingIn ? 0.6 : 1
-              }}
-            >
-              {checkingIn ? "A registar..." : "👉 Fazer check-in agora"}
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Aguarda parceiro — só visível se eu fiz check-in mas ambos ainda não */}
-      {myCheckedIn && !bothActive && (
-        <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
-          <div className="max-w-md mx-auto">
-            <div
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                background: "rgba(0,0,0,0.05)",
-                color: "#888",
-                fontWeight: "600",
-                border: "1px solid rgba(0,0,0,0.08)",
-                textAlign: "center",
-                fontSize: "14px"
-              }}
-            >
-              ✅ Check-in feito · Aguarda o teu parceiro
-            </div>
+            {!myCheckedIn ? (
+              <button
+                onClick={handleCheckIn}
+                disabled={checkingIn}
+                className="w-full py-3.5 rounded-2xl bg-rose-500 text-white font-semibold text-base disabled:opacity-60 active:scale-[0.98] transition-all"
+              >
+                {checkingIn ? "A registar..." : "Fazer check-in agora"}
+              </button>
+            ) : (
+              <div className="w-full py-3.5 rounded-2xl bg-[#f5f5f5] text-[#717171] font-medium text-sm text-center border border-[#e5e5e5]">
+                Check-in feito · A aguardar o teu parceiro
+              </div>
+            )}
           </div>
         </div>
       )}
