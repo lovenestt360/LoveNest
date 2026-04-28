@@ -123,18 +123,23 @@ export function BottomTabs() {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="rounded-t-[2rem] border-t border-[#e5e5e5] bg-white pb-[max(env(safe-area-inset-bottom),1.5rem)] shadow-xl"
+              className="rounded-t-[2rem] border-t border-[#e5e5e5] bg-white pb-[max(env(safe-area-inset-bottom),1.5rem)]"
             >
               {/* Drag handle */}
-              <div className="flex justify-center pt-1 pb-4">
-                <div className="w-10 h-1 rounded-full bg-slate-200" />
+              <div className="flex justify-center pt-2 pb-5">
+                <div className="w-10 h-1 rounded-full bg-[#e5e5e5]" />
               </div>
 
-              <SheetHeader className="px-1 pb-4">
-                <SheetTitle className="text-left text-base font-black text-foreground/70 uppercase tracking-widest text-[11px]">
-                  Mais
-                </SheetTitle>
-              </SheetHeader>
+              {/* Header — LoveNest brand */}
+              <div className="flex items-center justify-between px-1 pb-5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                    <span className="text-sm">💛</span>
+                  </div>
+                  <span className="text-base font-bold text-foreground">LoveNest</span>
+                </div>
+                <span className="text-[11px] font-medium text-[#717171]">Mais funcionalidades</span>
+              </div>
 
               <div className="grid grid-cols-4 gap-3">
                 {moreItems
@@ -147,21 +152,21 @@ export function BottomTabs() {
                         key={to}
                         type="button"
                         onClick={() => { setMoreOpen(false); navigate(to); }}
-                        className={cn(
-                          "relative flex flex-col items-center gap-2 rounded-2xl p-3 transition-all duration-200 active:scale-[0.95]",
-                          active
-                            ? "bg-rose-50 text-rose-400"
-                            : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                        )}
+                        className="relative flex flex-col items-center gap-2 active:scale-[0.95] transition-all duration-150"
                       >
                         <div className={cn(
-                          "w-11 h-11 rounded-2xl flex items-center justify-center relative",
-                          active ? "bg-rose-100" : "bg-white shadow-sm shadow-black/5"
+                          "w-14 h-14 rounded-2xl flex items-center justify-center relative border transition-colors",
+                          active
+                            ? "bg-rose-50 border-rose-200 text-rose-500"
+                            : "bg-white border-[#e5e5e5] text-rose-400 hover:bg-rose-50/50"
                         )}>
-                          <Icon className="h-5 w-5" strokeWidth={1.5} />
+                          <Icon className="h-6 w-6" strokeWidth={1.5} />
                           {badge > 0 && <Badge count={badge} />}
                         </div>
-                        <span className="text-[10px] font-semibold leading-tight text-center">{label}</span>
+                        <span className={cn(
+                          "text-[10px] font-medium leading-tight text-center",
+                          active ? "text-rose-500" : "text-foreground/60"
+                        )}>{label}</span>
                       </button>
                     );
                   })}
