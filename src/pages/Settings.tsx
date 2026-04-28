@@ -515,57 +515,72 @@ export default function Settings() {
   const initials = (displayName || user?.email || "U").slice(0, 2).toUpperCase();
 
   const menuItems = [
-    { id: 'profile', label: 'Meu Perfil', sub: 'Dados e foto de perfil', icon: <User className="h-5 w-5" />, color: 'bg-rose-100 text-rose-600' },
-    { id: 'house', label: 'Nossa Casa', sub: 'Dados do parceiro e namoro', icon: <Heart className="h-5 w-5" />, color: 'bg-rose-100 text-rose-600' },
-    { id: 'notifications', label: 'Notificações', sub: 'Alertas e avisos do app', icon: <Bell className="h-5 w-5" />, color: 'bg-indigo-100 text-indigo-600' },
-    { id: 'verification', label: 'Verificar Identidade', sub: 'Segurança e confiança (KYC)', icon: <ShieldCheck className="h-5 w-5" />, color: 'bg-emerald-100 text-emerald-600' },
-    { id: 'customization', label: 'Personalização', sub: 'Fundo do chat e opacidade', icon: <Palette className="h-5 w-5" />, color: 'bg-purple-100 text-purple-600' },
-    { id: 'data', label: 'Segurança e Dados', sub: 'Exportação e conta', icon: <Shield className="h-5 w-5" />, color: 'bg-slate-100 text-slate-600' },
+    { id: 'profile',       label: 'Meu Perfil',           sub: 'Dados e foto de perfil',       icon: <User className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'house',         label: 'Nossa Casa',            sub: 'Dados do parceiro e namoro',   icon: <Heart className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'notifications', label: 'Notificações',          sub: 'Alertas e avisos do app',      icon: <Bell className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'verification',  label: 'Verificar Identidade',  sub: 'Segurança e confiança',        icon: <ShieldCheck className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'customization', label: 'Personalização',        sub: 'Fundo do chat e opacidade',    icon: <Palette className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'data',          label: 'Segurança e Dados',     sub: 'Exportação e conta',           icon: <Shield className="h-5 w-5" strokeWidth={1.5} /> },
   ] as const;
 
   return (
     <div className="pb-24 animate-in fade-in duration-500">
       {currentCategory === 'menu' ? (
         <section className="space-y-6">
-          <header className="mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Definições</h1>
-            <p className="text-sm font-medium text-muted-foreground mt-1">Este é o vosso espaço 💛<br />Personalizem a vossa história.</p>
+          <header className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground">Definições</h1>
+            <p className="text-sm text-[#717171] mt-0.5">Personalizem o vosso espaço.</p>
           </header>
 
-          <div className="glass-card p-6 flex items-center gap-4 mb-8">
-            <Avatar className="h-20 w-20 ring-4 ring-background shadow-xl">
+          {/* Profile summary */}
+          <div className="glass-card p-5 flex items-center gap-4 mb-6">
+            <Avatar className="h-16 w-16 ring-2 ring-white shadow-sm">
               {avatarUrl ? <AvatarImage src={avatarUrl} /> : null}
-              <AvatarFallback className="text-2xl bg-gradient-to-br from-rose-400 to-orange-400 text-white border-none">{initials}</AvatarFallback>
+              <AvatarFallback className="text-lg bg-rose-50 text-rose-400 font-semibold border border-rose-100">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold truncate">{displayName || "Utilizador"}</h3>
-              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-              <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-sm">PREMIUM ✨</div>
+              <h3 className="text-base font-semibold text-foreground truncate">{displayName || "Utilizador"}</h3>
+              <p className="text-sm text-[#717171] truncate">{user?.email}</p>
             </div>
           </div>
 
-          <div className="grid gap-4">
-            {menuItems.map((item) => (
-              <button key={item.id} onClick={() => setCurrentCategory(item.id)} className="glass-card glass-card-hover p-5 flex items-center gap-4 text-left w-full group rounded-[2rem]">
-                <div className={cn("h-12 w-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm", item.color)}>{item.icon}</div>
-                <div className="flex-1">
-                  <p className="font-bold text-[15px]">{item.label}</p>
-                  <p className="text-xs text-muted-foreground/80 font-medium">{item.sub}</p>
+          {/* Menu items */}
+          <div className="space-y-2">
+            {menuItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setCurrentCategory(item.id)}
+                className="glass-card glass-card-hover w-full p-4 flex items-center gap-4 text-left active:scale-[0.98]"
+              >
+                <div className="h-10 w-10 rounded-2xl bg-white border border-[#e5e5e5] flex items-center justify-center text-rose-400 shrink-0">
+                  {item.icon}
                 </div>
-                <ChevronLeft className="h-4 w-4 text-muted-foreground rotate-180" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                  <p className="text-[11px] text-[#717171]">{item.sub}</p>
+                </div>
+                <ChevronLeft className="h-4 w-4 text-[#c4c4c4] rotate-180 shrink-0" strokeWidth={1.5} />
               </button>
             ))}
           </div>
 
-          <Button variant="ghost" className="w-full text-destructive mt-8 h-12 font-bold" onClick={() => signOut()}>
-            <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão
-          </Button>
+          <button
+            onClick={() => signOut()}
+            className="w-full mt-6 h-12 rounded-2xl border border-[#e5e5e5] text-sm font-medium text-rose-500 flex items-center justify-center gap-2 hover:bg-rose-50 transition-colors active:scale-[0.98]"
+          >
+            <LogOut className="h-4 w-4" strokeWidth={1.5} /> Terminar Sessão
+          </button>
         </section>
       ) : (
         <section className="animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => setCurrentCategory('menu')} className="rounded-full hover:bg-primary/5"><ChevronLeft className="h-5 w-5" /></Button>
-            <h2 className="text-xl font-bold gradient-text">{menuItems.find(m => m.id === currentCategory)?.label}</h2>
+            <button
+              onClick={() => setCurrentCategory('menu')}
+              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+            </button>
+            <h2 className="text-xl font-bold text-foreground">{menuItems.find(m => m.id === currentCategory)?.label}</h2>
           </div>
 
           {currentCategory === 'profile' && (
@@ -590,13 +605,13 @@ export default function Settings() {
                     <SelectContent className="rounded-2xl"><SelectItem value="none">Preferir não dizer</SelectItem><SelectItem value="female">Mulher</SelectItem><SelectItem value="male">Homem</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary rounded-2xl">
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
                 </Button>
 
                 {referralCode && (
                   <div className="pt-4 border-t border-border space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Teu Código LoveNest (Amigos)</Label>
+                    <Label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Teu Código LoveNest (Amigos)</Label>
                     <div className="flex gap-2">
                       <Input value={referralCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
                       <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(referralCode, "Código de parceiro copiado!")}>
@@ -619,11 +634,11 @@ export default function Settings() {
                   <div className="space-y-2"><Label className="font-bold text-sm">Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
                 </div>
                 <div className="space-y-2"><Label className="font-bold text-sm">Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
-                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-bold glow-primary">Guardar Dados</Button>
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">Guardar Dados</Button>
 
                 {houseInviteCode && (
                   <div className="pt-4 border-t border-border space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código da Casa (Parceiro)</Label>
+                    <Label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Código da Casa (Parceiro)</Label>
                     <div className="flex gap-2">
                       <Input value={houseInviteCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
                       <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
@@ -682,7 +697,7 @@ export default function Settings() {
                     <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading}>Testar</Button>
                   </div>
                 ) : (
-                  <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-bold glow-primary">Ativar</Button>
+                  <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">Ativar</Button>
                 )}
               </div>
               <div className="glass-card p-6 space-y-4">
@@ -719,7 +734,7 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4 border-t border-border/50">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Horário Preferido</Label>
+                  <Label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Horário Preferido</Label>
                   <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
                     <SelectTrigger className="h-10 bg-white dark:bg-white/5 border-border rounded-xl mt-1">
                       <SelectValue placeholder="Escolhe uma hora..." />
