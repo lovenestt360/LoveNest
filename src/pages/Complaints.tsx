@@ -172,14 +172,14 @@ export default function Complaints() {
 
       {/* Create modal */}
       {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
-          <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200">
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-xl flex flex-col" style={{ maxHeight: "90dvh" }}>
             <div className="px-6 pt-5 pb-3 shrink-0">
-              <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto sm:hidden mb-4" />
+              <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto mb-4" />
               <h2 className="text-lg font-bold text-foreground">Nova Reclamação</h2>
             </div>
-            <div className="overflow-y-auto px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6">
+            <div className="overflow-y-auto flex-1 px-6 pb-8">
               <CreateComplaintForm
                 spaceId={spaceId}
                 userId={user?.id}
