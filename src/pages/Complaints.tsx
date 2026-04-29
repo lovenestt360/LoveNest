@@ -173,16 +173,18 @@ export default function Complaints() {
 
       {/* Create modal */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md rounded-3xl border-0 shadow-xl p-6">
-          <DialogHeader>
+        <DialogContent className="max-w-md rounded-3xl border-0 shadow-xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-3">
             <DialogTitle className="text-lg font-bold text-foreground">Nova Reclamação</DialogTitle>
           </DialogHeader>
+          <div className="overflow-y-auto max-h-[70vh] px-6 pb-6">
           <CreateComplaintForm
             spaceId={spaceId}
             userId={user?.id}
             onCreated={() => { setCreateOpen(false); fetchComplaints(); }}
             onCancel={() => setCreateOpen(false)}
           />
+          </div>
         </DialogContent>
       </Dialog>
 
