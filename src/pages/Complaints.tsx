@@ -3,28 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart, Sparkles } from "lucide-react";
+import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const FEELINGS = ["magoado", "frustrado", "triste", "ansioso", "zangado", "confuso", "ignorado", "sozinho", "outro"];
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  open: { label: "Aberta", color: "bg-destructive text-destructive-foreground" },
-  talking: { label: "Em conversa", color: "bg-yellow-500 text-white" },
-  resolved: { label: "Resolvida", color: "bg-green-600 text-white" },
-  archived: { label: "Arquivada", color: "bg-muted text-muted-foreground" },
+
+const STATUS_MAP: Record<string, { label: string; dot: string; text: string }> = {
+  open:     { label: "Aberta",      dot: "bg-rose-500",   text: "text-rose-500" },
+  talking:  { label: "Em conversa", dot: "bg-amber-400",  text: "text-amber-500" },
+  resolved: { label: "Resolvida",   dot: "bg-green-500",  text: "text-green-600" },
+  archived: { label: "Arquivada",   dot: "bg-[#c4c4c4]",  text: "text-[#717171]" },
 };
+
 const SEVERITY_LABELS = ["", "Leve", "Baixa", "Média", "Alta", "Crítica"];
 const PAGE_SIZE = 20;
 
@@ -86,92 +82,121 @@ export default function Complaints() {
   }, [spaceId, fetchComplaints]);
 
   if (selected) {
-    return <ComplaintDetail complaint={selected} onBack={() => { setSelected(null); fetchComplaints(); }} onResolve={() => { setShowResolvedOverlay(true); setTimeout(() => setShowResolvedOverlay(false), 3000); }} />;
+    return (
+      <ComplaintDetail
+        complaint={selected}
+        onBack={() => { setSelected(null); fetchComplaints(); }}
+        onResolve={() => { setShowResolvedOverlay(true); setTimeout(() => setShowResolvedOverlay(false), 3000); }}
+      />
+    );
   }
 
   const filtered = complaints.filter(c => c.status === filter).slice(0, PAGE_SIZE);
-  const totalForFilter = complaints.filter(c => c.status === filter).length;
 
   return (
-    <section className="space-y-4 pb-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Conflitos</h1>
-          <p className="text-sm text-muted-foreground">Central de reclamações.</p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Nova</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Nova Reclamação</DialogTitle></DialogHeader>
-            <CreateComplaintForm spaceId={spaceId} userId={user?.id} onCreated={() => { setCreateOpen(false); fetchComplaints(); }} />
-          </DialogContent>
-        </Dialog>
-      </header>
+    <section className="space-y-5 pb-6">
 
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {Object.entries(STATUS_MAP).map(([key, { label }]) => {
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Conflitos</h1>
+          <p className="text-sm text-[#717171]">Resolve com calma e amor</p>
+        </div>
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="flex items-center gap-1.5 h-9 px-4 rounded-2xl bg-rose-500 text-white text-sm font-semibold active:scale-[0.98] transition-all"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2} />
+          Nova
+        </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {Object.entries(STATUS_MAP).map(([key, { label, dot }]) => {
           const count = complaints.filter(c => c.status === key).length;
+          const active = filter === key;
           return (
-            <Button key={key} variant={filter === key ? "default" : "outline"} size="sm" onClick={() => setFilter(key)}>
-              {label} {count > 0 && <span className="ml-1 text-xs">({count})</span>}
-            </Button>
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={cn(
+                "flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all border",
+                active
+                  ? "bg-foreground text-white border-foreground"
+                  : "bg-white text-[#717171] border-[#e5e5e5] hover:bg-[#f5f5f5]"
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-white" : dot)} />
+              {label}
+              {count > 0 && <span className="opacity-60">({count})</span>}
+            </button>
           );
         })}
       </div>
 
       {/* List */}
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground pt-4">Nenhuma reclamação {STATUS_MAP[filter]?.label.toLowerCase()}.</p>
+        <div className="glass-card py-12 text-center space-y-2">
+          <Heart className="mx-auto h-7 w-7 text-[#c4c4c4]" strokeWidth={1.5} />
+          <p className="text-sm text-[#717171]">Nenhum conflito {STATUS_MAP[filter]?.label.toLowerCase()}</p>
+        </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((c, idx) => (
-            <Card 
-              key={c.id} 
-              className={cn(
-                "cursor-pointer hover:bg-accent/30 transition-all animate-fade-slide-up shadow-sm",
-                `stagger-${(idx % 5) + 1}`
-              )} 
-              onClick={() => setSelected(c)}
-            >
-              <CardContent className="py-3 flex items-start justify-between gap-2">
-                <div className="space-y-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{c.title}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                    <Badge variant="outline" className={STATUS_MAP[c.status]?.color + " border-0 text-[10px]"}>{STATUS_MAP[c.status]?.label}</Badge>
-                    <span>Sev. {c.severity} — {SEVERITY_LABELS[c.severity]}</span>
-                    {c.feeling && <span>· {c.feeling}</span>}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{format(new Date(c.created_at), "d MMM, HH:mm", { locale: pt })}</p>
+        <div className="glass-card divide-y divide-[#f0f0f0]">
+          {filtered.map((c) => {
+            const s = STATUS_MAP[c.status];
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className="w-full text-left px-4 py-3.5 flex items-start gap-3 hover:bg-[#fafafa] transition-colors first:rounded-t-[1.25rem] last:rounded-b-[1.25rem]"
+              >
+                <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", s?.dot)} />
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <p className="text-sm font-semibold text-foreground truncate">{c.title}</p>
+                  <p className="text-xs text-[#717171]">
+                    {s?.label} · Sev. {c.severity} {SEVERITY_LABELS[c.severity] && `— ${SEVERITY_LABELS[c.severity]}`}
+                    {c.feeling && ` · ${c.feeling}`}
+                  </p>
+                  <p className="text-[11px] text-[#c4c4c4]">{format(new Date(c.created_at), "d MMM, HH:mm", { locale: pt })}</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-          {totalForFilter > PAGE_SIZE && (
-            <p className="text-xs text-muted-foreground text-center pt-2">A mostrar {PAGE_SIZE} de {totalForFilter}</p>
-          )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create modal */}
+      {createOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
+          <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 space-y-4 animate-in slide-in-from-bottom duration-200">
+            <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto sm:hidden mb-2" />
+            <h2 className="text-lg font-bold text-foreground">Nova Reclamação</h2>
+            <CreateComplaintForm
+              spaceId={spaceId}
+              userId={user?.id}
+              onCreated={() => { setCreateOpen(false); fetchComplaints(); }}
+              onCancel={() => setCreateOpen(false)}
+            />
+          </div>
         </div>
       )}
 
       {/* Reconciliation Overlay */}
       {showResolvedOverlay && (
-        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-background/90 backdrop-blur-xl animate-in fade-in duration-500">
-          <div className="text-center space-y-6 animate-bounce-in">
-            <div className="relative inline-block">
-              <div className="bg-primary/20 p-8 rounded-full shadow-glow animate-pulse">
-                <Heart className="w-24 h-24 text-primary fill-primary" />
-              </div>
-              <Sparkles className="absolute -top-2 -right-2 w-10 h-10 text-yellow-500 animate-spin-slow" />
+        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm animate-in fade-in duration-500">
+          <div className="text-center space-y-5">
+            <div className="bg-rose-50 p-8 rounded-full mx-auto w-fit">
+              <Heart className="w-20 h-20 text-rose-400 fill-rose-400 animate-pulse" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-black text-foreground tracking-tight italic">Mais fortes juntos 💛</h2>
-              <p className="text-muted-foreground text-sm font-medium mx-auto max-w-[280px]">O diálogo cura e o compromisso fortalece a vossa história.</p>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold text-foreground">Mais fortes juntos</h2>
+              <p className="text-sm text-[#717171] max-w-[260px] mx-auto">O diálogo cura e o compromisso fortalece a vossa história.</p>
             </div>
           </div>
         </div>
@@ -180,8 +205,15 @@ export default function Complaints() {
   );
 }
 
-/* ---------- Create Form ---------- */
-function CreateComplaintForm({ spaceId, userId, onCreated }: { spaceId: string | null; userId?: string; onCreated: () => void }) {
+/* ── Create Form ── */
+function CreateComplaintForm({
+  spaceId, userId, onCreated, onCancel
+}: {
+  spaceId: string | null;
+  userId?: string;
+  onCreated: () => void;
+  onCancel: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [feeling, setFeeling] = useState("");
@@ -202,17 +234,14 @@ function CreateComplaintForm({ spaceId, userId, onCreated }: { spaceId: string |
       severity,
     });
     if (error) {
-      toast({ title: "Erro ao criar conflito", description: "Tenta novamente.", variant: "destructive" });
+      console.error("Complaint insert error:", error);
+      toast({ title: "Erro ao criar conflito", description: error.message, variant: "destructive" });
     } else {
-      toast({ 
-        title: "Vamos resolver isto com calma 💛", 
-        description: "O amor também se constrói nos momentos difíceis.",
-        duration: 6000
-      });
+      toast({ title: "Criado com calma", description: "O amor também se constrói nos momentos difíceis." });
       if (spaceId) {
         notifyPartner({
           couple_space_id: spaceId,
-          title: "⚡ Nova reclamação",
+          title: "Nova reclamação",
           body: title.trim().slice(0, 80),
           url: "/conflitos",
           type: "conflitos",
@@ -223,36 +252,100 @@ function CreateComplaintForm({ spaceId, userId, onCreated }: { spaceId: string |
     setSaving(false);
   };
 
+  const inputClass = "h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400";
+
   return (
-    <div className="space-y-3">
-      <div><Label>Título</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Resumo breve" /></div>
-      <div><Label>Descrição</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="O que aconteceu…" /></div>
-      <div>
-        <Label>Sentimento</Label>
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-0.5">
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Título</label>
+        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Resumo breve" className={inputClass} />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Descrição</label>
+        <Textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows={3}
+          placeholder="O que aconteceu…"
+          className="rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Sentimento</label>
         <Select value={feeling} onValueChange={setFeeling}>
-          <SelectTrigger><SelectValue placeholder="Como me sinto" /></SelectTrigger>
-          <SelectContent>{FEELINGS.map(f => <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>)}</SelectContent>
+          <SelectTrigger className={inputClass}>
+            <SelectValue placeholder="Como me sinto" />
+          </SelectTrigger>
+          <SelectContent>
+            {FEELINGS.map(f => <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>)}
+          </SelectContent>
         </Select>
       </div>
-      <div>
-        <Label>Severidade (1-5)</Label>
-        <div className="flex gap-1 pt-1">
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Severidade (1-5)</label>
+        <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map(s => (
-            <Button key={s} size="sm" variant={severity === s ? "default" : "outline"} onClick={() => setSeverity(s)} className="w-9 h-9 p-0">
+            <button
+              key={s}
+              onClick={() => setSeverity(s)}
+              className={cn(
+                "h-10 w-10 rounded-full text-sm font-semibold border transition-all",
+                severity === s
+                  ? "bg-rose-500 text-white border-rose-500"
+                  : "bg-white text-foreground border-[#e5e5e5] hover:border-rose-300"
+              )}
+            >
               {s}
-            </Button>
+            </button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground mt-1">{SEVERITY_LABELS[severity]}</p>
+        <p className="text-xs text-[#717171]">{SEVERITY_LABELS[severity]}</p>
       </div>
-      <div><Label>O que eu preciso é… (opcional)</Label><Textarea value={clearRequest} onChange={e => setClearRequest(e.target.value)} rows={2} placeholder="Pedido claro" /></div>
-      <Button className="w-full" onClick={submit} disabled={saving || !title.trim() || !description.trim()}>Criar reclamação</Button>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">
+          O que eu preciso é… <span className="text-[#717171] font-normal">(opcional)</span>
+        </label>
+        <Textarea
+          value={clearRequest}
+          onChange={e => setClearRequest(e.target.value)}
+          rows={2}
+          placeholder="Pedido claro"
+          className="rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
+        />
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={onCancel}
+          className="flex-1 h-12 rounded-2xl border border-[#e5e5e5] text-sm font-semibold text-[#717171] hover:bg-[#f5f5f5] transition-all"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={submit}
+          disabled={saving || !title.trim() || !description.trim()}
+          className="flex-1 h-12 rounded-2xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
+        </button>
+      </div>
     </div>
   );
 }
 
-/* ---------- Detail View ---------- */
-function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint: Complaint; onBack: () => void; onResolve: () => void }) {
+/* ── Detail View ── */
+function ComplaintDetail({
+  complaint: initial, onBack, onResolve
+}: {
+  complaint: Complaint;
+  onBack: () => void;
+  onResolve: () => void;
+}) {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const [complaint, setComplaint] = useState(initial);
@@ -303,11 +396,10 @@ function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint:
     if (complaint.status === "open") {
       await supabase.from("complaints").update({ status: "talking" }).eq("id", complaint.id);
     }
-    // Push to partner
     if (spaceId) {
       notifyPartner({
         couple_space_id: spaceId,
-        title: "💬 Resposta num conflito",
+        title: "Resposta num conflito",
         body: newMsg.trim().slice(0, 80),
         url: "/conflitos",
         type: "conflitos",
@@ -320,18 +412,16 @@ function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint:
     const update: Record<string, unknown> = { status };
     if (status === "resolved") update.resolved_at = new Date().toISOString();
     await supabase.from("complaints").update(update).eq("id", complaint.id);
-    
     if (status === "resolved") {
       onResolve();
-      toast({ title: "Mais fortes juntos 💛", description: "Resolver conflitos fortalece a vossa união." });
+      toast({ title: "Mais fortes juntos", description: "Resolver conflitos fortalece a vossa união." });
     } else {
       toast({ title: `Estado: ${STATUS_MAP[status]?.label}` });
     }
-    // Push for resolved
     if (status === "resolved" && spaceId) {
       notifyPartner({
         couple_space_id: spaceId,
-        title: "✅ Conflito resolvido",
+        title: "Conflito resolvido",
         body: complaint.title.slice(0, 80),
         url: "/conflitos",
         type: "conflitos",
@@ -341,51 +431,60 @@ function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint:
 
   const saveSolution = async () => {
     await supabase.from("complaints").update({ solution_note: solutionNote.trim() || null }).eq("id", complaint.id);
-    toast({ title: "💡 Plano de solução guardado" });
+    toast({ title: "Plano de solução guardado" });
   };
 
   const isMine = complaint.created_by === user?.id;
+  const s = STATUS_MAP[complaint.status];
 
   return (
-    <section className="space-y-4 pb-4 flex flex-col h-full">
-      <header className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="h-5 w-5" /></Button>
+    <section className="space-y-4 pb-6">
+
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onBack}
+          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0"
+        >
+          <ArrowLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+        </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold truncate">{complaint.title}</h1>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline" className={STATUS_MAP[complaint.status]?.color + " border-0 text-[10px]"}>{STATUS_MAP[complaint.status]?.label}</Badge>
-            <span>Sev. {complaint.severity}</span>
+          <h1 className="text-base font-bold text-foreground truncate">{complaint.title}</h1>
+          <div className="flex items-center gap-1.5 text-xs text-[#717171]">
+            <span className={cn("h-1.5 w-1.5 rounded-full", s?.dot)} />
+            <span>{s?.label}</span>
+            <span>· Sev. {complaint.severity}</span>
             {complaint.feeling && <span>· {complaint.feeling}</span>}
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Original */}
-      <Card>
-        <CardContent className="pt-4 space-y-2">
-          <p className="text-sm whitespace-pre-wrap">{complaint.description}</p>
-          {complaint.clear_request && (
-            <div className="rounded bg-accent/40 p-2">
-              <p className="text-xs font-medium text-muted-foreground">O que preciso:</p>
-              <p className="text-sm">{complaint.clear_request}</p>
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground">{isMine ? "Criada por ti" : "Criada pelo teu par"} — {format(new Date(complaint.created_at), "d MMM, HH:mm", { locale: pt })}</p>
-        </CardContent>
-      </Card>
+      {/* Original description */}
+      <div className="glass-card p-4 space-y-3">
+        <p className="text-sm text-foreground whitespace-pre-wrap">{complaint.description}</p>
+        {complaint.clear_request && (
+          <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-rose-400 uppercase tracking-wider mb-0.5">O que preciso</p>
+            <p className="text-sm text-foreground">{complaint.clear_request}</p>
+          </div>
+        )}
+        <p className="text-[11px] text-[#c4c4c4]">
+          {isMine ? "Criada por ti" : "Criada pelo teu par"} — {format(new Date(complaint.created_at), "d MMM, HH:mm", { locale: pt })}
+        </p>
+      </div>
 
-      {/* Guided Tips */}
+      {/* Tips */}
       {complaint.status !== "resolved" && complaint.status !== "archived" && (
-        <div className="rounded-xl bg-primary/5 border border-primary/10 p-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <Heart className="h-4 w-4 text-primary fill-primary/20" />
+        <div className="glass-card p-4 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+            <Heart className="h-4 w-4 text-rose-400 fill-rose-100" strokeWidth={1.5} />
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-bold text-primary">Dicas para uma resolução saudável:</p>
-            <ul className="text-[11px] text-muted-foreground list-disc list-inside space-y-0.5">
-              <li>Respirem antes de responder ✨</li>
-              <li>Evitem responder com raiva 💛</li>
-              <li>Foquem-se em como se sentem, não em culpar.</li>
+            <p className="text-xs font-semibold text-foreground">Dicas para uma resolução saudável</p>
+            <ul className="text-[11px] text-[#717171] list-disc list-inside space-y-0.5">
+              <li>Respirem antes de responder</li>
+              <li>Evitem responder com raiva</li>
+              <li>Foquem-se em como se sentem, não em culpar</li>
             </ul>
           </div>
         </div>
@@ -394,42 +493,76 @@ function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint:
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
         {complaint.status !== "talking" && complaint.status !== "resolved" && complaint.status !== "archived" && (
-          <Button size="sm" variant="outline" onClick={() => updateStatus("talking")}><MessageCircle className="mr-1 h-3 w-3" /> Em conversa</Button>
+          <button
+            onClick={() => updateStatus("talking")}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-[#e5e5e5] bg-white text-xs font-semibold text-foreground hover:bg-[#f5f5f5] transition-all"
+          >
+            <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} /> Em conversa
+          </button>
         )}
         {complaint.status !== "resolved" && complaint.status !== "archived" && (
-          <Button size="sm" variant="outline" onClick={() => updateStatus("resolved")}><CheckCircle2 className="mr-1 h-3 w-3" /> Resolvida</Button>
+          <button
+            onClick={() => updateStatus("resolved")}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-green-200 bg-green-50 text-xs font-semibold text-green-600 hover:bg-green-100 transition-all"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Resolvida
+          </button>
         )}
         {complaint.status !== "archived" && (
-          <Button size="sm" variant="ghost" onClick={() => updateStatus("archived")}><Archive className="mr-1 h-3 w-3" /> Arquivar</Button>
+          <button
+            onClick={() => updateStatus("archived")}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-[#e5e5e5] bg-white text-xs font-semibold text-[#717171] hover:bg-[#f5f5f5] transition-all"
+          >
+            <Archive className="h-3.5 w-3.5" strokeWidth={1.5} /> Arquivar
+          </button>
         )}
       </div>
 
       {/* Solution note */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">💡 Plano de solução</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
-          <Textarea value={solutionNote} onChange={e => setSolutionNote(e.target.value)} rows={2} placeholder="Como vamos resolver isto…" />
-          <Button size="sm" variant="outline" onClick={saveSolution}>Guardar</Button>
-        </CardContent>
-      </Card>
-
-      <Separator />
+      <div className="glass-card p-4 space-y-3">
+        <p className="text-sm font-semibold text-foreground">Plano de solução</p>
+        <Textarea
+          value={solutionNote}
+          onChange={e => setSolutionNote(e.target.value)}
+          rows={2}
+          placeholder="Como vamos resolver isto…"
+          className="rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
+        />
+        <button
+          onClick={saveSolution}
+          className="h-9 px-4 rounded-2xl border border-[#e5e5e5] text-sm font-semibold text-foreground hover:bg-[#f5f5f5] transition-all"
+        >
+          Guardar
+        </button>
+      </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0">
-        <h3 className="text-sm font-semibold mb-2">Conversa</h3>
-        <ScrollArea className="h-60 rounded-md border p-3">
-          {messages.length === 0 && <p className="text-xs text-muted-foreground">Sem mensagens ainda.</p>}
-          {messages.map(m => (
-            <div key={m.id} className={`mb-2 flex ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.user_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                <p className="whitespace-pre-wrap">{m.content}</p>
-                <p className="text-[10px] opacity-70 mt-1">{format(new Date(m.created_at), "HH:mm")}</p>
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#717171]">Conversa</p>
+        <div className="glass-card p-3 space-y-2 max-h-64 overflow-y-auto">
+          {messages.length === 0 && (
+            <p className="text-xs text-[#717171] text-center py-4">Sem mensagens ainda. Inicia o diálogo.</p>
+          )}
+          {messages.map(m => {
+            const mine = m.user_id === user?.id;
+            return (
+              <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                <div className={cn(
+                  "max-w-[80%] rounded-[18px] px-3 py-2 text-sm",
+                  mine
+                    ? "rounded-br-[4px] bg-rose-500 text-white"
+                    : "rounded-bl-[4px] bg-white border border-[#e5e5e5] text-foreground"
+                )}>
+                  <p className="whitespace-pre-wrap">{m.content}</p>
+                  <p className={cn("text-[10px] mt-0.5", mine ? "text-white/60" : "text-[#c4c4c4]")}>
+                    {format(new Date(m.created_at), "HH:mm")}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={bottomRef} />
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Send */}
@@ -439,9 +572,16 @@ function ComplaintDetail({ complaint: initial, onBack, onResolve }: { complaint:
             value={newMsg}
             onChange={e => setNewMsg(e.target.value)}
             placeholder="Escreve uma resposta…"
+            className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           />
-          <Button size="icon" onClick={sendMessage} disabled={sending || !newMsg.trim()}><Send className="h-4 w-4" /></Button>
+          <button
+            onClick={sendMessage}
+            disabled={sending || !newMsg.trim()}
+            className="h-12 w-12 shrink-0 rounded-2xl bg-rose-500 text-white flex items-center justify-center disabled:opacity-50 active:scale-[0.96] transition-all"
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" strokeWidth={1.5} />}
+          </button>
         </div>
       )}
     </section>
