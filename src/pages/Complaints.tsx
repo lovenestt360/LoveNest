@@ -174,7 +174,7 @@ export default function Complaints() {
       {createOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-xl flex flex-col" style={{ maxHeight: "90dvh" }}>
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-xl flex flex-col" style={{ height: "85dvh" }}>
             <div className="px-6 pt-5 pb-3 shrink-0">
               <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto mb-4" />
               <h2 className="text-lg font-bold text-foreground">Nova Reclamação</h2>
