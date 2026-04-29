@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart } from "lucide-react";
+import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -438,8 +438,27 @@ function ComplaintDetail({
   };
 
   const saveSolution = async () => {
-    await supabase.from("complaints").update({ solution_note: solutionNote.trim() || null }).eq("id", complaint.id);
-    toast({ title: "Plano de solução guardado" });
+    const { error } = await supabase
+      .from("complaints")
+      .update({ solution_note: solutionNote.trim() || null })
+      .eq("id", complaint.id);
+    if (error) {
+      toast({ title: "Erro ao guardar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Plano de solução guardado" });
+      fetchComplaint();
+    }
+  };
+
+  const deleteComplaint = async () => {
+    if (!window.confirm("Apagar este conflito permanentemente?")) return;
+    const { error } = await supabase.from("complaints").delete().eq("id", complaint.id);
+    if (error) {
+      toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Conflito apagado" });
+      onBack();
+    }
   };
 
   const isMine = complaint.created_by === user?.id;
@@ -522,6 +541,14 @@ function ComplaintDetail({
             className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-[#e5e5e5] bg-white text-xs font-semibold text-[#717171] hover:bg-[#f5f5f5] transition-all"
           >
             <Archive className="h-3.5 w-3.5" strokeWidth={1.5} /> Arquivar
+          </button>
+        )}
+        {complaint.status === "archived" && (
+          <button
+            onClick={deleteComplaint}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-500 hover:bg-rose-100 transition-all"
+          >
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Apagar
           </button>
         )}
       </div>
