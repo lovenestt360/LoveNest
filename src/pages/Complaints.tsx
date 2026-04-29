@@ -174,15 +174,19 @@ export default function Complaints() {
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
-          <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 space-y-4 animate-in slide-in-from-bottom duration-200">
-            <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto sm:hidden mb-2" />
-            <h2 className="text-lg font-bold text-foreground">Nova Reclamação</h2>
-            <CreateComplaintForm
-              spaceId={spaceId}
-              userId={user?.id}
-              onCreated={() => { setCreateOpen(false); fetchComplaints(); }}
-              onCancel={() => setCreateOpen(false)}
-            />
+          <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200">
+            <div className="px-6 pt-5 pb-3 shrink-0">
+              <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto sm:hidden mb-4" />
+              <h2 className="text-lg font-bold text-foreground">Nova Reclamação</h2>
+            </div>
+            <div className="overflow-y-auto px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6">
+              <CreateComplaintForm
+                spaceId={spaceId}
+                userId={user?.id}
+                onCreated={() => { setCreateOpen(false); fetchComplaints(); }}
+                onCancel={() => setCreateOpen(false)}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -255,7 +259,7 @@ function CreateComplaintForm({
   const inputClass = "h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400";
 
   return (
-    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-0.5">
+    <div className="space-y-4">
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-foreground">Título</label>
