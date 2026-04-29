@@ -290,7 +290,7 @@ function DateSeparator({ date }: { date: string }) {
 
   return (
     <div className="flex justify-center py-3">
-      <span className="text-[11px] font-semibold text-foreground/70 bg-background/80 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+      <span className="text-[11px] font-semibold text-[#717171] bg-white border border-[#e5e5e5] px-4 py-1 rounded-full shadow-sm">
         {label}
       </span>
     </div>
@@ -367,7 +367,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
         size="icon" 
         className={cn(
           "h-10 w-10 shrink-0 rounded-full transition-all active:scale-90",
-          isMine ? "hover:bg-white/20 text-white" : "hover:bg-muted text-primary"
+          isMine ? "hover:bg-white/20 text-white" : "hover:bg-rose-50 text-rose-500"
         )} 
         onClick={toggle}
       >
@@ -415,8 +415,8 @@ function ActionSheet({
       {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-2xl shadow-2xl border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
-        <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-lg border-t border-[#e5e5e5] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
+        <div className="w-12 h-1 bg-[#e5e5e5] rounded-full mx-auto mb-4" />
 
         {/* Preview */}
         <p className="text-xs text-muted-foreground mb-3 line-clamp-2 px-1">
@@ -425,7 +425,7 @@ function ActionSheet({
 
         <div className="grid gap-1">
           <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3" onClick={onReply}>
-            <Reply className="h-5 w-5 text-primary" /> Responder
+            <Reply className="h-5 w-5 text-rose-500" /> Responder
           </Button>
           {isMine && (
             <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3" onClick={onEdit}>
@@ -1034,7 +1034,7 @@ export default function Chat() {
 
       {/* ── Bottom bar area (Floating Pill) ── */}
       <div className="absolute bottom-0 left-0 right-0 z-50 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="mx-auto max-w-lg bg-background/80 backdrop-blur-xl border border-white/20 shadow-lg p-1 rounded-full pointer-events-auto">
+        <div className="mx-auto max-w-lg bg-white border border-[#e5e5e5] shadow-sm p-1 rounded-full pointer-events-auto">
           {/* Edit overlay */}
           {editingMsg && (
             <div className="flex items-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 px-3 py-2 mb-2 mx-1 mt-1">
@@ -1057,8 +1057,8 @@ export default function Chat() {
 
           {/* Reply preview */}
           {replyTo && (
-            <div className="flex items-center gap-2 rounded-2xl bg-primary/10 border border-primary/20 px-3 py-2 mb-2 mx-1 mt-1">
-              <Reply className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="flex items-center gap-2 rounded-2xl bg-rose-50 border border-rose-200 px-3 py-2 mb-2 mx-1 mt-1">
+              <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
               <p className="flex-1 text-xs text-muted-foreground line-clamp-1 pr-2">
                 {replyTo.content || (replyTo.image_url ? "📷 Foto" : replyTo.audio_url ? "🎤 Áudio" : "")}
               </p>
@@ -1070,7 +1070,7 @@ export default function Chat() {
 
           {/* Image preview */}
           {imagePreview && (
-            <div className="flex items-center gap-3 rounded-2xl bg-muted/50 border border-border/50 px-2 py-2 mb-2 mx-1 mt-1">
+            <div className="flex items-center gap-3 rounded-2xl bg-[#f5f5f5] border border-[#e5e5e5] px-2 py-2 mb-2 mx-1 mt-1">
               <img src={imagePreview} alt="preview" className="h-10 w-10 rounded-[10px] object-cover shadow-sm" />
               <p className="flex-1 text-xs text-muted-foreground font-medium truncate">{imageFile?.name}</p>
               <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background/50" onClick={() => setImageFile(null)}>
@@ -1081,7 +1081,7 @@ export default function Chat() {
 
           {/* Audio preview */}
           {audio.audioBlob && !audio.recording && (
-            <div className="flex items-center gap-2 rounded-2xl bg-muted/50 border border-border px-3 py-2 mb-2 mx-1 mt-1">
+            <div className="flex items-center gap-2 rounded-2xl bg-[#f5f5f5] border border-[#e5e5e5] px-3 py-2 mb-2 mx-1 mt-1">
               <Mic className="h-4 w-4 text-primary shrink-0" />
               <p className="flex-1 text-xs font-medium text-foreground">Áudio gravado ({audio.duration}s)</p>
               <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background/50" onClick={audio.clear}>
@@ -1095,7 +1095,7 @@ export default function Chat() {
             <div className="relative">
               {/* WhatsApp Recording Overlay */}
               {(audio.recording || audio.audioBlob) && (
-                <div className="absolute inset-y-0 left-0 right-0 z-40 bg-background flex flex-col justify-center animate-in fade-in slide-in-from-bottom duration-300 rounded-t-3xl sm:rounded-3xl border-t border-muted sm:border shadow-2xl">
+                <div className="absolute inset-y-0 left-0 right-0 z-40 bg-white flex flex-col justify-center animate-in fade-in slide-in-from-bottom duration-300 rounded-t-3xl sm:rounded-3xl border-t border-[#e5e5e5] sm:border shadow-sm">
                   <div className="flex items-center gap-2 pl-3 pr-2 h-[52px] py-1">
                     
                     {/* Trash Button */}
@@ -1154,7 +1154,7 @@ export default function Chat() {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-10 w-10 shrink-0 rounded-full text-primary hover:bg-primary/10" 
+                          className="h-10 w-10 shrink-0 rounded-full text-rose-500 hover:bg-rose-50"
                           onClick={() => audio.stop()}
                           title="Finalizar e Ouvir"
                         >
@@ -1204,7 +1204,7 @@ export default function Chat() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 rounded-full text-primary hover:bg-primary/10 transition-transform active:scale-[1.3] duration-300"
+                        className="h-10 w-10 rounded-full text-rose-500 hover:bg-rose-50 transition-transform active:scale-[1.3] duration-300"
                         onClick={() => {
                           console.log("DEBUG: HEART CLICK - Botão clicado via UI");
                           handleSendCarinho();
@@ -1212,7 +1212,7 @@ export default function Chat() {
                         disabled={sending}
                         title="Enviar Carinho"
                       >
-                        <Heart className="h-5 w-5 fill-primary" />
+                        <Heart className="h-5 w-5 fill-rose-500 text-rose-500" />
                       </Button>
                       <Button
                         type="button"
@@ -1246,8 +1246,8 @@ export default function Chat() {
       {showCarinhoAnim && (
         <div className="absolute top-1/3 left-0 right-0 z-[100] pointer-events-none flex items-center justify-center">
           <div className="relative">
-            <div className="animate-bounce p-5 bg-primary/20 rounded-full backdrop-blur-md shadow-glow">
-              <Heart className="h-20 w-20 text-primary fill-primary animate-pulse" />
+            <div className="animate-bounce p-5 bg-rose-500/20 rounded-full shadow-sm">
+              <Heart className="h-20 w-20 text-rose-500 fill-rose-500 animate-pulse" />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               {Array.from({ length: 16 }).map((_, i) => (
@@ -1259,7 +1259,7 @@ export default function Chat() {
                     animationDelay: `${i * 0.04}s`
                   }}
                 >
-                  <Heart className="h-8 w-8 text-primary/30 fill-primary/30" />
+                  <Heart className="h-8 w-8 text-rose-500/30 fill-rose-500/30" />
                 </div>
               ))}
             </div>
