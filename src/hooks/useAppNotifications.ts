@@ -77,7 +77,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/chat") {
             setChatUnread((c) => c + 1);
             if (getNotifPrefs().chat) {
-              toast({ title: "💬 Chat", description: msg.content.length > 60 ? msg.content.slice(0, 60) + "…" : msg.content });
+              toast({ title: "Chat", description: msg.content.length > 60 ? msg.content.slice(0, 60) + "…" : msg.content });
             }
           }
         }
@@ -91,7 +91,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/humor") {
             setMoodUnread((c) => c + 1);
             if (getNotifPrefs().humor) {
-              toast({ title: "😊 O teu par registou o humor de hoje" });
+              toast({ title: "O teu par registou o humor de hoje" });
             }
           }
         }
@@ -106,7 +106,7 @@ export function useAppNotifications() {
             if (locationRef.current !== "/tarefas") {
               setTasksUnread((c) => c + 1);
               if (getNotifPrefs().tarefas) {
-                toast({ title: "📋 Nova tarefa para ti", description: row.title.length > 60 ? row.title.slice(0, 60) + "…" : row.title });
+                toast({ title: "Nova tarefa para ti", description: row.title.length > 60 ? row.title.slice(0, 60) + "…" : row.title });
               }
             }
           }
@@ -122,7 +122,7 @@ export function useAppNotifications() {
             if (locationRef.current !== "/tarefas") {
               setTasksUnread((c) => c + 1);
               if (getNotifPrefs().tarefas) {
-                toast({ title: "✅ Tarefa concluída", description: row.title.length > 60 ? row.title.slice(0, 60) + "…" : row.title });
+                toast({ title: "Tarefa concluída", description: row.title.length > 60 ? row.title.slice(0, 60) + "…" : row.title });
               }
             }
           }
@@ -137,7 +137,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/memorias") {
             setMemoriesUnread((c) => c + 1);
             if (getNotifPrefs().memorias) {
-              toast({ title: "📸 Nova memória", description: row.caption || "O teu par adicionou uma foto" });
+              toast({ title: "Nova memória", description: row.caption || "O teu par adicionou uma foto" });
             }
           }
         }
@@ -151,7 +151,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/memorias") {
             setMemoriesUnread((c) => c + 1);
             if (getNotifPrefs().memorias) {
-              toast({ title: "💬 Novo comentário numa memória", description: row.content.length > 60 ? row.content.slice(0, 60) + "…" : row.content });
+              toast({ title: "Novo comentário numa memória", description: row.content.length > 60 ? row.content.slice(0, 60) + "…" : row.content });
             }
           }
         }
@@ -165,7 +165,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/agenda") {
             setScheduleUnread((c) => c + 1);
             if (getNotifPrefs().tarefas !== false) {
-              toast({ title: "📅 Novo evento", description: row.title });
+              toast({ title: "Novo evento", description: row.title });
             }
           }
         }
@@ -180,7 +180,7 @@ export function useAppNotifications() {
             setScheduleUnread((c) => c + 1);
             // using tarefas config as fallback for agenda/rotinas since agenda missing from toggles
             if (getNotifPrefs().tarefas !== false) {
-              toast({ title: "🗓️ Rotina actualizada", description: row.title });
+              toast({ title: "Rotina actualizada", description: row.title });
             }
           }
         }
@@ -194,7 +194,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/oracao") {
             setPrayerUnread((c) => c + 1);
             if (getNotifPrefs().oracao) {
-              toast({ title: "🙏 Oração do dia atualizada" });
+              toast({ title: "Oração do dia atualizada" });
             }
           }
         }
@@ -208,7 +208,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/oracao") {
             setPrayerUnread((c) => c + 1);
             if (getNotifPrefs().oracao) {
-              toast({ title: "✨ O teu par atualizou o diário espiritual" });
+              toast({ title: "O teu par atualizou o diário espiritual" });
             }
           }
         }
@@ -222,7 +222,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/conflitos") {
             setComplaintsUnread((c) => c + 1);
             if (getNotifPrefs().conflitos) {
-              toast({ title: "⚡ Nova reclamação", description: row.title.length > 60 ? row.title.slice(0, 60) + "…" : row.title });
+              toast({ title: "Nova reclamação", description: row.title.length > 60 ? row.title.slice(0, 60) + "…" : row.title });
             }
           }
         }
@@ -236,7 +236,7 @@ export function useAppNotifications() {
           if (locationRef.current !== "/conflitos") {
             setComplaintsUnread((c) => c + 1);
             if (getNotifPrefs().conflitos) {
-              toast({ title: "💬 Resposta num conflito", description: row.content.length > 60 ? row.content.slice(0, 60) + "…" : row.content });
+              toast({ title: "Resposta num conflito", description: row.content.length > 60 ? row.content.slice(0, 60) + "…" : row.content });
             }
           }
         }
@@ -251,7 +251,7 @@ export function useAppNotifications() {
             if (locationRef.current !== "/conflitos") {
               setComplaintsUnread((c) => c + 1);
               if (getNotifPrefs().conflitos) {
-                toast({ title: "✅ Conflito resolvido", description: row.title });
+                toast({ title: "Conflito resolvido", description: row.title });
               }
             }
           }
