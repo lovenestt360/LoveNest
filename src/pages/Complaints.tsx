@@ -223,11 +223,18 @@ function CreateComplaintForm({
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!spaceId || !userId || !title.trim() || !description.trim()) return;
+    if (!spaceId || !title.trim() || !description.trim()) return;
     setSaving(true);
+    // Use session user directly to ensure created_by matches auth.uid()
+    const { data: { user: sessionUser } } = await supabase.auth.getUser();
+    if (!sessionUser) {
+      toast({ title: "Sessão expirada", description: "Faz login novamente.", variant: "destructive" });
+      setSaving(false);
+      return;
+    }
     const { error } = await supabase.from("complaints").insert({
       couple_space_id: spaceId,
-      created_by: userId,
+      created_by: sessionUser.id,
       title: title.trim(),
       description: description.trim(),
       feeling: feeling || null,
