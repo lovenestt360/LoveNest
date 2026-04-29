@@ -6,7 +6,8 @@ import { notifyPartner } from "@/lib/notifyPartner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, ArrowLeft, Send, CheckCircle2, Archive, MessageCircle, Loader2, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -171,25 +172,19 @@ export default function Complaints() {
       )}
 
       {/* Create modal */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-xl flex flex-col" style={{ height: "85dvh" }}>
-            <div className="px-6 pt-5 pb-3 shrink-0">
-              <div className="w-10 h-1 bg-[#e5e5e5] rounded-full mx-auto mb-4" />
-              <h2 className="text-lg font-bold text-foreground">Nova Reclamação</h2>
-            </div>
-            <div className="overflow-y-auto flex-1 px-6 pb-8">
-              <CreateComplaintForm
-                spaceId={spaceId}
-                userId={user?.id}
-                onCreated={() => { setCreateOpen(false); fetchComplaints(); }}
-                onCancel={() => setCreateOpen(false)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-md rounded-3xl border-0 shadow-xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground">Nova Reclamação</DialogTitle>
+          </DialogHeader>
+          <CreateComplaintForm
+            spaceId={spaceId}
+            userId={user?.id}
+            onCreated={() => { setCreateOpen(false); fetchComplaints(); }}
+            onCancel={() => setCreateOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Reconciliation Overlay */}
       {showResolvedOverlay && (
@@ -216,7 +211,7 @@ function CreateComplaintForm({
   spaceId: string | null;
   userId?: string;
   onCreated: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
