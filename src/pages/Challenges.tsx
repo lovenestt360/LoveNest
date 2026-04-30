@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ArrowLeft, CheckCircle, Plus, Trophy, Flame, Gift, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Plus, Trophy, Flame, Gift, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -84,6 +84,17 @@ export default function Challenges() {
             setNewDesc("");
             setIsAdding(false);
             loadChallenges();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            const { error } = await supabase.from("couple_challenges").delete().eq("id", id);
+            if (error) throw error;
+            loadChallenges();
+            toast({ title: "Desafio removido", description: "O desafio foi apagado da lista." });
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
@@ -316,15 +327,23 @@ export default function Challenges() {
                                     <span className="text-[11px] text-[#aaa]">
                                         {c.is_completed ? `Concluído ${format(new Date(c.completed_at), "d MMM", { locale: pt })}` : `Criado ${format(new Date(c.created_at), "d MMM", { locale: pt })}`}
                                     </span>
-                                    {!c.is_completed ? (
-                                        <Button size="sm" onClick={() => handleComplete(c.id, c.is_completed)} className="bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-semibold px-4 h-8 border-0">
-                                            Feito!
-                                        </Button>
-                                    ) : (
-                                        <button onClick={() => handleComplete(c.id, c.is_completed)} className="text-[11px] text-[#aaa] underline underline-offset-2">
-                                            Desfazer
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleDelete(c.id)}
+                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#c0c0c0] active:bg-red-50 active:text-red-400 transition-colors"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
-                                    )}
+                                        {!c.is_completed ? (
+                                            <Button size="sm" onClick={() => handleComplete(c.id, c.is_completed)} className="bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-semibold px-4 h-8 border-0">
+                                                Feito!
+                                            </Button>
+                                        ) : (
+                                            <button onClick={() => handleComplete(c.id, c.is_completed)} className="text-[11px] text-[#aaa] underline underline-offset-2">
+                                                Desfazer
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
