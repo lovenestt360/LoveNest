@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ArrowLeft, Lock, Unlock, Plus, Clock, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, Plus, Clock, Image as ImageIcon, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -117,28 +117,26 @@ export default function TimeCapsule() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <header className="px-4 py-4 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                            Cápsula do Tempo <Clock className="w-5 h-5 text-indigo-500" />
-                        </h1>
-                    </div>
+            <header className="px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm z-10 border-b border-[#f0f0f0] flex items-center gap-3">
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-[#717171]">
+                    <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div>
+                    <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+                        Cápsula do Tempo <Clock className="w-4 h-4 text-[#717171]" />
+                    </h1>
                 </div>
             </header>
 
-            <main className="p-4 space-y-6 max-w-md mx-auto">
-                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-3xl p-5 text-center shadow-sm">
-                    <p className="text-sm font-medium text-indigo-700">Guarda mensagens hoje para serem lidas juntos no futuro.</p>
+            <main className="p-4 space-y-4 max-w-md mx-auto">
+                <div className="bg-white border border-[#f0f0f0] rounded-2xl p-4 shadow-sm">
+                    <p className="text-[13px] text-[#717171]">Guarda mensagens hoje para serem lidas juntos no futuro.</p>
                 </div>
 
                 {/* Add Flow */}
                 {isAdding ? (
-                    <form onSubmit={handleCreate} className="bg-card border rounded-2xl p-5 space-y-4 shadow-sm animate-in slide-in-from-top-2">
-                        <h3 className="font-bold">Enterrar Nova Cápsula</h3>
+                    <form onSubmit={handleCreate} className="bg-white border border-[#f0f0f0] rounded-2xl p-5 space-y-4 shadow-sm animate-in slide-in-from-top-2">
+                        <h3 className="font-semibold">Nova Cápsula</h3>
 
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-muted-foreground ml-1">Para quando?</label>
@@ -165,29 +163,31 @@ export default function TimeCapsule() {
                         </div>
                     </form>
                 ) : (
-                    <Button onClick={() => setIsAdding(true)} className="w-full h-12 rounded-2xl gap-2 shadow-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200" variant="secondary">
-                        <Plus className="w-5 h-5" /> Criar Nova Cápsula
-                    </Button>
+                    <button onClick={() => setIsAdding(true)} className="w-full h-12 rounded-2xl gap-2 bg-white border border-[#f0f0f0] shadow-sm text-foreground font-semibold text-sm flex items-center justify-center active:scale-[0.98] transition-all">
+                        <Plus className="w-5 h-5 text-[#717171]" /> Criar Nova Cápsula
+                    </button>
                 )}
 
                 {/* List */}
                 {loading ? (
-                    <div className="text-center p-8 animate-pulse font-bold text-muted-foreground tracking-widest text-sm">A PROCURAR NO TEMPO...</div>
+                    <div className="flex justify-center py-10">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#c0c0c0]" />
+                    </div>
                 ) : capsules.length === 0 ? (
-                    <div className="text-center p-10 bg-card border rounded-3xl shadow-sm space-y-3">
-                        <Lock className="w-10 h-10 text-muted-foreground mx-auto" />
-                        <h3 className="font-bold">Nenhuma Cápsula Encontrada</h3>
-                        <p className="text-sm text-muted-foreground">O vosso eu do futuro ainda não tem nenhuma surpresa vossa.</p>
+                    <div className="text-center p-10 bg-white border border-[#f0f0f0] rounded-2xl shadow-sm space-y-2">
+                        <Lock className="w-9 h-9 text-[#c0c0c0] mx-auto" />
+                        <p className="font-semibold text-foreground">Nenhuma cápsula ainda</p>
+                        <p className="text-[12px] text-[#717171]">O vosso eu do futuro ainda não tem surpresas guardadas.</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {capsules.map((c) => {
                             const unlockDateObj = new Date(c.unlock_date);
                             const canUnlock = isPast(unlockDateObj);
                             const daysDiff = Math.abs(differenceInDays(new Date(), unlockDateObj));
 
                             return (
-                                <div key={c.id} className={`bg-card border rounded-2xl overflow-hidden relative shadow-sm transition-all ${c.is_unlocked ? '' : 'bg-muted/30'}`}>
+                                <div key={c.id} className="bg-white border border-[#f0f0f0] rounded-2xl overflow-hidden shadow-sm transition-all">
                                     {c.is_unlocked ? (
                                         <div className="p-5 animate-in fade-in zoom-in-95 duration-500">
                                             <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground font-bold uppercase tracking-wider">

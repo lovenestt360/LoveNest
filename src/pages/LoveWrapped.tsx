@@ -3,7 +3,6 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Share2, MessageCircle, Gift, Flame, Camera, 
@@ -495,82 +494,74 @@ export default function LoveWrapped() {
   }
 
   return (
-    <section className="space-y-6 animate-fade-in pb-10">
-      <header className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="h-10 w-10 flex items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <ChevronLeft className="h-6 w-6" />
+    <section className="animate-fade-in pb-10">
+      <header className="flex items-center gap-3 px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm border-b border-[#f0f0f0]">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-[#717171]">
+          <ChevronLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            LoveWrapped
+          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-rose-500" /> LoveWrapped
           </h1>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Resumo mensal do vosso amor</p>
+          <p className="text-[12px] text-[#717171]">Resumo mensal do vosso amor</p>
         </div>
       </header>
 
+      <div className="p-4 space-y-4">
+
       {wrappedList.length === 0 ? (
-        <Card className="border-dashed h-64 flex flex-col items-center justify-center bg-muted/30 rounded-[2.5rem]">
-          <CardContent className="p-8 text-center space-y-4">
-            <div className="bg-primary/10 h-16 w-16 rounded-full flex items-center justify-center mx-auto text-primary">
-              <Sparkles className="w-8 h-8" />
-            </div>
-            <div className="space-y-1">
-              <p className="font-bold">Ainda não há resumos gerados.</p>
-              <p className="text-xs text-muted-foreground">O vosso primeiro LoveWrapped será gerado no final deste mês! ✨</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-[#f0f0f0] rounded-2xl p-10 text-center shadow-sm space-y-3">
+          <div className="bg-rose-50 h-14 w-14 rounded-2xl flex items-center justify-center mx-auto text-rose-400">
+            <Sparkles className="w-7 h-7" />
+          </div>
+          <p className="font-semibold text-foreground">Ainda sem resumos</p>
+          <p className="text-[12px] text-[#717171]">O primeiro LoveWrapped será gerado no final deste mês</p>
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-3">
           {wrappedList.map((item, idx) => (
-            <button 
-              key={item.id} 
+            <button
+              key={item.id}
               onClick={() => handleStartStory(idx)}
-              className="glass-card hover:bg-accent/40 p-5 rounded-[2rem] flex items-center justify-between group active:scale-[0.98] transition-all"
+              className="w-full bg-white border border-[#f0f0f0] rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
             >
-              <div className="flex items-center gap-4">
-                <div className="bg-pink-500/20 h-12 w-12 rounded-2xl flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform">
-                  <Heart className="w-6 h-6" />
+              <div className="flex items-center gap-3">
+                <div className="bg-rose-50 h-11 w-11 rounded-xl flex items-center justify-center text-rose-400">
+                  <Heart className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-black italic text-lg">{MONTH_NAMES[item.month]} {item.year}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Ver o resumo emocional</p>
+                  <p className="font-semibold text-[15px]">{MONTH_NAMES[item.month]} {item.year}</p>
+                  <p className="text-[12px] text-[#717171]">Ver resumo emocional</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+              <ChevronRight className="h-4 w-4 text-[#c0c0c0]" />
             </button>
           ))}
         </div>
       )}
 
-      {/* Referral Stats */}
-      <Card className="rounded-[2.5rem] bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20 overflow-hidden mt-8">
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-600">
-              <Gift className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-black text-[15px] tracking-tight">Convida os Amigos</p>
-              <p className="text-[11px] text-muted-foreground font-bold">Partilha o vosso percurso e ganha bónus ✨</p>
-            </div>
+      {/* Referral */}
+      <button
+        className="w-full bg-white border border-[#f0f0f0] rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
+        onClick={() => {
+          const text = `A usar o LoveNest para construir uma relação mais forte! Junta-te a nós 💛 ${window.location.origin}`;
+          if (navigator.share) navigator.share({ title: "LoveNest", text, url: window.location.origin });
+          else { navigator.clipboard.writeText(text); toast({ title: "Link copiado!" }); }
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
+            <Gift className="w-5 h-5" />
           </div>
-          <Button 
-             className="w-full bg-indigo-600 text-white hover:bg-indigo-700 font-bold h-12 rounded-2xl shadow-glow"
-             onClick={() => {
-               const text = `A usar o LoveNest para construir uma relação mais forte! Junta-te a nós 💛 ${window.location.origin}`;
-               if (navigator.share) navigator.share({ title: "LoveNest", text, url: window.location.origin });
-               else {
-                 navigator.clipboard.writeText(text);
-                 toast({ title: "Link copiado!" });
-               }
-             }}
-          >
-            Convidar agora
-          </Button>
-        </CardContent>
-      </Card>
+          <div className="text-left">
+            <p className="font-semibold text-[13px]">Convidar Amigos</p>
+            <p className="text-[11px] text-[#717171]">Partilha o percurso e ganha bónus</p>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-[#c0c0c0]" />
+      </button>
+
+      </div>
     </section>
   );
 }

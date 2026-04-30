@@ -175,25 +175,23 @@ export default function Challenges() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <header className="px-4 py-4 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                            Desafios LoveNest <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-                        </h1>
-                    </div>
+            <header className="px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm z-10 border-b border-[#f0f0f0] flex items-center gap-3">
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-[#717171]">
+                    <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div>
+                    <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+                        Desafios <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+                    </h1>
                 </div>
             </header>
 
-            <main className="p-4 space-y-6 max-w-md mx-auto">
+            <main className="p-4 space-y-4 max-w-md mx-auto">
                 {/* Stats */}
-                <div className="bg-primary/10 border border-primary/20 rounded-3xl p-6 text-center shadow-sm">
-                    <Trophy className="w-12 h-12 text-primary mx-auto mb-3" />
-                    <h2 className="text-3xl font-black text-primary">{completedCount}</h2>
-                    <p className="text-sm font-bold uppercase tracking-widest text-primary/70">Desafios Concluídos</p>
+                <div className="bg-white border border-[#f0f0f0] rounded-2xl p-5 text-center shadow-sm">
+                    <Trophy className="w-10 h-10 text-rose-500 mx-auto mb-2" />
+                    <h2 className="text-3xl font-bold text-foreground">{completedCount}</h2>
+                    <p className="text-[12px] text-[#717171] mt-0.5">Desafios concluídos</p>
                 </div>
 
                 {/* Action Buttons */}
@@ -287,38 +285,39 @@ export default function Challenges() {
 
                 {/* List */}
                 {loading ? (
-                    <div className="text-center p-8 animate-pulse font-bold text-muted-foreground tracking-widest text-sm">A CARREGAR...</div>
+                    <div className="flex justify-center py-10">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#c0c0c0]" />
+                    </div>
                 ) : challenges.length === 0 ? (
-                    <div className="text-center p-10 bg-card border rounded-3xl shadow-sm space-y-3">
-                        <Gift className="w-10 h-10 text-muted-foreground mx-auto" />
-                        <h3 className="font-bold">Sem Desafios Ativos</h3>
-                        <p className="text-sm text-muted-foreground">Criem desafios divertidos ou usem a IA para gerar sugestões!</p>
+                    <div className="text-center p-10 bg-white border border-[#f0f0f0] rounded-2xl shadow-sm space-y-2">
+                        <Gift className="w-9 h-9 text-[#c0c0c0] mx-auto" />
+                        <p className="font-semibold text-foreground">Sem desafios ativos</p>
+                        <p className="text-[12px] text-[#717171]">Criem desafios ou usem a IA para gerar sugestões</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {challenges.map((c, idx) => (
                             <div key={c.id} className={cn(
-                                "bg-card border rounded-2xl p-5 relative overflow-hidden transition-all shadow-sm animate-fade-slide-up",
-                                `stagger-${(idx % 5) + 1}`,
-                                c.is_completed ? 'opacity-60 grayscale-[0.5]' : ''
+                                "bg-white border border-[#f0f0f0] rounded-2xl p-4 relative overflow-hidden shadow-sm transition-all",
+                                c.is_completed ? 'opacity-55' : ''
                             )}>
-                                {c.is_completed && <div className="absolute top-0 right-0 p-3 bg-green-500/10 rounded-bl-2xl"><CheckCircle className="w-5 h-5 text-green-500" /></div>}
+                                {c.is_completed && <div className="absolute top-3 right-3"><CheckCircle className="w-4 h-4 text-green-500" /></div>}
 
-                                <h4 className={`font-bold text-lg mb-1 pr-10 ${c.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{c.title}</h4>
-                                {c.description && <p className="text-sm text-muted-foreground mb-4">{c.description}</p>}
+                                <h4 className={`font-semibold text-base mb-0.5 pr-6 ${c.is_completed ? 'line-through text-[#717171]' : 'text-foreground'}`}>{c.title}</h4>
+                                {c.description && <p className="text-[12px] text-[#717171] mb-3">{c.description}</p>}
 
-                                <div className="flex items-center justify-between mt-2 text-xs">
-                                    <span className="text-muted-foreground">
-                                        {c.is_completed ? `Concluído em ${format(new Date(c.completed_at), "d MMM", { locale: pt })}` : `Criado em ${format(new Date(c.created_at), "d MMM", { locale: pt })}`}
+                                <div className="flex items-center justify-between mt-3">
+                                    <span className="text-[11px] text-[#aaa]">
+                                        {c.is_completed ? `Concluído ${format(new Date(c.completed_at), "d MMM", { locale: pt })}` : `Criado ${format(new Date(c.created_at), "d MMM", { locale: pt })}`}
                                     </span>
                                     {!c.is_completed ? (
-                                        <Button size="sm" onClick={() => handleComplete(c.id, c.is_completed)} className="bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold px-4">
+                                        <Button size="sm" onClick={() => handleComplete(c.id, c.is_completed)} className="bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-semibold px-4 h-8 border-0">
                                             Feito!
                                         </Button>
                                     ) : (
-                                        <Button size="sm" variant="ghost" onClick={() => handleComplete(c.id, c.is_completed)} className="text-[10px] text-muted-foreground underline underline-offset-2">
+                                        <button onClick={() => handleComplete(c.id, c.is_completed)} className="text-[11px] text-[#aaa] underline underline-offset-2">
                                             Desfazer
-                                        </Button>
+                                        </button>
                                     )}
                                 </div>
                             </div>

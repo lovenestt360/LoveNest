@@ -95,23 +95,27 @@ export default function Memories() {
   };
 
   return (
-    <section className="space-y-6 pb-24 animate-fade-in max-w-lg mx-auto px-4 pt-4">
-      <header className="flex items-center justify-between bg-background/40 backdrop-blur-md p-4 rounded-3xl border border-border/50 sticky top-4 z-40 shadow-sm">
+    <section className="space-y-5 pb-24 animate-fade-in max-w-lg mx-auto">
+      <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm z-40 border-b border-[#f0f0f0]">
         <div>
-          <h1 className="text-xl font-black tracking-tight">Memórias</h1>
-          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{photos.length} momento{photos.length !== 1 ? "s" : ""} registado{photos.length !== 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-semibold tracking-tight">Memórias</h1>
+          <p className="text-[12px] text-[#717171]">{photos.length} momento{photos.length !== 1 ? "s" : ""} guardado{photos.length !== 1 ? "s" : ""}</p>
         </div>
-        <Button size="sm" onClick={() => setUploadOpen(true)} className="rounded-xl font-bold shadow-lg shadow-primary/20">
+        <Button size="sm" onClick={() => setUploadOpen(true)} className="rounded-2xl bg-rose-500 hover:bg-rose-600 text-white border-0 shadow-sm">
           <Plus className="mr-1 h-4 w-4" /> Novo
         </Button>
       </header>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#c0c0c0]" />
         </div>
       ) : photos.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-12">Ainda sem memórias. Adiciona a primeira! 📸</p>
+        <div className="mx-4 bg-white border border-[#f0f0f0] rounded-2xl p-10 text-center shadow-sm space-y-2">
+          <p className="text-2xl">📸</p>
+          <p className="text-sm font-semibold text-foreground">Ainda sem memórias</p>
+          <p className="text-[12px] text-[#717171]">Adiciona a primeira foto do casal</p>
+        </div>
       ) : (
         <>
           <PhotoGrid photos={photos} onSelect={setSelectedPhoto} />
