@@ -9,9 +9,12 @@ export function useReferralTracking(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    // Check referral from URL (stored in sessionStorage during signup)
-    const refCode = sessionStorage.getItem("lovenest_ref");
+    // localStorage survives OAuth redirects; sessionStorage is fallback for email flow
+    const refCode =
+      localStorage.getItem("lovenest_ref") ||
+      sessionStorage.getItem("lovenest_ref");
     if (!refCode) return;
+    localStorage.removeItem("lovenest_ref");
     sessionStorage.removeItem("lovenest_ref");
 
     // Find referrer by code

@@ -82,6 +82,9 @@ export default function Signup() {
             type="button"
             onClick={async () => {
               setGoogleLoading(true);
+              // Persistir código de convite em localStorage antes do redirect OAuth
+              // (sessionStorage não sobrevive ao redirect externo do Google)
+              if (inviteCode) localStorage.setItem("lovenest_ref", inviteCode);
               const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: { redirectTo: window.location.origin + "/casa" },
@@ -159,7 +162,7 @@ export default function Signup() {
               />
               {inviteCode && (
                 <p className="text-[11px] text-rose-500 font-medium px-1">
-                  Ganha 100 pontos iniciais ao registar com código.
+                  Ganha 60 pontos ao registar com código de convite.
                 </p>
               )}
             </div>
