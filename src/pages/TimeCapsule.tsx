@@ -135,31 +135,33 @@ export default function TimeCapsule() {
 
                 {/* Add Flow */}
                 {isAdding ? (
-                    <form onSubmit={handleCreate} className="bg-white border border-[#f0f0f0] rounded-2xl p-5 space-y-4 shadow-sm animate-in slide-in-from-top-2">
-                        <h3 className="font-semibold">Nova Cápsula</h3>
-
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-muted-foreground ml-1">Para quando?</label>
-                            <Input type="date" value={unlockDate} onChange={(e) => setUnlockDate(e.target.value)} min={format(new Date(), "yyyy-MM-dd")} className="bg-muted border-none" required />
+                    <form onSubmit={handleCreate} className="bg-white border border-[#f0f0f0] rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
+                        <div className="p-4 border-b border-[#f0f0f0]">
+                            <h3 className="font-semibold text-[15px]">Nova Cápsula</h3>
                         </div>
-
-                        <Textarea placeholder="A tua mensagem para o futuro..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} className="bg-muted border-none resize-none" rows={4} required />
-
-                        <div className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedImage ? 'border-primary bg-primary/5' : 'border-border'}`} onClick={() => document.getElementById('capsule-img')?.click()}>
-                            <div className="flex flex-col items-center gap-1 justify-center pointer-events-none">
-                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                                <span className="text-xs font-bold text-muted-foreground">{selectedImage ? selectedImage.name : "Anexar Foto (Opcional)"}</span>
+                        <div className="divide-y divide-[#f0f0f0]">
+                            <div className="p-4 space-y-1">
+                                <label className="text-[11px] font-semibold text-[#717171]">Para quando?</label>
+                                <Input type="date" value={unlockDate} onChange={(e) => setUnlockDate(e.target.value)} min={format(new Date(), "yyyy-MM-dd")} className="bg-transparent border-none p-0 h-auto text-sm focus-visible:ring-0 cursor-pointer" required />
                             </div>
-                            <input id="capsule-img" type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                if (e.target.files?.[0]) setSelectedImage(e.target.files[0]);
-                            }} />
+                            <div className="p-4 space-y-1">
+                                <label className="text-[11px] font-semibold text-[#717171]">A tua mensagem</label>
+                                <Textarea placeholder="Escreve para o vosso eu do futuro..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} className="bg-transparent border-none p-0 resize-none text-sm focus-visible:ring-0 placeholder:text-[#c0c0c0]" rows={3} required />
+                            </div>
+                            <div
+                                className={`p-4 flex items-center gap-3 cursor-pointer active:bg-[#fafafa] transition-colors ${selectedImage ? 'text-foreground' : 'text-[#717171]'}`}
+                                onClick={() => document.getElementById('capsule-img')?.click()}
+                            >
+                                <ImageIcon className="w-5 h-5 shrink-0" />
+                                <span className="text-[13px] font-medium">{selectedImage ? selectedImage.name : "Anexar Foto (Opcional)"}</span>
+                                <input id="capsule-img" type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) setSelectedImage(e.target.files[0]); }} />
+                            </div>
                         </div>
-
-                        <div className="flex gap-2 pt-2">
-                            <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setIsAdding(false)}>Cancelar</Button>
-                            <Button type="submit" className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white" disabled={uploading || !newMessage.trim() || !unlockDate}>
-                                {uploading ? "A enterrar..." : "Enterrar Cápsula"}
-                            </Button>
+                        <div className="p-4 flex gap-2">
+                            <button type="button" className="flex-1 h-11 rounded-xl border border-[#e5e5e5] text-sm font-medium text-[#717171] active:scale-[0.98] transition-all" onClick={() => setIsAdding(false)}>Cancelar</button>
+                            <button type="submit" disabled={uploading || !newMessage.trim() || !unlockDate} className="flex-1 h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all">
+                                {uploading ? "A guardar..." : "Guardar Cápsula"}
+                            </button>
                         </div>
                     </form>
                 ) : (

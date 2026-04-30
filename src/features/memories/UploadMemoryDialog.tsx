@@ -124,84 +124,69 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
-      <DialogContent className="max-w-md p-6 rounded-[2rem] border-none bg-background/80 backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in duration-300">
-        <DialogHeader className="text-center pb-2">
-          <DialogTitle className="text-2xl font-black tracking-tight text-center w-full">Cria uma Memória ✨</DialogTitle>
-          <DialogDescription className="text-center w-full font-medium text-muted-foreground">Regista este momento especial no vosso ninho.</DialogDescription>
+      <DialogContent className="max-w-md p-6 rounded-3xl border border-[#f0f0f0] bg-white shadow-xl animate-in fade-in zoom-in duration-200">
+        <DialogHeader className="text-center pb-1">
+          <DialogTitle className="text-xl font-semibold tracking-tight text-center w-full">Nova Memória</DialogTitle>
+          <DialogDescription className="text-center w-full text-[13px] text-[#717171]">Regista este momento especial no vosso ninho.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 pt-2">
+        <div className="space-y-4 pt-2">
           {preview ? (
-            <div className="relative group overflow-hidden rounded-3xl shadow-lg ring-1 ring-border/50 transition-all duration-500 hover:ring-primary/30">
-              <img src={preview} alt="Preview" className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="absolute top-3 right-3 rounded-full bg-white/90 backdrop-blur shadow-lg hover:bg-white transition-all font-bold"
+            <div className="relative overflow-hidden rounded-2xl shadow-sm">
+              <img src={preview} alt="Preview" className="w-full h-56 object-cover" />
+              <button
+                className="absolute top-2.5 right-2.5 rounded-full bg-white/90 backdrop-blur shadow px-3 py-1 text-xs font-semibold text-foreground border border-[#f0f0f0]"
                 onClick={() => { setFile(null); setPreview(null); }}
               >
-                Trocar Foto
-              </Button>
+                Trocar
+              </button>
             </div>
           ) : (
             <button
               type="button"
-              className="group flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 p-12 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.02] transition-all duration-300 bg-muted/30"
+              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#e0e0e0] bg-[#fafafa] p-10 active:scale-[0.98] transition-all"
               onClick={() => inputRef.current?.click()}
             >
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110 duration-300">
-                <ImagePlus className="h-7 w-7" />
+              <div className="h-12 w-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400">
+                <ImagePlus className="h-6 w-6" />
               </div>
               <div className="text-center">
-                <span className="text-sm font-bold block text-foreground">Escolher foto da galeria</span>
-                <span className="text-[10px] uppercase font-black tracking-widest opacity-60">Formatos: JPG, PNG, WEBP</span>
+                <span className="text-sm font-semibold text-foreground block">Escolher foto da galeria</span>
+                <span className="text-[11px] text-[#aaa] mt-0.5 block">JPG, PNG, WEBP</span>
               </div>
             </button>
           )}
           <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-          <div className="space-y-4 bg-muted/30 p-4 rounded-2xl border border-border/50">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">O que aconteceu?</Label>
-              <Textarea 
-                rows={2} 
-                placeholder="Escreve uma legenda para esta memória..." 
-                className="resize-none border-none bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/50 p-0 text-sm font-medium" 
-                value={caption} 
-                onChange={(e) => setCaption(e.target.value)} 
-                maxLength={300} 
+          <div className="bg-white border border-[#f0f0f0] rounded-2xl divide-y divide-[#f0f0f0]">
+            <div className="p-4 space-y-1">
+              <Label className="text-[11px] font-semibold text-[#717171]">Legenda</Label>
+              <Textarea
+                rows={2}
+                placeholder="O que aconteceu neste momento..."
+                className="resize-none border-none bg-transparent focus-visible:ring-0 p-0 text-sm placeholder:text-[#c0c0c0]"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                maxLength={300}
               />
             </div>
-
-            <div className="h-px bg-border/50" />
-
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Data do Momento</Label>
-              <div className="relative">
-                <Input 
-                  type="date" 
-                  className="bg-transparent border-none focus-visible:ring-0 p-0 h-auto font-bold text-sm cursor-pointer" 
-                  value={takenOn} 
-                  onChange={(e) => setTakenOn(e.target.value)} 
-                />
-              </div>
+            <div className="p-4 space-y-1">
+              <Label className="text-[11px] font-semibold text-[#717171]">Data do momento</Label>
+              <Input
+                type="date"
+                className="bg-transparent border-none focus-visible:ring-0 p-0 h-auto text-sm cursor-pointer"
+                value={takenOn}
+                onChange={(e) => setTakenOn(e.target.value)}
+              />
             </div>
           </div>
 
-          <Button 
-            className="w-full h-12 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300" 
-            disabled={!file || !isReady || uploading} 
+          <Button
+            className="w-full h-12 rounded-2xl font-semibold text-sm bg-rose-500 hover:bg-rose-600 text-white border-0 shadow-sm transition-all"
+            disabled={!file || !isReady || uploading}
             onClick={handleSave}
           >
-            {uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A Guardar...
-              </>
-            ) : (
-              "Guardar Memória 📸"
-            )}
+            {uploading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A guardar...</> : "Guardar Memória"}
           </Button>
         </div>
       </DialogContent>
