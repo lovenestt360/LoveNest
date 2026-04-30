@@ -289,37 +289,34 @@ function useGlobalAnnouncements() {
   return announcements;
 }
 
-const AppIconButton = ({ 
-  icon, 
-  label, 
-  to, 
-  badge, 
-  color 
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
-  to: string; 
-  badge?: number | string; 
+const AppIconButton = ({
+  icon,
+  label,
+  to,
+  badge,
+  color
+}: {
+  icon: React.ReactNode;
+  label: string;
+  to: string;
+  badge?: number | string;
   color: string;
 }) => {
   const navigate = useNavigate();
   return (
     <button
       onClick={() => navigate(to)}
-      className="flex flex-col items-center gap-2 p-2 relative group"
+      className="relative flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-[#f0f0f0] shadow-sm active:scale-95 transition-all"
     >
-      <div className={cn(
-        "w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all group-active:scale-90",
-        color
-      )}>
+      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center", color)}>
         {icon}
-        {badge && badge !== 0 ? (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black h-5 min-w-5 px-1 rounded-full flex items-center justify-center border-2 border-background shadow-sm animate-in zoom-in duration-300">
-            {badge}
-          </span>
-        ) : null}
       </div>
-      <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">{label}</span>
+      {badge && badge !== 0 ? (
+        <span className="absolute top-2 right-2 bg-rose-500 text-white text-[9px] font-black h-4 min-w-4 px-1 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+          {badge}
+        </span>
+      ) : null}
+      <span className="text-[10px] font-semibold text-[#717171]">{label}</span>
     </button>
   );
 };
@@ -501,12 +498,12 @@ const Index = () => {
       </section>
 
       {/* ── SECONDARY TOOLS GRID (3 Columns) ── */}
-      <section className="space-y-4 px-1">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/30 px-2 flex items-center justify-center gap-2">
-            Ferramentas Extra
+      <section className="space-y-3 px-1">
+        <h2 className="text-[11px] font-semibold text-[#717171] px-1">
+          Ferramentas Extra
         </h2>
-        
-        <div className="grid grid-cols-3 gap-1">
+
+        <div className="grid grid-cols-3 gap-2">
           {isEnabled("home_memories") && (
             <AppIconButton 
               icon={<Camera className="w-5 h-5" />} 
@@ -581,18 +578,18 @@ const Index = () => {
 
         <button
           onClick={handleShareReferral}
-          className="w-full glass-card bg-white/40 border-primary/10 rounded-[2rem] p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
+          className="w-full bg-white border border-[#f0f0f0] rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
-             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
-                <Share2 className="w-5 h-5" />
-             </div>
-             <div className="text-left">
-                <h4 className="text-[13px] font-black tracking-tight">Convidar Amigos</h4>
-                <p className="text-[10px] text-muted-foreground font-bold">Ganha 50 Pontos! 💰</p>
-             </div>
+            <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <h4 className="text-[13px] font-semibold text-foreground">Convidar Amigos</h4>
+              <p className="text-[11px] text-[#717171]">Ganha 50 pontos por convite</p>
+            </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
+          <ArrowRight className="w-4 h-4 text-[#c0c0c0]" />
         </button>
       </div>
     </div>
