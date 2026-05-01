@@ -64,10 +64,10 @@ function useCardData() {
         if (typeof data === "number") setPoints(data);
       });
 
-    // Mission completion
+    // Mission completion — column is "type" (not "activity_type")
     Promise.all([
       (supabase.from("daily_activity" as any)
-        .select("activity_type,user_id")
+        .select("type,user_id")
         .eq("couple_space_id", spaceId)
         .eq("activity_date", today) as any),
       (supabase.from("daily_spiritual_logs" as any)
@@ -78,8 +78,8 @@ function useCardData() {
       const activities: any[] = acts ?? [];
       const spiritual: any[]  = logs ?? [];
 
-      const uniqueUsers = (type: string) =>
-        new Set(activities.filter(a => a.activity_type === type).map(a => a.user_id)).size;
+      const uniqueUsers = (actType: string) =>
+        new Set(activities.filter(a => a.type === actType).map(a => a.user_id)).size;
 
       setMissions({
         message: uniqueUsers("message") >= 2,
