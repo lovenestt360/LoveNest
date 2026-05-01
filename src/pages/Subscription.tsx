@@ -200,13 +200,11 @@ export default function Subscription() {
                     <h1 className="text-xl font-bold tracking-tight text-foreground">Subscrição LoveNest</h1>
                 </header>
                 <main className="p-4 max-w-md mx-auto">
-                    <div className="bg-card border rounded-3xl p-8 shadow-md text-center animate-in zoom-in-95">
-                        <div className="mx-auto w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-inner">
-                            <CheckCircle className="w-10 h-10" />
-                        </div>
-                        <h2 className="text-3xl font-black mb-2 tracking-tight text-primary">Modo Gratuito Ativo! ✨</h2>
-                        <p className="text-foreground/80 leading-relaxed font-medium">O LoveNest está atualmente em modo de oferta total. Podes desfrutar de todas as funcionalidades premium sem qualquer custo ou subscrição.</p>
-                        <Button className="mt-8 w-full rounded-2xl font-bold h-12" onClick={() => navigate("/")}>Voltar à Home</Button>
+                    <div className="glass-card p-8 text-center animate-in zoom-in-95">
+                        <CheckCircle className="w-12 h-12 text-primary mx-auto mb-5" strokeWidth={1.5} />
+                        <h2 className="text-2xl font-bold mb-2 tracking-tight">Modo Gratuito Ativo</h2>
+                        <p className="text-[14px] text-muted-foreground leading-relaxed">O LoveNest está em modo de acesso total. Podes desfrutar de todas as funcionalidades premium sem qualquer custo.</p>
+                        <Button className="mt-6 w-full rounded-2xl font-semibold h-12" onClick={() => navigate("/")}>Voltar à Home</Button>
                     </div>
                 </main>
             </div>
@@ -224,19 +222,15 @@ export default function Subscription() {
 
             <main className="p-4 space-y-6 max-w-md mx-auto">
                 {house?.subscription_status === 'active' ? (
-                    <div className="bg-card border rounded-3xl p-8 shadow-md text-center animate-in zoom-in-95">
-                        <div className="mx-auto w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-inner">
-                            <CheckCircle className="w-10 h-10" />
-                        </div>
-                        <h2 className="text-3xl font-black mb-2 tracking-tight">Estatuto Premium!</h2>
-                        <p className="text-foreground/80 leading-relaxed font-medium">A tua casa <strong className="text-primary">{house.house_name}</strong> tem subscrição ativa. Explora todas as features sem limites!</p>
+                    <div className="glass-card p-8 text-center animate-in zoom-in-95">
+                        <CheckCircle className="w-12 h-12 text-primary mx-auto mb-5" strokeWidth={1.5} />
+                        <h2 className="text-2xl font-bold mb-2 tracking-tight">Estatuto Premium</h2>
+                        <p className="text-[14px] text-muted-foreground leading-relaxed">A tua casa <strong className="text-foreground">{house.house_name}</strong> tem subscrição ativa. Explora todas as funcionalidades sem limites.</p>
                     </div>
                 ) : pendingPayment ? (
-                    <div className="bg-card border rounded-3xl p-8 shadow-md text-center animate-in zoom-in-95">
-                        <div className="mx-auto w-20 h-20 bg-yellow-500/10 text-yellow-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                            <UploadCloud className="w-10 h-10" />
-                        </div>
-                        <h2 className="text-3xl font-black mb-2 tracking-tight">Em Análise</h2>
+                    <div className="glass-card p-8 text-center animate-in zoom-in-95">
+                        <UploadCloud className="w-12 h-12 text-amber-500 mx-auto mb-5" strokeWidth={1.5} />
+                        <h2 className="text-2xl font-bold mb-2 tracking-tight">Em Análise</h2>
                         <p className="text-foreground/80 leading-relaxed font-medium">Recebemos o teu comprovativo. A nossa equipa está a verificar o pagamento e a ativação será feita em breve.</p>
 
                         <div className="mt-4 mb-6 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted p-3 rounded-xl border flex flex-col items-center">
