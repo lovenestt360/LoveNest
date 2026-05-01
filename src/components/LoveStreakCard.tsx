@@ -1,31 +1,103 @@
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
-import { Flame, Shield, ChevronRight } from "lucide-react";
+import {
+  Flame, Shield, ChevronRight, Heart,
+  MessageCircle, Zap, Smile, BookHeart
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { format } from "date-fns";
+
+// ── Phrases ──────────────────────────────────────────────────────────────────
 
 const PHRASES = [
-  { min: 0,  max: 0,        msg: "Comecem hoje, cada dia conta! 💫" },
-  { min: 1,  max: 2,        msg: "O primeiro passo é sempre o mais bonito 🌱" },
-  { min: 3,  max: 6,        msg: "Estão a construir algo especial juntos ✨" },
-  { min: 7,  max: 13,       msg: "Uma semana de amor! A vossa chama brilha 🔥" },
-  { min: 14, max: 29,       msg: "Dois amantes em sintonia perfeita 💕" },
-  { min: 30, max: 89,       msg: "Um mês de dedicação. Que casal incrível! 🏆" },
-  { min: 90, max: Infinity, msg: "Lendários! O amor de vocês é inspirador 👑" },
+  { min: 0,  max: 0,        msg: "Comecem hoje, cada dia conta!" },
+  { min: 1,  max: 2,        msg: "O primeiro passo é sempre o mais bonito" },
+  { min: 3,  max: 6,        msg: "Estão a construir algo especial juntos" },
+  { min: 7,  max: 13,       msg: "Uma semana de amor! A vossa chama brilha" },
+  { min: 14, max: 29,       msg: "Dois amantes em sintonia perfeita" },
+  { min: 30, max: 89,       msg: "Um mês de dedicação. Que casal incrível!" },
+  { min: 90, max: Infinity, msg: "Lendários! O amor de vocês é inspirador" },
 ];
 
-function getPhrase(streak: number) {
-  return PHRASES.find(p => streak >= p.min && streak <= p.max)?.msg ?? "";
+function getPhrase(s: number) {
+  return PHRASES.find(p => s >= p.min && s <= p.max)?.msg ?? "";
 }
 
-function getRank(streak: number) {
-  if (streak >= 90) return "Lendário";
-  if (streak >= 30) return "Apaixonado";
-  if (streak >= 7)  return "Flamejante";
+function getRank(s: number) {
+  if (s >= 90) return "Lendário";
+  if (s >= 30) return "Apaixonado";
+  if (s >= 7)  return "Flamejante";
   return "Iniciante";
 }
 
+// ── Mission definitions ───────────────────────────────────────────────────────
+
+const MISSIONS = [
+  { id: "message", Icon: MessageCircle, doneColor: "text-sky-500"    },
+  { id: "checkin", Icon: Zap,           doneColor: "text-rose-500"   },
+  { id: "mood",    Icon: Smile,         doneColor: "text-amber-500"  },
+  { id: "prayer",  Icon: BookHeart,     doneColor: "text-purple-500" },
+] as const;
+
+type MissionId = typeof MISSIONS[number]["id"];
+type MissionStatus = Record<MissionId, boolean>;
+
+// ── Extra data hook ───────────────────────────────────────────────────────────
+
+function useCardData() {
+  const spaceId = useCoupleSpaceId();
+  const [points, setPoints] = useState<number | null>(null);
+  const [missions, setMissions] = useState<MissionStatus>({
+    message: false, checkin: false, mood: false, prayer: false,
+  });
+
+  useEffect(() => {
+    if (!spaceId) return;
+    const today = format(new Date(), "yyyy-MM-dd");
+
+    // Real couple points
+    (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
+      .then(({ data }: any) => {
+        if (typeof data === "number") setPoints(data);
+      });
+
+    // Mission completion
+    Promise.all([
+      (supabase.from("daily_activity" as any)
+        .select("activity_type,user_id")
+        .eq("couple_space_id", spaceId)
+        .eq("activity_date", today) as any),
+      (supabase.from("daily_spiritual_logs" as any)
+        .select("prayed_today,user_id")
+        .eq("couple_space_id", spaceId)
+        .eq("day_key", today) as any),
+    ]).then(([{ data: acts }, { data: logs }]) => {
+      const activities: any[] = acts ?? [];
+      const spiritual: any[]  = logs ?? [];
+
+      const uniqueUsers = (type: string) =>
+        new Set(activities.filter(a => a.activity_type === type).map(a => a.user_id)).size;
+
+      setMissions({
+        message: uniqueUsers("message") >= 2,
+        checkin: uniqueUsers("checkin") >= 2,
+        mood:    uniqueUsers("mood")    >= 2,
+        prayer:  spiritual.filter(l => l.prayed_today).length >= 2,
+      });
+    });
+  }, [spaceId]);
+
+  return { points, missions };
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+
 export function LoveStreakCard() {
   const { streak, loading } = useStreak();
+  const { points, missions }  = useCardData();
   const navigate = useNavigate();
 
   if (loading) {
@@ -38,23 +110,16 @@ export function LoveStreakCard() {
     );
   }
 
-  const { currentStreak, longestStreak, bothActiveToday, streakAtRisk,
-          shieldsRemaining, shieldUsedToday } = streak;
-  const isZero = currentStreak === 0;
-
-  const phrase  = getPhrase(currentStreak);
-  const rank    = getRank(currentStreak);
-  const points  = currentStreak * 5 + Math.floor(longestStreak * 2);
+  const {
+    currentStreak, longestStreak, bothActiveToday, shieldsRemaining,
+    shieldUsedToday, myCheckedIn,
+  } = streak;
 
   const numberColor = bothActiveToday
     ? "text-rose-500"
-    : shieldUsedToday
-      ? "text-blue-500"
-      : "text-foreground";
+    : shieldUsedToday ? "text-blue-500" : "text-foreground";
 
-  // Hearts: user is considered active unless streak is zero and not at risk
-  const myHeart      = !isZero || streakAtRisk ? "💗" : "🤍";
-  const partnerHeart = bothActiveToday ? "💗" : "🤍";
+  const displayPoints = points ?? 0;
 
   return (
     <button
@@ -72,11 +137,14 @@ export function LoveStreakCard() {
         <ChevronRight className="w-4 h-4 text-[#c4c4c4]" strokeWidth={1.5} />
       </div>
 
-      {/* Row 2 — emotional phrase */}
-      <p className="text-[11px] text-[#aaa] mb-2.5 leading-snug">{phrase}</p>
+      {/* Row 2 — phrase */}
+      <p className="text-[11px] text-[#aaa] mb-2.5 leading-snug">
+        {getPhrase(currentStreak)}
+      </p>
 
       {/* Row 3 — streak number + hearts & shields */}
       <div className="flex items-start justify-between mb-3">
+        {/* Big number */}
         <div className="flex items-baseline gap-1.5">
           <span className={cn("text-5xl font-bold tabular-nums tracking-tight", numberColor)}>
             {currentStreak}
@@ -84,25 +152,35 @@ export function LoveStreakCard() {
           <span className="text-base font-medium text-[#717171]">dias</span>
         </div>
 
+        {/* Hearts + Shields */}
         <div className="flex flex-col items-end gap-2 pt-0.5">
-          {/* Hearts */}
+          {/* Hearts — filled when checked in */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-0.5">
-              <span className="text-sm leading-none">{myHeart}</span>
-              <span className="text-[9px] text-[#bbb] font-semibold ml-0.5">Tu</span>
+            <div className="flex items-center gap-1">
+              <Heart
+                className={cn("w-4 h-4 transition-colors",
+                  myCheckedIn ? "fill-rose-500 text-rose-500" : "text-[#e0e0e0]")}
+                strokeWidth={myCheckedIn ? 0 : 1.5}
+              />
+              <span className="text-[9px] text-[#bbb] font-semibold">Tu</span>
             </div>
-            <div className="flex items-center gap-0.5">
-              <span className="text-sm leading-none">{partnerHeart}</span>
-              <span className="text-[9px] text-[#bbb] font-semibold ml-0.5">Par</span>
+            <div className="flex items-center gap-1">
+              <Heart
+                className={cn("w-4 h-4 transition-colors",
+                  bothActiveToday ? "fill-rose-500 text-rose-500" : "text-[#e0e0e0]")}
+                strokeWidth={bothActiveToday ? 0 : 1.5}
+              />
+              <span className="text-[9px] text-[#bbb] font-semibold">Par</span>
             </div>
           </div>
 
-          {/* Shields */}
+          {/* Shields — filled when remaining */}
           <div className="flex items-center gap-0.5">
             {[0, 1, 2].map(i => (
               <Shield
                 key={i}
-                className={cn("w-3.5 h-3.5", i < shieldsRemaining ? "text-blue-400" : "text-[#e0e0e0]")}
+                className={cn("w-3.5 h-3.5",
+                  i < shieldsRemaining ? "text-blue-400" : "text-[#e0e0e0]")}
                 strokeWidth={1.5}
               />
             ))}
@@ -113,21 +191,29 @@ export function LoveStreakCard() {
         </div>
       </div>
 
-      {/* Row 4 — footer: rank/record/points + missions */}
+      {/* Row 4 — footer: rank/record/pts + missions */}
       <div className="flex items-center justify-between pt-2.5 border-t border-[#f0f0f0]">
         <div className="flex items-center gap-1 text-[11px] text-[#717171]">
-          <span className="font-semibold text-foreground">{rank}</span>
+          <span className="font-semibold text-foreground">{getRank(currentStreak)}</span>
           <span className="text-[#d8d8d8]">·</span>
           <span>Rec: <span className="font-semibold text-foreground">{longestStreak}d</span></span>
           <span className="text-[#d8d8d8]">·</span>
-          <span className="font-semibold text-amber-500">{points}pts</span>
+          <span className="font-semibold text-amber-500">{displayPoints}pts</span>
         </div>
 
-        {/* Missions — compact */}
-        <div className="flex items-center gap-1 text-[11px]">
-          <span className="text-[10px] text-[#bbb] font-semibold uppercase tracking-wide">Missões</span>
-          <span className="text-xs">💝📖✅</span>
-          <span className="text-[10px] font-bold text-[#bbb]">0/3</span>
+        {/* Missions — 4 icons, fill when done */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide mr-0.5">
+            Missões
+          </span>
+          {MISSIONS.map(({ id, Icon, doneColor }) => (
+            <Icon
+              key={id}
+              className={cn("w-3.5 h-3.5 transition-colors",
+                missions[id] ? doneColor : "text-[#e0e0e0]")}
+              strokeWidth={1.5}
+            />
+          ))}
         </div>
       </div>
     </button>
