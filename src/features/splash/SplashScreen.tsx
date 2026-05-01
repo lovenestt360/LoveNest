@@ -57,10 +57,9 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 
     fetchInfo();
 
-    // Sequence for premium feel - adjusted timings for better perceived performance
-    const tInitials = setTimeout(() => setShowInitials(true), 800);
-    const tFade = setTimeout(() => setFadeOut(true), 2500);
-    const tDone = setTimeout(onDone, 3200);
+    const tInitials = setTimeout(() => setShowInitials(true), 400);
+    const tFade = setTimeout(() => setFadeOut(true), 1600);
+    const tDone = setTimeout(onDone, 2200);
 
     return () => {
       mounted = false;
@@ -79,8 +78,8 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         background: "radial-gradient(circle at center, #0a0a0a 0%, #000 100%)",
       }}
     >
-      {/* Background glow animation - cleaner rose */}
-      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] animate-pulse pointer-events-none filter blur-3xl" />
+      {/* Background glow — static, no animation for performance */}
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] pointer-events-none" />
 
       <div className="relative flex flex-col items-center justify-center scale-100 group">
         <div className="relative mb-6 flex h-28 w-28 items-center justify-center animate-in zoom-in duration-700 ease-out">
@@ -120,8 +119,13 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 }
 
 export function SplashGate({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(true);
-  const hide = useCallback(() => setShow(false), []);
+  const [show, setShow] = useState(() => {
+    try { return !sessionStorage.getItem("splash_done"); } catch { return true; }
+  });
+  const hide = useCallback(() => {
+    try { sessionStorage.setItem("splash_done", "1"); } catch { }
+    setShow(false);
+  }, []);
 
   return (
     <>

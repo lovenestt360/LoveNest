@@ -63,6 +63,26 @@ export function useAppNotifications() {
   const resetPrayerUnread = useCallback(() => setPrayerUnread(0), []);
   const resetComplaintsUnread = useCallback(() => setComplaintsUnread(0), []);
 
+  // Mission complete notifications
+  useEffect(() => {
+    const MISSION_LABELS: Record<string, string> = {
+      message:  "Chat — Ambos enviaram mensagens hoje",
+      checkin:  "Check-in — Ambos fizeram check-in hoje",
+      mood:     "Humor — Ambos partilharam o humor hoje",
+      prayer:   "Oração — Ambos oraram hoje",
+      general:  "Missão completa — Os dois participaram hoje",
+    };
+
+    function onMissionComplete(e: Event) {
+      const type = (e as CustomEvent<{ type: string }>).detail?.type ?? "general";
+      const label = MISSION_LABELS[type] ?? MISSION_LABELS.general;
+      toast({ title: "Missão Completa!", description: label });
+    }
+
+    window.addEventListener("mission-complete", onMissionComplete);
+    return () => window.removeEventListener("mission-complete", onMissionComplete);
+  }, []);
+
   useEffect(() => {
     if (!spaceId || !user) return;
 

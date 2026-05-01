@@ -26,7 +26,9 @@ export async function logActivity(
     if (!res?.success) {
       console.warn("[logActivity] Unexpected response:", res);
     } else {
-      console.log(`[logActivity] ✓ type=${type} streak=${res.streak ?? "?"} active_today=${res.active_today ?? "?"}`);
+      if (res.active_today >= 2) {
+        window.dispatchEvent(new CustomEvent("mission-complete", { detail: { type } }));
+      }
     }
   } catch (err: any) {
     console.error("[logActivity] Exception:", err?.message);

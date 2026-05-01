@@ -742,7 +742,7 @@ export default function Admin() {
     }
 
     const pendingPayments = payments.filter(p => p.status === 'pending');
-    const activeHouses = houses.filter(h => h.subscription_status === 'active');
+    const activeHouses = houses.filter(h => !h.is_suspended);
 
     const filteredHouses = houses.filter(h => 
         (h.house_name?.toLowerCase().includes(searchHouse.toLowerCase())) ||
