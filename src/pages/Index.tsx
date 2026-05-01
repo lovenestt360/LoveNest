@@ -437,6 +437,7 @@ const Index = () => {
             ]}
             to="/plano"
             badge={tasksUnread + scheduleUnread}
+            accent="text-blue-500"
           />
 
           <DashCard
@@ -448,6 +449,7 @@ const Index = () => {
             ]}
             to="/humor"
             badge={moodUnread}
+            accent="text-amber-500"
           />
 
           {isEnabled("home_conversas") && (
@@ -460,6 +462,7 @@ const Index = () => {
               ]}
               to="/chat"
               badge={chatUnread}
+              accent="text-sky-500"
             />
           )}
 
@@ -472,6 +475,7 @@ const Index = () => {
                 `${fastingProgress}% completo`,
               ]}
               to="/jejum"
+              accent="text-orange-500"
             />
           )}
 
@@ -480,6 +484,7 @@ const Index = () => {
             title="Ciclo"
             lines={["Ciclo & Saúde", "Ver detalhes"]}
             to="/ciclo"
+            accent="text-pink-500"
           />
 
           {isEnabled("home_oracao") && (
@@ -492,6 +497,7 @@ const Index = () => {
               ]}
               to="/oracao"
               badge={prayerUnread}
+              accent="text-purple-500"
             />
           )}
         </div>
@@ -505,49 +511,49 @@ const Index = () => {
 
         <div className="grid grid-cols-3 gap-2">
           {isEnabled("home_memories") && (
-            <AppIconButton 
-              icon={<Camera className="w-5 h-5" />} 
-              label="Memórias" 
-              badge={memoriesUnread} 
-              to="/memorias" 
-              color="text-violet-500 bg-violet-500/10" 
+            <AppIconButton
+              icon={<Camera className="w-5 h-5" />}
+              label="Memórias"
+              badge={memoriesUnread}
+              to="/memorias"
+              color="text-violet-500"
             />
           )}
 
           {isEnabled("home_desafios") && (
-            <AppIconButton 
-              icon={<Trophy className="w-5 h-5" />} 
-              label="Desafios" 
-              to="/desafios" 
-              color="text-blue-500 bg-blue-500/10" 
+            <AppIconButton
+              icon={<Trophy className="w-5 h-5" />}
+              label="Desafios"
+              to="/desafios"
+              color="text-blue-500"
             />
           )}
 
           {isEnabled("home_wrapped") && (
-            <AppIconButton 
-              icon={<Sparkles className="w-5 h-5" />} 
-              label="Wrapped" 
-              badge={hasWrapped ? "!" : 0} 
-              to="/wrapped" 
-              color="text-rose-500 bg-rose-500/10" 
+            <AppIconButton
+              icon={<Sparkles className="w-5 h-5" />}
+              label="Wrapped"
+              badge={hasWrapped ? "!" : 0}
+              to="/wrapped"
+              color="text-rose-500"
             />
           )}
 
           {isEnabled("home_capsula") && (
-            <AppIconButton 
-              icon={<Clock className="w-5 h-5" />} 
-              label="Cápsula" 
-              to="/capsula" 
-              color="text-primary bg-primary/10" 
+            <AppIconButton
+              icon={<Clock className="w-5 h-5" />}
+              label="Cápsula"
+              to="/capsula"
+              color="text-primary"
             />
           )}
-          
+
            {isEnabled("home_descobrir") && (
-            <AppIconButton 
-              icon={<Compass className="w-5 h-5" />} 
-              label="Descobrir" 
+            <AppIconButton
+              icon={<Compass className="w-5 h-5" />}
+              label="Descobrir"
               to="/descobrir"
-              color="text-emerald-500 bg-emerald-500/10" 
+              color="text-emerald-500"
             />
           )}
         </div>

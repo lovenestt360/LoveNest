@@ -16,9 +16,7 @@ export default function Descobrir() {
             </header>
 
             <main className="flex flex-col items-center justify-center px-8 pt-24 text-center space-y-5">
-                <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                    <Sparkles className="w-9 h-9 text-emerald-500" />
-                </div>
+                <Sparkles className="w-12 h-12 text-emerald-500" />
 
                 <div className="space-y-2">
                     <h2 className="text-2xl font-bold tracking-tight text-foreground">Em breve</h2>
