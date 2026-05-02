@@ -1033,7 +1033,7 @@ export default function Admin() {
                                                                 )}>
                                                                     {(!isTrialExpired) ? "Ativo" : "Expirado"}
                                                                 </span>
-                                                                <span className="text-[10px] text-muted-foreground">Termina: {new Date(house.trial_ends_at).toLocaleDateString()}</span>
+                                                                <span className="text-[10px] text-muted-foreground">Termina: {house.trial_ends_at ? new Date(house.trial_ends_at).toLocaleDateString('pt-PT') : "—"}</span>
                                                             </div>
                                                         ) : (
                                                             <span className="text-xs text-muted-foreground">—</span>

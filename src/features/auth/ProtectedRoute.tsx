@@ -91,9 +91,9 @@ export function ProtectedRoute() {
     try {
       setSavingTrial(true);
 
-      // 5 days from now
+      // 15 days from now
       const endsAt = new Date();
-      endsAt.setDate(endsAt.getDate() + 5);
+      endsAt.setDate(endsAt.getDate() + 15);
 
       const { error } = await supabase.from("couple_spaces").update({
         trial_started_at: new Date().toISOString(),
@@ -183,7 +183,7 @@ export function ProtectedRoute() {
           <div>
             <h1 className="text-2xl font-black text-foreground mb-2 tracking-tight">Bem-vindo(a) ao LoveNest Premium</h1>
             <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-              A sua casa foi criada com sucesso! Para começar, oferecemos <strong className="text-primary">5 dias totalmente gratuitos</strong> para explorar todas as funcionalidades do aplicativo com o seu parceiro.
+              A sua casa foi criada com sucesso! Para começar, oferecemos <strong className="text-primary">15 dias totalmente gratuitos</strong> para explorar todas as funcionalidades do aplicativo com o seu parceiro.
             </p>
           </div>
 
@@ -194,7 +194,7 @@ export function ProtectedRoute() {
               onClick={handleActivateTrial}
               disabled={savingTrial}
             >
-              {savingTrial ? "A ativar..." : "Começar 5 dias grátis"}
+              {savingTrial ? "A ativar..." : "Começar 15 dias grátis"}
             </Button>
 
             <Button
