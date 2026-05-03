@@ -107,8 +107,16 @@ export default function Admin() {
     const [sendingMsg, setSendingMsg] = useState(false);
 
     // Plan form
+    const BILLING_TYPES = [
+        { id: "monthly",     label: "Mensal",    days: 30  },
+        { id: "semiannual",  label: "Semestral", days: 180 },
+        { id: "annual",      label: "Anual",     days: 365 },
+        { id: "lifetime",    label: "Vitalício", days: null },
+    ];
+
     const [newPlanName, setNewPlanName] = useState("");
     const [newPlanPrice, setNewPlanPrice] = useState("");
+    const [newPlanBillingType, setNewPlanBillingType] = useState("monthly");
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
     const [creatingPlan, setCreatingPlan] = useState(false);
 
@@ -116,6 +124,7 @@ export default function Admin() {
     const [editingPlan, setEditingPlan] = useState<any>(null);
     const [editPlanName, setEditPlanName] = useState("");
     const [editPlanPrice, setEditPlanPrice] = useState("");
+    const [editPlanBillingType, setEditPlanBillingType] = useState("monthly");
     const [editPlanFeatures, setEditPlanFeatures] = useState<string[]>([]);
     const [savingPlanEdit, setSavingPlanEdit] = useState(false);
 
@@ -449,6 +458,7 @@ export default function Admin() {
             const { error } = await adminClient.from("subscription_plans").insert({
                 name: newPlanName,
                 price: newPlanPrice,
+                billing_type: newPlanBillingType,
                 features: selectedFeatures,
                 is_active: true
             });
@@ -456,6 +466,7 @@ export default function Admin() {
             toast({ title: "Plano Criado", description: "Novo plano de subscrição adicionado." });
             setNewPlanName("");
             setNewPlanPrice("");
+            setNewPlanBillingType("monthly");
             setSelectedFeatures([]);
             fetchAllData();
         } catch (error: any) {
@@ -526,6 +537,7 @@ export default function Admin() {
         setEditingPlan(plan);
         setEditPlanName(plan.name);
         setEditPlanPrice(plan.price);
+        setEditPlanBillingType(plan.billing_type || "monthly");
         setEditPlanFeatures(plan.features || []);
     };
 
@@ -536,6 +548,7 @@ export default function Admin() {
             const { error } = await adminClient.from("subscription_plans").update({
                 name: editPlanName,
                 price: editPlanPrice,
+                billing_type: editPlanBillingType,
                 features: editPlanFeatures
             }).eq("id", editingPlan.id);
             if (error) throw error;
@@ -1151,11 +1164,26 @@ export default function Admin() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label className="text-sm font-bold text-muted-foreground mb-1 block">Nome do Plano</label>
-                                    <Input value={newPlanName} onChange={e => setNewPlanName(e.target.value)} placeholder="Ex: Premium Anual" required className="bg-background" />
+                                    <Input value={newPlanName} onChange={e => setNewPlanName(e.target.value)} placeholder="Ex: LoveNest Anual" required className="bg-background" />
                                 </div>
                                 <div>
                                     <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
                                     <Input value={newPlanPrice} onChange={e => setNewPlanPrice(e.target.value)} placeholder="Ex: 5000 MZN / Ano" required className="bg-background" />
+                                </div>
+                            </div>
+                            <div className="mb-4">
+                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {BILLING_TYPES.map(bt => (
+                                        <button
+                                            key={bt.id}
+                                            type="button"
+                                            onClick={() => setNewPlanBillingType(bt.id)}
+                                            className={`px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all ${newPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}
+                                        >
+                                            {bt.label}{bt.days ? ` · ${bt.days}d` : " · ∞"}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                             <div className="mb-6">
@@ -1195,7 +1223,7 @@ export default function Admin() {
                                         <h3 className="font-bold text-lg">Editar Plano</h3>
                                         <Button variant="ghost" size="icon" onClick={() => setEditingPlan(null)}><X className="w-5 h-5" /></Button>
                                     </div>
-                                    <div className="p-6 space-y-4">
+                                    <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                                         <div>
                                             <label className="text-sm font-bold text-muted-foreground mb-1 block">Nome do Plano</label>
                                             <Input value={editPlanName} onChange={e => setEditPlanName(e.target.value)} className="bg-background" />
@@ -1203,6 +1231,21 @@ export default function Admin() {
                                         <div>
                                             <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
                                             <Input value={editPlanPrice} onChange={e => setEditPlanPrice(e.target.value)} className="bg-background" />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {BILLING_TYPES.map(bt => (
+                                                    <button
+                                                        key={bt.id}
+                                                        type="button"
+                                                        onClick={() => setEditPlanBillingType(bt.id)}
+                                                        className={`px-3 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${editPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}
+                                                    >
+                                                        {bt.label}{bt.days ? ` · ${bt.days}d` : " · ∞"}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="text-sm font-bold text-muted-foreground mb-2 block">Funcionalidades</label>

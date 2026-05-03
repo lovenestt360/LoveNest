@@ -6,6 +6,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
 
+const BILLING_LABELS: Record<string, string> = {
+    monthly:    "Mensal",
+    semiannual: "Semestral",
+    annual:     "Anual",
+    lifetime:   "Vitalício",
+};
+
 const FEATURE_LABELS: Record<string, string> = {
     home: "Home",
     chat: "Chat",
@@ -274,7 +281,7 @@ export default function Subscription() {
                                                     <div className="flex-1 pr-2">
                                                         <h4 className="font-bold text-base mb-0.5">{p.name}</h4>
                                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                                                            {p.billing_type === 'one_time' ? 'Pagamento Único' : p.billing_type || 'Mensal'}
+                                                            {BILLING_LABELS[p.billing_type] || "Mensal"}
                                                         </p>
                                                     </div>
                                                     <div className="text-right shrink-0">
