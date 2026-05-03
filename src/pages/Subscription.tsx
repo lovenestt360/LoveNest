@@ -6,6 +6,24 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
 
+const FEATURE_LABELS: Record<string, string> = {
+    home: "Home",
+    chat: "Chat",
+    mood: "Humor do casal",
+    memories: "Memórias e álbuns",
+    agenda: "Agenda, rotinas e tarefas",
+    prayer: "Oração em casal",
+    fasting: "Jejum",
+    cycle: "Ciclo menstrual",
+    conflicts: "Gestão de conflitos",
+    wallpapers: "Wallpapers exclusivos",
+    stats: "Estatísticas do casal",
+    time_capsules: "Cápsulas do tempo",
+    challenges: "Desafios de casal",
+};
+
+const resolveFeatureLabel = (feat: string) => FEATURE_LABELS[feat] ?? feat;
+
 export default function Subscription() {
     const [loading, setLoading] = useState(true);
     const [house, setHouse] = useState<any>(null);
@@ -269,7 +287,7 @@ export default function Subscription() {
                                                         {p.features.map((feat: string, i: number) => (
                                                             <li key={i} className="flex gap-2 items-start text-[12px] text-muted-foreground">
                                                                 <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" strokeWidth={2} />
-                                                                {feat}
+                                                                {resolveFeatureLabel(feat)}
                                                             </li>
                                                         ))}
                                                     </ul>

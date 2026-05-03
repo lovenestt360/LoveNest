@@ -153,7 +153,6 @@ export default function Admin() {
     const ALL_FEATURES = [
         { id: "home", label: "Home" },
         { id: "chat", label: "Chat" },
-        { id: "tasks", label: "Tarefas" },
         { id: "mood", label: "Humor" },
         { id: "memories", label: "Memórias" },
         { id: "agenda", label: "Agenda" },
@@ -161,7 +160,6 @@ export default function Admin() {
         { id: "fasting", label: "Jejum" },
         { id: "cycle", label: "Ciclo" },
         { id: "conflicts", label: "Conflitos" },
-        { id: "routine", label: "Rotinas" },
         { id: "wallpapers", label: "Wallpapers" },
         { id: "stats", label: "Estatísticas" },
         { id: "time_capsules", label: "Cápsulas" },
@@ -196,7 +194,7 @@ export default function Admin() {
         try {
             // 1. Pagamentos
             const { data: paymentsData } = await adminClient
-                .from("subscription_payments" as any)
+                .from("payments" as any)
                 .select(`
                     *,
                     couple_spaces (
@@ -320,9 +318,8 @@ export default function Admin() {
 
     const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
         try {
-            // 1. Marcar pagamento como aprovado (tabela correcta: subscription_payments)
             const { error: pErr } = await adminClient
-                .from("subscription_payments" as any)
+                .from("payments" as any)
                 .update({ status: 'approved' })
                 .eq("id", paymentId);
             if (pErr) throw pErr;
@@ -971,7 +968,9 @@ export default function Admin() {
                                     <tbody className="divide-y">
                                         {filteredHouses.map((house) => {
                                             const activePayment = payments.find(p => p.couple_space_id === house.id && p.status === 'approved');
-                                            const isTrialExpired = house.trial_ends_at && new Date(house.trial_ends_at) < new Date();
+                                            const effectiveTrialEnd = house.trial_ends_at
+                                                ?? (house.trial_started_at ? new Date(new Date(house.trial_started_at).getTime() + 15 * 86400000).toISOString() : null);
+                                            const isTrialExpired = effectiveTrialEnd && new Date(effectiveTrialEnd) < new Date();
                                             
                                             // Age gap detection (if both ages exist)
                                             const p1Age = house.partner1_age;
@@ -1033,7 +1032,7 @@ export default function Admin() {
                                                                 )}>
                                                                     {(!isTrialExpired) ? "Ativo" : "Expirado"}
                                                                 </span>
-                                                                <span className="text-[10px] text-muted-foreground">Termina: {house.trial_ends_at ? new Date(house.trial_ends_at).toLocaleDateString('pt-PT') : "—"}</span>
+                                                                <span className="text-[10px] text-muted-foreground">Termina: {effectiveTrialEnd ? new Date(effectiveTrialEnd).toLocaleDateString('pt-PT') : "—"}</span>
                                                             </div>
                                                         ) : (
                                                             <span className="text-xs text-muted-foreground">—</span>

@@ -24,8 +24,8 @@ export default function Paywall({ title, description }: { title?: string, descri
                     </h3>
                     <ul className="space-y-3">
                         {[
-                            "Desafios e Rotinas exclusivas de casal",
-                            "Controlo total sobre Agendas e Tarefas",
+                            "Desafios exclusivos de casal",
+                            "Agenda completa: rotinas, tarefas e missões",
                             "Cápsulas do Tempo e Memórias completas",
                             "Zero limites. Feito para crescerem juntos.",
                         ].map((item) => (

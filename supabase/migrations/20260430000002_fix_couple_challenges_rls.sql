@@ -2,6 +2,7 @@
 -- Replace is_member_of_couple_space() with inline EXISTS (same fix applied to complaints)
 
 DROP POLICY IF EXISTS "House members can view their challenges" ON public.couple_challenges;
+DROP POLICY IF EXISTS "Members can view their challenges" ON public.couple_challenges;
 CREATE POLICY "Members can view their challenges"
     ON public.couple_challenges
     FOR SELECT
@@ -14,6 +15,7 @@ CREATE POLICY "Members can view their challenges"
     );
 
 DROP POLICY IF EXISTS "House members can insert challenges" ON public.couple_challenges;
+DROP POLICY IF EXISTS "Members can insert challenges" ON public.couple_challenges;
 CREATE POLICY "Members can insert challenges"
     ON public.couple_challenges
     FOR INSERT
@@ -26,6 +28,7 @@ CREATE POLICY "Members can insert challenges"
     );
 
 DROP POLICY IF EXISTS "House members can update challenges" ON public.couple_challenges;
+DROP POLICY IF EXISTS "Members can update challenges" ON public.couple_challenges;
 CREATE POLICY "Members can update challenges"
     ON public.couple_challenges
     FOR UPDATE
@@ -38,6 +41,7 @@ CREATE POLICY "Members can update challenges"
     );
 
 DROP POLICY IF EXISTS "House members can delete challenges" ON public.couple_challenges;
+DROP POLICY IF EXISTS "Members can delete challenges" ON public.couple_challenges;
 CREATE POLICY "Members can delete challenges"
     ON public.couple_challenges
     FOR DELETE
