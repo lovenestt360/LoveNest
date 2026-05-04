@@ -170,41 +170,59 @@ export function ProtectedRoute() {
   // If Free Mode is active, we bypass everything downstream (trials, paywalls, etc.)
   if (freeMode) return <Outlet />;
 
-  if (houseData && houseData.trial_used === false && houseData.subscription_status !== 'active') {
+  if (houseData && houseData.trial_used === false && houseData.subscription_status !== 'active' && location.pathname !== '/subscricao') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background/95 p-4 backdrop-blur-sm">
-        <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-card p-8 text-center space-y-6 shadow-2xl animate-in zoom-in-95 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-orange-500"></div>
+      <div className="flex min-h-screen items-center justify-center bg-background p-5">
+        <div className="w-full max-w-sm text-center space-y-7 animate-in fade-in slide-in-from-bottom-4">
 
-          <div className="w-20 h-20 bg-gradient-to-tr from-primary/20 to-orange-500/20 text-primary rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+          {/* Icon */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-primary/30 mx-auto" />
           </div>
 
-          <div>
-            <h1 className="text-2xl font-black text-foreground mb-2 tracking-tight">Bem-vindo(a) ao LoveNest Premium</h1>
-            <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-              A sua casa foi criada com sucesso! Para começar, oferecemos <strong className="text-primary">15 dias totalmente gratuitos</strong> para explorar todas as funcionalidades do aplicativo com o seu parceiro.
+          {/* Text */}
+          <div className="space-y-3">
+            <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">
+              A vossa LoveNest<br />está pronta!
+            </h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              A vossa casa foi criada com sucesso. Experimentem{" "}
+              <span className="text-primary font-bold">15 dias completamente grátis</span>{" "}
+              e descubram tudo o que o LoveNest tem para oferecer.
             </p>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <Button
-              variant="default"
-              className="w-full h-14 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform bg-primary hover:bg-primary/90"
+          {/* Buttons */}
+          <div className="space-y-3">
+            <button
+              className="w-full h-14 rounded-2xl font-bold text-base bg-primary text-primary-foreground shadow-md active:scale-95 transition-transform disabled:opacity-60"
               onClick={handleActivateTrial}
               disabled={savingTrial}
             >
-              {savingTrial ? "A ativar..." : "Começar 15 dias grátis"}
-            </Button>
+              {savingTrial ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  A ativar...
+                </span>
+              ) : "Começar 15 dias grátis"}
+            </button>
 
-            <Button
-              variant="outline"
-              className="w-full h-12 rounded-xl font-bold text-muted-foreground border-2 hover:bg-muted"
+            <button
+              className="w-full h-12 rounded-2xl font-bold text-sm text-muted-foreground bg-muted/60 active:scale-95 transition-transform"
               onClick={() => window.location.assign("/subscricao")}
             >
-              Ativar plano definitivo agora
-            </Button>
+              Ver planos e preços
+            </button>
           </div>
+
         </div>
       </div>
     );

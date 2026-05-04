@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTierAccess } from "@/hooks/useTierAccess";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useTheme } from "@/components/theme-provider";
@@ -83,6 +84,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper, uploadWallpaper, removeWallpaper } = useUserSettings();
+  const { allowed: wallpaperAllowed } = useTierAccess("wallpapers");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -813,7 +815,26 @@ export default function Settings() {
                     <Label className="text-base font-bold mb-1 block">Papel de Parede do Chat</Label>
                     <p className="text-xs text-muted-foreground mb-4">Escolha uma foto para o fundo das conversas.</p>
                   </div>
-                  
+
+                  {!wallpaperAllowed ? (
+                    <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-5 flex flex-col items-center gap-3 text-center">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold">Funcionalidade Premium</p>
+                        <p className="text-xs text-muted-foreground mt-1">O papel de parede do chat requer um plano ativo.</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-9 px-5 font-bold text-xs rounded-xl"
+                        onClick={() => window.location.href = "/subscricao"}
+                      >
+                        Ver Planos
+                      </Button>
+                    </div>
+                  ) : (
+                  <>
                   <div className="flex items-center gap-4">
                     <div className="relative h-24 w-16 rounded-lg overflow-hidden border border-white/20 bg-muted shrink-0">
                       {wallpaperUrl ? (
@@ -848,10 +869,10 @@ export default function Settings() {
                         </label>
                       </Button>
                       {wallpaperUrl && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full text-xs font-bold h-9 text-destructive" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-xs font-bold h-9 text-destructive"
                           onClick={async () => {
                             setSavingWallpaper(true);
                             await removeWallpaper();
@@ -871,13 +892,15 @@ export default function Settings() {
                       <Label className="text-xs font-bold">Opacidade do Fundo</Label>
                       <span className="text-xs font-bold text-primary">{Math.round(wallpaperOpacity * 100)}%</span>
                     </div>
-                      <input 
-                        type="range" min="0" max="1" step="0.01" 
-                        value={wallpaperOpacity} 
+                      <input
+                        type="range" min="0" max="1" step="0.01"
+                        value={wallpaperOpacity}
                         onChange={(e) => updateWallpaper({ opacity: parseFloat(e.target.value) })}
                         className="w-full accent-primary h-2 bg-zinc-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
+                  </>
+                  )}
                 </div>
               </div>
             </div>
