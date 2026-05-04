@@ -4,6 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import Paywall from "@/components/Paywall";
 
+// Tier levels — must match subscription_plans.tier_level in DB
+// 0 = Free, 1 = Plus, 2 = Pro, 3 = Max
+// Trial active = 999 (all access)
+
 export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) {
     const { freeMode, loading: freeModeLoading } = useFreeMode();
     const [loading, setLoading] = useState(true);
@@ -17,7 +21,7 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
             return;
         }
 
-        const checkPremium = async () => {
+        const check = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
@@ -29,92 +33,59 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
                     .maybeSingle();
                 if (!member) return;
 
-                // If no specific feature required, just check premium status
-                if (!requiredFeature) {
-                    const { data: house } = await supabase
-                        .from("couple_spaces")
-                        .select("subscription_status, trial_used, trial_ends_at")
-                        .eq("id", member.couple_space_id)
-                        .maybeSingle();
-                    if (!house) return;
-
-                    const trialActive = house.trial_used && house.trial_ends_at && new Date(house.trial_ends_at) > new Date();
-                    const subscribed = house.subscription_status === "active";
-                    setAccess(trialActive || subscribed ? "allow" : "paywall");
-                    return;
-                }
-
-                // Check if this feature is a premium feature (exists in ANY active plan)
-                const { data: allPlans } = await supabase
-                    .from("subscription_plans")
-                    .select("features")
-                    .eq("is_active", true);
-
-                const isPremiumFeature = allPlans?.some(
-                    (p: any) => Array.isArray(p.features) && p.features.includes(requiredFeature)
-                ) ?? false;
-
-                // Feature not in any plan → it's free
-                if (!isPremiumFeature) {
-                    setAccess("allow");
-                    return;
-                }
-
-                // Feature is premium — check if user has access
                 const { data: house } = await supabase
                     .from("couple_spaces")
-                    .select("subscription_status, trial_used, trial_ends_at")
+                    .select("subscription_status, trial_used, trial_ends_at, tier_level")
                     .eq("id", member.couple_space_id)
                     .maybeSingle();
                 if (!house) return;
 
-                // Trial active → allow all premium features
-                const trialActive = house.trial_used && house.trial_ends_at && new Date(house.trial_ends_at) > new Date();
+                // ── Determine user's effective tier ──────────────────────
+                let userTier = 0;
+
+                const trialActive =
+                    house.trial_used &&
+                    house.trial_ends_at &&
+                    new Date(house.trial_ends_at) > new Date();
+
                 if (trialActive) {
-                    setAccess("allow");
+                    userTier = 999; // trial = unrestricted
+                } else if (house.subscription_status === "active") {
+                    userTier = house.tier_level ?? 1;
+                }
+
+                // ── No specific feature → generic premium check ───────────
+                if (!requiredFeature) {
+                    setAccess(userTier > 0 ? "allow" : "paywall");
                     return;
                 }
 
-                // No subscription → paywall
-                if (house.subscription_status !== "active") {
-                    setAccess("paywall");
-                    return;
-                }
-
-                // Subscription active → check if their plan includes this feature
-                const { data: payment } = await supabase
-                    .from("payments")
-                    .select("plan_name")
-                    .eq("couple_space_id", member.couple_space_id)
-                    .eq("status", "approved")
-                    .order("created_at", { ascending: false })
-                    .limit(1)
+                // ── Get feature's minimum tier from DB ───────────────────
+                const { data: ft } = await (supabase as any)
+                    .from("feature_tiers")
+                    .select("min_tier")
+                    .eq("feature_id", requiredFeature)
                     .maybeSingle();
 
-                if (!payment) {
-                    setAccess("paywall");
-                    return;
-                }
+                // Feature not in feature_tiers table → treat as free (tier 0)
+                const minTier: number = ft?.min_tier ?? 0;
 
-                const { data: plan } = await supabase
-                    .from("subscription_plans")
-                    .select("features")
-                    .eq("name", payment.plan_name)
-                    .maybeSingle();
-
-                if (plan?.features?.includes(requiredFeature)) {
+                if (minTier === 0 || userTier >= minTier) {
                     setAccess("allow");
                 } else {
-                    // Has subscription but this feature is in a higher plan
-                    setAccess("upgrade");
+                    // User has some plan but not a high enough tier
+                    setAccess(userTier > 0 ? "upgrade" : "paywall");
                 }
-            } catch (error) {
-                console.error(error);
+            } catch (e) {
+                console.error("PremiumGuard error:", e);
+                // On error, allow access to avoid blocking users
+                setAccess("allow");
             } finally {
                 setLoading(false);
             }
         };
-        checkPremium();
+
+        check();
     }, [freeMode, freeModeLoading, requiredFeature]);
 
     if (loading || freeModeLoading) {
@@ -122,7 +93,9 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="text-center">
                     <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                    <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mt-4">A verificar acesso...</p>
+                    <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mt-4">
+                        A verificar acesso...
+                    </p>
                 </div>
             </div>
         );
@@ -131,13 +104,13 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
     if (access === "upgrade") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[80vh] bg-background p-6 text-center animate-in fade-in">
-                <div className="bg-card w-full max-w-sm rounded-3xl p-8 border shadow-sm">
-                    <div className="mx-auto w-14 h-14 flex items-center justify-center mb-4 text-2xl font-black text-primary">
-                        ⬆
+                <div className="bg-card w-full max-w-sm rounded-3xl p-8 border shadow-sm space-y-4">
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="m12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
                     </div>
-                    <h2 className="text-xl font-bold mb-2">Funcionalidade Bloqueada</h2>
-                    <p className="text-muted-foreground text-sm mb-6">
-                        O teu plano atual não inclui o acesso a esta funcionalidade. Faz upgrade para abrires o cadeado!
+                    <h2 className="text-xl font-bold">Plano Superior Necessário</h2>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                        Esta funcionalidade requer um plano superior ao teu. Faz upgrade para desbloqueares o acesso.
                     </p>
                     <button
                         onClick={() => window.location.href = "/subscricao"}

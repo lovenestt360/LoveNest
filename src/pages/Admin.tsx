@@ -114,9 +114,17 @@ export default function Admin() {
         { id: "lifetime",    label: "Vitalício", days: null },
     ];
 
+    const TIER_LEVELS = [
+        { level: 0, label: "Free",  color: "bg-muted text-muted-foreground" },
+        { level: 1, label: "Plus",  color: "bg-blue-500/10 text-blue-600" },
+        { level: 2, label: "Pro",   color: "bg-purple-500/10 text-purple-600" },
+        { level: 3, label: "Max",   color: "bg-amber-500/10 text-amber-600" },
+    ];
+
     const [newPlanName, setNewPlanName] = useState("");
     const [newPlanPrice, setNewPlanPrice] = useState("");
     const [newPlanBillingType, setNewPlanBillingType] = useState("monthly");
+    const [newPlanTierLevel, setNewPlanTierLevel] = useState(1);
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
     const [creatingPlan, setCreatingPlan] = useState(false);
 
@@ -125,8 +133,13 @@ export default function Admin() {
     const [editPlanName, setEditPlanName] = useState("");
     const [editPlanPrice, setEditPlanPrice] = useState("");
     const [editPlanBillingType, setEditPlanBillingType] = useState("monthly");
+    const [editPlanTierLevel, setEditPlanTierLevel] = useState(1);
     const [editPlanFeatures, setEditPlanFeatures] = useState<string[]>([]);
     const [savingPlanEdit, setSavingPlanEdit] = useState(false);
+
+    // Feature tiers
+    const [featureTiers, setFeatureTiers] = useState<any[]>([]);
+    const [savingFeatureTier, setSavingFeatureTier] = useState<string | null>(null);
 
     // Settings form
     const [savingSettings, setSavingSettings] = useState(false);
@@ -308,6 +321,13 @@ export default function Admin() {
             // 10. Feature Flags
             fetchFeatureFlags();
 
+            // 11. Feature Tiers
+            const { data: ftData } = await adminClient
+                .from("feature_tiers" as any)
+                .select("*")
+                .order("min_tier", { ascending: true });
+            setFeatureTiers(ftData || []);
+
         } catch (error: any) {
             console.error("Admin: Erro crítico ao carregar dados", error);
             toast({ 
@@ -338,9 +358,10 @@ export default function Admin() {
                 p => p.name?.toLowerCase() === planName?.toLowerCase()
             );
 
-            // 3. Activar subscrição da casa + atribuir plano
+            // 3. Activar subscrição da casa + atribuir plano + tier_level
             const houseUpdate: any = { subscription_status: 'active' };
             if (matchedPlan?.id) houseUpdate.plan_id = matchedPlan.id;
+            if (matchedPlan?.tier_level != null) houseUpdate.tier_level = matchedPlan.tier_level;
 
             const { error: hErr } = await adminClient
                 .from("couple_spaces")
@@ -459,6 +480,7 @@ export default function Admin() {
                 name: newPlanName,
                 price: newPlanPrice,
                 billing_type: newPlanBillingType,
+                tier_level: newPlanTierLevel,
                 features: selectedFeatures,
                 is_active: true
             });
@@ -538,6 +560,7 @@ export default function Admin() {
         setEditPlanName(plan.name);
         setEditPlanPrice(plan.price);
         setEditPlanBillingType(plan.billing_type || "monthly");
+        setEditPlanTierLevel(plan.tier_level ?? 1);
         const validIds = ALL_FEATURES.map(f => f.id);
         setEditPlanFeatures((plan.features || []).filter((f: string) => validIds.includes(f)));
     };
@@ -550,6 +573,7 @@ export default function Admin() {
                 name: editPlanName,
                 price: editPlanPrice,
                 billing_type: editPlanBillingType,
+                tier_level: editPlanTierLevel,
                 features: editPlanFeatures
             }).eq("id", editingPlan.id);
             if (error) throw error;
@@ -1172,19 +1196,28 @@ export default function Admin() {
                                     <Input value={newPlanPrice} onChange={e => setNewPlanPrice(e.target.value)} placeholder="Ex: 5000 MZN / Ano" required className="bg-background" />
                                 </div>
                             </div>
-                            <div className="mb-4">
-                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {BILLING_TYPES.map(bt => (
-                                        <button
-                                            key={bt.id}
-                                            type="button"
-                                            onClick={() => setNewPlanBillingType(bt.id)}
-                                            className={`px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all ${newPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}
-                                        >
-                                            {bt.label}{bt.days ? ` · ${bt.days}d` : " · ∞"}
-                                        </button>
-                                    ))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {BILLING_TYPES.map(bt => (
+                                            <button key={bt.id} type="button" onClick={() => setNewPlanBillingType(bt.id)}
+                                                className={`px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${newPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
+                                                {bt.label}{bt.days ? ` · ${bt.days}d` : " · ∞"}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Nível de Acesso (Tier)</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {TIER_LEVELS.map(tl => (
+                                            <button key={tl.level} type="button" onClick={() => setNewPlanTierLevel(tl.level)}
+                                                className={`px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${newPlanTierLevel === tl.level ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
+                                                {tl.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                             <div className="mb-6">
@@ -1233,23 +1266,32 @@ export default function Admin() {
                                             <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
                                             <Input value={editPlanPrice} onChange={e => setEditPlanPrice(e.target.value)} className="bg-background" />
                                         </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {BILLING_TYPES.map(bt => (
-                                                    <button
-                                                        key={bt.id}
-                                                        type="button"
-                                                        onClick={() => setEditPlanBillingType(bt.id)}
-                                                        className={`px-3 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${editPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}
-                                                    >
-                                                        {bt.label}{bt.days ? ` · ${bt.days}d` : " · ∞"}
-                                                    </button>
-                                                ))}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {BILLING_TYPES.map(bt => (
+                                                        <button key={bt.id} type="button" onClick={() => setEditPlanBillingType(bt.id)}
+                                                            className={`px-2.5 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${editPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
+                                                            {bt.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Nível de Acesso (Tier)</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {TIER_LEVELS.map(tl => (
+                                                        <button key={tl.level} type="button" onClick={() => setEditPlanTierLevel(tl.level)}
+                                                            className={`px-2.5 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${editPlanTierLevel === tl.level ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
+                                                            {tl.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-2 block">Funcionalidades</label>
+                                            <label className="text-sm font-bold text-muted-foreground mb-2 block">Destaques do Plano <span className="font-normal text-muted-foreground/60">(opcional — para mostrar na página de subscrição)</span></label>
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                                 {ALL_FEATURES.map(feature => {
                                                     const isSelected = editPlanFeatures.includes(feature.id);
@@ -1291,9 +1333,14 @@ export default function Admin() {
                                             <h4 className="text-xl font-bold text-primary">{p.name}</h4>
                                             <p className="text-2xl font-black">{p.price}</p>
                                         </div>
-                                        <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${p.is_active ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}>
-                                            {p.is_active ? 'Visível' : 'Oculto'}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${p.is_active ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                                                {p.is_active ? 'Visível' : 'Oculto'}
+                                            </span>
+                                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${TIER_LEVELS.find(t => t.level === (p.tier_level ?? 1))?.color ?? 'bg-muted text-muted-foreground'}`}>
+                                                Tier {p.tier_level ?? 1} · {TIER_LEVELS.find(t => t.level === (p.tier_level ?? 1))?.label ?? 'Plus'}
+                                            </span>
+                                        </div>
                                     </div>
                                     <ul className="space-y-2 mb-6 text-sm text-foreground/80 flex-1">
                                         {p.features?.map((f: string, i: number) => {
@@ -1316,6 +1363,54 @@ export default function Admin() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* FEATURE TIERS SECTION — dentro da tab de planos */}
+                {tab === "plans" && featureTiers.length > 0 && (
+                    <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto mt-8">
+                        <div className="border-t pt-8">
+                            <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                Níveis de Acesso por Funcionalidade
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Define o tier mínimo necessário para aceder a cada funcionalidade. Tier 0 = gratuito para todos.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {featureTiers.map((ft: any) => (
+                                    <div key={ft.feature_id} className="flex items-center justify-between bg-card border rounded-xl px-4 py-3">
+                                        <span className="text-sm font-semibold">{ft.feature_label}</span>
+                                        <div className="flex gap-1">
+                                            {TIER_LEVELS.map(tl => (
+                                                <button
+                                                    key={tl.level}
+                                                    disabled={savingFeatureTier === ft.feature_id}
+                                                    onClick={async () => {
+                                                        setSavingFeatureTier(ft.feature_id);
+                                                        await adminClient
+                                                            .from("feature_tiers" as any)
+                                                            .update({ min_tier: tl.level, updated_at: new Date().toISOString() })
+                                                            .eq("feature_id", ft.feature_id);
+                                                        setFeatureTiers(prev => prev.map(f =>
+                                                            f.feature_id === ft.feature_id ? { ...f, min_tier: tl.level } : f
+                                                        ));
+                                                        setSavingFeatureTier(null);
+                                                    }}
+                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all border ${
+                                                        ft.min_tier === tl.level
+                                                            ? 'border-primary bg-primary text-primary-foreground'
+                                                            : 'border-border bg-background hover:border-primary/40 text-muted-foreground'
+                                                    }`}
+                                                >
+                                                    {tl.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
