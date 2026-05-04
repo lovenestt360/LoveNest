@@ -398,9 +398,10 @@ export default function Admin() {
             setAssigningPlan(true);
             const planDetails = plans.find(p => p.name === selectedPlanForAssign);
 
-            // 1. Update House Status
             const updates: any = {
-                subscription_status: 'active'
+                subscription_status: 'active',
+                plan_id: planDetails?.id ?? null,
+                tier_level: planDetails?.tier_level ?? 1,
             };
 
             const trialDays = parseInt(assignTrialDays);
@@ -417,6 +418,29 @@ export default function Admin() {
             if (hErr) throw hErr;
 
             toast({ title: "Plano Atribuído!", description: `A casa agora tem acesso ao plano ${selectedPlanForAssign}.` });
+            setAssignModalOpen(false);
+            setSelectedHouse(null);
+            setSelectedPlanForAssign("");
+            setAssignTrialDays("0");
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setAssigningPlan(false);
+        }
+    };
+
+    const handleRemovePlan = async () => {
+        if (!selectedHouse) return;
+        try {
+            setAssigningPlan(true);
+            const { error } = await adminClient.from("couple_spaces").update({
+                subscription_status: 'inactive',
+                plan_id: null,
+                tier_level: 0,
+            }).eq("id", selectedHouse.id);
+            if (error) throw error;
+            toast({ title: "Plano Removido", description: "A casa voltou ao estado sem plano." });
             setAssignModalOpen(false);
             setSelectedHouse(null);
             setSelectedPlanForAssign("");
@@ -798,7 +822,12 @@ export default function Admin() {
             )}
 
             {/* Manual Assignment Modal */}
-            {assignModalOpen && selectedHouse && (
+            {assignModalOpen && selectedHouse && (() => {
+                const currentPlan = plans.find(p => p.id === selectedHouse.plan_id);
+                const hasActivePlan = selectedHouse.subscription_status === 'active' && currentPlan;
+                const trialActive = selectedHouse.trial_used && selectedHouse.trial_ends_at && new Date(selectedHouse.trial_ends_at) > new Date();
+                const trialEndsAt = selectedHouse.trial_ends_at ? new Date(selectedHouse.trial_ends_at).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
+                return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
                     <div className="bg-card w-full max-w-md rounded-2xl shadow-xl overflow-hidden border">
                         <div className="p-6 border-b flex justify-between items-center bg-muted/30">
@@ -806,13 +835,36 @@ export default function Admin() {
                             <Button variant="ghost" size="icon" onClick={() => setAssignModalOpen(false)}><X className="w-5 h-5" /></Button>
                         </div>
                         <div className="p-6 space-y-4">
+                            {/* House info */}
                             <div>
-                                <p className="text-sm font-bold text-muted-foreground mb-1">Casa Selecionada:</p>
-                                <p className="font-bold">{selectedHouse.house_name} ({selectedHouse.partner1_name} & {selectedHouse.partner2_name})</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Casa</p>
+                                <p className="font-bold">{selectedHouse.house_name} <span className="text-muted-foreground font-normal">({selectedHouse.partner1_name} & {selectedHouse.partner2_name})</span></p>
                             </div>
 
+                            {/* Current plan status */}
+                            <div className={`rounded-xl p-4 space-y-1 ${hasActivePlan ? 'bg-green-500/10 border border-green-500/20' : 'bg-muted/50 border border-dashed'}`}>
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Estado Atual</p>
+                                {hasActivePlan ? (
+                                    <>
+                                        <p className="font-bold text-green-600 dark:text-green-400">{currentPlan.name}
+                                            <span className="ml-2 text-xs font-normal text-muted-foreground">Tier {currentPlan.tier_level}</span>
+                                        </p>
+                                        {trialActive && trialEndsAt && (
+                                            <p className="text-xs text-muted-foreground">Trial termina: <span className="font-bold text-foreground">{trialEndsAt}</span></p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        {trialActive
+                                            ? <span>Trial ativo até <span className="font-bold text-foreground">{trialEndsAt}</span></span>
+                                            : "Sem plano ativo"}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Plan selector */}
                             <div>
-                                <label className="text-sm font-bold text-muted-foreground mb-1 block">Escolher Plano</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Atribuir Novo Plano</label>
                                 <select
                                     className="w-full h-10 px-3 py-2 rounded-md border bg-background text-sm"
                                     value={selectedPlanForAssign}
@@ -820,26 +872,34 @@ export default function Admin() {
                                 >
                                     <option value="">-- Selecione --</option>
                                     {plans.map(p => (
-                                        <option key={p.id} value={p.name}>{p.name} ({p.price})</option>
+                                        <option key={p.id} value={p.name}>{p.name} · {p.price} · Tier {p.tier_level}</option>
                                     ))}
                                 </select>
                             </div>
 
+                            {/* Trial days */}
                             <div>
-                                <label className="text-sm font-bold text-muted-foreground mb-1 block">Renovar Trial (Opcional, em dias)</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Renovar Trial (dias, 0 = não alterar)</label>
                                 <Input type="number" min="0" value={assignTrialDays} onChange={(e) => setAssignTrialDays(e.target.value)} />
-                                <p className="text-xs text-muted-foreground mt-1">Coloca 0 para não alterar o período de Trial atual.</p>
                             </div>
                         </div>
-                        <div className="p-4 bg-muted/30 border-t flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancelar</Button>
-                            <Button className="font-bold" disabled={!selectedPlanForAssign || assigningPlan} onClick={handleAssignPlan}>
-                                {assigningPlan ? "A atribuir..." : "Confirmar Atribuição"}
-                            </Button>
+                        <div className="p-4 bg-muted/30 border-t flex justify-between gap-2">
+                            {hasActivePlan ? (
+                                <Button variant="destructive" size="sm" className="font-bold" disabled={assigningPlan} onClick={handleRemovePlan}>
+                                    Remover Plano
+                                </Button>
+                            ) : <div />}
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancelar</Button>
+                                <Button className="font-bold" disabled={!selectedPlanForAssign || assigningPlan} onClick={handleAssignPlan}>
+                                    {assigningPlan ? "A guardar..." : "Confirmar"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Sidebar Navigation */}
             <aside className="w-full md:w-64 bg-card border-r flex flex-col h-auto md:h-screen shrink-0">
