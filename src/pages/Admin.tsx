@@ -538,7 +538,8 @@ export default function Admin() {
         setEditPlanName(plan.name);
         setEditPlanPrice(plan.price);
         setEditPlanBillingType(plan.billing_type || "monthly");
-        setEditPlanFeatures(plan.features || []);
+        const validIds = ALL_FEATURES.map(f => f.id);
+        setEditPlanFeatures((plan.features || []).filter((f: string) => validIds.includes(f)));
     };
 
     const handleSavePlanEdit = async () => {

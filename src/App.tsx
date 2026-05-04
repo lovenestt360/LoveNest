@@ -99,7 +99,7 @@ const AppRoutes = () => (
         <Route element={<PremiumGuard requiredFeature="fasting" />}>
           <Route path="jejum" element={<Fasting />} />
         </Route>
-        <Route element={<PremiumGuard requiredFeature="routine" />}>
+        <Route element={<PremiumGuard requiredFeature="agenda" />}>
           <Route path="rotina" element={<Navigate to="/plano?tab=rotina" replace />} />
           <Route path="rotina/dia/:date" element={<RoutineDay />} />
           <Route path="rotina/gerir" element={<RoutineManage />} />
