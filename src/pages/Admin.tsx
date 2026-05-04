@@ -1295,9 +1295,12 @@ export default function Admin() {
                                         </span>
                                     </div>
                                     <ul className="space-y-2 mb-6 text-sm text-foreground/80 flex-1">
-                                        {p.features?.map((f: string, i: number) => (
-                                            <li key={i} className="flex items-center gap-2"><Check className="w-4 h-4 text-primary shrink-0" /> {f}</li>
-                                        ))}
+                                        {p.features?.map((f: string, i: number) => {
+                                            const label = ALL_FEATURES.find(ft => ft.id === f)?.label ?? f;
+                                            return (
+                                                <li key={i} className="flex items-center gap-2"><Check className="w-4 h-4 text-primary shrink-0" /> {label}</li>
+                                            );
+                                        })}
                                     </ul>
                                     <div className="flex gap-2">
                                         <Button variant="outline" className="flex-1" onClick={() => openEditPlan(p)}>
