@@ -73,14 +73,17 @@ const AppRoutes = () => (
     {/* Protected routes (login + pareamento) */}
     <Route element={<ProtectedRoute />}>
       <Route element={<AppShell />}>
+        {/* Always free routes */}
         <Route index element={<Index />} />
         <Route path="chat" element={<Chat />} />
-        <Route path="humor" element={<Mood />} />
         <Route path="configuracoes" element={<Settings />} />
         <Route path="subscricao" element={<Subscription />} />
         <Route path="plano" element={<Plano />} />
 
-        {/* Premium Routes */}
+        {/* Premium Routes — controlled by plan features in admin */}
+        <Route element={<PremiumGuard requiredFeature="mood" />}>
+          <Route path="humor" element={<Mood />} />
+        </Route>
         <Route element={<PremiumGuard requiredFeature="prayer" />}>
           <Route path="oracao" element={<Prayer />} />
         </Route>
