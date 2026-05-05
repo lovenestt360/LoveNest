@@ -111,10 +111,18 @@ const AppRoutes = () => (
         <Route element={<PremiumGuard requiredFeature="time_capsules" />}>
           <Route path="capsula" element={<TimeCapsule />} />
         </Route>
-        <Route path="wrapped" element={<LoveWrapped />} />
-        <Route path="lovestreak" element={<LoveStreak />} />
-        <Route path="ranking" element={<Ranking />} />
-        <Route path="descobrir" element={<Descobrir />} />
+        <Route element={<PremiumGuard requiredFeature="wrapped" />}>
+          <Route path="wrapped" element={<LoveWrapped />} />
+        </Route>
+        <Route element={<PremiumGuard requiredFeature="lovestreak" />}>
+          <Route path="lovestreak" element={<LoveStreak />} />
+        </Route>
+        <Route element={<PremiumGuard requiredFeature="ranking" />}>
+          <Route path="ranking" element={<Ranking />} />
+        </Route>
+        <Route element={<PremiumGuard requiredFeature="descobrir" />}>
+          <Route path="descobrir" element={<Descobrir />} />
+        </Route>
       </Route>
     </Route>
 

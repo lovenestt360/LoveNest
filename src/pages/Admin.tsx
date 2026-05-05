@@ -185,7 +185,11 @@ export default function Admin() {
         { id: "wallpapers", label: "Wallpapers" },
         { id: "stats", label: "Estatísticas" },
         { id: "time_capsules", label: "Cápsulas" },
-        { id: "challenges", label: "Desafios" }
+        { id: "challenges", label: "Desafios" },
+        { id: "wrapped", label: "LoveWrapped" },
+        { id: "lovestreak", label: "LoveStreak" },
+        { id: "ranking", label: "Ranking" },
+        { id: "descobrir", label: "Descobrir" },
     ];
 
     const { toast } = useToast();
