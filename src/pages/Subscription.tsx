@@ -45,6 +45,7 @@ export default function Subscription() {
 
     const [uploading, setUploading] = useState(false);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
     const [userEmail, setUserEmail] = useState("");
     const [userName, setUserName] = useState("");
 
@@ -128,24 +129,29 @@ export default function Subscription() {
             if (!user) return;
             if (!house) throw new Error("Sem casa associada.");
 
-            const fileExt = receiptFile.name.split('.').pop();
+            const fileExt = (receiptFile.name.split('.').pop() || 'jpg').toLowerCase();
             const fileName = `${house.id}_${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage.from("receipts").upload(fileName, receiptFile);
+            const { error: uploadError } = await supabase.storage
+                .from("receipts")
+                .upload(fileName, receiptFile, { contentType: receiptFile.type || 'image/jpeg', upsert: false });
             if (uploadError) throw uploadError;
 
             const { data: publicUrlData } = supabase.storage.from("receipts").getPublicUrl(fileName);
-            const { error: paymentError } = await supabase.from("payments").insert({
+            const { data: inserted, error: paymentError } = await supabase.from("payments").insert({
                 couple_space_id: house.id,
                 plan_name: selectedPlan.name,
                 amount: selectedPlan.price,
-                method: selectedMethod.name,
+                method: selectedMethod?.name || '',
                 proof_url: publicUrlData.publicUrl,
                 status: 'pending'
-            });
+            }).select().single();
             if (paymentError) throw paymentError;
 
-            toast({ title: "Sucesso!", description: "Comprovativo enviado. Aguarda a aprovação do admin." });
-            loadData();
+            // Update state directly — avoids loadData() flash (loading=true → full page reload effect)
+            setPendingPayment(inserted);
+            setReceiptFile(null);
+            setReceiptPreview(null);
+            toast({ title: "Comprovativo enviado!", description: "Aguarda a aprovação do admin." });
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
@@ -340,21 +346,56 @@ export default function Subscription() {
                             {/* Upload Proof */}
                             <div className="space-y-3">
                                 <h3 className="font-bold text-base">Comprovativo de Pagamento</h3>
-                                <div
-                                    className={`border-2 border-dashed rounded-2xl p-8 text-center space-y-3 transition-colors cursor-pointer ${receiptFile ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'}`}
-                                    onClick={() => document.getElementById('receipt')?.click()}
-                                >
-                                    <UploadCloud className={`w-9 h-9 mx-auto ${receiptFile ? 'text-primary' : 'text-muted-foreground'}`} strokeWidth={1.5} />
-                                    <div>
-                                        <p className="text-sm font-bold text-foreground">
-                                            {receiptFile ? receiptFile.name : "Clica para anexar o comprovativo"}
-                                        </p>
-                                        {!receiptFile && <p className="text-xs text-muted-foreground mt-1">Imagens ou PDF suportados</p>}
+                                {receiptFile ? (
+                                    <div className="border-2 border-primary bg-primary/5 rounded-2xl overflow-hidden">
+                                        {receiptPreview ? (
+                                            <img
+                                                src={receiptPreview}
+                                                alt="Comprovativo"
+                                                className="w-full max-h-52 object-contain bg-black/5"
+                                            />
+                                        ) : (
+                                            <div className="p-5 flex items-center gap-3">
+                                                <CheckCircle className="w-6 h-6 text-primary shrink-0" strokeWidth={1.5} />
+                                                <p className="text-sm font-bold text-foreground truncate flex-1">{receiptFile.name}</p>
+                                            </div>
+                                        )}
+                                        <div className="p-3 border-t border-primary/20 flex items-center justify-between gap-2">
+                                            <p className="text-xs text-primary font-semibold truncate flex-1">{receiptFile.name}</p>
+                                            <button
+                                                type="button"
+                                                className="text-xs text-muted-foreground underline shrink-0"
+                                                onClick={() => { setReceiptFile(null); setReceiptPreview(null); }}
+                                            >
+                                                Alterar
+                                            </button>
+                                        </div>
                                     </div>
-                                    <input id="receipt" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => {
-                                        if (e.target.files?.[0]) setReceiptFile(e.target.files[0]);
-                                    }} />
-                                </div>
+                                ) : (
+                                    <label
+                                        htmlFor="receipt"
+                                        className="block border-2 border-dashed border-border hover:bg-muted/40 rounded-2xl p-8 text-center space-y-3 transition-colors cursor-pointer"
+                                    >
+                                        <UploadCloud className="w-9 h-9 mx-auto text-muted-foreground" strokeWidth={1.5} />
+                                        <div>
+                                            <p className="text-sm font-bold text-foreground">Toca para anexar o comprovativo</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Imagens ou PDF suportados</p>
+                                        </div>
+                                    </label>
+                                )}
+                                <input id="receipt" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setReceiptFile(file);
+                                        if (file.type.startsWith('image/')) {
+                                            const url = URL.createObjectURL(file);
+                                            setReceiptPreview(url);
+                                        } else {
+                                            setReceiptPreview(null);
+                                        }
+                                    }
+                                    e.target.value = '';
+                                }} />
                             </div>
 
                             {/* Trust indicators */}
