@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Camera, ImageIcon } from "lucide-react";
+import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -373,64 +373,42 @@ export default function Subscription() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {/* Camera — abre câmara directamente, fiável em iOS PWA */}
-                                        <label
-                                            htmlFor="receipt-camera"
-                                            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border hover:bg-muted/40 rounded-2xl p-6 text-center cursor-pointer transition-colors"
-                                        >
-                                            <Camera className="w-7 h-7 text-primary" strokeWidth={1.5} />
-                                            <span className="text-sm font-bold text-foreground">Tirar Foto</span>
-                                            <span className="text-[11px] text-muted-foreground">Câmara</span>
-                                        </label>
-
-                                        {/* Gallery — pode reiniciar a página em iOS PWA */}
-                                        <label
-                                            htmlFor="receipt-gallery"
-                                            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border hover:bg-muted/40 rounded-2xl p-6 text-center cursor-pointer transition-colors"
-                                        >
-                                            <ImageIcon className="w-7 h-7 text-muted-foreground" strokeWidth={1.5} />
-                                            <span className="text-sm font-bold text-foreground">Da Galeria</span>
-                                            <span className="text-[11px] text-muted-foreground">ou PDF</span>
-                                        </label>
+                                    /* Input como overlay directo — sem display:none, sem delegação JS.
+                                       O input cobre toda a área táctil com opacity:0, o browser
+                                       trata o toque como gesto directo e abre o seletor nativo. */
+                                    <div className="relative border-2 border-dashed border-border rounded-2xl hover:bg-muted/40 transition-colors">
+                                        <div className="p-8 text-center space-y-3 pointer-events-none select-none">
+                                            <UploadCloud className="w-9 h-9 mx-auto text-muted-foreground" strokeWidth={1.5} />
+                                            <div>
+                                                <p className="text-sm font-bold text-foreground">Toca para selecionar a foto</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Galeria, câmara ou PDF</p>
+                                            </div>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                setReceiptFile(file);
+                                                if (file.type.startsWith('image/')) {
+                                                    setReceiptPreview(URL.createObjectURL(file));
+                                                } else {
+                                                    setReceiptPreview(null);
+                                                }
+                                            }}
+                                            style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                fontSize: '0',
+                                            }}
+                                        />
                                     </div>
                                 )}
-
-                                {/* Camera input — capture abre câmara sem suspender a app iOS */}
-                                <input
-                                    id="receipt-camera"
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            setReceiptFile(file);
-                                            setReceiptPreview(URL.createObjectURL(file));
-                                        }
-                                        e.target.value = '';
-                                    }}
-                                />
-                                {/* Gallery input — para desktop ou Android */}
-                                <input
-                                    id="receipt-gallery"
-                                    type="file"
-                                    accept="image/*,.pdf"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            setReceiptFile(file);
-                                            if (file.type.startsWith('image/')) {
-                                                setReceiptPreview(URL.createObjectURL(file));
-                                            } else {
-                                                setReceiptPreview(null);
-                                            }
-                                        }
-                                        e.target.value = '';
-                                    }}
-                                />
                             </div>
 
                             {/* Trust indicators */}
