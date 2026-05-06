@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
@@ -35,14 +35,21 @@ export function ProtectedRoute() {
   const [houseData, setHouseData] = useState<any>(null);
   const [savingTrial, setSavingTrial] = useState(false);
 
+  // Tracks whether we've completed at least one successful check.
+  // Subsequent runs (token refresh, etc.) skip the blocking spinner so that
+  // the Outlet (and child pages like Subscription) never unmounts mid-session.
+  const hasCheckedRef = useRef(false);
+
   const runCheck = async () => {
     if (!verifiedUser) {
       setChecking(false);
+      hasCheckedRef.current = false;
       return;
     }
 
-    setChecking(true);
     setCheckError(null);
+    // Only block UI with spinner on the very first check
+    if (!hasCheckedRef.current) setChecking(true);
 
     try {
       const { data, error } = await supabase
@@ -77,6 +84,7 @@ export function ProtectedRoute() {
       setHasCoupleSpace(null);
       setCheckError("Não foi possível verificar seu LoveNest. Tente novamente.");
     } finally {
+      hasCheckedRef.current = true;
       setChecking(false);
     }
   };
@@ -84,7 +92,7 @@ export function ProtectedRoute() {
   useEffect(() => {
     runCheck();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verifiedUser, location.pathname]);
+  }, [verifiedUser]);
 
   const handleActivateTrial = async () => {
     if (!houseData?.id) return;
