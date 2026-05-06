@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Camera, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -346,6 +346,7 @@ export default function Subscription() {
                             {/* Upload Proof */}
                             <div className="space-y-3">
                                 <h3 className="font-bold text-base">Comprovativo de Pagamento</h3>
+
                                 {receiptFile ? (
                                     <div className="border-2 border-primary bg-primary/5 rounded-2xl overflow-hidden">
                                         {receiptPreview ? (
@@ -372,30 +373,64 @@ export default function Subscription() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <label
-                                        htmlFor="receipt"
-                                        className="block border-2 border-dashed border-border hover:bg-muted/40 rounded-2xl p-8 text-center space-y-3 transition-colors cursor-pointer"
-                                    >
-                                        <UploadCloud className="w-9 h-9 mx-auto text-muted-foreground" strokeWidth={1.5} />
-                                        <div>
-                                            <p className="text-sm font-bold text-foreground">Toca para anexar o comprovativo</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Imagens ou PDF suportados</p>
-                                        </div>
-                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Camera — abre câmara directamente, fiável em iOS PWA */}
+                                        <label
+                                            htmlFor="receipt-camera"
+                                            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border hover:bg-muted/40 rounded-2xl p-6 text-center cursor-pointer transition-colors"
+                                        >
+                                            <Camera className="w-7 h-7 text-primary" strokeWidth={1.5} />
+                                            <span className="text-sm font-bold text-foreground">Tirar Foto</span>
+                                            <span className="text-[11px] text-muted-foreground">Câmara</span>
+                                        </label>
+
+                                        {/* Gallery — pode reiniciar a página em iOS PWA */}
+                                        <label
+                                            htmlFor="receipt-gallery"
+                                            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border hover:bg-muted/40 rounded-2xl p-6 text-center cursor-pointer transition-colors"
+                                        >
+                                            <ImageIcon className="w-7 h-7 text-muted-foreground" strokeWidth={1.5} />
+                                            <span className="text-sm font-bold text-foreground">Da Galeria</span>
+                                            <span className="text-[11px] text-muted-foreground">ou PDF</span>
+                                        </label>
+                                    </div>
                                 )}
-                                <input id="receipt" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        setReceiptFile(file);
-                                        if (file.type.startsWith('image/')) {
-                                            const url = URL.createObjectURL(file);
-                                            setReceiptPreview(url);
-                                        } else {
-                                            setReceiptPreview(null);
+
+                                {/* Camera input — capture abre câmara sem suspender a app iOS */}
+                                <input
+                                    id="receipt-camera"
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setReceiptFile(file);
+                                            setReceiptPreview(URL.createObjectURL(file));
                                         }
-                                    }
-                                    e.target.value = '';
-                                }} />
+                                        e.target.value = '';
+                                    }}
+                                />
+                                {/* Gallery input — para desktop ou Android */}
+                                <input
+                                    id="receipt-gallery"
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setReceiptFile(file);
+                                            if (file.type.startsWith('image/')) {
+                                                setReceiptPreview(URL.createObjectURL(file));
+                                            } else {
+                                                setReceiptPreview(null);
+                                            }
+                                        }
+                                        e.target.value = '';
+                                    }}
+                                />
                             </div>
 
                             {/* Trust indicators */}
