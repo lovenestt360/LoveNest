@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import {
@@ -54,17 +54,15 @@ function useCardData() {
     message: false, checkin: false, mood: false, prayer: false,
   });
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!spaceId) return;
     const today = format(new Date(), "yyyy-MM-dd");
 
-    // Real couple points
     (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
       .then(({ data }: any) => {
         if (typeof data === "number") setPoints(data);
       });
 
-    // Mission completion — column is "type" (not "activity_type")
     Promise.all([
       (supabase.from("daily_activity" as any)
         .select("type,user_id")
@@ -90,6 +88,23 @@ function useCardData() {
     });
   }, [spaceId]);
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Refresh when streak updates (partner check-in, own check-in, etc.)
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener("streak-updated", handler);
+    return () => window.removeEventListener("streak-updated", handler);
+  }, [fetchData]);
+
+  // Polling every 3 minutes to catch partner activity
+  useEffect(() => {
+    const interval = setInterval(fetchData, 3 * 60_000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
   return { points, missions };
 }
 
@@ -112,8 +127,11 @@ export function LoveStreakCard() {
 
   const {
     currentStreak, longestStreak, bothActiveToday, shieldsRemaining,
-    shieldUsedToday, myCheckedIn,
+    shieldUsedToday, myCheckedIn, activeCount,
   } = streak;
+
+  // "Par" heart: partner checked in if there's activity from someone other than me
+  const partnerCheckedIn = activeCount >= (myCheckedIn ? 2 : 1);
 
   const numberColor = bothActiveToday
     ? "text-rose-500"
@@ -167,8 +185,8 @@ export function LoveStreakCard() {
             <div className="flex items-center gap-1">
               <Heart
                 className={cn("w-4 h-4 transition-colors",
-                  bothActiveToday ? "fill-rose-500 text-rose-500" : "text-[#e0e0e0]")}
-                strokeWidth={bothActiveToday ? 0 : 1.5}
+                  partnerCheckedIn ? "fill-rose-500 text-rose-500" : "text-[#e0e0e0]")}
+                strokeWidth={partnerCheckedIn ? 0 : 1.5}
               />
               <span className="text-[9px] text-[#bbb] font-semibold">Par</span>
             </div>

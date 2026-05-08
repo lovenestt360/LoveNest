@@ -246,13 +246,11 @@ export default function LoveStreak() {
       if (error) { toast.error("Erro ao comprar LoveShield."); return; }
       
       const status = (data as any)?.status;
-      if (status === "error_insufficient_points") {
+      if (status === "insufficient_points" || status === "error_insufficient_points") {
         toast.error("Pontos insuficientes para comprar LoveShield.");
-      } else if (status === "error_limit_reached") {
-        toast.error("Só podes comprar 1 escudo extra por mês.");
-      } else if (status === "error_has_free_shields") {
-        toast.error("Não podes comprar enquanto tiveres escudos gratuitos.");
-      } else {
+      } else if (status === "limit_reached" || status === "error_limit_reached") {
+        toast.error("Já atingiste o limite de escudos (máx. 5).");
+      } else if (status === "ok" || !status) {
         toast.success("LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
         await Promise.all([fetchPoints(), refresh()]);
         window.dispatchEvent(new CustomEvent("streak-updated"));
@@ -520,12 +518,15 @@ export default function LoveStreak() {
               </div>
             </div>
 
-            {/* Ação (Botão) — Só aparece se puder comprar (remaining=0 e purchased=0) */}
-            {shieldsRemaining === 0 && shieldsPurchased === 0 ? (
+            {/* Botão de compra — aparece sempre que shields < 5 */}
+            {shieldsRemaining < 5 ? (
               <div className="flex items-center justify-between pt-2 border-t border-border/30">
                 <div className="flex items-center gap-1.5">
                   <Coins className="w-3.5 h-3.5 text-amber-500" />
                   <span className="text-sm font-black tabular-nums">200 pts</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    ({shieldsRemaining}/5 escudos)
+                  </span>
                 </div>
                 <Button
                   size="sm"
@@ -535,16 +536,16 @@ export default function LoveStreak() {
                   disabled={buyingShield || !canBuyShield}
                 >
                   {buyingShield ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-                   canBuyShield ? "Comprar Extra" : "Saldo Insuficiente"}
+                   canBuyShield ? "+1 Escudo" : "Saldo Insuficiente"}
                 </Button>
               </div>
-            ) : shieldsRemaining === 0 && shieldsPurchased > 0 ? (
+            ) : (
               <div className="flex justify-end pt-2 border-t border-border/30">
-                 <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
-                    Esgotado por este mês
-                 </span>
+                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
+                  Máximo de escudos atingido
+                </span>
               </div>
-            ) : null}
+            )}
           </div>
 
           {/* Ranking pontos */}
