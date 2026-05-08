@@ -26,6 +26,8 @@ export async function logActivity(
     if (!res?.success) {
       console.warn("[logActivity] Unexpected response:", res);
     } else {
+      // Notify all listeners (LoveStreakCard, LoveStreak) that activity changed
+      window.dispatchEvent(new CustomEvent("streak-updated", { detail: { type } }));
       if (res.active_today >= 2) {
         window.dispatchEvent(new CustomEvent("mission-complete", { detail: { type } }));
       }

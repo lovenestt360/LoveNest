@@ -281,18 +281,20 @@ export default function LoveStreak() {
     if (activeTab === "missoes") fetchMissions();
   }, [activeTab, fetchPoints, fetchMissions]);
 
-  // Sincronização Global via Evento
+  // Refresh quando outra página regista actividade (Chat, Humor, Oração, check-in)
   useEffect(() => {
-    const handleUpdate = () => {
-      console.log("🔄 [LoveStreak] streak-updated recebido");
-      fetchAllData();
-    };
-
+    const handleUpdate = () => fetchAllData();
     window.addEventListener("streak-updated", handleUpdate);
+    return () => window.removeEventListener("streak-updated", handleUpdate);
+  }, [fetchAllData]);
 
-    return () => {
-      window.removeEventListener("streak-updated", handleUpdate);
+  // Refresh quando o utilizador volta à página (vem do Chat, Humor, etc.)
+  useEffect(() => {
+    const handleVisible = () => {
+      if (document.visibilityState === "visible") fetchAllData();
     };
+    document.addEventListener("visibilitychange", handleVisible);
+    return () => document.removeEventListener("visibilitychange", handleVisible);
   }, [fetchAllData]);
 
   // ── Loading guard ─────────────────────────
