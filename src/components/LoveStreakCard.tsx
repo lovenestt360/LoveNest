@@ -115,6 +115,18 @@ export function LoveStreakCard() {
   const { points, missions }  = useCardData();
   const navigate = useNavigate();
 
+  // ALL hooks must be called before any conditional return
+  const celebratedRef = useRef(false);
+  const bothActiveToday = streak?.bothActiveToday ?? false;
+
+  useEffect(() => {
+    if (bothActiveToday && !celebratedRef.current) {
+      celebratedRef.current = true;
+      try { navigator.vibrate?.([15, 50, 20]); } catch {}
+    }
+    if (!bothActiveToday) celebratedRef.current = false;
+  }, [bothActiveToday]);
+
   if (loading) {
     return (
       <div className="glass-card p-5 animate-pulse space-y-3">
@@ -126,22 +138,12 @@ export function LoveStreakCard() {
   }
 
   const {
-    currentStreak, longestStreak, bothActiveToday, shieldsRemaining,
+    currentStreak, longestStreak, shieldsRemaining,
     shieldUsedToday, myCheckedIn, activeCount,
   } = streak;
 
   // "Par" heart: partner checked in if there's activity from someone other than me
   const partnerCheckedIn = activeCount >= (myCheckedIn ? 2 : 1);
-
-  // Haptic when both active (first time this session)
-  const celebratedRef = useRef(false);
-  useEffect(() => {
-    if (bothActiveToday && !celebratedRef.current) {
-      celebratedRef.current = true;
-      try { navigator.vibrate?.([15, 50, 20]); } catch {}
-    }
-    if (!bothActiveToday) celebratedRef.current = false;
-  }, [bothActiveToday]);
 
   const numberColor = bothActiveToday
     ? "text-rose-500"
