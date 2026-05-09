@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import React from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import {
@@ -135,8 +134,8 @@ export function LoveStreakCard() {
   const partnerCheckedIn = activeCount >= (myCheckedIn ? 2 : 1);
 
   // Haptic when both active (first time this session)
-  const celebratedRef = React.useRef(false);
-  React.useEffect(() => {
+  const celebratedRef = useRef(false);
+  useEffect(() => {
     if (bothActiveToday && !celebratedRef.current) {
       celebratedRef.current = true;
       try { navigator.vibrate?.([15, 50, 20]); } catch {}
