@@ -340,6 +340,105 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
+/* ══════════════════════════════════════════════════════
+   EMOTIONAL MICRO-INTERACTIONS
+   Elegant, minimal, premium — Apple × Headspace feel
+   ══════════════════════════════════════════════════════ */
+
+  /* Flame breathes with warmth — streak always alive */
+  @keyframes flame-breathe {
+    0%, 100% {
+      filter: drop-shadow(0 0 5px rgba(251,113,133,0.45))
+              drop-shadow(0 0 10px rgba(244,63,94,0.25));
+    }
+    50% {
+      filter: drop-shadow(0 0 12px rgba(251,113,133,0.85))
+              drop-shadow(0 0 24px rgba(244,63,94,0.45));
+    }
+  }
+
+  /* Streak number bounces in on change */
+  @keyframes streak-pop {
+    0%   { transform: scale(0.82); opacity: 0.5; }
+    55%  { transform: scale(1.09); opacity: 1; }
+    75%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+
+  /* Double heartbeat — when both active */
+  @keyframes heart-throb {
+    0%, 100% { transform: scale(1); }
+    14%  { transform: scale(1.35); }
+    28%  { transform: scale(1.05); }
+    42%  { transform: scale(1.2); }
+    56%  { transform: scale(1); }
+  }
+
+  /* Mission complete — ripple glow */
+  @keyframes mission-ripple {
+    0%   { box-shadow: 0 0 0 0 rgba(244,63,94,0.35); }
+    50%  { box-shadow: 0 0 0 10px rgba(244,63,94,0.08); }
+    100% { box-shadow: 0 0 0 0 rgba(244,63,94,0); }
+  }
+
+  /* Shimmer sweep across completed mission row */
+  @keyframes shimmer-sweep {
+    0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    15%  { opacity: 0.6; }
+    85%  { opacity: 0.6; }
+    100% { transform: translateX(220%) skewX(-15deg); opacity: 0; }
+  }
+
+  /* Points pop on increment */
+  @keyframes count-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.14); }
+    65%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+
+  /* Particle float upward */
+  @keyframes particle-float {
+    0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-90px) scale(0.2) rotate(20deg); opacity: 0; }
+  }
+
+  /* Streak card warm glow border */
+  @keyframes warm-glow-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0), 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04); }
+    50%  { box-shadow: 0 0 0 2px rgba(244,63,94,0.12), 0 4px 20px rgba(244,63,94,0.15), 0 1px 2px rgba(0,0,0,0.06); }
+  }
+
+  /* Success checkmark draw */
+  @keyframes check-draw {
+    0%   { stroke-dashoffset: 24; opacity: 0; }
+    40%  { opacity: 1; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  /* Soft scale-in for celebration overlay */
+  @keyframes celebration-in {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.04); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Number slide up (count animation) */
+  @keyframes number-slide-up {
+    0%   { transform: translateY(6px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ── Animation utility classes ── */
+  .animate-flame-breathe   { animation: flame-breathe 2.8s ease-in-out infinite; }
+  .animate-streak-pop      { animation: streak-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-heart-throb     { animation: heart-throb 0.85s ease-in-out forwards; }
+  .animate-mission-ripple  { animation: mission-ripple 0.9s ease-out forwards; }
+  .animate-count-pop       { animation: count-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-warm-glow-border{ animation: warm-glow-border 2.5s ease-in-out infinite; }
+  .animate-celebration-in  { animation: celebration-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-number-slide-up { animation: number-slide-up 0.3s ease-out forwards; }
+
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {
   @apply bg-white border-white h-3 w-3;

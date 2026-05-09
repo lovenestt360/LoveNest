@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import {
@@ -133,6 +134,16 @@ export function LoveStreakCard() {
   // "Par" heart: partner checked in if there's activity from someone other than me
   const partnerCheckedIn = activeCount >= (myCheckedIn ? 2 : 1);
 
+  // Haptic when both active (first time this session)
+  const celebratedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (bothActiveToday && !celebratedRef.current) {
+      celebratedRef.current = true;
+      try { navigator.vibrate?.([15, 50, 20]); } catch {}
+    }
+    if (!bothActiveToday) celebratedRef.current = false;
+  }, [bothActiveToday]);
+
   const numberColor = bothActiveToday
     ? "text-rose-500"
     : shieldUsedToday ? "text-blue-500" : "text-foreground";
@@ -142,12 +153,21 @@ export function LoveStreakCard() {
   return (
     <button
       onClick={() => navigate("/lovestreak")}
-      className="glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98]"
+      className={cn(
+        "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98] transition-all",
+        bothActiveToday && "animate-warm-glow-border"
+      )}
     >
       {/* Row 1 — header */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <Flame className="w-4 h-4 text-orange-500" strokeWidth={1.5} />
+          <Flame
+            className={cn(
+              "w-4 h-4 transition-colors",
+              bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-orange-400"
+            )}
+            strokeWidth={1.5}
+          />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
             A vossa Chama
           </span>
@@ -176,16 +196,24 @@ export function LoveStreakCard() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Heart
-                className={cn("w-4 h-4 transition-colors",
-                  myCheckedIn ? "fill-rose-500 text-rose-500" : "text-[#e0e0e0]")}
+                className={cn(
+                  "w-4 h-4 transition-all duration-500",
+                  myCheckedIn
+                    ? "fill-rose-500 text-rose-500 animate-heart-throb"
+                    : "text-[#e0e0e0]"
+                )}
                 strokeWidth={myCheckedIn ? 0 : 1.5}
               />
               <span className="text-[9px] text-[#bbb] font-semibold">Tu</span>
             </div>
             <div className="flex items-center gap-1">
               <Heart
-                className={cn("w-4 h-4 transition-colors",
-                  partnerCheckedIn ? "fill-rose-500 text-rose-500" : "text-[#e0e0e0]")}
+                className={cn(
+                  "w-4 h-4 transition-all duration-500",
+                  partnerCheckedIn
+                    ? "fill-rose-500 text-rose-500 animate-heart-throb"
+                    : "text-[#e0e0e0]"
+                )}
                 strokeWidth={partnerCheckedIn ? 0 : 1.5}
               />
               <span className="text-[9px] text-[#bbb] font-semibold">Par</span>

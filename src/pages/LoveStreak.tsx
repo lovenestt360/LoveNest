@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useCountUp } from "@/hooks/useCountUp";
+import { CelebrationBurst } from "@/components/CelebrationBurst";
+import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import {
   Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star,
@@ -107,6 +110,13 @@ export default function LoveStreak() {
   const [missions, setMissions]         = useState<Mission[]>([]);
   const [loadingMissions, setLoadingMissions] = useState(false);
 
+  // — Animation state —
+  const [streakPopKey, setStreakPopKey]         = useState(0);
+  const [celebrating, setCelebrating]           = useState(false);
+  const [recentlyCompletedMissions, setRecentlyCompletedMissions] = useState<Set<string>>(new Set());
+  const prevStreakRef  = useRef(0);
+  const prevBothRef   = useRef(false);
+
   // Sincronização
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -133,6 +143,42 @@ export default function LoveStreak() {
   const missionsDone   = missions.filter(m => m.completed).length;
   const missionsPts    = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
   const canBuyShield   = totalPoints >= 200;
+
+  // Animated points counter
+  const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
+
+  // Detect streak increment → pop animation
+  useEffect(() => {
+    if (currentStreak > 0 && currentStreak !== prevStreakRef.current) {
+      setStreakPopKey(k => k + 1);
+      hapticLight();
+      prevStreakRef.current = currentStreak;
+    }
+  }, [currentStreak]);
+
+  // Detect bothActive → celebrate + haptic
+  useEffect(() => {
+    if (bothActive && !prevBothRef.current) {
+      setCelebrating(true);
+      hapticCelebrate();
+      const t = setTimeout(() => setCelebrating(false), 1400);
+      prevBothRef.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!bothActive) prevBothRef.current = false;
+  }, [bothActive]);
+
+  // Detect newly completed missions → shimmer + haptic
+  useEffect(() => {
+    const completedNow = new Set(missions.filter(m => m.completed).map(m => m.id));
+    completedNow.forEach(id => {
+      if (!recentlyCompletedMissions.has(id)) {
+        hapticLight();
+      }
+    });
+    setRecentlyCompletedMissions(completedNow);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missions]);
 
   // ── Fetch pontos ──────────────────────────
 
@@ -263,8 +309,10 @@ export default function LoveStreak() {
   // ── Check-in ─────────────────────────────
 
   const handleCheckIn = async () => {
+    hapticLight();
     const { ok, message } = await checkIn();
     if (ok) {
+      hapticSuccess();
       toast.success("Vocês protegeram a chama hoje 🔥");
     } else {
       toast.error(message || "Não foi possível registar a vossa presença.");
@@ -334,19 +382,38 @@ export default function LoveStreak() {
         <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
           {/* Hero — número grande */}
-          <section className="text-center py-8">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">
-              {isZero ? "O amor começa aqui" : "A vossa chama"}
-            </p>
-            <div className="flex items-baseline justify-center gap-2">
-              <span className={cn(
-                "text-8xl font-bold tabular-nums leading-none",
-                bothActive ? "text-rose-500" : shieldUsedToday ? "text-blue-500" : "text-foreground"
-              )}>
+          <section className="text-center py-8 relative">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Flame
+                className={cn(
+                  "w-4 h-4 transition-colors",
+                  bothActive ? "text-rose-500 animate-flame-breathe" : "text-[#717171]"
+                )}
+                strokeWidth={1.5}
+              />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+                {isZero ? "O amor começa aqui" : "A vossa chama"}
+              </p>
+            </div>
+
+            {/* Big streak number with pop on change + celebration burst */}
+            <div className="relative inline-flex items-baseline gap-2">
+              <CelebrationBurst active={celebrating} />
+              <span
+                key={streakPopKey}
+                className={cn(
+                  "text-8xl font-bold tabular-nums leading-none transition-colors",
+                  bothActive ? "text-rose-500 animate-streak-pop"
+                    : shieldUsedToday ? "text-blue-500"
+                    : "text-foreground",
+                  streakPopKey > 0 && !bothActive && "animate-streak-pop"
+                )}
+              >
                 {currentStreak}
               </span>
               <span className="text-3xl font-light text-[#c4c4c4]">d</span>
             </div>
+
             <p className="text-sm text-[#717171] mt-3">
               {isZero ? "Cada gesto conta — comecem hoje 💛" : `${currentStreak} dias a cuidar um do outro`}
             </p>
@@ -451,8 +518,13 @@ export default function LoveStreak() {
               <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
             ) : (
               <div className="flex items-baseline justify-center gap-2">
-                <span className="text-7xl font-bold tabular-nums text-foreground leading-none">
-                  {totalPoints.toLocaleString("pt-PT")}
+                <span
+                  className={cn(
+                    "text-7xl font-bold tabular-nums text-foreground leading-none transition-all",
+                    pointsPopped && "animate-count-pop"
+                  )}
+                >
+                  {pointsDisplay.toLocaleString("pt-PT")}
                 </span>
                 <span className="text-2xl font-light text-[#c4c4c4]">pts</span>
               </div>
@@ -604,17 +676,37 @@ export default function LoveStreak() {
           ) : (
             <div className="glass-card divide-y divide-[#f5f5f5] overflow-hidden">
               {missions.map(m => (
-                <div key={m.id} className="flex items-center gap-4 p-4">
+                <div
+                  key={m.id}
+                  className={cn(
+                    "relative flex items-center gap-4 p-4 overflow-hidden transition-colors duration-500",
+                    m.completed && "bg-rose-50/40 animate-mission-ripple"
+                  )}
+                >
+                  {/* Shimmer sweep on completion */}
+                  {m.completed && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background: "linear-gradient(90deg, transparent 0%, rgba(244,63,94,0.08) 50%, transparent 100%)",
+                        animation: "shimmer-sweep 1s ease-out forwards",
+                      }}
+                    />
+                  )}
+
                   <div className={cn(
-                    "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0",
-                    m.completed ? "bg-rose-50 text-rose-500" : "bg-[#f5f5f5] text-[#717171]"
+                    "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500",
+                    m.completed
+                      ? "bg-rose-100 text-rose-500 shadow-sm shadow-rose-100"
+                      : "bg-[#f5f5f5] text-[#717171]"
                   )}>
                     {MISSION_ICONS[m.emoji] ?? <Target className="w-4 h-4" strokeWidth={1.5} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "text-sm font-medium",
-                      m.completed ? "line-through text-[#c4c4c4]" : "text-foreground"
+                      "text-sm font-medium transition-all duration-300",
+                      m.completed ? "text-rose-400 line-through" : "text-foreground"
                     )}>
                       {m.title}
                     </p>
@@ -626,9 +718,12 @@ export default function LoveStreak() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="text-[11px] font-medium text-rose-400">+{m.points}</span>
+                    <span className={cn(
+                      "text-[11px] font-medium transition-colors",
+                      m.completed ? "text-rose-400" : "text-[#c4c4c4]"
+                    )}>+{m.points}</span>
                     {m.completed
-                      ? <CheckCircle2 className="w-5 h-5 text-rose-500" strokeWidth={1.5} />
+                      ? <CheckCircle2 className="w-5 h-5 text-rose-500 animate-celebration-in" strokeWidth={1.5} />
                       : <Circle className="w-5 h-5 text-[#e5e5e5]" strokeWidth={1.5} />
                     }
                   </div>
@@ -655,12 +750,29 @@ export default function LoveStreak() {
               <button
                 onClick={handleCheckIn}
                 disabled={checkingIn}
-                className="w-full py-3.5 rounded-2xl bg-rose-500 text-white font-semibold text-base disabled:opacity-60 active:scale-[0.98] transition-all"
+                className={cn(
+                  "w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-200",
+                  "bg-rose-500 text-white shadow-lg shadow-rose-200",
+                  "active:scale-[0.97] active:shadow-none",
+                  "disabled:opacity-60 disabled:scale-100",
+                  !checkingIn && "hover:bg-rose-600"
+                )}
               >
-                {checkingIn ? "A guardar o vosso momento..." : "Estou presente hoje 🔥"}
+                {checkingIn ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    A guardar o vosso momento...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Flame className="w-4 h-4 animate-flame-breathe" strokeWidth={1.5} />
+                    Estou presente hoje
+                  </span>
+                )}
               </button>
             ) : (
-              <div className="w-full py-3.5 rounded-2xl bg-[#f5f5f5] text-[#717171] font-medium text-sm text-center border border-[#e5e5e5]">
+              <div className="w-full py-3.5 rounded-2xl bg-rose-50 text-rose-400 font-medium text-sm text-center border border-rose-100 flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4" strokeWidth={1.5} />
                 O teu gesto foi guardado · A esperar pelo teu par ❤️
               </div>
             )}
