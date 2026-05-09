@@ -13,13 +13,13 @@ import { format } from "date-fns";
 // ── Phrases ──────────────────────────────────────────────────────────────────
 
 const PHRASES = [
-  { min: 0,  max: 0,        msg: "Comecem hoje, cada dia conta!" },
-  { min: 1,  max: 2,        msg: "O primeiro passo é sempre o mais bonito" },
-  { min: 3,  max: 6,        msg: "Estão a construir algo especial juntos" },
-  { min: 7,  max: 13,       msg: "Uma semana de amor! A vossa chama brilha" },
-  { min: 14, max: 29,       msg: "Dois amantes em sintonia perfeita" },
-  { min: 30, max: 89,       msg: "Um mês de dedicação. Que casal incrível!" },
-  { min: 90, max: Infinity, msg: "Lendários! O amor de vocês é inspirador" },
+  { min: 0,  max: 0,        msg: "O amor de vocês começa aqui 🌱" },
+  { min: 1,  max: 2,        msg: "Uma faísca que vai virar chama 🔥" },
+  { min: 3,  max: 6,        msg: "A vossa chama está a crescer 🌿" },
+  { min: 7,  max: 13,       msg: "Sete dias a cuidar um do outro 💛" },
+  { min: 14, max: 29,       msg: "Em sintonia, em amor ✨" },
+  { min: 30, max: 89,       msg: "Um mês de amor dedicado. Extraordinários 🌟" },
+  { min: 90, max: Infinity, msg: "O vosso amor é uma lenda viva 🏆" },
 ];
 
 function getPhrase(s: number) {
@@ -27,10 +27,10 @@ function getPhrase(s: number) {
 }
 
 function getRank(s: number) {
-  if (s >= 90) return "Lendário";
-  if (s >= 30) return "Apaixonado";
-  if (s >= 7)  return "Flamejante";
-  return "Iniciante";
+  if (s >= 90) return "Eternos";
+  if (s >= 30) return "Ardentes";
+  if (s >= 7)  return "Em Chama";
+  return "Chispa";
 }
 
 // ── Mission definitions ───────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ export function LoveStreakCard() {
         <div className="flex items-center gap-1.5">
           <Flame className="w-4 h-4 text-orange-500" strokeWidth={1.5} />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
-            LoveStreak
+            A vossa Chama
           </span>
         </div>
         <ChevronRight className="w-4 h-4 text-[#c4c4c4]" strokeWidth={1.5} />
@@ -203,7 +203,7 @@ export function LoveStreakCard() {
               />
             ))}
             <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide ml-1">
-              Shields
+              Proteção
             </span>
           </div>
         </div>
@@ -222,7 +222,7 @@ export function LoveStreakCard() {
         {/* Missions — 4 icons, fill when done */}
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide mr-0.5">
-            Missões
+            Gestos
           </span>
           {MISSIONS.map(({ id, Icon, doneColor }) => (
             <Icon

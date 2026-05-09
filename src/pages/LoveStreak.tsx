@@ -31,10 +31,10 @@ interface Mission {
 }
 
 const MISSION_DEFS: Omit<Mission, "completed" | "completedCount">[] = [
-  { id: "message",  title: "Conversar",   description: "Ambos enviam uma mensagem no chat",   emoji: "message",  activityType: "message",  points: 10 },
-  { id: "checkin",  title: "Check-in",    description: "Ambos fazem o check-in diário",        emoji: "checkin",  activityType: "checkin",  points: 10 },
-  { id: "mood",     title: "Humor",       description: "Ambos registam o humor de hoje",        emoji: "mood",     activityType: "mood",     points: 5  },
-  { id: "prayer",   title: "Oração",      description: "Ambos partilham uma oração",            emoji: "prayer",   activityType: "prayer",   points: 5  },
+  { id: "message",  title: "Conversar",   description: "Um beijo em texto para o vosso par",       emoji: "message",  activityType: "message",  points: 10 },
+  { id: "checkin",  title: "Presença",    description: "Digam ao outro que estão presentes hoje",  emoji: "checkin",  activityType: "checkin",  points: 10 },
+  { id: "mood",     title: "Sentimento",  description: "Partilhem como estão, de coração",         emoji: "mood",     activityType: "mood",     points: 5  },
+  { id: "prayer",   title: "Oração",      description: "Um momento sagrado criado juntos",          emoji: "prayer",   activityType: "prayer",   points: 5  },
 ];
 
 const MISSION_ICONS: Record<string, React.ReactNode> = {
@@ -48,9 +48,9 @@ const MISSION_ICONS: Record<string, React.ReactNode> = {
 // TAB BAR
 // ─────────────────────────────────────────────
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "streaks", label: "Streak",  icon: <Flame   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
-  { id: "pontos",  label: "Pontos",  icon: <Coins   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
-  { id: "missoes", label: "Missões", icon: <Target  className="w-3.5 h-3.5" strokeWidth={1.5} /> },
+  { id: "streaks", label: "Chama",   icon: <Flame   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
+  { id: "pontos",  label: "Amor",    icon: <Coins   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
+  { id: "missoes", label: "Gestos",  icon: <Target  className="w-3.5 h-3.5" strokeWidth={1.5} /> },
 ];
 
 function TabBar({ activeTab, onChange }: { activeTab: Tab; onChange: (t: Tab) => void }) {
@@ -265,9 +265,9 @@ export default function LoveStreak() {
   const handleCheckIn = async () => {
     const { ok, message } = await checkIn();
     if (ok) {
-      toast.success("Check-in registado! 🔥");
+      toast.success("Vocês protegeram a chama hoje 🔥");
     } else {
-      toast.error(message || "Não foi possível registar o check-in.");
+      toast.error(message || "Não foi possível registar a vossa presença.");
     }
   };
 
@@ -336,7 +336,7 @@ export default function LoveStreak() {
           {/* Hero — número grande */}
           <section className="text-center py-8">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">
-              {isZero ? "Comecem hoje" : "Chama acesa"}
+              {isZero ? "O amor começa aqui" : "A vossa chama"}
             </p>
             <div className="flex items-baseline justify-center gap-2">
               <span className={cn(
@@ -348,7 +348,7 @@ export default function LoveStreak() {
               <span className="text-3xl font-light text-[#c4c4c4]">d</span>
             </div>
             <p className="text-sm text-[#717171] mt-3">
-              {isZero ? "O vosso streak começa hoje" : `${currentStreak} dias a cuidar um do outro`}
+              {isZero ? "Cada gesto conta — comecem hoje 💛" : `${currentStreak} dias a cuidar um do outro`}
             </p>
           </section>
 
@@ -357,11 +357,11 @@ export default function LoveStreak() {
             <div className="glass-card p-4 flex items-start gap-3 border-amber-200">
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" strokeWidth={1.5} />
               <div>
-                <p className="text-sm font-semibold text-amber-600">Streak em risco</p>
-                <p className="text-sm text-[#717171] mt-0.5">Hoje é decisivo. Não deixem o streak cair.</p>
+                <p className="text-sm font-semibold text-amber-600">A chama precisa de vocês hoje</p>
+                <p className="text-sm text-[#717171] mt-0.5">Um pequeno gesto pode proteger o que construíram juntos.</p>
                 {shieldsRemaining > 0 && (
                   <p className="text-[11px] text-[#717171] mt-1">
-                    Tens {shieldsRemaining} shield{shieldsRemaining > 1 ? "s" : ""} disponíveis.
+                    {shieldsRemaining} escudo{shieldsRemaining > 1 ? "s" : ""} prontos para proteger a vossa chama.
                   </p>
                 )}
               </div>
@@ -372,10 +372,10 @@ export default function LoveStreak() {
             <div className="glass-card p-4 flex items-start gap-3 border-blue-200">
               <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" strokeWidth={1.5} />
               <div>
-                <p className="text-sm font-semibold text-blue-600">LoveShield activado</p>
+                <p className="text-sm font-semibold text-blue-600">O amor protegeu a vossa chama 🛡️</p>
                 <p className="text-sm text-[#717171] mt-0.5">
-                  O shield protegeu a vossa chama.{" "}
-                  {shieldsRemaining > 0 ? `Restam ${shieldsRemaining}.` : "Sem shields restantes."}
+                  Mais um dia guardado pelo que construíram.{" "}
+                  {shieldsRemaining > 0 ? `Restam ${shieldsRemaining} escudos.` : "Renovem a proteção em breve."}
                 </p>
               </div>
             </div>
@@ -386,19 +386,19 @@ export default function LoveStreak() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
-                  {bothActive ? "Hoje completo"
-                    : myCheckedIn ? "Check-in feito"
-                    : isZero ? "À espera do primeiro gesto"
-                    : "Falta alguém"}
+                  {bothActive ? "A vossa chama está acesa 🔥"
+                    : myCheckedIn ? "O teu gesto foi registado 💛"
+                    : isZero ? "Façam o primeiro gesto hoje 🌱"
+                    : "A chama ainda espera pelo vosso momento"}
                 </h2>
                 <p className="text-sm text-[#717171] mt-0.5">
                   {totalMembers > 0
-                    ? `${activeCount}/${totalMembers} pessoas activas hoje`
-                    : "A carregar..."}
+                    ? `${activeCount} de ${totalMembers} presentes hoje`
+                    : "A preparar..."}
                 </p>
                 {myCheckedIn && !bothActive && totalMembers >= 2 && (
                   <p className="text-[11px] text-amber-500 mt-1">
-                    Aguarda que o teu parceiro faça check-in
+                    O teu par ainda não apareceu hoje ❤️
                   </p>
                 )}
               </div>
@@ -411,7 +411,7 @@ export default function LoveStreak() {
             </div>
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] font-medium text-[#717171]">
-                <span>Progresso mensal (28d)</span>
+                <span>Jornada deste mês</span>
                 <span>{progress}%</span>
               </div>
               <Progress value={progress} className="h-1.5 bg-[#f5f5f5]" />
@@ -421,8 +421,8 @@ export default function LoveStreak() {
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Recorde", value: longestStreak, unit: "dias" },
-              { label: "Atividade", value: totalMembers > 0 ? Math.round((activeCount / totalMembers) * 100) : 0, unit: "% hoje" },
+              { label: "Melhor Sequência", value: longestStreak, unit: "dias juntos" },
+              { label: "Presença", value: totalMembers > 0 ? Math.round((activeCount / totalMembers) * 100) : 0, unit: "% hoje" },
             ].map(s => (
               <div key={s.label} className="glass-card p-4 text-center">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">{s.label}</p>
@@ -433,7 +433,7 @@ export default function LoveStreak() {
           </div>
 
           {/* Ranking */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Ranking Global — Streak</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Casais mais dedicados — Chama</p>
           <RankingCard compact={false} initialRankType="streak" hideToggle myCoupleId={spaceId ?? undefined} refreshTrigger={refreshKey} />
         </div>
       )}
@@ -446,7 +446,7 @@ export default function LoveStreak() {
 
           {/* Hero pontos */}
           <section className="text-center py-8">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">Total acumulado</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">Amor acumulado ✨</p>
             {loadingPoints ? (
               <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
             ) : (
@@ -462,14 +462,14 @@ export default function LoveStreak() {
           {/* Stats pontos */}
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Hoje</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Hoje ganhámos</p>
               <p className="text-3xl font-bold tabular-nums text-rose-500">+{pointsToday}</p>
-              <p className="text-[11px] text-[#717171] mt-0.5">Pontos</p>
+              <p className="text-[11px] text-[#717171] mt-0.5">pontos de amor</p>
             </div>
             <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Por dia</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Por dia juntos</p>
               <p className="text-3xl font-bold tabular-nums text-foreground">10</p>
-              <p className="text-[11px] text-[#717171] mt-0.5">Se ambos ativos</p>
+              <p className="text-[11px] text-[#717171] mt-0.5">quando ambos presentes</p>
             </div>
           </div>
 
@@ -477,12 +477,12 @@ export default function LoveStreak() {
           <div className="glass-card p-4 flex items-start gap-3">
             <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
             <p className="text-sm text-[#717171] leading-relaxed">
-              Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia em que ambos fazem atividade. Acumulem para comprar itens na loja!
+              Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️
             </p>
           </div>
 
           {/* ── LOJA: LOVE SHIELD ─────────────────────── */}
-          <SectionHeader icon={<ShoppingBag className="w-4 h-4" />} title="Loja de Itens" />
+          <SectionHeader icon={<ShoppingBag className="w-4 h-4" />} title="Protejam a Chama" />
 
           <div className="glass-card rounded-[20px] p-4 border-primary/10 flex flex-col gap-3">
             <div className="flex items-center gap-4">
@@ -506,15 +506,15 @@ export default function LoveStreak() {
                 
                 <p className="text-[11px] font-medium text-muted-foreground/80 leading-snug">
                   {shieldsRemaining > 1 && shieldsPurchased === 0 ? (
-                    `Tens ${shieldsRemaining} proteções este mês 🛡️`
+                    `${shieldsRemaining} dias protegidos este mês 🛡️`
                   ) : shieldsRemaining === 1 && shieldsPurchased === 0 ? (
-                    `Última proteção este mês 🛡️⚠️`
+                    `Última proteção do mês 🛡️ — renova em breve`
                   ) : shieldsRemaining === 1 && shieldsPurchased > 0 ? (
-                    `Proteção extra ativa`
+                    `Proteção extra ativa — a vossa chama está segura`
                   ) : shieldsRemaining === 0 && shieldsPurchased === 0 ? (
-                    `Podes comprar 1 proteção extra.`
+                    `A vossa chama precisa de proteção`
                   ) : (
-                    `Sem proteções restantes este mês`
+                    `Chama totalmente protegida este mês 💙`
                   )}
                 </p>
               </div>
@@ -551,7 +551,7 @@ export default function LoveStreak() {
           </div>
 
           {/* Ranking pontos */}
-          <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ranking Global — Pontos" />
+          <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Casais mais dedicados — Amor" />
           <RankingCard 
             compact={false} 
             initialRankType="points" 
@@ -572,9 +572,15 @@ export default function LoveStreak() {
           <div className="glass-card p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Missões de Hoje</h2>
+                <h2 className="text-base font-semibold text-foreground">
+                  {missionsDone === 0 ? "Pequenos gestos fortalecem o amor ✨"
+                    : missionsDone === MISSION_DEFS.length ? "Hoje foram extraordinários 🔥"
+                    : "Continuem — a chama agradece 💛"}
+                </h2>
                 <p className="text-sm text-[#717171] mt-0.5">
-                  {missionsDone}/{MISSION_DEFS.length} completas · {missionsPts} pts ganhos
+                  {missionsDone === 0
+                    ? "Nenhum gesto ainda hoje"
+                    : `${missionsDone} de ${MISSION_DEFS.length} gestos dados · +${missionsPts} pts`}
                 </p>
               </div>
               <Target className="w-5 h-5 text-rose-400 shrink-0" strokeWidth={1.5} />
@@ -584,12 +590,12 @@ export default function LoveStreak() {
               className="h-1.5 bg-[#f5f5f5]"
             />
             <p className="text-[11px] text-[#717171] mt-3">
-              As missões contam quando ambos as completam
+              O amor conta quando ambos participam
             </p>
           </div>
 
           {/* Missions list */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Lista de Missões</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Os vossos gestos de hoje</p>
 
           {loadingMissions ? (
             <div className="flex justify-center py-8">
@@ -615,7 +621,7 @@ export default function LoveStreak() {
                     <p className="text-[11px] text-[#717171] truncate">{m.description}</p>
                     {!m.completed && m.completedCount > 0 && (
                       <p className="text-[11px] text-amber-500 mt-0.5">
-                        {m.completedCount}/{totalMembers} já completou
+                        {m.completedCount} de {totalMembers} já deu este gesto ❤️
                       </p>
                     )}
                   </div>
@@ -635,7 +641,7 @@ export default function LoveStreak() {
           <div className="glass-card p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" strokeWidth={1.5} />
             <p className="text-sm text-[#717171] leading-relaxed">
-              Usa o chat, regista o humor, faz orações e check-in para completar todas as missões.
+              Pequenos gestos diários são o segredo de um amor que dura para sempre 💛
             </p>
           </div>
         </div>
@@ -651,11 +657,11 @@ export default function LoveStreak() {
                 disabled={checkingIn}
                 className="w-full py-3.5 rounded-2xl bg-rose-500 text-white font-semibold text-base disabled:opacity-60 active:scale-[0.98] transition-all"
               >
-                {checkingIn ? "A registar..." : "Fazer check-in agora"}
+                {checkingIn ? "A guardar o vosso momento..." : "Estou presente hoje 🔥"}
               </button>
             ) : (
               <div className="w-full py-3.5 rounded-2xl bg-[#f5f5f5] text-[#717171] font-medium text-sm text-center border border-[#e5e5e5]">
-                Check-in feito · A aguardar o teu parceiro
+                O teu gesto foi guardado · A esperar pelo teu par ❤️
               </div>
             )}
           </div>

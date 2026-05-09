@@ -375,12 +375,14 @@ const Index = () => {
     : 0;
 
   const emotionalMessages = [
-    "Mais um dia para cuidarem um do outro 💛",
+    "O vosso ninho é o vosso lugar seguro 🏠",
     "Pequenos gestos constroem grandes amores ✨",
     "Hoje é o dia perfeito para dizer 'amo-te' 🌹",
-    "O vosso ninho é o vosso lugar seguro 🏠",
-    "Cada segundo convosco é um presente 🎁",
-    "Não deixem a vossa chama apagar hoje 🔥"
+    "Cada dia juntos é um presente que não se repete 🎁",
+    "O amor que cuidam cresce sem que percebam 🌿",
+    "Não deixem a vossa chama apagar hoje 🔥",
+    "Estar presente é o maior gesto de amor 💛",
+    "O silêncio partilhado também é intimidade 🌙",
   ];
   const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
   const currentMessage = emotionalMessages[dayOfYear % emotionalMessages.length];
@@ -425,15 +427,15 @@ const Index = () => {
       {/* ── MAIN TOOL GRID ── */}
       <section className="space-y-3 px-1">
         <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">
-          Gestão Diária
+          O vosso dia a dia
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <DashCard
             icon={<CheckSquare className="h-5 w-5" strokeWidth={1.5} />}
             title="Agenda"
             lines={[
-              plano.pending > 0 ? `${plano.pending} pendentes` : "Tudo em dia",
-              plano.next ? `${plano.next.time} · ${plano.next.title}` : "Sem eventos",
+              plano.pending > 0 ? `${plano.pending} a aguardar vocês` : "Em paz por hoje ✨",
+              plano.next ? `${plano.next.time} · ${plano.next.title}` : "Adicionem algo especial",
             ]}
             to="/plano"
             badge={tasksUnread + scheduleUnread}
@@ -444,8 +446,8 @@ const Index = () => {
             icon={<Smile className="h-5 w-5" strokeWidth={1.5} />}
             title="Humor"
             lines={[
-              mood.mine ? `Tu: ${mood.mine.label}` : "Registar humor",
-              mood.partner ? `Par: ${mood.partner.label}` : "A aguardar par",
+              mood.mine ? `Tu: ${mood.mine.emoji} ${mood.mine.label}` : "Como te sentes hoje?",
+              mood.partner ? `Par: ${mood.partner.emoji} ${mood.partner.label}` : "O teu par ainda não partilhou",
             ]}
             to="/humor"
             badge={moodUnread}
@@ -457,8 +459,8 @@ const Index = () => {
               icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
               title="Chat"
               lines={[
-                chatUnread > 0 ? `${chatUnread} novas mensagens` : "Abrir conversa",
-                chatPreview.preview ?? "Sem mensagens recentes",
+                chatUnread > 0 ? `${chatUnread} mensagens à espera de ti` : "Um beijo em texto...",
+                chatPreview.preview ?? "Escreve a primeira mensagem hoje",
               ]}
               to="/chat"
               badge={chatUnread}
@@ -471,8 +473,8 @@ const Index = () => {
               icon={<Flame className="h-5 w-5" strokeWidth={1.5} />}
               title="Jejum"
               lines={[
-                `${fasting.streak} dias consecutivos`,
-                `${fastingProgress}% completo`,
+                fasting.streak > 0 ? `${fasting.streak} dias de disciplina 🔥` : "Comecem o jejum hoje",
+                fastingProgress > 0 ? `${fastingProgress}% da jornada feita` : "Cada dia conta",
               ]}
               to="/jejum"
               accent="text-orange-500"
@@ -482,7 +484,7 @@ const Index = () => {
           <DashCard
             icon={<Flower2 className="h-5 w-5" strokeWidth={1.5} />}
             title="Ciclo"
-            lines={["Ciclo & Saúde", "Ver detalhes"]}
+            lines={["Saúde & Sintonia", "Ver o vosso ciclo"]}
             to="/ciclo"
             accent="text-pink-500"
           />
@@ -492,8 +494,8 @@ const Index = () => {
               icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
               title="Oração"
               lines={[
-                prayer.myPrayed ? "Tu: registado" : "Tu: por registar",
-                prayer.partnerPrayed ? "Par: registado" : "Par: a aguardar",
+                prayer.myPrayed ? "Tu: em oração 🙏" : "Partilha a tua oração hoje",
+                prayer.partnerPrayed ? "Par: em oração 🙏" : "O teu par ainda não orou hoje",
               ]}
               to="/oracao"
               badge={prayerUnread}
@@ -506,7 +508,7 @@ const Index = () => {
       {/* ── SECONDARY TOOLS GRID (3 Columns) ── */}
       <section className="space-y-3 px-1">
         <h2 className="text-[11px] font-semibold text-[#717171] px-1">
-          Ferramentas Extra
+          Memórias & Aventuras
         </h2>
 
         <div className="grid grid-cols-3 gap-2">
@@ -565,8 +567,8 @@ const Index = () => {
           <div className="glass-card bg-gradient-to-br from-primary/15 to-transparent border-primary/20 rounded-[2.5rem] p-5 shadow-sm">
              <div className="flex items-center gap-3 mb-4 text-center justify-center flex-col">
                 <HeartHandshake className="w-8 h-8 text-primary" />
-                <h3 className="text-sm font-black tracking-tight">O teu ninho está vazio!</h3>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Partilha o código com o teu par</p>
+                <h3 className="text-sm font-black tracking-tight">O vosso ninho ainda aguarda o par 🕊️</h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Partilha o código com quem amas</p>
              </div>
              <div className="flex gap-2">
                 <div className="flex-1 bg-white/50 border border-primary/10 rounded-2xl h-12 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
@@ -591,8 +593,8 @@ const Index = () => {
               <Share2 className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <h4 className="text-[13px] font-semibold text-foreground">Convidar Amigos</h4>
-              <p className="text-[11px] text-[#717171]">Ganha 50 pontos por convite</p>
+              <h4 className="text-[13px] font-semibold text-foreground">Partilha o amor</h4>
+              <p className="text-[11px] text-[#717171]">Ganha 50 pts por cada casal que convidas</p>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-[#c0c0c0]" />
