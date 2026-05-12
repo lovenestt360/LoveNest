@@ -299,6 +299,7 @@ export default function Settings() {
     }
     setSaving(false);
     toast({ title: "Perfil atualizado! ✨" });
+    window.dispatchEvent(new CustomEvent("onboarding-refresh"));
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -437,6 +438,7 @@ export default function Settings() {
         }, { onConflict: "user_id,endpoint" });
         setPushSubscribed(true);
         toast({ title: "Notificações ativadas! 🔔" });
+        window.dispatchEvent(new CustomEvent("onboarding-refresh"));
       }
     } catch (err: any) {
       toast({ title: "Erro no push", description: err.message, variant: "destructive" });

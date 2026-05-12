@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -11,7 +11,7 @@ export function useOnboarding() {
   const [step, setStep] = useState<OnboardingStep>("complete");
   const [loading, setLoading] = useState(true);
 
-  const checkOnboarding = async () => {
+  const checkOnboarding = useCallback(async () => {
     if (!user) {
       setStep("complete");
       setLoading(false);
@@ -88,7 +88,13 @@ export function useOnboarding() {
 
   useEffect(() => {
     checkOnboarding();
-  }, [user, spaceId]);
+  }, [user, spaceId, checkOnboarding]);
+
+  // Re-check whenever Settings dispatches "onboarding-refresh"
+  useEffect(() => {
+    window.addEventListener("onboarding-refresh", checkOnboarding);
+    return () => window.removeEventListener("onboarding-refresh", checkOnboarding);
+  }, [checkOnboarding]);
 
   return { step, loading, refresh: checkOnboarding };
 }

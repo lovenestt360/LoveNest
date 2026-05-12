@@ -36,6 +36,9 @@ export default function Signup() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    // Persist code in localStorage so useReferralTracking finds it even
+    // after the email-verification redirect (sessionStorage doesn't survive)
+    if (inviteCode) localStorage.setItem("lovenest_ref", inviteCode);
     try {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
