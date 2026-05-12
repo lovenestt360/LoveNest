@@ -18,6 +18,157 @@ import {
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
+// Hooks & helpers
+// ─────────────────────────────────────────────
+
+function useHoursLeft() {
+  const calc = () => {
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 3600000));
+  };
+  const [h, setH] = useState(calc);
+  useEffect(() => {
+    const t = setInterval(() => setH(calc()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  return h;
+}
+
+type UrgencyLevel = "safe" | "notice" | "warning" | "critical";
+function getUrgency(hoursLeft: number): UrgencyLevel {
+  if (hoursLeft > 8) return "safe";
+  if (hoursLeft > 4) return "notice";
+  if (hoursLeft > 1) return "warning";
+  return "critical";
+}
+
+interface StatusConfig {
+  label: string;
+  bg: string;
+  text: string;
+  dot: string;
+}
+
+function getCoupleStatus(
+  bothActive: boolean, myCheckedIn: boolean,
+  shieldUsedToday: boolean, isPerfectDay: boolean,
+  hoursLeft: number, isZero: boolean
+): StatusConfig {
+  if (isPerfectDay)
+    return { label: "Ligados ✨",             bg: "bg-rose-50",   text: "text-rose-600",  dot: "bg-rose-500"  };
+  if (bothActive)
+    return { label: "Chama acesa ❤️",          bg: "bg-rose-50",   text: "text-rose-500",  dot: "bg-rose-400"  };
+  if (shieldUsedToday)
+    return { label: "Chama protegida 🛡️",     bg: "bg-blue-50",   text: "text-blue-600",  dot: "bg-blue-400"  };
+  if (myCheckedIn)
+    return { label: "A aguardar o par 💛",     bg: "bg-amber-50",  text: "text-amber-600", dot: "bg-amber-400" };
+  if (!isZero && hoursLeft <= 3)
+    return { label: "Última chance 🕯️",        bg: "bg-red-50",    text: "text-red-600",   dot: "bg-red-500"   };
+  if (isZero)
+    return { label: "Comecem hoje 🌱",          bg: "bg-slate-50",  text: "text-slate-600", dot: "bg-slate-400" };
+  return   { label: "Aguardando conexão",      bg: "bg-slate-50",  text: "text-slate-500", dot: "bg-slate-300" };
+}
+
+// ─────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────
+
+function CoupleStatusBadge({ status }: { status: StatusConfig }) {
+  return (
+    <div className={cn(
+      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full animate-status-badge-in",
+      status.bg
+    )}>
+      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", status.dot)} />
+      <span className={cn("text-[11px] font-semibold", status.text)}>{status.label}</span>
+    </div>
+  );
+}
+
+function FlameAlertBar({
+  bothActive, myCheckedIn, shieldUsedToday, missionsDone,
+  hoursLeft, currentStreak,
+}: {
+  bothActive: boolean; myCheckedIn: boolean; shieldUsedToday: boolean;
+  missionsDone: number; hoursLeft: number; currentStreak: number;
+}) {
+  if (bothActive) return null;
+  const urgency = getUrgency(hoursLeft);
+  const fillPct = Math.round((missionsDone / MISSION_DEFS.length) * 100);
+
+  const barColor =
+    shieldUsedToday   ? "bg-blue-400" :
+    urgency === "critical" ? "bg-red-400" :
+    urgency === "warning"  ? "bg-orange-400" :
+    urgency === "notice"   ? "bg-amber-400" :
+    "bg-emerald-400";
+
+  const message = shieldUsedToday
+    ? "O escudo guardou a sequência hoje — boa proteção 🛡️"
+    : urgency === "critical"
+    ? `Menos de 1h — ${myCheckedIn ? "o teu par ainda não apareceu ❤️" : "a chama precisa de vocês agora"}`
+    : urgency === "warning"
+    ? `Faltam ${hoursLeft}h — ainda dá tempo de proteger a chama`
+    : myCheckedIn
+    ? `O teu gesto está guardado · ${hoursLeft}h para o par aparecer ❤️`
+    : currentStreak > 0
+    ? `Faltam ${hoursLeft}h para proteger ${currentStreak} dias de amor`
+    : "Hoje é um bom dia para começar ❤️";
+
+  return (
+    <div className={cn(
+      "glass-card p-4 space-y-2.5",
+      urgency === "critical" && !shieldUsedToday && "border-red-200 animate-flame-pulse-alert",
+      urgency === "warning"  && !shieldUsedToday && "border-orange-200",
+      urgency === "notice"   && !shieldUsedToday && "border-amber-100",
+    )}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Flame
+            className={cn(
+              "w-3.5 h-3.5",
+              shieldUsedToday ? "text-blue-500" :
+              urgency === "critical" ? "text-red-500 animate-flame-breathe" :
+              urgency === "warning"  ? "text-orange-500" :
+              "text-amber-500"
+            )}
+            strokeWidth={1.5}
+          />
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#717171]">
+            Chama de hoje
+          </span>
+        </div>
+        <span className={cn(
+          "text-[11px] font-semibold tabular-nums",
+          shieldUsedToday ? "text-blue-500" :
+          urgency === "critical" ? "text-red-500" :
+          urgency === "warning"  ? "text-orange-500" :
+          "text-[#aaa]"
+        )}>
+          {shieldUsedToday ? "Protegida" : `${hoursLeft}h restantes`}
+        </span>
+      </div>
+
+      {/* Emotional progress bar */}
+      <div className="h-1.5 bg-[#f0f0f0] rounded-full overflow-hidden">
+        <div
+          className={cn("h-full rounded-full animate-flame-bar-fill", barColor)}
+          style={{ width: `${shieldUsedToday ? 100 : Math.max(fillPct, 4)}%` }}
+        />
+      </div>
+
+      <p className={cn(
+        "text-[11px] leading-snug",
+        urgency === "critical" && !shieldUsedToday ? "text-red-600 font-medium" : "text-[#717171]"
+      )}>
+        {message}
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
 type Tab = "streaks" | "pontos" | "missoes";
@@ -98,6 +249,7 @@ export default function LoveStreak() {
   const spaceId    = useCoupleSpaceId();
   const { streak, loading, error: streakError, checkIn, checkingIn, refresh } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>("streaks");
+  const hoursLeft = useHoursLeft();
 
   // — Points state —
   const [totalPoints, setTotalPoints]   = useState(0);
@@ -143,6 +295,8 @@ export default function LoveStreak() {
   const missionsDone   = missions.filter(m => m.completed).length;
   const missionsPts    = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
   const canBuyShield   = totalPoints >= 200;
+  const isPerfectDay   = bothActive && missionsDone === MISSION_DEFS.length;
+  const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
@@ -167,6 +321,20 @@ export default function LoveStreak() {
     }
     if (!bothActive) prevBothRef.current = false;
   }, [bothActive]);
+
+  // Detect perfect day (both active + all missions) → extra celebration
+  const prevPerfectRef = useRef(false);
+  useEffect(() => {
+    const perfect = bothActive && missionsDone === MISSION_DEFS.length;
+    if (perfect && !prevPerfectRef.current) {
+      prevPerfectRef.current = true;
+      hapticCelebrate();
+      setTimeout(() => {
+        toast.success("Dia perfeito! 🔥 A vossa chama nunca esteve tão viva", { duration: 4000 });
+      }, 800);
+    }
+    if (!perfect) prevPerfectRef.current = false;
+  }, [bothActive, missionsDone]);
 
   // Detect newly completed missions → shimmer + haptic
   useEffect(() => {
@@ -207,8 +375,8 @@ export default function LoveStreak() {
     if (!spaceId) return;
     setLoadingMissions(true);
     try {
-      const d = new Date();
-      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      // Use UTC date to match server CURRENT_DATE (same fix already applied in useStreak)
+      const today = new Date().toISOString().slice(0, 10);
 
       // Fetch activity + spiritual logs in parallel
       const [activityRes, spiritualRes] = await Promise.all([
@@ -252,33 +420,17 @@ export default function LoveStreak() {
     }
   }, [spaceId, totalMembers]);
 
-  // Novas funções exigidas pela sincronização robusta
-  const fetchTodayActivity = useCallback(async () => {
-    console.log("[LoveStreak] fetchTodayActivity - ja coberto por fetchMissions");
-    return fetchMissions();
-  }, [fetchMissions]);
-
-  const fetchRanking = useCallback(async () => {
-    console.log("[LoveStreak] fetchRanking - sinalizando RankingCard via refreshKey");
-    // O RankingCard ja tem useEffect que dispara quando montado ou quando props mudam.
-    // O handleCheckIn ja faz setRefreshKey.
-  }, []);
-
   const fetchAllData = useCallback(async () => {
     try {
-      console.log("[LoveStreak] fetchAllData em curso (Promise.all)...");
       await Promise.all([
         refresh(),
         fetchPoints(),
         fetchMissions(),
-        fetchTodayActivity(),
-        fetchRanking()
       ]);
-      console.log("[LoveStreak] fetchAllData concluido ✓");
     } catch (err) {
       console.error("[fetchAllData ERROR]:", err);
     }
-  }, [refresh, fetchPoints, fetchMissions, fetchTodayActivity, fetchRanking]);
+  }, [refresh, fetchPoints, fetchMissions]);
 
   // ── Buy shield ────────────────────────────
 
@@ -294,8 +446,10 @@ export default function LoveStreak() {
       const status = (data as any)?.status;
       if (status === "insufficient_points" || status === "error_insufficient_points") {
         toast.error("Pontos insuficientes para comprar LoveShield.");
+      } else if (status === "already_purchased_this_month") {
+        toast.error("Já compraram 1 escudo este mês 🛡️ — volta no próximo mês.");
       } else if (status === "limit_reached" || status === "error_limit_reached") {
-        toast.error("Já atingiste o limite de escudos (máx. 5).");
+        toast.error("Já têm 3 escudos — o máximo mensal 🛡️");
       } else if (status === "ok" || !status) {
         toast.success("LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
         await Promise.all([fetchPoints(), refresh()]);
@@ -319,11 +473,13 @@ export default function LoveStreak() {
     }
   };
 
-  // ── Load by tab ───────────────────────────
-  useEffect(() => {
-    fetchAllData();
-  }, []); // Initial load obrigatório
+  // ── Initial load — waits for spaceId (async RPC in useCoupleSpaceId) ──────
+  // Empty-deps effect runs before spaceId is ready; this re-runs once it resolves.
+  // fetchAllData is fresh at this point because it's recreated when spaceId changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (spaceId) fetchAllData(); }, [spaceId]);
 
+  // ── Load by tab ───────────────────────────
   useEffect(() => {
     if (activeTab === "pontos")  { fetchPoints(); }
     if (activeTab === "missoes") fetchMissions();
@@ -382,7 +538,10 @@ export default function LoveStreak() {
         <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
           {/* Hero — número grande */}
-          <section className="text-center py-8 relative">
+          <section className={cn(
+            "text-center py-8 relative rounded-3xl transition-all duration-700",
+            isPerfectDay && "animate-perfect-day-glow"
+          )}>
             <div className="flex items-center justify-center gap-2 mb-3">
               <Flame
                 className={cn(
@@ -414,39 +573,23 @@ export default function LoveStreak() {
               <span className="text-3xl font-light text-[#c4c4c4]">d</span>
             </div>
 
-            <p className="text-sm text-[#717171] mt-3">
+            <p className="text-sm text-[#717171] mt-3 mb-4">
               {isZero ? "Cada gesto conta — comecem hoje 💛" : `${currentStreak} dias a cuidar um do outro`}
             </p>
+
+            {/* Couple status badge */}
+            <CoupleStatusBadge key={coupleStatus.label} status={coupleStatus} />
           </section>
 
-          {/* Alertas */}
-          {streakAtRisk && !shieldUsedToday && (
-            <div className="glass-card p-4 flex items-start gap-3 border-amber-200">
-              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" strokeWidth={1.5} />
-              <div>
-                <p className="text-sm font-semibold text-amber-600">A chama precisa de vocês hoje</p>
-                <p className="text-sm text-[#717171] mt-0.5">Um pequeno gesto pode proteger o que construíram juntos.</p>
-                {shieldsRemaining > 0 && (
-                  <p className="text-[11px] text-[#717171] mt-1">
-                    {shieldsRemaining} escudo{shieldsRemaining > 1 ? "s" : ""} prontos para proteger a vossa chama.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {shieldUsedToday && (
-            <div className="glass-card p-4 flex items-start gap-3 border-blue-200">
-              <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" strokeWidth={1.5} />
-              <div>
-                <p className="text-sm font-semibold text-blue-600">O amor protegeu a vossa chama 🛡️</p>
-                <p className="text-sm text-[#717171] mt-0.5">
-                  Mais um dia guardado pelo que construíram.{" "}
-                  {shieldsRemaining > 0 ? `Restam ${shieldsRemaining} escudos.` : "Renovem a proteção em breve."}
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Flame Alert Bar — urgency + day progress */}
+          <FlameAlertBar
+            bothActive={bothActive}
+            myCheckedIn={myCheckedIn}
+            shieldUsedToday={shieldUsedToday}
+            missionsDone={missionsDone}
+            hoursLeft={hoursLeft}
+            currentStreak={currentStreak}
+          />
 
           {/* Status card */}
           <div className="glass-card p-5">
@@ -592,14 +735,35 @@ export default function LoveStreak() {
               </div>
             </div>
 
-            {/* Botão de compra — aparece sempre que shields < 5 */}
-            {shieldsRemaining < 5 ? (
+            {/* Botão de compra: 3 estados */}
+            {shieldsRemaining >= 3 ? (
+              /* Estado 1: shields completos — não pode comprar */
+              <div className="flex justify-end pt-2 border-t border-border/30">
+                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
+                  Máximo de escudos atingido
+                </span>
+              </div>
+            ) : shieldsPurchased > 0 ? (
+              /* Estado 2: já compraram 1 escudo este mês — não pode comprar outra vez */
+              <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <div className="flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="text-[11px] text-muted-foreground leading-snug">
+                    Já compraram 1 escudo este mês
+                  </span>
+                </div>
+                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest px-2 py-1 bg-black/5 rounded-lg border border-border/50">
+                  Renova em {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString("pt-PT", { day: "numeric", month: "short" })}
+                </span>
+              </div>
+            ) : (
+              /* Estado 3: perderam escudos e ainda não compraram este mês */
               <div className="flex items-center justify-between pt-2 border-t border-border/30">
                 <div className="flex items-center gap-1.5">
                   <Coins className="w-3.5 h-3.5 text-amber-500" />
                   <span className="text-sm font-black tabular-nums">200 pts</span>
                   <span className="text-[10px] text-muted-foreground">
-                    ({shieldsRemaining}/5 escudos)
+                    ({shieldsRemaining}/3 escudos)
                   </span>
                 </div>
                 <Button
@@ -612,12 +776,6 @@ export default function LoveStreak() {
                   {buyingShield ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
                    canBuyShield ? "+1 Escudo" : "Saldo Insuficiente"}
                 </Button>
-              </div>
-            ) : (
-              <div className="flex justify-end pt-2 border-t border-border/30">
-                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
-                  Máximo de escudos atingido
-                </span>
               </div>
             )}
           </div>
