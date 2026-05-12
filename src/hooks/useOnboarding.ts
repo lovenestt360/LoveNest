@@ -84,7 +84,7 @@ export function useOnboarding() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, spaceId]);
 
   useEffect(() => {
     checkOnboarding();
