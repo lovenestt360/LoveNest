@@ -429,15 +429,57 @@ input, textarea, [contenteditable="true"] {
     100% { transform: translateY(0); opacity: 1; }
   }
 
+  /* Flame pulse alert — used when streak is at critical risk */
+  @keyframes flame-pulse-alert {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.82; transform: scale(0.985); }
+  }
+
+  /* Perfect day ambient glow — rose halo around hero section */
+  @keyframes perfect-day-glow {
+    0%, 100% { box-shadow: 0 0 40px 0 rgba(244,63,94,0.10); }
+    50%       { box-shadow: 0 0 80px 12px rgba(244,63,94,0.28); }
+  }
+
+  /* Status badge entrance */
+  @keyframes status-badge-in {
+    from { transform: scale(0.75) translateY(6px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  /* Flame bar fill — left to right */
+  @keyframes flame-bar-fill {
+    from { transform: scaleX(0); transform-origin: left; }
+    to   { transform: scaleX(1); transform-origin: left; }
+  }
+
   /* ── Animation utility classes ── */
-  .animate-flame-breathe   { animation: flame-breathe 2.8s ease-in-out infinite; }
-  .animate-streak-pop      { animation: streak-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-  .animate-heart-throb     { animation: heart-throb 0.85s ease-in-out forwards; }
-  .animate-mission-ripple  { animation: mission-ripple 0.9s ease-out forwards; }
-  .animate-count-pop       { animation: count-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-  .animate-warm-glow-border{ animation: warm-glow-border 2.5s ease-in-out infinite; }
-  .animate-celebration-in  { animation: celebration-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-  .animate-number-slide-up { animation: number-slide-up 0.3s ease-out forwards; }
+  .animate-flame-breathe     { animation: flame-breathe 2.8s ease-in-out infinite; }
+  .animate-streak-pop        { animation: streak-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-heart-throb       { animation: heart-throb 0.85s ease-in-out forwards; }
+  .animate-mission-ripple    { animation: mission-ripple 0.9s ease-out forwards; }
+  .animate-count-pop         { animation: count-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-warm-glow-border  { animation: warm-glow-border 2.5s ease-in-out infinite; }
+  .animate-celebration-in    { animation: celebration-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-number-slide-up   { animation: number-slide-up 0.3s ease-out forwards; }
+  .animate-flame-pulse-alert { animation: flame-pulse-alert 1.4s ease-in-out infinite; }
+  .animate-perfect-day-glow  { animation: perfect-day-glow 3s ease-in-out infinite; border-radius: 1.5rem; }
+  .animate-status-badge-in   { animation: status-badge-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-flame-bar-fill    { animation: flame-bar-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+  /* Partner presence — gentle living pulse */
+  @keyframes presence-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.7; transform: scale(1.15); }
+  }
+  .animate-presence-pulse { animation: presence-pulse 2.5s ease-in-out infinite; }
+
+  /* Ritual card — soft ambient glow to invite action */
+  @keyframes ritual-invite {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+    50%       { box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.06); }
+  }
+  .animate-ritual-invite { animation: ritual-invite 3s ease-in-out infinite; border-radius: 1.5rem; }
 
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {

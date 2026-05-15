@@ -24,6 +24,10 @@ import { toast } from "sonner";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { Button } from "@/components/ui/button";
 import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext";
+import { useEmotionalFeed } from "@/hooks/useEmotionalFeed";
+import { EmotionalFeed } from "@/components/EmotionalFeed";
+import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
+import { DailyRitualCard } from "@/components/DailyRitualCard";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -345,6 +349,7 @@ const Index = () => {
   const announcements = useGlobalAnnouncements();
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
+  const feed = useEmotionalFeed();
 
   const handleShareReferral = () => {
     if (!referralCode) return;
@@ -374,18 +379,36 @@ const Index = () => {
     ? Math.min(100, Math.round((fasting.loggedDays / fasting.plan.total_days) * 100))
     : 0;
 
-  const emotionalMessages = [
-    "O vosso ninho é o vosso lugar seguro 🏠",
-    "Pequenos gestos constroem grandes amores ✨",
-    "Hoje é o dia perfeito para dizer 'amo-te' 🌹",
-    "Cada dia juntos é um presente que não se repete 🎁",
-    "O amor que cuidam cresce sem que percebam 🌿",
-    "Não deixem a vossa chama apagar hoje 🔥",
-    "Estar presente é o maior gesto de amor 💛",
-    "O silêncio partilhado também é intimidade 🌙",
-  ];
-  const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-  const currentMessage = emotionalMessages[dayOfYear % emotionalMessages.length];
+  const currentMessage = (() => {
+    const hour = new Date().getHours();
+    const morning = [
+      "Bom dia, ninho 🌅 Como começa o coração hoje?",
+      "A manhã é mais suave quando há amor perto ☀️",
+      "Um novo dia, uma nova oportunidade de estar presente 🌿",
+    ];
+    const afternoon = [
+      "Pequenos gestos constroem grandes amores ✨",
+      "Estar presente é o maior gesto de amor 💛",
+      "O amor que cuidam cresce sem que percebam 🌿",
+      "Cada dia juntos é um presente que não se repete 🎁",
+    ];
+    const evening = [
+      "O fim do dia é o melhor momento para se encontrarem 🌙",
+      "A vossa chama ainda vos espera esta noite 🔥",
+      "O silêncio partilhado também é intimidade 🌙",
+      "Não deixem o dia acabar sem um gesto de amor 💛",
+    ];
+    const night = [
+      "O amor que cuidam cresce enquanto dormem 🌿",
+      "O vosso ninho é o vosso lugar seguro 🏠",
+      "Amanhã trazem a vossa presença um ao outro ✨",
+    ];
+    const pool = hour >= 6 && hour < 12 ? morning
+               : hour >= 12 && hour < 19 ? afternoon
+               : hour >= 19 && hour < 23 ? evening : night;
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    return pool[dayOfYear % pool.length];
+  })();
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 max-w-lg mx-auto overflow-x-hidden">
@@ -409,6 +432,9 @@ const Index = () => {
 
         <LoveStreakCard />
 
+        {/* Partner Presence Indicator — Pillar 1: Emotional Presence */}
+        {avatars.partner && <PartnerPresenceCard />}
+
         {/* Global Announcements */}
         {announcements.map((ann) => (
           <div key={ann.id} className="glass-card border-amber-500/20 bg-amber-500/5 text-amber-700 p-4 rounded-3xl animate-in fade-in zoom-in duration-500 shadow-sm border">
@@ -423,6 +449,11 @@ const Index = () => {
         
 
       </div>
+
+      {/* ── DAILY RITUAL — Pillar 3: Ritual Loop System ── */}
+      <section className="px-1">
+        <DailyRitualCard />
+      </section>
 
       {/* ── MAIN TOOL GRID ── */}
       <section className="space-y-3 px-1">
@@ -560,6 +591,25 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* ── EMOTIONAL FEED PREVIEW ── */}
+      {(feed.loading || feed.items.length > 0) && (
+        <section className="space-y-3 px-1">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+              Momentos juntos
+            </h2>
+            <button
+              onClick={() => navigate("/momentos")}
+              className="flex items-center gap-1 text-[11px] font-medium text-rose-400 active:opacity-70 transition-opacity"
+            >
+              Ver todos
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <EmotionalFeed items={feed.items} loading={feed.loading} limit={4} />
+        </section>
+      )}
 
       {/* ── Footer / Invite Section ── */}
       <div className="space-y-4 pt-4 px-1">
