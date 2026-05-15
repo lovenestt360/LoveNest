@@ -14,12 +14,15 @@ export function ProtectedRoute() {
   // isVerifying = true desde o mount se n houver user para dar tempo à leitura
   const [isVerifying, setIsVerifying] = useState(!user);
   const [verifiedUser, setVerifiedUser] = useState<any>(user);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       if (!isVerifying) setIsVerifying(true);
-      supabase.auth.getSession().then(({ data }) => {
+      supabase.auth.getSession().then(({ data, error }) => {
         setVerifiedUser(data.session?.user ?? null);
+        // Only flag as expired when Supabase returns an actual auth error
+        if (!data.session && error) setSessionExpired(true);
         setIsVerifying(false);
       });
     } else {
@@ -132,7 +135,11 @@ export function ProtectedRoute() {
   }
 
   if (!verifiedUser) {
-    return <Navigate to="/entrar" state={{ bounced: "A sua sessão expirou automaticamente ou o dispositivo barrou a leitura. Verifique a Data/Hora do PC." }} replace />;
+    return <Navigate
+      to="/entrar"
+      state={sessionExpired ? { bounced: "A tua sessão expirou. Inicia sessão novamente." } : undefined}
+      replace
+    />;
   }
 
   if (checkError) {

@@ -10,12 +10,15 @@ export function AuthOnlyRoute() {
   // Inicia isVerifying = true se não houver user, para bloquear o navigate prematuro antes do useEffect
   const [isVerifying, setIsVerifying] = useState(!user);
   const [verifiedUser, setVerifiedUser] = useState<any>(user);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       if (!isVerifying) setIsVerifying(true);
-      supabase.auth.getSession().then(({ data }) => {
+      supabase.auth.getSession().then(({ data, error }) => {
         setVerifiedUser(data.session?.user ?? null);
+        // Only flag as expired when Supabase returns an actual auth error
+        if (!data.session && error) setSessionExpired(true);
         setIsVerifying(false);
       });
     } else {
@@ -36,7 +39,11 @@ export function AuthOnlyRoute() {
   }
 
   if (!verifiedUser) {
-    return <Navigate to="/entrar" state={{ bounced: "A sua sessão expirou automaticamente. Verifique se a Data e Hora do seu computador estão corretas ou limpe o cache do navegador." }} replace />;
+    return <Navigate
+      to="/entrar"
+      state={sessionExpired ? { bounced: "A tua sessão expirou. Inicia sessão novamente." } : undefined}
+      replace
+    />;
   }
 
   return <Outlet />;
