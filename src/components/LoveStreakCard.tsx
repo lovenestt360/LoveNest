@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import {
   Flame, Shield, ChevronRight, Heart,
-  MessageCircle, Zap, Smile, BookHeart
+  MessageCircle, Zap, Smile, BookHeart, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,12 +64,19 @@ function getRelationshipState(s: number): { name: string; color: string } {
   return             { name: "Início",        color: "text-[#aaa]"     };
 }
 
+// Icon that accompanies the relationship state label
+function getRelationshipIcon(name: string) {
+  if (name === "Almas Gémeas" || name === "Inseparáveis") return Sparkles;
+  if (name === "Chama Viva") return Flame;
+  return Heart;
+}
+
 // ── Mission definitions ───────────────────────────────────────────────────────
 
 const MISSIONS = [
   { id: "message", Icon: MessageCircle, doneColor: "text-sky-500"    },
   { id: "checkin", Icon: Zap,           doneColor: "text-rose-500"   },
-  { id: "mood",    Icon: Smile,         doneColor: "text-amber-500"  },
+  { id: "mood",    Icon: Smile,         doneColor: "text-pink-400"   },
   { id: "prayer",  Icon: BookHeart,     doneColor: "text-purple-500" },
 ] as const;
 
@@ -197,6 +204,8 @@ export function LoveStreakCard() {
 
   const displayPoints = points ?? 0;
   const gesturesDone = Object.values(missions).filter(Boolean).length;
+  const allMissionsDone = gesturesDone === MISSIONS.length;
+  const RelIcon = getRelationshipIcon(relState.name);
 
   return (
     <button
@@ -204,7 +213,7 @@ export function LoveStreakCard() {
       className={cn(
         "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98] transition-all",
         bothActiveToday && "animate-warm-glow-border",
-        !bothActiveToday && streakAtRisk && "border-amber-200/60"
+        !bothActiveToday && streakAtRisk && "border-rose-100"
       )}
     >
       {/* Row 1 — header */}
@@ -213,7 +222,7 @@ export function LoveStreakCard() {
           <Flame
             className={cn(
               "w-4 h-4 transition-colors",
-              bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-orange-400"
+              bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-[#c4c4c4]"
             )}
             strokeWidth={1.5}
           />
@@ -302,26 +311,57 @@ export function LoveStreakCard() {
       </div>
 
       {/* Row 4 — footer: relationship state + pts · gestos | mission icons */}
-      <div className="flex items-center justify-between pt-2.5 border-t border-[#f0f0f0]">
+      <div className={cn(
+        "flex items-center justify-between pt-2.5 border-t transition-colors",
+        allMissionsDone ? "border-rose-100" : "border-[#f0f0f0]"
+      )}>
         <div className="flex flex-col gap-0.5">
-          <span className={cn("text-[11px] font-semibold", relState.color)}>
-            {relState.name}
-          </span>
-          <span className="text-[10px] text-[#aaa]">
-            {displayPoints} pts · {gesturesDone} gestos
-          </span>
-        </div>
-
-        {/* Mission icons — no label */}
-        <div className="flex items-center gap-1.5">
-          {MISSIONS.map(({ id, Icon, doneColor }) => (
-            <Icon
-              key={id}
-              className={cn("w-3.5 h-3.5 transition-colors",
-                missions[id] ? doneColor : "text-[#e0e0e0]")}
+          <div className="flex items-center gap-1">
+            <RelIcon
+              className={cn("w-3 h-3 shrink-0", relState.color,
+                allMissionsDone && "animate-flame-breathe")}
               strokeWidth={1.5}
             />
-          ))}
+            <span className={cn("text-[11px] font-semibold", relState.color)}>
+              {relState.name}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className={cn(
+              "font-semibold tabular-nums",
+              displayPoints > 0 ? "text-rose-400" : "text-[#ccc]"
+            )}>
+              {displayPoints}
+            </span>
+            <span className="text-[#ccc]">pts</span>
+            <span className="text-[#ddd]">·</span>
+            <span className={cn(
+              "font-semibold tabular-nums",
+              gesturesDone > 0 ? "text-sky-400" : "text-[#ccc]"
+            )}>
+              {gesturesDone}
+            </span>
+            <span className="text-[#ccc]">gestos</span>
+          </div>
+        </div>
+
+        {/* Mission icons + all-done celebration */}
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-1.5">
+            {MISSIONS.map(({ id, Icon, doneColor }) => (
+              <Icon
+                key={id}
+                className={cn("w-3.5 h-3.5 transition-colors",
+                  missions[id] ? doneColor : "text-[#e0e0e0]")}
+                strokeWidth={1.5}
+              />
+            ))}
+          </div>
+          {allMissionsDone && (
+            <span className="text-[9px] font-semibold text-rose-400 tracking-wide">
+              Missão cumprida
+            </span>
+          )}
         </div>
       </div>
     </button>
