@@ -21,8 +21,38 @@ const PHRASES = [
   { min: 90, max: Infinity, msg: "O vosso amor tornou-se uma força viva 🏆" },
 ];
 
-function getPhrase(s: number) {
+function getCountPhrase(s: number) {
   return PHRASES.find(p => s >= p.min && s <= p.max)?.msg ?? "";
+}
+
+// Activity-state aware phrase — document: Feature 2 emotional feedback
+function getContextualPhrase(
+  streak: number,
+  bothActive: boolean,
+  myIn: boolean,
+  partnerIn: boolean,
+  atRisk: boolean
+): string {
+  const day = Math.floor(Date.now() / 86400000);
+
+  if (bothActive) {
+    const msgs = [
+      "Hoje cuidaram um do outro ✨",
+      "A chama esteve protegida hoje 💛",
+      "Vocês encontraram-se aqui hoje 🌤️",
+    ];
+    return msgs[day % msgs.length];
+  }
+  if (atRisk) {
+    const msgs = [
+      "A chama sente saudades 🕯️",
+      "Hoje ainda podem proteger o vosso momento",
+    ];
+    return msgs[day % msgs.length];
+  }
+  if (myIn && !partnerIn) return "O teu par ainda não chegou hoje ❤️";
+  if (partnerIn && !myIn) return "A chama continua à espera do teu gesto";
+  return getCountPhrase(streak);
 }
 
 // Emotional relationship state — the identity of the couple's journey
@@ -197,9 +227,9 @@ export function LoveStreakCard() {
         <ChevronRight className="w-4 h-4 text-[#c4c4c4]" strokeWidth={1.5} />
       </div>
 
-      {/* Row 2 — phrase */}
+      {/* Row 2 — contextual emotional phrase */}
       <p className="text-[11px] text-[#aaa] mb-1.5 leading-snug">
-        {getPhrase(currentStreak)}
+        {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk)}
       </p>
 
       {/* Row 2.5 — couple status badge */}

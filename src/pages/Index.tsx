@@ -477,8 +477,8 @@ const Index = () => {
             icon={<Smile className="h-5 w-5" strokeWidth={1.5} />}
             title="Humor"
             lines={[
-              mood.mine ? `Tu: ${mood.mine.emoji} ${mood.mine.label}` : "Como te sentes hoje?",
-              mood.partner ? `Par: ${mood.partner.emoji} ${mood.partner.label}` : "O teu par ainda não partilhou",
+              mood.mine ? `Tu: ${mood.mine.emoji} ${mood.mine.label}` : "Como está o teu coração hoje?",
+              mood.partner ? `Par: ${mood.partner.emoji} ${mood.partner.label}` : "Partilha como te sentes",
             ]}
             to="/humor"
             badge={moodUnread}
@@ -490,8 +490,8 @@ const Index = () => {
               icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
               title="Chat"
               lines={[
-                chatUnread > 0 ? `${chatUnread} mensagens à espera de ti` : "Um beijo em texto...",
-                chatPreview.preview ?? "Escreve a primeira mensagem hoje",
+                chatUnread > 0 ? `${chatUnread} mensagens à espera de ti` : "Uma pequena mensagem importa",
+                chatPreview.preview ?? "Às vezes presença começa aqui",
               ]}
               to="/chat"
               badge={chatUnread}
@@ -504,7 +504,7 @@ const Index = () => {
               icon={<Flame className="h-5 w-5" strokeWidth={1.5} />}
               title="Jejum"
               lines={[
-                fasting.streak > 0 ? `${fasting.streak} dias de disciplina 🔥` : "Comecem o jejum hoje",
+                fasting.streak > 0 ? `${fasting.streak} dias de disciplina 🔥` : "Um acto de amor e disciplina",
                 fastingProgress > 0 ? `${fastingProgress}% da jornada feita` : "Cada dia conta",
               ]}
               to="/jejum"
@@ -525,8 +525,8 @@ const Index = () => {
               icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
               title="Oração"
               lines={[
-                prayer.myPrayed ? "Tu: em oração 🙏" : "Partilha a tua oração hoje",
-                prayer.partnerPrayed ? "Par: em oração 🙏" : "O teu par ainda não orou hoje",
+                prayer.myPrayed ? "Tu: em oração 🙏" : "Um momento sagrado juntos",
+                prayer.partnerPrayed ? "Par: em oração 🙏" : "Cuidem um do outro em silêncio",
               ]}
               to="/oracao"
               badge={prayerUnread}
