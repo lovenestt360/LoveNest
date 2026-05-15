@@ -27,7 +27,6 @@ import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext
 import { useEmotionalFeed } from "@/hooks/useEmotionalFeed";
 import { EmotionalFeed } from "@/components/EmotionalFeed";
 import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
-import { DailyRitualCard } from "@/components/DailyRitualCard";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -382,26 +381,25 @@ const Index = () => {
   const currentMessage = (() => {
     const hour = new Date().getHours();
     const morning = [
-      "Bom dia, ninho 🌅 Como começa o coração hoje?",
-      "A manhã é mais suave quando há amor perto ☀️",
-      "Um novo dia, uma nova oportunidade de estar presente 🌿",
+      "A manhã é mais suave quando há amor perto",
+      "Um novo dia, uma nova oportunidade de estar presente",
+      "Bom dia — como começa o coração hoje?",
     ];
     const afternoon = [
-      "Pequenos gestos constroem grandes amores ✨",
-      "Estar presente é o maior gesto de amor 💛",
-      "O amor que cuidam cresce sem que percebam 🌿",
-      "Cada dia juntos é um presente que não se repete 🎁",
+      "Pequenos gestos constroem grandes amores",
+      "Estar presente é o maior gesto de amor",
+      "O amor que cuidam cresce sem que percebam",
+      "Cada dia juntos é um presente que não se repete",
     ];
     const evening = [
-      "O fim do dia é o melhor momento para se encontrarem 🌙",
-      "A vossa chama ainda vos espera esta noite 🔥",
-      "O silêncio partilhado também é intimidade 🌙",
-      "Não deixem o dia acabar sem um gesto de amor 💛",
+      "O fim do dia é o melhor momento para se encontrarem",
+      "O silêncio partilhado também é intimidade",
+      "Não deixem o dia acabar sem um gesto de amor",
     ];
     const night = [
-      "O amor que cuidam cresce enquanto dormem 🌿",
-      "O vosso ninho é o vosso lugar seguro 🏠",
-      "Amanhã trazem a vossa presença um ao outro ✨",
+      "O amor que cuidam cresce enquanto dormem",
+      "O vosso ninho é o vosso lugar seguro",
+      "Amanhã trazem a vossa presença um ao outro",
     ];
     const pool = hour >= 6 && hour < 12 ? morning
                : hour >= 12 && hour < 19 ? afternoon
@@ -449,11 +447,6 @@ const Index = () => {
         
 
       </div>
-
-      {/* ── DAILY RITUAL — Pillar 3: Ritual Loop System ── */}
-      <section className="px-1">
-        <DailyRitualCard />
-      </section>
 
       {/* ── MAIN TOOL GRID ── */}
       <section className="space-y-3 px-1">

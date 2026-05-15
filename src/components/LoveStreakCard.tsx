@@ -12,13 +12,13 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 // ── Phrases ──────────────────────────────────────────────────────────────────
 
 const PHRASES = [
-  { min: 0,  max: 0,        msg: "O amor de vocês começa aqui 🌱" },
-  { min: 1,  max: 2,        msg: "Uma faísca que vai virar chama 🔥" },
-  { min: 3,  max: 6,        msg: "A vossa chama está a crescer 🌿" },
-  { min: 7,  max: 13,       msg: "Sete dias a aparecer um pelo outro 💛" },
-  { min: 14, max: 29,       msg: "Em sintonia, em amor ✨" },
-  { min: 30, max: 89,       msg: "Um mês a mostrar-se um ao outro. Extraordinários 🌟" },
-  { min: 90, max: Infinity, msg: "O vosso amor tornou-se uma força viva 🏆" },
+  { min: 0,  max: 0,        msg: "O amor de vocês começa aqui" },
+  { min: 1,  max: 2,        msg: "Uma faísca que vai tornar-se chama" },
+  { min: 3,  max: 6,        msg: "A vossa chama está a crescer" },
+  { min: 7,  max: 13,       msg: "Sete dias a aparecer um pelo outro" },
+  { min: 14, max: 29,       msg: "Em sintonia, em amor" },
+  { min: 30, max: 89,       msg: "Um mês a mostrar-se um ao outro" },
+  { min: 90, max: Infinity, msg: "O vosso amor tornou-se uma força viva" },
 ];
 
 function getCountPhrase(s: number) {
@@ -37,31 +37,31 @@ function getContextualPhrase(
 
   if (bothActive) {
     const msgs = [
-      "Hoje cuidaram um do outro ✨",
-      "A chama esteve protegida hoje 💛",
-      "Vocês encontraram-se aqui hoje 🌤️",
+      "Hoje cuidaram um do outro",
+      "A chama esteve protegida hoje",
+      "Vocês encontraram-se aqui hoje",
     ];
     return msgs[day % msgs.length];
   }
   if (atRisk) {
     const msgs = [
-      "A chama sente saudades 🕯️",
+      "A chama sente saudades",
       "Hoje ainda podem proteger o vosso momento",
     ];
     return msgs[day % msgs.length];
   }
-  if (myIn && !partnerIn) return "O teu par ainda não chegou hoje ❤️";
+  if (myIn && !partnerIn) return "O teu par ainda não chegou hoje";
   if (partnerIn && !myIn) return "A chama continua à espera do teu gesto";
   return getCountPhrase(streak);
 }
 
 // Emotional relationship state — the identity of the couple's journey
-function getRelationshipState(s: number): { name: string; emoji: string; color: string } {
-  if (s >= 90) return { name: "Almas Gémeas",  emoji: "💫", color: "text-violet-500" };
-  if (s >= 30) return { name: "Inseparáveis",  emoji: "🫂", color: "text-rose-500"   };
-  if (s >= 7)  return { name: "Chama Viva",    emoji: "🔥", color: "text-orange-500" };
-  if (s >= 1)  return { name: "Em Conexão",    emoji: "✨", color: "text-amber-500"  };
-  return             { name: "Semente",        emoji: "🌱", color: "text-emerald-500" };
+function getRelationshipState(s: number): { name: string; color: string } {
+  if (s >= 90) return { name: "Almas Gémeas", color: "text-rose-500"    };
+  if (s >= 30) return { name: "Inseparáveis", color: "text-rose-500"    };
+  if (s >= 7)  return { name: "Chama Viva",   color: "text-rose-400"   };
+  if (s >= 1)  return { name: "Em Conexão",   color: "text-[#717171]"  };
+  return             { name: "Início",        color: "text-[#aaa]"     };
 }
 
 // ── Mission definitions ───────────────────────────────────────────────────────
@@ -79,10 +79,10 @@ type MissionStatus = Record<MissionId, boolean>;
 // ── Couple status (compact, for card) ────────────────────────────────────────
 
 function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean) {
-  if (bothActive)       return { label: "Ligados",           color: "text-rose-500",  dot: "bg-rose-400"  };
-  if (shieldUsedToday)  return { label: "Chama protegida",   color: "text-blue-500",  dot: "bg-blue-400"  };
-  if (myCheckedIn)      return { label: "A aguardar o par",  color: "text-amber-500", dot: "bg-amber-400" };
-  return                { label: "Aguardando conexão",       color: "text-[#bbb]",    dot: "bg-[#ddd]"    };
+  if (bothActive)      return { label: "Juntos hoje",        color: "text-rose-500", dot: "bg-rose-400" };
+  if (shieldUsedToday) return { label: "Chama protegida",    color: "text-sky-500",  dot: "bg-sky-400"  };
+  if (myCheckedIn)     return { label: "A aguardar o par",   color: "text-[#aaa]",   dot: "bg-[#ccc]"   };
+  return               { label: "Aguardando presença",       color: "text-[#bbb]",   dot: "bg-[#ddd]"   };
 }
 
 // ── Extra data hook ───────────────────────────────────────────────────────────
@@ -188,18 +188,15 @@ export function LoveStreakCard() {
   const cardStatus = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday);
   const relState = getRelationshipState(currentStreak);
 
-  const numberColor = bothActiveToday
-    ? "text-rose-500"
-    : streakAtRisk ? "text-amber-500"
-    : shieldUsedToday ? "text-blue-500" : "text-foreground";
+  const numberColor = bothActiveToday ? "text-rose-500" : "text-foreground";
 
   const daysLabel = bothActiveToday
     ? "dias a aparecer um pelo outro"
-    : streakAtRisk
-    ? "dias · a chama espera por vocês"
+    : streakAtRisk ? "dias · a chama espera por vocês"
     : currentStreak === 0 ? "dias" : "dias juntos";
 
   const displayPoints = points ?? 0;
+  const gesturesDone = Object.values(missions).filter(Boolean).length;
 
   return (
     <button
@@ -250,8 +247,8 @@ export function LoveStreakCard() {
             </span>
           </div>
           <span className={cn(
-            "text-[10px] font-semibold leading-snug max-w-[130px]",
-            bothActiveToday ? "text-rose-400" : streakAtRisk ? "text-amber-500" : "text-[#aaa]"
+            "text-[10px] leading-snug max-w-[130px]",
+            bothActiveToday ? "text-rose-400 font-medium" : "text-[#aaa]"
           )}>
             {daysLabel}
           </span>
@@ -304,21 +301,19 @@ export function LoveStreakCard() {
         </div>
       </div>
 
-      {/* Row 4 — footer: relationship state/record/pts + missions */}
+      {/* Row 4 — footer: relationship state + pts · gestos | mission icons */}
       <div className="flex items-center justify-between pt-2.5 border-t border-[#f0f0f0]">
-        <div className="flex items-center gap-1 text-[11px] text-[#717171]">
-          <span className={cn("font-semibold", relState.color)}>{relState.emoji} {relState.name}</span>
-          <span className="text-[#d8d8d8]">·</span>
-          <span>Rec: <span className="font-semibold text-foreground">{longestStreak}d</span></span>
-          <span className="text-[#d8d8d8]">·</span>
-          <span className="font-semibold text-amber-500">{displayPoints}pts</span>
+        <div className="flex flex-col gap-0.5">
+          <span className={cn("text-[11px] font-semibold", relState.color)}>
+            {relState.name}
+          </span>
+          <span className="text-[10px] text-[#aaa]">
+            {displayPoints} pts · {gesturesDone} gestos
+          </span>
         </div>
 
-        {/* Missions — 4 icons, fill when done */}
+        {/* Mission icons — no label */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide mr-0.5">
-            Gestos
-          </span>
           {MISSIONS.map(({ id, Icon, doneColor }) => (
             <Icon
               key={id}

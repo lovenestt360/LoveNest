@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { supabase } from "@/integrations/supabase/client";
+import { Heart, Moon, Users } from "lucide-react";
 
 interface PresenceState {
   partnerName: string;
@@ -19,7 +20,6 @@ function usePartnerPresence() {
     if (!user || !spaceId) return;
     const today = new Date().toISOString().slice(0, 10);
 
-    // Fetch partner member + profile in one query, then check activity
     (supabase.from("members" as any)
       .select("user_id, profiles(display_name)")
       .eq("couple_space_id", spaceId)
@@ -33,7 +33,6 @@ function usePartnerPresence() {
         const pName = ((member.profiles as any)?.display_name as string | null)
           ?.split(" ")[0] ?? "O teu par";
 
-        // Check today's activity for both users in one query
         (supabase.from("daily_activity" as any)
           .select("user_id")
           .eq("couple_space_id", spaceId)
@@ -62,13 +61,12 @@ export function PartnerPresenceCard() {
 
   if (bothPresent) {
     return (
-      <div className="px-1 animate-in fade-in slide-in-from-bottom-1 duration-500">
-        <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 border border-rose-100/80 rounded-2xl">
-          <span className="text-sm animate-presence-pulse">✨</span>
-          <span className="text-[11px] font-semibold text-rose-600">
+      <div className="px-1 animate-in fade-in duration-500">
+        <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 border border-rose-100/60 rounded-2xl">
+          <Users className="w-3.5 h-3.5 text-rose-400 shrink-0" strokeWidth={1.5} />
+          <span className="text-[11px] font-medium text-rose-500">
             Ambos presentes no ninho hoje
           </span>
-          <span className="ml-auto text-[10px] text-rose-300 font-medium">agora</span>
         </div>
       </div>
     );
@@ -76,24 +74,22 @@ export function PartnerPresenceCard() {
 
   if (partnerActive) {
     return (
-      <div className="px-1 animate-in fade-in slide-in-from-bottom-1 duration-500">
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-100/80 rounded-2xl">
-          <span className="text-sm">💛</span>
-          <span className="text-[11px] font-semibold text-amber-700">
+      <div className="px-1 animate-in fade-in duration-500">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#fafafa] border border-[#f0f0f0] rounded-2xl">
+          <Heart className="w-3.5 h-3.5 text-rose-300 shrink-0" strokeWidth={1.5} />
+          <span className="text-[11px] font-medium text-[#717171]">
             {partnerName} esteve presente hoje
           </span>
-          <span className="ml-auto text-[10px] text-amber-300 font-medium">hoje</span>
         </div>
       </div>
     );
   }
 
-  // Partner hasn't been active today — emotional silence state
   return (
-    <div className="px-1 animate-in fade-in slide-in-from-bottom-1 duration-500">
-      <div className="flex items-center gap-2 px-3 py-2 bg-[#fafafa] border border-[#efefef] rounded-2xl">
-        <span className="text-sm opacity-60">🌙</span>
-        <span className="text-[11px] font-medium text-[#b0b0b0]">
+    <div className="px-1 animate-in fade-in duration-500">
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#fafafa] border border-[#f0f0f0] rounded-2xl">
+        <Moon className="w-3.5 h-3.5 text-[#ccc] shrink-0" strokeWidth={1.5} />
+        <span className="text-[11px] text-[#c0c0c0]">
           O ninho ainda aguarda {partnerName} hoje
         </span>
       </div>
