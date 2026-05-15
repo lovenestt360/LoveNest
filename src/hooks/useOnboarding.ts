@@ -3,6 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 
+// Returns true only when push notifications are technically possible on this device.
+// iOS requires 16.4+ AND the app installed as PWA.
+function isPushCapable(): boolean {
+  if (typeof Notification === "undefined" || !("PushManager" in window)) return false;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (!isIOS) return true;
+  const m = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+  if (!m) return false;
+  const major = parseInt(m[1]); const minor = parseInt(m[2]);
+  return major > 16 || (major === 16 && minor >= 4);
+}
+
 export type OnboardingStep = "profile" | "house" | "notifications" | "complete";
 
 export function useOnboarding() {
@@ -66,6 +79,17 @@ export function useOnboarding() {
       }
 
       // 3. Check Notifications
+      // Skip if: device can't support push, OR user already dismissed the step
+      const pushCapable = isPushCapable();
+      const skipped = localStorage.getItem(`notif-skipped-${user.id}`) === "1";
+
+      if (!pushCapable || skipped) {
+        // Device physically cannot support push (iOS < 16.4) or user opted out
+        setStep("complete");
+        setLoading(false);
+        return;
+      }
+
       const { data: pushSub } = await supabase
         .from("push_subscriptions")
         .select("id")
@@ -96,5 +120,7 @@ export function useOnboarding() {
     return () => window.removeEventListener("onboarding-refresh", checkOnboarding);
   }, [checkOnboarding]);
 
-  return { step, loading, refresh: checkOnboarding };
+  return { step, loading, refresh: checkOnboarding, userId: user?.id ?? null };
 }
+
+export { isPushCapable };
