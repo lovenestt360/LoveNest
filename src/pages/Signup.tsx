@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, ArrowRight } from "lucide-react";
 
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -35,13 +37,26 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!isValidEmail(trimmedEmail)) {
+      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      return;
+    }
+    if (password.length < 6) {
+      toast({ variant: "destructive", title: "Senha muito curta", description: "A senha deve ter pelo menos 6 caracteres." });
+      return;
+    }
+    if (displayName.trim().length < 2) {
+      toast({ variant: "destructive", title: "Nome inválido", description: "Insere o teu nome (mínimo 2 caracteres)." });
+      return;
+    }
     setLoading(true);
     // Persist code in localStorage so useReferralTracking finds it even
     // after the email-verification redirect (sessionStorage doesn't survive)
     if (inviteCode) localStorage.setItem("lovenest_ref", inviteCode);
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
+        email: trimmedEmail,
         password,
         options: {
           data: { display_name: displayName, referred_by_code: inviteCode || undefined },
@@ -130,7 +145,9 @@ export default function Signup() {
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">E-mail</label>
               <Input
-                type="email"
+                type="text"
+                inputMode="email"
+                autoComplete="email"
                 placeholder="teu@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}

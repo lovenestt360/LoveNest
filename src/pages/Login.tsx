@@ -3,8 +3,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2, ArrowRight } from "lucide-react";
+import { Heart, Loader2, ArrowRight, ChevronLeft, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
 // Google "G" SVG icon — official brand colour
 function GoogleIcon({ className }: { className?: string }) {
@@ -25,6 +27,9 @@ export default function Login() {
   const [loading, setLoading]     = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [forgotView, setForgotView] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -45,10 +50,15 @@ export default function Login() {
 
   const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = email.trim().toLowerCase();
+    if (!isValidEmail(trimmed)) {
+      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), password,
+        email: trimmed, password,
       });
       if (error) throw error;
       navigate("/casa");
@@ -64,14 +74,40 @@ export default function Login() {
 
   const handleMagic = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = email.trim().toLowerCase();
+    if (!isValidEmail(trimmed)) {
+      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim().toLowerCase(),
+        email: trimmed,
         options: { emailRedirectTo: window.location.origin + "/casa" },
       });
       if (error) throw error;
       setMagicSent(true);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao enviar", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = forgotEmail.trim().toLowerCase();
+    if (!isValidEmail(trimmed)) {
+      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: window.location.origin + "/redefinir-senha",
+      });
+      if (error) throw error;
+      setForgotSent(true);
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro ao enviar", description: err.message });
     } finally {
@@ -118,49 +154,55 @@ export default function Login() {
         {/* Card */}
         <div className="glass-card p-7 space-y-5">
 
-          {/* Google button — CTA principal */}
-          <button
-            onClick={handleGoogle}
-            disabled={googleLoading || loading}
-            className="w-full h-12 rounded-2xl border border-[#e5e5e5] bg-white text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-[#f9f9f9] active:scale-[0.98] transition-all disabled:opacity-60"
-          >
-            {googleLoading
-              ? <Loader2 className="w-4 h-4 animate-spin text-[#717171]" />
-              : <GoogleIcon className="w-5 h-5" />
-            }
-            Continuar com Google
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-[#f0f0f0]" />
-            <span className="text-[11px] font-medium text-[#717171]">ou</span>
-            <div className="flex-1 h-px bg-[#f0f0f0]" />
-          </div>
-
-          {/* Tabs */}
-          <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
-            {(["password", "magic"] as const).map(t => (
+          {/* Google button — CTA principal (hidden in forgot view) */}
+          {!forgotView && (
+            <>
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={cn(
-                  "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                  tab === t ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
-                )}
+                onClick={handleGoogle}
+                disabled={googleLoading || loading}
+                className="w-full h-12 rounded-2xl border border-[#e5e5e5] bg-white text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-[#f9f9f9] active:scale-[0.98] transition-all disabled:opacity-60"
               >
-                {t === "password" ? "Senha" : "Link Mágico"}
+                {googleLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin text-[#717171]" />
+                  : <GoogleIcon className="w-5 h-5" />
+                }
+                Continuar com Google
               </button>
-            ))}
-          </div>
 
-          {/* Password form */}
-          {tab === "password" && (
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-[#f0f0f0]" />
+                <span className="text-[11px] font-medium text-[#717171]">ou</span>
+                <div className="flex-1 h-px bg-[#f0f0f0]" />
+              </div>
+
+              {/* Tabs */}
+              <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+                {(["password", "magic"] as const).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={cn(
+                      "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
+                      tab === t ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
+                    )}
+                  >
+                    {t === "password" ? "Senha" : "Link Mágico"}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Password form / Forgot password */}
+          {tab === "password" && !forgotView && (
             <form onSubmit={handlePassword} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">E-mail</label>
                 <Input
-                  type="email"
+                  type="text"
+                  inputMode="email"
+                  autoComplete="email"
                   placeholder="teu@email.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -169,7 +211,16 @@ export default function Login() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Senha</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-foreground">Senha</label>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotEmail(email); setForgotView(true); setForgotSent(false); }}
+                    className="text-xs font-medium text-rose-500 hover:underline"
+                  >
+                    Esqueceste a senha?
+                  </button>
+                </div>
                 <Input
                   type="password"
                   placeholder="A tua senha"
@@ -190,6 +241,68 @@ export default function Login() {
                 }
               </button>
             </form>
+          )}
+
+          {/* Forgot password view */}
+          {tab === "password" && forgotView && (
+            forgotSent ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
+                  <Mail className="w-8 h-8 text-rose-400" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-foreground">Link enviado!</p>
+                  <p className="text-sm text-[#717171] mt-1">
+                    Verifica o teu e-mail em <span className="font-medium text-foreground">{forgotEmail}</span> e clica no link para definir uma nova senha.
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setForgotView(false); setForgotSent(false); }}
+                  className="text-sm font-medium text-rose-500 hover:underline"
+                >
+                  Voltar ao login
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setForgotView(false)}
+                  className="flex items-center gap-1 text-sm text-[#717171] hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Voltar
+                </button>
+                <div>
+                  <p className="text-base font-semibold text-foreground">Recuperar senha</p>
+                  <p className="text-sm text-[#717171] mt-0.5">Envia-mos um link para redefinires a tua senha.</p>
+                </div>
+                <form onSubmit={handleForgot} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground">E-mail da conta</label>
+                    <Input
+                      type="text"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="teu@email.com"
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      required
+                      className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    {loading
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <> Enviar link <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
+                    }
+                  </button>
+                </form>
+              </div>
+            )
           )}
 
           {/* Magic link form */}
@@ -217,7 +330,9 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">E-mail</label>
                   <Input
-                    type="email"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="email"
                     placeholder="teu@email.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
