@@ -6,41 +6,19 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { useStreak } from "@/features/streak/useStreak";
 import { logActivity } from "@/lib/logActivity";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Send,
-  Loader2,
-  Image as ImageIcon,
-  Mic,
-  MicOff,
-  Pin,
-  PinOff,
-  Reply,
-  Pencil,
-  Trash2,
-  X,
-  Check,
-  CornerDownRight,
-  Settings,
-  Palette,
-  ShieldCheck,
-  Heart,
-  ChevronLeft,
-  Play,
-  Pause
+  Send, Loader2, Image as ImageIcon, Mic, Pin, PinOff, Reply,
+  Pencil, Trash2, X, Check, CornerDownRight, Palette, ShieldCheck,
+  Heart, ChevronLeft, Play, Pause,
 } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 
-/* ── Types ── */
+/* ── Types ─────────────────────────────────────────────────────────────────── */
 
 interface Message {
   id: string;
@@ -59,223 +37,215 @@ interface Message {
 
 const PAGE_SIZE = 50;
 
-/* ── Long Press Hook (mobile-friendly) ── */
+/* ── Long Press ─────────────────────────────────────────────────────────────── */
 
-function useLongPress(onLongPress: () => void, delay = 500) {
+function useLongPress(onLongPress: () => void, delay = 450) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const movedRef = useRef(false);
 
   const start = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     movedRef.current = false;
     timerRef.current = setTimeout(() => {
-      if (!movedRef.current) {
-        e.preventDefault?.();
-        onLongPress();
-      }
+      if (!movedRef.current) { e.preventDefault?.(); onLongPress(); }
     }, delay);
   }, [onLongPress, delay]);
 
-  const move = useCallback(() => {
-    movedRef.current = true;
-    clearTimeout(timerRef.current);
-  }, []);
+  const move = useCallback(() => { movedRef.current = true; clearTimeout(timerRef.current); }, []);
+  const end  = useCallback(() => { clearTimeout(timerRef.current); }, []);
 
-  const end = useCallback(() => {
-    clearTimeout(timerRef.current);
-  }, []);
-
-  return {
-    onTouchStart: start,
-    onTouchMove: move,
-    onTouchEnd: end,
-    onMouseDown: start,
-    onMouseMove: move,
-    onMouseUp: end,
-  };
+  return { onTouchStart: start, onTouchMove: move, onTouchEnd: end, onMouseDown: start, onMouseMove: move, onMouseUp: end };
 }
 
-/* ── Audio Recorder Hook ── */
+/* ── Audio Recorder (iOS-compatible) ───────────────────────────────────────── */
 
 function useAudioRecorder() {
-  const [recording, setRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [duration, setDuration] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [recording, setRecording]   = useState(false);
+  const [isPaused, setIsPaused]     = useState(false);
+  const [audioBlob, setAudioBlob]   = useState<Blob | null>(null);
+  const [duration, setDuration]     = useState(0);
+  const recRef   = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef  = useRef<ReturnType<typeof setInterval>>();
   const streamRef = useRef<MediaStream | null>(null);
 
   const start = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      
+
+      // iOS detection: ALL iOS browsers (Safari, Chrome, Firefox) use WebKit
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
       let mimeType = "";
-      if (isSafari && MediaRecorder.isTypeSupported("audio/mp4")) {
-        mimeType = "audio/mp4";
+      if (isIOS) {
+        mimeType = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
       } else {
-        const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"];
-        for (const t of types) {
-          if (MediaRecorder.isTypeSupported(t)) {
-            mimeType = t;
-            break;
-          }
+        for (const t of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", "audio/ogg"]) {
+          if (MediaRecorder.isTypeSupported(t)) { mimeType = t; break; }
         }
       }
 
-      console.log("Audio: Starting recorder with", mimeType);
-      const recorder = new MediaRecorder(stream, { mimeType: mimeType || undefined });
+      const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       chunksRef.current = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      
-      mediaRecorderRef.current = recorder;
-      recorder.start(200);
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recRef.current = rec;
+      rec.start(200);
       setAudioBlob(null);
       setRecording(true);
       setIsPaused(false);
       setDuration(0);
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
-    } catch (err) {
-      console.error("Audio: Permissions denied or error:", err);
+    } catch {
       alert("Permissão de microfone negada ou erro ao iniciar gravação.");
     }
   }, []);
 
-  const stop = useCallback((): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
-        resolve(null);
-        return;
-      }
-
-      mediaRecorderRef.current.onstop = () => {
-        const type = mediaRecorderRef.current?.mimeType || "audio/mp4";
-        const blob = new Blob(chunksRef.current, { type });
-        console.log("Audio: Recording stopped. Blob size:", blob.size, "Type:", type);
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(t => t.stop());
-          streamRef.current = null;
-        }
-        const finalBlob = blob.size > 0 ? blob : null;
-        setAudioBlob(finalBlob);
-        resolve(finalBlob);
-      };
-
-      if (mediaRecorderRef.current.state === "recording") {
-        mediaRecorderRef.current.requestData();
-      }
-      mediaRecorderRef.current.stop();
-      setRecording(false);
-      setIsPaused(false);
-      clearInterval(timerRef.current);
-    });
-  }, []);
+  const stop = useCallback((): Promise<Blob | null> => new Promise((resolve) => {
+    if (!recRef.current || recRef.current.state === "inactive") { resolve(null); return; }
+    recRef.current.onstop = () => {
+      const type = recRef.current?.mimeType || "audio/mp4";
+      const blob = new Blob(chunksRef.current, { type });
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+      const final = blob.size > 0 ? blob : null;
+      setAudioBlob(final);
+      resolve(final);
+    };
+    if (recRef.current.state === "recording") recRef.current.requestData();
+    recRef.current.stop();
+    setRecording(false);
+    setIsPaused(false);
+    clearInterval(timerRef.current);
+  }), []);
 
   const pause = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      try {
-        mediaRecorderRef.current.pause();
-        setIsPaused(true);
-        clearInterval(timerRef.current);
-      } catch (err) {
-        console.error("Audio pause error:", err);
-      }
+    if (recRef.current?.state === "recording") {
+      try { recRef.current.pause(); setIsPaused(true); clearInterval(timerRef.current); } catch {}
     }
   }, []);
 
   const resume = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+    if (recRef.current?.state === "paused") {
       try {
-        mediaRecorderRef.current.resume();
-        setIsPaused(false);
-        // Restart timer
+        recRef.current.resume(); setIsPaused(false);
         clearInterval(timerRef.current);
         timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
-      } catch (err) {
-        console.error("Audio resume error:", err);
-      }
+      } catch {}
     }
   }, []);
 
   const cancel = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.onstop = null;
-      mediaRecorderRef.current.stop();
+    if (recRef.current && recRef.current.state !== "inactive") {
+      recRef.current.onstop = null;
+      recRef.current.stop();
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setRecording(false);
-    setIsPaused(false);
-    setAudioBlob(null);
-    clearInterval(timerRef.current);
-    chunksRef.current = [];
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setRecording(false); setIsPaused(false); setAudioBlob(null);
+    clearInterval(timerRef.current); chunksRef.current = [];
   }, []);
 
   const clear = useCallback(() => {
-    setAudioBlob(null);
-    setDuration(0);
-    setIsPaused(false);
-    chunksRef.current = [];
+    setAudioBlob(null); setDuration(0); setIsPaused(false); chunksRef.current = [];
   }, []);
 
   return { recording, isPaused, audioBlob, duration, start, stop, pause, resume, cancel, clear };
 }
 
-/* ── Image Picker ── */
+/* ── Waveform Bars (decorative, WhatsApp style) ─────────────────────────────── */
 
-function ImagePickerButton({ onPick }: { onPick: (file: File) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+const WH = [3, 5, 9, 6, 11, 7, 13, 10, 15, 12, 9, 6, 11, 8, 5, 4, 9, 6, 10, 13, 11, 7, 5, 8];
+
+function WaveformBars({ progress, isMine }: { progress: number; isMine: boolean }) {
+  return (
+    <div className="flex items-center gap-[1.5px]" style={{ height: 28 }}>
+      {WH.map((h, i) => (
+        <div
+          key={i}
+          className={cn("w-[2px] rounded-full transition-colors",
+            i / WH.length <= progress
+              ? isMine ? "bg-white" : "bg-rose-500"
+              : isMine ? "bg-white/35" : "bg-[#ccc]"
+          )}
+          style={{ height: `${h}px` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Audio Player (WhatsApp style) ─────────────────────────────────────────── */
+
+function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [dur, setDur] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const toggle = useCallback(() => {
+    if (!audioRef.current) return;
+    if (playing) audioRef.current.pause();
+    else audioRef.current.play().catch(() => setPlaying(false));
+  }, [playing]);
+
+  const fmt = (t: number) => `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, "0")}`;
+  const progress = dur > 0 ? currentTime / dur : 0;
+
+  return (
+    <div className="flex items-center gap-2 min-w-[190px]">
+      <audio
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        playsInline
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); setCurrentTime(0); }}
+        onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
+        onLoadedMetadata={() => audioRef.current && setDur(audioRef.current.duration)}
+      />
+
+      <button
+        onClick={toggle}
+        className={cn(
+          "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90",
+          isMine ? "bg-white/25 text-white" : "bg-rose-50 text-rose-500"
+        )}
+      >
+        {playing
+          ? <Pause className="h-4 w-4 fill-current" />
+          : <Play className="h-4 w-4 fill-current ml-0.5" />}
+      </button>
+
+      <div className="flex flex-col gap-1">
+        <WaveformBars progress={progress} isMine={isMine} />
+        <span className={cn("text-[10px] font-mono tabular-nums",
+          isMine ? "text-white/65" : "text-[#999]")}>
+          {fmt(playing ? currentTime : dur)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Image Picker ───────────────────────────────────────────────────────────── */
+
+function ImagePickerButton({ onPick }: { onPick: (f: File) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
   return (
     <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) { onPick(f); e.target.value = ""; }
-        }}
-      />
-      <Button type="button" variant="ghost" size="icon" className="shrink-0 text-muted-foreground h-9 w-9"
-        onClick={() => inputRef.current?.click()}>
+      <input ref={ref} type="file" accept="image/*" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) { onPick(f); e.target.value = ""; } }} />
+      <button type="button" onClick={() => ref.current?.click()}
+        className="w-9 h-9 flex items-center justify-center text-[#999] hover:text-[#666] shrink-0 transition-colors">
         <ImageIcon className="h-5 w-5" />
-      </Button>
+      </button>
     </>
   );
 }
 
-/* ── Pinned Messages Bar ── */
-
-function PinnedBar({ messages, onJump }: { messages: Message[]; onJump: (id: string) => void }) {
-  const pinned = messages.filter(m => m.is_pinned && !m.is_deleted);
-  if (pinned.length === 0) return null;
-  const last = pinned[pinned.length - 1];
-  return (
-    <button
-      type="button"
-      onClick={() => onJump(last.id)}
-      className="flex w-full items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 px-3 py-2 text-left transition-colors hover:bg-amber-100 shrink-0"
-    >
-      <Pin className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-amber-800 dark:text-amber-300 font-medium line-clamp-1">
-          {last.content || (last.image_url ? "📷 Foto" : last.audio_url ? "🎤 Áudio" : "")}
-        </p>
-      </div>
-      <span className="text-[10px] text-amber-600">
-        {pinned.length > 1 ? `${pinned.length} fixadas` : "Fixada"}
-      </span>
-    </button>
-  );
-}
-
-/* ── Date Separator ── */
+/* ── Date Separator ─────────────────────────────────────────────────────────── */
 
 function DateSeparator({ date }: { date: string }) {
   const d = new Date(date);
@@ -290,313 +260,250 @@ function DateSeparator({ date }: { date: string }) {
 
   return (
     <div className="flex justify-center py-3">
-      <span className="text-[11px] font-semibold text-[#717171] bg-white border border-[#e5e5e5] px-4 py-1 rounded-full shadow-sm">
+      <span className="text-[11px] font-medium text-[#666] bg-white/85 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
         {label}
       </span>
     </div>
   );
 }
 
-/* ── Audio Player ── */
-function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
+/* ── Pinned Bar ─────────────────────────────────────────────────────────────── */
 
-  const toggle = useCallback(() => {
-    if (!audioRef.current) return;
-    if (playing) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch((err) => { 
-        console.error("Audio playback error:", err);
-        alert("O seu telemóvel bloqueou a reprodução ou o áudio está corrompido.");
-        setPlaying(false);
-      });
-    }
-  }, [playing]);
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleSeek = (val: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = val[0];
-      setCurrentTime(val[0]);
-    }
-  };
-
-  const formatAudioTime = (time: number) => {
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
+function PinnedBar({ messages, onJump }: { messages: Message[]; onJump: (id: string) => void }) {
+  const pinned = messages.filter(m => m.is_pinned && !m.is_deleted);
+  if (pinned.length === 0) return null;
+  const last = pinned[pinned.length - 1];
   return (
-    <div className={cn(
-      "flex items-center gap-3 py-1 min-w-[200px] sm:min-w-[240px]",
-      isMine ? "text-primary-foreground" : "text-foreground"
-    )}>
-      <audio
-        ref={audioRef}
-        src={url}
-        preload="auto"
-        playsInline
-        controls={false}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => { setPlaying(false); setCurrentTime(0); }}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onError={(e) => console.error("Audio Load Error:", e)}
-      />
-      
-      <Button 
-        type="button" 
-        variant="ghost" 
-        size="icon" 
-        className={cn(
-          "h-10 w-10 shrink-0 rounded-full transition-all active:scale-90",
-          isMine ? "hover:bg-white/20 text-white" : "hover:bg-rose-50 text-rose-500"
-        )} 
-        onClick={toggle}
-      >
-        {playing ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 ml-0.5 fill-current" />}
-      </Button>
-
-      <div className="flex-1 space-y-1">
-        <Slider
-          value={[currentTime]}
-          max={duration || 100}
-          step={0.1}
-          onValueChange={handleSeek}
-          className={isMine ? "voice-slider-mine" : "voice-slider-partner"}
-        />
-        <div className="flex justify-between items-center text-[10px] opacity-70 font-mono">
-          <span>{formatAudioTime(currentTime)}</span>
-          <span>{formatAudioTime(duration)}</span>
-        </div>
-      </div>
-    </div>
+    <button type="button" onClick={() => onJump(last.id)}
+      className="flex w-full items-center gap-2 px-4 py-2 bg-rose-50 border-b border-rose-100/80 text-left">
+      <Pin className="h-3 w-3 text-rose-400 shrink-0" />
+      <p className="flex-1 text-xs text-rose-600 font-medium line-clamp-1">
+        {last.content || (last.image_url ? "Foto" : last.audio_url ? "Áudio" : "")}
+      </p>
+      <span className="text-[10px] text-rose-400 shrink-0">
+        {pinned.length > 1 ? `${pinned.length} fixadas` : "Fixada"}
+      </span>
+    </button>
   );
 }
 
-/* ── Action Sheet (Mobile-friendly context menu) ── */
+/* ── Action Sheet ───────────────────────────────────────────────────────────── */
 
 function ActionSheet({
-  msg,
-  isMine,
-  onReply,
-  onEdit,
-  onDelete,
-  onPin,
-  onClose,
+  msg, isMine, onReply, onEdit, onDelete, onPin, onClose,
 }: {
-  msg: Message;
-  isMine: boolean;
-  onReply: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onPin: () => void;
-  onClose: () => void;
+  msg: Message; isMine: boolean;
+  onReply: () => void; onEdit: () => void; onDelete: () => void; onPin: () => void; onClose: () => void;
 }) {
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
-      {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-lg border-t border-[#e5e5e5] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
-        <div className="w-12 h-1 bg-[#e5e5e5] rounded-full mx-auto mb-4" />
-
-        {/* Preview */}
-        <p className="text-xs text-muted-foreground mb-3 line-clamp-2 px-1">
-          {msg.content || (msg.image_url ? "📷 Foto" : msg.audio_url ? "🎤 Áudio" : "")}
+      <div className="fixed inset-0 z-40 bg-black/25" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
+        <div className="w-10 h-1 bg-[#e0e0e0] rounded-full mx-auto mb-4" />
+        <p className="text-xs text-[#aaa] mb-3 line-clamp-2 px-1">
+          {msg.content || (msg.image_url ? "Foto" : msg.audio_url ? "Áudio" : "")}
         </p>
-
-        <div className="grid gap-1">
-          <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3" onClick={onReply}>
-            <Reply className="h-5 w-5 text-rose-500" /> Responder
-          </Button>
+        <div className="grid gap-0.5">
+          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left transition-colors" onClick={onReply}>
+            <Reply className="h-5 w-5 text-rose-500" /><span className="text-[15px]">Responder</span>
+          </button>
           {isMine && (
-            <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3" onClick={onEdit}>
-              <Pencil className="h-5 w-5 text-amber-500" /> Editar
-            </Button>
+            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left transition-colors" onClick={onEdit}>
+              <Pencil className="h-5 w-5 text-[#717171]" /><span className="text-[15px]">Editar</span>
+            </button>
           )}
-          <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3" onClick={onPin}>
-            {msg.is_pinned ? <PinOff className="h-5 w-5 text-muted-foreground" /> : <Pin className="h-5 w-5 text-amber-500" />}
-            {msg.is_pinned ? "Desafixar" : "Fixar"}
-          </Button>
+          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left transition-colors" onClick={onPin}>
+            {msg.is_pinned
+              ? <><PinOff className="h-5 w-5 text-[#717171]" /><span className="text-[15px]">Desafixar</span></>
+              : <><Pin className="h-5 w-5 text-[#717171]" /><span className="text-[15px]">Fixar</span></>}
+          </button>
           {isMine && (
-            <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3 text-destructive hover:text-destructive" onClick={onDelete}>
-              <Trash2 className="h-5 w-5" /> Apagar
-            </Button>
+            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left text-red-500 transition-colors" onClick={onDelete}>
+              <Trash2 className="h-5 w-5" /><span className="text-[15px]">Apagar</span>
+            </button>
           )}
-          <Button variant="ghost" className="w-full justify-start h-12 text-base gap-3 text-muted-foreground" onClick={onClose}>
-            <X className="h-5 w-5" /> Cancelar
-          </Button>
+          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left text-[#aaa] transition-colors" onClick={onClose}>
+            <X className="h-5 w-5" /><span className="text-[15px]">Cancelar</span>
+          </button>
         </div>
       </div>
     </>
   );
 }
 
-/* ── Main Chat Component ── */
+/* ── Message Bubble ─────────────────────────────────────────────────────────── */
+
+function MessageBubble({
+  msg, isMine, isDeleted, replyPreview, formatTime, jumpToMsg, onLongPress, refCallback,
+}: {
+  msg: Message; isMine: boolean; isDeleted: boolean; replyPreview: string | null;
+  formatTime: (iso: string) => string; jumpToMsg: (id: string) => void;
+  onLongPress: () => void; refCallback: (el: HTMLDivElement | null) => void;
+}) {
+  const lp = useLongPress(onLongPress, 450);
+
+  return (
+    <div ref={refCallback} className={cn("flex px-2 mb-[3px]", isMine ? "justify-end" : "justify-start")}>
+      <div className="relative max-w-[78%]">
+        {msg.is_pinned && !isDeleted && (
+          <div className="absolute -top-1.5 right-2 z-10">
+            <Pin className="h-2.5 w-2.5 text-rose-400 fill-rose-400" />
+          </div>
+        )}
+        <div
+          {...lp}
+          className={cn(
+            "px-3 py-[7px] text-[15px] select-none shadow-sm",
+            isMine
+              ? "bg-rose-500 text-white rounded-[18px] rounded-br-[4px]"
+              : "bg-white text-[#1a1a1a] rounded-[18px] rounded-bl-[4px]",
+            isDeleted && "opacity-60",
+            msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
+          )}
+          style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
+        >
+          {/* Reply preview */}
+          {replyPreview && !isDeleted && (
+            <button type="button"
+              onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
+              className={cn(
+                "flex items-start gap-1 rounded-lg px-2 py-1.5 mb-1.5 text-[11px] border-l-2 w-full text-left",
+                isMine ? "bg-white/20 border-white/50 text-white/80" : "bg-[#f5f5f5] border-rose-300 text-[#717171]"
+              )}
+            >
+              <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
+              <span className="line-clamp-2 break-words">{replyPreview}</span>
+            </button>
+          )}
+
+          {/* Image */}
+          {msg.image_url && !isDeleted && (
+            <img src={msg.image_url} alt="Foto"
+              className="rounded-[14px] max-w-full max-h-64 object-cover mb-1 cursor-pointer"
+              onClick={() => window.open(msg.image_url!, "_blank")} />
+          )}
+
+          {/* Audio */}
+          {msg.audio_url && !isDeleted && (
+            <div className="py-1">
+              {msg.audio_url === "pending"
+                ? <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /><span className="text-[11px] opacity-60">A processar...</span></div>
+                : <AudioPlayer url={msg.audio_url} isMine={isMine} />}
+            </div>
+          )}
+
+          {/* Text */}
+          {isDeleted
+            ? <p className="text-sm italic opacity-70">Mensagem apagada</p>
+            : msg.content && <p className="whitespace-pre-wrap break-words leading-snug">{msg.content}</p>
+          }
+
+          {/* Time + status */}
+          <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
+            isMine ? "text-white/55" : "text-[#aaa]")}>
+            {msg.is_edited && !isDeleted && <span className="text-[10px]">editada ·</span>}
+            <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
+            {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Chat ──────────────────────────────────────────────────────────────── */
 
 export default function Chat() {
-  const { user } = useAuth();
-  const spaceId = useCoupleSpaceId();
-  const navigate = useNavigate();
-  const { resetChatUnread } = useAppNotifContext();
-  const { toast } = useToast();
-  const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper } = useUserSettings();
-  const { partner, loading: loadingPartner } = usePartnerProfile();
+  const { user }                                   = useAuth();
+  const spaceId                                    = useCoupleSpaceId();
+  const navigate                                   = useNavigate();
+  const { resetChatUnread }                        = useAppNotifContext();
+  const { toast }                                  = useToast();
+  const { wallpaperUrl, wallpaperOpacity }         = useUserSettings();
+  const { partner }                                = usePartnerProfile();
 
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (spaceId) {
-      console.log("Chat: spaceId obtido com sucesso ->", spaceId);
-      setIsReady(true);
-    } else {
-      console.log("Chat: aguardando spaceId...");
-    }
-  }, [spaceId]);
-
-
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [isReady, setIsReady]       = useState(false);
+  const [messages, setMessages]     = useState<Message[]>([]);
+  const [input, setInput]           = useState("");
+  const [sending, setSending]       = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [hasMore, setHasMore]       = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Reply / Edit state
-  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [replyTo, setReplyTo]       = useState<Message | null>(null);
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
-  const [editText, setEditText] = useState("");
-
-  // Image preview before send
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editText, setEditText]     = useState("");
+  const [imageFile, setImageFile]   = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  // Audio
-  const audio = useAudioRecorder();
-
-  // Action sheet
-  const [sheetMsg, setSheetMsg] = useState<Message | null>(null);
-
-  // Carinho/Love animation state
+  const [sheetMsg, setSheetMsg]     = useState<Message | null>(null);
   const [showCarinhoAnim, setShowCarinhoAnim] = useState(false);
 
+  const audio     = useAudioRecorder();
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const msgRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const inputRef  = useRef<HTMLInputElement>(null);
+  const msgRefs   = useRef<Record<string, HTMLDivElement | null>>({});
 
-  /* ── Load messages ── */
+  /* ready flag */
+  useEffect(() => {
+    if (spaceId) setIsReady(true);
+  }, [spaceId]);
+
+  /* load messages */
   useEffect(() => {
     resetChatUnread();
-    if (!spaceId) {
-      console.log("Chat: No spaceId available yet, skipping message load.");
-      setLoading(false);
-      return;
-    }
-    
-    console.log("Chat: Loading messages for spaceId:", spaceId);
+    if (!spaceId) { setLoading(false); return; }
     setLoading(true);
-    const fetchMessages = async () => {
+    (async () => {
       try {
         const { data, error } = await supabase
-          .from("messages")
-          .select("*")
+          .from("messages").select("*")
           .eq("couple_space_id", spaceId)
           .order("created_at", { ascending: false })
           .limit(PAGE_SIZE);
-
-        if (error) {
-          console.error("Chat: Error loading messages:", error.message);
-          toast({ title: "Erro ao carregar mensagens", description: error.message, variant: "destructive" });
-        } else if (data) {
-          console.log("Chat: Loaded", data.length, "messages.");
-          setMessages((data as Message[]).reverse());
-          setHasMore(data.length === PAGE_SIZE);
-        }
-      } catch (err) {
-        console.error("Chat: Unexpected error loading messages:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
+        if (error) toast({ title: "Erro ao carregar mensagens", description: error.message, variant: "destructive" });
+        else if (data) { setMessages((data as Message[]).reverse()); setHasMore(data.length === PAGE_SIZE); }
+      } finally { setLoading(false); }
+    })();
   }, [spaceId, resetChatUnread, toast]);
 
   const loadMore = useCallback(async () => {
     if (!spaceId || loadingMore || messages.length === 0) return;
     setLoadingMore(true);
     const oldest = messages[0];
-    const { data } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("couple_space_id", spaceId)
-      .lt("created_at", oldest.created_at)
-      .order("created_at", { ascending: false })
-      .limit(PAGE_SIZE);
-    if (data) {
-      setMessages((prev) => [...(data as Message[]).reverse(), ...prev]);
-      setHasMore(data.length === PAGE_SIZE);
-    }
+    const { data } = await supabase.from("messages").select("*")
+      .eq("couple_space_id", spaceId).lt("created_at", oldest.created_at)
+      .order("created_at", { ascending: false }).limit(PAGE_SIZE);
+    if (data) { setMessages(prev => [...(data as Message[]).reverse(), ...prev]); setHasMore(data.length === PAGE_SIZE); }
     setLoadingMore(false);
   }, [spaceId, loadingMore, messages]);
 
-  /* ── Realtime ── */
+  /* realtime */
   useEffect(() => {
     if (!spaceId) return;
-    const channel = supabase
-      .channel("chat-room")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "messages",
-        filter: `couple_space_id=eq.${spaceId}`,
-      }, (payload) => {
-        if (payload.eventType === "INSERT") {
-          const newMsg = payload.new as Message;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            // Remove optimistic temp message if it matches this one
-            if (newMsg.sender_user_id === user?.id) {
-              return [...prev.filter(m => !m.id.startsWith("temp-")), newMsg];
-            }
-            return [...prev, newMsg];
-          });
-        } else if (payload.eventType === "UPDATE") {
-          setMessages((prev) => prev.map(m =>
-            m.id === (payload.new as Message).id ? (payload.new as Message) : m
-          ));
-        } else if (payload.eventType === "DELETE") {
-          setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
-        }
-      })
+    const ch = supabase.channel("chat-room")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `couple_space_id=eq.${spaceId}` },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const m = payload.new as Message;
+            setMessages(prev => {
+              if (prev.some(x => x.id === m.id)) return prev;
+              if (m.sender_user_id === user?.id) return [...prev.filter(x => !x.id.startsWith("temp-")), m];
+              return [...prev, m];
+            });
+          } else if (payload.eventType === "UPDATE") {
+            setMessages(prev => prev.map(m => m.id === (payload.new as Message).id ? (payload.new as Message) : m));
+          } else if (payload.eventType === "DELETE") {
+            setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));
+          }
+        })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [spaceId]);
+    return () => { supabase.removeChannel(ch); };
+  }, [spaceId, user?.id]);
 
-  /* ── Auto scroll ── */
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  /* auto scroll */
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  /* ── Image preview ── */
+  /* image preview */
   useEffect(() => {
     if (!imageFile) { setImagePreview(null); return; }
     const url = URL.createObjectURL(imageFile);
@@ -604,407 +511,280 @@ export default function Chat() {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  /* ── Upload helpers ── */
+  /* upload helper */
   const uploadMedia = useCallback(async (file: Blob, ext: string): Promise<string | null> => {
     if (!user) return null;
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("chat-media").upload(path, file, {
-      contentType: file.type || undefined
-    });
-    if (error) { 
-      console.error("Storage upload error:", error); 
-      throw new Error(`Erro de storage: ${error.message}`); 
-    }
+    const { error } = await supabase.storage.from("chat-media").upload(path, file, { contentType: file.type || undefined });
+    if (error) throw new Error(`Erro de storage: ${error.message}`);
     const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
     return data?.publicUrl ?? null;
   }, [user]);
 
+  /* send */
   const handleSend = useCallback(async (blobOverride?: Blob) => {
     if (!user || sending) return;
-    if (!isReady) {
-      console.warn("Chat: Tentativa de envio antes do sistema estar pronto.");
-      return;
-    }
-    
+    if (!isReady && !spaceId) return;
+
     let sp = spaceId;
     if (!sp && user) {
-      const { data: member } = await supabase
-        .from('members')
-        .select('couple_space_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle();
-      sp = member?.couple_space_id;
+      const { data: m } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).limit(1).maybeSingle();
+      sp = m?.couple_space_id;
     }
-
     if (!sp) {
-      console.error("CRITICAL: couple_space_id ainda null no Chat", user?.id);
-      toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço de casal.", variant: "destructive" });
+      toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço.", variant: "destructive" });
       return;
     }
 
-    // ── Pre-calculate values ──
-    const currentInput = input;
-    const text = currentInput.trim();
-    const activeAudioBlob = blobOverride;
-    const currentReplyTo = replyTo;
-    const currentImageFile = imageFile;
+    const text         = input.trim();
+    const activeBlob   = blobOverride;
+    const currentImage = imageFile;
+    const currentReply = replyTo;
 
-    if (!text && !currentImageFile && !activeAudioBlob) return;
+    if (!text && !currentImage && !activeBlob) return;
 
-    // ── Optimistic Clear ──
-    setInput("");
-    setReplyTo(null);
-    setImageFile(null);
-    audio.clear();
-    setSending(true);
+    setInput(""); setReplyTo(null); setImageFile(null); audio.clear(); setSending(true);
 
-    // ── Optimistic Message ──
     const tempId = `temp-${Date.now()}`;
-    const optimisticMsg: Message = {
-      id: tempId,
-      couple_space_id: spaceId,
-      sender_user_id: user.id,
-      content: currentInput,
-      reply_to_id: currentReplyTo?.id ?? null,
-      image_url: currentImageFile ? URL.createObjectURL(currentImageFile) : null,
-      audio_url: activeAudioBlob ? "pending" : null,
-      is_pinned: false,
-      is_edited: false,
-      is_deleted: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, optimisticMsg]);
+    setMessages(prev => [...prev, {
+      id: tempId, couple_space_id: sp!, sender_user_id: user.id,
+      content: input, reply_to_id: currentReply?.id ?? null,
+      image_url: currentImage ? URL.createObjectURL(currentImage) : null,
+      audio_url: activeBlob ? "pending" : null,
+      is_pinned: false, is_edited: false, is_deleted: false,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }]);
+
     try {
       let imageUrl: string | null = null;
       let audioUrl: string | null = null;
 
-      if (currentImageFile) {
-        const ext = currentImageFile.name.split(".").pop() ?? "jpg";
-        imageUrl = await uploadMedia(currentImageFile, ext);
-      }
-      
-      if (activeAudioBlob) {
-        if (activeAudioBlob.size === 0) {
-          console.warn("Audio: Attempted to send empty blob, skipping.");
-          setSending(false);
-          return;
-        }
-        const ext = activeAudioBlob.type.includes("mp4") ? "mp4" : "webm";
-        const uploadedExt = activeAudioBlob.type.includes("mpeg") ? "mp3" : ext;
-        audioUrl = await uploadMedia(activeAudioBlob, uploadedExt);
-        if (!audioUrl) {
-          throw new Error("O servidor não devolveu o link do áudio.");
-        }
+      if (currentImage) {
+        const ext = currentImage.name.split(".").pop() ?? "jpg";
+        imageUrl = await uploadMedia(currentImage, ext);
       }
 
-      const { error: insertError } = await supabase.from("messages").insert({
-        couple_space_id: sp,
-        sender_user_id: user.id,
-        content: currentInput,
-        reply_to_id: currentReplyTo?.id ?? null,
-        image_url: imageUrl,
-        audio_url: audioUrl,
+      if (activeBlob) {
+        if (activeBlob.size === 0) { setSending(false); return; }
+        // Reliable extension from blob type (fallback to mp4 for iOS)
+        const blobType = activeBlob.type || "audio/mp4";
+        const ext = blobType.includes("mp4") ? "mp4" : blobType.includes("ogg") ? "ogg" : "webm";
+        audioUrl = await uploadMedia(activeBlob, ext);
+        if (!audioUrl) throw new Error("O servidor não devolveu o link do áudio.");
+      }
+
+      const { error: insertErr } = await supabase.from("messages").insert({
+        couple_space_id: sp, sender_user_id: user.id, content: input,
+        reply_to_id: currentReply?.id ?? null, image_url: imageUrl, audio_url: audioUrl,
       });
+      if (insertErr) throw insertErr;
 
-      if (insertError) {
-        console.error("Chat: Insert error:", insertError.message);
-        toast({ title: "Erro ao enviar", description: insertError.message, variant: "destructive" });
-        setSending(false);
-        return;
-      }
-
-      // ── LoveStreak: registar atividade (fire-and-forget) ──
-      console.log("[DEBUG] Chat: Message sent successfully. Calling logActivity...");
       if (sp) logActivity(sp, "message");
 
-      // ── Non-blocking Notification ──
-      let body = currentInput;
-      if (!body && imageUrl) body = "📷 Enviou uma foto";
-      if (!body && audioUrl) body = "🎤 Enviou um áudio";
-      
-      if (sp) {
-        notifyPartner({
-          couple_space_id: sp,
-          title: "💬 Nova mensagem no Chat",
-          body: body.length > 50 ? body.slice(0, 50) + "…" : body,
-          url: "/chat",
-          type: "chat",
-        }).catch(err => console.error("Notification fail (silent):", err));
-      }
-
+      let body = input;
+      if (!body && imageUrl) body = "Enviou uma foto";
+      if (!body && audioUrl) body = "Enviou um audio";
+      if (sp) notifyPartner({ couple_space_id: sp, title: "Nova mensagem", body: body.slice(0, 50), url: "/chat", type: "chat" }).catch(() => {});
     } catch (err: any) {
-      // Remove temp message on error
       setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")));
       toast({ title: "Erro ao enviar", description: err?.message, variant: "destructive" });
     } finally {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [input, spaceId, user, sending, imageFile, uploadMedia, toast, replyTo]);
+  }, [input, spaceId, user, sending, imageFile, uploadMedia, toast, replyTo, isReady, audio]);
 
-  /* ── Send Carinho ── */
+  /* carinho */
   const handleSendCarinho = useCallback(async () => {
-    console.log("DEBUG: HEART CLICK - Início da função");
-    
-    if (!user) {
-      console.error("DEBUG CARINHO: Falha - Utilizador não autenticado");
-      return;
-    }
-    
-    if (sending) {
-      console.warn("DEBUG CARINHO: Abortado - Já existe um envio em curso (sending = true)");
-      return;
-    }
+    if (!user || sending) return;
 
-    if (!isReady) {
-      console.warn("DEBUG CARINHO: Alerta - Sistema ainda não está pronto (isReady = false)");
-      // Vamos tentar continuar se tivermos o spaceId local
-    }
-
-    console.log("DEBUG CARINHO: Autorizado - Iniciando processo de inserção...");
-    
     let sp = spaceId;
     if (!sp && user) {
-      console.log("DEBUG CARINHO: spaceId nulo, tentando fallback via members...");
-      const { data: member, error: memberErr } = await supabase
-        .from('members')
-        .select('couple_space_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle();
-      
-      if (memberErr) console.error("DEBUG CARINHO: Erro no fallback de member:", memberErr);
-      sp = member?.couple_space_id;
+      const { data: m } = await supabase.from("members").select("couple_space_id").eq("user_id", user.id).limit(1).maybeSingle();
+      sp = m?.couple_space_id;
     }
+    if (!sp) { toast({ title: "Dados em falta", variant: "destructive" }); return; }
 
-    if (!sp) {
-      console.error("CRITICAL DEBUG: couple_space_id ainda null no Carinho", user?.id);
-      toast({ title: "Dados em falta", description: "Não conseguimos identificar o teu espaço.", variant: "destructive" });
-      return;
-    }
-    
-    console.log("DEBUG CARINHO: Usando couple_space_id ->", sp);
     setSending(true);
     setShowCarinhoAnim(true);
-    
+
     try {
-      // 1. Inserir mensagem para o par no Chat
-      const messagePayload = {
-        couple_space_id: sp,
-        sender_user_id: user.id,
-        content: "Só para te lembrar que te amo 💛"
-      };
-
-      console.log("MESSAGE PAYLOAD:", messagePayload);
-      console.log("DEBUG CARINHO: [1/2] Inserindo mensagem no chat...");
-      
-      const { error: msgErr } = await supabase.from("messages").insert(messagePayload);
-
-      if (msgErr) {
-        console.error("MESSAGE ERROR:", msgErr);
-        throw msgErr;
-      }
-
-      // 2. LoveStreak: registar atividade do carinho (fire-and-forget)
-      console.log("[DEBUG] Chat: Carinho sent successfully. Calling logActivity...");
+      const { error } = await supabase.from("messages").insert({
+        couple_space_id: sp, sender_user_id: user.id, content: "Só para te lembrar que te amo",
+      });
+      if (error) throw error;
       if (sp) logActivity(sp, "message");
-
-      // 3. Notificação
-      notifyPartner({
-        couple_space_id: sp,
-        title: "💖 Recebeste carinho!",
-        body: "Só para te lembrar que te amo 💛",
-        url: "/chat",
-        type: "chat",
-      }).catch((e) => console.warn("DEBUG CARINHO: Push falhou (não crítico):", e));
-
-      // Animation timeout
-      setTimeout(() => {
-        setShowCarinhoAnim(false);
-        console.log("DEBUG CARINHO: Animação finalizada");
-      }, 2000);
-      
+      notifyPartner({ couple_space_id: sp, title: "Recebeste carinho!", body: "Só para te lembrar que te amo", url: "/chat", type: "chat" }).catch(() => {});
+      setTimeout(() => setShowCarinhoAnim(false), 2000);
     } catch (err: any) {
-      console.error("DEBUG CARINHO CRITICAL ERROR:", err);
       toast({ title: "Erro ao enviar carinho", description: err?.message, variant: "destructive" });
     } finally {
       setSending(false);
-      console.log("DEBUG CARINHO: Processo concluído (sending set to false)");
     }
-  }, [spaceId, user, sending, isReady, toast]);
+  }, [spaceId, user, sending, toast]);
 
-  /* ── Edit message ── */
+  /* edit */
   const handleEditSave = useCallback(async () => {
     if (!editingMsg || !editText.trim()) return;
-    const targetId = editingMsg.id;
-    const newContent = editText.trim();
-
-    // ── Optimistic UI ──
-    setMessages((prev) => prev.map(m => 
-      m.id === targetId ? { ...m, content: newContent, is_edited: true } : m
-    ));
-    setEditingMsg(null);
-    setEditText("");
-
-    // ── Actual DB ──
-    await supabase.from("messages")
-      .update({ content: newContent, is_edited: true, updated_at: new Date().toISOString() })
-      .eq("id", targetId);
+    const id = editingMsg.id;
+    const content = editText.trim();
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, content, is_edited: true } : m));
+    setEditingMsg(null); setEditText("");
+    await supabase.from("messages").update({ content, is_edited: true, updated_at: new Date().toISOString() }).eq("id", id);
   }, [editingMsg, editText]);
 
-  /* ── Delete message ── */
+  /* delete */
   const handleDelete = useCallback(async (msg: Message) => {
-    // ── Optimistic UI ──
-    setMessages((prev) => prev.map(m => 
-      m.id === msg.id ? { ...m, is_deleted: true, content: "" } : m
-    ));
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_deleted: true, content: "" } : m));
     setSheetMsg(null);
-
-    // ── Actual DB update ──
     const { error } = await supabase.from("messages")
       .update({ is_deleted: true, content: "", image_url: null, audio_url: null, updated_at: new Date().toISOString() })
       .eq("id", msg.id);
-    
-    if (error) {
-      console.error("Delete error:", error);
-      toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" });
-    }
+    if (error) toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" });
   }, [toast]);
 
-  /* ── Pin/Unpin ── */
+  /* pin */
   const handlePin = useCallback(async (msg: Message) => {
-    await supabase.from("messages")
-      .update({ is_pinned: !msg.is_pinned, updated_at: new Date().toISOString() })
-      .eq("id", msg.id);
+    await supabase.from("messages").update({ is_pinned: !msg.is_pinned, updated_at: new Date().toISOString() }).eq("id", msg.id);
     setSheetMsg(null);
   }, []);
 
-  /* ── Scroll to message ── */
+  /* scroll to msg */
   const jumpToMsg = useCallback((id: string) => {
     const el = msgRefs.current[id];
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("ring-2", "ring-primary");
-      setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 1500);
+      el.classList.add("ring-2", "ring-rose-400");
+      setTimeout(() => el.classList.remove("ring-2", "ring-rose-400"), 1500);
     }
   }, []);
 
-  /* ── Get replied message content ── */
+  /* reply preview text */
   const getReplyPreview = useCallback((id: string | null) => {
     if (!id) return null;
     const msg = messages.find(m => m.id === id);
     if (!msg) return null;
     if (msg.is_deleted) return "Mensagem apagada";
-    if (msg.image_url) return "📷 Foto";
-    if (msg.audio_url) return "🎤 Áudio";
-    return msg.content.length > 50 ? msg.content.slice(0, 50) + "…" : msg.content;
+    if (msg.image_url) return "Foto";
+    if (msg.audio_url) return "Audio";
+    return msg.content.length > 60 ? msg.content.slice(0, 60) + "…" : msg.content;
   }, [messages]);
 
-  /* ── Format time ── */
   const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-  /* ── Group messages by date ── */
   const groupedMessages = useMemo(() => {
     const groups: { date: string; msgs: Message[] }[] = [];
     let lastDate = "";
     for (const msg of messages) {
       const date = msg.created_at.slice(0, 10);
-      if (date !== lastDate) {
-        groups.push({ date: msg.created_at, msgs: [] });
-        lastDate = date;
-      }
+      if (date !== lastDate) { groups.push({ date: msg.created_at, msgs: [] }); lastDate = date; }
       groups[groups.length - 1].msgs.push(msg);
     }
     return groups;
   }, [messages]);
 
+  const hasText   = !!input.trim() || !!imageFile;
+  const inRecMode = audio.recording || !!audio.audioBlob;
+
+  /* ── Partner initials fallback ── */
+  const partnerInitial = partner?.display_name?.[0]?.toUpperCase() ?? "?";
+
   return (
     <section className="relative flex flex-col overflow-hidden h-[100dvh]">
 
+      {/* Wallpaper */}
+      {wallpaperUrl && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src={wallpaperUrl} alt="" className="w-full h-full object-cover" style={{ opacity: wallpaperOpacity ?? 0.15 }} />
+        </div>
+      )}
+
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 px-4 pt-3 pb-3 bg-white border-b border-[#e5e5e5]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0"
-            >
-              <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
-            </button>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-base font-semibold text-foreground truncate max-w-[160px]">
-                  {partner?.display_name || "Amor"}
-                </span>
-                {partner?.verification_status === 'verified' && (
-                  <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" strokeWidth={1.5} />
-                )}
-              </div>
-              <p className="text-[11px] text-[#717171]">Chat privado</p>
-            </div>
+      <header className="relative z-20 shrink-0 bg-white border-b border-[#e8e8e8]">
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          {/* Back */}
+          <button onClick={() => navigate("/")}
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0">
+            <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+          </button>
+
+          {/* Avatar */}
+          <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center shrink-0 overflow-hidden border border-rose-200">
+            {partner?.avatar_url
+              ? <img src={partner.avatar_url} alt="" className="w-full h-full object-cover" />
+              : <span className="text-sm font-semibold text-rose-500">{partnerInitial}</span>
+            }
           </div>
 
-          <button
-            onClick={() => navigate("/configuracoes#customization")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
-          >
-            <Palette className="h-5 w-5 text-[#717171]" strokeWidth={1.5} />
+          {/* Name + subtitle */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1">
+              <span className="text-[15px] font-semibold text-foreground truncate">
+                {partner?.display_name || "Amor"}
+              </span>
+              {partner?.verification_status === "verified" && (
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.5} />
+              )}
+            </div>
+            <p className="text-[11px] text-[#999]">Chat privado</p>
+          </div>
+
+          {/* Palette */}
+          <button onClick={() => navigate("/configuracoes#customization")}
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0">
+            <Palette className="h-4.5 w-4.5 text-[#999]" strokeWidth={1.5} />
           </button>
         </div>
       </header>
 
-      {/* ── Pinned bar ── */}
-      <div className="relative z-20 shrink-0 px-1">
+      {/* Pinned */}
+      <div className="relative z-20 shrink-0">
         <PinnedBar messages={messages} onJump={jumpToMsg} />
       </div>
 
-      {/* ── Messages area ── */}
-      <div className="flex-1 relative z-10 overflow-y-auto px-2 select-none" style={{ scrollbarWidth: "none" }}>
-        <div className="flex flex-col gap-1.5 py-4 pb-32 min-h-full justify-end">
+      {/* ── Messages ── */}
+      <div
+        className="flex-1 relative z-10 overflow-y-auto"
+        style={{ scrollbarWidth: "none", backgroundColor: wallpaperUrl ? undefined : "#ece5dd" }}
+      >
+        <div className="flex flex-col gap-0 py-3 pb-4 min-h-full justify-end">
           {hasMore && (
             <div className="flex justify-center py-2">
-              <Button variant="secondary" size="sm" className="rounded-full shadow-sm" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              <button onClick={loadMore} disabled={loadingMore}
+                className="text-xs text-[#666] bg-white/80 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                {loadingMore && <Loader2 className="h-3 w-3 animate-spin" />}
                 Carregar mais
-              </Button>
+              </button>
             </div>
           )}
           {loading && (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-[#aaa]" />
             </div>
           )}
           {!loading && messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <span className="text-4xl">👋</span>
-              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Diz olá!</p>
+              <Heart className="h-10 w-10 text-rose-300" strokeWidth={1} />
+              <p className="text-sm text-[#999]">Nenhuma mensagem ainda. Diz olá!</p>
             </div>
           )}
 
-          {groupedMessages.map((group) => (
+          {groupedMessages.map(group => (
             <div key={group.date}>
               <DateSeparator date={group.date} />
-              {group.msgs.map((msg) => {
-                const isMine = msg.sender_user_id === user?.id;
-                const isDeleted = msg.is_deleted;
-                const replyPreview = getReplyPreview(msg.reply_to_id);
-
-                return (
-                  <MessageBubble
-                    key={msg.id}
-                    msg={msg}
-                    isMine={isMine}
-                    isDeleted={isDeleted}
-                    replyPreview={replyPreview}
-                    formatTime={formatTime}
-                    jumpToMsg={jumpToMsg}
-                    onLongPress={() => { if (!isDeleted) setSheetMsg(msg); }}
-                    refCallback={(el) => { msgRefs.current[msg.id] = el; }}
-                  />
-                );
-              })}
+              {group.msgs.map(msg => (
+                <MessageBubble
+                  key={msg.id}
+                  msg={msg}
+                  isMine={msg.sender_user_id === user?.id}
+                  isDeleted={msg.is_deleted}
+                  replyPreview={getReplyPreview(msg.reply_to_id)}
+                  formatTime={formatTime}
+                  jumpToMsg={jumpToMsg}
+                  onLongPress={() => { if (!msg.is_deleted) setSheetMsg(msg); }}
+                  refCallback={el => { msgRefs.current[msg.id] = el; }}
+                />
+              ))}
             </div>
           ))}
           <div ref={bottomRef} />
@@ -1016,250 +796,180 @@ export default function Chat() {
         <ActionSheet
           msg={sheetMsg}
           isMine={sheetMsg.sender_user_id === user?.id}
-          onReply={() => {
-            setReplyTo(sheetMsg);
-            setSheetMsg(null);
-            inputRef.current?.focus();
-          }}
-          onEdit={() => {
-            setEditingMsg(sheetMsg);
-            setEditText(sheetMsg.content);
-            setSheetMsg(null);
-          }}
+          onReply={() => { setReplyTo(sheetMsg); setSheetMsg(null); inputRef.current?.focus(); }}
+          onEdit={() => { setEditingMsg(sheetMsg); setEditText(sheetMsg.content); setSheetMsg(null); }}
           onDelete={() => handleDelete(sheetMsg)}
           onPin={() => handlePin(sheetMsg)}
           onClose={() => setSheetMsg(null)}
         />
       )}
 
-      {/* ── Bottom bar area (Floating Pill) ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-50 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="mx-auto max-w-lg bg-white border border-[#e5e5e5] shadow-sm p-1 rounded-full pointer-events-auto">
-          {/* Edit overlay */}
-          {editingMsg && (
-            <div className="flex items-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 px-3 py-2 mb-2 mx-1 mt-1">
-              <Pencil className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-              <Input
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="flex-1 h-8 text-sm bg-transparent border-0 shadow-none focus-visible:ring-0 px-0"
-                autoFocus
-                onKeyDown={e => { if (e.key === "Enter") handleEditSave(); if (e.key === "Escape") setEditingMsg(null); }}
-              />
-              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={handleEditSave} disabled={sending}>
-                <Check className="h-4 w-4 text-green-600" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-muted-foreground" onClick={() => setEditingMsg(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+      {/* ── Bottom Input Bar (WhatsApp style) ── */}
+      <div className="relative z-50 shrink-0 bg-[#f0f0f0] px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
 
-          {/* Reply preview */}
-          {replyTo && (
-            <div className="flex items-center gap-2 rounded-2xl bg-rose-50 border border-rose-200 px-3 py-2 mb-2 mx-1 mt-1">
-              <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
-              <p className="flex-1 text-xs text-muted-foreground line-clamp-1 pr-2">
-                {replyTo.content || (replyTo.image_url ? "📷 Foto" : replyTo.audio_url ? "🎤 Áudio" : "")}
-              </p>
-              <Button size="icon" variant="ghost" className="h-6 w-6 rounded-full hover:bg-background/50" onClick={() => setReplyTo(null)}>
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
+        {/* Edit mode banner */}
+        {editingMsg && (
+          <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2 mb-1.5 border border-[#e0e0e0]">
+            <Pencil className="h-3.5 w-3.5 text-[#717171] shrink-0" />
+            <input
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              className="flex-1 text-sm bg-transparent outline-none"
+              autoFocus
+              onKeyDown={e => { if (e.key === "Enter") handleEditSave(); if (e.key === "Escape") setEditingMsg(null); }}
+            />
+            <button onClick={handleEditSave} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
+              <Check className="h-4 w-4 text-rose-500" />
+            </button>
+            <button onClick={() => setEditingMsg(null)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
+              <X className="h-4 w-4 text-[#999]" />
+            </button>
+          </div>
+        )}
 
-          {/* Image preview */}
-          {imagePreview && (
-            <div className="flex items-center gap-3 rounded-2xl bg-[#f5f5f5] border border-[#e5e5e5] px-2 py-2 mb-2 mx-1 mt-1">
-              <img src={imagePreview} alt="preview" className="h-10 w-10 rounded-[10px] object-cover shadow-sm" />
-              <p className="flex-1 text-xs text-muted-foreground font-medium truncate">{imageFile?.name}</p>
-              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background/50" onClick={() => setImageFile(null)}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
+        {/* Reply banner */}
+        {replyTo && !editingMsg && (
+          <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2 mb-1.5 border-l-2 border-rose-400">
+            <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+            <p className="flex-1 text-xs text-[#717171] line-clamp-1">
+              {replyTo.content || (replyTo.image_url ? "Foto" : replyTo.audio_url ? "Audio" : "")}
+            </p>
+            <button onClick={() => setReplyTo(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
+              <X className="h-3 w-3 text-[#999]" />
+            </button>
+          </div>
+        )}
 
-          {/* Audio preview */}
-          {audio.audioBlob && !audio.recording && (
-            <div className="flex items-center gap-2 rounded-2xl bg-[#f5f5f5] border border-[#e5e5e5] px-3 py-2 mb-2 mx-1 mt-1">
-              <Mic className="h-4 w-4 text-primary shrink-0" />
-              <p className="flex-1 text-xs font-medium text-foreground">Áudio gravado ({audio.duration}s)</p>
-              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background/50" onClick={audio.clear}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
+        {/* Image preview */}
+        {imagePreview && !editingMsg && (
+          <div className="flex items-center gap-2 bg-white rounded-2xl px-2 py-1.5 mb-1.5">
+            <img src={imagePreview} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
+            <p className="flex-1 text-xs text-[#717171] truncate">{imageFile?.name}</p>
+            <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
+              <X className="h-3 w-3 text-[#999]" />
+            </button>
+          </div>
+        )}
 
-          {/* Input bar */}
-          {!editingMsg && (
-            <div className="relative">
-              {/* WhatsApp Recording Overlay */}
-              {(audio.recording || audio.audioBlob) && (
-                <div className="absolute inset-y-0 left-0 right-0 z-40 bg-white flex flex-col justify-center animate-in fade-in slide-in-from-bottom duration-300 rounded-t-3xl sm:rounded-3xl border-t border-[#e5e5e5] sm:border shadow-sm">
-                  <div className="flex items-center gap-2 pl-3 pr-2 h-[52px] py-1">
-                    
-                    {/* Trash Button */}
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500" 
-                      onClick={() => audio.cancel()}
-                      title="Apagar Gravação"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
+        {/* Main input row */}
+        {!editingMsg && (
+          <div className="flex items-end gap-2">
 
-                    <div className="flex-1 flex items-center justify-center min-w-0">
-                      {audio.recording ? (
-                        <div className="flex items-center gap-2 rounded-full bg-red-500/10 px-4 py-2 border border-red-500/20">
-                          <div className={cn("h-2.5 w-2.5 rounded-full bg-red-500", !audio.isPaused && "animate-pulse")} />
-                          <span className="text-[15px] font-bold text-red-600 font-mono tracking-wider">
-                            {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, '0')}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="w-full flex justify-center">
-                          <AudioPlayer url={URL.createObjectURL(audio.audioBlob!)} isMine={false} />
-                        </div>
-                      )}
-                    </div>
+            {/* Input area (white pill) */}
+            <div className="flex-1 relative">
+              {/* Recording overlay inside the pill */}
+              {inRecMode ? (
+                <div className="flex items-center gap-2 bg-white rounded-[24px] min-h-[44px] px-2">
+                  {/* Trash */}
+                  <button onClick={audio.cancel}
+                    className="w-9 h-9 flex items-center justify-center text-[#aaa] hover:text-red-500 transition-colors shrink-0">
+                    <Trash2 className="h-5 w-5" />
+                  </button>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {audio.recording && (
-                        audio.isPaused ? (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 shrink-0 rounded-full text-red-500 hover:bg-red-50" 
-                            onClick={() => audio.resume()}
-                            title="Retomar Gravação"
-                          >
-                            <Mic className="h-5 w-5 fill-current" />
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-muted" 
-                            onClick={() => audio.pause()}
-                            title="Pausar Gravação"
-                          >
-                            <Pause className="h-5 w-5 fill-current" />
-                          </Button>
-                        )
-                      )}
-                      
-                      {/* Stop/Preview Button */}
-                      {audio.recording && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 shrink-0 rounded-full text-rose-500 hover:bg-rose-50"
-                          onClick={() => audio.stop()}
-                          title="Finalizar e Ouvir"
-                        >
-                          <div className="h-4 w-4 bg-current rounded-sm" />
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        size="icon"
-                        className="h-10 w-10 shrink-0 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-sm transition-transform active:scale-95"
-                        onClick={async () => {
-                          if (audio.recording) {
-                            const blob = await audio.stop();
-                            if (blob) handleSend(blob);
-                          } else if (audio.audioBlob) {
-                            handleSend(audio.audioBlob);
-                          }
-                        }}
-                        disabled={!isReady || sending}
-                      >
-                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
-                      </Button>
-                    </div>
+                  {/* Timer / Preview */}
+                  <div className="flex-1 flex items-center justify-center">
+                    {audio.recording ? (
+                      <div className="flex items-center gap-2">
+                        <div className={cn("h-2 w-2 rounded-full bg-red-500", !audio.isPaused && "animate-pulse")} />
+                        <span className="text-[15px] font-mono font-semibold text-[#333] tabular-nums">
+                          {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, "0")}
+                        </span>
+                        {audio.recording && !audio.isPaused && (
+                          <button onClick={audio.pause} className="text-[#aaa] hover:text-[#666]">
+                            <Pause className="h-4 w-4" />
+                          </button>
+                        )}
+                        {audio.isPaused && (
+                          <button onClick={audio.resume} className="text-rose-500">
+                            <Mic className="h-4 w-4 fill-current" />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      audio.audioBlob && (
+                        <AudioPreviewInline blob={audio.audioBlob} duration={audio.duration} />
+                      )
+                    )}
                   </div>
-                </div>
-              )}
 
-              <form
-                className={cn("flex items-center gap-1 pl-1 pr-1.5", (audio.recording || audio.audioBlob) && "opacity-0 invisible pointer-events-none")}
-                onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              >
-                <ImagePickerButton onPick={setImageFile} />
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={(replyTo || imageFile) 
-                    ? "Adicionar texto..." 
-                    : (new Date().getHours() > 18 ? "Diz algo bonito hoje..." : "Escreve algo que aqueça o coração 💛")}
-                  className="flex-1 h-10 border-0 bg-transparent shadow-none px-2 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-[14px]"
-                  autoComplete="off"
-                />
-                <div className="flex items-center gap-1 shrink-0">
-                  {(!input.trim() && !imageFile) ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-full text-rose-500 hover:bg-rose-50 transition-transform active:scale-[1.3] duration-300"
-                        onClick={() => {
-                          console.log("DEBUG: HEART CLICK - Botão clicado via UI");
-                          handleSendCarinho();
-                        }}
-                        disabled={sending}
-                        title="Enviar Carinho"
-                      >
-                        <Heart className="h-5 w-5 fill-rose-500 text-rose-500" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-full transition-all text-muted-foreground hover:bg-muted/50"
-                        onClick={() => isReady && audio.start()}
-                        disabled={!isReady}
-                        title="Gravar Áudio"
-                      >
-                        <Mic className="h-5 w-5" />
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      type="submit"
-                      size="icon"
-                      className="h-10 w-10 shrink-0 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-sm transition-transform active:scale-95"
-                      disabled={!isReady || sending}
-                    >
-                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-[16px] w-[16px] ml-0.5" />}
-                    </Button>
+                  {/* Stop recording (show preview) */}
+                  {audio.recording && (
+                    <button onClick={() => audio.stop()}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-[#f0f0f0] text-[#666] shrink-0">
+                      <div className="h-3.5 w-3.5 bg-current rounded-sm" />
+                    </button>
                   )}
                 </div>
-              </form>
+              ) : (
+                <div className="flex items-end bg-white rounded-[24px] min-h-[44px] px-2 py-1">
+                  <ImagePickerButton onPick={setImageFile} />
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder="Mensagem"
+                    className="flex-1 min-h-[36px] bg-transparent outline-none text-[15px] text-[#1a1a1a] placeholder:text-[#aaa] px-1 py-1.5 resize-none"
+                    autoComplete="off"
+                  />
+                  {/* Carinho heart — only when no text */}
+                  {!hasText && (
+                    <button type="button" onClick={handleSendCarinho} disabled={sending}
+                      className="w-9 h-9 flex items-center justify-center text-rose-500 hover:text-rose-600 transition-transform active:scale-125 duration-200 shrink-0">
+                      <Heart className="h-5 w-5 fill-rose-500" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Right button: send or mic */}
+            <button
+              type="button"
+              disabled={!isReady || sending}
+              onClick={async () => {
+                if (inRecMode) {
+                  if (audio.recording) {
+                    const blob = await audio.stop();
+                    if (blob) handleSend(blob);
+                  } else if (audio.audioBlob) {
+                    handleSend(audio.audioBlob);
+                  }
+                } else if (hasText) {
+                  handleSend();
+                } else {
+                  audio.start();
+                }
+              }}
+              className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95",
+                "bg-rose-500 text-white",
+                (!isReady || sending) && "opacity-60"
+              )}
+            >
+              {sending
+                ? <Loader2 className="h-5 w-5 animate-spin" />
+                : (inRecMode || hasText)
+                  ? <Send className="h-5 w-5 ml-0.5" />
+                  : <Mic className="h-5 w-5" />
+              }
+            </button>
+          </div>
+        )}
       </div>
-      {/* Heart Animation Overlay - Positioned more centrally */}
+
+      {/* Carinho animation */}
       {showCarinhoAnim && (
         <div className="absolute top-1/3 left-0 right-0 z-[100] pointer-events-none flex items-center justify-center">
           <div className="relative">
-            <div className="animate-bounce p-5 bg-rose-500/20 rounded-full shadow-sm">
+            <div className="animate-bounce p-5 bg-rose-500/15 rounded-full">
               <Heart className="h-20 w-20 text-rose-500 fill-rose-500 animate-pulse" />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              {Array.from({ length: 16 }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="absolute animate-in fade-out zoom-out duration-1000 fill-mode-forwards"
-                  style={{ 
-                    transform: `rotate(${i * 22.5}deg) translateY(-140px)`,
-                    animationDelay: `${i * 0.04}s`
-                  }}
-                >
-                  <Heart className="h-8 w-8 text-rose-500/30 fill-rose-500/30" />
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="absolute animate-in fade-out zoom-out duration-1000 fill-mode-forwards"
+                  style={{ transform: `rotate(${i * 30}deg) translateY(-120px)`, animationDelay: `${i * 0.05}s` }}>
+                  <Heart className="h-6 w-6 text-rose-400/40 fill-rose-400/40" />
                 </div>
               ))}
             </div>
@@ -1270,113 +980,43 @@ export default function Chat() {
   );
 }
 
-/* ── Message Bubble (extracted for long press support) ── */
+/* ── Audio Preview (inline, for recording state) ─────────────────────────────── */
 
-function MessageBubble({
-  msg,
-  isMine,
-  isDeleted,
-  replyPreview,
-  formatTime,
-  jumpToMsg,
-  onLongPress,
-  refCallback,
-}: {
-  msg: Message;
-  isMine: boolean;
-  isDeleted: boolean;
-  replyPreview: string | null;
-  formatTime: (iso: string) => string;
-  jumpToMsg: (id: string) => void;
-  onLongPress: () => void;
-  refCallback: (el: HTMLDivElement | null) => void;
-}) {
-  const longPressHandlers = useLongPress(onLongPress, 400);
+function AudioPreviewInline({ blob, duration }: { blob: Blob; duration: number }) {
+  const [playing, setPlaying]     = useState(false);
+  const [currentTime, setCurrent] = useState(0);
+  const [dur, setDur]             = useState(duration);
+  const urlRef = useRef<string>("");
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(blob);
+    urlRef.current = url;
+    return () => URL.revokeObjectURL(url);
+  }, [blob]);
+
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (playing) audioRef.current.pause();
+    else audioRef.current.play().catch(() => setPlaying(false));
+  };
+
+  const fmt = (t: number) => `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, "0")}`;
+  const progress = dur > 0 ? currentTime / dur : 0;
 
   return (
-    <div
-      ref={refCallback}
-      className={cn("flex mb-1.5 transition-all rounded-xl animate-fade-slide-up", isMine ? "justify-end" : "justify-start")}
-    >
-      <div className="relative max-w-[80%]">
-        {/* Pin indicator */}
-        {msg.is_pinned && !isDeleted && (
-          <div className="absolute -top-2 right-2 z-10">
-            <Pin className="h-3 w-3 text-amber-500 fill-amber-500" />
-          </div>
-        )}
-
-        {/* Message bubble with long press */}
-        <div
-          {...longPressHandlers}
-          className={cn(
-            "px-4 py-2.5 text-[15px] select-none transition-all shadow-sm max-w-full",
-            isMine
-              ? "rounded-[22px] rounded-br-[6px] bg-rose-500 text-white font-medium shadow-sm"
-              : "rounded-[22px] rounded-bl-[6px] bg-white border border-[#e5e5e5] text-foreground font-medium shadow-sm",
-            isDeleted && "opacity-50 italic",
-            msg.id.startsWith("temp-") && "opacity-70 grayscale-[0.5] animate-pulse"
-          )}
-          style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
-        >
-          {/* Reply preview */}
-          {replyPreview && !isDeleted && (
-            <button
-              type="button"
-              onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
-              className={cn(
-                "flex items-center gap-1 rounded-lg px-2 py-1 mb-1 text-[10px] border-l-2",
-                isMine
-                  ? "bg-white/20 border-white/40 text-white/80"
-                  : "bg-[#f5f5f5] border-[#e5e5e5] text-[#717171]"
-              )}
-            >
-              <CornerDownRight className="h-2.5 w-2.5 shrink-0" />
-              <span className="line-clamp-1">{replyPreview}</span>
-            </button>
-          )}
-
-          {/* Image */}
-          {msg.image_url && !isDeleted && (
-            <img
-              src={msg.image_url}
-              alt="Foto"
-              className="rounded-xl max-w-full max-h-60 object-cover mb-1"
-              onClick={() => window.open(msg.image_url!, "_blank")}
-            />
-          )}
-
-          {/* Audio */}
-          {msg.audio_url && !isDeleted && (
-            <div className="mb-1">
-              {msg.audio_url === "pending" ? (
-                <div className="flex items-center gap-2 py-2 px-3 bg-white/5 rounded-xl">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-[10px] opacity-70">A processar áudio...</span>
-                </div>
-              ) : (
-                <AudioPlayer url={msg.audio_url} isMine={isMine} />
-              )}
-            </div>
-          )}
-
-          {/* Content */}
-          {isDeleted ? (
-            <p className="text-xs">🚫 Mensagem apagada</p>
-          ) : (
-            msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-          )}
-
-          {/* Time + edited badge */}
-          <div className={cn(
-            "mt-0.5 flex items-center gap-1 text-[10px] leading-none",
-            isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-          )}>
-            {msg.is_edited && !isDeleted && <span>editada •</span>}
-            <span>{formatTime(msg.created_at)}</span>
-          </div>
-        </div>
-      </div>
+    <div className="flex items-center gap-2 w-full">
+      <audio ref={audioRef} src={urlRef.current} playsInline
+        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); setCurrent(0); }}
+        onTimeUpdate={() => audioRef.current && setCurrent(audioRef.current.currentTime)}
+        onLoadedMetadata={() => audioRef.current && setDur(audioRef.current.duration)}
+      />
+      <button onClick={toggle} className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+        {playing ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current ml-0.5" />}
+      </button>
+      <WaveformBars progress={progress} isMine={false} />
+      <span className="text-[10px] font-mono text-[#999] tabular-nums shrink-0">{fmt(playing ? currentTime : dur)}</span>
     </div>
   );
 }
