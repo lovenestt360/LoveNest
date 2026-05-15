@@ -857,46 +857,54 @@ export default function Chat() {
 
             {/* Input area (white pill) */}
             <div className="flex-1 relative">
-              {/* Recording overlay inside the pill */}
+              {/* Recording / Preview overlay inside the pill */}
               {inRecMode ? (
-                <div className="flex items-center gap-2 bg-white rounded-[24px] min-h-[44px] px-2">
-                  {/* Trash */}
+                <div className="flex items-center gap-2 bg-white rounded-[24px] min-h-[48px] px-3 py-2">
+
+                  {/* Delete */}
                   <button onClick={audio.cancel}
-                    className="w-9 h-9 flex items-center justify-center text-[#aaa] hover:text-red-500 transition-colors shrink-0">
+                    className="w-9 h-9 flex items-center justify-center text-[#bbb] hover:text-red-400 transition-colors shrink-0">
                     <Trash2 className="h-5 w-5" />
                   </button>
 
-                  {/* Timer / Preview */}
-                  <div className="flex-1 flex items-center justify-center">
+                  {/* Center: timer (recording) OR audio preview (stopped) */}
+                  <div className="flex-1 flex items-center min-w-0">
                     {audio.recording ? (
-                      <div className="flex items-center gap-2">
-                        <div className={cn("h-2 w-2 rounded-full bg-red-500", !audio.isPaused && "animate-pulse")} />
-                        <span className="text-[15px] font-mono font-semibold text-[#333] tabular-nums">
+                      /* ── Recording state ── */
+                      <div className="flex items-center gap-2 flex-1 justify-center">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full bg-red-500 shrink-0",
+                          !audio.isPaused && "animate-pulse"
+                        )} />
+                        <span className="text-[16px] font-mono font-semibold text-[#333] tabular-nums">
                           {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, "0")}
                         </span>
-                        {audio.recording && !audio.isPaused && (
-                          <button onClick={audio.pause} className="text-[#aaa] hover:text-[#666]">
-                            <Pause className="h-4 w-4" />
+                        {/* Pause / Resume */}
+                        {audio.isPaused ? (
+                          <button onClick={audio.resume}
+                            className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 transition-transform active:scale-90">
+                            <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
                           </button>
-                        )}
-                        {audio.isPaused && (
-                          <button onClick={audio.resume} className="text-rose-500">
-                            <Mic className="h-4 w-4 fill-current" />
+                        ) : (
+                          <button onClick={audio.pause}
+                            className="w-7 h-7 rounded-full bg-[#f0f0f0] flex items-center justify-center text-[#888] transition-transform active:scale-90">
+                            <Pause className="h-3.5 w-3.5 fill-current" />
                           </button>
                         )}
                       </div>
                     ) : (
+                      /* ── Preview state — listen before sending ── */
                       audio.audioBlob && (
                         <AudioPreviewInline blob={audio.audioBlob} duration={audio.duration} />
                       )
                     )}
                   </div>
 
-                  {/* Stop recording (show preview) */}
+                  {/* Stop to preview (only during recording) */}
                   {audio.recording && (
                     <button onClick={() => audio.stop()}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-[#f0f0f0] text-[#666] shrink-0">
-                      <div className="h-3.5 w-3.5 bg-current rounded-sm" />
+                      className="w-9 h-9 rounded-full bg-[#f0f0f0] flex items-center justify-center text-[#666] shrink-0 transition-transform active:scale-90">
+                      <div className="h-4 w-4 bg-current rounded-[3px]" />
                     </button>
                   )}
                 </div>
@@ -983,15 +991,16 @@ export default function Chat() {
 /* ── Audio Preview (inline, for recording state) ─────────────────────────────── */
 
 function AudioPreviewInline({ blob, duration }: { blob: Blob; duration: number }) {
-  const [playing, setPlaying]     = useState(false);
+  const [playing, setPlaying]   = useState(false);
   const [currentTime, setCurrent] = useState(0);
-  const [dur, setDur]             = useState(duration);
-  const urlRef = useRef<string>("");
+  const [dur, setDur]           = useState(duration);
+  // useState (not useRef) so the <audio> src attribute re-renders correctly
+  const [blobUrl, setBlobUrl]   = useState("");
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     const url = URL.createObjectURL(blob);
-    urlRef.current = url;
+    setBlobUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [blob]);
 
@@ -1006,17 +1015,29 @@ function AudioPreviewInline({ blob, duration }: { blob: Blob; duration: number }
 
   return (
     <div className="flex items-center gap-2 w-full">
-      <audio ref={audioRef} src={urlRef.current} playsInline
-        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
-        onEnded={() => { setPlaying(false); setCurrent(0); }}
-        onTimeUpdate={() => audioRef.current && setCurrent(audioRef.current.currentTime)}
-        onLoadedMetadata={() => audioRef.current && setDur(audioRef.current.duration)}
-      />
-      <button onClick={toggle} className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
-        {playing ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current ml-0.5" />}
+      {blobUrl && (
+        <audio ref={audioRef} src={blobUrl} preload="auto" playsInline
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => { setPlaying(false); setCurrent(0); }}
+          onTimeUpdate={() => audioRef.current && setCurrent(audioRef.current.currentTime)}
+          onLoadedMetadata={() => audioRef.current && setDur(audioRef.current.duration)}
+        />
+      )}
+      <button
+        onClick={toggle}
+        className="w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-90"
+      >
+        {playing
+          ? <Pause className="h-4 w-4 fill-current" />
+          : <Play className="h-4 w-4 fill-current ml-0.5" />}
       </button>
-      <WaveformBars progress={progress} isMine={false} />
-      <span className="text-[10px] font-mono text-[#999] tabular-nums shrink-0">{fmt(playing ? currentTime : dur)}</span>
+      <div className="flex flex-col gap-1 flex-1 min-w-0">
+        <WaveformBars progress={progress} isMine={false} />
+        <span className="text-[10px] font-mono text-[#999] tabular-nums">
+          {fmt(playing ? currentTime : dur)}
+        </span>
+      </div>
     </div>
   );
 }
