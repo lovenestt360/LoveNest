@@ -45,6 +45,7 @@ const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const LoveStreak = lazy(() => import("./pages/LoveStreak"));
 const Ranking = lazy(() => import("./pages/Ranking"));
 const Descobrir = lazy(() => import("./pages/Descobrir"));
+const Momentos  = lazy(() => import("./pages/Momentos"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -123,6 +124,7 @@ const AppRoutes = () => (
         <Route element={<PremiumGuard requiredFeature="descobrir" />}>
           <Route path="descobrir" element={<Descobrir />} />
         </Route>
+        <Route path="momentos" element={<Momentos />} />
       </Route>
     </Route>
 
