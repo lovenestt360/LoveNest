@@ -21,19 +21,29 @@ const PHRASES = [
   { min: 90, max: Infinity, msg: "O vosso amor tornou-se uma força viva" },
 ];
 
+const PERFECT_DAY_PHRASES = [
+  "Hoje escolheram um ao outro",
+  "O vosso ninho esteve completo hoje",
+  "Cuidaram de todos os pequenos momentos",
+  "Hoje apareceram um para o outro",
+  "A chama ficou completa hoje",
+];
+
 function getCountPhrase(s: number) {
   return PHRASES.find(p => s >= p.min && s <= p.max)?.msg ?? "";
 }
 
-// Activity-state aware phrase — document: Feature 2 emotional feedback
 function getContextualPhrase(
   streak: number,
   bothActive: boolean,
   myIn: boolean,
   partnerIn: boolean,
-  atRisk: boolean
+  atRisk: boolean,
+  perfectDay: boolean,
 ): string {
   const day = Math.floor(Date.now() / 86400000);
+
+  if (perfectDay) return PERFECT_DAY_PHRASES[day % PERFECT_DAY_PHRASES.length];
 
   if (bothActive) {
     const msgs = [
@@ -64,7 +74,6 @@ function getRelationshipState(s: number): { name: string; color: string } {
   return             { name: "Início",        color: "text-[#aaa]"     };
 }
 
-// Icon that accompanies the relationship state label
 function getRelationshipIcon(name: string) {
   if (name === "Almas Gémeas" || name === "Inseparáveis") return Sparkles;
   if (name === "Chama Viva") return Flame;
@@ -86,10 +95,10 @@ type MissionStatus = Record<MissionId, boolean>;
 // ── Couple status (compact, for card) ────────────────────────────────────────
 
 function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean) {
-  if (bothActive)      return { label: "Juntos hoje",        color: "text-rose-500", dot: "bg-rose-400" };
-  if (shieldUsedToday) return { label: "Chama protegida",    color: "text-sky-500",  dot: "bg-sky-400"  };
-  if (myCheckedIn)     return { label: "A aguardar o par",   color: "text-[#aaa]",   dot: "bg-[#ccc]"   };
-  return               { label: "Aguardando presença",       color: "text-[#bbb]",   dot: "bg-[#ddd]"   };
+  if (bothActive)       return { label: "Juntos hoje",        color: "text-rose-500", dot: "bg-rose-400" };
+  if (shieldUsedToday)  return { label: "Chama protegida",    color: "text-sky-500",  dot: "bg-sky-400"  };
+  if (myCheckedIn)      return { label: "A aguardar o par",   color: "text-[#aaa]",   dot: "bg-[#ccc]"   };
+  return                { label: "Aguardando presença",       color: "text-[#bbb]",   dot: "bg-[#ddd]"   };
 }
 
 // ── Extra data hook ───────────────────────────────────────────────────────────
@@ -103,7 +112,6 @@ function useCardData() {
 
   const fetchData = useCallback(async () => {
     if (!spaceId) return;
-    // UTC date to match server CURRENT_DATE (avoids timezone mismatch)
     const today = new Date().toISOString().slice(0, 10);
 
     (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
@@ -140,14 +148,12 @@ function useCardData() {
     fetchData();
   }, [fetchData]);
 
-  // Refresh when streak updates (partner check-in, own check-in, etc.)
   useEffect(() => {
     const handler = () => fetchData();
     window.addEventListener("streak-updated", handler);
     return () => window.removeEventListener("streak-updated", handler);
   }, [fetchData]);
 
-  // Polling every 3 minutes to catch partner activity
   useEffect(() => {
     const interval = setInterval(fetchData, 3 * 60_000);
     return () => clearInterval(interval);
@@ -160,20 +166,38 @@ function useCardData() {
 
 export function LoveStreakCard() {
   const { streak, loading } = useStreak();
-  const { points, missions }  = useCardData();
+  const { points, missions } = useCardData();
+  const spaceId = useCoupleSpaceId();
   const navigate = useNavigate();
 
-  // ALL hooks must be called before any conditional return
-  const celebratedRef = useRef(false);
-  const bothActiveToday = streak?.bothActiveToday ?? false;
+  const celebratedRef     = useRef(false);
+  const perfectDayRef     = useRef(false);
+  const bothActiveToday   = streak?.bothActiveToday ?? false;
 
+  const gesturesDone    = Object.values(missions).filter(Boolean).length;
+  const allMissionsDone = gesturesDone === MISSIONS.length;
+  const perfectDay      = bothActiveToday && allMissionsDone;
+
+  // Haptic: subtle pulse when both active, triple pulse for perfect day
   useEffect(() => {
     if (bothActiveToday && !celebratedRef.current) {
       celebratedRef.current = true;
-      try { navigator.vibrate?.([15, 50, 20]); } catch {}
+      try {
+        navigator.vibrate?.(perfectDay ? [20, 60, 20, 60, 20] : [15, 50, 20]);
+      } catch {}
     }
     if (!bothActiveToday) celebratedRef.current = false;
-  }, [bothActiveToday]);
+  }, [bothActiveToday, perfectDay]);
+
+  // Record perfect day in DB (idempotent RPC — safe to call multiple times)
+  useEffect(() => {
+    if (perfectDay && spaceId && !perfectDayRef.current) {
+      perfectDayRef.current = true;
+      (supabase.rpc("record_perfect_day" as any, { p_couple_space_id: spaceId }) as any)
+        .catch(() => {});
+    }
+    if (!perfectDay) perfectDayRef.current = false;
+  }, [perfectDay, spaceId]);
 
   if (loading) {
     return (
@@ -190,10 +214,9 @@ export function LoveStreakCard() {
     shieldUsedToday, myCheckedIn, activeCount, streakAtRisk,
   } = streak;
 
-  // "Par" heart: partner checked in if there's activity from someone other than me
   const partnerCheckedIn = activeCount >= (myCheckedIn ? 2 : 1);
   const cardStatus = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday);
-  const relState = getRelationshipState(currentStreak);
+  const relState   = getRelationshipState(currentStreak);
 
   const numberColor = bothActiveToday ? "text-rose-500" : "text-foreground";
 
@@ -203,167 +226,184 @@ export function LoveStreakCard() {
     : currentStreak === 0 ? "dias" : "dias juntos";
 
   const displayPoints = points ?? 0;
-  const gesturesDone = Object.values(missions).filter(Boolean).length;
-  const allMissionsDone = gesturesDone === MISSIONS.length;
   const RelIcon = getRelationshipIcon(relState.name);
 
   return (
-    <button
-      onClick={() => navigate("/lovestreak")}
-      className={cn(
-        "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98] transition-all",
-        bothActiveToday && "animate-warm-glow-border",
-        !bothActiveToday && streakAtRisk && "border-rose-100"
-      )}
-    >
-      {/* Row 1 — header */}
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1.5">
-          <Flame
-            className={cn(
-              "w-4 h-4 transition-colors",
-              bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-[#c4c4c4]"
-            )}
-            strokeWidth={1.5}
-          />
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
-            A vossa Chama
-          </span>
-        </div>
-        <ChevronRight className="w-4 h-4 text-[#c4c4c4]" strokeWidth={1.5} />
-      </div>
-
-      {/* Row 2 — contextual emotional phrase */}
-      <p className="text-[11px] text-[#aaa] mb-1.5 leading-snug">
-        {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk)}
-      </p>
-
-      {/* Row 2.5 — couple status badge */}
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", cardStatus.dot)} />
-        <span className={cn("text-[10px] font-semibold", cardStatus.color)}>
-          {cardStatus.label}
-        </span>
-      </div>
-
-      {/* Row 3 — streak number + hearts & shields */}
-      <div className="flex items-start justify-between mb-3">
-        {/* Big number */}
-        <div className="flex flex-col items-start gap-0.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className={cn("text-5xl font-bold tabular-nums tracking-tight", numberColor)}>
-              {currentStreak}
-            </span>
-          </div>
-          <span className={cn(
-            "text-[10px] leading-snug max-w-[130px]",
-            bothActiveToday ? "text-rose-400 font-medium" : "text-[#aaa]"
-          )}>
-            {daysLabel}
-          </span>
-        </div>
-
-        {/* Hearts + Shields */}
-        <div className="flex flex-col items-end gap-2 pt-0.5">
-          {/* Hearts — filled when checked in */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Heart
-                className={cn(
-                  "w-4 h-4 transition-all duration-500",
-                  myCheckedIn
-                    ? "fill-rose-500 text-rose-500 animate-heart-throb"
-                    : "text-[#e0e0e0]"
-                )}
-                strokeWidth={myCheckedIn ? 0 : 1.5}
-              />
-              <span className="text-[9px] text-[#bbb] font-semibold">Tu</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Heart
-                className={cn(
-                  "w-4 h-4 transition-all duration-500",
-                  partnerCheckedIn
-                    ? "fill-rose-500 text-rose-500 animate-heart-throb"
-                    : "text-[#e0e0e0]"
-                )}
-                strokeWidth={partnerCheckedIn ? 0 : 1.5}
-              />
-              <span className="text-[9px] text-[#bbb] font-semibold">Par</span>
-            </div>
-          </div>
-
-          {/* Shields — filled when remaining */}
-          <div className="flex items-center gap-0.5">
-            {[0, 1, 2].map(i => (
-              <Shield
-                key={i}
-                className={cn("w-3.5 h-3.5",
-                  i < shieldsRemaining ? "text-blue-400" : "text-[#e0e0e0]")}
-                strokeWidth={1.5}
-              />
-            ))}
-            <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide ml-1">
-              Proteção
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 4 — footer: relationship state + pts · gestos | mission icons */}
-      <div className={cn(
-        "flex items-center justify-between pt-2.5 border-t transition-colors",
-        allMissionsDone ? "border-rose-100" : "border-[#f0f0f0]"
-      )}>
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1">
-            <RelIcon
-              className={cn("w-3 h-3 shrink-0", relState.color,
-                allMissionsDone && "animate-flame-breathe")}
+    <div className="space-y-1.5">
+      <button
+        onClick={() => navigate("/lovestreak")}
+        className={cn(
+          "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98] transition-all duration-300",
+          perfectDay
+            ? "animate-warm-glow-border bg-rose-50/30 shadow-[0_4px_24px_rgba(244,63,94,0.08)]"
+            : bothActiveToday
+              ? "animate-warm-glow-border"
+              : streakAtRisk
+                ? "border-rose-100"
+                : ""
+        )}
+      >
+        {/* Row 1 — header */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1.5">
+            <Flame
+              className={cn(
+                "w-4 h-4 transition-colors",
+                bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-[#c4c4c4]"
+              )}
               strokeWidth={1.5}
             />
-            <span className={cn("text-[11px] font-semibold", relState.color)}>
-              {relState.name}
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+              A vossa Chama
             </span>
           </div>
-          <div className="flex items-center gap-1 text-[10px]">
-            <span className={cn(
-              "font-semibold tabular-nums",
-              displayPoints > 0 ? "text-rose-400" : "text-[#ccc]"
-            )}>
-              {displayPoints}
-            </span>
-            <span className="text-[#ccc]">pts</span>
-            <span className="text-[#ddd]">·</span>
-            <span className={cn(
-              "font-semibold tabular-nums",
-              gesturesDone > 0 ? "text-sky-400" : "text-[#ccc]"
-            )}>
-              {gesturesDone}
-            </span>
-            <span className="text-[#ccc]">gestos</span>
+          <div className="flex items-center gap-1.5">
+            {perfectDay && (
+              <span className="flex items-center gap-1 bg-rose-50 border border-rose-100 text-rose-400 text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300">
+                <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
+                Dia Completo
+              </span>
+            )}
+            <ChevronRight className="w-4 h-4 text-[#c4c4c4]" strokeWidth={1.5} />
           </div>
         </div>
 
-        {/* Mission icons + all-done celebration */}
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-1.5">
-            {MISSIONS.map(({ id, Icon, doneColor }) => (
-              <Icon
-                key={id}
-                className={cn("w-3.5 h-3.5 transition-colors",
-                  missions[id] ? doneColor : "text-[#e0e0e0]")}
+        {/* Row 2 — contextual emotional phrase */}
+        <p className="text-[11px] text-[#aaa] mb-1.5 leading-snug">
+          {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk, perfectDay)}
+        </p>
+
+        {/* Row 2.5 — couple status badge */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", cardStatus.dot)} />
+          <span className={cn("text-[10px] font-semibold", cardStatus.color)}>
+            {cardStatus.label}
+          </span>
+        </div>
+
+        {/* Row 3 — streak number + hearts & shields */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex flex-col items-start gap-0.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className={cn("text-5xl font-bold tabular-nums tracking-tight", numberColor)}>
+                {currentStreak}
+              </span>
+            </div>
+            <span className={cn(
+              "text-[10px] leading-snug max-w-[130px]",
+              bothActiveToday ? "text-rose-400 font-medium" : "text-[#aaa]"
+            )}>
+              {daysLabel}
+            </span>
+          </div>
+
+          {/* Hearts + Shields */}
+          <div className="flex flex-col items-end gap-2 pt-0.5">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Heart
+                  className={cn(
+                    "w-4 h-4 transition-all duration-500",
+                    myCheckedIn
+                      ? "fill-rose-500 text-rose-500 animate-heart-throb"
+                      : "text-[#e0e0e0]"
+                  )}
+                  strokeWidth={myCheckedIn ? 0 : 1.5}
+                />
+                <span className="text-[9px] text-[#bbb] font-semibold">Tu</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Heart
+                  className={cn(
+                    "w-4 h-4 transition-all duration-500",
+                    partnerCheckedIn
+                      ? "fill-rose-500 text-rose-500 animate-heart-throb"
+                      : "text-[#e0e0e0]"
+                  )}
+                  strokeWidth={partnerCheckedIn ? 0 : 1.5}
+                />
+                <span className="text-[9px] text-[#bbb] font-semibold">Par</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-0.5">
+              {[0, 1, 2].map(i => (
+                <Shield
+                  key={i}
+                  className={cn("w-3.5 h-3.5",
+                    i < shieldsRemaining ? "text-blue-400" : "text-[#e0e0e0]")}
+                  strokeWidth={1.5}
+                />
+              ))}
+              <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide ml-1">
+                Proteção
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 4 — footer: relationship state + pts · gestos | mission icons */}
+        <div className={cn(
+          "flex items-center justify-between pt-2.5 border-t transition-colors duration-300",
+          allMissionsDone ? "border-rose-100" : "border-[#f0f0f0]"
+        )}>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1">
+              <RelIcon
+                className={cn("w-3 h-3 shrink-0", relState.color,
+                  allMissionsDone && "animate-flame-breathe")}
                 strokeWidth={1.5}
               />
-            ))}
+              <span className={cn("text-[11px] font-semibold", relState.color)}>
+                {relState.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px]">
+              <span className={cn(
+                "font-semibold tabular-nums",
+                displayPoints > 0 ? "text-rose-400" : "text-[#ccc]"
+              )}>
+                {displayPoints}
+              </span>
+              <span className="text-[#ccc]">pts</span>
+              <span className="text-[#ddd]">·</span>
+              <span className={cn(
+                "font-semibold tabular-nums",
+                gesturesDone > 0 ? "text-sky-400" : "text-[#ccc]"
+              )}>
+                {gesturesDone}
+              </span>
+              <span className="text-[#ccc]">gestos</span>
+            </div>
           </div>
-          {allMissionsDone && (
-            <span className="text-[9px] font-semibold text-rose-400 tracking-wide">
-              Missão cumprida
-            </span>
-          )}
+
+          {/* Mission icons + all-done celebration */}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1.5">
+              {MISSIONS.map(({ id, Icon, doneColor }) => (
+                <Icon
+                  key={id}
+                  className={cn("w-3.5 h-3.5 transition-colors",
+                    missions[id] ? doneColor : "text-[#e0e0e0]")}
+                  strokeWidth={1.5}
+                />
+              ))}
+            </div>
+            {allMissionsDone && (
+              <span className="text-[9px] font-semibold text-rose-400 tracking-wide">
+                Missão cumprida
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-    </button>
+      </button>
+
+      {/* Subtle home micro-feedback — only visible on perfect day */}
+      {perfectDay && (
+        <p className="text-center text-[10px] text-[#bbb] font-medium px-2 animate-in fade-in duration-500">
+          Hoje o vosso espaço esteve completo.
+        </p>
+      )}
+    </div>
   );
 }
