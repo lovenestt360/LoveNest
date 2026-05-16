@@ -27,6 +27,9 @@ import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext
 import { useEmotionalFeed } from "@/hooks/useEmotionalFeed";
 import { EmotionalFeed } from "@/components/EmotionalFeed";
 import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
+import { useStreak } from "@/features/streak/useStreak";
+import { useMilestone } from "@/hooks/useMilestone";
+import { MilestoneModal, getMilestoneMicroMemory } from "@/components/MilestoneModal";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -350,6 +353,13 @@ const Index = () => {
   const houseInviteCode = useHouseInviteCode();
   const feed = useEmotionalFeed();
 
+  const spaceId = useCoupleSpaceId();
+  const { streak: streakData } = useStreak();
+  const { pendingMilestone, recentMilestone, confirmMilestone } = useMilestone(
+    streakData?.currentStreak ?? 0,
+    spaceId
+  );
+
   const handleShareReferral = () => {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
@@ -429,6 +439,13 @@ const Index = () => {
         />
 
         <LoveStreakCard />
+
+        {/* Milestone micro-memory — visible for 24h after any streak milestone */}
+        {recentMilestone && (
+          <p className="text-center text-[10px] text-[#bbb] font-medium px-2 -mt-2 animate-in fade-in duration-500">
+            {getMilestoneMicroMemory(recentMilestone)}
+          </p>
+        )}
 
         {/* Partner Presence Indicator — Pillar 1: Emotional Presence */}
         {avatars.partner && <PartnerPresenceCard />}
@@ -643,6 +660,11 @@ const Index = () => {
           <ArrowRight className="w-4 h-4 text-[#c0c0c0]" />
         </button>
       </div>
+
+      {/* Emotional Milestone Modal — shown once per milestone, never again */}
+      {pendingMilestone && (
+        <MilestoneModal value={pendingMilestone} onClose={confirmMilestone} />
+      )}
     </div>
   );
 };
