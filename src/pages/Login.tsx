@@ -37,7 +37,14 @@ export default function Login() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/casa", { replace: true });
+      if (session) {
+        navigate("/casa", { replace: true });
+        return;
+      }
+      // First-time visitors see the emotional onboarding before login
+      if (!localStorage.getItem("onboarding_seen")) {
+        navigate("/inicio", { replace: true });
+      }
     });
   }, [navigate]);
 

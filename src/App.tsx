@@ -32,6 +32,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 const CoupleSpace = lazy(() => import("./pages/CoupleSpace"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Fasting = lazy(() => import("./pages/Fasting"));
@@ -63,6 +64,7 @@ function PageLoader() {
 const AppRoutes = () => (
   <Routes>
     {/* Public routes */}
+    <Route path="/inicio" element={<Onboarding />} />
     <Route path="/entrar" element={<Login />} />
     <Route path="/criar-conta" element={<Signup />} />
     <Route path="/signup" element={<Signup />} />
