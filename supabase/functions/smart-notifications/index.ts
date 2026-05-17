@@ -1,13 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 // ══════════════════════════════════════════════════════════════════════
-// LoveNest — Smart Emotional Notifications
+// LoveNest — Emotional Notification System V1
 //
-// Rules fire in priority order. Only 1 rule per user per run.
-// Max 2 smart notifications per user per day.
-// Each rule has its own cooldown to prevent repetition.
+// 5 notification categories (spec V1):
+//   1. silent_day     — neither partner active today, 19h–21h local
+//   2. partner_active — partner interacted, user hasn't
+//   3. flame_risk     — streak at risk, end of day
+//   4. perfect_day    — both partners completed all missions today
+//   5. milestone      — streak milestone reached
 //
-// Healthy hours: 8h–22h in the user's local timezone.
+// Extra (kept for product value, not in V1 spec):
+//   capsule_soon, wrapped_ready
+//
+// Rules:
+//   - Max 2 notifications/user/day
+//   - Per-rule cooldowns prevent repetition
+//   - Only during healthy hours: 8h–22h local
+//   - No urgency, no guilt, no pressure
 // ══════════════════════════════════════════════════════════════════════
 
 const CORS = {
@@ -15,46 +25,53 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// ── Message banks — pick randomly for variety ──────────────────────────
+// ── Message banks ──────────────────────────────────────────────────────
+// Tone: calm · intimate · emotionally warm · no emojis · no urgency
 const MSGS = {
-  streak_risk: [
-    { title: "A chama ainda espera pelos dois 🔥", body: "O dia está quase a terminar. Um pequeno gesto protege o que construíram juntos." },
-    { title: "Não deixem o dia terminar sem um gesto ❤️", body: "A vossa sequência precisa de vocês hoje. Um gesto é suficiente." },
-    { title: "A vossa chama espera 🕯️", body: "Façam o check-in antes da meia-noite e mantenham a chama viva." },
+  // 1. Silent Day Reminder — neither partner active, 19h–21h
+  silent_day: [
+    { title: "O vosso espaço", body: "O vosso espaço esteve silencioso hoje." },
+    { title: "Ainda há tempo", body: "Hoje ainda podem aparecer um para o outro." },
+    { title: "O vosso ninho", body: "Pequenos gestos mantêm o ninho vivo." },
+    { title: "Um momento", body: "Ainda há espaço para um momento hoje." },
   ],
-  long_absence: [
-    { title: "O vosso ninho sente falta de movimento 🕊️", body: "Pequenos gestos mantêm grandes amores vivos." },
-    { title: "Voltam quando quiserem ❤️", body: "O vosso espaço está aqui, à vossa espera." },
-    { title: "Já há algum tempo sem visitar o vosso ninho ✨", body: "Uma mensagem, um gesto — o que quiserem. Estamos aqui." },
-  ],
+
+  // 2. Partner Presence — partner active, user hasn't checked in
   partner_active: [
-    { title: "O teu par esteve presente hoje ❤️", body: "Vai ver o que está a acontecer no vosso ninho." },
-    { title: "Há movimento no vosso ninho 🏠", body: "O teu amor passou por aqui. Talvez valha a pena dar uma vista de olhos." },
-    { title: "O teu par deixou algo para ti 💛", body: "Entra e descobre o que aconteceu hoje." },
+    { title: "Presença no ninho", body: "O teu par esteve presente hoje." },
+    { title: "Um gesto no vosso espaço", body: "O teu par deixou um gesto no vosso espaço." },
+    { title: "Presença", body: "Hoje alguém apareceu para vocês." },
   ],
-  mission_almost: [
-    { title: "Falta só um gesto para proteger a chama hoje 🔥", body: "Estão quase lá. Um pequeno passo faz toda a diferença." },
-    { title: "A chama agradece o esforço ✨", body: "Mais um gesto e o dia fica completo para a vossa chama." },
-    { title: "Tão perto de um dia perfeito 💛", body: "Só falta um gesto para completar as missões de hoje." },
+
+  // 3. Flame Risk — streak at risk after 19h
+  flame_risk: [
+    { title: "A chama", body: "A chama sente falta dos dois." },
+    { title: "Ainda a tempo", body: "Hoje ainda podem proteger o vosso momento." },
+    { title: "A presença conta", body: "A presença de hoje ainda conta." },
   ],
-  gentle_reminder: [
-    { title: "Como estás hoje? 💛", body: "O teu par pode querer saber. Regista o teu humor e partilha este momento." },
-    { title: "Um pensamento sobre vocês 🌿", body: "Como está o vosso dia? Um gesto de carinho pode mudar tudo." },
-    { title: "O teu par vai querer saber como te sentes 💛", body: "Abre a app e partilha o teu humor. É rápido e vale muito." },
+
+  // 4. Perfect Day — both partners completed all missions
+  perfect_day: [
+    { title: "O vosso espaço", body: "Hoje o vosso espaço esteve completo." },
+    { title: "Todos os momentos", body: "Todos os pequenos momentos foram cuidados hoje." },
+    { title: "Presença mútua", body: "Hoje escolheram aparecer um para o outro." },
   ],
+
+  // 5. Milestone — streak milestone reached
+  milestone: [
+    { title: "Uma etapa juntos", body: "O vosso espaço continua a ganhar raízes." },
+    { title: "Dias que ficam", body: "Pequenos dias tornam-se grandes memórias." },
+    { title: "História em construção", body: "Chegaram a uma nova etapa juntos." },
+  ],
+
+  // Extra — capsule / wrapped (product value, kept from previous version)
   capsule_soon: [
-    { title: "A vossa cápsula será aberta em breve 🕰️", body: "Uma mensagem do passado está prestes a chegar. Preparem-se para reviver." },
-    { title: "O tempo está quase chegando ✉️", body: "A vossa cápsula do tempo abre nos próximos dias. Uma surpresa a caminho." },
+    { title: "A vossa cápsula", body: "Uma mensagem do passado está prestes a chegar." },
+    { title: "O tempo passa", body: "A vossa cápsula do tempo abre nos próximos dias." },
   ],
   wrapped_ready: [
-    { title: "O vosso Wrapped está pronto ✨", body: "O resumo do vosso mês de amor está à vossa espera." },
-    { title: "Este mês em números e emoções 💛", body: "Vejam juntos o que viveram este mês. Vai surpreender." },
-    { title: "Um mês de amor em imagens e gestos 🌟", body: "O vosso Wrapped do mês está criado. Abram juntos!" },
-  ],
-  streak_milestone: [
-    { title: "Uma conquista de amor! 🏆", body: "Parabéns por este recorde de dias juntos. Que inspiração!" },
-    { title: "Que casal extraordinário! ✨", body: "A vossa dedicação diária é de admirar. Continuem assim." },
-    { title: "Este marco é vosso 💛", body: "Atingiram um novo recorde de dias consecutivos. O amor agradece." },
+    { title: "O vosso mês", body: "O resumo do vosso mês está à vossa espera." },
+    { title: "Um mês em memórias", body: "Vejam juntos o que viveram este mês." },
   ],
 };
 
@@ -64,26 +81,24 @@ function pick<T>(arr: T[]): T {
 
 // ── Cooldowns per rule (hours) ─────────────────────────────────────────
 const COOLDOWNS: Record<string, number> = {
-  streak_risk:       6,
-  long_absence:     24,
-  partner_active:    6,
-  mission_almost:   10,
-  gentle_reminder:  16,
-  capsule_soon:     48,
-  wrapped_ready:    72,
-  streak_milestone: 168, // 7 days
+  silent_day:     16,
+  partner_active:  8,
+  flame_risk:      8,
+  perfect_day:    20,
+  milestone:     168, // 7 days
+  capsule_soon:   48,
+  wrapped_ready:  72,
 };
 
-// ── URL routing per rule ──────────────────────────────────────────────
+// ── Deep-link per rule ────────────────────────────────────────────────
 const RULE_URLS: Record<string, string> = {
-  streak_risk:      "/lovestreak",
-  long_absence:     "/",
-  partner_active:   "/",
-  mission_almost:   "/lovestreak",
-  gentle_reminder:  "/humor",
-  capsule_soon:     "/capsula",
-  wrapped_ready:    "/wrapped",
-  streak_milestone: "/lovestreak",
+  silent_day:     "/",
+  partner_active: "/",
+  flame_risk:     "/lovestreak",
+  perfect_day:    "/lovestreak",
+  milestone:      "/lovestreak",
+  capsule_soon:   "/capsula",
+  wrapped_ready:  "/wrapped",
 };
 
 // ─────────────────────────────────────────────────────────────────────
@@ -92,28 +107,26 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: CORS });
   }
 
-  const supabaseUrl   = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const vapidPub      = Deno.env.get("VAPID_PUBLIC_KEY")!;
-  const vapidPriv     = Deno.env.get("VAPID_PRIVATE_KEY")!;
-  const sb            = createClient(supabaseUrl, serviceKey);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const vapidPub    = Deno.env.get("VAPID_PUBLIC_KEY")!;
+  const vapidPriv   = Deno.env.get("VAPID_PRIVATE_KEY")!;
+  const sb          = createClient(supabaseUrl, serviceKey);
 
-  const now           = new Date();
-  const todayISO      = now.toISOString().slice(0, 10); // YYYY-MM-DD UTC
-  const nowMs         = now.getTime();
+  const now       = new Date();
+  const todayISO  = now.toISOString().slice(0, 10);
+  const nowMs     = now.getTime();
 
-  let totalSent = 0;
+  let totalSent     = 0;
   let scannedSpaces = 0;
 
   try {
-    // 1. Load all couple spaces with their members
     const { data: spaces, error: err } = await sb
       .from("couple_spaces")
       .select("id, streak_count, last_streak_date, members(user_id, profiles(display_name, timezone))");
 
     if (err) throw err;
 
-    // Preload web-push once
     const webpush = await import("npm:web-push");
     webpush.default.setVapidDetails(
       "mailto:app@lovenestt.lovable.app",
@@ -128,9 +141,8 @@ Deno.serve(async (req) => {
 
       scannedSpaces++;
 
-      // ── Pre-fetch shared couple data ──────────────────────────────
+      // ── Shared couple data ────────────────────────────────────────
 
-      // Today's activity (streak/mission/mood)
       const { data: todayActivity } = await sb
         .from("daily_activity")
         .select("user_id, type")
@@ -139,65 +151,60 @@ Deno.serve(async (req) => {
 
       const activeUsersToday = new Set((todayActivity || []).map((r: any) => r.user_id));
 
-      // Pending time capsules (unlock in 1–5 days)
-      const in5Days = new Date(nowMs + 5 * 86400000).toISOString();
-      const { data: capsules } = await sb
-        .from("time_capsules")
-        .select("id, unlock_at")
-        .eq("couple_space_id", spaceId)
-        .gt("unlock_at", now.toISOString())
-        .lte("unlock_at", in5Days);
-
-      // Wrapped this month
-      const thisMonth = now.getMonth() + 1;
-      const thisYear  = now.getFullYear();
-      const { data: wrapped } = await sb
-        .from("love_wrapped")
-        .select("id")
-        .eq("couple_space_id", spaceId)
-        .eq("month", thisMonth)
-        .eq("year", thisYear)
-        .maybeSingle();
-
-      // Today's missions completion (count distinct completed types)
-      // A mission is "couple-completed" when both users have the activity type
+      // Perfect day: all 4 missions complete by both partners
       const typeMap: Record<string, Set<string>> = {};
       for (const row of (todayActivity || []) as any[]) {
         if (!typeMap[row.type]) typeMap[row.type] = new Set();
         typeMap[row.type].add(row.user_id);
       }
-      const missionTypes = ["message", "checkin", "mood", "prayer"];
-      const missionsDone = missionTypes.filter(t => (typeMap[t]?.size ?? 0) >= 2).length;
+      const missionTypes  = ["message", "checkin", "mood", "prayer"];
+      const missionsDone  = missionTypes.filter(t => (typeMap[t]?.size ?? 0) >= 2).length;
+      const isPerfectDay  = missionsDone === missionTypes.length;
 
-      // ── Per-member rule evaluation ────────────────────────────────
+      // Capsule about to open (1–5 days)
+      const in5Days = new Date(nowMs + 5 * 86400000).toISOString();
+      const { data: capsules } = await sb
+        .from("time_capsules")
+        .select("id")
+        .eq("couple_space_id", spaceId)
+        .gt("unlock_at", now.toISOString())
+        .lte("unlock_at", in5Days);
+
+      // Monthly wrapped
+      const { data: wrapped } = await sb
+        .from("love_wrapped")
+        .select("id")
+        .eq("couple_space_id", spaceId)
+        .eq("month", now.getMonth() + 1)
+        .eq("year", now.getFullYear())
+        .maybeSingle();
+
+      // ── Per-member evaluation ─────────────────────────────────────
       for (const member of members) {
-        const userId    = member.user_id;
-        const profile   = (member.profiles as any) || {};
-        const partner   = members.find((m: any) => m.user_id !== userId);
-        const partnerName = (partner?.profiles as any)?.display_name || "o teu par";
+        const userId  = member.user_id;
+        const profile = (member.profiles as any) || {};
+        const partner = members.find((m: any) => m.user_id !== userId);
 
-        // Resolve local hour for this user
-        const tz = profile.timezone || "UTC";
+        // Resolve user's local hour
+        const tz        = profile.timezone || "UTC";
         const localHour = parseInt(
           new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hour12: false }).format(now)
         );
 
-        // Only notify during healthy hours (8h–22h local)
+        // Healthy hours: 8h–22h
         if (localHour < 8 || localHour >= 22) continue;
 
-        // Check daily cap (max 2 smart notifications per user today)
+        // Daily cap: max 2 smart notifications per user per day
         const todayStart = new Date(now);
         todayStart.setUTCHours(0, 0, 0, 0);
-
         const { count: dailyCount } = await sb
           .from("notification_history")
           .select("id", { count: "exact", head: true })
           .eq("user_id", userId)
           .gte("sent_at", todayStart.toISOString());
-
         if ((dailyCount ?? 0) >= 2) continue;
 
-        // Helper: check rule cooldown
+        // Cooldown helper
         const recentlySent = async (ruleKey: string): Promise<boolean> => {
           const since = new Date(nowMs - (COOLDOWNS[ruleKey] || 24) * 3600000).toISOString();
           const { data } = await sb
@@ -210,79 +217,76 @@ Deno.serve(async (req) => {
           return !!data;
         };
 
-        // ── RULE ENGINE (priority order) ───────────────────────────
+        const partnerUserId   = partner?.user_id;
+        const myActiveToday   = activeUsersToday.has(userId);
+        const partnerActive   = partnerUserId ? activeUsersToday.has(partnerUserId) : false;
+        const streak          = (space as any).streak_count ?? 0;
+
         let rule: string | null = null;
         let msg: { title: string; body: string } | null = null;
 
-        // ── RULE 1: Streak milestone ─────────────────────────────
-        // Fires once when streak hits 7, 14, 30, 60, 90, 180, 365
-        const streak = (space as any).streak_count ?? 0;
-        const MILESTONES = [7, 14, 30, 60, 90, 180, 365];
-        if (!rule && MILESTONES.includes(streak) && activeUsersToday.has(userId)) {
-          const mKey = `streak_milestone_${streak}`;
+        // ── RULE 1: Perfect Day (highest emotional value) ───────────
+        // Trigger: all missions done by both. Send to both members.
+        if (!rule && isPerfectDay && myActiveToday) {
+          const mKey = `perfect_day_${todayISO}`;
           if (!(await recentlySent(mKey))) {
             rule = mKey;
-            const base = pick(MSGS.streak_milestone);
-            msg = {
-              title: base.title,
-              body: `${streak} dias de amor consecutivos. ${base.body}`,
-            };
+            msg  = pick(MSGS.perfect_day);
           }
         }
 
-        // ── RULE 2: Capsule about to open ──────────────────────
+        // ── RULE 2: Streak Milestone ─────────────────────────────────
+        const MILESTONES = [7, 14, 30, 50, 100, 365];
+        if (!rule && MILESTONES.includes(streak) && myActiveToday) {
+          const mKey = `milestone_${streak}`;
+          if (!(await recentlySent(mKey))) {
+            rule = mKey;
+            const base = pick(MSGS.milestone);
+            msg  = { title: base.title, body: `${streak} dias. ${base.body}` };
+          }
+        }
+
+        // ── RULE 3: Capsule soon ─────────────────────────────────────
         if (!rule && (capsules?.length ?? 0) > 0) {
           if (!(await recentlySent("capsule_soon"))) {
             rule = "capsule_soon";
-            msg = pick(MSGS.capsule_soon);
+            msg  = pick(MSGS.capsule_soon);
           }
         }
 
-        // ── RULE 3: Wrapped ready ──────────────────────────────
+        // ── RULE 4: Wrapped ready ────────────────────────────────────
         if (!rule && wrapped) {
           if (!(await recentlySent("wrapped_ready"))) {
             rule = "wrapped_ready";
-            msg = pick(MSGS.wrapped_ready);
+            msg  = pick(MSGS.wrapped_ready);
           }
         }
 
-        // ── RULE 4: Streak at risk (after 19h, not checked in) ─
-        const lastStreak = (space as any).last_streak_date;
-        const streakActive = streak > 0;
-        const checkedInToday = activeUsersToday.has(userId);
-        const partnerCheckedIn = activeUsersToday.has(partner?.user_id);
-
-        if (!rule && streakActive && localHour >= 19 && (!checkedInToday || !partnerCheckedIn)) {
-          if (!(await recentlySent("streak_risk"))) {
-            rule = "streak_risk";
-            msg = pick(MSGS.streak_risk);
+        // ── RULE 5: Flame Risk — streak > 0, after 19h, not both active
+        if (!rule && streak > 0 && localHour >= 19 && (!myActiveToday || !partnerActive)) {
+          if (!(await recentlySent("flame_risk"))) {
+            rule = "flame_risk";
+            msg  = pick(MSGS.flame_risk);
           }
         }
 
-        // ── RULE 5: Mission almost complete (3 of 4 done) ────
-        if (!rule && missionsDone === 3) {
-          if (!(await recentlySent("mission_almost"))) {
-            rule = "mission_almost";
-            msg = pick(MSGS.mission_almost);
-          }
-        }
-
-        // ── RULE 6: Partner was active today, user wasn't ────
-        const partnerUserId = partner?.user_id;
-        if (
-          !rule
-          && partnerUserId
-          && activeUsersToday.has(partnerUserId)
-          && !activeUsersToday.has(userId)
-        ) {
+        // ── RULE 6: Partner Presence — partner active, user isn't ───
+        if (!rule && partnerUserId && partnerActive && !myActiveToday) {
           if (!(await recentlySent("partner_active"))) {
             rule = "partner_active";
-            const base = pick(MSGS.partner_active);
-            msg = { title: base.title, body: base.body };
+            msg  = pick(MSGS.partner_active);
           }
         }
 
-        // ── RULE 7: Long absence (no activity in 2+ days) ───
+        // ── RULE 7: Silent Day — neither active, 19h–21h ────────────
+        if (!rule && !myActiveToday && !partnerActive && localHour >= 19 && localHour < 21) {
+          if (!(await recentlySent("silent_day"))) {
+            rule = "silent_day";
+            msg  = pick(MSGS.silent_day);
+          }
+        }
+
+        // ── Long absence (48h+ no activity) — lower priority ─────────
         if (!rule) {
           const { data: recentAct } = await sb
             .from("daily_activity")
@@ -293,40 +297,28 @@ Deno.serve(async (req) => {
             .limit(1)
             .maybeSingle();
 
-          if (recentAct) {
-            const lastActive = new Date(recentAct.activity_date + "T00:00:00Z");
-            const hoursInactive = (nowMs - lastActive.getTime()) / 3600000;
-            if (hoursInactive >= 48) {
-              if (!(await recentlySent("long_absence"))) {
-                rule = "long_absence";
-                msg = pick(MSGS.long_absence);
-              }
-            }
-          } else {
-            // Never logged activity
-            if (!(await recentlySent("long_absence"))) {
-              rule = "long_absence";
-              msg = pick(MSGS.long_absence);
+          const hoursInactive = recentAct
+            ? (nowMs - new Date(recentAct.activity_date + "T00:00:00Z").getTime()) / 3600000
+            : Infinity;
+
+          if (hoursInactive >= 48) {
+            if (!(await recentlySent("silent_day"))) {
+              rule = "silent_day";
+              msg  = pick(MSGS.silent_day);
             }
           }
         }
 
-        // ── RULE 8: Gentle daily reminder (no mood logged, before 20h)
-        if (!rule && localHour < 20 && !activeUsersToday.has(userId)) {
-          if (!(await recentlySent("gentle_reminder"))) {
-            rule = "gentle_reminder";
-            msg = pick(MSGS.gentle_reminder);
-          }
-        }
-
-        // ── SEND ─────────────────────────────────────────────────
+        // ── SEND ─────────────────────────────────────────────────────
         if (!rule || !msg) continue;
 
-        // Determine the rule key for cooldown (milestones use dynamic key)
-        const cooldownKey = rule.startsWith("streak_milestone_") ? "streak_milestone" : rule;
-        const targetUrl   = RULE_URLS[cooldownKey] || "/";
+        // Derive cooldown key from rule (dynamic keys like perfect_day_2026-05-17 → perfect_day)
+        const cooldownKey = rule.startsWith("perfect_day_") ? "perfect_day"
+          : rule.startsWith("milestone_")    ? "milestone"
+          : rule;
 
-        // Get user's push subscriptions
+        const targetUrl = RULE_URLS[cooldownKey] || "/";
+
         const { data: subs } = await sb
           .from("push_subscriptions")
           .select("id, endpoint, p256dh, auth")
@@ -335,12 +327,12 @@ Deno.serve(async (req) => {
         if (!subs || subs.length === 0) continue;
 
         const payload = JSON.stringify({
-          title: msg.title,
-          body:  msg.body,
-          icon:  "/icon-192.png",
-          badge: "/icon-192.png",
-          data:  { url: targetUrl, type: "smart" },
-          vibrate: [100, 50, 100],
+          title:   msg.title,
+          body:    msg.body,
+          icon:    "/icon-192.png",
+          badge:   "/icon-192.png",
+          data:    { url: targetUrl, type: "smart" },
+          vibrate: [80, 40, 80],
         });
 
         let sent = false;
@@ -360,9 +352,9 @@ Deno.serve(async (req) => {
 
         if (sent) {
           await sb.from("notification_history").insert({
-            user_id:          userId,
-            couple_space_id:  spaceId,
-            rule_key:         rule,
+            user_id:         userId,
+            couple_space_id: spaceId,
+            rule_key:        rule,
           });
           totalSent++;
           console.log(`[smart-notif] ${rule} → ${userId}`);
