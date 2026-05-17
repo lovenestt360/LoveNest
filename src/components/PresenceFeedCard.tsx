@@ -22,13 +22,16 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 // ── Single feed row ───────────────────────────────────────────────────────────
 
-function PresenceRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
+function PresenceRow({ item, isLast, index = 0 }: { item: FeedItem; isLast: boolean; index?: number }) {
   const Icon = ICON_MAP[item.iconType] ?? Activity;
   return (
-    <div className={cn(
-      "flex items-start gap-3 py-3 transition-opacity animate-in fade-in duration-500",
-      !isLast && "border-b border-[#f5f5f5]"
-    )}>
+    <div
+      className={cn(
+        "flex items-start gap-3 py-3 animate-in fade-in slide-in-from-bottom-1 duration-500",
+        !isLast && "border-b border-[#f5f5f5]"
+      )}
+      style={{ animationDelay: `${index * 70}ms` }}
+    >
       {/* Tiny icon */}
       <div className={cn(
         "w-5 h-5 shrink-0 flex items-center justify-center mt-0.5",
@@ -130,6 +133,7 @@ export function PresenceFeedCard() {
               key={item.id}
               item={item}
               isLast={idx === displayItems.length - 1}
+              index={idx}
             />
           ))}
         </div>

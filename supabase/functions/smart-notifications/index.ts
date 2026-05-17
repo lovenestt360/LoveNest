@@ -113,9 +113,10 @@ Deno.serve(async (req) => {
   const vapidPriv   = Deno.env.get("VAPID_PRIVATE_KEY")!;
   const sb          = createClient(supabaseUrl, serviceKey);
 
-  const now       = new Date();
-  const todayISO  = now.toISOString().slice(0, 10);
-  const nowMs     = now.getTime();
+  const now         = new Date();
+  const todayISO    = now.toISOString().slice(0, 10);
+  const nowMs       = now.getTime();
+  const yesterdayISO = new Date(nowMs - 86400000).toISOString().slice(0, 10);
 
   let totalSent     = 0;
   let scannedSpaces = 0;
@@ -271,18 +272,35 @@ Deno.serve(async (req) => {
         }
 
         // ── RULE 6: Partner Presence — partner active, user isn't ───
+        // Only fires ~35% of valid triggers — keeps it rare and meaningful
         if (!rule && partnerUserId && partnerActive && !myActiveToday) {
-          if (!(await recentlySent("partner_active"))) {
+          if (!(await recentlySent("partner_active")) && Math.random() <= 0.35) {
             rule = "partner_active";
             msg  = pick(MSGS.partner_active);
           }
         }
 
         // ── RULE 7: Silent Day — neither active, 19h–21h ────────────
+        // Smarter filtering: skip if yesterday was active or a perfect day happened recently
         if (!rule && !myActiveToday && !partnerActive && localHour >= 19 && localHour < 21) {
           if (!(await recentlySent("silent_day"))) {
-            rule = "silent_day";
-            msg  = pick(MSGS.silent_day);
+            // Skip if user was highly active yesterday (engaged couple, just had an off-day)
+            const { count: yesterdayCount } = await sb
+              .from("daily_activity")
+              .select("id", { count: "exact", head: true })
+              .eq("couple_space_id", spaceId)
+              .eq("user_id", userId)
+              .eq("activity_date", yesterdayISO);
+
+            // Skip if perfect_day notification was sent today or yesterday (positive momentum)
+            const recentPerfect =
+              await recentlySent(`perfect_day_${todayISO}`) ||
+              await recentlySent(`perfect_day_${yesterdayISO}`);
+
+            if ((yesterdayCount ?? 0) < 3 && !recentPerfect) {
+              rule = "silent_day";
+              msg  = pick(MSGS.silent_day);
+            }
           }
         }
 

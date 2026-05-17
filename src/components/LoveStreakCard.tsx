@@ -178,12 +178,14 @@ export function LoveStreakCard() {
   const allMissionsDone = gesturesDone === MISSIONS.length;
   const perfectDay      = bothActiveToday && allMissionsDone;
 
-  // Haptic: subtle pulse when both active, triple pulse for perfect day
+  // Haptic hierarchy:
+  //   perfect day  → warm triple pulse  [20, 60, 20, 60, 20]
+  //   both active  → soft single pulse  [10, 30, 10]
   useEffect(() => {
     if (bothActiveToday && !celebratedRef.current) {
       celebratedRef.current = true;
       try {
-        navigator.vibrate?.(perfectDay ? [20, 60, 20, 60, 20] : [15, 50, 20]);
+        navigator.vibrate?.(perfectDay ? [20, 60, 20, 60, 20] : [10, 30, 10]);
       } catch {}
     }
     if (!bothActiveToday) celebratedRef.current = false;
@@ -233,9 +235,10 @@ export function LoveStreakCard() {
       <button
         onClick={() => navigate("/lovestreak")}
         className={cn(
-          "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98] transition-all duration-300",
+          "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98]",
+          "transition-[background-color,box-shadow,border-color] duration-[400ms] ease-in-out",
           perfectDay
-            ? "animate-warm-glow-border bg-rose-50/30 shadow-[0_4px_24px_rgba(244,63,94,0.08)]"
+            ? "animate-warm-glow-border bg-rose-50/30 shadow-[0_4px_28px_rgba(244,63,94,0.07)]"
             : bothActiveToday
               ? "animate-warm-glow-border"
               : streakAtRisk
@@ -284,8 +287,12 @@ export function LoveStreakCard() {
         {/* Row 3 — streak number + hearts & shields */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-col items-start gap-0.5">
-            <div className="flex items-baseline gap-1.5">
-              <span className={cn("text-5xl font-bold tabular-nums tracking-tight", numberColor)}>
+            <div className="relative flex items-baseline gap-1.5">
+              {/* Ultra-subtle ambient glow — subconscious emotional warmth */}
+              {bothActiveToday && (
+                <div className="absolute -inset-4 bg-rose-400/[0.06] rounded-2xl blur-2xl pointer-events-none" />
+              )}
+              <span className={cn("text-5xl font-bold tabular-nums tracking-tight relative", numberColor)}>
                 {currentStreak}
               </span>
             </div>

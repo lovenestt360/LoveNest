@@ -430,22 +430,29 @@ const Index = () => {
 
       {/* ── Visual Highlights ── */}
       <div className="space-y-4 px-1">
-        <TimeTogetherCard 
-          days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds} 
-          streak={0} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")} 
-        />
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "0ms" }}>
+          <TimeTogetherCard
+            days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
+            streak={0} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")}
+          />
+        </div>
 
-        <LoveStreakCard />
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
+          <LoveStreakCard />
+          {/* Milestone micro-memory — visible for 24h after any streak milestone */}
+          {recentMilestone && (
+            <p className="text-center text-[10px] text-[#bbb] font-medium px-2 mt-1.5 animate-in fade-in duration-500">
+              {getMilestoneMicroMemory(recentMilestone)}
+            </p>
+          )}
+        </div>
 
-        {/* Milestone micro-memory — visible for 24h after any streak milestone */}
-        {recentMilestone && (
-          <p className="text-center text-[10px] text-[#bbb] font-medium px-2 -mt-2 animate-in fade-in duration-500">
-            {getMilestoneMicroMemory(recentMilestone)}
-          </p>
+        {/* Partner Presence Indicator */}
+        {avatars.partner && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "160ms" }}>
+            <PartnerPresenceCard />
+          </div>
         )}
-
-        {/* Partner Presence Indicator — Pillar 1: Emotional Presence */}
-        {avatars.partner && <PartnerPresenceCard />}
 
         {/* Global Announcements */}
         {announcements.map((ann) => (
