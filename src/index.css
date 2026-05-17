@@ -517,6 +517,12 @@ input, textarea, [contenteditable="true"] {
     50%      { transform: scale(0.92); opacity: 0.85; }
   }
 
+  /* "toca para continuar" — very subtle breathing so user notices it naturally */
+  @keyframes ob-hint-breathe {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 0.85; }
+  }
+
   /* ── Onboarding utility classes ── */
   .animate-ob-float-a       { animation: ob-float-a 8s ease-in-out infinite; }
   .animate-ob-float-b       { animation: ob-float-b 10s ease-in-out infinite; }
@@ -524,6 +530,7 @@ input, textarea, [contenteditable="true"] {
   .animate-ob-layer-breathe { animation: ob-layer-breathe 5s ease-in-out infinite; }
   .animate-ob-ring-breathe  { animation: ob-ring-breathe 6s ease-in-out infinite; }
   .animate-ob-ring-inner    { animation: ob-ring-inner-breathe 4.5s ease-in-out infinite; }
+  .animate-ob-hint          { animation: ob-hint-breathe 3.5s ease-in-out infinite; }
 
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {

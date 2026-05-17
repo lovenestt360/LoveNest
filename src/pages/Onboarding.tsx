@@ -1,34 +1,33 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ── Screen definitions ────────────────────────────────────────────────────────
-
+// ── Screens — Refinement 1: secondary copy now more human and emotionally mature
 const SCREENS = [
   {
     id: "presence",
     headline: "O amor também vive nos dias comuns.",
-    sub: "Pequenos momentos mantêm duas pessoas emocionalmente próximas.",
+    sub: "Mesmo os dias silenciosos aproximam duas pessoas.",
   },
   {
     id: "rituals",
     headline: "Pequenos gestos criam proximidade.",
-    sub: "A presença cresce nos momentos repetidos todos os dias.",
+    sub: "A presença cresce nos pequenos momentos.",
   },
   {
     id: "space",
     headline: "Um espaço privado para aparecerem um para o outro.",
-    sub: "Guardem momentos, criem rituais e mantenham a vossa chama presente.",
+    sub: "Alguns espaços fazem duas pessoas sentirem-se mais próximas.",
   },
   {
     id: "invitation",
     headline: "Comecem a construir a vossa história.",
-    sub: "Criem o vosso espaço emocional privado no LoveNest.",
+    sub: "O vosso espaço começa aqui.",
   },
 ] as const;
 
-// ── Visuals — Phase 2: ambient motion ────────────────────────────────────────
+// ── Visuals — ambient motion (Phase 2) ───────────────────────────────────────
 
 function PresenceVisual() {
   return (
@@ -88,143 +87,140 @@ function InvitationVisual() {
 
 const VISUALS = [PresenceVisual, RitualsVisual, SpaceVisual, InvitationVisual];
 
+// ── Shared design tokens — Refinements 4 & 5 ─────────────────────────────────
+
+// Input: softer focus border — less "beauty app", more premium neutral
+const INPUT_CLASS =
+  "w-full h-14 rounded-2xl border border-[#eeeeee] bg-white text-center text-[17px] font-medium text-foreground placeholder:text-[#d4d4d4] focus:outline-none focus:border-[#ddd0d0] focus:ring-2 focus:ring-rose-50 transition-all";
+
+// Button: slightly reduced saturation + soft warm shadow
+const BTN_PRIMARY =
+  "w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)]";
+
 // ── Phase 3: Personalisation screens ─────────────────────────────────────────
 
-function NameScreen({
-  onContinue,
-  onLogin,
-}: {
-  onContinue: (name: string) => void;
-  onLogin: () => void;
-}) {
+function FunctionalShell({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
+  return (
+    <div className="min-h-screen bg-white flex flex-col select-none overflow-hidden relative">
+      {/* Refinement 3: ultra-subtle ambient warmth — same atmosphere as storytelling */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/60 blur-[90px] pointer-events-none" />
+
+      {/* Back */}
+      <div className="px-5 pt-14 shrink-0">
+        <button
+          onClick={onBack}
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f7f7] active:scale-95 transition-all"
+        >
+          <ChevronLeft className="w-5 h-5 text-[#c0c0c0]" strokeWidth={1.5} />
+        </button>
+      </div>
+
+      {children}
+      <div className="pb-16 shrink-0" />
+    </div>
+  );
+}
+
+function NameScreen({ onContinue, onLogin }: { onContinue: (name: string) => void; onLogin: () => void }) {
   const [name, setName] = useState("");
   const valid = name.trim().length >= 2;
 
   return (
-    <div
-      key="name"
-      className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-3 duration-[450ms]"
-    >
-      <div className="w-full max-w-[280px] space-y-8 text-center">
-        <div className="space-y-4">
-          <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
-            Como te chamas?
-          </h1>
-          <p className="text-[14px] text-[#888] leading-relaxed">
-            Para personalizarmos o vosso espaço.
-          </p>
+    <FunctionalShell onBack={onLogin}>
+      <div
+        key="name"
+        className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-3 duration-[450ms] relative z-10"
+      >
+        <div className="w-full max-w-[272px] space-y-8 text-center">
+          <div className="space-y-4">
+            <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
+              Como te chamas?
+            </h1>
+            <p className="text-[14px] text-[#999] leading-relaxed">
+              Para personalizarmos o vosso espaço.
+            </p>
+          </div>
+
+          <input
+            type="text"
+            placeholder="O teu nome"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && valid) onContinue(name.trim()); }}
+            autoFocus
+            className={INPUT_CLASS}
+          />
+
+          <div className="space-y-3">
+            <button
+              onClick={() => valid && onContinue(name.trim())}
+              disabled={!valid}
+              className={BTN_PRIMARY}
+            >
+              Continuar
+            </button>
+            <button
+              onClick={onLogin}
+              className="w-full text-[12px] text-[#c8c8c8] hover:text-[#999] transition-colors py-1"
+            >
+              Já tenho conta
+            </button>
+          </div>
         </div>
-
-        <input
-          type="text"
-          placeholder="O teu nome"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && valid) onContinue(name.trim()); }}
-          autoFocus
-          className="w-full h-14 rounded-2xl border border-[#ececec] bg-white text-center text-[17px] font-medium text-foreground placeholder:text-[#d0d0d0] focus:outline-none focus:border-rose-200 focus:ring-2 focus:ring-rose-100/50 transition-all"
-        />
-
-        <button
-          onClick={() => valid && onContinue(name.trim())}
-          disabled={!valid}
-          className="w-full h-14 rounded-2xl bg-rose-500 text-white font-semibold text-[15px] disabled:opacity-35 active:scale-[0.98] transition-all shadow-sm"
-        >
-          Continuar
-        </button>
-
-        <button
-          onClick={onLogin}
-          className="text-[12px] text-[#c0c0c0] hover:text-[#888] transition-colors"
-        >
-          Já tenho conta
-        </button>
       </div>
-    </div>
+    </FunctionalShell>
   );
 }
 
-function InviteScreen({
-  onContinue,
-  onSkip,
-  onBack,
-}: {
-  onContinue: (code: string) => void;
-  onSkip: () => void;
-  onBack: () => void;
-}) {
+function InviteScreen({ onContinue, onSkip, onBack }: { onContinue: (code: string) => void; onSkip: () => void; onBack: () => void }) {
   const [code, setCode] = useState("");
   const valid = code.trim().length >= 4;
 
   return (
-    <div
-      key="invite"
-      className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-3 duration-[450ms]"
-    >
-      <div className="w-full max-w-[280px] space-y-8 text-center">
-        <div className="space-y-4">
-          <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
-            Qual é o vosso código?
-          </h1>
-          <p className="text-[14px] text-[#888] leading-relaxed">
-            O teu par partilhou um código de convite contigo.
-          </p>
+    <FunctionalShell onBack={onBack}>
+      <div
+        key="invite"
+        className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-3 duration-[450ms] relative z-10"
+      >
+        <div className="w-full max-w-[272px] space-y-8 text-center">
+          <div className="space-y-4">
+            <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
+              Qual é o vosso código?
+            </h1>
+            <p className="text-[14px] text-[#999] leading-relaxed">
+              O teu par partilhou um código de convite contigo.
+            </p>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Ex: AMOR2024"
+            value={code}
+            onChange={e => setCode(e.target.value.toUpperCase())}
+            onKeyDown={e => { if (e.key === "Enter" && valid) onContinue(code.trim()); }}
+            autoFocus
+            maxLength={12}
+            className={INPUT_CLASS + " tracking-[0.15em] font-bold"}
+          />
+
+          <div className="space-y-3">
+            <button
+              onClick={() => valid && onContinue(code.trim())}
+              disabled={!valid}
+              className={BTN_PRIMARY}
+            >
+              Entrar no nosso espaço
+            </button>
+            <button
+              onClick={onSkip}
+              className="w-full text-[12px] text-[#c8c8c8] hover:text-[#999] transition-colors py-1"
+            >
+              Não tenho código
+            </button>
+          </div>
         </div>
-
-        <input
-          type="text"
-          placeholder="Ex: AMOR2024"
-          value={code}
-          onChange={e => setCode(e.target.value.toUpperCase())}
-          onKeyDown={e => { if (e.key === "Enter" && valid) onContinue(code.trim()); }}
-          autoFocus
-          maxLength={12}
-          className="w-full h-14 rounded-2xl border border-[#ececec] bg-white text-center text-[17px] font-bold text-foreground placeholder:text-[#d0d0d0] tracking-[0.15em] focus:outline-none focus:border-rose-200 focus:ring-2 focus:ring-rose-100/50 transition-all"
-        />
-
-        <button
-          onClick={() => valid && onContinue(code.trim())}
-          disabled={!valid}
-          className="w-full h-14 rounded-2xl bg-rose-500 text-white font-semibold text-[15px] disabled:opacity-35 active:scale-[0.98] transition-all shadow-sm"
-        >
-          Entrar no nosso espaço
-        </button>
-
-        <button
-          onClick={onSkip}
-          className="text-[12px] text-[#c0c0c0] hover:text-[#888] transition-colors"
-        >
-          Não tenho código
-        </button>
       </div>
-    </div>
-  );
-}
-
-// ── Bottom bar — shared across all phases ─────────────────────────────────────
-
-function PhaseHeader({
-  phase,
-  onBack,
-}: {
-  phase: "screens" | "name" | "invite";
-  onBack?: () => void;
-}) {
-  return (
-    <div className="flex justify-between items-center px-6 pt-14 shrink-0">
-      {phase === "screens" ? (
-        <div className="w-2 h-2 rounded-full bg-rose-300" />
-      ) : (
-        <button
-          onClick={onBack}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] active:scale-95 transition-all"
-        >
-          <ChevronLeft className="w-5 h-5 text-[#bbb]" strokeWidth={1.5} />
-        </button>
-      )}
-      {/* Skip only on storytelling screens — handled by parent */}
-      <div />
-    </div>
+    </FunctionalShell>
   );
 }
 
@@ -240,18 +236,13 @@ export default function Onboarding() {
   const navigate = useNavigate();
 
   const isLast = current === SCREENS.length - 1;
-
   const markSeen = () => localStorage.setItem("onboarding_seen", "1");
 
-  // Advance storytelling screens
   const goTo = useCallback((index: number) => {
     if (exiting || index === current) return;
     setExiting(true);
     try { navigator.vibrate?.([6]); } catch {}
-    setTimeout(() => {
-      setCurrent(index);
-      setExiting(false);
-    }, 220);
+    setTimeout(() => { setCurrent(index); setExiting(false); }, 220);
   }, [exiting, current]);
 
   const advance = useCallback(() => {
@@ -259,83 +250,30 @@ export default function Onboarding() {
     goTo(current + 1);
   }, [isLast, phase, current, goTo]);
 
-  // Screen 4 CTAs
-  const handleCreateSpace = () => {
-    setInvitePath(false);
-    setPhase("name");
-  };
+  // Phase transitions
+  const handleCreateSpace = () => { setInvitePath(false); setPhase("name"); };
+  const handleHaveInvite  = () => { setInvitePath(true);  setPhase("name"); };
 
-  const handleHaveInvite = () => {
-    setInvitePath(true);
-    setPhase("name");
-  };
-
-  // Name screen continue
   const handleNameContinue = (name: string) => {
     localStorage.setItem("onboarding_name", name);
-    if (invitePath) {
-      setPhase("invite");
-    } else {
-      markSeen();
-      navigate("/criar-conta");
-    }
+    if (invitePath) { setPhase("invite"); } else { markSeen(); navigate("/criar-conta"); }
   };
 
-  // Invite code continue
   const handleInviteContinue = (code: string) => {
     sessionStorage.setItem("lovenest_ref", code);
     markSeen();
     navigate("/criar-conta");
   };
 
-  // Invite code — user doesn't have code, continue to signup anyway
-  const handleInviteSkip = () => {
-    markSeen();
-    navigate("/criar-conta");
-  };
-
-  const handleLogin = () => {
-    markSeen();
-    navigate("/entrar");
-  };
-
-  const handleSkip = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    markSeen();
-    navigate("/entrar");
-  };
+  const handleLogin = () => { markSeen(); navigate("/entrar"); };
+  const handleSkip  = (e: React.MouseEvent) => { e.stopPropagation(); markSeen(); navigate("/entrar"); };
 
   const screen = SCREENS[current];
   const Visual = VISUALS[current];
 
-  // ── Name phase ───────────────────────────────────────────────────────────
-  if (phase === "name") {
-    return (
-      <div className="min-h-screen bg-white flex flex-col select-none overflow-hidden">
-        <PhaseHeader phase="name" onBack={() => setPhase("screens")} />
-        <NameScreen
-          onContinue={handleNameContinue}
-          onLogin={handleLogin}
-        />
-        <div className="pb-14" />
-      </div>
-    );
-  }
-
-  // ── Invite phase ─────────────────────────────────────────────────────────
-  if (phase === "invite") {
-    return (
-      <div className="min-h-screen bg-white flex flex-col select-none overflow-hidden">
-        <PhaseHeader phase="invite" onBack={() => setPhase("name")} />
-        <InviteScreen
-          onContinue={handleInviteContinue}
-          onSkip={handleInviteSkip}
-          onBack={() => setPhase("name")}
-        />
-        <div className="pb-14" />
-      </div>
-    );
-  }
+  // ── Functional phases ────────────────────────────────────────────────────
+  if (phase === "name")   return <NameScreen   onContinue={handleNameContinue} onLogin={handleLogin} />;
+  if (phase === "invite") return <InviteScreen onContinue={handleInviteContinue} onSkip={() => { markSeen(); navigate("/criar-conta"); }} onBack={() => setPhase("name")} />;
 
   // ── Storytelling screens ─────────────────────────────────────────────────
   return (
@@ -345,18 +283,18 @@ export default function Onboarding() {
     >
       {/* Top bar */}
       <div className="flex justify-between items-center px-6 pt-14 shrink-0">
-        <div className="w-2 h-2 rounded-full bg-rose-300" />
+        <div className="w-2 h-2 rounded-full bg-rose-200" />
         {!isLast && (
           <button
             onClick={handleSkip}
-            className="text-[11px] font-medium text-[#c8c8c8] hover:text-[#999] transition-colors py-1 px-2"
+            className="text-[11px] font-medium text-[#ccc] hover:text-[#999] transition-colors py-1 px-2"
           >
             Saltar
           </button>
         )}
       </div>
 
-      {/* Screen content — key remount on change */}
+      {/* Screen content */}
       <div
         key={current}
         className={cn(
@@ -369,19 +307,20 @@ export default function Onboarding() {
           <Visual />
         </div>
 
-        <div className="text-center space-y-5 max-w-[272px]">
+        {/* Refinement 6: tighter max-width on headline for better line-break rhythm */}
+        <div className="text-center space-y-5 max-w-[260px]">
           <h1 className="text-[26px] font-bold text-foreground leading-[1.25] tracking-tight">
             {screen.headline}
           </h1>
-          <p className="text-[14px] text-[#888] leading-[1.65] font-normal">
+          <p className="text-[14px] text-[#999] leading-[1.7] font-normal">
             {screen.sub}
           </p>
         </div>
       </div>
 
       {/* Bottom */}
-      <div className="px-8 pb-14 pt-6 shrink-0 space-y-7">
-        {/* Dot pagination */}
+      <div className="px-8 pb-14 pt-4 shrink-0 space-y-6">
+        {/* Dots */}
         <div className="flex justify-center items-center gap-2">
           {SCREENS.map((_, i) => (
             <button
@@ -399,7 +338,7 @@ export default function Onboarding() {
           ))}
         </div>
 
-        {/* CTA — screen 4 */}
+        {/* CTA or hint */}
         {isLast ? (
           <div
             className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-500"
@@ -407,7 +346,7 @@ export default function Onboarding() {
           >
             <button
               onClick={handleCreateSpace}
-              className="w-full h-14 rounded-2xl bg-rose-500 text-white font-semibold text-[15px] active:scale-[0.98] transition-transform shadow-sm"
+              className={BTN_PRIMARY}
             >
               Criar espaço
             </button>
@@ -419,7 +358,8 @@ export default function Onboarding() {
             </button>
           </div>
         ) : (
-          <p className="text-center text-[10px] text-[#d8d8d8] tracking-[0.08em]">
+          /* Refinement 2: breathing hint — slightly more visible, animated */
+          <p className="text-center text-[10px] text-[#bbb] tracking-[0.06em] animate-ob-hint">
             toca para continuar
           </p>
         )}
