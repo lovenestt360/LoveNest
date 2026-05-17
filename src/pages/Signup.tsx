@@ -33,6 +33,12 @@ export default function Signup() {
   useEffect(() => {
     const ref = searchParams.get("ref") || sessionStorage.getItem("lovenest_ref");
     if (ref) { setInviteCode(ref); sessionStorage.setItem("lovenest_ref", ref); }
+    // Pre-fill name collected during emotional onboarding
+    const savedName = localStorage.getItem("onboarding_name");
+    if (savedName) {
+      setDisplayName(savedName);
+      localStorage.removeItem("onboarding_name");
+    }
   }, [searchParams]);
 
   const handleSignup = async (e: React.FormEvent) => {
