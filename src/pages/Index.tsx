@@ -24,12 +24,11 @@ import { toast } from "sonner";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { Button } from "@/components/ui/button";
 import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext";
-import { useEmotionalFeed } from "@/hooks/useEmotionalFeed";
-import { EmotionalFeed } from "@/components/EmotionalFeed";
 import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
 import { useStreak } from "@/features/streak/useStreak";
 import { useMilestone } from "@/hooks/useMilestone";
 import { MilestoneModal, getMilestoneMicroMemory } from "@/components/MilestoneModal";
+import { PresenceFeedCard } from "@/components/PresenceFeedCard";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -351,8 +350,6 @@ const Index = () => {
   const announcements = useGlobalAnnouncements();
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
-  const feed = useEmotionalFeed();
-
   const spaceId = useCoupleSpaceId();
   const { streak: streakData } = useStreak();
   const { pendingMilestone, recentMilestone, confirmMilestone } = useMilestone(
@@ -602,24 +599,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ── EMOTIONAL FEED PREVIEW ── */}
-      {(feed.loading || feed.items.length > 0) && (
-        <section className="space-y-3 px-1">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
-              Momentos juntos
-            </h2>
-            <button
-              onClick={() => navigate("/momentos")}
-              className="flex items-center gap-1 text-[11px] font-medium text-rose-400 active:opacity-70 transition-opacity"
-            >
-              Ver todos
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          <EmotionalFeed items={feed.items} loading={feed.loading} limit={4} />
-        </section>
-      )}
+      {/* ── PRESENCE FEED ── */}
+      <section className="px-1">
+        <PresenceFeedCard />
+      </section>
 
       {/* ── Footer / Invite Section ── */}
       <div className="space-y-4 pt-4 px-1">

@@ -1,44 +1,41 @@
 import { cn } from "@/lib/utils";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, HeartHandshake, Flame, MessageCircle, SmilePlus, MoonStar, Sparkles, Star, Image, Clock } from "lucide-react";
 import { FeedItem } from "@/hooks/useEmotionalFeed";
 
-// ── Type → dot color ──────────────────────────────────────────────────────────
-const TYPE_DOT: Record<string, string> = {
-  all_missions:    "bg-rose-400",
-  streak:          "bg-orange-400",
-  partner_checkin: "bg-rose-300",
-  message:         "bg-sky-400",
-  mood:            "bg-amber-400",
-  prayer:          "bg-purple-400",
-  memory:          "bg-violet-400",
-  capsule:         "bg-teal-400",
-  milestone:       "bg-yellow-400",
+// ── Icon registry ─────────────────────────────────────────────────────────────
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  heart_handshake: HeartHandshake,
+  flame:           Flame,
+  message_circle:  MessageCircle,
+  smile_plus:      SmilePlus,
+  moon_star:       MoonStar,
+  sparkles:        Sparkles,
+  star:            Star,
+  image:           Image,
+  clock:           Clock,
 };
 
-// ── Individual feed item ───────────────────────────────────────────────────────
+// ── Individual feed item ──────────────────────────────────────────────────────
+
 function FeedRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
-  const dot = TYPE_DOT[item.type] || "bg-[#ddd]";
+  const Icon = ICON_MAP[item.iconType] ?? Sparkles;
   return (
     <div className={cn(
-      "flex items-start gap-3 px-4 py-3.5 transition-colors",
-      !isLast && "border-b border-[#f5f5f5]"
+      "flex items-start gap-3 px-4 py-3.5",
+      !isLast && "border-b border-[#f8f8f8]"
     )}>
-      {/* Emoji */}
-      <span className="text-[17px] w-7 text-center shrink-0 mt-0.5 leading-none">
-        {item.emoji}
-      </span>
-
-      {/* Content */}
+      <div className={cn("w-6 h-6 shrink-0 flex items-center justify-center mt-0.5", item.iconColor)}>
+        <Icon className="w-4 h-4" strokeWidth={1.5} />
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium text-foreground leading-snug">
           {item.message}
         </p>
         {item.detail && (
-          <p className="text-[11px] text-[#aaa] mt-0.5 leading-snug">{item.detail}</p>
+          <p className="text-[11px] text-[#bbb] mt-0.5">{item.detail}</p>
         )}
       </div>
-
-      {/* Time */}
       <span className="text-[10px] text-[#ccc] shrink-0 font-medium mt-0.5 min-w-[32px] text-right">
         {item.timeAgo}
       </span>
@@ -47,10 +44,11 @@ function FeedRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
 }
 
 // ── Day group header ──────────────────────────────────────────────────────────
+
 function DayHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 px-1 pt-1 pb-0.5">
-      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[#ccc]">
+      <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#ccc]">
         {label}
       </span>
       <span className="flex-1 h-px bg-[#f0f0f0]" />
@@ -58,7 +56,8 @@ function DayHeader({ label }: { label: string }) {
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
+// ── Main component (used by Momentos page — full history view) ────────────────
+
 interface Props {
   items: FeedItem[];
   loading: boolean;
@@ -71,7 +70,7 @@ export function EmotionalFeed({ items, loading, limit, onRefresh }: Props) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-8">
+      <div className="flex justify-center py-10">
         <Loader2 className="w-5 h-5 text-rose-300 animate-spin" />
       </div>
     );
@@ -79,17 +78,18 @@ export function EmotionalFeed({ items, loading, limit, onRefresh }: Props) {
 
   if (displayItems.length === 0) {
     return (
-      <div className="glass-card p-6 text-center">
-        <p className="text-2xl mb-2">🌱</p>
-        <p className="text-sm font-medium text-foreground/60">Os vossos momentos vão aparecer aqui</p>
-        <p className="text-[11px] text-[#bbb] mt-1">
-          Façam um check-in, partilhem o humor ou enviem uma oração
+      <div className="glass-card p-8 text-center space-y-1.5">
+        <p className="text-sm font-medium text-foreground/60">
+          O vosso espaço ainda está silencioso.
+        </p>
+        <p className="text-[11px] text-[#bbb]">
+          Pequenos gestos vão criar história aqui.
         </p>
       </div>
     );
   }
 
-  // Group by dayLabel, preserving order
+  // Group by dayLabel preserving order
   const groups: { label: string; items: FeedItem[] }[] = [];
   for (const item of displayItems) {
     const last = groups[groups.length - 1];
@@ -113,17 +113,12 @@ export function EmotionalFeed({ items, loading, limit, onRefresh }: Props) {
           </button>
         </div>
       )}
-
       {groups.map(group => (
         <div key={group.label} className="space-y-1">
           <DayHeader label={group.label} />
           <div className="glass-card overflow-hidden">
             {group.items.map((item, idx) => (
-              <FeedRow
-                key={item.id}
-                item={item}
-                isLast={idx === group.items.length - 1}
-              />
+              <FeedRow key={item.id} item={item} isLast={idx === group.items.length - 1} />
             ))}
           </div>
         </div>
