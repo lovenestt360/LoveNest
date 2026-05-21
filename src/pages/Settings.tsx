@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles } from "lucide-react";
 import { VerificationSection } from "@/features/verification/VerificationSection";
+import { NotificationPrePermissionModal } from "@/components/NotificationPrePermissionModal";
 import {
   Select,
   SelectContent,
@@ -115,6 +116,7 @@ export default function Settings() {
   const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [showPrePermission, setShowPrePermission] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
   const [dbSubscription, setDbSubscription] = useState<any>(null);
   const [debugLogs, setDebugLogs] = useState<any[]>([]);
@@ -437,7 +439,7 @@ export default function Settings() {
           user_agent: navigator.userAgent,
         }, { onConflict: "user_id,endpoint" });
         setPushSubscribed(true);
-        toast({ title: "Notificações ativadas! 🔔" });
+        toast({ title: "Notificações ativadas" });
         window.dispatchEvent(new CustomEvent("onboarding-refresh"));
       }
     } catch (err: any) {
@@ -666,42 +668,40 @@ export default function Settings() {
                   </div>
                   {pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}
                 </div>
-                {pushPermission === "unsupported" && !hidePushWarning ? (
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 relative">
-                    <p className="text-[11px] text-amber-900 font-bold leading-tight mb-1">
-                      ⚠️ O teu iPhone precisa do iOS 16.4 ou superior.
+                {pushPermission === "unsupported" ? (
+                  <div className="bg-[#f8f5f5] border border-[#ece8e8] rounded-2xl p-4">
+                    <p className="text-[12px] font-semibold text-foreground leading-snug mb-1">
+                      Notificações indisponíveis neste dispositivo.
                     </p>
-                    <p className="text-[11px] text-amber-700 font-medium leading-tight pr-8">
-                      A Apple só libertou as notificações para apps instaladas (PWA) no <b>iOS 16.4</b>. 
-                      Atualiza o teu iPhone nas Definições do sistema para ativares esta funcionalidade! ✨
+                    <p className="text-[11px] text-[#999] leading-relaxed">
+                      A Apple requer iOS 16.4 ou superior com a app instalada no ecrã inicial para suportar notificações push.
                     </p>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="absolute top-2 right-2 h-6 w-6 text-amber-900/50 hover:text-amber-900 hover:bg-amber-500/20 rounded-full"
-                      onClick={() => toggleHidePushWarning(true)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : pushPermission === "unsupported" && hidePushWarning ? (
-                  <div className="flex items-center justify-between group">
-                    <div className="space-y-0.5">
-                      <p className="text-[13px] font-bold">Mostrar aviso de suporte iOS</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">Reativar o alerta de versão 16.4+</p>
-                    </div>
-                    <Switch 
-                      checked={!hidePushWarning} 
-                      onCheckedChange={(checked) => toggleHidePushWarning(!checked)} 
-                    />
                   </div>
                 ) : pushSubscribed ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading}>Desativar</Button>
-                    <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading}>Testar</Button>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading} className="flex-1 rounded-xl">Desativar</Button>
+                      <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading} className="flex-1 rounded-xl">Testar</Button>
+                    </div>
+                    <p className="text-[10px] text-[#bbb] text-center">Notificações ativas neste dispositivo.</p>
+                  </div>
+                ) : pushPermission === "denied" ? (
+                  <div className="bg-[#f8f5f5] border border-[#ece8e8] rounded-2xl p-4">
+                    <p className="text-[12px] font-semibold text-foreground leading-snug mb-1">
+                      Permissão bloqueada.
+                    </p>
+                    <p className="text-[11px] text-[#999] leading-relaxed">
+                      Para ativar, vai às Definições do teu dispositivo e permite notificações para o LoveNest.
+                    </p>
                   </div>
                 ) : (
-                  <Button onClick={handleEnablePush} disabled={pushLoading} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">Ativar</Button>
+                  <button
+                    onClick={() => setShowPrePermission(true)}
+                    disabled={pushLoading}
+                    className="w-full h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_12px_rgba(244,63,94,0.15)]"
+                  >
+                    {pushLoading ? "A ativar..." : "Ativar notificações"}
+                  </button>
                 )}
               </div>
               <div className="glass-card p-6 space-y-4">
@@ -713,8 +713,7 @@ export default function Settings() {
                 </div>
                 
                 <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
-                  O LoveNest analisa o vosso ritmo para enviar mensagens de carinho, 
-                  incentivos e alertas nos momentos certos. ✨
+                  O LoveNest analisa o vosso ritmo para enviar lembretes suaves nos momentos certos.
                 </p>
 
                 <div className="space-y-4 pt-2">
@@ -922,6 +921,14 @@ export default function Settings() {
             </div>
           )}
         </section>
+      )}
+
+      {/* Pre-permission modal — shows before triggering browser prompt */}
+      {showPrePermission && (
+        <NotificationPrePermissionModal
+          onConfirm={() => { setShowPrePermission(false); handleEnablePush(); }}
+          onDismiss={() => setShowPrePermission(false)}
+        />
       )}
     </div>
   );
