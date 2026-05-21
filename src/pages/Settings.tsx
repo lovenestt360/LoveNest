@@ -508,12 +508,27 @@ export default function Settings() {
     }
   };
 
+  const [leaveConfirming, setLeaveConfirming] = useState(false);
+  const [leaveLoading, setLeaveLoading] = useState(false);
+
   const handleLeaveHouse = async () => {
     if (!user || !spaceId) return;
-    setLeaving(true);
-    const { error } = await supabase.from("members").delete().eq("user_id", user.id).eq("couple_space_id", spaceId);
-    if (!error) window.location.assign("/casa");
-    setLeaving(false);
+    setLeaveLoading(true);
+    try {
+      const { error } = await supabase
+        .from("members")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("couple_space_id", spaceId);
+      if (error) throw error;
+      // Clear any local state tied to this couple space
+      sessionStorage.removeItem("lovenest_ref");
+      window.location.assign("/casa");
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao sair", description: err.message });
+      setLeaveLoading(false);
+      setLeaveConfirming(false);
+    }
   };
 
   if (loading) return <section className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></section>;
@@ -914,10 +929,65 @@ export default function Settings() {
           {currentCategory === 'data' && (
             <div className="space-y-4">
               <div className="glass-card p-4 flex items-center justify-between"><div><p className="text-sm font-bold">Exportar Dados</p><p className="text-[10px] text-muted-foreground">JSON format.</p></div><Button variant="ghost" onClick={handleExport} disabled={exporting}>Exportar</Button></div>
-              <AlertDialog open={leaving} onOpenChange={setLeaving}>
-                <AlertDialogTrigger asChild><button className="glass-card p-4 flex items-center justify-between w-full text-destructive hover:bg-destructive/5 transition-colors"><div className="flex items-center gap-3"><LogOut className="h-5 w-5" /><p className="text-sm font-bold">Sair da Casa</p></div><ChevronLeft className="h-4 w-4 rotate-180 opacity-50" /></button></AlertDialogTrigger>
-                <AlertDialogContent className="rounded-[2rem]"><AlertDialogHeader><AlertDialogTitle>Tem certeza?</AlertDialogTitle><AlertDialogDescription>Irás perder acesso a este ninho.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleLeaveHouse} className="bg-destructive rounded-full">Sim, sair</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-              </AlertDialog>
+              {!leaveConfirming ? (
+                <button
+                  onClick={() => setLeaveConfirming(true)}
+                  className="glass-card p-4 flex items-center justify-between w-full text-rose-500 hover:bg-rose-50/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <LogOut className="h-5 w-5" strokeWidth={1.5} />
+                    <div className="text-left">
+                      <p className="text-sm font-semibold">Sair do espaço partilhado</p>
+                      <p className="text-[11px] text-[#bbb] font-normal">Deixar este ninho</p>
+                    </div>
+                  </div>
+                  <ChevronLeft className="h-4 w-4 rotate-180 text-[#ccc]" strokeWidth={1.5} />
+                </button>
+              ) : (
+                <div className="glass-card border-rose-100 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {/* Header */}
+                  <div className="space-y-1">
+                    <p className="text-[15px] font-bold text-foreground">Sair do espaço partilhado?</p>
+                    <p className="text-[12px] text-[#999] leading-relaxed">
+                      Esta ação não pode ser desfeita.
+                    </p>
+                  </div>
+
+                  {/* Consequences */}
+                  <div className="space-y-2.5">
+                    {[
+                      "Perderás acesso a todas as memórias e conversas deste espaço.",
+                      "O teu par continuará no espaço e poderá convidar outra pessoa.",
+                      "Poderás criar ou entrar noutro espaço no futuro.",
+                    ].map((text) => (
+                      <div key={text} className="flex items-start gap-2.5">
+                        <div className="w-1 h-1 rounded-full bg-[#ccc] mt-2 shrink-0" />
+                        <p className="text-[12px] text-[#888] leading-relaxed">{text}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => setLeaveConfirming(false)}
+                      className="flex-1 h-11 rounded-xl bg-[#f5f5f5] text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleLeaveHouse}
+                      disabled={leaveLoading}
+                      className="flex-1 h-11 rounded-xl bg-rose-500/90 text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      {leaveLoading
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : "Confirmar saída"
+                      }
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>
