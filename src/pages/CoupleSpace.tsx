@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, User as UserIcon } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Share2, Copy, Loader2, ArrowRight, ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type MemberProfile = {
   user_id: string;
@@ -20,15 +16,48 @@ type MemberProfile = {
 type CoupleState =
   | { status: "loading" }
   | { status: "no_house" }
-  | {
-      status: "has_house";
-      coupleSpaceId: string;
-      inviteCode: string | null;
-      members: MemberProfile[];
-    };
+  | { status: "has_house"; coupleSpaceId: string; inviteCode: string | null; members: MemberProfile[] };
+
+// ── Minimal abstract visuals (consistent with onboarding language) ────────────
+
+function TwoApartVisual() {
+  return (
+    <div className="relative w-32 h-24 mx-auto">
+      <div className="absolute w-12 h-12 rounded-full bg-rose-100/80 top-2 left-4 animate-ob-float-a" />
+      <div className="absolute w-10 h-10 rounded-full bg-rose-50 border border-rose-100 bottom-2 right-4 animate-ob-float-b"
+        style={{ animationDelay: "-4s" }} />
+    </div>
+  );
+}
+
+function WaitingVisual() {
+  return (
+    <div className="relative w-32 h-24 mx-auto">
+      {/* Present partner — filled */}
+      <div className="absolute w-12 h-12 rounded-full bg-rose-200/80 top-2 left-8" />
+      {/* Waiting space — outline only */}
+      <div className="absolute w-10 h-10 rounded-full border-2 border-dashed border-rose-200 bottom-2 right-8 animate-ob-float-b"
+        style={{ animationDelay: "-2s" }} />
+    </div>
+  );
+}
+
+function TogetherVisual() {
+  return (
+    <div className="relative w-32 h-20 mx-auto flex items-center justify-center">
+      <div className="absolute w-12 h-12 rounded-full bg-rose-200/80 left-8" />
+      <div className="absolute w-12 h-12 rounded-full bg-rose-100 border border-rose-200 right-8" />
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function CoupleSpace() {
-  const [inviteCodeInput, setInviteCodeInput] = useState("");
+  // Pre-fill invite code from onboarding Phase 3
+  const savedCode = sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref") || "";
+  const [inviteCodeInput, setInviteCodeInput] = useState(savedCode.toUpperCase());
+  const [view, setView] = useState<"create" | "join">(savedCode ? "join" : "create");
   const [loadingAction, setLoadingAction] = useState(false);
   const [state, setState] = useState<CoupleState>({ status: "loading" });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -41,408 +70,327 @@ export default function CoupleSpace() {
     return state.members.length;
   }, [state]);
 
-  const refresh = async () => {
+  const myName = useMemo(() => {
+    if (state.status !== "has_house") return null;
+    const me = state.members.find(m => m.user_id === currentUserId);
+    return me?.display_name?.split(" ")[0] ?? null;
+  }, [state, currentUserId]);
+
+  const partnerName = useMemo(() => {
+    if (state.status !== "has_house") return null;
+    const partner = state.members.find(m => m.user_id !== currentUserId);
+    return partner?.display_name?.split(" ")[0] ?? null;
+  }, [state, currentUserId]);
+
+  const refresh = useCallback(async () => {
     setState({ status: "loading" });
-
-    // getUser() validates the token with Supabase server and auto-refreshes
-    // it if expired — more reliable than getSession() which only reads cache.
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (!user || authError) {
-      navigate("/entrar", { replace: true });
-      return;
-    }
-
+    if (!user || authError) { navigate("/entrar", { replace: true }); return; }
     setCurrentUserId(user.id);
 
-    // Use SECURITY DEFINER RPC to bypass RLS recursion on members table
-    const { data: coupleSpaceId, error: memberErr } = await supabase
-      .rpc("get_user_couple_space_id");
+    const { data: coupleSpaceId, error: memberErr } = await supabase.rpc("get_user_couple_space_id");
+    if (memberErr) { setState({ status: "no_house" }); return; }
+    if (!coupleSpaceId) { setState({ status: "no_house" }); return; }
 
-    if (memberErr) {
-      console.error("Error loading membership via RPC:", memberErr);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar seu LoveNest",
-        description: "Não foi possível verificar seu pareamento. Tente novamente.",
-      });
-      setState({ status: "no_house" });
-      return;
-    }
+    const { data: spaceRow } = await supabase
+      .from("couple_spaces").select("invite_code").eq("id", coupleSpaceId).maybeSingle();
 
-    if (!coupleSpaceId) {
-      setState({ status: "no_house" });
-      return;
-    }
-
-    const { data: spaceRow, error: spaceErr } = await supabase
-      .from("couple_spaces")
-      .select("invite_code")
-      .eq("id", coupleSpaceId)
-      .maybeSingle();
-
-    if (spaceErr) {
-      console.error("Error loading couple space:", spaceErr);
-    }
-
-    // Use SECURITY DEFINER RPC — bypasses RLS recursion, returns all couple members
-    const { data: membersRows, error: membersErr } = await supabase
+    const { data: membersRows } = await supabase
       .rpc("get_couple_member_ids", { p_couple_space_id: coupleSpaceId });
 
-    if (membersErr) {
-      console.warn("get_couple_member_ids failed, falling back to current user:", membersErr.message);
-    }
+    const userIds = (membersRows ?? []).map((m: { user_id: string }) => m.user_id);
+    const ids = userIds.length > 0 ? userIds : [user.id];
 
-    const rawUserIds = (membersRows ?? []).map((m: { user_id: string }) => m.user_id);
-    // Fallback: always show at least the current user
-    const userIds = rawUserIds.length > 0 ? rawUserIds : [user.id];
+    const { data: profilesRows } = await supabase
+      .from("profiles").select("user_id, display_name, avatar_url").in("user_id", ids);
 
-    let profiles: MemberProfile[] = [];
-    if (userIds.length > 0) {
-      const { data: profilesRows, error: profilesErr } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url")
-        .in("user_id", userIds);
-
-      if (profilesErr) {
-        console.error("Error loading profiles:", profilesErr);
-        // fallback: mostrar apenas IDs
-        profiles = userIds.map((id) => ({ user_id: id, display_name: null, avatar_url: null }));
-      } else {
-        // Garantir ordem estável
-        const byId = new Map((profilesRows ?? []).map((p) => [p.user_id, p]));
-        profiles = userIds.map((id) => {
-          const p = byId.get(id);
-          return {
-            user_id: id,
-            display_name: p?.display_name ?? null,
-            avatar_url: p?.avatar_url ?? null,
-          };
-        });
-      }
-    }
-
-    setState({
-      status: "has_house",
-      coupleSpaceId,
-      inviteCode: spaceRow?.invite_code ?? null,
-      members: profiles,
+    const byId = new Map((profilesRows ?? []).map((p: any) => [p.user_id, p]));
+    const profiles: MemberProfile[] = ids.map((id: string) => {
+      const p = byId.get(id) as any;
+      return { user_id: id, display_name: p?.display_name ?? null, avatar_url: p?.avatar_url ?? null };
     });
-  };
 
+    setState({ status: "has_house", coupleSpaceId, inviteCode: spaceRow?.invite_code ?? null, members: profiles });
+  }, [navigate]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  // Auto-navigate to home if both partners connected
   useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (state.status === "has_house" && memberCount >= 2) {
+      // Small delay to let the "complete" state render first
+      const t = setTimeout(() => navigate("/", { replace: true }), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [state.status, memberCount, navigate]);
 
   const handleCreateSpace = async () => {
     setLoadingAction(true);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/entrar"); return; }
 
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Você precisa entrar",
-          description: "Faça login para criar seu LoveNest.",
-        });
-        navigate("/entrar");
-        return;
-      }
+      const { data: existing } = await supabase
+        .from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
+      if (existing) { await refresh(); return; }
 
-      // Verificar se já é membro
-      const { data: existingMember } = await supabase
-        .from("members")
-        .select("couple_space_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (existingMember) {
-        toast({
-          title: "Você já está num LoveNest",
-          description: "Abrindo seu LoveNest...",
-        });
-        await refresh();
-        return;
-      }
-
-      // Gerar código de convite único localmente
       const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      // Criar o espaço (couple_space)
       const { data: space, error: spaceError } = await supabase
-        .from("couple_spaces")
-        .insert({ invite_code: inviteCode })
-        .select()
-        .single();
-
+        .from("couple_spaces").insert({ invite_code: inviteCode }).select().single();
       if (spaceError) throw spaceError;
 
-      // Adicionar o criador como membro
-      const { error: memberError } = await supabase.from("members").insert({
-        couple_space_id: space.id,
-        user_id: user.id,
-      });
-
+      const { error: memberError } = await supabase.from("members")
+        .insert({ couple_space_id: space.id, user_id: user.id });
       if (memberError) {
-        // Se chocar no novo Constraint Unique do user_id, apagamos a sala fantasma para não haver lixo
-        if (memberError.code === "23505" || memberError.message.includes("duplicate key")) {
-           await supabase.from("couple_spaces").delete().eq("id", space.id);
-           throw new Error("Você já está associado a um casal! Ação bloqueada.");
+        if (memberError.code === "23505") {
+          await supabase.from("couple_spaces").delete().eq("id", space.id);
+          throw new Error("Já pertences a um espaço.");
         }
         throw memberError;
       }
-
-      toast({
-        title: "LoveNest criado!",
-        description: "Agora copie o código e envie para o seu par.",
-      });
-
       await refresh();
     } catch (error: any) {
-      console.error("Error creating space:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar LoveNest",
-        description: error.message || "Não foi possível criar seu LoveNest.",
-      });
+      toast({ variant: "destructive", title: "Erro ao criar espaço", description: error.message });
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const handleJoinSpace = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleJoinSpace = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setLoadingAction(true);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Você precisa entrar",
-          description: "Faça login para entrar num LoveNest.",
-        });
-        navigate("/entrar");
-        return;
-      }
+      if (!user) { navigate("/entrar"); return; }
 
       const code = inviteCodeInput.trim().toUpperCase();
-
-      // Buscar espaço pelo código
       const { data: space, error: spaceError } = await supabase
-        .from("couple_spaces")
-        .select("id")
-        .eq("invite_code", code)
-        .eq("status", "active")
-        .maybeSingle();
-
+        .from("couple_spaces").select("id").eq("invite_code", code).eq("status", "active").maybeSingle();
       if (spaceError) throw spaceError;
-
       if (!space) {
-        toast({
-          variant: "destructive",
-          title: "Código inválido",
-          description: "Não encontramos nenhum LoveNest com este código.",
-        });
+        toast({ variant: "destructive", title: "Código inválido", description: "Não encontrámos nenhum espaço com este código." });
         return;
       }
 
-      // Tentar entrar no espaço
-      // O trigger no banco (tr_check_member_limit) vai barrar se já houver 2 membros
-      const { error: joinError } = await supabase.from("members").insert({
-        couple_space_id: space.id,
-        user_id: user.id,
-      });
-
+      const { error: joinError } = await supabase.from("members")
+        .insert({ couple_space_id: space.id, user_id: user.id });
       if (joinError) {
-        let msg = "Não foi possível entrar no LoveNest.";
-        if (joinError.message.includes("couple_space_full")) {
-          msg = "Este LoveNest já está completo (máximo 2 membros).";
-        } else if (joinError.code === "23505" || joinError.message.includes("duplicate key")) {
-          msg = "Você já pertence a um LoveNest! Bloqueio ativo. Saia do atual primeiro se quiser entrar neste.";
-        }
-        
-        toast({
-          variant: "destructive",
-          title: "Erro ao entrar",
-          description: msg,
-        });
+        let msg = "Não foi possível entrar no espaço.";
+        if (joinError.message.includes("couple_space_full")) msg = "Este espaço já tem dois membros.";
+        else if (joinError.code === "23505") msg = "Já pertences a um espaço.";
+        toast({ variant: "destructive", title: "Erro ao entrar", description: msg });
         return;
       }
 
-      toast({
-        title: "Bem-vindo ao LoveNest!",
-        description: "Você entrou com sucesso.",
-      });
+      // Clean up stored code
+      sessionStorage.removeItem("lovenest_ref");
+      localStorage.removeItem("lovenest_ref");
 
       await refresh();
       navigate("/", { replace: true });
     } catch (error: any) {
-      console.error("Error joining space:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao entrar no LoveNest",
-        description: error.message || "Código inválido ou Casa completa.",
-      });
+      toast({ variant: "destructive", title: "Erro", description: error.message });
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const copyCode = async (code: string) => {
+  const handleShare = async () => {
+    if (state.status !== "has_house" || !state.inviteCode) return;
+    const code = state.inviteCode;
+    const text = `Vem para o nosso espaço no LoveNest. Usa o código: ${code}`;
     try {
-      await navigator.clipboard.writeText(code);
-      toast({ title: "Código copiado!", description: "Compartilhe com seu par." });
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "Não foi possível copiar",
-        description: "Copie manualmente o código.",
-      });
-    }
+      if (navigator.share) {
+        await navigator.share({ title: "LoveNest", text, url: window.location.origin });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Copiado", description: "Partilha o código com o teu par." });
+      }
+    } catch {}
   };
 
-  const MemberRow = ({ member }: { member: MemberProfile }) => {
-    const fallback = (member.display_name ?? "?").slice(0, 2).toUpperCase();
-    const whoLabel = currentUserId && member.user_id === currentUserId ? "Você" : "Seu par";
-
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (state.status === "loading") {
     return (
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={member.avatar_url ?? undefined} alt={member.display_name ?? "Perfil"} />
-            <AvatarFallback>
-              <UserIcon className="h-4 w-4" />
-              <span className="sr-only">{fallback}</span>
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="text-sm font-medium leading-none">{member.display_name ?? "Sem nome"}</p>
-            <p className="text-xs text-muted-foreground">{whoLabel}</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-rose-300 animate-spin" />
+      </div>
+    );
+  }
+
+  // ── No house — create or join ─────────────────────────────────────────────
+  if (state.status === "no_house") {
+    return (
+      <div className="min-h-screen bg-white flex flex-col select-none">
+        {/* Back to join if in create view (and vice versa) */}
+        <div className="px-6 pt-14 shrink-0">
+          {view === "join" && (
+            <button
+              onClick={() => setView("create")}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f7f7] transition-all"
+            >
+              <ChevronLeft className="w-5 h-5 text-[#c0c0c0]" strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+
+          {/* Visual */}
+          <div className="mb-12">
+            <TwoApartVisual />
           </div>
+
+          {view === "create" ? (
+            <div className="w-full max-w-[272px] text-center space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
+                  Criem o vosso ninho.
+                </h1>
+                <p className="text-[14px] text-[#999] leading-relaxed">
+                  Cria o espaço e partilha o código com o teu par para se juntarem.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={handleCreateSpace}
+                  disabled={loadingAction}
+                  className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
+                >
+                  {loadingAction
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <> Criar o nosso espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
+                  }
+                </button>
+                <button
+                  onClick={() => setView("join")}
+                  className="w-full h-12 text-[13px] font-medium text-[#bbb] hover:text-[#717171] transition-colors"
+                >
+                  Tenho um código de convite
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleJoinSpace} className="w-full max-w-[272px] text-center space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
+                  O vosso ninho aguarda.
+                </h1>
+                <p className="text-[14px] text-[#999] leading-relaxed">
+                  Insere o código que o teu par partilhou contigo.
+                </p>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Ex: AMOR2024"
+                value={inviteCodeInput}
+                onChange={e => setInviteCodeInput(e.target.value.toUpperCase())}
+                maxLength={12}
+                autoFocus
+                className="w-full h-14 rounded-2xl border border-[#eeeeee] bg-white text-center text-[17px] font-bold text-foreground placeholder:text-[#d4d4d4] tracking-[0.15em] focus:outline-none focus:border-[#ddd0d0] focus:ring-2 focus:ring-rose-50 transition-all"
+              />
+
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={loadingAction || inviteCodeInput.trim().length < 4}
+                  className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
+                >
+                  {loadingAction
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : "Entrar no nosso espaço"
+                  }
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+
+        <div className="pb-16 shrink-0" />
+      </div>
+    );
+  }
+
+  // ── Has house — waiting for partner ──────────────────────────────────────
+  if (state.status === "has_house" && memberCount < 2) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-8 select-none">
+        {/* Subtle ambient */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 blur-[90px] pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-[280px] text-center space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+
+          <WaitingVisual />
+
+          <div className="space-y-4">
+            <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
+              O vosso ninho está criado.
+            </h1>
+            <p className="text-[14px] text-[#999] leading-relaxed">
+              Partilha o código com o teu par para se juntarem.
+            </p>
+          </div>
+
+          {/* Invite code — prominent */}
+          <div className="space-y-3">
+            <div className="h-16 rounded-2xl border border-[#f0f0f0] bg-[#fafafa] flex items-center justify-center">
+              <span className="text-[22px] font-bold text-foreground tracking-[0.2em]">
+                {state.inviteCode ?? "—"}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleShare}
+                className="flex-1 h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] active:scale-[0.98] transition-all shadow-[0_2px_12px_rgba(244,63,94,0.15)] flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" strokeWidth={1.5} />
+                Partilhar
+              </button>
+              <button
+                onClick={() => state.inviteCode && navigator.clipboard.writeText(state.inviteCode).then(() =>
+                  toast({ title: "Código copiado" })
+                )}
+                className="h-12 w-12 rounded-2xl border border-[#f0f0f0] bg-white flex items-center justify-center active:scale-95 transition-all"
+              >
+                <Copy className="w-4 h-4 text-[#bbb]" strokeWidth={1.5} />
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-[#ccc] animate-ob-hint">
+            A aguardar o teu par...
+          </p>
         </div>
       </div>
     );
-  };
+  }
 
+  // ── Has house — both connected (auto-navigates after 2.2s) ───────────────
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">LoveNest</CardTitle>
-          <CardDescription>Crie ou entre no seu espaço privado de casal</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {state.status === "loading" ? (
-            <div className="py-6 text-center">
-              <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="text-sm text-muted-foreground">Carregando...</p>
-            </div>
-          ) : state.status === "no_house" ? (
-            <Tabs defaultValue="create" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="create">Criar Ninho</TabsTrigger>
-                <TabsTrigger value="join">Entrar com Código</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="create">
-                <div className="space-y-4 pt-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Crie um novo LoveNest e gere um código de convite para seu par.
-                  </p>
-                  <Button onClick={handleCreateSpace} className="w-full" disabled={loadingAction}>
-                    {loadingAction ? "Criando..." : "Criar LoveNest"}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="join">
-                <form onSubmit={handleJoinSpace} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="inviteCode">Código de Convite</Label>
-                    <Input
-                      id="inviteCode"
-                      type="text"
-                      placeholder="Ex: A1B2C3D4"
-                      value={inviteCodeInput}
-                      onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
-                      required
-                      className="text-center text-lg font-bold tracking-wider uppercase"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Apenas 2 membros podem estar num LoveNest.
-                    </p>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loadingAction}>
-                    {loadingAction ? "Entrando..." : "Entrar no Ninho"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Seu código do LoveNest</p>
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={state.inviteCode ?? "—"}
-                    readOnly
-                    className="text-center text-lg font-bold tracking-wider"
-                  />
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => state.inviteCode && copyCode(state.inviteCode)}
-                    disabled={!state.inviteCode}
-                    aria-label="Copiar código"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {memberCount < 2 ? (
-                <div className="rounded-lg border bg-card p-3 text-card-foreground">
-                  <p className="text-sm font-medium">Aguardando o teu par entrar</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Este LoveNest aceita no máximo 2 membros.
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-lg border bg-card p-3 text-card-foreground">
-                  <p className="text-sm font-medium">Casa completa</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Vocês já estão pareados. Pode ir para a Home.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Membros ({memberCount}/2)</p>
-                <div className="space-y-3">
-                  {state.members.map((m) => (
-                    <MemberRow key={m.user_id} member={m} />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button className="flex-1" onClick={() => navigate("/", { replace: true })}>
-                  Ir para Home
-                </Button>
-                <Button className="flex-1" variant="outline" onClick={refresh}>
-                  Atualizar
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-8 select-none">
+      <div className="relative z-10 w-full max-w-[280px] text-center space-y-10 animate-in fade-in zoom-in-95 duration-500">
+        <TogetherVisual />
+        <div className="space-y-4">
+          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
+            O vosso espaço está completo.
+          </h1>
+          <p className="text-[14px] text-[#999] leading-relaxed">
+            {partnerName
+              ? `Tu e ${partnerName} estão agora juntos no LoveNest.`
+              : "Já podem começar a construir a vossa história."
+            }
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/", { replace: true })}
+          className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
+        >
+          Entrar no LoveNest <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+        </button>
+      </div>
     </div>
   );
 }
