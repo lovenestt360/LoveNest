@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { track } from "@vercel/analytics";
 import { Share2, Copy, Loader2, ArrowRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -148,6 +149,7 @@ export default function CoupleSpace() {
         }
         throw memberError;
       }
+      track("space_created");
       await refresh();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro ao criar espaço", description: error.message });
@@ -186,6 +188,7 @@ export default function CoupleSpace() {
       sessionStorage.removeItem("lovenest_ref");
       localStorage.removeItem("lovenest_ref");
 
+      track("space_joined");
       await refresh();
       navigate("/", { replace: true });
     } catch (error: any) {

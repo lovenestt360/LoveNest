@@ -18,6 +18,8 @@ import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
 import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -183,6 +185,8 @@ const App = () => (
         </SplashGate>
       </BrowserRouter>
     </ThemeProvider>
+    <Analytics />
+    <SpeedInsights />
   </QueryClientProvider>
 );
 

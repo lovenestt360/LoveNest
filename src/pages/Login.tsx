@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, ArrowRight, ChevronLeft, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { track } from "@vercel/analytics";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
@@ -68,6 +69,7 @@ export default function Login() {
         email: trimmed, password,
       });
       if (error) throw error;
+      track("login_completed", { method: "password" });
       navigate("/casa");
     } catch (err: any) {
       const msg = err.message.includes("Invalid login credentials")
@@ -93,6 +95,7 @@ export default function Login() {
         options: { emailRedirectTo: window.location.origin + "/casa" },
       });
       if (error) throw error;
+      track("login_magic_link_sent");
       setMagicSent(true);
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro ao enviar", description: err.message });

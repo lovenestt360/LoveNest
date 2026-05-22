@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { track } from "@vercel/analytics";
 
 // ── Screens — Refinement 1: secondary copy now more human and emotionally mature
 const SCREENS = [
@@ -251,22 +252,34 @@ export default function Onboarding() {
   }, [isLast, phase, current, goTo]);
 
   // Phase transitions
-  const handleCreateSpace = () => { setInvitePath(false); setPhase("name"); };
-  const handleHaveInvite  = () => { setInvitePath(true);  setPhase("name"); };
+  const handleCreateSpace = () => { track("onboarding_create_space"); setInvitePath(false); setPhase("name"); };
+  const handleHaveInvite  = () => { track("onboarding_have_invite");  setInvitePath(true);  setPhase("name"); };
 
   const handleNameContinue = (name: string) => {
     localStorage.setItem("onboarding_name", name);
-    if (invitePath) { setPhase("invite"); } else { markSeen(); navigate("/criar-conta"); }
+    if (invitePath) {
+      setPhase("invite");
+    } else {
+      track("onboarding_completed", { path: "create" });
+      markSeen();
+      navigate("/criar-conta");
+    }
   };
 
   const handleInviteContinue = (code: string) => {
+    track("onboarding_completed", { path: "invite" });
     sessionStorage.setItem("lovenest_ref", code);
     markSeen();
     navigate("/criar-conta");
   };
 
   const handleLogin = () => { markSeen(); navigate("/entrar"); };
-  const handleSkip  = (e: React.MouseEvent) => { e.stopPropagation(); markSeen(); navigate("/entrar"); };
+  const handleSkip  = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    track("onboarding_skipped", { screen: current });
+    markSeen();
+    navigate("/entrar");
+  };
 
   const screen = SCREENS[current];
   const Visual = VISUALS[current];

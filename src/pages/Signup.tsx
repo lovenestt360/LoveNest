@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, ArrowRight } from "lucide-react";
+import { track } from "@vercel/analytics";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
@@ -71,8 +72,10 @@ export default function Signup() {
       });
       if (error) throw error;
       if (data.session) {
+        track("signup_completed", { method: "email", has_invite: !!inviteCode });
         navigate("/casa");
       } else {
+        track("signup_email_confirm", { has_invite: !!inviteCode });
         toast({ title: "Verifica o teu e-mail!", description: "Enviámos um link de confirmação." });
         navigate("/entrar");
       }
