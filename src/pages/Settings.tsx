@@ -511,6 +511,32 @@ export default function Settings() {
   const [leaveConfirming, setLeaveConfirming] = useState(false);
   const [leaveLoading, setLeaveLoading] = useState(false);
 
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setDeleteLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão inválida.");
+
+      const { error } = await supabase.functions.invoke("delete-account", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+
+      // Clear local state and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.assign("/inicio");
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao eliminar conta", description: err.message });
+      setDeleteLoading(false);
+      setDeleteConfirming(false);
+    }
+  };
+
   const handleLeaveHouse = async () => {
     if (!user || !spaceId) return;
     setLeaveLoading(true);
@@ -1008,6 +1034,71 @@ export default function Settings() {
                   </div>
                 </div>
               )}
+
+              {/* ── Delete account ── */}
+              <div className="pt-2">
+                {!deleteConfirming ? (
+                  <button
+                    onClick={() => setDeleteConfirming(true)}
+                    className="w-full text-left px-1 py-2 flex items-center gap-2"
+                  >
+                    <span className="text-[12px] text-[#ccc] hover:text-rose-400 transition-colors">
+                      Eliminar conta permanentemente
+                    </span>
+                  </button>
+                ) : (
+                  <div className="glass-card border-rose-200/60 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="space-y-1">
+                      <p className="text-[15px] font-bold text-foreground">Eliminar conta?</p>
+                      <p className="text-[12px] text-[#999] leading-relaxed">
+                        Esta ação é permanente e não pode ser revertida.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-medium text-[#bbb] uppercase tracking-wide">O que será eliminado</p>
+                      {[
+                        "O teu perfil e dados pessoais",
+                        "As tuas subscrições de notificações",
+                        "Os teus registos de atividade e humor",
+                        "O teu acesso ao espaço partilhado",
+                        "A tua conta de autenticação",
+                      ].map((text) => (
+                        <div key={text} className="flex items-start gap-2.5">
+                          <div className="w-1 h-1 rounded-full bg-[#ddd] mt-2 shrink-0" />
+                          <p className="text-[12px] text-[#888] leading-relaxed">{text}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="bg-rose-50/60 border border-rose-100 rounded-xl p-3">
+                      <p className="text-[11px] text-[#999] leading-relaxed">
+                        As mensagens e memórias partilhadas permanecem no espaço do teu par.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={() => setDeleteConfirming(false)}
+                        className="flex-1 h-11 rounded-xl bg-[#f5f5f5] text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={deleteLoading}
+                        className="flex-1 h-11 rounded-xl bg-rose-600 text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        {deleteLoading
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : "Eliminar conta"
+                        }
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
         </section>
