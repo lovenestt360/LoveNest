@@ -1,14 +1,81 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Lock, Heart, Flame, BookHeart, Camera, MessageCircle } from "lucide-react";
+import { ArrowRight, Lock, Heart, Flame, BookHeart, Camera, MessageCircle, Sparkles } from "lucide-react";
 
-// ── Hero ambient visual ───────────────────────────────────────────────────────
+// ── Hero visual composition ───────────────────────────────────────────────────
+// Floating cards that evoke the product without screenshots
 
-function AmbientOrb({ className }: { className?: string }) {
+function HeroComposition() {
   return (
-    <div
-      className={`absolute rounded-full pointer-events-none ${className}`}
-      aria-hidden
-    />
+    <div className="relative w-full h-72 flex items-center justify-center select-none" aria-hidden>
+
+      {/* Ambient glow */}
+      <div className="absolute w-56 h-56 bg-rose-100/70 rounded-full blur-3xl" />
+      <div className="absolute w-40 h-40 bg-rose-200/30 rounded-full blur-2xl translate-x-16 -translate-y-8" />
+
+      {/* Central flame ring */}
+      <div className="relative z-10 w-16 h-16 rounded-2xl bg-white shadow-[0_8px_32px_rgba(244,63,94,0.18)] border border-rose-100 flex items-center justify-center animate-ob-float-a">
+        <Flame className="w-7 h-7 text-rose-400 animate-flame-breathe" strokeWidth={1.5} />
+      </div>
+
+      {/* Streak card — top left */}
+      <div
+        className="absolute z-10 left-4 top-8 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.07)] border border-[#f0f0f0] px-4 py-3 flex items-center gap-2.5 animate-ob-float-b"
+        style={{ animationDelay: "-2s" }}
+      >
+        <div className="w-7 h-7 bg-rose-50 rounded-xl flex items-center justify-center">
+          <Flame className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
+        </div>
+        <div>
+          <p className="text-[10px] text-[#bbb] font-medium leading-none mb-0.5">LoveStreak</p>
+          <p className="text-[14px] font-black text-foreground leading-none">14 dias</p>
+        </div>
+      </div>
+
+      {/* Mood card — top right */}
+      <div
+        className="absolute z-10 right-4 top-6 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.07)] border border-[#f0f0f0] px-4 py-3 animate-ob-float-a"
+        style={{ animationDelay: "-4s" }}
+      >
+        <p className="text-[10px] text-[#bbb] font-medium mb-1">Como estás hoje?</p>
+        <div className="flex gap-1.5">
+          {["Feliz", "Grato"].map((m, i) => (
+            <span
+              key={m}
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${i === 0 ? "bg-rose-50 text-rose-400" : "bg-[#f5f5f5] text-[#aaa]"}`}
+            >
+              {m}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Message card — bottom left */}
+      <div
+        className="absolute z-10 left-2 bottom-10 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.07)] border border-[#f0f0f0] px-4 py-3 max-w-[160px] animate-ob-float-b"
+        style={{ animationDelay: "-6s" }}
+      >
+        <p className="text-[10px] text-[#bbb] font-medium mb-1">Mensagem</p>
+        <p className="text-[12px] font-medium text-foreground leading-snug">"Saudades de ti."</p>
+      </div>
+
+      {/* Milestone card — bottom right */}
+      <div
+        className="absolute z-10 right-3 bottom-8 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.07)] border border-[#f0f0f0] px-4 py-3 flex items-center gap-2 animate-ob-float-a"
+        style={{ animationDelay: "-1s" }}
+      >
+        <div className="w-7 h-7 bg-rose-50 rounded-xl flex items-center justify-center">
+          <Sparkles className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
+        </div>
+        <div>
+          <p className="text-[10px] text-[#bbb] font-medium leading-none mb-0.5">Milestone</p>
+          <p className="text-[11px] font-bold text-foreground leading-none">Dia Completo</p>
+        </div>
+      </div>
+
+      {/* Connecting dots — subtle relationship lines */}
+      <div className="absolute z-0 w-32 h-32 border border-dashed border-rose-100/60 rounded-full animate-ob-ring-breathe" />
+      <div className="absolute z-0 w-20 h-20 border border-rose-100/40 rounded-full animate-ob-ring-inner" style={{ animationDelay: "-2s" }} />
+    </div>
   );
 }
 
@@ -24,9 +91,9 @@ function FeatureCard({
   desc: string;
 }) {
   return (
-    <div className="p-5 rounded-2xl border border-[#f0f0f0] bg-white space-y-3">
+    <div className="p-5 rounded-2xl border border-[#f0f0f0] bg-white space-y-3 hover:border-rose-100 hover:shadow-sm transition-all duration-300">
       <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center">
-        <Icon className="w-4.5 h-4.5 text-rose-400" strokeWidth={1.5} />
+        <Icon className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />
       </div>
       <p className="text-[14px] font-semibold text-foreground leading-snug">{title}</p>
       <p className="text-[12px] text-[#999] leading-relaxed">{desc}</p>
@@ -38,7 +105,7 @@ function FeatureCard({
 
 function TrustPill({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#f0f0f0] bg-white">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#efefef] bg-white">
       <Lock className="w-2.5 h-2.5 text-[#ccc]" strokeWidth={2} />
       <span className="text-[11px] text-[#999] font-medium">{text}</span>
     </div>
@@ -70,52 +137,44 @@ export default function Landing() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative max-w-lg mx-auto px-6 pt-16 pb-20 overflow-hidden">
-        {/* Ambient background orbs */}
-        <AmbientOrb className="w-64 h-64 bg-rose-100/40 blur-3xl -top-20 -right-20 animate-ob-float-a" />
-        <AmbientOrb className="w-48 h-48 bg-rose-50/60 blur-3xl bottom-0 -left-16 animate-ob-float-b" style={{ animationDelay: "-5s" } as React.CSSProperties} />
+      <section className="max-w-lg mx-auto px-6 pt-8 pb-16 space-y-8">
 
-        <div className="relative space-y-8">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-            <span className="text-[11px] font-semibold text-rose-400 tracking-wide">Espaço privado para casais</span>
-          </div>
+        {/* Floating product composition */}
+        <HeroComposition />
 
-          {/* Headline */}
-          <div className="space-y-4">
-            <h1 className="text-[40px] font-black text-foreground leading-[1.1] tracking-tight">
-              O amor vive nos{" "}
-              <span className="text-rose-400">dias comuns.</span>
-            </h1>
-            <p className="text-[16px] text-[#717171] leading-relaxed max-w-[320px]">
-              Um espaço íntimo para dois. Presença diária, rituais partilhados e memórias que ficam.
-            </p>
-          </div>
+        {/* Headline */}
+        <div className="space-y-4">
+          <h1 className="text-[38px] font-black text-foreground leading-[1.1] tracking-tight">
+            O amor vive nos{" "}
+            <span className="text-rose-400">dias comuns.</span>
+          </h1>
+          <p className="text-[15px] text-[#717171] leading-relaxed max-w-[300px]">
+            Um espaço íntimo para dois. Presença diária, rituais partilhados e memórias que ficam.
+          </p>
+        </div>
 
-          {/* CTAs */}
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate("/inicio")}
-              className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(244,63,94,0.30)] flex items-center justify-center gap-2"
-            >
-              Criar o nosso espaço
-              <ArrowRight className="w-4 h-4" strokeWidth={2} />
-            </button>
-            <button
-              onClick={() => navigate("/entrar")}
-              className="w-full h-12 rounded-2xl text-[13px] font-medium text-[#aaa] hover:text-[#717171] transition-colors"
-            >
-              Já tenho convite do meu par
-            </button>
-          </div>
+        {/* CTAs */}
+        <div className="space-y-3">
+          <button
+            onClick={() => navigate("/inicio")}
+            className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-[0_4px_24px_rgba(244,63,94,0.32)] flex items-center justify-center gap-2"
+          >
+            Criar o nosso espaço
+            <ArrowRight className="w-4 h-4" strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => navigate("/entrar")}
+            className="w-full h-12 rounded-2xl text-[13px] font-medium text-[#aaa] hover:text-[#717171] transition-colors"
+          >
+            Já tenho convite do meu par
+          </button>
+        </div>
 
-          {/* Trust pills */}
-          <div className="flex flex-wrap gap-2">
-            <TrustPill text="Privado" />
-            <TrustPill text="Sem publicidade" />
-            <TrustPill text="Só de vocês" />
-          </div>
+        {/* Trust pills */}
+        <div className="flex flex-wrap gap-2">
+          <TrustPill text="Privado" />
+          <TrustPill text="Sem publicidade" />
+          <TrustPill text="Só de vocês" />
         </div>
       </section>
 
@@ -126,7 +185,7 @@ export default function Landing() {
 
       {/* ── Features grid ── */}
       <section className="max-w-lg mx-auto px-6 py-16 space-y-6">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#bbb]">O que encontram</p>
           <h2 className="text-[24px] font-bold text-foreground leading-snug tracking-tight">
             Tudo num só espaço.
@@ -134,63 +193,37 @@ export default function Landing() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <FeatureCard
-            icon={Flame}
-            title="LoveStreak"
-            desc="Aparecam um pelo outro todos os dias. A vossa chama não se apaga."
-          />
-          <FeatureCard
-            icon={MessageCircle}
-            title="Chat privado"
-            desc="Só de vocês. Mensagens, áudios e momentos partilhados."
-          />
-          <FeatureCard
-            icon={Heart}
-            title="Humor diário"
-            desc="Saibam como o outro está, mesmo quando as palavras são difíceis."
-          />
-          <FeatureCard
-            icon={Camera}
-            title="Memórias"
-            desc="Fotos e momentos guardados no vosso espaço, para sempre."
-          />
-          <FeatureCard
-            icon={BookHeart}
-            title="Rituais"
-            desc="Oração, reflexão, planos — os pequenos rituais que unem."
-          />
-          <FeatureCard
-            icon={Flame}
-            title="Missões"
-            desc="Gestos diários que mantêm a ligação presente e o amor próximo."
-          />
+          <FeatureCard icon={Flame}         title="LoveStreak"    desc="Apareçam um pelo outro todos os dias. A vossa chama não se apaga." />
+          <FeatureCard icon={MessageCircle} title="Chat privado"   desc="Só de vocês. Mensagens, áudios e momentos partilhados." />
+          <FeatureCard icon={Heart}         title="Humor diário"   desc="Saibam como o outro está, mesmo quando as palavras são difíceis." />
+          <FeatureCard icon={Camera}        title="Memórias"       desc="Fotos e momentos guardados no vosso espaço, para sempre." />
+          <FeatureCard icon={BookHeart}     title="Rituais"        desc="Oração, reflexão, planos — os pequenos rituais que unem." />
+          <FeatureCard icon={Sparkles}      title="Missões"        desc="Gestos diários que mantêm a ligação presente e o amor próximo." />
         </div>
       </section>
 
-      {/* ── Emotional quote section ── */}
-      <section className="relative overflow-hidden">
-        <div className="bg-rose-500 max-w-lg mx-auto mx-0">
-          <div className="max-w-lg mx-auto px-6 py-16 space-y-6 text-center">
-            <p className="text-[28px] font-black text-white leading-[1.2] tracking-tight">
-              "Pequenos gestos tornam-se grandes memórias."
-            </p>
-            <p className="text-[14px] text-rose-100 leading-relaxed max-w-[260px] mx-auto">
-              O LoveNest foi criado para os casais que acreditam que o amor se constrói todos os dias.
-            </p>
-            <button
-              onClick={() => navigate("/inicio")}
-              className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-white text-rose-500 font-bold text-[14px] active:scale-[0.98] transition-all shadow-lg"
-            >
-              Começar agora
-              <ArrowRight className="w-4 h-4" strokeWidth={2} />
-            </button>
-          </div>
+      {/* ── Quote / Emotional break ── */}
+      <section className="bg-rose-500 w-full">
+        <div className="max-w-lg mx-auto px-6 py-16 text-center space-y-6">
+          <p className="text-[28px] font-black text-white leading-[1.2] tracking-tight">
+            "Pequenos gestos tornam-se grandes memórias."
+          </p>
+          <p className="text-[14px] text-rose-100 leading-relaxed max-w-[260px] mx-auto">
+            O LoveNest foi criado para os casais que acreditam que o amor se constrói todos os dias.
+          </p>
+          <button
+            onClick={() => navigate("/inicio")}
+            className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-white text-rose-500 font-bold text-[14px] active:scale-[0.98] transition-all shadow-lg"
+          >
+            Começar agora
+            <ArrowRight className="w-4 h-4" strokeWidth={2} />
+          </button>
         </div>
       </section>
 
       {/* ── How it works ── */}
       <section className="max-w-lg mx-auto px-6 py-16 space-y-8">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#bbb]">Como funciona</p>
           <h2 className="text-[24px] font-bold text-foreground leading-snug tracking-tight">
             Em três passos.
@@ -199,21 +232,9 @@ export default function Landing() {
 
         <div className="space-y-6">
           {[
-            {
-              step: "01",
-              title: "Criam o espaço",
-              desc: "Um de vocês cria o espaço e gera um código de convite.",
-            },
-            {
-              step: "02",
-              title: "Convidam o par",
-              desc: "Partilham o código com o vosso par para se juntarem ao ninho.",
-            },
-            {
-              step: "03",
-              title: "Aparecem todos os dias",
-              desc: "Pequenos gestos diários que mantêm o amor presente.",
-            },
+            { step: "01", title: "Criam o espaço",    desc: "Um de vocês cria o espaço e gera um código de convite." },
+            { step: "02", title: "Convidam o par",    desc: "Partilham o código com o vosso par para se juntarem ao ninho." },
+            { step: "03", title: "Aparecem todos os dias", desc: "Pequenos gestos diários que mantêm o amor presente." },
           ].map(({ step, title, desc }) => (
             <div key={step} className="flex gap-5">
               <div className="w-8 h-8 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -244,7 +265,7 @@ export default function Landing() {
           </div>
           <button
             onClick={() => navigate("/inicio")}
-            className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-[0_4px_24px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
           >
             Criar o nosso espaço
             <ArrowRight className="w-4 h-4" strokeWidth={2} />
