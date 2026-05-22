@@ -42,9 +42,9 @@ export default function Login() {
         navigate("/casa", { replace: true });
         return;
       }
-      // First-time visitors see the emotional onboarding before login
+      // First-time visitors see the landing page before onboarding
       if (!localStorage.getItem("onboarding_seen")) {
-        navigate("/inicio", { replace: true });
+        navigate("/landing", { replace: true });
       }
     });
   }, [navigate]);
