@@ -719,42 +719,30 @@ export default function Settings() {
                   </button>
                 )}
               </div>
-              <div className="glass-card p-6 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-sm uppercase text-primary">Lembretes Inteligentes</h3>
+              {/* Smart notifications */}
+              <div className="glass-card p-5 space-y-0">
+                <div className="pb-4 border-b border-[#f5f5f5]">
+                  <p className="text-[13px] font-semibold text-foreground">Lembretes automáticos</p>
+                  <p className="text-[11px] text-[#999] mt-0.5 leading-relaxed">Enviados nos momentos certos, com base no vosso ritmo.</p>
                 </div>
-                
-                <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
-                  O LoveNest analisa o vosso ritmo para enviar lembretes suaves nos momentos certos.
-                </p>
-
-                <div className="space-y-4 pt-2">
-                  {[
-                    { id: 'engagement', label: 'Interação e Conexão', desc: 'Incentivos quando estão distantes' },
-                    { id: 'emotion', label: 'Cuidado Emocional', desc: 'Lembretes para registar o humor' },
-                    { id: 'partner', label: 'Atividade do Par', desc: 'Saber quando o par está ativo' },
-                    { id: 'system', label: 'Tarefas e Sistema', desc: 'Alertas de tarefas pendentes' }
-                  ].map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between group">
-                      <div className="space-y-0.5">
-                        <p className="text-[13px] font-bold group-hover:text-primary transition-colors">{cat.label}</p>
-                        <p className="text-[10px] text-muted-foreground font-medium">{cat.desc}</p>
-                      </div>
-                      <Switch 
-                        checked={smartSettings.find(s => s.category === cat.id)?.enabled !== false} 
-                        onCheckedChange={() => toggleSmartNotif(cat.id)} 
-                      />
+                {[
+                  { id: 'engagement', label: 'Presença e conexão',  desc: 'Quando o espaço está silencioso' },
+                  { id: 'emotion',    label: 'Cuidado emocional',   desc: 'Lembretes para partilhares como te sentes' },
+                  { id: 'partner',    label: 'Atividade do par',    desc: 'Quando o teu par aparece no espaço' },
+                  { id: 'system',     label: 'Agenda e tarefas',    desc: 'Alertas sobre tarefas e eventos' },
+                ].map((cat, i, arr) => (
+                  <div key={cat.id} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-[#f5f5f5]')}>
+                    <div className="space-y-0.5">
+                      <p className="text-[13px] font-medium text-foreground">{cat.label}</p>
+                      <p className="text-[11px] text-[#bbb]">{cat.desc}</p>
                     </div>
-                  ))}
-                </div>
-
-                <div className="pt-4 border-t border-border/50">
-                  <Label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Horário Preferido</Label>
+                    <Switch checked={smartSettings.find(s => s.category === cat.id)?.enabled !== false} onCheckedChange={() => toggleSmartNotif(cat.id)} />
+                  </div>
+                ))}
+                <div className="pt-4 border-t border-[#f5f5f5]">
+                  <p className="text-[11px] font-medium text-[#999] mb-2">Horário preferido para lembretes</p>
                   <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
-                    <SelectTrigger className="h-10 bg-white dark:bg-white/5 border-border rounded-xl mt-1">
+                    <SelectTrigger className="h-11 bg-white border-[#eeeeee] rounded-xl text-[13px]">
                       <SelectValue placeholder="Escolhe uma hora..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -763,19 +751,51 @@ export default function Settings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[9px] text-muted-foreground italic mt-2">Dica: Escolhe um horário em que costumas estar livre. 💛</p>
                 </div>
               </div>
 
-              <div className="glass-card p-6 space-y-4">
-                <h3 className="font-bold text-sm uppercase text-muted-foreground">Módulos em Tempo Real</h3>
-                <div className="space-y-3">
-                  {Object.entries(notifPrefs).map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between"><span className="text-sm capitalize">{k.replace('_', ' ')}</span><Switch checked={v} onCheckedChange={() => toggleNotif(k)} /></div>
+              {/* Real-time activity notifications */}
+              <div className="glass-card p-5 space-y-0">
+                <div className="pb-4 border-b border-[#f5f5f5]">
+                  <p className="text-[13px] font-semibold text-foreground">Avisos em tempo real</p>
+                  <p className="text-[11px] text-[#999] mt-0.5 leading-relaxed">Alertas imediatos quando há atividade no vosso espaço.</p>
+                </div>
+                {([
+                  { key: 'chat',      label: 'Mensagens',  desc: 'Nova mensagem do teu par' },
+                  { key: 'humor',     label: 'Humor',      desc: 'Quando o par partilha como se sente' },
+                  { key: 'tarefas',   label: 'Agenda',     desc: 'Tarefas e eventos pendentes' },
+                  { key: 'memorias',  label: 'Memórias',   desc: 'Novas memórias adicionadas' },
+                  { key: 'oracao',    label: 'Oração',     desc: 'Momento de oração em conjunto' },
+                  { key: 'conflitos', label: 'Desabafos',  desc: 'Novos desabafos para resolver' },
+                ] as const).map((item, i, arr) => (
+                  <div key={item.key} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-[#f5f5f5]')}>
+                    <div className="space-y-0.5">
+                      <p className="text-[13px] font-medium text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-[#bbb]">{item.desc}</p>
+                    </div>
+                    <Switch checked={notifPrefs[item.key] ?? true} onCheckedChange={() => toggleNotif(item.key)} />
+                  </div>
+                ))}
+                <div className="pt-4 border-t border-[#f5f5f5]">
+                  <p className="text-[11px] font-medium text-[#bbb] pb-2">Ciclo menstrual</p>
+                  {([
+                    { key: 'ciclo_lembrete',    label: 'Lembretes gerais', desc: 'Avisos sobre o ciclo' },
+                    { key: 'ciclo_menstruacao', label: 'Menstruação',      desc: 'Início do período' },
+                    { key: 'ciclo_fertil',      label: 'Período fértil',   desc: 'Janela de fertilidade' },
+                    { key: 'ciclo_par',         label: 'Partilha do par',  desc: 'Quando o par partilha dados' },
+                  ] as const).map((item, i, arr) => (
+                    <div key={item.key} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-[#f5f5f5]')}>
+                      <div className="space-y-0.5">
+                        <p className="text-[13px] font-medium text-foreground">{item.label}</p>
+                        <p className="text-[11px] text-[#bbb]">{item.desc}</p>
+                      </div>
+                      <Switch checked={notifPrefs[item.key] ?? false} onCheckedChange={() => toggleNotif(item.key)} />
+                    </div>
                   ))}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="w-full text-[9px] opacity-10" onClick={() => setShowDebug(!showDebug)}>{showDebug ? "Fechar Logs" : "Abrir Logs"}</Button>
+
+                            <Button variant="ghost" size="sm" className="w-full text-[9px] opacity-10" onClick={() => setShowDebug(!showDebug)}>{showDebug ? "Fechar Logs" : "Abrir Logs"}</Button>
               {showDebug && (
                 <div className="p-4 bg-zinc-900 rounded-xl overflow-hidden shadow-2xl animate-in zoom-in-95">
                   <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-mono text-zinc-500">SYSTEM_LOGS</span><Button onClick={handlePingRaw} size="sm" className="h-6">Ping</Button></div>
