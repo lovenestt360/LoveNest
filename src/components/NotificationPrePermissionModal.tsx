@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bell, HeartHandshake, Flame, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,6 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Lock scroll while modal is open
     document.body.style.overflow = "hidden";
     const t = requestAnimationFrame(() => setVisible(true));
     return () => {
@@ -36,9 +36,20 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
     setTimeout(onDismiss, 260);
   };
 
-  return (
-    // Fixed overlay — always centered in the visible viewport
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-5">
+  // Portal renders directly in document.body — escapes any CSS transform
+  // context in parent components (AppShell, etc.) that would break fixed positioning
+  return createPortal(
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
       {/* Backdrop */}
       <div
         className={cn(
@@ -48,7 +59,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
         onClick={handleDismiss}
       />
 
-      {/* Card — centered, never goes below fold */}
+      {/* Card */}
       <div
         className={cn(
           "relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden",
@@ -56,7 +67,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
           visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         )}
       >
-        {/* Rose accent strip at top */}
+        {/* Rose accent top bar */}
         <div className="h-1 bg-gradient-to-r from-rose-300 via-rose-400 to-rose-300" />
 
         <div className="p-7">
@@ -104,6 +115,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
