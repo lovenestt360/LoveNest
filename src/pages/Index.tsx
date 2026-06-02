@@ -331,6 +331,12 @@ const Index = () => {
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: pt });
   const { isEnabled } = useFeatureAccess();
+
+  // Track app opens — used to defer notification permission to 3rd open
+  useEffect(() => {
+    const current = parseInt(localStorage.getItem("app_open_count") || "0", 10);
+    localStorage.setItem("app_open_count", String(current + 1));
+  }, []);
   
 
 

@@ -1,381 +1,294 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { track } from "@vercel/analytics";
 
-// ── Screens — Refinement 1: secondary copy now more human and emotionally mature
-const SCREENS = [
-  {
-    id: "presence",
-    headline: "O amor também vive nos dias comuns.",
-    sub: "Mesmo os dias silenciosos aproximam duas pessoas.",
-  },
-  {
-    id: "rituals",
-    headline: "Pequenos gestos criam proximidade.",
-    sub: "A presença cresce nos pequenos momentos.",
-  },
-  {
-    id: "space",
-    headline: "Um espaço privado para aparecerem um para o outro.",
-    sub: "Alguns espaços fazem duas pessoas sentirem-se mais próximas.",
-  },
-  {
-    id: "invitation",
-    headline: "Comecem a construir a vossa história.",
-    sub: "O vosso espaço começa aqui.",
-  },
-] as const;
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
-// ── Visuals — ambient motion (Phase 2) ───────────────────────────────────────
-
-function PresenceVisual() {
+function GoogleIcon({ className }: { className?: string }) {
   return (
-    <div className="relative w-48 h-48 mx-auto">
-      <div className="absolute inset-0 rounded-full bg-rose-50/40 blur-3xl scale-75" />
-      <div className="absolute w-20 h-20 rounded-full bg-rose-100/90 top-5 left-5 animate-ob-float-a" />
+    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+// ── Intro visual ──────────────────────────────────────────────────────────────
+
+function IntroVisual() {
+  return (
+    <div className="relative w-44 h-36 mx-auto">
+      <div className="absolute inset-0 rounded-full bg-rose-50/50 blur-3xl scale-75" />
+      <div className="absolute w-18 h-18 w-[72px] h-[72px] rounded-full bg-rose-100/90 top-4 left-4 animate-ob-float-a" />
       <div
-        className="absolute w-16 h-16 rounded-full bg-rose-50 border border-rose-100 bottom-5 right-6 animate-ob-float-b"
+        className="absolute w-14 h-14 rounded-full bg-rose-50 border border-rose-100 bottom-4 right-4 animate-ob-float-b"
         style={{ animationDelay: "-4s" }}
       />
     </div>
   );
 }
 
-function RitualsVisual() {
-  const bars = [10, 22, 15, 28, 18, 12, 24, 10, 20];
-  return (
-    <div className="flex items-end justify-center gap-2.5 h-32">
-      {bars.map((h, i) => (
-        <div
-          key={i}
-          style={{ height: h, animationDelay: `${i * 120}ms` }}
-          className={cn(
-            "w-1.5 rounded-full animate-ob-bar-breathe",
-            i % 2 === 0 ? "bg-rose-200" : "bg-rose-100"
-          )}
-        />
-      ))}
-    </div>
-  );
-}
+// ── Input shared style ────────────────────────────────────────────────────────
 
-function SpaceVisual() {
-  return (
-    <div className="flex items-center justify-center h-48">
-      <div className="absolute w-40 h-40 rounded-full bg-rose-50/30 blur-3xl" />
-      <div className="relative w-40 h-40">
-        <div className="absolute inset-0 rounded-[2.5rem] border border-rose-100 animate-ob-layer-breathe" style={{ animationDelay: "0s" }} />
-        <div className="absolute inset-4 rounded-[1.8rem] border border-rose-100/60 bg-rose-50/30 animate-ob-layer-breathe" style={{ animationDelay: "-1.5s" }} />
-        <div className="absolute inset-10 rounded-2xl bg-rose-100/60 animate-ob-layer-breathe" style={{ animationDelay: "-3s" }} />
+const INPUT = "w-full h-12 rounded-2xl border border-[#eeeeee] bg-white px-4 text-[15px] font-medium text-foreground placeholder:text-[#d4d4d4] focus:outline-none focus:border-[#ddd0d0] focus:ring-2 focus:ring-rose-50 transition-all";
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+type Phase = "intro" | "form";
+
+export default function Onboarding() {
+  const [phase, setPhase] = useState<Phase>("intro");
+
+  // Form state
+  const [name, setName]           = useState(localStorage.getItem("onboarding_name") || "");
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [inviteCode, setInviteCode] = useState(
+    sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref") || ""
+  );
+  const [showInvite, setShowInvite] = useState(
+    !!(sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref"))
+  );
+  const [loading, setLoading]         = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const navigate  = useNavigate();
+  const { toast } = useToast();
+
+  const markSeen = () => localStorage.setItem("onboarding_seen", "1");
+
+  // ── Signup ────────────────────────────────────────────────────────────────
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName  = name.trim();
+
+    if (trimmedName.length < 2) {
+      toast({ variant: "destructive", title: "Nome inválido", description: "Insere pelo menos 2 caracteres." });
+      return;
+    }
+    if (!isValidEmail(trimmedEmail)) {
+      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      return;
+    }
+    if (password.length < 6) {
+      toast({ variant: "destructive", title: "Senha curta", description: "Mínimo de 6 caracteres." });
+      return;
+    }
+
+    setLoading(true);
+    if (inviteCode) {
+      localStorage.setItem("lovenest_ref", inviteCode);
+      sessionStorage.setItem("lovenest_ref", inviteCode);
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: { display_name: trimmedName, referred_by_code: inviteCode || undefined },
+          emailRedirectTo: window.location.origin + "/casa",
+        },
+      });
+      if (error) throw error;
+
+      markSeen();
+      localStorage.removeItem("onboarding_name");
+
+      if (data.session) {
+        track("signup_completed", { method: "email", has_invite: !!inviteCode });
+        navigate("/casa");
+      } else {
+        track("signup_email_confirm", { has_invite: !!inviteCode });
+        toast({ title: "Verifica o teu e-mail!", description: "Enviámos um link de confirmação." });
+        navigate("/entrar");
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao criar conta", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    if (inviteCode) localStorage.setItem("lovenest_ref", inviteCode);
+    markSeen();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/casa" },
+    });
+    if (error) {
+      toast({ variant: "destructive", title: "Erro com Google", description: error.message });
+      setGoogleLoading(false);
+    }
+  };
+
+  // ── Intro screen ──────────────────────────────────────────────────────────
+
+  if (phase === "intro") {
+    return (
+      <div className="min-h-screen bg-white flex flex-col select-none">
+        {/* Skip */}
+        <div className="flex justify-end px-6 pt-12 shrink-0">
+          <button
+            onClick={() => { markSeen(); navigate("/entrar"); }}
+            className="text-[12px] font-medium text-[#ccc] hover:text-[#999] transition-colors px-2 py-1"
+          >
+            Já tenho conta
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="mb-12">
+            <IntroVisual />
+          </div>
+          <div className="text-center space-y-5 max-w-[272px]">
+            <h1 className="text-[28px] font-bold text-foreground leading-[1.2] tracking-tight">
+              O amor também vive nos dias comuns.
+            </h1>
+            <p className="text-[14px] text-[#999] leading-[1.7]">
+              Cria o vosso espaço em menos de um minuto.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="px-8 pb-14 pt-6 shrink-0 space-y-3">
+          <button
+            onClick={() => setPhase("form")}
+            className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
+          >
+            Começar
+            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+          </button>
+          <p className="text-center text-[10px] text-[#d8d8d8] tracking-[0.06em] animate-ob-hint">
+            grátis · privado · sem publicidade
+          </p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-function InvitationVisual() {
+  // ── Signup form ───────────────────────────────────────────────────────────
+
   return (
-    <div className="flex items-center justify-center h-48">
-      <div className="relative w-32 h-32">
-        <div className="absolute inset-0 rounded-full border border-rose-100 animate-ob-ring-breathe" />
-        <div className="absolute inset-5 rounded-full border border-rose-100/70 bg-rose-50/30 animate-ob-ring-inner" style={{ animationDelay: "-2s" }} />
-        <div className="absolute inset-11 rounded-full bg-rose-200/70 animate-ob-ring-breathe" style={{ animationDelay: "-3s" }} />
-      </div>
-    </div>
-  );
-}
-
-const VISUALS = [PresenceVisual, RitualsVisual, SpaceVisual, InvitationVisual];
-
-// ── Shared design tokens — Refinements 4 & 5 ─────────────────────────────────
-
-// Input: softer focus border — less "beauty app", more premium neutral
-const INPUT_CLASS =
-  "w-full h-14 rounded-2xl border border-[#eeeeee] bg-white text-center text-[17px] font-medium text-foreground placeholder:text-[#d4d4d4] focus:outline-none focus:border-[#ddd0d0] focus:ring-2 focus:ring-rose-50 transition-all";
-
-// Button: slightly reduced saturation + soft warm shadow
-const BTN_PRIMARY =
-  "w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)]";
-
-// ── Phase 3: Personalisation screens ─────────────────────────────────────────
-
-function FunctionalShell({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
-  return (
-    <div className="min-h-screen bg-white flex flex-col select-none overflow-hidden relative">
-      {/* Refinement 3: ultra-subtle ambient warmth — same atmosphere as storytelling */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/60 blur-[90px] pointer-events-none" />
+    <div className="min-h-screen bg-white flex flex-col relative">
+      {/* Ambient warmth */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 blur-[90px] pointer-events-none" />
 
       {/* Back */}
-      <div className="px-5 pt-14 shrink-0">
+      <div className="px-5 pt-12 shrink-0">
         <button
-          onClick={onBack}
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f7f7] active:scale-95 transition-all"
+          onClick={() => setPhase("intro")}
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f7f7] transition-all"
         >
           <ChevronLeft className="w-5 h-5 text-[#c0c0c0]" strokeWidth={1.5} />
         </button>
       </div>
 
-      {children}
-      <div className="pb-16 shrink-0" />
-    </div>
-  );
-}
+      <div className="flex-1 flex flex-col justify-center px-8 py-6 relative z-10">
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
 
-function NameScreen({ onContinue, onLogin }: { onContinue: (name: string) => void; onLogin: () => void }) {
-  const [name, setName] = useState("");
-  const valid = name.trim().length >= 2;
-
-  return (
-    <FunctionalShell onBack={onLogin}>
-      <div
-        key="name"
-        className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-3 duration-[450ms] relative z-10"
-      >
-        <div className="w-full max-w-[272px] space-y-8 text-center">
-          <div className="space-y-4">
-            <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
-              Como te chamas?
+          {/* Heading */}
+          <div className="space-y-1">
+            <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
+              Criar o vosso espaço.
             </h1>
-            <p className="text-[14px] text-[#999] leading-relaxed">
-              Para personalizarmos o vosso espaço.
-            </p>
+            <p className="text-[13px] text-[#999]">Começa em segundos.</p>
           </div>
 
-          <input
-            type="text"
-            placeholder="O teu nome"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && valid) onContinue(name.trim()); }}
-            autoFocus
-            className={INPUT_CLASS}
-          />
-
-          <div className="space-y-3">
-            <button
-              onClick={() => valid && onContinue(name.trim())}
-              disabled={!valid}
-              className={BTN_PRIMARY}
-            >
-              Continuar
-            </button>
-            <button
-              onClick={onLogin}
-              className="w-full text-[12px] text-[#c8c8c8] hover:text-[#999] transition-colors py-1"
-            >
-              Já tenho conta
-            </button>
-          </div>
-        </div>
-      </div>
-    </FunctionalShell>
-  );
-}
-
-function InviteScreen({ onContinue, onSkip, onBack }: { onContinue: (code: string) => void; onSkip: () => void; onBack: () => void }) {
-  const [code, setCode] = useState("");
-  const valid = code.trim().length >= 4;
-
-  return (
-    <FunctionalShell onBack={onBack}>
-      <div
-        key="invite"
-        className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-3 duration-[450ms] relative z-10"
-      >
-        <div className="w-full max-w-[272px] space-y-8 text-center">
-          <div className="space-y-4">
-            <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
-              Qual é o vosso código?
-            </h1>
-            <p className="text-[14px] text-[#999] leading-relaxed">
-              O teu par partilhou um código de convite contigo.
-            </p>
-          </div>
-
-          <input
-            type="text"
-            placeholder="Ex: AMOR2024"
-            value={code}
-            onChange={e => setCode(e.target.value.toUpperCase())}
-            onKeyDown={e => { if (e.key === "Enter" && valid) onContinue(code.trim()); }}
-            autoFocus
-            maxLength={12}
-            className={INPUT_CLASS + " tracking-[0.15em] font-bold"}
-          />
-
-          <div className="space-y-3">
-            <button
-              onClick={() => valid && onContinue(code.trim())}
-              disabled={!valid}
-              className={BTN_PRIMARY}
-            >
-              Entrar no nosso espaço
-            </button>
-            <button
-              onClick={onSkip}
-              className="w-full text-[12px] text-[#c8c8c8] hover:text-[#999] transition-colors py-1"
-            >
-              Não tenho código
-            </button>
-          </div>
-        </div>
-      </div>
-    </FunctionalShell>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
-
-type Phase = "screens" | "name" | "invite";
-
-export default function Onboarding() {
-  const [current, setCurrent]   = useState(0);
-  const [exiting, setExiting]   = useState(false);
-  const [phase, setPhase]       = useState<Phase>("screens");
-  const [invitePath, setInvitePath] = useState(false);
-  const navigate = useNavigate();
-
-  const isLast = current === SCREENS.length - 1;
-  const markSeen = () => localStorage.setItem("onboarding_seen", "1");
-
-  const goTo = useCallback((index: number) => {
-    if (exiting || index === current) return;
-    setExiting(true);
-    try { navigator.vibrate?.([6]); } catch {}
-    setTimeout(() => { setCurrent(index); setExiting(false); }, 220);
-  }, [exiting, current]);
-
-  const advance = useCallback(() => {
-    if (isLast || phase !== "screens") return;
-    goTo(current + 1);
-  }, [isLast, phase, current, goTo]);
-
-  // Phase transitions
-  const handleCreateSpace = () => { track("onboarding_create_space"); setInvitePath(false); setPhase("name"); };
-  const handleHaveInvite  = () => { track("onboarding_have_invite");  setInvitePath(true);  setPhase("name"); };
-
-  const handleNameContinue = (name: string) => {
-    localStorage.setItem("onboarding_name", name);
-    if (invitePath) {
-      setPhase("invite");
-    } else {
-      track("onboarding_completed", { path: "create" });
-      markSeen();
-      navigate("/criar-conta");
-    }
-  };
-
-  const handleInviteContinue = (code: string) => {
-    track("onboarding_completed", { path: "invite" });
-    sessionStorage.setItem("lovenest_ref", code);
-    markSeen();
-    navigate("/criar-conta");
-  };
-
-  const handleLogin = () => { markSeen(); navigate("/entrar"); };
-  const handleSkip  = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    track("onboarding_skipped", { screen: current });
-    markSeen();
-    navigate("/entrar");
-  };
-
-  const screen = SCREENS[current];
-  const Visual = VISUALS[current];
-
-  // ── Functional phases ────────────────────────────────────────────────────
-  if (phase === "name")   return <NameScreen   onContinue={handleNameContinue} onLogin={handleLogin} />;
-  if (phase === "invite") return <InviteScreen onContinue={handleInviteContinue} onSkip={() => { markSeen(); navigate("/criar-conta"); }} onBack={() => setPhase("name")} />;
-
-  // ── Storytelling screens ─────────────────────────────────────────────────
-  return (
-    <div
-      className="min-h-screen bg-white flex flex-col select-none overflow-hidden"
-      onClick={!isLast ? advance : undefined}
-    >
-      {/* Top bar */}
-      <div className="flex justify-between items-center px-6 pt-14 shrink-0">
-        <div className="w-2 h-2 rounded-full bg-rose-200" />
-        {!isLast && (
+          {/* Google */}
           <button
-            onClick={handleSkip}
-            className="text-[11px] font-medium text-[#ccc] hover:text-[#999] transition-colors py-1 px-2"
+            type="button"
+            onClick={handleGoogle}
+            disabled={googleLoading || loading}
+            className="w-full h-12 rounded-2xl border border-[#e8e8e8] bg-white text-[13px] font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-[#f9f9f9] active:scale-[0.98] transition-all disabled:opacity-60"
           >
-            Saltar
+            {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-[#717171]" /> : <GoogleIcon className="w-4 h-4" />}
+            Continuar com Google
           </button>
-        )}
-      </div>
 
-      {/* Screen content */}
-      <div
-        key={current}
-        className={cn(
-          "flex-1 flex flex-col items-center justify-center px-8",
-          "animate-in fade-in slide-in-from-bottom-3 duration-[450ms] ease-out",
-          exiting && "opacity-0 -translate-y-2 transition-[opacity,transform] duration-[220ms] ease-in"
-        )}
-      >
-        <div className="mb-14">
-          <Visual />
-        </div>
-
-        {/* Refinement 6: tighter max-width on headline for better line-break rhythm */}
-        <div className="text-center space-y-5 max-w-[260px]">
-          <h1 className="text-[26px] font-bold text-foreground leading-[1.25] tracking-tight">
-            {screen.headline}
-          </h1>
-          <p className="text-[14px] text-[#999] leading-[1.7] font-normal">
-            {screen.sub}
-          </p>
-        </div>
-      </div>
-
-      {/* Bottom */}
-      <div className="px-8 pb-14 pt-4 shrink-0 space-y-6">
-        {/* Dots */}
-        <div className="flex justify-center items-center gap-2">
-          {SCREENS.map((_, i) => (
-            <button
-              key={i}
-              onClick={(e) => { e.stopPropagation(); if (i <= current) goTo(i); }}
-              className={cn(
-                "rounded-full transition-all duration-300 ease-out",
-                i === current
-                  ? "w-6 h-1.5 bg-rose-400"
-                  : i < current
-                    ? "w-1.5 h-1.5 bg-rose-200"
-                    : "w-1.5 h-1.5 bg-[#e8e8e8]"
-              )}
-            />
-          ))}
-        </div>
-
-        {/* CTA or hint */}
-        {isLast ? (
-          <div
-            className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-500"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={handleCreateSpace}
-              className={BTN_PRIMARY}
-            >
-              Criar espaço
-            </button>
-            <button
-              onClick={handleHaveInvite}
-              className="w-full h-12 rounded-2xl text-[13px] font-medium text-[#bbb] hover:text-[#717171] transition-colors"
-            >
-              Já tenho convite
-            </button>
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-[#f0f0f0]" />
+            <span className="text-[11px] text-[#bbb]">ou</span>
+            <div className="flex-1 h-px bg-[#f0f0f0]" />
           </div>
-        ) : (
-          /* Refinement 2: breathing hint — slightly more visible, animated */
-          <p className="text-center text-[10px] text-[#bbb] tracking-[0.06em] animate-ob-hint">
-            toca para continuar
+
+          {/* Form */}
+          <form onSubmit={handleSignup} className="space-y-3">
+            <input
+              type="text"
+              placeholder="O teu nome"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              className={INPUT}
+            />
+            <input
+              type="text"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="teu@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className={INPUT}
+            />
+            <input
+              type="password"
+              placeholder="Senha (mín. 6 caracteres)"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className={INPUT}
+            />
+
+            {/* Invite code toggle */}
+            {!showInvite ? (
+              <button
+                type="button"
+                onClick={() => setShowInvite(true)}
+                className="text-[12px] text-[#bbb] hover:text-[#717171] transition-colors w-full text-left px-1"
+              >
+                + Tenho um código de convite do meu par
+              </button>
+            ) : (
+              <input
+                type="text"
+                placeholder="Código de convite (ex: AMOR2024)"
+                value={inviteCode}
+                onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                className={cn(INPUT, "tracking-wider font-bold text-center")}
+              />
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || googleLoading}
+              className="w-full h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2 mt-1"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Criar espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>}
+            </button>
+          </form>
+
+          <p className="text-center text-[11px] text-[#bbb]">
+            Já tens conta?{" "}
+            <button onClick={() => { markSeen(); navigate("/entrar"); }} className="text-rose-500 font-semibold hover:underline">
+              Entrar
+            </button>
           </p>
-        )}
+        </div>
       </div>
     </div>
   );

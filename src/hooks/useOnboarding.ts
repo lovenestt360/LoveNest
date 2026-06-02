@@ -79,12 +79,13 @@ export function useOnboarding() {
       }
 
       // 3. Check Notifications
-      // Skip if: device can't support push, OR user already dismissed the step
+      // Skip if: device can't support push, user dismissed, or not enough app opens yet.
+      // We defer the notification ask to the 3rd open — reduces early abandonment.
       const pushCapable = isPushCapable();
-      const skipped = localStorage.getItem(`notif-skipped-${user.id}`) === "1";
+      const skipped     = localStorage.getItem(`notif-skipped-${user.id}`) === "1";
+      const openCount   = parseInt(localStorage.getItem("app_open_count") || "0", 10);
 
-      if (!pushCapable || skipped) {
-        // Device physically cannot support push (iOS < 16.4) or user opted out
+      if (!pushCapable || skipped || openCount < 3) {
         setStep("complete");
         setLoading(false);
         return;
