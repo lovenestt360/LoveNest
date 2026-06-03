@@ -374,45 +374,56 @@ export default function CoupleSpace() {
 
           <WaitingVisual />
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
               O vosso ninho está criado.
             </h1>
-            <p className="text-[14px] text-[#999] leading-relaxed">
-              Partilha o código com o teu par para se juntarem.
+            <p className="text-[14px] text-[#888] leading-relaxed">
+              Partilha o código com o teu par. Podes entrar na app enquanto esperas.
             </p>
           </div>
 
           {/* Invite code — prominent */}
           <div className="space-y-3">
+            <p className="text-[11px] font-semibold text-[#bbb] uppercase tracking-wider">
+              Código do vosso espaço
+            </p>
             <div className="h-16 rounded-2xl border border-[#f0f0f0] bg-[#fafafa] flex items-center justify-center">
-              <span className="text-[22px] font-bold text-foreground tracking-[0.2em]">
+              <span className="text-[22px] font-black text-foreground tracking-[0.25em]">
                 {state.inviteCode ?? "—"}
               </span>
             </div>
-
             <div className="flex gap-2">
               <button
                 onClick={handleShare}
-                className="flex-1 h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] active:scale-[0.98] transition-all shadow-[0_2px_12px_rgba(244,63,94,0.15)] flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-2xl bg-rose-500 text-white font-semibold text-[14px] active:scale-[0.98] transition-all shadow-[0_4px_14px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
               >
                 <Share2 className="w-4 h-4" strokeWidth={1.5} />
-                Partilhar
+                Partilhar código
               </button>
               <button
                 onClick={() => state.inviteCode && navigator.clipboard.writeText(state.inviteCode).then(() =>
                   toast({ title: "Código copiado" })
                 )}
-                className="h-12 w-12 rounded-2xl border border-[#f0f0f0] bg-white flex items-center justify-center active:scale-95 transition-all"
+                className="h-12 w-12 rounded-2xl border border-[#eeeeee] bg-white flex items-center justify-center active:scale-95 transition-all"
               >
                 <Copy className="w-4 h-4 text-[#bbb]" strokeWidth={1.5} />
               </button>
             </div>
           </div>
 
-          <p className="text-[11px] text-[#ccc] animate-ob-hint">
-            A aguardar o teu par...
-          </p>
+          {/* Enter app — don't block user */}
+          <div className="space-y-2 pt-2">
+            <button
+              onClick={() => navigate("/", { replace: true })}
+              className="w-full h-13 rounded-2xl border border-[#e8e8e8] bg-white text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
+            >
+              Entrar na app <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+            <p className="text-[11px] text-[#ccc] text-center animate-ob-hint">
+              O teu par pode juntar-se depois com o código acima.
+            </p>
+          </div>
         </div>
       </div>
     );
