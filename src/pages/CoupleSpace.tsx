@@ -225,93 +225,140 @@ export default function CoupleSpace() {
   if (state.status === "no_house") {
     return (
       <div className="min-h-screen bg-white flex flex-col select-none">
-        {/* Back to join if in create view (and vice versa) */}
-        <div className="px-6 pt-14 shrink-0">
+        {/* Top bar */}
+        <div className="px-6 pt-12 shrink-0 h-16 flex items-center">
           {view === "join" && (
             <button
               onClick={() => setView("create")}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f7f7] transition-all"
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-all"
             >
-              <ChevronLeft className="w-5 h-5 text-[#c0c0c0]" strokeWidth={1.5} />
+              <ChevronLeft className="w-5 h-5 text-[#bbb]" strokeWidth={1.5} />
             </button>
           )}
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="w-full max-w-[320px] space-y-8">
 
-          {/* Visual */}
-          <div className="mb-12">
-            <TwoApartVisual />
-          </div>
-
-          {view === "create" ? (
-            <div className="w-full max-w-[272px] text-center space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-                  Criem o vosso ninho.
-                </h1>
-                <p className="text-[14px] text-[#999] leading-relaxed">
-                  Cria o espaço e partilha o código com o teu par para se juntarem.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={handleCreateSpace}
-                  disabled={loadingAction}
-                  className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
-                >
-                  {loadingAction
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <> Criar o nosso espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
-                  }
-                </button>
-                <button
-                  onClick={() => setView("join")}
-                  className="w-full h-12 text-[13px] font-medium text-[#bbb] hover:text-[#717171] transition-colors"
-                >
-                  Tenho um código de convite
-                </button>
-              </div>
+            {/* Visual */}
+            <div className="flex justify-center">
+              <TwoApartVisual />
             </div>
-          ) : (
-            <form onSubmit={handleJoinSpace} className="w-full max-w-[272px] text-center space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-                  O vosso ninho aguarda.
-                </h1>
-                <p className="text-[14px] text-[#999] leading-relaxed">
-                  Insere o código que o teu par partilhou contigo.
+
+            {view === "create" ? (
+              <>
+                {/* Copy */}
+                <div className="text-center space-y-3">
+                  <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
+                    O teu par ainda não chegou.
+                  </h1>
+                  <p className="text-[14px] text-[#888] leading-relaxed">
+                    Cria o vosso espaço, recebe um código e partilha-o com o teu par para se juntarem.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  {/* Primary */}
+                  <button
+                    onClick={handleCreateSpace}
+                    disabled={loadingAction}
+                    className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
+                  >
+                    {loadingAction
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <> Criar o nosso espaço <ArrowRight className="w-4 h-4" strokeWidth={2} /> </>
+                    }
+                  </button>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-3 py-1">
+                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                    <span className="text-[11px] text-[#ccc] font-medium">ou</span>
+                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                  </div>
+
+                  {/* Secondary — visible, with border */}
+                  <button
+                    onClick={() => setView("join")}
+                    className="w-full h-13 rounded-2xl border border-[#e8e8e8] bg-white text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
+                  >
+                    Já tenho um código de convite
+                  </button>
+                </div>
+
+                {/* Explanation */}
+                <p className="text-center text-[11px] text-[#ccc] leading-relaxed">
+                  O teu par vai entrar com o código que recebes após criar o espaço.
                 </p>
-              </div>
+              </>
+            ) : (
+              <>
+                {/* Copy */}
+                <div className="text-center space-y-3">
+                  <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
+                    Entrar no espaço do teu par.
+                  </h1>
+                  <p className="text-[14px] text-[#888] leading-relaxed">
+                    O teu par criou um espaço e partilhou um código contigo. Insere-o abaixo.
+                  </p>
+                </div>
 
-              <input
-                type="text"
-                placeholder="Ex: AMOR2024"
-                value={inviteCodeInput}
-                onChange={e => setInviteCodeInput(e.target.value.toUpperCase())}
-                maxLength={12}
-                autoFocus
-                className="w-full h-14 rounded-2xl border border-[#eeeeee] bg-white text-center text-[17px] font-bold text-foreground placeholder:text-[#d4d4d4] tracking-[0.15em] focus:outline-none focus:border-[#ddd0d0] focus:ring-2 focus:ring-rose-50 transition-all"
-              />
+                {/* Code input */}
+                <form onSubmit={handleJoinSpace} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-semibold text-[#999] px-1">
+                      Código de convite
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 3L2BRUL2"
+                      value={inviteCodeInput}
+                      onChange={e => setInviteCodeInput(e.target.value.toUpperCase())}
+                      maxLength={12}
+                      autoFocus
+                      className="w-full h-14 rounded-2xl border border-[#eeeeee] bg-white text-center text-[18px] font-black text-foreground placeholder:text-[#d4d4d4] tracking-[0.2em] focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
+                    />
+                  </div>
 
-              <div className="space-y-3">
-                <button
-                  type="submit"
-                  disabled={loadingAction || inviteCodeInput.trim().length < 4}
-                  className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
-                >
-                  {loadingAction
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : "Entrar no nosso espaço"
-                  }
-                </button>
-              </div>
-            </form>
-          )}
+                  {/* Primary */}
+                  <button
+                    type="submit"
+                    disabled={loadingAction || inviteCodeInput.trim().length < 4}
+                    className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
+                  >
+                    {loadingAction
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <> Entrar no espaço <ArrowRight className="w-4 h-4" strokeWidth={2} /> </>
+                    }
+                  </button>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-3 py-1">
+                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                    <span className="text-[11px] text-[#ccc] font-medium">ou</span>
+                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                  </div>
+
+                  {/* Secondary — create instead */}
+                  <button
+                    type="button"
+                    onClick={() => setView("create")}
+                    className="w-full h-13 rounded-2xl border border-[#e8e8e8] bg-white text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center py-3.5"
+                  >
+                    Quero criar um novo espaço
+                  </button>
+                </form>
+
+                <p className="text-center text-[11px] text-[#ccc] leading-relaxed">
+                  Não tens código? Pede ao teu par que crie o espaço primeiro.
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="pb-16 shrink-0" />
+        <div className="pb-12 shrink-0" />
       </div>
     );
   }
