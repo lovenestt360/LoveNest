@@ -35,7 +35,8 @@ const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
-const Landing    = lazy(() => import("./pages/Landing"));
+const Landing      = lazy(() => import("./pages/Landing"));
+const ConfirmEmail = lazy(() => import("./pages/ConfirmEmail"));
 const CoupleSpace = lazy(() => import("./pages/CoupleSpace"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Fasting = lazy(() => import("./pages/Fasting"));
@@ -69,6 +70,7 @@ const AppRoutes = () => (
     {/* Public routes */}
     <Route path="/landing" element={<Landing />} />
     <Route path="/inicio" element={<Onboarding />} />
+    <Route path="/confirmar-email" element={<ConfirmEmail />} />
     <Route path="/entrar" element={<Login />} />
     <Route path="/criar-conta" element={<Signup />} />
     <Route path="/signup" element={<Signup />} />

@@ -21,12 +21,8 @@ export function OnboardingWizard() {
   const pushCapable = isPushCapable();
 
   useEffect(() => {
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true ||
-      document.referrer.includes("android-app://");
-
-    if (!loading && step !== "complete" && isStandalone) {
+    if (!loading && step !== "complete") {
+      // Don't show if the user is already on the relevant settings section
       const hash = location.hash.replace("#", "");
       if (location.pathname === "/configuracoes" && hash === step) {
         setOpen(false);

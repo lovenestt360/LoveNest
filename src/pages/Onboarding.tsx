@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,8 +60,21 @@ export default function Onboarding() {
 
   const navigate  = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   const markSeen = () => localStorage.setItem("onboarding_seen", "1");
+
+  // Capture ?ref=CODE from URL (shared invite links)
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      const code = ref.toUpperCase();
+      sessionStorage.setItem("lovenest_ref", code);
+      localStorage.setItem("lovenest_ref", code);
+      setInviteCode(code);
+      setShowInvite(true);
+    }
+  }, [searchParams]);
 
   // ── Signup ────────────────────────────────────────────────────────────────
 
@@ -108,8 +121,9 @@ export default function Onboarding() {
         navigate("/casa");
       } else {
         track("signup_email_confirm", { has_invite: !!inviteCode });
-        toast({ title: "Verifica o teu e-mail!", description: "Enviámos um link de confirmação." });
-        navigate("/entrar");
+        // Store email so confirmation screen can display it
+        localStorage.setItem("confirm_email", trimmedEmail);
+        navigate("/confirmar-email");
       }
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro ao criar conta", description: err.message });

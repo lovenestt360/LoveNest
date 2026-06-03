@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,7 @@ export default function Login() {
 
   const navigate  = useNavigate();
   const location  = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,8 +43,12 @@ export default function Login() {
         navigate("/casa", { replace: true });
         return;
       }
-      // First-time visitors see the landing page before onboarding
-      if (!localStorage.getItem("onboarding_seen")) {
+      // First-time visitors see the landing page before onboarding.
+      // Exception: if the URL has ?returning=1 (set by shared links for existing users)
+      // we skip the landing and show login directly.
+      const isReturning = searchParams.get("returning") === "1"
+        || document.referrer.includes(window.location.hostname);
+      if (!localStorage.getItem("onboarding_seen") && !isReturning) {
         navigate("/landing", { replace: true });
       }
     });

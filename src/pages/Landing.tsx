@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Lock, Heart, Flame, BookHeart, Camera, MessageCircle, Sparkles } from "lucide-react";
 
 // ── Hero visual composition ───────────────────────────────────────────────────
@@ -116,6 +117,16 @@ function TrustPill({ text }: { text: string }) {
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Capture ?ref=CODE from shared invite links and persist for later use
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      sessionStorage.setItem("lovenest_ref", ref.toUpperCase());
+      localStorage.setItem("lovenest_ref", ref.toUpperCase());
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-[#faf9f9] text-foreground overflow-x-hidden">
