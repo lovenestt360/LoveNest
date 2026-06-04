@@ -201,15 +201,42 @@ export default function CoupleSpace() {
   const handleShare = async () => {
     if (state.status !== "has_house" || !state.inviteCode) return;
     const code = state.inviteCode;
-    const text = `Vem para o nosso espaço no LoveNest. Usa o código: ${code}`;
-    try {
-      if (navigator.share) {
+    const text = `Vem para o nosso espaço no LoveNest!\nUsa o código: ${code}\n${window.location.origin}`;
+
+    // 1. Try native share sheet (mobile)
+    if (navigator.share) {
+      try {
         await navigator.share({ title: "LoveNest", text, url: window.location.origin });
-      } else {
-        await navigator.clipboard.writeText(text);
-        toast({ title: "Copiado", description: "Partilha o código com o teu par." });
+        return; // success — share sheet opened
+      } catch (e: any) {
+        // User cancelled (AbortError) or share failed — fall through to clipboard
+        if (e?.name === "AbortError") return; // user cancelled intentionally
       }
+    }
+
+    // 2. Try clipboard API
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Código copiado!", description: "Cola e envia ao teu par." });
+      return;
     } catch {}
+
+    // 3. Last resort — execCommand (works in most desktop browsers)
+    try {
+      const el = document.createElement("textarea");
+      el.value = text;
+      el.style.position = "fixed";
+      el.style.opacity = "0";
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      toast({ title: "Código copiado!", description: "Cola e envia ao teu par." });
+    } catch {
+      // Nothing worked — show the code in a toast so user can copy manually
+      toast({ title: `Código: ${code}`, description: "Copia e envia ao teu par manualmente." });
+    }
   };
 
   // ── Loading ───────────────────────────────────────────────────────────────
