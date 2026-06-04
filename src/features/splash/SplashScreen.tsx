@@ -90,20 +90,13 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "radial-gradient(circle at center, #0d0d0d 0%, #000 100%)",
+        background: "#000000",
         willChange: "opacity",
         transition: "opacity 600ms ease-in-out",
         opacity: stage === 3 ? 0 : 1,
         pointerEvents: stage === 3 ? "none" : "auto",
       }}
     >
-      {/* Subtle static glow — no animation, no blur */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: "radial-gradient(circle at center, rgba(244,63,94,0.12) 0%, transparent 65%)",
-        pointerEvents: "none",
-      }} />
 
       {/* Logo + wordmark */}
       <div style={{
