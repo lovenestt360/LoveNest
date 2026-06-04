@@ -3,15 +3,14 @@ import { LogoIcon } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
 
 function SplashOverlay({ onDone }: { onDone: () => void }) {
-  const [visible, setVisible]         = useState(true);
-  const [showSub, setShowSub]         = useState(false);
-  const [initials, setInitials]       = useState<string | null>(null);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [initials, setInitials] = useState<string | null>(null);
   const [showInitials, setShowInitials] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    async function fetchInitials() {
+    async function fetchInfo() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
@@ -33,82 +32,83 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
             if (house.initials) {
               setInitials(house.initials);
             } else if (house.partner1_name && house.partner2_name) {
-              setInitials(`${house.partner1_name[0]}${house.partner2_name[0]}`);
+              const i1 = house.partner1_name[0] || "";
+              const i2 = house.partner2_name[0] || "";
+              setInitials(`${i1}${i2}`);
             }
           }
+        } else {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          if (profile?.display_name && mounted) {
+            setInitials(profile.display_name[0].toUpperCase());
+          }
         }
-      } catch {}
+      } catch (err) {
+        console.error("Splash: fetchInfo exception", err);
+      }
     }
 
-    fetchInitials();
+    fetchInfo();
 
-    const t1 = setTimeout(() => setShowSub(true), 350);
-    const t2 = setTimeout(() => setShowInitials(true), 600);
-    const t3 = setTimeout(() => setVisible(false), 1800);
-    const t4 = setTimeout(onDone, 2400);
+    const tInitials = setTimeout(() => setShowInitials(true), 400);
+    const tFade     = setTimeout(() => setFadeOut(true), 1600);
+    const tDone     = setTimeout(onDone, 2200);
 
     return () => {
       mounted = false;
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
+      clearTimeout(tInitials);
+      clearTimeout(tFade);
+      clearTimeout(tDone);
     };
   }, [onDone]);
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white transition-opacity duration-500 ease-in-out ${
-        visible ? "opacity-100" : "opacity-0 pointer-events-none"
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${
+        fadeOut ? "opacity-0 scale-105 pointer-events-none" : "opacity-100 scale-100"
       }`}
+      style={{
+        background: "radial-gradient(circle at center, #0a0a0a 0%, #000 100%)",
+      }}
     >
-      {/* Logo — subtle breathing scale */}
-      <div
-        className="flex flex-col items-center gap-5"
-        style={{ animation: "splash-breathe 3s ease-in-out infinite" }}
-      >
-        <LogoIcon size={88} />
+      {/* Background glow */}
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] pointer-events-none" />
 
-        {/* Wordmark */}
-        <div className="text-center space-y-1.5">
-          <h1
-            className={`text-[22px] font-bold tracking-tight text-[#0B1324] transition-all duration-500 ${
-              showSub ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
-            }`}
-          >
+      <div className="relative flex flex-col items-center justify-center scale-100 group">
+        {/* Logo — substituiu o Heart */}
+        <div className="relative mb-6 flex h-28 w-28 items-center justify-center animate-in zoom-in duration-700 ease-out">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl animate-pulse" />
+          <div className="absolute inset-0 rounded-full border border-primary/20 scale-125 animate-ping opacity-10" />
+          <LogoIcon size={96} className="relative" />
+        </div>
+
+        <div className="text-center overflow-hidden space-y-3">
+          <h1 className="text-5xl font-black tracking-tighter text-white drop-shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
             LoveNest
           </h1>
-          <p
-            className={`text-[12px] text-[#999] leading-snug transition-all duration-500 delay-100 ${
-              showSub ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
-            }`}
-          >
-            O amor também vive nos dias comuns.
-          </p>
+
+          <div className={`transition-all duration-1000 delay-500 ${showInitials ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+            {initials ? (
+              <p className="text-sm font-black tracking-[0.4em] text-white/90 uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                {initials.includes("&")
+                  ? initials.replace("&", "♥")
+                  : (initials.length > 1 ? `${initials[0]} ♥ ${initials[initials.length - 1]}` : initials)}
+              </p>
+            ) : (
+              <div className="h-0.5 w-12 bg-primary/40 rounded-full mx-auto animate-pulse" />
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Couple initials — personal touch, low priority */}
-      {initials && (
-        <div
-          className={`absolute bottom-16 text-center transition-all duration-700 ${
-            showInitials ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <p className="text-[11px] text-[#ccc] font-semibold tracking-[0.3em] uppercase">
-            {initials.length >= 2
-              ? `${initials[0]} · ${initials[initials.length - 1]}`
-              : initials}
-          </p>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes splash-breathe {
-          0%, 100% { transform: scale(1); }
-          50%       { transform: scale(0.982); }
-        }
-      `}</style>
+      <div className="absolute bottom-16 flex flex-col items-center animate-in fade-in duration-1000 delay-700 fill-mode-both">
+        <p className="text-[9px] tracking-[0.4em] text-zinc-400 font-black uppercase mb-3">Para Casais Extraordinários</p>
+        <div className="h-0.5 w-8 bg-primary/40 rounded-full" />
+      </div>
     </div>
   );
 }
@@ -117,7 +117,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   const [show, setShow] = useState(() => {
     try { return !sessionStorage.getItem("splash_done"); } catch { return true; }
   });
-
   const hide = useCallback(() => {
     try { sessionStorage.setItem("splash_done", "1"); } catch {}
     setShow(false);
