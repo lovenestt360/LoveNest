@@ -1,16 +1,17 @@
 {
   "id": "com.lovenest.app",
-  "name": "LoveNest — Espaço de Casal",
+  "name": "LoveNest — O amor também vive nos dias comuns.",
   "short_name": "LoveNest",
-  "description": "Seu espaço privado de casal para amor, fé e conexão.",
+  "description": "Um espaço privado para dois. Presença diária, rituais partilhados e memórias que ficam.",
   "start_url": "/?utm_source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
-  "theme_color": "#1a1f36",
-  "background_color": "#0a0a0a",
+  "theme_color": "#0B1324",
+  "background_color": "#ffffff",
   "orientation": "portrait",
   "categories": ["lifestyle", "social"],
+  "lang": "pt",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -41,12 +42,14 @@
   "shortcuts": [
     {
       "name": "Chat",
+      "short_name": "Chat",
       "url": "/chat",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Tarefas",
-      "url": "/tarefas",
+      "name": "LoveStreak",
+      "short_name": "Streak",
+      "url": "/lovestreak",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]

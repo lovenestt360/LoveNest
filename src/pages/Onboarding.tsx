@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { LogoMark } from "@/components/Logo";
 import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,8 +152,12 @@ export default function Onboarding() {
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-white flex flex-col select-none">
-        {/* Skip */}
-        <div className="flex justify-end px-6 pt-12 shrink-0">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 pt-12 shrink-0">
+          <div className="flex items-center gap-2">
+            <LogoMark size={26} />
+            <span className="text-[13px] font-bold tracking-tight text-foreground">LoveNest</span>
+          </div>
           <button
             onClick={() => { markSeen(); navigate("/entrar"); }}
             className="text-[12px] font-medium text-[#ccc] hover:text-[#999] transition-colors px-2 py-1"

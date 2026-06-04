@@ -3,9 +3,10 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2, ArrowRight, ChevronLeft, Mail } from "lucide-react";
+import { Loader2, ArrowRight, ChevronLeft, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@vercel/analytics";
+import { LogoIcon } from "@/components/Logo";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
@@ -156,13 +157,13 @@ export default function Login() {
       <div className="w-full max-w-sm space-y-8">
 
         {/* Brand */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-50 border border-rose-100 mx-auto">
-            <Heart className="h-8 w-8 text-rose-400 fill-rose-400" strokeWidth={1.5} />
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <LogoIcon size={72} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Bem-vindo</h1>
-            <p className="text-sm text-[#717171] mt-1">O teu espaço privado de casal</p>
+            <h1 className="text-[28px] font-bold text-foreground tracking-tight">Bem-vindo</h1>
+            <p className="text-[14px] text-[#888] mt-1">O teu espaço privado de casal</p>
           </div>
         </div>
 
@@ -324,8 +325,8 @@ export default function Login() {
           {tab === "magic" && (
             magicSent ? (
               <div className="text-center space-y-4 py-4">
-                <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
-                  <Heart className="w-8 h-8 text-rose-400 fill-rose-400" strokeWidth={1.5} />
+                <div className="flex justify-center">
+                  <LogoIcon size={64} />
                 </div>
                 <div>
                   <p className="text-base font-semibold text-foreground">Link enviado!</p>

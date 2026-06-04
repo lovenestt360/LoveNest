@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Lock, Heart, Flame, BookHeart, Camera, MessageCircle, Sparkles } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 // ── Hero visual composition ───────────────────────────────────────────────────
 // Floating cards that evoke the product without screenshots
@@ -135,8 +136,8 @@ export default function Landing() {
       <header className="sticky top-0 z-40 bg-[#faf9f9]/90 backdrop-blur-md border-b border-[#f0f0f0]">
         <div className="max-w-lg mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-rose-400" />
-            <span className="text-[14px] font-bold tracking-tight">LoveNest</span>
+            <LogoMark size={28} />
+            <span className="text-[14px] font-bold tracking-tight text-foreground">LoveNest</span>
           </div>
           <button
             onClick={() => navigate("/entrar")}
@@ -289,7 +290,7 @@ export default function Landing() {
       <footer className="border-t border-[#f0f0f0] bg-white">
         <div className="max-w-lg mx-auto px-6 py-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-300" />
+            <LogoMark size={22} />
             <span className="text-[12px] font-bold text-foreground">LoveNest</span>
           </div>
           <p className="text-[11px] text-[#ccc]">Um espaço privado para o vosso amor.</p>
