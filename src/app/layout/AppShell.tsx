@@ -2,7 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { BottomTabs } from "@/app/layout/BottomTabs";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { WifiOff } from "lucide-react";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { FloatingSetupChecklist } from "@/components/onboarding/FloatingSetupChecklist";
 import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
 import { ChatWallpaper } from "@/features/chat/components/ChatWallpaper";
@@ -52,7 +52,7 @@ export function AppShell() {
       {!isChat && <BottomTabs />}
       
       {/* System Components */}
-      <OnboardingWizard />
+      <FloatingSetupChecklist />
       <VerificationPrompt />
     </div>
   );
