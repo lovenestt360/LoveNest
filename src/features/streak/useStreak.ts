@@ -138,6 +138,10 @@ export function useStreak() {
   // (browser date) which mismatched the server's CURRENT_DATE (UTC),
   // causing active_today to always read as 0 after refresh.
   // ─────────────────────────────────────────────────────────────────────
+  // Track previous state to detect streak breaks and shield usage
+  const prevStreakRef  = useRef<number | null>(null);
+  const prevShieldsRef = useRef<number | null>(null);
+
   const refresh = useCallback(async () => {
     if (!spaceId) { setLoading(false); return; }
 
@@ -145,6 +149,13 @@ export function useStreak() {
     setError(null);
 
     try {
+      // Step 1: Force streak recalculation for the current UTC day.
+      // update_streak() is idempotent — if it already ran today it's a no-op.
+      // This ensures breaks and shield consumption happen immediately on open,
+      // without waiting for the user to do any activity.
+      await supabase.rpc("update_streak", { p_couple_space_id: spaceId });
+
+      // Step 2: Fetch authoritative state after recalculation
       const [streakRes, membersRes] = await Promise.all([
         supabase.rpc("get_streak", { p_couple_space_id: spaceId }),
         supabase.rpc("get_couple_member_ids", { p_couple_space_id: spaceId }),
@@ -165,10 +176,37 @@ export function useStreak() {
         console.warn("[useStreak] get_couple_member_ids failed:", membersRes.error.message);
       }
 
-      setStreak(buildState(raw, memberListCount));
+      const newState = buildState(raw, memberListCount);
+
+      // Step 3: Detect meaningful changes and notify the UI
+      const prev        = prevStreakRef.current;
+      const prevShields = prevShieldsRef.current;
+
+      if (prev !== null && prevShields !== null) {
+        // Streak just broke — had streak, now zero, shields didn't save it
+        if (prev > 0 && newState.currentStreak === 0) {
+          window.dispatchEvent(new CustomEvent("streak-broke", {
+            detail: { prev }
+          }));
+        }
+        // Shield was auto-consumed — streak stayed same but shields dropped
+        else if (
+          newState.currentStreak > 0 &&
+          prevShields > newState.shieldsRemaining &&
+          newState.shieldsRemaining >= 0
+        ) {
+          window.dispatchEvent(new CustomEvent("shield-protected", {
+            detail: { shieldsLeft: newState.shieldsRemaining }
+          }));
+        }
+      }
+
+      prevStreakRef.current  = newState.currentStreak;
+      prevShieldsRef.current = newState.shieldsRemaining;
+
+      setStreak(newState);
     } catch (err: any) {
       setError(err?.message ?? "Erro inesperado em useStreak");
-      // Keep previous state — do not reset to EMPTY
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { BottomTabs } from "@/app/layout/BottomTabs";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { WifiOff } from "lucide-react";
@@ -6,6 +7,7 @@ import { FloatingSetupChecklist } from "@/components/onboarding/FloatingSetupChe
 import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
 import { ChatWallpaper } from "@/features/chat/components/ChatWallpaper";
+import { toast } from "sonner";
 
 function PageTransition({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -20,6 +22,36 @@ export function AppShell() {
   const isOnline = useOnlineStatus();
   const location = useLocation();
   const isChat = location.pathname === "/chat";
+
+  // Listen for streak events dispatched by useStreak after recalculation
+  useEffect(() => {
+    const onBroke = (e: Event) => {
+      const prev = (e as CustomEvent).detail?.prev ?? 0;
+      toast("A vossa chama esfriou.", {
+        description: prev > 0
+          ? `A sequência de ${prev} ${prev === 1 ? "dia" : "dias"} terminou. Comecem de novo hoje.`
+          : "Apareçam todos os dias para manter a chama viva.",
+        duration: 6000,
+      });
+    };
+
+    const onShield = (e: Event) => {
+      const left = (e as CustomEvent).detail?.shieldsLeft ?? 0;
+      toast("A vossa sequência foi protegida.", {
+        description: left > 0
+          ? `Um escudo foi usado automaticamente. Restam ${left} ${left === 1 ? "escudo" : "escudos"}.`
+          : "O último escudo foi usado. Apareçam hoje para proteger a chama.",
+        duration: 6000,
+      });
+    };
+
+    window.addEventListener("streak-broke", onBroke);
+    window.addEventListener("shield-protected", onShield);
+    return () => {
+      window.removeEventListener("streak-broke", onBroke);
+      window.removeEventListener("shield-protected", onShield);
+    };
+  }, []);
 
   return (
     <div className={cn(
