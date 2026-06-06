@@ -11,15 +11,23 @@ interface DashCardProps {
   className?: string;
 }
 
+// Derive a tinted bg class from the accent text class: "text-blue-500" → "bg-blue-50"
+function iconBgFromAccent(accent?: string): string {
+  if (!accent) return "bg-rose-50";
+  return accent.replace("text-", "bg-").replace(/-\d+$/, "-50");
+}
+
 export function DashCard({ icon, title, lines, to, badge = 0, accent, className }: DashCardProps) {
   const navigate = useNavigate();
   const hasBadge = typeof badge === "number" ? badge > 0 : !!badge;
+  const iconBg   = iconBgFromAccent(accent);
 
   return (
     <button
       onClick={() => navigate(to)}
       className={cn(
-        "glass-card glass-card-hover group relative flex flex-col gap-3 p-4 text-left w-full active:scale-[0.98]",
+        "glass-card glass-card-hover group relative flex flex-col gap-3 p-4 text-left w-full",
+        "active:scale-[0.98] hover:-translate-y-0.5 transition-all duration-200",
         className
       )}
     >
@@ -27,6 +35,7 @@ export function DashCard({ icon, title, lines, to, badge = 0, accent, className 
       <div className="flex items-start justify-between">
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center",
+          iconBg,
           accent ?? "text-rose-500"
         )}>
           {icon}

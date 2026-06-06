@@ -502,7 +502,7 @@ const Index = () => {
             ]}
             to="/humor"
             badge={moodUnread}
-            accent="text-amber-500"
+            accent="text-pink-500"
           />
 
           {isEnabled("home_conversas") && (
