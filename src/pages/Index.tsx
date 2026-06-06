@@ -395,11 +395,7 @@ const Index = () => {
   const { currentMessage, phraseColor } = (() => {
     const hour = new Date().getHours();
 
-    // Morning → rose · Afternoon → violet · Evening → pink · Night → violet deep
-    const color =
-      hour >= 6 && hour < 12  ? "#F43F5E" :
-      hour >= 12 && hour < 19 ? "#8B5CF6" :
-      hour >= 19 && hour < 23 ? "#EC4899" : "#7C3AED";
+    const color = "#F43F5E";
 
     const morning = [
       "A manhã é mais suave quando há amor perto",
