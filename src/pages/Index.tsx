@@ -362,6 +362,7 @@ const Index = () => {
     streakData?.currentStreak ?? 0,
     spaceId
   );
+  const bothActiveToday = streakData?.bothActiveToday ?? false;
 
   const handleShareReferral = () => {
     if (!referralCode) return;
@@ -422,15 +423,42 @@ const Index = () => {
   })();
 
   return (
-    <div className="space-y-6 animate-fade-in pb-20 max-w-lg mx-auto overflow-x-hidden">
+    <>
+      {/* ── Ambient light system ── */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed", top: "-5%", right: "-8%",
+          width: 300, height: 300, borderRadius: "50%",
+          background: "#FF6B8F", filter: "blur(160px)",
+          opacity: bothActiveToday ? 0.065 : 0.038,
+          zIndex: 0, pointerEvents: "none",
+          animation: "blob-a 18s ease-in-out infinite",
+          transition: "opacity 2s ease",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed", bottom: "8%", left: "-10%",
+          width: 260, height: 260, borderRadius: "50%",
+          background: "#4D7CFE", filter: "blur(140px)",
+          opacity: bothActiveToday ? 0.045 : 0.030,
+          zIndex: 0, pointerEvents: "none",
+          animation: "blob-b 22s ease-in-out infinite",
+          transition: "opacity 2s ease",
+        }}
+      />
+
+      <div className="space-y-6 animate-fade-in pb-20 max-w-lg mx-auto overflow-x-hidden">
       {/* ── Premium Header & Greeting ── */}
       <div className="space-y-4">
         <HomeHeader me={avatars.me} partner={avatars.partner} today={today} loading={avatars.loading} />
         
         <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">
-           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/40 italic">
-             {currentMessage}
-           </p>
+          <p className="text-[12px] font-medium tracking-wide" style={{ color: "#b8b8b8" }}>
+            {currentMessage}
+          </p>
         </div>
       </div>
 
@@ -477,9 +505,12 @@ const Index = () => {
 
       {/* ── MAIN TOOL GRID ── */}
       <section className="space-y-3 px-1">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">
-          O vosso dia a dia
-        </h2>
+        <div className="flex items-center gap-3 px-1">
+          <div className="w-0.5 h-4 rounded-full" style={{ background: "#FECDD3" }} />
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+            O vosso dia a dia
+          </h2>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <DashCard
             icon={<CheckSquare className="h-5 w-5" strokeWidth={1.5} />}
@@ -558,9 +589,12 @@ const Index = () => {
 
       {/* ── SECONDARY TOOLS GRID (3 Columns) ── */}
       <section className="space-y-3 px-1">
-        <h2 className="text-[11px] font-semibold text-[#717171] px-1">
-          Memórias & Aventuras
-        </h2>
+        <div className="flex items-center gap-3 px-1">
+          <div className="w-0.5 h-4 rounded-full" style={{ background: "#FECDD3" }} />
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+            Memórias & Aventuras
+          </h2>
+        </div>
 
         <div className="grid grid-cols-3 gap-2">
           {isEnabled("home_memories") && (
@@ -662,6 +696,7 @@ const Index = () => {
         <MilestoneModal value={pendingMilestone} onClose={confirmMilestone} />
       )}
     </div>
+  </>
   );
 };
 
