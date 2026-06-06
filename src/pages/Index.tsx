@@ -427,29 +427,47 @@ const Index = () => {
 
   return (
     <>
-      {/* ── Ambient light system ── */}
+      {/* ── Ambient light system — 3 blobs ── */}
+
+      {/* Blob A — pink, top right */}
       <div
         aria-hidden="true"
         style={{
-          position: "fixed", top: "-5%", right: "-8%",
-          width: 300, height: 300, borderRadius: "50%",
-          background: "#FF6B8F", filter: "blur(160px)",
-          opacity: bothActiveToday ? 0.065 : 0.038,
+          position: "fixed", top: "-6%", right: "-10%",
+          width: 380, height: 380, borderRadius: "50%",
+          background: "#FF6B8F", filter: "blur(170px)",
+          opacity: bothActiveToday ? 0.100 : 0.058,
           zIndex: 0, pointerEvents: "none",
           animation: "blob-a 18s ease-in-out infinite",
           transition: "opacity 2s ease",
         }}
       />
+
+      {/* Blob B — blue, bottom left */}
       <div
         aria-hidden="true"
         style={{
-          position: "fixed", bottom: "8%", left: "-10%",
-          width: 260, height: 260, borderRadius: "50%",
-          background: "#4D7CFE", filter: "blur(140px)",
-          opacity: bothActiveToday ? 0.045 : 0.030,
+          position: "fixed", bottom: "6%", left: "-12%",
+          width: 320, height: 320, borderRadius: "50%",
+          background: "#4D7CFE", filter: "blur(150px)",
+          opacity: bothActiveToday ? 0.072 : 0.042,
           zIndex: 0, pointerEvents: "none",
           animation: "blob-b 22s ease-in-out infinite",
           transition: "opacity 2s ease",
+        }}
+      />
+
+      {/* Blob C — warm rose, center — creates depth in the emotional zone */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed", top: "20%", left: "8%",
+          width: 520, height: 420, borderRadius: "50%",
+          background: "#FF6B8F", filter: "blur(220px)",
+          opacity: bothActiveToday ? 0.042 : 0.020,
+          zIndex: 0, pointerEvents: "none",
+          animation: "blob-c 28s ease-in-out infinite",
+          transition: "opacity 2.5s ease",
         }}
       />
 
@@ -511,7 +529,7 @@ const Index = () => {
       </div>
 
       {/* ── MAIN TOOL GRID ── */}
-      <section className="space-y-3 px-1">
+      <section className="space-y-3 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700" style={{ animationDelay: "220ms" }}>
         <div className="flex items-center gap-3 px-1">
           <div className="w-0.5 h-4 rounded-full" style={{ background: "#FECDD3" }} />
           <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
@@ -595,7 +613,7 @@ const Index = () => {
       </section>
 
       {/* ── SECONDARY TOOLS GRID (3 Columns) ── */}
-      <section className="space-y-3 px-1">
+      <section className="space-y-3 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700" style={{ animationDelay: "340ms" }}>
         <div className="flex items-center gap-3 px-1">
           <div className="w-0.5 h-4 rounded-full" style={{ background: "#FECDD3" }} />
           <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
@@ -654,7 +672,7 @@ const Index = () => {
       </section>
 
       {/* ── PRESENCE FEED ── */}
-      <section className="px-1">
+      <section className="px-1 animate-in fade-in slide-in-from-bottom-1 duration-700" style={{ animationDelay: "440ms" }}>
         <PresenceFeedCard />
       </section>
 
