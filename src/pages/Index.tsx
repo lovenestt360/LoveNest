@@ -28,7 +28,6 @@ import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
 import { useStreak } from "@/features/streak/useStreak";
 import { useMilestone } from "@/hooks/useMilestone";
 import { MilestoneModal, getMilestoneMicroMemory } from "@/components/MilestoneModal";
-import { PresenceFeedCard } from "@/components/PresenceFeedCard";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -628,12 +627,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ── PRESENCE FEED ── */}
-      <section className="px-1 animate-in fade-in slide-in-from-bottom-1 duration-700" style={{ animationDelay: "440ms" }}>
-        <PresenceFeedCard />
-      </section>
-
-      {/* ── Footer / Invite Section ── */}
+{/* ── Footer / Invite Section ── */}
       <div className="space-y-4 pt-4 px-1">
         {!avatars.partner && houseInviteCode && (
           <div className="glass-card bg-gradient-to-br from-primary/15 to-transparent border-primary/20 rounded-[2.5rem] p-5 shadow-sm">
