@@ -180,8 +180,8 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // LoveStreak: registar atividade (fire-and-forget — não bloqueia UI)
-    if (sp) logActivity(sp, "mood");
+    // LoveStreak: registar atividade apenas na primeira gravação do dia (INSERT)
+    if (sp && !existingId) logActivity(sp, "mood");
 
     // Notificação ao parceiro
     if (sp) {

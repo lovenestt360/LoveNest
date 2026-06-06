@@ -198,7 +198,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
         couple_space_id: spaceId,
         title: "🙏 Oração do dia atualizada",
         body: prayerText.trim().slice(0, 80),
-        url: "/oracao",
+        url: "/jornada-espiritual?tab=oracao",
         type: "oracao",
       });
     }
@@ -234,21 +234,8 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     }
     setLogDirty(false);
 
-    // LoveStreak: registar atividade (fire-and-forget)
-    if (spaceId) logActivity(spaceId, "prayer");
-
     // Re-fetch para garantir estado atualizado (inclui partnerLog)
     fetchAll();
-
-    if (spaceId) {
-      notifyPartner({
-        couple_space_id: spaceId,
-        title: "✨ Diário espiritual atualizado",
-        body: gratitude.trim().slice(0, 60) || "Registo do dia atualizado",
-        url: "/oracao",
-        type: "oracao",
-      });
-    }
 
     // Emotional feedback
     if (prayedToday) {
@@ -272,7 +259,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
       couple_space_id: spaceId,
       title: "🙏 Convite Especial",
       body: "O teu par está à tua espera para rezarem juntos! ✨",
-      url: "/oracao",
+      url: "/jornada-espiritual?tab=oracao",
       type: "oracao",
     });
     toast({ title: "✨ Convite enviado!", description: "O teu par foi notificado para rezarem juntos." });

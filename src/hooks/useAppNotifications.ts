@@ -207,11 +207,11 @@ export function useAppNotifications() {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "daily_prayers", filter: `couple_space_id=eq.${spaceId}` },
+        { event: "INSERT", schema: "public", table: "daily_prayers", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
           const row = payload.new as { created_by: string } | undefined;
           if (!row || row.created_by === user.id) return;
-          if (locationRef.current !== "/oracao") {
+          if (locationRef.current !== "/jornada-espiritual") {
             setPrayerUnread((c) => c + 1);
             if (getNotifPrefs().oracao) {
               toast({ title: "Oração do dia atualizada" });
@@ -221,11 +221,11 @@ export function useAppNotifications() {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` },
+        { event: "INSERT", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
           const row = payload.new as { user_id: string } | undefined;
           if (!row || row.user_id === user.id) return;
-          if (locationRef.current !== "/oracao") {
+          if (locationRef.current !== "/jornada-espiritual") {
             setPrayerUnread((c) => c + 1);
             if (getNotifPrefs().oracao) {
               toast({ title: "O teu par atualizou o diário espiritual" });
