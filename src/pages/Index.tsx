@@ -552,6 +552,15 @@ const Index = () => {
             to="/ciclo"
             accent="text-pink-500"
           />
+
+          <DashCard
+            icon={<HeartHandshake className="h-5 w-5" strokeWidth={1.5} />}
+            title="Conflitos"
+            lines={["Resolver juntos", "Com calma e amor"]}
+            to="/conflitos"
+            badge={complaintsUnread}
+            accent="text-rose-500"
+          />
         </div>
       </section>
 
