@@ -532,6 +532,20 @@ input, textarea, [contenteditable="true"] {
   .animate-ob-ring-inner    { animation: ob-ring-inner-breathe 4.5s ease-in-out infinite; }
   .animate-ob-hint          { animation: ob-hint-breathe 3.5s ease-in-out infinite; }
 
+/* ── Landing ambient + logo motion ──────────────────────────────────────── */
+@keyframes blob-a {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes blob-b {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-2px); }
+}
+
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {
   @apply bg-white border-white h-3 w-3;
