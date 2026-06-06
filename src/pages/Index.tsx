@@ -427,49 +427,6 @@ const Index = () => {
 
   return (
     <>
-      {/* ── Ambient light system — 3 blobs ── */}
-
-      {/* Blob A — pink, top right */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed", top: "-6%", right: "-10%",
-          width: 380, height: 380, borderRadius: "50%",
-          background: "#FF6B8F", filter: "blur(170px)",
-          opacity: bothActiveToday ? 0.100 : 0.058,
-          zIndex: 0, pointerEvents: "none",
-          animation: "blob-a 18s ease-in-out infinite",
-          transition: "opacity 2s ease",
-        }}
-      />
-
-      {/* Blob B — blue, bottom left */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed", bottom: "6%", left: "-12%",
-          width: 320, height: 320, borderRadius: "50%",
-          background: "#4D7CFE", filter: "blur(150px)",
-          opacity: bothActiveToday ? 0.072 : 0.042,
-          zIndex: 0, pointerEvents: "none",
-          animation: "blob-b 22s ease-in-out infinite",
-          transition: "opacity 2s ease",
-        }}
-      />
-
-      {/* Blob C — warm rose, center — creates depth in the emotional zone */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed", top: "20%", left: "8%",
-          width: 520, height: 420, borderRadius: "50%",
-          background: "#FF6B8F", filter: "blur(220px)",
-          opacity: bothActiveToday ? 0.042 : 0.020,
-          zIndex: 0, pointerEvents: "none",
-          animation: "blob-c 28s ease-in-out infinite",
-          transition: "opacity 2.5s ease",
-        }}
-      />
 
       <div className="space-y-6 animate-fade-in pb-20 max-w-lg mx-auto overflow-x-hidden">
       {/* ── Premium Header & Greeting ── */}
