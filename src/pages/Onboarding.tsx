@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { LogoMark } from "@/components/Logo";
 import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
@@ -7,7 +7,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { track } from "@vercel/analytics";
 
+// ── Brand ─────────────────────────────────────────────────────────────────────
+const PINK = "#FF6B8F";
+const BLUE = "#4D7CFE";
+
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+// ── Hooks ─────────────────────────────────────────────────────────────────────
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const h = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
+  return reduced;
+}
+
+// ── Google icon ───────────────────────────────────────────────────────────────
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -20,16 +41,49 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-// ── Intro visual ──────────────────────────────────────────────────────────────
+// ── Intro visual — breathing circles ─────────────────────────────────────────
 
-function IntroVisual() {
+function IntroVisual({ reduced }: { reduced: boolean }) {
   return (
-    <div className="relative w-44 h-36 mx-auto">
-      <div className="absolute inset-0 rounded-full bg-rose-50/50 blur-3xl scale-75" />
-      <div className="absolute w-18 h-18 w-[72px] h-[72px] rounded-full bg-rose-100/90 top-4 left-4 animate-ob-float-a" />
+    <div className="relative w-48 h-40 mx-auto">
+      {/* Diffuse glow behind the circles */}
       <div
-        className="absolute w-14 h-14 rounded-full bg-rose-50 border border-rose-100 bottom-4 right-4 animate-ob-float-b"
-        style={{ animationDelay: "-4s" }}
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: "-40%",
+          background: `radial-gradient(ellipse at 45% 55%, ${PINK}1e 0%, transparent 62%)`,
+          filter: "blur(18px)",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Circle A — large, warm rose */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 80, height: 80,
+          top: 14, left: 18,
+          background: `linear-gradient(140deg, #FECDD3 0%, #FDA4AF 100%)`,
+          boxShadow: reduced
+            ? "none"
+            : `0 10px 40px rgba(255,107,143,0.24), 0 2px 8px rgba(255,107,143,0.12)`,
+          animation: reduced ? "none" : "ob-float-a 8s ease-in-out infinite",
+        }}
+      />
+      {/* Circle B — smaller, lighter, offset movement */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 58, height: 58,
+          bottom: 12, right: 18,
+          background: `linear-gradient(140deg, #FFF1F2 0%, #FECDD3 100%)`,
+          border: `1.5px solid rgba(255,107,143,0.18)`,
+          boxShadow: reduced
+            ? "none"
+            : `0 6px 28px rgba(255,107,143,0.16)`,
+          animation: reduced ? "none" : "ob-float-b 10s ease-in-out infinite",
+          animationDelay: "-4s",
+        }}
       />
     </div>
   );
@@ -46,7 +100,6 @@ type Phase = "intro" | "form";
 export default function Onboarding() {
   const [phase, setPhase] = useState<Phase>("intro");
 
-  // Form state
   const [name, setName]           = useState(localStorage.getItem("onboarding_name") || "");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
@@ -56,8 +109,13 @@ export default function Onboarding() {
   const [showInvite, setShowInvite] = useState(
     !!(sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref"))
   );
-  const [loading, setLoading]         = useState(false);
+  const [loading, setLoading]           = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Entry animation
+  const reduced = useReducedMotion();
+  const [ready, setReady] = useState(false);
+  const [hoverCta, setHoverCta] = useState(false);
 
   const navigate  = useNavigate();
   const { toast } = useToast();
@@ -65,7 +123,6 @@ export default function Onboarding() {
 
   const markSeen = () => localStorage.setItem("onboarding_seen", "1");
 
-  // Capture ?ref=CODE from URL (shared invite links)
   useEffect(() => {
     const ref = searchParams.get("ref");
     if (ref) {
@@ -76,6 +133,30 @@ export default function Onboarding() {
       setShowInvite(true);
     }
   }, [searchParams]);
+
+  // Trigger entry sequence shortly after mount
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Entrance helper
+  const enter = (
+    delay: number,
+    fromY = 20,
+    fromScale?: number
+  ): React.CSSProperties => ({
+    opacity: ready ? 1 : 0,
+    transform:
+      ready || reduced
+        ? "none"
+        : fromScale
+        ? `translateY(${fromY}px) scale(${fromScale})`
+        : `translateY(${fromY}px)`,
+    transition: reduced
+      ? "none"
+      : `opacity 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+  });
 
   // ── Signup ────────────────────────────────────────────────────────────────
 
@@ -122,7 +203,6 @@ export default function Onboarding() {
         navigate("/casa");
       } else {
         track("signup_email_confirm", { has_invite: !!inviteCode });
-        // Store email so confirmation screen can display it
         localStorage.setItem("confirm_email", trimmedEmail);
         navigate("/confirmar-email");
       }
@@ -151,9 +231,53 @@ export default function Onboarding() {
 
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-white flex flex-col select-none">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-6 pt-12 shrink-0">
+      <div className="relative min-h-screen bg-white flex flex-col select-none overflow-hidden">
+
+        {/* ── Ambient background glows ── */}
+        {!reduced && (
+          <>
+            {/* Rosa — canto inferior esquerdo */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute", bottom: "-8%", left: "-18%",
+                width: 320, height: 320, borderRadius: "50%",
+                background: PINK, filter: "blur(140px)", opacity: 0.065,
+                animation: "ob-ambient-a 20s ease-in-out infinite",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Azul — canto superior direito */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute", top: "-6%", right: "-14%",
+                width: 280, height: 280, borderRadius: "50%",
+                background: BLUE, filter: "blur(130px)", opacity: 0.055,
+                animation: "ob-ambient-b 24s ease-in-out infinite",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Rosa eco — meio superior, imperceptível */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute", top: "25%", left: "30%",
+                width: 200, height: 200, borderRadius: "50%",
+                background: PINK, filter: "blur(100px)", opacity: 0.03,
+                animation: "ob-ambient-a 28s ease-in-out infinite",
+                animationDelay: "-12s",
+                pointerEvents: "none",
+              }}
+            />
+          </>
+        )}
+
+        {/* ── Nav ── */}
+        <div
+          className="flex items-center justify-between px-6 pt-12 shrink-0 relative z-10"
+          style={enter(0, -8)}
+        >
           <div className="flex items-center gap-2">
             <LogoMark size={26} />
             <span className="text-[13px] font-bold tracking-tight text-foreground">LoveNest</span>
@@ -166,34 +290,62 @@ export default function Onboarding() {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="mb-12">
-            <IntroVisual />
+        {/* ── Central visual + copy ── */}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 relative z-10">
+
+          {/* Circles */}
+          <div style={{ ...enter(150, 0, 0.94), marginBottom: 44 }}>
+            <IntroVisual reduced={reduced} />
           </div>
-          <div className="text-center space-y-5 max-w-[272px]">
-            <h1 className="text-[28px] font-bold text-foreground leading-[1.2] tracking-tight">
-              O amor também vive nos dias comuns.
-            </h1>
-            <p className="text-[14px] text-[#999] leading-[1.7]">
-              Cria o vosso espaço em menos de um minuto.
-            </p>
-          </div>
+
+          {/* Headline */}
+          <h1
+            className="text-[28px] font-bold text-foreground leading-[1.2] tracking-tight text-center max-w-[272px]"
+            style={enter(300, 24)}
+          >
+            O amor também vive<br />nos dias comuns.
+          </h1>
+
+          {/* Sub */}
+          <p
+            className="text-[14px] text-[#999] leading-[1.7] text-center mt-4"
+            style={enter(450, 20)}
+          >
+            Cria o vosso espaço em menos de um minuto.
+          </p>
+
         </div>
 
-        {/* Bottom */}
-        <div className="px-8 pb-14 pt-6 shrink-0 space-y-3">
+        {/* ── Bottom CTA ── */}
+        <div
+          className="px-8 pb-14 pt-6 shrink-0 space-y-3 relative z-10"
+          style={enter(600, 20)}
+        >
           <button
             onClick={() => setPhase("form")}
-            className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
+            onMouseEnter={() => setHoverCta(true)}
+            onMouseLeave={() => setHoverCta(false)}
+            className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] active:scale-[0.98] flex items-center justify-center gap-2"
+            style={{
+              background: PINK,
+              boxShadow: hoverCta
+                ? `0 12px 40px ${PINK}55, 0 4px 16px ${PINK}33`
+                : `0 6px 28px ${PINK}44, 0 2px 8px ${PINK}22`,
+              transform: hoverCta ? "translateY(-2px)" : "translateY(0)",
+              transition: "box-shadow 180ms ease, transform 180ms ease",
+            }}
           >
             Começar
             <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
           </button>
-          <p className="text-center text-[10px] text-[#d8d8d8] tracking-[0.06em] animate-ob-hint">
+          <p
+            className="text-center text-[10px] tracking-[0.06em] animate-ob-hint"
+            style={{ color: "#d8d8d8" }}
+          >
             grátis · privado · sem publicidade
           </p>
         </div>
+
       </div>
     );
   }
@@ -218,7 +370,6 @@ export default function Onboarding() {
       <div className="flex-1 flex flex-col justify-center px-8 py-6 relative z-10">
         <div className="w-full max-w-[320px] mx-auto space-y-6">
 
-          {/* Heading */}
           <div className="space-y-1">
             <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
               Criar o vosso espaço.
@@ -226,7 +377,6 @@ export default function Onboarding() {
             <p className="text-[13px] text-[#999]">Começa em segundos.</p>
           </div>
 
-          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
@@ -237,14 +387,12 @@ export default function Onboarding() {
             Continuar com Google
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-[#f0f0f0]" />
             <span className="text-[11px] text-[#bbb]">ou</span>
             <div className="flex-1 h-px bg-[#f0f0f0]" />
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSignup} className="space-y-3">
             <input
               type="text"
@@ -273,7 +421,6 @@ export default function Onboarding() {
               className={INPUT}
             />
 
-            {/* Invite code toggle */}
             {!showInvite ? (
               <button
                 type="button"
@@ -295,7 +442,11 @@ export default function Onboarding() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2 mt-1"
+              className="w-full h-12 rounded-2xl text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-1"
+              style={{
+                background: PINK,
+                boxShadow: `0 6px 28px ${PINK}44, 0 2px 8px ${PINK}22`,
+              }}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Criar espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>}
             </button>

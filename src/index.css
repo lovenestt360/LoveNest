@@ -483,16 +483,28 @@ input, textarea, [contenteditable="true"] {
 
   /* ── Onboarding Phase 2 — Ambient Presence Motion ──────────────────── */
 
-  /* Screen 1: two circles drift in opposite directions — slow, organic */
+  /* Background ambient glows — very slow, barely perceptible */
+  @keyframes ob-ambient-a {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    30%      { transform: translate(10px, -14px) scale(1.04); }
+    65%      { transform: translate(-8px, 9px) scale(0.97); }
+  }
+  @keyframes ob-ambient-b {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    40%      { transform: translate(-12px, 11px) scale(1.03); }
+    75%      { transform: translate(8px, -8px) scale(0.98); }
+  }
+
+  /* Screen 1: two circles drift in opposite directions — slow, organic, with breathing */
   @keyframes ob-float-a {
-    0%, 100% { transform: translate(0px, 0px); }
-    33%      { transform: translate(6px, -10px); }
-    66%      { transform: translate(-4px, 5px); }
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    33%      { transform: translate(6px, -10px) scale(1.03); }
+    66%      { transform: translate(-4px, 5px) scale(0.98); }
   }
   @keyframes ob-float-b {
-    0%, 100% { transform: translate(0px, 0px); }
-    40%      { transform: translate(-7px, 8px); }
-    75%      { transform: translate(4px, -6px); }
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    40%      { transform: translate(-7px, 8px) scale(1.03); }
+    75%      { transform: translate(4px, -6px) scale(0.97); }
   }
 
   /* Screen 2: bars breathe rhythmically — each with own delay for wave effect */
