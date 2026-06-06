@@ -152,8 +152,11 @@ input, textarea, [contenteditable="true"] {
 @layer utilities {
   .glass-card {
     background: #ffffff;
-    border: 1px solid #e5e5e5;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid #e8e8e8;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.05),
+      0 4px 16px rgba(0,0,0,0.05),
+      inset 0 1px 0 rgba(255,255,255,0.85);
     border-radius: 1.25rem;
   }
 
@@ -164,12 +167,16 @@ input, textarea, [contenteditable="true"] {
   }
 
   .glass-card-hover {
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: box-shadow 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.25s cubic-bezier(0.4,0,0.2,1);
     cursor: pointer;
   }
   .glass-card-hover:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.85);
     transform: translateY(-1px);
+  }
+  .glass-card-hover:active {
+    transform: scale(0.985) translateY(0);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.85);
   }
   .dark .glass-card-hover:hover {
     box-shadow: 0 4px 16px rgba(0,0,0,0.4);
@@ -405,8 +412,8 @@ input, textarea, [contenteditable="true"] {
 
   /* Streak card warm glow border */
   @keyframes warm-glow-border {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0), 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04); }
-    50%  { box-shadow: 0 0 0 2px rgba(244,63,94,0.12), 0 4px 20px rgba(244,63,94,0.15), 0 1px 2px rgba(0,0,0,0.06); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0), 0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05); }
+    50%  { box-shadow: 0 0 0 2.5px rgba(244,63,94,0.22), 0 4px 32px rgba(244,63,94,0.24), 0 1px 2px rgba(0,0,0,0.05); }
   }
 
   /* Success checkmark draw */
@@ -555,6 +562,43 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
+/* Inner halo — tighter, faster breathing, warmer core */
+@keyframes chama-breathe-inner {
+  0%, 100% { opacity: 0.55; transform: scale(1.00); }
+  50%       { opacity: 0.95; transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes chama-breathe-inner {
+    0%, 100% { opacity: 0.75; transform: none; }
+  }
+}
+
+/* Hearts pulse together — continuous when both partners are present */
+@keyframes hearts-warm-pulse {
+  0%, 100% { transform: scale(1.00); filter: drop-shadow(0 0 0px rgba(244,63,94,0)); }
+  50%       { transform: scale(1.10); filter: drop-shadow(0 0 7px rgba(244,63,94,0.55)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes hearts-warm-pulse {
+    0%, 100% { transform: scale(1); filter: none; }
+  }
+}
+
+/* Journey current level dot — slow living presence */
+@keyframes journey-dot-pulse {
+  0%, 100% { transform: scale(1.00); }
+  50%       { transform: scale(1.30); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes journey-dot-pulse {
+    0%, 100% { transform: scale(1); }
+  }
+}
+
+.animate-chama-breathe-inner { animation: chama-breathe-inner 4.5s ease-in-out infinite; }
+.animate-hearts-warm-pulse   { animation: hearts-warm-pulse 3s ease-in-out infinite; }
+.animate-journey-dot-pulse   { animation: journey-dot-pulse 3.5s ease-in-out infinite; }
+
 /* ── Landing ambient + logo motion ──────────────────────────────────────── */
 @keyframes blob-a {
   0%, 100% { transform: translateY(0px) scale(1); }
@@ -573,6 +617,28 @@ input, textarea, [contenteditable="true"] {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-2px); }
 }
+
+/* ── Color-coded card glow — semantic depth per card type ──
+   Placed outside @layer so these override Tailwind's layered utilities.
+   Each card type glows in its own semantic color on hover and collapses on press. ── */
+
+.card-glow-blue:hover    { box-shadow: 0 4px 24px rgba(77,124,254,0.18),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-rose:hover    { box-shadow: 0 4px 24px rgba(255,107,143,0.20), inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-pink:hover    { box-shadow: 0 4px 24px rgba(236,72,153,0.16),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-sky:hover     { box-shadow: 0 4px 24px rgba(14,165,233,0.16),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-purple:hover  { box-shadow: 0 4px 24px rgba(168,85,247,0.16),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-orange:hover  { box-shadow: 0 4px 24px rgba(249,115,22,0.16),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-violet:hover  { box-shadow: 0 4px 24px rgba(139,92,246,0.16),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+.card-glow-emerald:hover { box-shadow: 0 4px 24px rgba(16,185,129,0.14),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-1px); }
+
+.card-glow-blue:active    { transform: scale(0.983); box-shadow: 0 2px 10px rgba(77,124,254,0.10),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-rose:active    { transform: scale(0.983); box-shadow: 0 2px 10px rgba(255,107,143,0.12), inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-pink:active    { transform: scale(0.983); box-shadow: 0 2px 10px rgba(236,72,153,0.09),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-sky:active     { transform: scale(0.983); box-shadow: 0 2px 10px rgba(14,165,233,0.09),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-purple:active  { transform: scale(0.983); box-shadow: 0 2px 10px rgba(168,85,247,0.09),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-orange:active  { transform: scale(0.983); box-shadow: 0 2px 10px rgba(249,115,22,0.09),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-violet:active  { transform: scale(0.983); box-shadow: 0 2px 10px rgba(139,92,246,0.09),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-emerald:active { transform: scale(0.983); box-shadow: 0 2px 10px rgba(16,185,129,0.08),  inset 0 1px 0 rgba(255,255,255,0.9); }
 
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {

@@ -17,17 +17,31 @@ function iconBgFromAccent(accent?: string): string {
   return accent.replace("text-", "bg-").replace(/-\d+$/, "-50");
 }
 
+function glowClassFromAccent(accent?: string): string {
+  if (!accent) return "";
+  if (accent.includes("blue"))    return "card-glow-blue";
+  if (accent.includes("sky"))     return "card-glow-sky";
+  if (accent.includes("pink"))    return "card-glow-pink";
+  if (accent.includes("purple"))  return "card-glow-purple";
+  if (accent.includes("orange"))  return "card-glow-orange";
+  if (accent.includes("violet"))  return "card-glow-violet";
+  if (accent.includes("emerald")) return "card-glow-emerald";
+  if (accent.includes("rose"))    return "card-glow-rose";
+  return "";
+}
+
 export function DashCard({ icon, title, lines, to, badge = 0, accent, className }: DashCardProps) {
-  const navigate = useNavigate();
-  const hasBadge = typeof badge === "number" ? badge > 0 : !!badge;
-  const iconBg   = iconBgFromAccent(accent);
+  const navigate  = useNavigate();
+  const hasBadge  = typeof badge === "number" ? badge > 0 : !!badge;
+  const iconBg    = iconBgFromAccent(accent);
+  const glowClass = glowClassFromAccent(accent);
 
   return (
     <button
       onClick={() => navigate(to)}
       className={cn(
         "glass-card glass-card-hover group relative flex flex-col gap-3 p-4 text-left w-full",
-        "active:scale-[0.98] hover:-translate-y-0.5 transition-all duration-200",
+        glowClass,
         className
       )}
     >

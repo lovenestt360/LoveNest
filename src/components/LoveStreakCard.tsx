@@ -83,16 +83,22 @@ function getJourneyDaysLeft(streak: number): number {
 
 function getCardTemperature(streak: number, bothActive: boolean, perfectDay: boolean): string {
   let o = 0;
-  if (streak >= 90)      o = 0.16;
-  else if (streak >= 30) o = 0.12;
-  else if (streak >= 14) o = 0.09;
-  else if (streak >= 7)  o = 0.06;
-  else if (streak >= 3)  o = 0.04;
-  else if (streak >= 1)  o = 0.025;
-  if (bothActive)  o = Math.min(o + 0.06, 0.20);
-  if (perfectDay)  o = Math.min(o + 0.03, 0.22);
+  if (streak >= 90)      o = 0.22;
+  else if (streak >= 30) o = 0.16;
+  else if (streak >= 14) o = 0.12;
+  else if (streak >= 7)  o = 0.08;
+  else if (streak >= 3)  o = 0.05;
+  else if (streak >= 1)  o = 0.032;
+  if (bothActive)  o = Math.min(o + 0.08, 0.28);
+  if (perfectDay)  o = Math.min(o + 0.04, 0.30);
   if (o === 0) return "white";
   return `radial-gradient(ellipse at 50% 115%, rgba(255,107,143,${o.toFixed(3)}) 0%, transparent 58%), white`;
+}
+
+function getStreakNumberSize(streak: number): string {
+  if (streak >= 30) return "text-7xl";
+  if (streak >= 7)  return "text-6xl";
+  return "text-5xl";
 }
 
 // ── Relationship state (footer) ───────────────────────────────────────────────
@@ -248,11 +254,12 @@ export function LoveStreakCard() {
 
   return (
     <div className="relative">
-      {/* ── External halo — the zone warms when both partners are present ──
-          Outer div: controls fade-in/out via opacity transition (1.8s)
-          Inner div: breathes continuously with chama-breathe (7s cycle)     */}
+      {/* ── Dual halo — outer atmospheric glow + inner warm core ──
+          Fade controlled by opacity transition (1.8s on parent).
+          Outer: wide atmospheric spread, 7s slow breath.
+          Inner: tighter warm core, 4.5s faster breath.              */}
       <div
-        className="absolute -inset-3 pointer-events-none"
+        className="absolute -inset-4 pointer-events-none"
         style={{
           opacity: bothActiveToday ? 1 : 0,
           transition: "opacity 1800ms ease-in-out",
@@ -262,10 +269,19 @@ export function LoveStreakCard() {
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at 50% 52%, rgba(255,107,143,0.20) 0%, rgba(77,124,254,0.08) 62%, transparent 100%)",
-            filter: "blur(24px)",
-            borderRadius: "2rem",
+            background: "radial-gradient(ellipse at 50% 55%, rgba(255,107,143,0.18) 0%, rgba(77,124,254,0.07) 65%, transparent 100%)",
+            filter: "blur(38px)",
+            borderRadius: "2.5rem",
             animation: "chama-breathe 7s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute inset-4"
+          style={{
+            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,143,0.30) 0%, transparent 68%)",
+            filter: "blur(18px)",
+            borderRadius: "2rem",
+            animation: "chama-breathe-inner 4.5s ease-in-out infinite",
           }}
         />
       </div>
@@ -333,8 +349,11 @@ export function LoveStreakCard() {
                   style={{ background: "radial-gradient(ellipse at center, rgba(251,113,133,0.13) 0%, transparent 70%)" }}
                 />
               )}
-              <span className={cn("text-5xl font-bold tabular-nums tracking-tight relative",
-                bothActiveToday ? "text-rose-500" : "text-foreground")}>
+              <span className={cn(
+                "font-extrabold tabular-nums tracking-tight relative transition-all duration-700",
+                getStreakNumberSize(currentStreak),
+                bothActiveToday ? "text-rose-500" : "text-foreground"
+              )}>
                 {currentStreak}
               </span>
             </div>
@@ -360,7 +379,12 @@ export function LoveStreakCard() {
               <div className="relative flex items-center gap-1">
                 <Heart
                   className={cn("w-4 h-4 transition-all duration-500",
-                    myCheckedIn ? "fill-rose-500 text-rose-500 animate-heart-throb" : "text-[#e0e0e0]")}
+                    myCheckedIn
+                      ? bothActiveToday
+                        ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
+                        : "fill-rose-500 text-rose-500 animate-heart-throb"
+                      : "text-[#e0e0e0]"
+                  )}
                   strokeWidth={myCheckedIn ? 0 : 1.5}
                 />
                 <span className="text-[9px] text-[#bbb] font-semibold">Tu</span>
@@ -368,7 +392,12 @@ export function LoveStreakCard() {
               <div className="relative flex items-center gap-1">
                 <Heart
                   className={cn("w-4 h-4 transition-all duration-500",
-                    partnerCheckedIn ? "fill-rose-500 text-rose-500 animate-heart-throb" : "text-[#e0e0e0]")}
+                    partnerCheckedIn
+                      ? bothActiveToday
+                        ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
+                        : "fill-rose-500 text-rose-500 animate-heart-throb"
+                      : "text-[#e0e0e0]"
+                  )}
                   strokeWidth={partnerCheckedIn ? 0 : 1.5}
                 />
                 <span className="text-[9px] text-[#bbb] font-semibold">Par</span>
@@ -406,13 +435,16 @@ export function LoveStreakCard() {
                     />
                   )}
                   <div
-                    className="shrink-0 rounded-full transition-all duration-700"
+                    className={cn(
+                      "shrink-0 rounded-full transition-all duration-700",
+                      isCurrent && "animate-journey-dot-pulse"
+                    )}
                     style={{
-                      width:  isCurrent ? 10 : 7,
-                      height: isCurrent ? 10 : 7,
+                      width:  isCurrent ? 12 : 7,
+                      height: isCurrent ? 12 : 7,
                       background: reached ? dotColor : "#f0f0f0",
                       boxShadow: isCurrent
-                        ? `0 0 ${bothActiveToday ? 12 : 8}px rgba(244,63,94,${bothActiveToday ? 0.55 : 0.40})`
+                        ? `0 0 ${bothActiveToday ? 16 : 10}px rgba(244,63,94,${bothActiveToday ? 0.65 : 0.45})`
                         : "none",
                     }}
                   />
