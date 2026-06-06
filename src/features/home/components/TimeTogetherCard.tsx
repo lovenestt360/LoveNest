@@ -1,21 +1,3 @@
-import { cn } from "@/lib/utils";
-
-function TimeUnit({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className={cn(
-        "text-3xl font-bold tabular-nums tracking-tight transition-colors",
-        accent ? "text-rose-500" : "text-foreground"
-      )}>
-        {String(value).padStart(2, "0")}
-      </span>
-      <span className="text-[10px] text-[#aaa] uppercase tracking-widest font-medium mt-0.5">
-        {label}
-      </span>
-    </div>
-  );
-}
-
 interface TimeTogetherCardProps {
   days: number;
   hours: number;
@@ -44,23 +26,69 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
     <div
       className="glass-card overflow-hidden"
       style={{
-        boxShadow: "0 2px 20px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)",
-        background: "radial-gradient(ellipse at 50% 0%, rgba(255,107,143,0.04) 0%, transparent 55%), white",
+        boxShadow: "0 2px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)",
+        background: "linear-gradient(148deg, rgba(251,246,241,0.80) 0%, rgba(255,255,255,0) 52%), white",
       }}
     >
       <div className="p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#aaa] mb-4">
+
+        {/* Label */}
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#c8bfb8" }}>
           Tempo juntos
         </p>
-        <div className="flex items-center justify-center gap-3">
-          <TimeUnit value={days}    label="dias" accent={days > 0} />
-          <span className="text-xl font-light text-[#e0e0e0] mb-4">:</span>
-          <TimeUnit value={hours}   label="hrs" />
-          <span className="text-xl font-light text-[#e0e0e0] mb-4">:</span>
-          <TimeUnit value={minutes} label="min" />
-          <span className="text-xl font-light text-[#e0e0e0] mb-4">:</span>
-          <TimeUnit value={seconds} label="seg" />
+
+        {/* Days — dominant presence */}
+        <div className="mb-4">
+          <span
+            className="text-[52px] font-extrabold tabular-nums tracking-tight leading-none text-rose-500"
+          >
+            {days}
+          </span>
+          <p className="text-[11px] font-medium mt-1.5 tracking-wide" style={{ color: "#c0b4ac" }}>
+            dias de história partilhada
+          </p>
         </div>
+
+        {/* Time — secondary, receded */}
+        <div
+          className="flex items-center gap-3 pt-3"
+          style={{ borderTop: "1px solid rgba(240,232,224,0.8)" }}
+        >
+          {/* Hours */}
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-semibold tabular-nums" style={{ color: "#a8a8a8" }}>
+              {String(hours).padStart(2, "0")}
+            </span>
+            <span className="text-[9px] uppercase tracking-widest font-medium mt-0.5" style={{ color: "#ccc" }}>
+              hrs
+            </span>
+          </div>
+
+          <span className="text-base font-light mb-3" style={{ color: "#e0d8d0" }}>:</span>
+
+          {/* Minutes */}
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-semibold tabular-nums" style={{ color: "#b0b0b0" }}>
+              {String(minutes).padStart(2, "0")}
+            </span>
+            <span className="text-[9px] uppercase tracking-widest font-medium mt-0.5" style={{ color: "#ccc" }}>
+              min
+            </span>
+          </div>
+
+          <span className="text-base font-light mb-3" style={{ color: "#e0d8d0" }}>:</span>
+
+          {/* Seconds */}
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-semibold tabular-nums" style={{ color: "#b8b8b8" }}>
+              {String(seconds).padStart(2, "0")}
+            </span>
+            <span className="text-[9px] uppercase tracking-widest font-medium mt-0.5" style={{ color: "#ccc" }}>
+              seg
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
   );

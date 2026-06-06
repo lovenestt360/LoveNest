@@ -631,14 +631,15 @@ input, textarea, [contenteditable="true"] {
 .card-glow-violet:hover  { box-shadow: 0 6px 32px rgba(139,92,246,0.24),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-2px); }
 .card-glow-emerald:hover { box-shadow: 0 6px 32px rgba(16,185,129,0.22),  inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-2px); }
 
-.card-glow-blue:active    { transform: scale(0.972); box-shadow: 0 1px 6px rgba(77,124,254,0.16),  0 0 0 1.5px rgba(77,124,254,0.12),  inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-rose:active    { transform: scale(0.972); box-shadow: 0 1px 6px rgba(255,107,143,0.18), 0 0 0 1.5px rgba(255,107,143,0.14), inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-pink:active    { transform: scale(0.972); box-shadow: 0 1px 6px rgba(236,72,153,0.14),  0 0 0 1.5px rgba(236,72,153,0.10),  inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-sky:active     { transform: scale(0.972); box-shadow: 0 1px 6px rgba(14,165,233,0.14),  0 0 0 1.5px rgba(14,165,233,0.10),  inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-purple:active  { transform: scale(0.972); box-shadow: 0 1px 6px rgba(168,85,247,0.14),  0 0 0 1.5px rgba(168,85,247,0.10),  inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-orange:active  { transform: scale(0.972); box-shadow: 0 1px 6px rgba(249,115,22,0.14),  0 0 0 1.5px rgba(249,115,22,0.10),  inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-violet:active  { transform: scale(0.972); box-shadow: 0 1px 6px rgba(139,92,246,0.14),  0 0 0 1.5px rgba(139,92,246,0.10),  inset 0 1px 0 rgba(255,255,255,0.9); }
-.card-glow-emerald:active { transform: scale(0.972); box-shadow: 0 1px 6px rgba(16,185,129,0.12),  0 0 0 1.5px rgba(16,185,129,0.08),  inset 0 1px 0 rgba(255,255,255,0.9); }
+/* Active states snap in fast (0.06s) then spring back at base transition speed */
+.card-glow-blue:active    { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(77,124,254,0.10),  0 0 0 2px rgba(77,124,254,0.18),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-rose:active    { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(255,107,143,0.12), 0 0 0 2px rgba(255,107,143,0.20), inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-pink:active    { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(236,72,153,0.10),  0 0 0 2px rgba(236,72,153,0.15),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-sky:active     { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(14,165,233,0.10),  0 0 0 2px rgba(14,165,233,0.15),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-purple:active  { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(168,85,247,0.10),  0 0 0 2px rgba(168,85,247,0.15),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-orange:active  { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(249,115,22,0.10),  0 0 0 2px rgba(249,115,22,0.15),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-violet:active  { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(139,92,246,0.10),  0 0 0 2px rgba(139,92,246,0.15),  inset 0 1px 0 rgba(255,255,255,0.9); }
+.card-glow-emerald:active { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(16,185,129,0.08),  0 0 0 2px rgba(16,185,129,0.12),  inset 0 1px 0 rgba(255,255,255,0.9); }
 
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {

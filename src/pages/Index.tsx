@@ -392,8 +392,15 @@ const Index = () => {
     ? Math.min(100, Math.round((fasting.loggedDays / fasting.plan.total_days) * 100))
     : 0;
 
-  const currentMessage = (() => {
+  const { currentMessage, phraseColor } = (() => {
     const hour = new Date().getHours();
+
+    // Morning → rose warm · Afternoon → violet soft · Evening → blue soft · Night → indigo soft
+    const color =
+      hour >= 6 && hour < 12  ? "#B87878" :
+      hour >= 12 && hour < 19 ? "#8C78C0" :
+      hour >= 19 && hour < 23 ? "#6888BC" : "#8088B8";
+
     const morning = [
       "A manhã é mais suave quando há amor perto",
       "Um novo dia, uma nova oportunidade de estar presente",
@@ -419,7 +426,7 @@ const Index = () => {
                : hour >= 12 && hour < 19 ? afternoon
                : hour >= 19 && hour < 23 ? evening : night;
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-    return pool[dayOfYear % pool.length];
+    return { currentMessage: pool[dayOfYear % pool.length], phraseColor: color };
   })();
 
   return (
@@ -455,8 +462,12 @@ const Index = () => {
       <div className="space-y-4">
         <HomeHeader me={avatars.me} partner={avatars.partner} today={today} loading={avatars.loading} />
         
-        <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">
-          <p className="text-[12px] font-medium tracking-wide" style={{ color: "#b8b8b8" }}>
+        <div className="flex flex-col items-center gap-2 animate-in fade-in duration-1200" style={{ animationDelay: "400ms" }}>
+          <div className="w-6 h-px rounded-full" style={{ background: phraseColor, opacity: 0.45 }} />
+          <p
+            className="text-[13px] font-medium tracking-wide leading-relaxed text-center px-6"
+            style={{ color: phraseColor }}
+          >
             {currentMessage}
           </p>
         </div>
