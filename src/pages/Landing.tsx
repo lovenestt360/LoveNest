@@ -1,100 +1,174 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Lock, Heart, Flame, BookHeart, Camera, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, Lock, Flame, Heart, MessageCircle, Camera, BookHeart } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 
-// Brand colors
-const PINK  = "#FF6B8F";
-const BLUE  = "#4D7CFE";
-const NAVY  = "#0B1324";
+// ── Brand tokens ──────────────────────────────────────────────────────────────
+const PINK = "#FF6B8F";
+const NAVY = "#0B1324";
 
-// ── Hero floating product cards ───────────────────────────────────────────────
+// ── Scroll-reveal hook ────────────────────────────────────────────────────────
+function useReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
 
-function HeroComposition() {
+// ── App mockup – CSS-rendered phone ──────────────────────────────────────────
+function PhoneMockup() {
   return (
-    <div className="relative w-full h-72 flex items-center justify-center select-none" aria-hidden>
-      {/* Ambient */}
-      <div className="absolute w-56 h-56 rounded-full blur-3xl opacity-20"
-        style={{ background: `radial-gradient(circle, ${PINK} 0%, ${BLUE} 100%)` }} />
-
-      {/* Central flame */}
-      <div className="relative z-10 w-16 h-16 rounded-2xl bg-white shadow-[0_8px_32px_rgba(11,19,36,0.12)] border border-[#f0f0f0] flex items-center justify-center animate-ob-float-a">
-        <Flame className="w-7 h-7" style={{ color: PINK }} strokeWidth={1.5} />
-      </div>
-
-      {/* LoveStreak */}
-      <div className="absolute z-10 left-4 top-8 bg-white rounded-2xl shadow-[0_4px_20px_rgba(11,19,36,0.08)] border border-[#f0f0f0] px-4 py-3 flex items-center gap-2.5 animate-ob-float-b" style={{ animationDelay: "-2s" }}>
-        <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: `${PINK}18` }}>
-          <Flame className="w-3.5 h-3.5" style={{ color: PINK }} strokeWidth={1.5} />
+    <div className="relative mx-auto" style={{ width: 268 }}>
+      {/* Chip left */}
+      <div
+        className="absolute z-20 bg-white rounded-2xl border border-[#f0f0f0] px-3 py-2.5 flex items-center gap-2.5 hidden md:flex"
+        style={{ left: -80, top: 72, boxShadow: "0 8px 32px rgba(11,19,36,0.10)" }}
+      >
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${PINK}18` }}>
+          <Flame className="w-3 h-3" style={{ color: PINK }} strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-[10px] text-[#bbb] font-medium leading-none mb-0.5">LoveStreak</p>
-          <p className="text-[14px] font-black leading-none" style={{ color: NAVY }}>14 dias</p>
+          <p className="text-[9px] text-[#bbb] font-medium leading-none mb-0.5">LoveStreak</p>
+          <p className="text-[13px] font-black leading-none" style={{ color: NAVY }}>14 dias</p>
         </div>
       </div>
 
-      {/* Mood card */}
-      <div className="absolute z-10 right-4 top-6 bg-white rounded-2xl shadow-[0_4px_20px_rgba(11,19,36,0.08)] border border-[#f0f0f0] px-4 py-3 animate-ob-float-a" style={{ animationDelay: "-4s" }}>
-        <p className="text-[10px] text-[#bbb] font-medium mb-1">Como estás hoje?</p>
-        <div className="flex gap-1.5">
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: PINK }}>Feliz</span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f5f5f5] text-[#aaa]">Grato</span>
-        </div>
+      {/* Chip right */}
+      <div
+        className="absolute z-20 bg-white rounded-2xl border border-[#f0f0f0] px-3 py-2.5 hidden md:block"
+        style={{ right: -76, bottom: 96, boxShadow: "0 8px 32px rgba(11,19,36,0.10)" }}
+      >
+        <p className="text-[9px] text-[#bbb] font-medium leading-none mb-1.5">Ela está bem</p>
+        <span
+          className="text-[9px] font-semibold px-2 py-0.5 rounded-full text-white"
+          style={{ background: PINK }}
+        >
+          Feliz
+        </span>
       </div>
 
-      {/* Message */}
-      <div className="absolute z-10 left-2 bottom-10 bg-white rounded-2xl shadow-[0_4px_20px_rgba(11,19,36,0.08)] border border-[#f0f0f0] px-4 py-3 max-w-[160px] animate-ob-float-b" style={{ animationDelay: "-6s" }}>
-        <p className="text-[10px] text-[#bbb] font-medium mb-1">Mensagem</p>
-        <p className="text-[12px] font-medium leading-snug" style={{ color: NAVY }}>"Saudades de ti."</p>
-      </div>
+      {/* Phone frame */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          borderRadius: 44,
+          background: NAVY,
+          boxShadow: "0 32px 80px rgba(11,19,36,0.20), 0 0 0 1px rgba(11,19,36,0.07)",
+        }}
+      >
+        {/* Dynamic island */}
+        <div
+          className="absolute top-3 left-1/2 -translate-x-1/2 z-10"
+          style={{ width: 80, height: 20, background: "#000", borderRadius: 12 }}
+        />
 
-      {/* Milestone */}
-      <div className="absolute z-10 right-3 bottom-8 bg-white rounded-2xl shadow-[0_4px_20px_rgba(11,19,36,0.08)] border border-[#f0f0f0] px-4 py-3 flex items-center gap-2 animate-ob-float-a" style={{ animationDelay: "-1s" }}>
-        <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: `${BLUE}18` }}>
-          <Sparkles className="w-3.5 h-3.5" style={{ color: BLUE }} strokeWidth={1.5} />
+        {/* Screen */}
+        <div style={{ background: "#F8F7F5", paddingTop: 48, paddingBottom: 24 }}>
+          {/* App header */}
+          <div className="flex items-center justify-between px-5 mb-5">
+            <div>
+              <p className="text-[10px] font-medium" style={{ color: "#aaa" }}>Bom dia</p>
+              <p className="text-[16px] font-bold leading-tight" style={{ color: NAVY }}>O vosso espaço</p>
+            </div>
+            <div className="w-8 h-8 rounded-full" style={{ background: "#e0e0e0" }} />
+          </div>
+
+          {/* Streak card */}
+          <div className="mx-3 mb-2.5 bg-white rounded-2xl p-3.5" style={{ boxShadow: "0 2px 12px rgba(11,19,36,0.06)" }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${PINK}15` }}>
+                <Flame className="w-4.5 h-4.5" style={{ color: PINK }} strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px]" style={{ color: "#aaa" }}>LoveStreak</p>
+                <p className="text-[15px] font-black leading-tight" style={{ color: NAVY }}>14 dias juntos</p>
+              </div>
+              <span
+                className="text-[9px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                style={{ background: `${PINK}15`, color: PINK }}
+              >
+                Ambos
+              </span>
+            </div>
+          </div>
+
+          {/* Mood */}
+          <div className="mx-3 mb-2.5 bg-white rounded-2xl p-3.5" style={{ boxShadow: "0 2px 12px rgba(11,19,36,0.06)" }}>
+            <p className="text-[10px] mb-2" style={{ color: "#aaa" }}>Como estás hoje?</p>
+            <div className="flex gap-1.5">
+              {["Feliz", "Grato", "Em paz"].map((m, i) => (
+                <span
+                  key={m}
+                  className="text-[9px] font-semibold px-2 py-1 rounded-full"
+                  style={i === 0
+                    ? { background: PINK, color: "#fff" }
+                    : { background: "#f3f3f3", color: "#aaa" }}
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="mx-3 bg-white rounded-2xl p-3.5" style={{ boxShadow: "0 2px 12px rgba(11,19,36,0.06)" }}>
+            <p className="text-[10px] mb-1.5" style={{ color: "#aaa" }}>Mensagem do teu par</p>
+            <p className="text-[11px] font-medium leading-relaxed" style={{ color: NAVY }}>
+              "Já reparei que hoje levantaste cedo. Boa semana, meu amor."
+            </p>
+            <p className="text-[9px] mt-1.5" style={{ color: "#ccc" }}>08:24</p>
+          </div>
         </div>
-        <div>
-          <p className="text-[10px] text-[#bbb] font-medium leading-none mb-0.5">Milestone</p>
-          <p className="text-[11px] font-bold leading-none" style={{ color: NAVY }}>Dia Completo</p>
+
+        {/* Home bar */}
+        <div className="flex justify-center py-2" style={{ background: "#F8F7F5" }}>
+          <div className="w-24 h-1 rounded-full" style={{ background: "#ddd" }} />
         </div>
       </div>
-
-      {/* Rings */}
-      <div className="absolute z-0 w-32 h-32 rounded-full border animate-ob-ring-breathe" style={{ borderColor: `${PINK}30` }} />
-      <div className="absolute z-0 w-20 h-20 rounded-full border animate-ob-ring-inner" style={{ borderColor: `${BLUE}25`, animationDelay: "-2s" }} />
     </div>
   );
 }
 
-// ── Feature card ──────────────────────────────────────────────────────────────
+// ── Feature pill ──────────────────────────────────────────────────────────────
+function FeaturePill({ icon: Icon, label, accent }: { icon: React.ElementType; label: string; accent: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-[#efefef]">
+      <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} strokeWidth={1.5} />
+      <span className="text-[12px] font-medium" style={{ color: NAVY }}>{label}</span>
+    </div>
+  );
+}
 
-function FeatureCard({ icon: Icon, title, desc, accent }: {
-  icon: React.ElementType; title: string; desc: string; accent: string;
+// ── Reveal wrapper ────────────────────────────────────────────────────────────
+function Reveal({ children, delay = 0, className = "" }: {
+  children: React.ReactNode; delay?: number; className?: string;
 }) {
+  const { ref, visible } = useReveal();
   return (
-    <div className="p-5 rounded-2xl bg-white border border-[#f0f0f0] space-y-3 hover:border-[#e0e0e0] hover:shadow-sm transition-all duration-300">
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${accent}15` }}>
-        <Icon className="w-[18px] h-[18px]" style={{ color: accent }} strokeWidth={1.5} />
-      </div>
-      <p className="text-[14px] font-semibold leading-snug" style={{ color: NAVY }}>{title}</p>
-      <p className="text-[12px] text-[#999] leading-relaxed">{desc}</p>
-    </div>
-  );
-}
-
-// ── Trust pill ────────────────────────────────────────────────────────────────
-
-function TrustPill({ text }: { text: string }) {
-  return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#efefef]">
-      <Lock className="w-2.5 h-2.5 text-[#ccc]" strokeWidth={2} />
-      <span className="text-[11px] text-[#999] font-medium">{text}</span>
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(20px)",
+        transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+      }}
+    >
+      {children}
     </div>
   );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-
 export default function Landing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -107,24 +181,24 @@ export default function Landing() {
     }
   }, [searchParams]);
 
-  const btnStyle = {
+  const cta = {
     background: PINK,
-    boxShadow: `0 4px 24px ${PINK}50`,
+    boxShadow: `0 4px 24px ${PINK}45`,
   };
 
   return (
-    <div className="min-h-screen bg-white text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden">
 
-      {/* ── Nav ── */}
+      {/* ── NAV ── */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#f0f0f0]">
-        <div className="max-w-lg mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <LogoMark size={28} />
-            <span className="text-[15px] font-bold tracking-tight" style={{ color: NAVY }}>LoveNest</span>
+            <LogoMark size={26} />
+            <span className="text-[14px] font-bold tracking-tight" style={{ color: NAVY }}>LoveNest</span>
           </div>
           <button
             onClick={() => navigate("/entrar")}
-            className="text-[13px] font-semibold transition-colors"
+            className="text-[13px] font-semibold transition-opacity hover:opacity-60"
             style={{ color: NAVY }}
           >
             Entrar
@@ -132,148 +206,366 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section className="max-w-lg mx-auto px-6 pt-8 pb-16 space-y-8">
-        <HeroComposition />
+      {/* ══════════════════════════════════════════════
+          01 — HERO
+          ════════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-5 pt-5">
 
-        <div className="space-y-4">
-          <h1 className="text-[38px] font-black leading-[1.1] tracking-tight" style={{ color: NAVY }}>
-            O amor vive nos{" "}
-            <span style={{ color: PINK }}>dias comuns.</span>
-          </h1>
-          <p className="text-[15px] text-[#717171] leading-relaxed max-w-[300px]">
-            Um espaço íntimo para dois. Presença diária, rituais partilhados e memórias que ficam.
-          </p>
+        {/* Hero image — rounded, gradient-fused at the bottom */}
+        <div
+          className="relative w-full rounded-3xl overflow-hidden"
+          style={{ height: "clamp(260px, 55vw, 520px)" }}
+        >
+          <img
+            src="/hero.jpg"
+            alt="Dois num mesmo espaço"
+            className="w-full h-full object-cover"
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, transparent 45%, rgba(255,255,255,0.6) 75%, #ffffff 100%)" }}
+          />
         </div>
 
-        <div className="space-y-3">
-          <button
-            onClick={() => navigate("/inicio")}
-            className="w-full h-14 rounded-2xl text-white font-bold text-[15px] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={btnStyle}
-          >
-            Criar o nosso espaço
-            <ArrowRight className="w-4 h-4" strokeWidth={2} />
-          </button>
-          <button
-            onClick={() => navigate("/entrar")}
-            className="w-full h-12 rounded-2xl text-[13px] font-medium text-[#aaa] hover:text-[#717171] transition-colors"
-          >
-            Já tenho convite do meu par
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <TrustPill text="Privado" />
-          <TrustPill text="Sem publicidade" />
-          <TrustPill text="Só de vocês" />
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="max-w-lg mx-auto px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-[#e8e8e8] to-transparent" />
-      </div>
-
-      {/* ── Features ── */}
-      <section className="max-w-lg mx-auto px-6 py-16 space-y-6">
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#bbb]">O que encontram</p>
-          <h2 className="text-[24px] font-bold leading-snug tracking-tight" style={{ color: NAVY }}>
-            Tudo num só espaço.
-          </h2>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <FeatureCard icon={Flame}         accent={PINK} title="LoveStreak"  desc="Apareçam um pelo outro todos os dias. A vossa chama não se apaga." />
-          <FeatureCard icon={MessageCircle} accent={BLUE} title="Chat privado" desc="Só de vocês. Mensagens, áudios e momentos partilhados." />
-          <FeatureCard icon={Heart}         accent={PINK} title="Humor diário" desc="Saibam como o outro está, mesmo quando as palavras são difíceis." />
-          <FeatureCard icon={Camera}        accent={BLUE} title="Memórias"     desc="Fotos e momentos guardados no vosso espaço, para sempre." />
-          <FeatureCard icon={BookHeart}     accent={PINK} title="Rituais"      desc="Oração, reflexão, planos — os pequenos rituais que unem." />
-          <FeatureCard icon={Sparkles}      accent={BLUE} title="Missões"      desc="Gestos diários que mantêm a ligação presente e o amor próximo." />
-        </div>
-      </section>
-
-      {/* ── Quote — navy instead of rose ── */}
-      <section style={{ background: NAVY }} className="w-full">
-        <div className="max-w-lg mx-auto px-6 py-16 text-center space-y-6">
-          <p className="text-[28px] font-black text-white leading-[1.2] tracking-tight">
-            "Pequenos gestos tornam-se grandes memórias."
-          </p>
-          <p className="text-[14px] leading-relaxed max-w-[260px] mx-auto" style={{ color: "rgba(255,255,255,0.6)" }}>
-            O LoveNest foi criado para os casais que acreditam que o amor se constrói todos os dias.
-          </p>
-          <button
-            onClick={() => navigate("/inicio")}
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl font-bold text-[14px] active:scale-[0.98] transition-all"
-            style={{ background: PINK, color: "#fff" }}
-          >
-            Começar agora
-            <ArrowRight className="w-4 h-4" strokeWidth={2} />
-          </button>
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
-      <section className="max-w-lg mx-auto px-6 py-16 space-y-8">
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#bbb]">Como funciona</p>
-          <h2 className="text-[24px] font-bold leading-snug tracking-tight" style={{ color: NAVY }}>
-            Em três passos.
-          </h2>
-        </div>
-        <div className="space-y-6">
-          {[
-            { step: "01", title: "Criam o espaço",      desc: "Um de vocês cria o espaço e gera um código de convite.", color: PINK },
-            { step: "02", title: "Convidam o par",      desc: "Partilham o código com o vosso par para se juntarem ao ninho.", color: BLUE },
-            { step: "03", title: "Aparecem todos os dias", desc: "Pequenos gestos diários que mantêm o amor presente.", color: PINK },
-          ].map(({ step, title, desc, color }) => (
-            <div key={step} className="flex gap-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${color}15` }}>
-                <span className="text-[10px] font-black" style={{ color }}>{step}</span>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[14px] font-semibold" style={{ color: NAVY }}>{title}</p>
-                <p className="text-[13px] text-[#999] leading-relaxed">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Final CTA ── */}
-      <section className="max-w-lg mx-auto px-6 pb-20 pt-4">
-        <div className="rounded-3xl border border-[#f0f0f0] bg-white p-8 text-center space-y-6">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto" style={{ background: `${PINK}12` }}>
-            <Heart className="w-5 h-5" style={{ color: PINK }} strokeWidth={1.5} />
-          </div>
-          <div className="space-y-3">
-            <h2 className="text-[22px] font-bold leading-snug tracking-tight" style={{ color: NAVY }}>
-              O vosso espaço espera por vocês.
-            </h2>
-            <p className="text-[13px] text-[#999] leading-relaxed max-w-[240px] mx-auto">
-              Criem o vosso ninho e comecem a construir a vossa história juntos.
+        {/* Text — emerges from the image */}
+        <div className="max-w-xl pt-1 pb-14 sm:pb-20 space-y-7">
+          <div className="space-y-4">
+            <h1
+              className="text-[40px] sm:text-[52px] font-black leading-[1.04] tracking-tight"
+              style={{ color: NAVY }}
+            >
+              O amor vive<br />
+              nos{" "}
+              <span style={{ color: PINK }}>dias comuns.</span>
+            </h1>
+            <p className="text-[16px] sm:text-[17px] leading-relaxed max-w-sm" style={{ color: "#717171" }}>
+              Não nos grandes gestos. Nos bons dias, nos momentos simples e nas manhãs de segunda-feira.
             </p>
           </div>
-          <button
-            onClick={() => navigate("/inicio")}
-            className="w-full h-14 rounded-2xl text-white font-bold text-[15px] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={btnStyle}
-          >
-            Criar o nosso espaço
-            <ArrowRight className="w-4 h-4" strokeWidth={2} />
-          </button>
-          <p className="text-[11px] text-[#ccc]">Grátis · Privado · Sem publicidade</p>
+
+          {/* CTAs */}
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate("/inicio")}
+              className="w-full sm:w-auto sm:px-8 h-14 rounded-2xl text-white font-bold text-[15px] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+              style={cta}
+            >
+              Criar o nosso espaço
+              <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+            </button>
+            <div>
+              <button
+                onClick={() => navigate("/entrar")}
+                className="text-[13px] font-medium transition-colors"
+                style={{ color: "#aaa" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#717171")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#aaa")}
+              >
+                Já tenho convite do meu par
+              </button>
+            </div>
+          </div>
+
+          {/* Trust */}
+          <div className="flex flex-wrap gap-2">
+            {["Privado", "Sem publicidade", "Só de vocês"].map(t => (
+              <div key={t} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#efefef]">
+                <Lock className="w-2.5 h-2.5 text-[#ccc]" strokeWidth={2} />
+                <span className="text-[11px] font-medium" style={{ color: "#999" }}>{t}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-[#f0f0f0]" style={{ background: NAVY }}>
-        <div className="max-w-lg mx-auto px-6 py-8 flex items-center justify-between">
+      {/* ══════════════════════════════════════════════
+          02 — PRESENÇA À DISTÂNCIA
+          ════════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
+
+          {/* Text */}
+          <Reveal className="order-2 md:order-1 space-y-5">
+            <h2
+              className="text-[28px] sm:text-[36px] font-black leading-[1.1] tracking-tight"
+              style={{ color: NAVY }}
+            >
+              Estar perto<br />não chega.<br />
+              <span style={{ color: PINK }}>Estar presente, sim.</span>
+            </h2>
+            <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "#717171" }}>
+              A vida move-se depressa. Os dias enchem-se. E de repente passam semanas sem que realmente se tenham visto — mesmo estando no mesmo sítio.
+            </p>
+            <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "#717171" }}>
+              O LoveNest é um lembrete diário de que o outro existe. E que tu também.
+            </p>
+          </Reveal>
+
+          {/* Image */}
+          <Reveal delay={120} className="order-1 md:order-2">
+            <div className="rounded-3xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
+              <img
+                src="/distance.jpg"
+                alt="Presença à distância"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          03 — PRODUTO EM CONTEXTO
+          ════════════════════════════════════════════ */}
+      <div style={{ background: "#FAFAF8" }}>
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
+          <Reveal className="text-center mb-12 space-y-3">
+            <h2
+              className="text-[26px] sm:text-[34px] font-black leading-[1.1] tracking-tight"
+              style={{ color: NAVY }}
+            >
+              Um espaço que só existe<br />para vocês dois.
+            </h2>
+            <p className="text-[14px] sm:text-[15px] leading-relaxed max-w-[300px] mx-auto" style={{ color: "#717171" }}>
+              Sem feeds públicos. Sem notificações de estranhos. Cada gesto tem peso porque foi feito a pensar numa pessoa.
+            </p>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <PhoneMockup />
+          </Reveal>
+
+          {/* Feature pills */}
+          <Reveal delay={200} className="mt-12 flex flex-wrap gap-2 justify-center">
+            <FeaturePill icon={Flame}         accent={PINK} label="LoveStreak" />
+            <FeaturePill icon={Heart}         accent={PINK} label="Humor diário" />
+            <FeaturePill icon={MessageCircle} accent="#4D7CFE" label="Mensagens" />
+            <FeaturePill icon={Camera}        accent="#4D7CFE" label="Memórias" />
+            <FeaturePill icon={BookHeart}     accent={PINK} label="Rituais" />
+          </Reveal>
+
+          <p className="text-center text-[11px] mt-6" style={{ color: "#ccc", letterSpacing: "0.03em" }}>
+            O vosso espaço, numa manhã qualquer.
+          </p>
+        </section>
+      </div>
+
+      {/* ══════════════════════════════════════════════
+          04 — PEQUENOS GESTOS
+          ════════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-5 py-8 sm:py-10">
+        <Reveal>
+          <div className="relative rounded-3xl overflow-hidden" style={{ minHeight: 420 }}>
+            <img
+              src="/gestures.jpg"
+              alt="Pequenos gestos"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Gradient overlay — dark at bottom for text legibility */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: `linear-gradient(to top, ${NAVY}f0 0%, ${NAVY}99 35%, transparent 65%)` }}
+            />
+            {/* Content */}
+            <div className="relative z-10 flex flex-col justify-end p-8 sm:p-12 md:p-14" style={{ minHeight: 420 }}>
+              <div className="max-w-sm space-y-4">
+                <h2 className="text-[26px] sm:text-[34px] font-black text-white leading-[1.1] tracking-tight">
+                  São os pequenos<br />gestos que ficam.
+                </h2>
+                <p className="text-[14px] sm:text-[15px] leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+                  Uma mensagem de bom dia. Registar como te sentes. Uma foto de algo que te fez lembrar dele.
+                  Não é sobre fazer mais — é sobre estar presente de propósito.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          05 — ESPAÇO SEGURO
+          ════════════════════════════════════════════ */}
+      <div style={{ background: NAVY }}>
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
+
+            {/* Image */}
+            <Reveal>
+              <div className="rounded-3xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
+                <img
+                  src="/safe.jpg"
+                  alt="Espaço seguro"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </Reveal>
+
+            {/* Text */}
+            <Reveal delay={120} className="space-y-6">
+              <h2
+                className="text-[36px] sm:text-[48px] font-black text-white leading-[1.04] tracking-tight"
+              >
+                Dois.<br />Mais ninguém.
+              </h2>
+              <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.60)" }}>
+                O LoveNest não é uma rede social. Não tem algoritmos, não tem audiência, não tem publicidade.
+              </p>
+              <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.60)" }}>
+                O que partilham aqui fica aqui — para sempre, só de vocês. O vosso espaço não é um feed. É um lar.
+              </p>
+              {/* Trust pills — dark variant */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {["Privado por design", "Sem publicidade", "Os dados são vossos"].map(t => (
+                  <div
+                    key={t}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border"
+                    style={{ borderColor: "rgba(255,255,255,0.14)" }}
+                  >
+                    <Lock className="w-2.5 h-2.5 shrink-0" style={{ color: "rgba(255,255,255,0.35)" }} strokeWidth={2} />
+                    <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+      </div>
+
+      {/* ══════════════════════════════════════════════
+          06 — COMO FUNCIONA
+          ════════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
+        <div className="max-w-lg">
+          <Reveal>
+            <h2
+              className="text-[26px] sm:text-[34px] font-black leading-[1.1] tracking-tight mb-12"
+              style={{ color: NAVY }}
+            >
+              Tão simples como<br />um bom dia.
+            </h2>
+          </Reveal>
+
+          <div className="space-y-10">
+            {[
+              {
+                n: "01",
+                title: "Criam o vosso espaço",
+                desc: "Um de vocês abre o LoveNest e cria o ninho. Em dois minutos, está pronto.",
+                delay: 0,
+              },
+              {
+                n: "02",
+                title: "Convidam o vosso par",
+                desc: "Um código. Uma mensagem. E o outro está lá — no mesmo espaço, ao mesmo tempo.",
+                delay: 80,
+              },
+              {
+                n: "03",
+                title: "Aparecem um para o outro",
+                desc: "Todos os dias. Nos grandes momentos e nos ordinários. O amor constrói-se assim.",
+                delay: 160,
+              },
+            ].map(({ n, title, desc, delay }) => (
+              <Reveal key={n} delay={delay}>
+                <div className="flex gap-5 items-start">
+                  <span
+                    className="text-[56px] font-black leading-none shrink-0 select-none"
+                    style={{ color: `${PINK}20`, lineHeight: 1 }}
+                  >
+                    {n}
+                  </span>
+                  <div className="pt-2.5 space-y-1.5">
+                    <p className="text-[15px] font-bold" style={{ color: NAVY }}>{title}</p>
+                    <p className="text-[14px] leading-relaxed" style={{ color: "#999" }}>{desc}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          07 — MANIFESTO
+          ════════════════════════════════════════════ */}
+      <div style={{ background: "#FAFAF8" }}>
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
+          <Reveal>
+            <div className="max-w-2xl mx-auto text-center space-y-6">
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: "#bbb" }}
+              >
+                Manifesto
+              </p>
+
+              {/* Large decorative quote mark */}
+              <div
+                className="text-[80px] font-black leading-none select-none"
+                style={{ color: `${PINK}18`, marginBottom: -24, fontFamily: "Georgia, serif" }}
+                aria-hidden
+              >
+                "
+              </div>
+
+              <blockquote
+                className="text-[20px] sm:text-[26px] font-bold leading-[1.3] tracking-tight"
+                style={{ color: NAVY }}
+              >
+                O amor não precisa de grandes gestos para ser real.
+                Precisa de aparecer. Todos os dias. Em pequenos momentos
+                que, somados, se tornam a história de vocês.
+              </blockquote>
+
+              <p className="text-[13px] sm:text-[14px] leading-relaxed max-w-xs mx-auto" style={{ color: "#999" }}>
+                O LoveNest foi criado para os casais que acreditam que o amor se constrói — dia após dia, com intenção.
+              </p>
+            </div>
+          </Reveal>
+        </section>
+      </div>
+
+      {/* ══════════════════════════════════════════════
+          08 — CTA FINAL
+          ════════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-20">
+        <Reveal>
+          <div className="text-center space-y-7">
+            <h2
+              className="text-[30px] sm:text-[40px] font-black leading-[1.08] tracking-tight"
+              style={{ color: NAVY }}
+            >
+              O vosso ninho<br />espera por vocês.
+            </h2>
+            <p
+              className="text-[14px] sm:text-[15px] leading-relaxed max-w-[260px] mx-auto"
+              style={{ color: "#999" }}
+            >
+              Criem o vosso espaço e comecem a construir a vossa história juntos.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/inicio")}
+                className="w-full sm:w-auto sm:px-10 h-14 rounded-2xl text-white font-bold text-[15px] active:scale-[0.98] transition-transform inline-flex items-center justify-center gap-2"
+                style={cta}
+              >
+                Criar o nosso espaço
+                <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+              </button>
+              <p className="text-[11px]" style={{ color: "#ccc" }}>Grátis · Privado · Sem publicidade</p>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ background: NAVY }}>
+        <div className="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
-            <LogoMark size={24} />
+            <LogoMark size={22} />
             <span className="text-[13px] font-bold text-white">LoveNest</span>
           </div>
-          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <p className="text-[11px] text-center sm:text-right" style={{ color: "rgba(255,255,255,0.33)" }}>
             Um espaço privado para o vosso amor.
           </p>
         </div>
