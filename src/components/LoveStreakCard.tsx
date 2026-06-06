@@ -83,16 +83,16 @@ function getJourneyDaysLeft(streak: number): number {
 
 function getCardTemperature(streak: number, bothActive: boolean, perfectDay: boolean): string {
   let o = 0;
-  if (streak >= 90)      o = 0.22;
-  else if (streak >= 30) o = 0.16;
-  else if (streak >= 14) o = 0.12;
-  else if (streak >= 7)  o = 0.08;
-  else if (streak >= 3)  o = 0.05;
-  else if (streak >= 1)  o = 0.032;
-  if (bothActive)  o = Math.min(o + 0.08, 0.28);
-  if (perfectDay)  o = Math.min(o + 0.04, 0.30);
+  if (streak >= 90)      o = 0.30;
+  else if (streak >= 30) o = 0.22;
+  else if (streak >= 14) o = 0.17;
+  else if (streak >= 7)  o = 0.12;
+  else if (streak >= 3)  o = 0.08;
+  else if (streak >= 1)  o = 0.050;
+  if (bothActive)  o = Math.min(o + 0.12, 0.40);
+  if (perfectDay)  o = Math.min(o + 0.06, 0.44);
   if (o === 0) return "white";
-  return `radial-gradient(ellipse at 50% 115%, rgba(255,107,143,${o.toFixed(3)}) 0%, transparent 58%), white`;
+  return `radial-gradient(ellipse at 50% 105%, rgba(255,107,143,${o.toFixed(3)}) 0%, transparent 62%), white`;
 }
 
 function getStreakNumberSize(streak: number): string {
@@ -269,17 +269,17 @@ export function LoveStreakCard() {
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at 50% 55%, rgba(255,107,143,0.18) 0%, rgba(77,124,254,0.07) 65%, transparent 100%)",
-            filter: "blur(38px)",
+            background: "radial-gradient(ellipse at 50% 55%, rgba(255,107,143,0.27) 0%, rgba(77,124,254,0.10) 65%, transparent 100%)",
+            filter: "blur(52px)",
             borderRadius: "2.5rem",
             animation: "chama-breathe 7s ease-in-out infinite",
           }}
         />
         <div
-          className="absolute inset-4"
+          className="absolute inset-3"
           style={{
-            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,143,0.30) 0%, transparent 68%)",
-            filter: "blur(18px)",
+            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,143,0.44) 0%, transparent 66%)",
+            filter: "blur(26px)",
             borderRadius: "2rem",
             animation: "chama-breathe-inner 4.5s ease-in-out infinite",
           }}
@@ -345,8 +345,8 @@ export function LoveStreakCard() {
             <div className="relative flex items-baseline gap-1.5">
               {bothActiveToday && (
                 <div
-                  className="absolute -inset-4 rounded-2xl pointer-events-none"
-                  style={{ background: "radial-gradient(ellipse at center, rgba(251,113,133,0.13) 0%, transparent 70%)" }}
+                  className="absolute -inset-5 rounded-2xl pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at center, rgba(251,113,133,0.22) 0%, transparent 68%)" }}
                 />
               )}
               <span className={cn(
@@ -369,10 +369,10 @@ export function LoveStreakCard() {
               {/* Shared glow — appears only when both are here */}
               {bothActiveToday && (
                 <div
-                  className="absolute -inset-2 rounded-full pointer-events-none"
+                  className="absolute -inset-4 rounded-full pointer-events-none"
                   style={{
-                    background: "radial-gradient(ellipse at center, rgba(251,113,133,0.22) 0%, transparent 68%)",
-                    filter: "blur(5px)",
+                    background: "radial-gradient(ellipse at center, rgba(251,113,133,0.40) 0%, transparent 65%)",
+                    filter: "blur(10px)",
                   }}
                 />
               )}
@@ -440,11 +440,11 @@ export function LoveStreakCard() {
                       isCurrent && "animate-journey-dot-pulse"
                     )}
                     style={{
-                      width:  isCurrent ? 12 : 7,
-                      height: isCurrent ? 12 : 7,
+                      width:  isCurrent ? 14 : 7,
+                      height: isCurrent ? 14 : 7,
                       background: reached ? dotColor : "#f0f0f0",
                       boxShadow: isCurrent
-                        ? `0 0 ${bothActiveToday ? 16 : 10}px rgba(244,63,94,${bothActiveToday ? 0.65 : 0.45})`
+                        ? `0 0 ${bothActiveToday ? 22 : 13}px rgba(244,63,94,${bothActiveToday ? 0.80 : 0.58})`
                         : "none",
                     }}
                   />
@@ -453,7 +453,7 @@ export function LoveStreakCard() {
             })}
           </div>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[9.5px] font-semibold"
+            <span className="text-[11px] font-bold tracking-wide"
               style={{ color: currentStreak >= 1 ? dotColor : "#d4d4d4" }}>
               {getCurrentJourneyLevel(currentStreak)?.name ?? "Início"}
             </span>
