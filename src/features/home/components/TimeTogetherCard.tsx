@@ -27,68 +27,65 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
       className="glass-card overflow-hidden"
       style={{
         boxShadow: "0 2px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)",
-        background: "linear-gradient(148deg, rgba(251,246,241,0.80) 0%, rgba(255,255,255,0) 52%), white",
+        background: "linear-gradient(148deg, rgba(251,246,241,0.65) 0%, rgba(255,255,255,0) 48%), white",
       }}
     >
       <div className="p-5">
-
-        {/* Label */}
-        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#c8bfb8" }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ color: "#c8bfb8" }}>
           Tempo juntos
         </p>
 
-        {/* Days — dominant presence */}
-        <div className="mb-4">
-          <span
-            className="text-[52px] font-extrabold tabular-nums tracking-tight leading-none text-rose-500"
-          >
-            {days}
-          </span>
-          <p className="text-[11px] font-medium mt-1.5 tracking-wide" style={{ color: "#c0b4ac" }}>
-            dias de história partilhada
-          </p>
-        </div>
+        {/* Single horizontal row — same structure as before, hierarchy via size + color */}
+        <div className="flex items-center justify-center gap-3">
 
-        {/* Time — secondary, receded */}
-        <div
-          className="flex items-center gap-3 pt-3"
-          style={{ borderTop: "1px solid rgba(240,232,224,0.8)" }}
-        >
-          {/* Hours */}
+          {/* Days — dominant */}
           <div className="flex flex-col items-center">
-            <span className="text-xl font-semibold tabular-nums" style={{ color: "#a8a8a8" }}>
+            <span className="tabular-nums tracking-tight text-rose-500"
+              style={{ fontSize: "34px", fontWeight: 800, lineHeight: 1 }}>
+              {days}
+            </span>
+            <span className="text-[10px] uppercase tracking-widest font-medium mt-1" style={{ color: "#c0b8b0" }}>
+              dias
+            </span>
+          </div>
+
+          <span className="text-lg font-light mb-4" style={{ color: "#e0dbd5" }}>:</span>
+
+          {/* Hours — secondary */}
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color: "#a8a8a8" }}>
               {String(hours).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium mt-0.5" style={{ color: "#ccc" }}>
+            <span className="text-[10px] uppercase tracking-widest font-medium mt-1" style={{ color: "#ccc" }}>
               hrs
             </span>
           </div>
 
-          <span className="text-base font-light mb-3" style={{ color: "#e0d8d0" }}>:</span>
+          <span className="text-lg font-light mb-4" style={{ color: "#e0dbd5" }}>:</span>
 
           {/* Minutes */}
           <div className="flex flex-col items-center">
-            <span className="text-xl font-semibold tabular-nums" style={{ color: "#b0b0b0" }}>
+            <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color: "#b0b0b0" }}>
               {String(minutes).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium mt-0.5" style={{ color: "#ccc" }}>
+            <span className="text-[10px] uppercase tracking-widest font-medium mt-1" style={{ color: "#ccc" }}>
               min
             </span>
           </div>
 
-          <span className="text-base font-light mb-3" style={{ color: "#e0d8d0" }}>:</span>
+          <span className="text-lg font-light mb-4" style={{ color: "#e0dbd5" }}>:</span>
 
-          {/* Seconds */}
+          {/* Seconds — most receded */}
           <div className="flex flex-col items-center">
-            <span className="text-xl font-semibold tabular-nums" style={{ color: "#b8b8b8" }}>
+            <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color: "#b8b8b8" }}>
               {String(seconds).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium mt-0.5" style={{ color: "#ccc" }}>
+            <span className="text-[10px] uppercase tracking-widest font-medium mt-1" style={{ color: "#ccc" }}>
               seg
             </span>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   );
