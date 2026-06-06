@@ -41,12 +41,13 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
   }
 
   return (
-    <div className="glass-card overflow-hidden">
-      {/* Gradient header strip */}
-      <div
-        className="h-[2px] w-full"
-        style={{ background: "linear-gradient(to right, rgba(255,107,143,0.3), rgba(77,124,254,0.2), transparent)" }}
-      />
+    <div
+      className="glass-card overflow-hidden"
+      style={{
+        boxShadow: "0 2px 20px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)",
+        background: "radial-gradient(ellipse at 50% 0%, rgba(255,107,143,0.04) 0%, transparent 55%), white",
+      }}
+    >
       <div className="p-5">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-[#aaa] mb-4">
           Tempo juntos

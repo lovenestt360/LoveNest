@@ -247,7 +247,30 @@ export function LoveStreakCard() {
     : currentStreak >= 7 ? "rgba(255,107,143,0.12)" : "#f0f0f0";
 
   return (
-    <div className="space-y-1.5">
+    <div className="relative">
+      {/* ── External halo — the zone warms when both partners are present ──
+          Outer div: controls fade-in/out via opacity transition (1.8s)
+          Inner div: breathes continuously with chama-breathe (7s cycle)     */}
+      <div
+        className="absolute -inset-3 pointer-events-none"
+        style={{
+          opacity: bothActiveToday ? 1 : 0,
+          transition: "opacity 1800ms ease-in-out",
+          zIndex: 0,
+        }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at 50% 52%, rgba(255,107,143,0.20) 0%, rgba(77,124,254,0.08) 62%, transparent 100%)",
+            filter: "blur(24px)",
+            borderRadius: "2rem",
+            animation: "chama-breathe 7s ease-in-out infinite",
+          }}
+        />
+      </div>
+
+      <div className="relative space-y-1.5" style={{ zIndex: 1 }}>
       <button
         onClick={() => navigate("/lovestreak")}
         className={cn(
@@ -469,6 +492,7 @@ export function LoveStreakCard() {
           Hoje o vosso espaço esteve completo.
         </p>
       )}
+      </div>
     </div>
   );
 }

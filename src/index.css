@@ -544,6 +544,17 @@ input, textarea, [contenteditable="true"] {
   .animate-ob-ring-inner    { animation: ob-ring-inner-breathe 4.5s ease-in-out infinite; }
   .animate-ob-hint          { animation: ob-hint-breathe 3.5s ease-in-out infinite; }
 
+/* ── Chama halo — breathes behind the streak card when both partners are present ── */
+@keyframes chama-breathe {
+  0%, 100% { opacity: 0.60; transform: scale(1.00) translateY(0px);   }
+  50%       { opacity: 1.00; transform: scale(1.04) translateY(-4px);  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes chama-breathe {
+    0%, 100% { opacity: 0.80; transform: none; }
+  }
+}
+
 /* ── Landing ambient + logo motion ──────────────────────────────────────── */
 @keyframes blob-a {
   0%, 100% { transform: translateY(0px) scale(1); }
