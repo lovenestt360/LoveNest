@@ -6,6 +6,7 @@ import { LogoMark } from "@/components/Logo";
 // ── Brand ─────────────────────────────────────────────────────────────────────
 const PINK = "#FF6B8F";
 const NAVY = "#0B1324";
+const WARM = "#FFF0E8";
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ function Pic({
   );
 }
 
-// ── Ambient background depth ──────────────────────────────────────────────────
+// ── Ambient light system — 4 blobs, extremely subtle, slow ───────────────────
 
 function AmbientBlobs({ reduced }: { reduced: boolean }) {
   if (reduced) return null;
@@ -103,23 +104,40 @@ function AmbientBlobs({ reduced }: { reduced: boolean }) {
       aria-hidden="true"
       style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}
     >
+      {/* Top-right — rosa, lento */}
       <div style={{
-        position: "absolute", top: "-5%", right: "-8%",
-        width: 480, height: 480, borderRadius: "50%",
-        background: PINK, filter: "blur(100px)", opacity: 0.04,
-        animation: "blob-a 12s ease-in-out infinite",
+        position: "absolute", top: "-8%", right: "-10%",
+        width: 640, height: 640, borderRadius: "50%",
+        background: PINK, filter: "blur(140px)", opacity: 0.055,
+        animation: "blob-a 16s ease-in-out infinite",
       }} />
+      {/* Bottom-left — azul, mais lento */}
       <div style={{
-        position: "absolute", bottom: "15%", left: "-6%",
-        width: 360, height: 360, borderRadius: "50%",
-        background: "#4D7CFE", filter: "blur(120px)", opacity: 0.03,
-        animation: "blob-b 14s ease-in-out infinite",
+        position: "absolute", bottom: "8%", left: "-12%",
+        width: 520, height: 520, borderRadius: "50%",
+        background: "#4D7CFE", filter: "blur(160px)", opacity: 0.04,
+        animation: "blob-b 18s ease-in-out infinite",
+      }} />
+      {/* Centro — branco quente, muito largo, quase imperceptível */}
+      <div style={{
+        position: "absolute", top: "32%", left: "5%",
+        width: 820, height: 340, borderRadius: "50%",
+        background: WARM, filter: "blur(120px)", opacity: 0.07,
+        animation: "blob-c 14s ease-in-out infinite",
+      }} />
+      {/* Topo-esquerdo — eco rosa, pequeno */}
+      <div style={{
+        position: "absolute", top: "12%", left: "-8%",
+        width: 340, height: 340, borderRadius: "50%",
+        background: PINK, filter: "blur(100px)", opacity: 0.025,
+        animation: "blob-a 22s ease-in-out infinite",
+        animationDelay: "-9s",
       }} />
     </div>
   );
 }
 
-// ── Scroll reveal wrapper ─────────────────────────────────────────────────────
+// ── Scroll reveal ─────────────────────────────────────────────────────────────
 
 function Reveal({
   children, delay = 0, className = "", reduced = false,
@@ -177,12 +195,9 @@ function PhoneMockup() {
       <div className="relative overflow-hidden" style={{
         borderRadius: 44,
         background: NAVY,
-        boxShadow: "0 32px 80px rgba(11,19,36,0.20), 0 0 0 1px rgba(11,19,36,0.07)",
+        boxShadow: "0 40px 100px rgba(11,19,36,0.28), 0 0 0 1px rgba(11,19,36,0.07)",
       }}>
-        {/* Dynamic island */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10" style={{ width: 80, height: 20, background: "#000", borderRadius: 12 }} />
-
-        {/* Screen */}
         <div style={{ background: "#F8F7F5", paddingTop: 48, paddingBottom: 24 }}>
           <div className="flex items-center justify-between px-5 mb-5">
             <div>
@@ -191,7 +206,6 @@ function PhoneMockup() {
             </div>
             <div className="w-8 h-8 rounded-full" style={{ background: "#e0e0e0" }} />
           </div>
-          {/* Streak */}
           <div className="mx-3 mb-2.5 bg-white rounded-2xl p-3.5" style={{ boxShadow: "0 2px 12px rgba(11,19,36,0.06)" }}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${PINK}15` }}>
@@ -206,7 +220,6 @@ function PhoneMockup() {
               </span>
             </div>
           </div>
-          {/* Mood */}
           <div className="mx-3 mb-2.5 bg-white rounded-2xl p-3.5" style={{ boxShadow: "0 2px 12px rgba(11,19,36,0.06)" }}>
             <p className="text-[10px] mb-2" style={{ color: "#aaa" }}>Como estás hoje?</p>
             <div className="flex gap-1.5">
@@ -218,7 +231,6 @@ function PhoneMockup() {
               ))}
             </div>
           </div>
-          {/* Message */}
           <div className="mx-3 bg-white rounded-2xl p-3.5" style={{ boxShadow: "0 2px 12px rgba(11,19,36,0.06)" }}>
             <p className="text-[10px] mb-1.5" style={{ color: "#aaa" }}>Mensagem do teu par</p>
             <p className="text-[11px] font-medium leading-relaxed" style={{ color: NAVY }}>
@@ -227,7 +239,6 @@ function PhoneMockup() {
             <p className="text-[9px] mt-1.5" style={{ color: "#ccc" }}>08:24</p>
           </div>
         </div>
-        {/* Home bar */}
         <div className="flex justify-center py-2" style={{ background: "#F8F7F5" }}>
           <div className="w-24 h-1 rounded-full" style={{ background: "#ddd" }} />
         </div>
@@ -260,7 +271,6 @@ export default function Landing() {
   );
   const [activeBtn, setActiveBtn] = useState<string | null>(null);
 
-  // Parallax enabled only on desktop + no reduced motion
   const pe = !reduced && isDesktop;
 
   const heroP     = useParallax(5, pe);
@@ -274,7 +284,6 @@ export default function Landing() {
       sessionStorage.setItem("lovenest_ref", ref.toUpperCase());
       localStorage.setItem("lovenest_ref", ref.toUpperCase());
     }
-    // Hero entrance — tiny delay ensures browser has painted
     const t = setTimeout(() => setHeroReady(true), 60);
     return () => clearTimeout(t);
   }, [searchParams]);
@@ -285,7 +294,6 @@ export default function Landing() {
     return () => window.removeEventListener("resize", h);
   }, []);
 
-  // ── Hero entrance styles ──────────────────────────────────────────────────
   const heroImgStyle: React.CSSProperties = {
     opacity: heroReady ? 1 : 0,
     transform: heroReady || reduced ? "scale(1)" : "scale(1.03)",
@@ -302,7 +310,6 @@ export default function Landing() {
       : `opacity 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
   });
 
-  // ── Button style ──────────────────────────────────────────────────────────
   const btnStyle = (id: string): React.CSSProperties => ({
     background: PINK,
     boxShadow: activeBtn === id
@@ -312,7 +319,6 @@ export default function Landing() {
     transition: "box-shadow 180ms ease, transform 180ms ease",
   });
 
-  // ── Parallax image wrapper helpers ────────────────────────────────────────
   const pxWrap = (y: number): React.CSSProperties => ({
     position: "absolute", inset: 0,
     height: pe ? "calc(100% + 16px)" : "100%",
@@ -327,6 +333,18 @@ export default function Landing() {
     transform: pe ? `translateY(${y}px)` : undefined,
     willChange: pe ? "transform" : "auto",
   });
+
+  // Shared warm tint — applied inside all image containers for visual consistency
+  const warmTint = (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "rgba(255,180,110,0.07)",
+        mixBlendMode: "multiply",
+      }}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden" style={{ position: "relative", zIndex: 1 }}>
@@ -358,26 +376,44 @@ export default function Landing() {
       {/* ══════════════════════════════════════════════
           01 — HERO
           ════════════════════════════════════════════ */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-5 pt-5">
+      <section className="relative max-w-6xl mx-auto px-4 sm:px-5 pt-5">
 
-        {/* Hero image — entrance animation on container, parallax on inner */}
+        {/* Atmospheric glow — behind the hero image, sets the premium tone */}
+        {!reduced && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute", top: 4, left: "4%", right: "4%",
+              height: "clamp(260px, 55vw, 520px)",
+              background: `radial-gradient(ellipse at 62% 42%, ${PINK}28 0%, rgba(77,124,254,0.12) 42%, transparent 68%)`,
+              filter: "blur(52px)",
+              borderRadius: "1.5rem",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
+        {/* Hero image */}
         <div
           ref={heroP.ref}
           className="relative w-full rounded-3xl overflow-hidden"
-          style={{ height: "clamp(260px, 55vw, 520px)", ...heroImgStyle }}
+          style={{ height: "clamp(260px, 55vw, 520px)", zIndex: 1, ...heroImgStyle }}
         >
           <div style={pxWrap(heroP.y)}>
             <Pic name="hero" alt="Dois num mesmo espaço" eager imgStyle={{ height: "100%" }} />
           </div>
-          {/* Gradient — fuses image into white background */}
+          {/* Warm tint */}
+          {warmTint}
+          {/* Gradient — fuses image into white below */}
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(to bottom, transparent 45%, rgba(255,255,255,0.6) 75%, #ffffff 100%)" }}
+            style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(255,255,255,0.55) 72%, #ffffff 100%)" }}
           />
         </div>
 
-        {/* Headline + CTAs — staggered entrance */}
-        <div className="max-w-xl pt-1 pb-14 sm:pb-20 space-y-7">
+        {/* Headline + CTAs */}
+        <div className="relative z-10 max-w-xl pt-1 pb-14 sm:pb-20 space-y-7">
           <div className="space-y-4" style={heroText(200)}>
             <h1 className="text-[40px] sm:text-[52px] font-black leading-[1.04] tracking-tight" style={{ color: NAVY }}>
               O amor vive<br />
@@ -425,6 +461,7 @@ export default function Landing() {
 
       {/* ══════════════════════════════════════════════
           02 — PRESENÇA À DISTÂNCIA
+          Transição suave: branco → branco (section flow)
           ════════════════════════════════════════════ */}
       <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
@@ -443,12 +480,17 @@ export default function Landing() {
           </Reveal>
 
           <Reveal delay={120} className="order-1 md:order-2" reduced={reduced}>
+            {/* Image container — rich shadow for mobile depth */}
             <div
               ref={distanceP.ref}
-              className="rounded-3xl overflow-hidden"
-              style={{ aspectRatio: "4/3" }}
+              className="relative rounded-3xl overflow-hidden"
+              style={{
+                aspectRatio: "4/3",
+                boxShadow: "0 24px 60px rgba(11,19,36,0.11), 0 6px 18px rgba(11,19,36,0.06)",
+              }}
             >
               <Pic name="distance" alt="Presença à distância" imgStyle={pxImg(distanceP.y)} />
+              {warmTint}
             </div>
           </Reveal>
 
@@ -457,8 +499,12 @@ export default function Landing() {
 
       {/* ══════════════════════════════════════════════
           03 — PRODUTO EM CONTEXTO
+          Transição: gradiente branco → off-white → branco
           ════════════════════════════════════════════ */}
-      <div style={{ background: "#FAFAF8", position: "relative", zIndex: 1 }}>
+      <div style={{
+        background: "linear-gradient(to bottom, #ffffff 0%, #FAFAF8 56px, #FAFAF8 calc(100% - 56px), #ffffff 100%)",
+        position: "relative", zIndex: 1,
+      }}>
         <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
 
           <Reveal className="text-center mb-12 space-y-3" reduced={reduced}>
@@ -470,8 +516,27 @@ export default function Landing() {
             </p>
           </Reveal>
 
+          {/* Phone mockup with ambient glow behind it */}
           <Reveal delay={100} reduced={reduced}>
-            <PhoneMockup />
+            <div className="relative">
+              {!reduced && (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    top: "50%", left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: "90%", height: "100%",
+                    background: `radial-gradient(ellipse at center, ${PINK}1a 0%, rgba(77,124,254,0.08) 45%, transparent 70%)`,
+                    filter: "blur(40px)",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <PhoneMockup />
+              </div>
+            </div>
           </Reveal>
 
           <Reveal delay={200} className="mt-12 flex flex-wrap gap-2 justify-center" reduced={reduced}>
@@ -491,23 +556,46 @@ export default function Landing() {
 
       {/* ══════════════════════════════════════════════
           04 — PEQUENOS GESTOS
+          Imagem editorial full-bleed com tratamento de cor
           ════════════════════════════════════════════ */}
       <section className="max-w-6xl mx-auto px-4 sm:px-5 py-8 sm:py-10">
         <Reveal reduced={reduced}>
           <div
             ref={gesturesP.ref}
             className="relative rounded-3xl overflow-hidden"
-            style={{ minHeight: 420 }}
+            style={{
+              minHeight: 420,
+              boxShadow: "0 32px 80px rgba(11,19,36,0.15), 0 8px 24px rgba(11,19,36,0.08)",
+            }}
           >
-            {/* Image with parallax */}
+            {/* Image */}
             <div style={pxWrap(gesturesP.y)}>
               <Pic name="gestures" alt="Pequenos gestos" imgStyle={{ height: "100%" }} />
             </div>
-            {/* Dark overlay for text legibility */}
+            {/* Warm tint — sobre a imagem, abaixo dos gradientes */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute", inset: 0, pointerEvents: "none",
+                background: "rgba(255,180,110,0.06)",
+                mixBlendMode: "multiply",
+              }}
+            />
+            {/* Gradient escuro para legibilidade do texto */}
             <div
               className="absolute inset-0 pointer-events-none"
-              style={{ background: `linear-gradient(to top, ${NAVY}f0 0%, ${NAVY}99 35%, transparent 65%)` }}
+              style={{ background: `linear-gradient(to top, ${NAVY}f5 0%, ${NAVY}cc 28%, ${NAVY}55 52%, transparent 72%)` }}
             />
+            {/* Ambient top glow dentro da secção */}
+            {!reduced && (
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse at 80% 10%, ${PINK}18 0%, transparent 50%)`,
+                }}
+              />
+            )}
             {/* Text */}
             <div className="relative z-10 flex flex-col justify-end p-8 sm:p-12 md:p-14" style={{ minHeight: 420 }}>
               <div className="max-w-sm space-y-4">
@@ -526,18 +614,45 @@ export default function Landing() {
 
       {/* ══════════════════════════════════════════════
           05 — ESPAÇO SEGURO
+          Navy com atmosfera interna — dois. mais ninguém.
           ════════════════════════════════════════════ */}
       <div style={{ background: NAVY, position: "relative", zIndex: 1 }}>
-        <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
+        {/* Transição suave: branco → navy */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 64,
+          background: `linear-gradient(to bottom, ${NAVY}00, ${NAVY})`,
+          marginTop: -64, zIndex: 2, pointerEvents: "none",
+        }} />
+
+        <section className="relative max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
+          {/* Atmosfera interna da secção navy */}
+          {!reduced && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden",
+                background: `
+                  radial-gradient(ellipse at 88% 12%, rgba(77,124,254,0.20) 0%, transparent 48%),
+                  radial-gradient(ellipse at 12% 88%, ${PINK}28 0%, transparent 40%)
+                `,
+              }}
+            />
+          )}
+
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
 
             <Reveal reduced={reduced}>
+              {/* Safe image — shadow dentro do fundo escuro */}
               <div
                 ref={safeP.ref}
-                className="rounded-3xl overflow-hidden"
-                style={{ aspectRatio: "4/3" }}
+                className="relative rounded-3xl overflow-hidden"
+                style={{
+                  aspectRatio: "4/3",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.07), 0 24px 64px rgba(0,0,0,0.32)",
+                }}
               >
                 <Pic name="safe" alt="Espaço seguro" imgStyle={pxImg(safeP.y)} />
+                {warmTint}
               </div>
             </Reveal>
 
@@ -545,17 +660,17 @@ export default function Landing() {
               <h2 className="text-[36px] sm:text-[48px] font-black text-white leading-[1.04] tracking-tight">
                 Dois.<br />Mais ninguém.
               </h2>
-              <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.60)" }}>
+              <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.58)" }}>
                 O LoveNest não é uma rede social. Não tem algoritmos, não tem audiência, não tem publicidade.
               </p>
-              <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.60)" }}>
+              <p className="text-[15px] sm:text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.58)" }}>
                 O que partilham aqui fica aqui — para sempre, só de vocês. O vosso espaço não é um feed. É um lar.
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 {["Privado por design", "Sem publicidade", "Os dados são vossos"].map(t => (
-                  <div key={t} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ borderColor: "rgba(255,255,255,0.14)" }}>
-                    <Lock className="w-2.5 h-2.5 shrink-0" style={{ color: "rgba(255,255,255,0.35)" }} strokeWidth={2} />
-                    <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>{t}</span>
+                  <div key={t} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ borderColor: "rgba(255,255,255,0.13)" }}>
+                    <Lock className="w-2.5 h-2.5 shrink-0" style={{ color: "rgba(255,255,255,0.32)" }} strokeWidth={2} />
+                    <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.42)" }}>{t}</span>
                   </div>
                 ))}
               </div>
@@ -577,9 +692,9 @@ export default function Landing() {
           </Reveal>
           <div className="space-y-10">
             {[
-              { n: "01", title: "Criam o vosso espaço",       desc: "Um de vocês abre o LoveNest e cria o ninho. Em dois minutos, está pronto.", delay: 0 },
-              { n: "02", title: "Convidam o vosso par",        desc: "Um código. Uma mensagem. E o outro está lá — no mesmo espaço, ao mesmo tempo.", delay: 80 },
-              { n: "03", title: "Aparecem um para o outro",    desc: "Todos os dias. Nos grandes momentos e nos ordinários. O amor constrói-se assim.", delay: 160 },
+              { n: "01", title: "Criam o vosso espaço",    desc: "Um de vocês abre o LoveNest e cria o ninho. Em dois minutos, está pronto.", delay: 0 },
+              { n: "02", title: "Convidam o vosso par",     desc: "Um código. Uma mensagem. E o outro está lá — no mesmo espaço, ao mesmo tempo.", delay: 80 },
+              { n: "03", title: "Aparecem um para o outro", desc: "Todos os dias. Nos grandes momentos e nos ordinários. O amor constrói-se assim.", delay: 160 },
             ].map(({ n, title, desc, delay }) => (
               <Reveal key={n} delay={delay} reduced={reduced}>
                 <div className="flex gap-5 items-start">
@@ -602,8 +717,12 @@ export default function Landing() {
 
       {/* ══════════════════════════════════════════════
           07 — MANIFESTO
+          Transição: gradiente branco → off-white → branco
           ════════════════════════════════════════════ */}
-      <div style={{ background: "#FAFAF8", position: "relative", zIndex: 1 }}>
+      <div style={{
+        background: "linear-gradient(to bottom, #ffffff 0%, #FAFAF8 56px, #FAFAF8 calc(100% - 56px), #ffffff 100%)",
+        position: "relative", zIndex: 1,
+      }}>
         <section className="max-w-6xl mx-auto px-4 sm:px-5 py-16 sm:py-24">
           <Reveal reduced={reduced}>
             <div className="max-w-2xl mx-auto text-center space-y-6">

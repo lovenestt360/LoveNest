@@ -534,12 +534,17 @@ input, textarea, [contenteditable="true"] {
 
 /* ── Landing ambient + logo motion ──────────────────────────────────────── */
 @keyframes blob-a {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-14px) scale(1.02); }
 }
 @keyframes blob-b {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-10px) scale(1.015); }
+}
+@keyframes blob-c {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  33%       { transform: translateY(-8px) translateX(10px); }
+  66%       { transform: translateY(5px) translateX(-8px); }
 }
 @keyframes logo-float {
   0%, 100% { transform: translateY(0px); }
