@@ -40,6 +40,7 @@ const ConfirmEmail = lazy(() => import("./pages/ConfirmEmail"));
 const CoupleSpace = lazy(() => import("./pages/CoupleSpace"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Fasting = lazy(() => import("./pages/Fasting"));
+const JornadaEspiritual = lazy(() => import("./pages/JornadaEspiritual"));
 const Routine = lazy(() => import("./pages/Routine"));
 const RoutineDay = lazy(() => import("./pages/RoutineDay"));
 const RoutineManage = lazy(() => import("./pages/RoutineManage"));
@@ -95,8 +96,10 @@ const AppRoutes = () => (
         <Route element={<PremiumGuard requiredFeature="mood" />}>
           <Route path="humor" element={<Mood />} />
         </Route>
+        <Route path="oracao" element={<Navigate to="/jornada-espiritual?tab=oracao" replace />} />
+        <Route path="jejum" element={<Navigate to="/jornada-espiritual?tab=jejum" replace />} />
         <Route element={<PremiumGuard requiredFeature="prayer" />}>
-          <Route path="oracao" element={<Prayer />} />
+          <Route path="jornada-espiritual" element={<JornadaEspiritual />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="conflicts" />}>
           <Route path="conflitos" element={<Complaints />} />
@@ -106,9 +109,6 @@ const AppRoutes = () => (
         </Route>
         <Route element={<PremiumGuard requiredFeature="cycle" />}>
           <Route path="ciclo" element={<Cycle />} />
-        </Route>
-        <Route element={<PremiumGuard requiredFeature="fasting" />}>
-          <Route path="jejum" element={<Fasting />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="agenda" />}>
           <Route path="rotina" element={<Navigate to="/plano?tab=rotina" replace />} />

@@ -13,7 +13,7 @@ import { getEasterDate, dayResultLabel } from "@/features/fasting/types";
 import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart,
-  HeartHandshake, MessageCircle, Heart, Flower2, Flame,
+  HeartHandshake, MessageCircle, Heart, Flower2,
   ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
@@ -531,16 +531,17 @@ const Index = () => {
             />
           )}
 
-          {isEnabled("home_jejum") && (
+          {(isEnabled("home_jejum") || isEnabled("home_oracao")) && (
             <DashCard
-              icon={<Flame className="h-5 w-5" strokeWidth={1.5} />}
-              title="Jejum"
+              icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
+              title="Jornada Espiritual"
               lines={[
-                fasting.streak > 0 ? `${fasting.streak} dias de disciplina 🔥` : "Um acto de amor e disciplina",
-                fastingProgress > 0 ? `${fastingProgress}% da jornada feita` : "Cada dia conta",
+                prayer.myPrayed ? "Em oração hoje" : fasting.streak > 0 ? `${fasting.streak} dias de jejum` : "Oração e disciplina",
+                fastingProgress > 0 ? `${fastingProgress}% da jornada` : "Cuidem a alma juntos",
               ]}
-              to="/jejum"
-              accent="text-orange-500"
+              to="/jornada-espiritual"
+              badge={prayerUnread}
+              accent="text-purple-500"
             />
           )}
 
@@ -551,20 +552,6 @@ const Index = () => {
             to="/ciclo"
             accent="text-pink-500"
           />
-
-          {isEnabled("home_oracao") && (
-            <DashCard
-              icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
-              title="Oração"
-              lines={[
-                prayer.myPrayed ? "Tu: em oração 🙏" : "Um momento sagrado juntos",
-                prayer.partnerPrayed ? "Par: em oração 🙏" : "Cuidem um do outro em silêncio",
-              ]}
-              to="/oracao"
-              badge={prayerUnread}
-              accent="text-purple-500"
-            />
-          )}
         </div>
       </section>
 

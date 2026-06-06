@@ -138,7 +138,7 @@ function CreatePlanWizard({ onSubmit }: { onSubmit: (input: CreatePlanInput) => 
 }
 
 // ── Página Principal ─────────────────────────────────────────────
-export default function Fasting() {
+export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }) {
     const data = useFasting();
     const [searchParams, setSearchParams] = useSearchParams();
     const [sheetDay, setSheetDay] = useState<string | null>(null);
@@ -172,12 +172,14 @@ export default function Fasting() {
     if (!data.profile) {
         return (
             <section className="space-y-4">
-                <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">🕯️ Jejum (Páscoa)</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Um percurso de disciplina, fé e constância — dia após dia.
-                    </p>
-                </header>
+                {!hideHeader && (
+                    <header>
+                        <h1 className="text-2xl font-semibold tracking-tight">Jejum (Páscoa)</h1>
+                        <p className="text-sm text-muted-foreground">
+                            Um percurso de disciplina, fé e constância — dia após dia.
+                        </p>
+                    </header>
+                )}
                 <CreatePlanWizard onSubmit={data.createPlan} />
             </section>
         );
@@ -185,12 +187,14 @@ export default function Fasting() {
 
     return (
         <section className="space-y-4 pb-6">
-            <header>
-                <h1 className="text-2xl font-semibold tracking-tight">🕯️ Jejum (Páscoa)</h1>
-                <p className="text-sm text-muted-foreground">
-                    Um percurso de disciplina, fé e constância — dia após dia.
-                </p>
-            </header>
+            {!hideHeader && (
+                <header>
+                    <h1 className="text-2xl font-semibold tracking-tight">Jejum (Páscoa)</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Um percurso de disciplina, fé e constância — dia após dia.
+                    </p>
+                </header>
+            )}
 
             <Tabs defaultValue={defaultTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-5 h-auto">

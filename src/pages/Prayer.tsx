@@ -40,7 +40,7 @@ interface SpiritualLog {
   updated_at: string;
 }
 
-export default function Prayer() {
+export default function Prayer({ hideHeader = false }: { hideHeader?: boolean }) {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const todayKey = format(new Date(), "yyyy-MM-dd");
@@ -302,10 +302,12 @@ export default function Prayer() {
 
   return (
     <section className="space-y-4 pb-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Oração</h1>
-        <p className="text-sm text-muted-foreground">Diário espiritual do casal.</p>
-      </header>
+      {!hideHeader && (
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight">Oração</h1>
+          <p className="text-sm text-muted-foreground">Diário espiritual do casal.</p>
+        </header>
+      )}
 
       {/* Prayer of the Day */}
       <Card>

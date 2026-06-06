@@ -17,7 +17,6 @@ import {
   Settings,
   BookOpen,
   Flower2,
-  Flame,
   ClipboardList,
   CreditCard,
   Heart,
@@ -40,8 +39,7 @@ const mainTabs = [
 const moreItems = [
   { to: "/memorias", label: "Memórias", Icon: Image },
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
-  { to: "/jejum", label: "Jejum", Icon: Flame },
-  { to: "/oracao", label: "Oração", Icon: BookOpen },
+  { to: "/jornada-espiritual", label: "Espiritual", Icon: BookOpen },
   { to: "/conflitos", label: "Conflitos", Icon: HeartHandshake },
   { to: "/configuracoes", label: "Definições", Icon: Settings },
   { to: "/subscricao", label: "Subscrição", Icon: CreditCard },
@@ -84,7 +82,7 @@ export function BottomTabs() {
     switch (to) {
       case "/memorias": return memoriesUnread;
       case "/agenda": return scheduleUnread;
-      case "/oracao": return prayerUnread;
+      case "/jornada-espiritual": return prayerUnread;
       case "/conflitos": return complaintsUnread;
       default: return 0;
     }
