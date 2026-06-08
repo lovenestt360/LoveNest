@@ -4,9 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 // Resets automatically when the date changes.
 const _missionFiredDate = new Map<string, string>(); // type → date string
 
+// Fire mission-complete with session-level dedup. Call this directly when you
+// know precisely that BOTH users completed the specific action (e.g., both prayed).
+export function fireMissionIfNotFired(type: string): void {
+  const today = new Date().toDateString();
+  if (_missionFiredDate.get(type) !== today) {
+    _missionFiredDate.set(type, today);
+    window.dispatchEvent(new CustomEvent("mission-complete", { detail: { type } }));
+  }
+}
+
 export async function logActivity(
   coupleId: string | null | undefined,
-  type: string = "general"
+  type: string = "general",
+  options?: { skipMission?: boolean }
 ): Promise<void> {
   if (!coupleId) return;
 
@@ -30,13 +41,11 @@ export async function logActivity(
     window.dispatchEvent(new CustomEvent("streak-updated", { detail: { type } }));
 
     // Fire mission-complete only when both partners are active today,
-    // and only ONCE per type per calendar day (prevents spam on repeat calls).
-    if (res.both_active_today === true) {
-      const today = new Date().toDateString();
-      if (_missionFiredDate.get(type) !== today) {
-        _missionFiredDate.set(type, today);
-        window.dispatchEvent(new CustomEvent("mission-complete", { detail: { type } }));
-      }
+    // only ONCE per type per calendar day, and only when not suppressed.
+    // Use skipMission: true when the caller handles mission firing directly
+    // (e.g., prayer — where both_active_today is too coarse; we need both to have prayed).
+    if (!options?.skipMission && res.both_active_today === true) {
+      fireMissionIfNotFired(type);
     }
   } catch (err: any) {
     console.error("[logActivity] Exception:", err?.message);

@@ -211,7 +211,7 @@ export function LoveStreakCard() {
   useEffect(() => {
     if (perfectDay && spaceId && !perfectDayRef.current) {
       perfectDayRef.current = true;
-      (supabase.rpc("record_perfect_day" as any, { p_couple_space_id: spaceId }) as any).catch(() => {});
+      supabase.rpc("record_perfect_day" as any, { p_couple_space_id: spaceId }).then(null, () => {});
     }
     if (!perfectDay) perfectDayRef.current = false;
   }, [perfectDay, spaceId]);

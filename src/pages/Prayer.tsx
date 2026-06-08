@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { logActivity } from "@/lib/logActivity";
+import { logActivity, fireMissionIfNotFired } from "@/lib/logActivity";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -190,8 +190,11 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     }
     setPrayedToday(true);
 
-    // LoveStreak: registar atividade (fire-and-forget)
-    if (spaceId) logActivity(spaceId, "prayer");
+    // LoveStreak: registar atividade; missão disparada apenas se parceiro já orou
+    if (spaceId) {
+      logActivity(spaceId, "prayer", { skipMission: true });
+      if (partnerLog?.prayed_today) fireMissionIfNotFired("prayer");
+    }
 
     if (spaceId) {
       notifyPartner({
@@ -283,8 +286,11 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     } else {
       await supabase.from("daily_spiritual_logs").insert(payload);
     }
-    // Registar atividade para missões quando marca "Orei hoje"
-    if (val && spaceId) logActivity(spaceId, "prayer");
+    // Registar atividade para streak; missão só dispara se parceiro já orou
+    if (val && spaceId) {
+      logActivity(spaceId, "prayer", { skipMission: true });
+      if (partnerLog?.prayed_today) fireMissionIfNotFired("prayer");
+    }
   };
 
   return (
