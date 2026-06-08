@@ -79,18 +79,18 @@ function getJourneyDaysLeft(streak: number): number {
   return JOURNEY_LEVELS[idx + 1].min - streak;
 }
 
-// ── Card temperature — warmth grows with streak ───────────────────────────────
+// ── Card temperature — subtle warmth, never saturated ────────────────────────
 
 function getCardTemperature(streak: number, bothActive: boolean, perfectDay: boolean): string {
   let o = 0;
-  if (streak >= 90)      o = 0.30;
-  else if (streak >= 30) o = 0.22;
-  else if (streak >= 14) o = 0.17;
-  else if (streak >= 7)  o = 0.12;
-  else if (streak >= 3)  o = 0.08;
-  else if (streak >= 1)  o = 0.050;
-  if (bothActive)  o = Math.min(o + 0.12, 0.40);
-  if (perfectDay)  o = Math.min(o + 0.06, 0.44);
+  if (streak >= 90)      o = 0.07;
+  else if (streak >= 30) o = 0.05;
+  else if (streak >= 14) o = 0.04;
+  else if (streak >= 7)  o = 0.03;
+  else if (streak >= 3)  o = 0.02;
+  else if (streak >= 1)  o = 0.015;
+  if (bothActive)  o = Math.min(o + 0.04, 0.10);
+  if (perfectDay)  o = Math.min(o + 0.02, 0.11);
   if (o === 0) return "white";
   return `radial-gradient(ellipse at 50% 105%, rgba(255,107,143,${o.toFixed(3)}) 0%, transparent 62%), white`;
 }
@@ -104,11 +104,11 @@ function getStreakNumberSize(streak: number): string {
 // ── Relationship state (footer) ───────────────────────────────────────────────
 
 function getRelationshipState(s: number): { name: string; color: string } {
-  if (s >= 90) return { name: "Eternidade",  color: "text-rose-600"   };
-  if (s >= 30) return { name: "Farol",       color: "text-rose-500"   };
-  if (s >= 14) return { name: "Chama Viva",  color: "text-rose-500"   };
-  if (s >= 7)  return { name: "Chama",       color: "text-rose-400"   };
-  if (s >= 3)  return { name: "Brasa",       color: "text-rose-400"   };
+  if (s >= 90) return { name: "Eternidade",  color: "text-[#717171]"  };
+  if (s >= 30) return { name: "Farol",       color: "text-[#717171]"  };
+  if (s >= 14) return { name: "Chama Viva",  color: "text-[#717171]"  };
+  if (s >= 7)  return { name: "Chama",       color: "text-[#717171]"  };
+  if (s >= 3)  return { name: "Brasa",       color: "text-[#717171]"  };
   if (s >= 1)  return { name: "Faísca",      color: "text-[#717171]"  };
   return             { name: "Início",       color: "text-[#aaa]"     };
 }
@@ -134,10 +134,10 @@ type MissionStatus = Record<MissionId, boolean>;
 // ── Card status ───────────────────────────────────────────────────────────────
 
 function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean) {
-  if (bothActive)      return { label: "Juntos hoje",       color: "text-rose-500", dot: "bg-rose-400" };
-  if (shieldUsedToday) return { label: "Chama protegida",   color: "text-sky-500",  dot: "bg-sky-400"  };
-  if (myCheckedIn)     return { label: "A aguardar o par",  color: "text-[#aaa]",   dot: "bg-[#ccc]"   };
-  return               { label: "Aguardando presença",      color: "text-[#bbb]",   dot: "bg-[#ddd]"   };
+  if (bothActive)      return { label: "Juntos hoje",       color: "text-[#717171]", dot: "bg-rose-400" };
+  if (shieldUsedToday) return { label: "Chama protegida",   color: "text-[#aaa]",    dot: "bg-sky-300"  };
+  if (myCheckedIn)     return { label: "A aguardar o par",  color: "text-[#aaa]",    dot: "bg-[#ccc]"   };
+  return               { label: "Aguardando presença",      color: "text-[#bbb]",    dot: "bg-[#ddd]"   };
 }
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
@@ -244,20 +244,15 @@ export function LoveStreakCard() {
 
   // Visual system
   const cardBg    = getCardTemperature(currentStreak, bothActiveToday, perfectDay);
-  const dotColor  = bothActiveToday ? "#F87171" : "#FDA4AF";
-  const lineColor = bothActiveToday ? "rgba(248,113,113,0.45)" : "rgba(253,164,175,0.45)";
+  const dotColor  = bothActiveToday ? "#F87171" : "#e0e0e0";
+  const lineColor = bothActiveToday ? "rgba(248,113,113,0.18)" : "rgba(220,220,220,0.8)";
   const daysLeft  = getJourneyDaysLeft(currentStreak);
   const nextName  = getJourneyNext(currentStreak);
-  const borderColor = bothActiveToday
-    ? "rgba(255,107,143,0.22)"
-    : currentStreak >= 7 ? "rgba(255,107,143,0.12)" : "#f0f0f0";
+  const borderColor = "#f0f0f0";
 
   return (
     <div className="relative">
-      {/* ── Dual halo — outer atmospheric glow + inner warm core ──
-          Fade controlled by opacity transition (1.8s on parent).
-          Outer: wide atmospheric spread, 7s slow breath.
-          Inner: tighter warm core, 4.5s faster breath.              */}
+      {/* ── Halo — soft atmospheric glow, half intensity ── */}
       <div
         className="absolute -inset-4 pointer-events-none"
         style={{
@@ -269,7 +264,7 @@ export function LoveStreakCard() {
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at 50% 55%, rgba(255,107,143,0.27) 0%, rgba(77,124,254,0.10) 65%, transparent 100%)",
+            background: "radial-gradient(ellipse at 50% 55%, rgba(255,107,143,0.13) 0%, transparent 100%)",
             filter: "blur(52px)",
             borderRadius: "2.5rem",
             animation: "chama-breathe 7s ease-in-out infinite",
@@ -278,7 +273,7 @@ export function LoveStreakCard() {
         <div
           className="absolute inset-3"
           style={{
-            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,143,0.44) 0%, transparent 66%)",
+            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,143,0.20) 0%, transparent 66%)",
             filter: "blur(26px)",
             borderRadius: "2rem",
             animation: "chama-breathe-inner 4.5s ease-in-out infinite",
@@ -291,12 +286,7 @@ export function LoveStreakCard() {
         onClick={() => navigate("/lovestreak")}
         className={cn(
           "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98]",
-          "transition-[box-shadow,border-color] duration-[400ms] ease-in-out",
-          perfectDay
-            ? "animate-warm-glow-border shadow-[0_4px_32px_rgba(244,63,94,0.10)]"
-            : bothActiveToday
-              ? "animate-warm-glow-border"
-              : ""
+          "transition-[box-shadow,border-color] duration-[400ms] ease-in-out"
         )}
         style={{ background: cardBg, borderColor }}
       >
@@ -315,7 +305,7 @@ export function LoveStreakCard() {
           </div>
           <div className="flex items-center gap-1.5">
             {perfectDay && (
-              <span className="flex items-center gap-1 bg-rose-50 border border-rose-100 text-rose-400 text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300">
+              <span className="flex items-center gap-1 bg-[#fafafa] border border-[#ebebeb] text-[#999] text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300">
                 <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
                 Dia Completo
               </span>
@@ -343,12 +333,6 @@ export function LoveStreakCard() {
           {/* Number */}
           <div className="flex flex-col items-start gap-0.5">
             <div className="relative flex items-baseline gap-1.5">
-              {bothActiveToday && (
-                <div
-                  className="absolute -inset-5 rounded-2xl pointer-events-none"
-                  style={{ background: "radial-gradient(ellipse at center, rgba(251,113,133,0.22) 0%, transparent 68%)" }}
-                />
-              )}
               <span className={cn(
                 "font-extrabold tabular-nums tracking-tight relative transition-all duration-700",
                 getStreakNumberSize(currentStreak),
@@ -366,16 +350,6 @@ export function LoveStreakCard() {
           {/* Presence — Tu + Par */}
           <div className="flex flex-col items-end gap-2 pt-0.5">
             <div className="relative flex items-center gap-3">
-              {/* Shared glow — appears only when both are here */}
-              {bothActiveToday && (
-                <div
-                  className="absolute -inset-4 rounded-full pointer-events-none"
-                  style={{
-                    background: "radial-gradient(ellipse at center, rgba(251,113,133,0.40) 0%, transparent 65%)",
-                    filter: "blur(10px)",
-                  }}
-                />
-              )}
               <div className="relative flex items-center gap-1">
                 <Heart
                   className={cn("w-4 h-4 transition-all duration-500",
@@ -444,7 +418,7 @@ export function LoveStreakCard() {
                       height: isCurrent ? 14 : 7,
                       background: reached ? dotColor : "#f0f0f0",
                       boxShadow: isCurrent
-                        ? `0 0 ${bothActiveToday ? 22 : 13}px rgba(244,63,94,${bothActiveToday ? 0.80 : 0.58})`
+                        ? `0 0 ${bothActiveToday ? 12 : 8}px rgba(244,63,94,${bothActiveToday ? 0.30 : 0.20})`
                         : "none",
                     }}
                   />
@@ -453,8 +427,8 @@ export function LoveStreakCard() {
             })}
           </div>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[11px] font-bold tracking-wide"
-              style={{ color: currentStreak >= 1 ? dotColor : "#d4d4d4" }}>
+            <span className="text-[11px] font-semibold tracking-wide"
+              style={{ color: currentStreak >= 1 ? (bothActiveToday ? "#F87171" : "#aaa") : "#d4d4d4" }}>
               {getCurrentJourneyLevel(currentStreak)?.name ?? "Início"}
             </span>
             {nextName ? (
@@ -462,23 +436,19 @@ export function LoveStreakCard() {
                 {daysLeft} {daysLeft === 1 ? "dia" : "dias"} para {nextName}
               </span>
             ) : currentStreak >= 90 ? (
-              <span className="text-[9px] font-medium" style={{ color: "#FDA4AF" }}>
-                Chegaram à Eternidade ✦
+              <span className="text-[9px] font-medium text-[#aaa]">
+                Chegaram à Eternidade
               </span>
             ) : null}
           </div>
         </div>
 
         {/* ── Footer ── */}
-        <div className={cn(
-          "flex items-center justify-between pt-2.5 border-t transition-colors duration-300",
-          allMissionsDone ? "border-rose-100" : "border-[#f0f0f0]"
-        )}>
+        <div className="flex items-center justify-between pt-2.5 border-t border-[#f0f0f0]">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1">
               <RelIcon
-                className={cn("w-3 h-3 shrink-0", relState.color,
-                  allMissionsDone && "animate-flame-breathe")}
+                className={cn("w-3 h-3 shrink-0", relState.color)}
                 strokeWidth={1.5}
               />
               <span className={cn("text-[11px] font-semibold", relState.color)}>
@@ -510,7 +480,7 @@ export function LoveStreakCard() {
               ))}
             </div>
             {allMissionsDone && (
-              <span className="text-[9px] font-semibold text-rose-400 tracking-wide">
+              <span className="text-[9px] font-semibold text-[#aaa] tracking-wide">
                 Missão cumprida
               </span>
             )}
