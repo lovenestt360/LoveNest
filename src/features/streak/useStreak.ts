@@ -73,7 +73,12 @@ function buildState(
   raw: Record<string, any>,
   memberListCount: number // from get_couple_member_ids (for UI display)
 ): StreakState {
-  const current      = Number(raw.streak ?? 0);
+  // get_streak returns status='broken' when last_streak_date < yesterday and shields
+  // couldn't cover the gap. update_streak (after the DB migration) sets streak_count=0
+  // eagerly, but even before that migration runs, we enforce 0 here so the UI
+  // never shows a stale streak after a break.
+  const rawStatus    = String(raw.status ?? "active");
+  const current      = rawStatus === "broken" ? 0 : Number(raw.streak ?? 0);
   const lastDate     = (raw.last_date as string | null) ?? null;
   const activeToday  = Number(raw.active_today ?? 0);
   const myCheckedIn  = Boolean(raw.my_checked_in ?? false);
