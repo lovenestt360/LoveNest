@@ -125,13 +125,9 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
       const partner = (logRes.data as SpiritualLog[]).find(l => l.user_id !== user.id) ?? null;
       setMyLog(mine);
       setPartnerLog(partner);
-      // prayedToday e criedToday são checkboxes — safe para actualizar
-      if (mine) {
-        setPrayedToday(mine.prayed_today);
-        setCriedToday(mine.cried_today);
-        // gratitude e reflection NÃO são actualizados aqui
-        // (o utilizador pode estar a escrever nestes campos)
-      }
+      // Never override prayedToday / criedToday / gratitude / reflection here —
+      // these are active form fields. Background polls update only partner state.
+      // fetchAll (on mount + after saves) is the only source of truth for own fields.
     }
   }, [spaceId, user, todayKey]);
 
@@ -357,14 +353,26 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={prayedToday} onCheckedChange={(v) => togglePrayed(!!v)} />
-              Orei hoje
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={criedToday} onCheckedChange={(v) => { setCriedToday(!!v); setLogDirty(true); }} />
-              Chorei hoje
-            </label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="prayed-today"
+                checked={prayedToday}
+                onCheckedChange={(v) => togglePrayed(!!v)}
+              />
+              <label htmlFor="prayed-today" className="text-sm cursor-pointer select-none">
+                Orei hoje
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="cried-today"
+                checked={criedToday}
+                onCheckedChange={(v) => { setCriedToday(!!v); setLogDirty(true); }}
+              />
+              <label htmlFor="cried-today" className="text-sm cursor-pointer select-none">
+                Chorei hoje
+              </label>
+            </div>
           </div>
           <div>
             <Label htmlFor="gratitude">Gratidão do dia</Label>

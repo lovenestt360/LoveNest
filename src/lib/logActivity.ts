@@ -4,14 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 // Resets automatically when the date changes.
 const _missionFiredDate = new Map<string, string>(); // type → date string
 
-// Fire mission-complete with session-level dedup. Call this directly when you
-// know precisely that BOTH users completed the specific action (e.g., both prayed).
+// Fire mission-complete with session-level dedup. Uses both an in-memory Map
+// (fast) and sessionStorage (survives component remounts / error boundary resets).
+// Resets daily: a new day = new sessionStorage key = fires once again.
 export function fireMissionIfNotFired(type: string): void {
   const today = new Date().toDateString();
-  if (_missionFiredDate.get(type) !== today) {
-    _missionFiredDate.set(type, today);
-    window.dispatchEvent(new CustomEvent("mission-complete", { detail: { type } }));
-  }
+  const ssKey = `mission_fired_${type}_${today}`;
+  if (_missionFiredDate.get(type) === today || sessionStorage.getItem(ssKey)) return;
+  _missionFiredDate.set(type, today);
+  sessionStorage.setItem(ssKey, "1");
+  window.dispatchEvent(new CustomEvent("mission-complete", { detail: { type } }));
 }
 
 export async function logActivity(
