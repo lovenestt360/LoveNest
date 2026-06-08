@@ -229,9 +229,16 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     if (myLog) {
       await supabase.from("daily_spiritual_logs").update(payload).eq("id", myLog.id);
     } else {
-      await supabase.from("daily_spiritual_logs").insert(payload);
+      const { data } = await supabase.from("daily_spiritual_logs").insert(payload).select("id").maybeSingle();
+      if (data) setMyLog({ ...payload, id: data.id, created_at: new Date().toISOString() } as any);
     }
     setLogDirty(false);
+
+    // LoveStreak: registar atividade de oração se marcou "Orei hoje"
+    if (prayedToday && spaceId) {
+      logActivity(spaceId, "prayer", { skipMission: true });
+      if (partnerLog?.prayed_today) fireMissionIfNotFired("prayer");
+    }
 
     // Re-fetch para garantir estado atualizado (inclui partnerLog)
     fetchAll();
@@ -241,14 +248,14 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
       if (partnerLog?.prayed_today) {
         toast({ title: "Vocês cresceram juntos hoje ✨", description: "A vossa conexão espiritual é linda." });
       } else {
-        toast({ 
-          title: "✅ Diário guardado", 
-          description: "Incentiva o teu par a rezar contigo hoje 💛",
+        toast({
+          title: "Diário guardado",
+          description: "Incentiva o teu par a rezar contigo hoje",
           action: <ToastAction altText="Rezar juntos" onClick={handleJoinPrayer}>Rezar juntos</ToastAction>
         });
       }
     } else {
-      toast({ title: "✅ Diário guardado" });
+      toast({ title: "Diário guardado" });
     }
   };
 
@@ -264,29 +271,9 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     toast({ title: "✨ Convite enviado!", description: "O teu par foi notificado para rezarem juntos." });
   };
 
-  const togglePrayed = async (val: boolean) => {
+  const togglePrayed = (val: boolean) => {
     setPrayedToday(val);
-    if (!spaceId || !user) return;
-    const payload = {
-      couple_space_id: spaceId,
-      user_id: user.id,
-      day_key: todayKey,
-      prayed_today: val,
-      cried_today: criedToday,
-      gratitude_note: gratitude.trim() || null,
-      reflection_note: reflection.trim() || null,
-      updated_at: new Date().toISOString(),
-    };
-    if (myLog) {
-      await supabase.from("daily_spiritual_logs").update({ prayed_today: val, updated_at: payload.updated_at }).eq("id", myLog.id);
-    } else {
-      await supabase.from("daily_spiritual_logs").insert(payload);
-    }
-    // Registar atividade para streak; missão só dispara se parceiro já orou
-    if (val && spaceId) {
-      logActivity(spaceId, "prayer", { skipMission: true });
-      if (partnerLog?.prayed_today) fireMissionIfNotFired("prayer");
-    }
+    setLogDirty(true);
   };
 
   return (
