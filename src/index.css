@@ -167,7 +167,8 @@ input, textarea, [contenteditable="true"] {
   }
 
   .glass-card-hover {
-    transition: box-shadow 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    transition: box-shadow 220ms cubic-bezier(0.34,1.56,0.64,1),
+                transform   220ms cubic-bezier(0.34,1.56,0.64,1);
     cursor: pointer;
   }
   .glass-card-hover:hover {
@@ -175,7 +176,7 @@ input, textarea, [contenteditable="true"] {
     transform: translateY(-1px);
   }
   .glass-card-hover:active {
-    transform: scale(0.972) translateY(0);
+    transform: scale(0.985) translateY(0);
     box-shadow: 0 1px 2px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85);
   }
   .dark .glass-card-hover:hover {
@@ -223,9 +224,32 @@ input, textarea, [contenteditable="true"] {
     background-color: hsl(var(--background));
   }
 
-  /* No decorative blobs — pure white background like Airbnb */
-  .bg-mesh::before, .bg-mesh::after {
-    display: none;
+  /* Atmospheric glows — barely perceptible, emotionally present */
+  .bg-mesh::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: -15%;
+    right: -12%;
+    width: 55%;
+    height: 55%;
+    background: radial-gradient(circle, rgba(244,63,94,0.028) 0%, transparent 68%);
+    filter: blur(72px);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .bg-mesh::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: -15%;
+    left: -12%;
+    width: 55%;
+    height: 55%;
+    background: radial-gradient(circle, rgba(99,102,241,0.022) 0%, transparent 68%);
+    filter: blur(72px);
+    border-radius: 50%;
+    pointer-events: none;
   }
 
   @keyframes mesh-float {

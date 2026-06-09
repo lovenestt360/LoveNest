@@ -1,3 +1,5 @@
+import { CalendarDays } from "lucide-react";
+
 interface TimeTogetherCardProps {
   days: number;
   hours: number;
@@ -6,9 +8,20 @@ interface TimeTogetherCardProps {
   onSetDate?: () => void;
   hasDate: boolean;
   streak?: number;
+  startDate?: string | null;
 }
 
-export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, hasDate }: TimeTogetherCardProps) {
+const MONTHS = [
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
+];
+
+function formatStartDate(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  return `${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, hasDate, startDate }: TimeTogetherCardProps) {
   if (!hasDate) {
     return (
       <button
@@ -79,6 +92,17 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
           </div>
 
         </div>
+
+        {/* Date micro detail */}
+        {startDate && (
+          <div className="flex items-center justify-center gap-1 mt-1.5">
+            <CalendarDays className="w-2.5 h-2.5 text-muted-foreground/40" strokeWidth={1.5} />
+            <span className="text-[9px] text-muted-foreground/50 font-medium">
+              Desde {formatStartDate(startDate)}
+            </span>
+          </div>
+        )}
+
       </div>
     </div>
   );

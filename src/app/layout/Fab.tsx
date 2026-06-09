@@ -1,82 +1,82 @@
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  CheckSquare,
-  Image,
-  CalendarDays,
-  BookOpen,
-  HeartHandshake,
-  Flame,
-} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Plus, Heart, Camera, BookHeart, MessageCircle } from "lucide-react";
 
-const quickActions = [
-  { label: "Nova tarefa", icon: CheckSquare, path: "/tarefas?new=1" },
-  { label: "Nova memória", icon: Image, path: "/memorias?new=1" },
-  { label: "Novo evento", icon: CalendarDays, path: "/agenda?new=1" },
-  { label: "Nova oração", icon: BookOpen, path: "/oracao?new=1" },
-  { label: "Registar jejum", icon: Flame, path: "/jejum?register=1" },
-  { label: "Nova reclamação", icon: HeartHandshake, path: "/conflitos?new=1" },
-];
+const ITEMS = [
+  { label: "Nova memória", Icon: Heart,         path: "/memorias?new=1",         color: "text-rose-400"   },
+  { label: "Foto",         Icon: Camera,        path: "/memorias?new=1",         color: "text-violet-400" },
+  { label: "Oração",       Icon: BookHeart,     path: "/jornada-espiritual",     color: "text-purple-400" },
+  { label: "Mensagem",     Icon: MessageCircle, path: "/chat",                   color: "text-sky-400"    },
+] as const;
 
 export function Fab() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const path = location.pathname;
+  const navigate  = useNavigate();
+  const [open, setOpen] = useState(false);
 
-  if (path !== "/") {
-    return null;
-  }
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    document.addEventListener("click", close, { passive: true });
+    return () => document.removeEventListener("click", close);
+  }, [open]);
 
-  const handleClick = () => {
-    setMenuOpen(true);
-  };
+  if (location.pathname !== "/") return null;
 
   return (
-    <>
-      <div className="fixed bottom-24 right-5 z-50">
-        <Button
-          type="button"
-          size="icon"
-          className="h-14 w-14 rounded-2xl shadow-xl bg-primary text-primary-foreground hover:scale-110 active:scale-90 transition-all duration-300 glow-primary"
-          aria-label="Adicionar"
-          onClick={handleClick}
-        >
-          <Plus className="h-7 w-7" />
-        </Button>
-      </div>
+    <div className="fixed bottom-24 right-5 z-50 flex flex-col items-end gap-3">
 
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border/50 pb-[max(env(safe-area-inset-bottom),1rem)]">
-          <SheetHeader>
-            <SheetTitle className="text-left text-lg font-bold">Criar</SheetTitle>
-          </SheetHeader>
-          <div className="grid grid-cols-3 gap-3 pt-4">
-            {quickActions.map(({ label, icon: Icon, path: to }) => (
-              <button
-                key={to}
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  navigate(to);
-                }}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-border/50 p-4 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-secondary active:scale-[0.97]"
-              >
-                <Icon className="h-6 w-6" />
-                <span className="leading-tight text-center">{label}</span>
-              </button>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+      {/* Action items — stagger upward */}
+      {ITEMS.map(({ label, Icon, path, color }, i) => (
+        <div
+          key={label}
+          className="flex items-center gap-2.5"
+          style={{
+            opacity:    open ? 1 : 0,
+            transform:  open ? "translateY(0) scale(1)" : "translateY(12px) scale(0.94)",
+            pointerEvents: open ? "auto" : "none",
+            transition: `opacity ${open ? 180 + i * 40 : 80}ms cubic-bezier(0.34,1.56,0.64,1),
+                         transform ${open ? 200 + i * 40 : 80}ms cubic-bezier(0.34,1.56,0.64,1)`,
+            transitionDelay: open ? `${i * 50}ms` : "0ms",
+          }}
+        >
+          <span className="text-[11px] font-semibold text-foreground/70 bg-card/95 backdrop-blur-sm border border-border rounded-full px-2.5 py-1 shadow-sm whitespace-nowrap">
+            {label}
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate(path); setOpen(false); }}
+            className={cn(
+              "h-11 w-11 rounded-full flex items-center justify-center",
+              "bg-card/95 backdrop-blur-sm border border-border",
+              "shadow-[0_4px_16px_rgba(0,0,0,0.10)]",
+              "active:scale-90 transition-transform duration-150",
+              color
+            )}
+          >
+            <Icon className="w-5 h-5" strokeWidth={1.5} />
+          </button>
+        </div>
+      ))}
+
+      {/* Main button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
+        aria-label={open ? "Fechar" : "Criar"}
+        className={cn(
+          "h-14 w-14 rounded-full flex items-center justify-center",
+          "bg-rose-500 text-white",
+          "shadow-[0_8px_32px_rgba(244,63,94,0.32),0_2px_8px_rgba(0,0,0,0.10)]",
+          "active:shadow-[0_4px_16px_rgba(244,63,94,0.22)]",
+          "transition-all duration-300"
+        )}
+        style={{
+          transform: open ? "rotate(45deg)" : "rotate(0deg)",
+          transitionTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)",
+        }}
+      >
+        <Plus className="w-6 h-6" strokeWidth={2} />
+      </button>
+    </div>
   );
 }

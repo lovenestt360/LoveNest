@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -391,38 +391,47 @@ const Index = () => {
     ? Math.min(100, Math.round((fasting.loggedDays / fasting.plan.total_days) * 100))
     : 0;
 
-  const { currentMessage, phraseColor } = (() => {
+  const phrasePool = useMemo(() => {
     const hour = new Date().getHours();
-
-    const color = "#F43F5E";
-
-    const morning = [
+    if (hour >= 6 && hour < 12) return [
       "A manhã é mais suave quando há amor perto",
       "Um novo dia, uma nova oportunidade de estar presente",
       "Bom dia — como começa o coração hoje?",
     ];
-    const afternoon = [
+    if (hour >= 12 && hour < 19) return [
       "Pequenos gestos constroem grandes amores",
-      "Estar presente é o maior gesto de amor",
       "O amor que cuidam cresce sem que percebam",
+      "O silêncio partilhado também é intimidade.",
       "Cada dia juntos é um presente que não se repete",
     ];
-    const evening = [
+    if (hour >= 19 && hour < 23) return [
       "O fim do dia é o melhor momento para se encontrarem",
-      "O silêncio partilhado também é intimidade",
       "Não deixem o dia acabar sem um gesto de amor",
+      "Pequenos gestos tornam-se história.",
     ];
-    const night = [
+    return [
       "O amor que cuidam cresce enquanto dormem",
       "O vosso ninho é o vosso lugar seguro",
       "Amanhã trazem a vossa presença um ao outro",
     ];
-    const pool = hour >= 6 && hour < 12 ? morning
-               : hour >= 12 && hour < 19 ? afternoon
-               : hour >= 19 && hour < 23 ? evening : night;
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-    return { currentMessage: pool[dayOfYear % pool.length], phraseColor: color };
-  })();
+  }, []);
+
+  const [phraseIdx, setPhraseIdx]       = useState(0);
+  const [phraseVisible, setPhraseVisible] = useState(true);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPhraseVisible(false);
+      setTimeout(() => {
+        setPhraseIdx(i => (i + 1) % phrasePool.length);
+        setPhraseVisible(true);
+      }, 550);
+    }, 8000);
+    return () => clearInterval(id);
+  }, [phrasePool]);
+
+  const currentMessage = phrasePool[phraseIdx];
+  const phraseColor    = "#F43F5E";
 
   return (
     <>
@@ -436,7 +445,11 @@ const Index = () => {
           <div className="w-6 h-px rounded-full" style={{ background: phraseColor, opacity: 0.45 }} />
           <p
             className="text-[13px] font-medium tracking-wide leading-relaxed text-center px-6"
-            style={{ color: phraseColor }}
+            style={{
+              color:      phraseColor,
+              opacity:    phraseVisible ? 1 : 0,
+              transition: "opacity 550ms ease-in-out",
+            }}
           >
             {currentMessage}
           </p>
@@ -448,7 +461,8 @@ const Index = () => {
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "0ms" }}>
           <TimeTogetherCard
             days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
-            streak={0} hasDate={!!time.startDate} onSetDate={() => navigate("/configuracoes")}
+            streak={0} hasDate={!!time.startDate} startDate={time.startDate}
+            onSetDate={() => navigate("/configuracoes")}
           />
         </div>
 

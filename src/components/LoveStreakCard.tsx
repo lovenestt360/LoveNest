@@ -285,10 +285,16 @@ export function LoveStreakCard() {
       <button
         onClick={() => navigate("/lovestreak")}
         className={cn(
-          "glass-card glass-card-hover w-full p-5 text-left active:scale-[0.98]",
-          "transition-[box-shadow,border-color] duration-[400ms] ease-in-out"
+          "glass-card glass-card-hover w-full p-5 text-left",
+          "transition-[box-shadow,border-color,transform] duration-[400ms] ease-in-out"
         )}
-        style={{ background: cardBg, borderColor }}
+        style={{
+          background:  cardBg,
+          borderColor,
+          boxShadow: bothActiveToday
+            ? "0 2px 4px rgba(0,0,0,0.04),0 12px 32px -4px rgba(0,0,0,0.09),inset 0 1px 0 rgba(255,255,255,0.95),inset 0 -1px 20px rgba(255,107,143,0.05)"
+            : "0 2px 4px rgba(0,0,0,0.04),0 8px 24px -2px rgba(0,0,0,0.07),inset 0 1px 0 rgba(255,255,255,0.90)",
+        }}
       >
 
         {/* ── Header ── */}
