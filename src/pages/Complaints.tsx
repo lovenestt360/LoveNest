@@ -124,8 +124,8 @@ export default function Complaints() {
               className={cn(
                 "flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all border",
                 active
-                  ? "bg-foreground text-white border-foreground"
-                  : "bg-white text-[#717171] border-[#e5e5e5] hover:bg-[#f5f5f5]"
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-card text-muted-foreground border-border hover:bg-muted/50"
               )}
             >
               <span className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-white" : dot)} />
@@ -147,14 +147,14 @@ export default function Complaints() {
           <p className="text-sm text-[#717171]">Nenhum conflito {STATUS_MAP[filter]?.label.toLowerCase()}</p>
         </div>
       ) : (
-        <div className="glass-card divide-y divide-[#f0f0f0]">
+        <div className="glass-card divide-y divide-border">
           {filtered.map((c) => {
             const s = STATUS_MAP[c.status];
             return (
               <button
                 key={c.id}
                 onClick={() => setSelected(c)}
-                className="w-full text-left px-4 py-3.5 flex items-start gap-3 hover:bg-[#fafafa] transition-colors first:rounded-t-[1.25rem] last:rounded-b-[1.25rem]"
+                className="w-full text-left px-4 py-3.5 flex items-start gap-3 hover:bg-muted/40 transition-colors first:rounded-t-[1.25rem] last:rounded-b-[1.25rem]"
               >
                 <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", s?.dot)} />
                 <div className="flex-1 min-w-0 space-y-0.5">
@@ -190,7 +190,7 @@ export default function Complaints() {
 
       {/* Reconciliation Overlay */}
       {showResolvedOverlay && (
-        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm animate-in fade-in duration-500">
           <div className="text-center space-y-5">
             <div className="bg-rose-50 p-8 rounded-full mx-auto w-fit">
               <Heart className="w-20 h-20 text-rose-400 fill-rose-400 animate-pulse" />
@@ -260,7 +260,7 @@ function CreateComplaintForm({
     setSaving(false);
   };
 
-  const inputClass = "h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400";
+  const inputClass = "h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400";
 
   return (
     <div className="space-y-4">
@@ -277,7 +277,7 @@ function CreateComplaintForm({
           onChange={e => setDescription(e.target.value)}
           rows={3}
           placeholder="O que aconteceu…"
-          className="rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
+          className="rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
         />
       </div>
 
@@ -304,7 +304,7 @@ function CreateComplaintForm({
                 "h-10 w-10 rounded-full text-sm font-semibold border transition-all",
                 severity === s
                   ? "bg-rose-500 text-white border-rose-500"
-                  : "bg-white text-foreground border-[#e5e5e5] hover:border-rose-300"
+                  : "bg-card text-foreground border-border hover:border-rose-300"
               )}
             >
               {s}
@@ -323,14 +323,14 @@ function CreateComplaintForm({
           onChange={e => setClearRequest(e.target.value)}
           rows={2}
           placeholder="Pedido claro"
-          className="rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
+          className="rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
         />
       </div>
 
       <div className="flex gap-2 pt-1">
         <button
           onClick={onCancel}
-          className="flex-1 h-12 rounded-2xl border border-[#e5e5e5] text-sm font-semibold text-[#717171] hover:bg-[#f5f5f5] transition-all"
+          className="flex-1 h-12 rounded-2xl border border-border text-sm font-semibold text-muted-foreground hover:bg-muted/50 transition-all"
         >
           Cancelar
         </button>
@@ -561,7 +561,7 @@ function ComplaintDetail({
           onChange={e => setSolutionNote(e.target.value)}
           rows={2}
           placeholder="Como vamos resolver isto…"
-          className="rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
+          className="rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 resize-none"
         />
         <button
           onClick={saveSolution}

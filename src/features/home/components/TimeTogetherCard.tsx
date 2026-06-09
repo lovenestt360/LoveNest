@@ -42,11 +42,11 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             </span>
           </div>
 
-          <span className="text-xs font-light text-[#ddd] mb-2.5">:</span>
+          <span className="text-xs font-light text-muted-foreground/40 mb-2.5">:</span>
 
           {/* Hours */}
           <div className="flex flex-col items-center">
-            <span className="text-base font-bold tabular-nums tracking-tight text-[#171717]">
+            <span className="text-base font-bold tabular-nums tracking-tight text-foreground">
               {String(hours).padStart(2, "0")}
             </span>
             <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">
@@ -54,11 +54,11 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             </span>
           </div>
 
-          <span className="text-xs font-light text-[#ddd] mb-2.5">:</span>
+          <span className="text-xs font-light text-muted-foreground/40 mb-2.5">:</span>
 
           {/* Minutes */}
           <div className="flex flex-col items-center">
-            <span className="text-base font-bold tabular-nums tracking-tight text-[#171717]">
+            <span className="text-base font-bold tabular-nums tracking-tight text-foreground">
               {String(minutes).padStart(2, "0")}
             </span>
             <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">
@@ -66,11 +66,11 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             </span>
           </div>
 
-          <span className="text-xs font-light text-[#ddd] mb-2.5">:</span>
+          <span className="text-xs font-light text-muted-foreground/40 mb-2.5">:</span>
 
           {/* Seconds */}
           <div className="flex flex-col items-center">
-            <span className="text-base font-bold tabular-nums tracking-tight text-[#333]">
+            <span className="text-base font-bold tabular-nums tracking-tight text-foreground/70">
               {String(seconds).padStart(2, "0")}
             </span>
             <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">

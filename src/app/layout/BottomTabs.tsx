@@ -90,7 +90,7 @@ export function BottomTabs() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e5e5e5] pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border pb-[env(safe-area-inset-bottom)]"
       aria-label="Navegação principal"
     >
       <div className="w-full">
@@ -125,11 +125,11 @@ export function BottomTabs() {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="rounded-t-[2rem] border-t border-[#e5e5e5] bg-white pb-[max(env(safe-area-inset-bottom),1.5rem)]"
+              className="rounded-t-[2rem] border-t border-border bg-card pb-[max(env(safe-area-inset-bottom),1.5rem)]"
             >
               {/* Drag handle */}
               <div className="flex justify-center pt-2 pb-5">
-                <div className="w-10 h-1 rounded-full bg-[#e5e5e5]" />
+                <div className="w-10 h-1 rounded-full bg-border" />
               </div>
 
               {/* Header */}
@@ -159,8 +159,8 @@ export function BottomTabs() {
                         <div className={cn(
                           "w-14 h-14 rounded-2xl flex items-center justify-center relative border transition-colors",
                           active
-                            ? "bg-rose-50 border-rose-200 text-rose-500"
-                            : "bg-white border-[#e5e5e5] text-rose-400 hover:bg-rose-50/50"
+                            ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40 text-rose-500"
+                            : "bg-card border-border text-rose-400 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
                         )}>
                           <Icon className="h-6 w-6" strokeWidth={1.5} />
                           {badge > 0 && <Badge count={badge} />}

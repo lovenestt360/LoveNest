@@ -91,8 +91,8 @@ function getCardTemperature(streak: number, bothActive: boolean, perfectDay: boo
   else if (streak >= 1)  o = 0.015;
   if (bothActive)  o = Math.min(o + 0.04, 0.10);
   if (perfectDay)  o = Math.min(o + 0.02, 0.11);
-  if (o === 0) return "white";
-  return `radial-gradient(ellipse at 50% 105%, rgba(255,107,143,${o.toFixed(3)}) 0%, transparent 62%), white`;
+  if (o === 0) return "hsl(var(--card))";
+  return `radial-gradient(ellipse at 50% 105%, rgba(255,107,143,${o.toFixed(3)}) 0%, transparent 62%), hsl(var(--card))`;
 }
 
 function getStreakNumberSize(streak: number): string {

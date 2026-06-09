@@ -310,7 +310,7 @@ const AppIconButton = ({
   return (
     <button
       onClick={() => navigate(to)}
-      className="relative flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-[#f0f0f0] shadow-sm active:scale-95 transition-all"
+      className="relative flex flex-col items-center gap-2 p-3 rounded-2xl bg-card border border-border shadow-sm active:scale-95 transition-all"
     >
       <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center", color)}>
         {icon}
@@ -648,10 +648,10 @@ const Index = () => {
 
         <button
           onClick={handleShareReferral}
-          className="w-full bg-white border border-[#f0f0f0] rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
+          className="w-full bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
+            <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-500">
               <Share2 className="w-5 h-5" />
             </div>
             <div className="text-left">

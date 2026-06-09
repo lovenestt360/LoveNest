@@ -119,12 +119,12 @@ export default function Plano() {
           <span className="text-sm text-[#717171] capitalize">
             {format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}
           </span>
-          <span className="px-2 py-0.5 rounded-full bg-[#f5f5f5] text-[10px] font-semibold text-[#717171]">Hoje</span>
+          <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">Hoje</span>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+      <div className="flex bg-muted rounded-2xl p-1 gap-1">
         {TABS.map(t => {
           const isActive = activeTab === t.id;
           return (
@@ -133,7 +133,7 @@ export default function Plano() {
               onClick={() => setSearchParams({ tab: t.id })}
               className={cn(
                 "flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                isActive ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
+                isActive ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
               )}
             >
               {t.label}
@@ -146,7 +146,7 @@ export default function Plano() {
       <main className="space-y-6">
         {activeTab === "rotina" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
-            <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+            <div className="flex bg-muted rounded-2xl p-1 gap-1">
               {([
                 { id: "mine",    label: "Minha",         icon: User },
                 { id: "partner", label: partnerFirstName, icon: Users },
@@ -158,7 +158,7 @@ export default function Plano() {
                     onClick={() => setRoutineSubTab(sub.id)}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                      routineSubTab === sub.id ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
+                      routineSubTab === sub.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
