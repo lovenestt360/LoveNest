@@ -56,18 +56,18 @@ function getCoupleStatus(
   hoursLeft: number, isZero: boolean
 ): StatusConfig {
   if (isPerfectDay)
-    return { label: "Ligados ✨",             bg: "bg-rose-50",   text: "text-rose-600",  dot: "bg-rose-500"  };
+    return { label: "Ligados ✨",             bg: "bg-rose-50 dark:bg-rose-950/30",   text: "text-rose-600 dark:text-rose-300",  dot: "bg-rose-500"  };
   if (bothActive)
-    return { label: "Chama acesa ❤️",          bg: "bg-rose-50",   text: "text-rose-500",  dot: "bg-rose-400"  };
+    return { label: "Chama acesa ❤️",          bg: "bg-rose-50 dark:bg-rose-950/30",   text: "text-rose-500 dark:text-rose-300",  dot: "bg-rose-400"  };
   if (shieldUsedToday)
-    return { label: "Chama protegida 🛡️",     bg: "bg-blue-50",   text: "text-blue-600",  dot: "bg-blue-400"  };
+    return { label: "Chama protegida 🛡️",     bg: "bg-blue-50 dark:bg-blue-950/30",   text: "text-blue-600 dark:text-blue-300",  dot: "bg-blue-400"  };
   if (myCheckedIn)
-    return { label: "A aguardar o par 💛",     bg: "bg-amber-50",  text: "text-amber-600", dot: "bg-amber-400" };
+    return { label: "A aguardar o par 💛",     bg: "bg-amber-50 dark:bg-amber-950/30",  text: "text-amber-600 dark:text-amber-300", dot: "bg-amber-400" };
   if (!isZero && hoursLeft <= 3)
-    return { label: "Última chance 🕯️",        bg: "bg-red-50",    text: "text-red-600",   dot: "bg-red-500"   };
+    return { label: "Última chance 🕯️",        bg: "bg-red-50 dark:bg-red-950/30",    text: "text-red-600 dark:text-red-300",   dot: "bg-red-500"   };
   if (isZero)
-    return { label: "Comecem hoje 🌱",          bg: "bg-slate-50",  text: "text-slate-600", dot: "bg-slate-400" };
-  return   { label: "Aguardando conexão",      bg: "bg-slate-50",  text: "text-slate-500", dot: "bg-slate-300" };
+    return { label: "Comecem hoje 🌱",          bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
+  return   { label: "Aguardando conexão",      bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-500 dark:text-slate-400", dot: "bg-slate-300" };
 }
 
 // ─────────────────────────────────────────────
@@ -119,9 +119,9 @@ function FlameAlertBar({
   return (
     <div className={cn(
       "glass-card p-4 space-y-2.5",
-      urgency === "critical" && !shieldUsedToday && "border-red-200 animate-flame-pulse-alert",
-      urgency === "warning"  && !shieldUsedToday && "border-orange-200",
-      urgency === "notice"   && !shieldUsedToday && "border-amber-100",
+      urgency === "critical" && !shieldUsedToday && "border-red-200 dark:border-red-800/50 animate-flame-pulse-alert",
+      urgency === "warning"  && !shieldUsedToday && "border-orange-200 dark:border-orange-800/50",
+      urgency === "notice"   && !shieldUsedToday && "border-amber-100 dark:border-amber-900/40",
     )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -135,7 +135,7 @@ function FlameAlertBar({
             )}
             strokeWidth={1.5}
           />
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#717171]">
+          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
             Chama de hoje
           </span>
         </div>
@@ -144,14 +144,14 @@ function FlameAlertBar({
           shieldUsedToday ? "text-blue-500" :
           urgency === "critical" ? "text-red-500" :
           urgency === "warning"  ? "text-orange-500" :
-          "text-[#aaa]"
+          "text-muted-foreground/65"
         )}>
           {shieldUsedToday ? "Protegida" : `${hoursLeft}h restantes`}
         </span>
       </div>
 
       {/* Emotional progress bar */}
-      <div className="h-1.5 bg-[#f0f0f0] rounded-full overflow-hidden">
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full animate-flame-bar-fill", barColor)}
           style={{ width: `${shieldUsedToday ? 100 : Math.max(fillPct, 4)}%` }}
@@ -160,7 +160,7 @@ function FlameAlertBar({
 
       <p className={cn(
         "text-[11px] leading-snug",
-        urgency === "critical" && !shieldUsedToday ? "text-red-600 font-medium" : "text-[#717171]"
+        urgency === "critical" && !shieldUsedToday ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground"
       )}>
         {message}
       </p>
@@ -209,7 +209,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 function TabBar({ activeTab, onChange }: { activeTab: Tab; onChange: (t: Tab) => void }) {
   return (
-    <div className="flex bg-white/50 backdrop-blur-sm border border-white/70 rounded-2xl p-1 gap-1 shadow-sm">
+    <div className="flex bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-white/70 dark:border-white/10 rounded-2xl p-1 gap-1 shadow-sm">
       {TABS.map(tab => (
         <button
           key={tab.id}
@@ -217,7 +217,7 @@ function TabBar({ activeTab, onChange }: { activeTab: Tab; onChange: (t: Tab) =>
           className={cn(
             "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200",
             activeTab === tab.id
-              ? "bg-white text-foreground/80 shadow-sm"
+              ? "bg-white dark:bg-white/10 text-foreground/80 shadow-sm"
               : "text-foreground/30 hover:text-foreground/60 active:scale-95"
           )}
         >
@@ -511,14 +511,14 @@ export default function LoveStreak() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-background pb-32">
 
       {/* ── HEADER ── */}
-      <div className="sticky top-0 z-20 bg-white border-b border-[#e5e5e5] px-4 pt-3 pb-0">
+      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 pt-3 pb-0">
         <div className="flex items-center gap-3 mb-3">
           <button
             onClick={() => navigate(-1)}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] active:scale-95 transition-all"
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted active:scale-95 transition-all"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
           </button>
@@ -546,11 +546,11 @@ export default function LoveStreak() {
               <Flame
                 className={cn(
                   "w-4 h-4 transition-colors",
-                  bothActive ? "text-rose-500 animate-flame-breathe" : "text-[#717171]"
+                  bothActive ? "text-rose-500 animate-flame-breathe" : "text-muted-foreground"
                 )}
                 strokeWidth={1.5}
               />
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {isZero ? "O amor começa aqui" : "A vossa chama"}
               </p>
             </div>
@@ -570,10 +570,10 @@ export default function LoveStreak() {
               >
                 {currentStreak}
               </span>
-              <span className="text-3xl font-light text-[#c4c4c4]">d</span>
+              <span className="text-3xl font-light text-muted-foreground/50">d</span>
             </div>
 
-            <p className="text-sm text-[#717171] mt-3 mb-4">
+            <p className="text-sm text-muted-foreground mt-3 mb-4">
               {isZero ? "Cada gesto conta — comecem hoje 💛" : `${currentStreak} dias a cuidar um do outro`}
             </p>
 
@@ -601,7 +601,7 @@ export default function LoveStreak() {
                     : isZero ? "Façam o primeiro gesto hoje 🌱"
                     : "A chama ainda espera pelo vosso momento"}
                 </h2>
-                <p className="text-sm text-[#717171] mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {totalMembers > 0
                     ? `${activeCount} de ${totalMembers} presentes hoje`
                     : "A preparar..."}
@@ -614,17 +614,17 @@ export default function LoveStreak() {
               </div>
               <Heart
                 className={cn("w-5 h-5 shrink-0 transition-all duration-500",
-                  bothActive ? "fill-rose-500 text-rose-500" : "text-[#e5e5e5]"
+                  bothActive ? "fill-rose-500 text-rose-500" : "text-muted-foreground/30"
                 )}
                 strokeWidth={1.5}
               />
             </div>
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] font-medium text-[#717171]">
+              <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
                 <span>Jornada deste mês</span>
                 <span>{progress}%</span>
               </div>
-              <Progress value={progress} className="h-1.5 bg-[#f5f5f5]" />
+              <Progress value={progress} className="h-1.5 bg-muted" />
             </div>
           </div>
 
@@ -635,15 +635,15 @@ export default function LoveStreak() {
               { label: "Presença", value: totalMembers > 0 ? Math.round((activeCount / totalMembers) * 100) : 0, unit: "% hoje" },
             ].map(s => (
               <div key={s.label} className="glass-card p-4 text-center">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">{s.label}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{s.label}</p>
                 <p className="text-3xl font-bold text-foreground tabular-nums">{s.value}</p>
-                <p className="text-[11px] text-[#717171] mt-0.5">{s.unit}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{s.unit}</p>
               </div>
             ))}
           </div>
 
           {/* Ranking */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Casais mais dedicados — Chama</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">Casais mais dedicados — Chama</p>
           <RankingCard compact={false} initialRankType="streak" hideToggle myCoupleId={spaceId ?? undefined} refreshTrigger={refreshKey} />
         </div>
       )}
@@ -656,7 +656,7 @@ export default function LoveStreak() {
 
           {/* Hero pontos */}
           <section className="text-center py-8">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">Amor acumulado ✨</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Amor acumulado ✨</p>
             {loadingPoints ? (
               <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
             ) : (
@@ -669,7 +669,7 @@ export default function LoveStreak() {
                 >
                   {pointsDisplay.toLocaleString("pt-PT")}
                 </span>
-                <span className="text-2xl font-light text-[#c4c4c4]">pts</span>
+                <span className="text-2xl font-light text-muted-foreground/50">pts</span>
               </div>
             )}
           </section>
@@ -677,21 +677,21 @@ export default function LoveStreak() {
           {/* Stats pontos */}
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Hoje ganhámos</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Hoje ganhámos</p>
               <p className="text-3xl font-bold tabular-nums text-rose-500">+{pointsToday}</p>
-              <p className="text-[11px] text-[#717171] mt-0.5">pontos de amor</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">pontos de amor</p>
             </div>
             <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#717171] mb-1">Por dia juntos</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Por dia juntos</p>
               <p className="text-3xl font-bold tabular-nums text-foreground">10</p>
-              <p className="text-[11px] text-[#717171] mt-0.5">quando ambos presentes</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">quando ambos presentes</p>
             </div>
           </div>
 
           {/* Info */}
           <div className="glass-card p-4 flex items-start gap-3">
             <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
-            <p className="text-sm text-[#717171] leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️
             </p>
           </div>
@@ -713,7 +713,7 @@ export default function LoveStreak() {
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-[15px] font-black text-foreground leading-none">LoveShield</h3>
                   {shieldsPurchased > 0 && (
-                     <span className="text-[9px] font-black bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                     <span className="text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-300 px-2 py-0.5 rounded-full uppercase tracking-widest">
                        EXTRA 💎
                      </span>
                   )}
@@ -752,7 +752,7 @@ export default function LoveStreak() {
                     Já compraram 1 escudo este mês
                   </span>
                 </div>
-                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest px-2 py-1 bg-black/5 rounded-lg border border-border/50">
+                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest px-2 py-1 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
                   Renova em {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString("pt-PT", { day: "numeric", month: "short" })}
                 </span>
               </div>
@@ -807,7 +807,7 @@ export default function LoveStreak() {
                     : missionsDone === MISSION_DEFS.length ? "Hoje foram extraordinários 🔥"
                     : "Continuem — a chama agradece 💛"}
                 </h2>
-                <p className="text-sm text-[#717171] mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {missionsDone === 0
                     ? "Nenhum gesto ainda hoje"
                     : `${missionsDone} de ${MISSION_DEFS.length} gestos dados · +${missionsPts} pts`}
@@ -817,22 +817,22 @@ export default function LoveStreak() {
             </div>
             <Progress
               value={MISSION_DEFS.length > 0 ? (missionsDone / MISSION_DEFS.length) * 100 : 0}
-              className="h-1.5 bg-[#f5f5f5]"
+              className="h-1.5 bg-muted"
             />
-            <p className="text-[11px] text-[#717171] mt-3">
+            <p className="text-[11px] text-muted-foreground mt-3">
               O amor conta quando ambos participam
             </p>
           </div>
 
           {/* Missions list */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">Os vossos gestos de hoje</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">Os vossos gestos de hoje</p>
 
           {loadingMissions ? (
             <div className="flex justify-center py-8">
               <Loader2 className="w-5 h-5 text-rose-400 animate-spin" />
             </div>
           ) : (
-            <div className="glass-card divide-y divide-[#f5f5f5] overflow-hidden">
+            <div className="glass-card divide-y divide-border overflow-hidden">
               {missions.map(m => (
                 <div
                   key={m.id}
@@ -856,8 +856,8 @@ export default function LoveStreak() {
                   <div className={cn(
                     "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500",
                     m.completed
-                      ? "bg-rose-100 text-rose-500 shadow-sm shadow-rose-100"
-                      : "bg-[#f5f5f5] text-[#717171]"
+                      ? "bg-rose-100 dark:bg-rose-950/40 text-rose-500 shadow-sm shadow-rose-100 dark:shadow-none"
+                      : "bg-muted text-muted-foreground"
                   )}>
                     {MISSION_ICONS[m.emoji] ?? <Target className="w-4 h-4" strokeWidth={1.5} />}
                   </div>
@@ -868,7 +868,7 @@ export default function LoveStreak() {
                     )}>
                       {m.title}
                     </p>
-                    <p className="text-[11px] text-[#717171] truncate">{m.description}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{m.description}</p>
                     {!m.completed && m.completedCount > 0 && (
                       <p className="text-[11px] text-amber-500 mt-0.5">
                         {m.completedCount} de {totalMembers} já deu este gesto ❤️
@@ -878,11 +878,11 @@ export default function LoveStreak() {
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <span className={cn(
                       "text-[11px] font-medium transition-colors",
-                      m.completed ? "text-rose-400" : "text-[#c4c4c4]"
+                      m.completed ? "text-rose-400" : "text-muted-foreground/50"
                     )}>+{m.points}</span>
                     {m.completed
                       ? <CheckCircle2 className="w-5 h-5 text-rose-500 animate-celebration-in" strokeWidth={1.5} />
-                      : <Circle className="w-5 h-5 text-[#e5e5e5]" strokeWidth={1.5} />
+                      : <Circle className="w-5 h-5 text-muted-foreground/30" strokeWidth={1.5} />
                     }
                   </div>
                 </div>
@@ -893,7 +893,7 @@ export default function LoveStreak() {
           {/* Dica */}
           <div className="glass-card p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" strokeWidth={1.5} />
-            <p className="text-sm text-[#717171] leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Pequenos gestos diários são o segredo de um amor que dura para sempre 💛
             </p>
           </div>
@@ -902,7 +902,7 @@ export default function LoveStreak() {
 
       {/* ── CTA fixo ── */}
       {!bothActive && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e5e5] px-4 py-4 z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-4 z-40">
           <div className="max-w-md mx-auto">
             {!myCheckedIn ? (
               <button
@@ -929,7 +929,7 @@ export default function LoveStreak() {
                 )}
               </button>
             ) : (
-              <div className="w-full py-3.5 rounded-2xl bg-rose-50 text-rose-400 font-medium text-sm text-center border border-rose-100 flex items-center justify-center gap-2">
+              <div className="w-full py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-rose-400 font-medium text-sm text-center border border-rose-100 dark:border-rose-900/40 flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4" strokeWidth={1.5} />
                 O teu gesto foi guardado · A esperar pelo teu par ❤️
               </div>

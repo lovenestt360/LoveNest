@@ -186,8 +186,8 @@ export default function Challenges() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <header className="px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm z-10 border-b border-[#f0f0f0] flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-[#717171]">
+            <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b border-border flex items-center gap-3">
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-muted-foreground">
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
@@ -199,10 +199,10 @@ export default function Challenges() {
 
             <main className="p-4 space-y-4 max-w-md mx-auto">
                 {/* Stats */}
-                <div className="bg-white border border-[#f0f0f0] rounded-2xl p-5 text-center shadow-sm">
+                <div className="bg-card border border-border rounded-2xl p-5 text-center shadow-sm">
                     <Trophy className="w-10 h-10 text-rose-500 mx-auto mb-2" />
                     <h2 className="text-3xl font-bold text-foreground">{completedCount}</h2>
-                    <p className="text-[12px] text-[#717171] mt-0.5">Desafios concluídos</p>
+                    <p className="text-[12px] text-muted-foreground mt-0.5">Desafios concluídos</p>
                 </div>
 
                 {/* Action Buttons */}
@@ -221,15 +221,15 @@ export default function Challenges() {
 
                 {/* Manual Add Flow */}
                 {isAdding && (
-                    <form onSubmit={handleAddChallenge} className="bg-white border border-[#f0f0f0] rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
-                        <div className="p-4 border-b border-[#f0f0f0]">
+                    <form onSubmit={handleAddChallenge} className="bg-card border border-border rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
+                        <div className="p-4 border-b border-border">
                             <h3 className="font-semibold text-[15px]">Novo Desafio</h3>
                         </div>
                         <div className="p-4 space-y-3">
-                            <Input placeholder="Título (ex: Cozinhar juntos)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} autoFocus className="h-11 rounded-xl bg-[#fafafa] border-[#f0f0f0] text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400" />
-                            <Textarea placeholder="Descrição (opcional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="rounded-xl bg-[#fafafa] border-[#f0f0f0] resize-none text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400" rows={2} />
+                            <Input placeholder="Título (ex: Cozinhar juntos)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} autoFocus className="h-11 rounded-xl bg-muted border-border text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400" />
+                            <Textarea placeholder="Descrição (opcional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="rounded-xl bg-muted border-border resize-none text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400" rows={2} />
                             <div className="flex gap-2 pt-1">
-                                <button type="button" className="flex-1 h-11 rounded-xl border border-[#e5e5e5] text-sm font-medium text-[#717171] active:scale-[0.98] transition-all" onClick={() => setIsAdding(false)}>Cancelar</button>
+                                <button type="button" className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground active:scale-[0.98] transition-all" onClick={() => setIsAdding(false)}>Cancelar</button>
                                 <button type="submit" disabled={!newTitle.trim()} className="flex-1 h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all">Criar Desafio</button>
                             </div>
                         </div>
@@ -238,13 +238,13 @@ export default function Challenges() {
 
                 {/* AI Generator Panel */}
                 {showGenerator && (
-                    <div className="bg-white border border-[#f0f0f0] rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
-                        <div className="p-4 border-b border-[#f0f0f0] flex items-center gap-2">
+                    <div className="bg-card border border-border rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
+                        <div className="p-4 border-b border-border flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-rose-500" />
                             <h3 className="font-semibold text-[15px]">Gerador de Desafios IA</h3>
                         </div>
                         <div className="p-4 space-y-4">
-                            <p className="text-[13px] text-[#717171]">Escolhe uma categoria e a IA sugere 5 desafios únicos para vocês!</p>
+                            <p className="text-[13px] text-muted-foreground">Escolhe uma categoria e a IA sugere 5 desafios únicos para vocês!</p>
 
                             {/* Category Selector */}
                             <div className="flex flex-wrap gap-2">
@@ -254,7 +254,7 @@ export default function Challenges() {
                                         onClick={() => setSelectedCategory(cat.id)}
                                         className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selectedCategory === cat.id
                                                 ? 'bg-rose-500 text-white border-rose-500'
-                                                : 'bg-white border-[#e5e5e5] text-[#717171] active:scale-95'
+                                                : 'bg-card border-border text-muted-foreground active:scale-95'
                                             }`}
                                     >
                                         {cat.label}
@@ -278,16 +278,16 @@ export default function Challenges() {
                             {aiSuggestions.length > 0 && (
                                 <div className="space-y-2 pt-1">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[12px] font-semibold text-[#717171]">Sugestões:</p>
+                                        <p className="text-[12px] font-semibold text-muted-foreground">Sugestões:</p>
                                         <button className="text-[12px] font-semibold text-rose-500 active:opacity-70" onClick={handleAddAllAiChallenges}>
                                             Adicionar todos
                                         </button>
                                     </div>
                                     {aiSuggestions.map((s, i) => (
-                                        <div key={i} className="bg-[#fafafa] border border-[#f0f0f0] rounded-xl p-3 flex justify-between items-start gap-3">
+                                        <div key={i} className="bg-muted border border-border rounded-xl p-3 flex justify-between items-start gap-3">
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-sm text-foreground">{s.title}</p>
-                                                {s.description && <p className="text-[12px] text-[#717171] mt-0.5">{s.description}</p>}
+                                                {s.description && <p className="text-[12px] text-muted-foreground mt-0.5">{s.description}</p>}
                                             </div>
                                             <button className="shrink-0 text-[12px] font-semibold text-rose-500 active:opacity-70 px-2" onClick={() => handleAddAiChallenge(s)}>
                                                 + Usar
@@ -303,34 +303,34 @@ export default function Challenges() {
                 {/* List */}
                 {loading ? (
                     <div className="flex justify-center py-10">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#c0c0c0]" />
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
                     </div>
                 ) : challenges.length === 0 ? (
-                    <div className="text-center p-10 bg-white border border-[#f0f0f0] rounded-2xl shadow-sm space-y-2">
-                        <Gift className="w-9 h-9 text-[#c0c0c0] mx-auto" />
+                    <div className="text-center p-10 bg-card border border-border rounded-2xl shadow-sm space-y-2">
+                        <Gift className="w-9 h-9 text-muted-foreground/50 mx-auto" />
                         <p className="font-semibold text-foreground">Sem desafios ativos</p>
-                        <p className="text-[12px] text-[#717171]">Criem desafios ou usem a IA para gerar sugestões</p>
+                        <p className="text-[12px] text-muted-foreground">Criem desafios ou usem a IA para gerar sugestões</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {challenges.map((c, idx) => (
                             <div key={c.id} className={cn(
-                                "bg-white border border-[#f0f0f0] rounded-2xl p-4 relative overflow-hidden shadow-sm transition-all",
+                                "bg-card border border-border rounded-2xl p-4 relative overflow-hidden shadow-sm transition-all",
                                 c.is_completed ? 'opacity-55' : ''
                             )}>
                                 {c.is_completed && <div className="absolute top-3 right-3"><CheckCircle className="w-4 h-4 text-green-500" /></div>}
 
-                                <h4 className={`font-semibold text-base mb-0.5 pr-6 ${c.is_completed ? 'line-through text-[#717171]' : 'text-foreground'}`}>{c.title}</h4>
-                                {c.description && <p className="text-[12px] text-[#717171] mb-3">{c.description}</p>}
+                                <h4 className={`font-semibold text-base mb-0.5 pr-6 ${c.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{c.title}</h4>
+                                {c.description && <p className="text-[12px] text-muted-foreground mb-3">{c.description}</p>}
 
                                 <div className="flex items-center justify-between mt-3">
-                                    <span className="text-[11px] text-[#aaa]">
+                                    <span className="text-[11px] text-muted-foreground/65">
                                         {c.is_completed ? `Concluído ${format(new Date(c.completed_at), "d MMM", { locale: pt })}` : `Criado ${format(new Date(c.created_at), "d MMM", { locale: pt })}`}
                                     </span>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => handleDelete(c.id)}
-                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#c0c0c0] active:bg-red-50 active:text-red-400 transition-colors"
+                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/50 active:bg-red-50 dark:active:bg-red-950/30 active:text-red-400 transition-colors"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
@@ -339,7 +339,7 @@ export default function Challenges() {
                                                 Feito!
                                             </Button>
                                         ) : (
-                                            <button onClick={() => handleComplete(c.id, c.is_completed)} className="text-[11px] text-[#aaa] underline underline-offset-2">
+                                            <button onClick={() => handleComplete(c.id, c.is_completed)} className="text-[11px] text-muted-foreground/65 underline underline-offset-2">
                                                 Desfazer
                                             </button>
                                         )}

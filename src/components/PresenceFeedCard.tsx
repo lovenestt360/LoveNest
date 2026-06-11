@@ -28,7 +28,7 @@ function PresenceRow({ item, isLast, index = 0 }: { item: FeedItem; isLast: bool
     <div
       className={cn(
         "flex items-start gap-3 py-3 animate-in fade-in slide-in-from-bottom-1 duration-500",
-        !isLast && "border-b border-[#f5f5f5]"
+        !isLast && "border-b border-border"
       )}
       style={{ animationDelay: `${index * 70}ms` }}
     >
@@ -46,9 +46,9 @@ function PresenceRow({ item, isLast, index = 0 }: { item: FeedItem; isLast: bool
           {item.message}
         </p>
         {item.detail && (
-          <p className="text-[10.5px] text-[#bbb] mt-0.5 leading-snug">{item.detail}</p>
+          <p className="text-[10.5px] text-muted-foreground/65 mt-0.5 leading-snug">{item.detail}</p>
         )}
-        <p className="text-[10px] text-[#bdbdbd] mt-0.5">{item.timeAgo}</p>
+        <p className="text-[10px] text-muted-foreground/50 mt-0.5">{item.timeAgo}</p>
       </div>
     </div>
   );
@@ -59,10 +59,10 @@ function PresenceRow({ item, isLast, index = 0 }: { item: FeedItem; isLast: bool
 function EmptyState() {
   return (
     <div className="py-5 text-center space-y-1">
-      <p className="text-[12.5px] font-medium text-[#bbb]">
+      <p className="text-[12.5px] font-medium text-muted-foreground/65">
         O vosso espaço ainda está silencioso.
       </p>
-      <p className="text-[11px] text-[#d0d0d0]">
+      <p className="text-[11px] text-muted-foreground/50">
         Pequenos gestos vão criar história aqui.
       </p>
     </div>
@@ -75,11 +75,11 @@ function Skeleton() {
   return (
     <div className="space-y-3 animate-pulse py-1">
       {[0, 1, 2].map(i => (
-        <div key={i} className={cn("flex items-start gap-3 py-2", i < 2 && "border-b border-[#f5f5f5]")}>
-          <div className="w-4 h-4 rounded-full bg-[#f0f0f0] shrink-0 mt-1" />
+        <div key={i} className={cn("flex items-start gap-3 py-2", i < 2 && "border-b border-border")}>
+          <div className="w-4 h-4 rounded-full bg-muted shrink-0 mt-1" />
           <div className="flex-1 space-y-1.5">
-            <div className="h-2.5 bg-[#f0f0f0] rounded-full w-4/5" />
-            <div className="h-2 bg-[#f5f5f5] rounded-full w-1/3" />
+            <div className="h-2.5 bg-muted rounded-full w-4/5" />
+            <div className="h-2 bg-muted rounded-full w-1/3" />
           </div>
         </div>
       ))}
@@ -96,7 +96,7 @@ export function PresenceFeedCard() {
   const displayItems = items.slice(0, 3);
 
   return (
-    <div className="bg-white border border-[#f3f3f3] rounded-3xl shadow-sm px-5 pt-4 pb-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="bg-card border border-border rounded-3xl shadow-sm px-5 pt-4 pb-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ export function PresenceFeedCard() {
             <p className="text-[12px] font-semibold text-foreground leading-none">
               Presença recente
             </p>
-            <p className="text-[10px] text-[#bbb] mt-0.5">
+            <p className="text-[10px] text-muted-foreground/65 mt-0.5">
               O vosso espaço continua vivo.
             </p>
           </div>

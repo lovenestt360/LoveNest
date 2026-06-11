@@ -112,7 +112,7 @@ export function BottomTabs() {
                 type="button"
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors duration-150 active:opacity-60",
-                  isMoreActive ? "text-rose-500" : "text-[#717171]"
+                  isMoreActive ? "text-rose-500" : "text-muted-foreground"
                 )}
                 aria-label="Mais"
               >
@@ -135,12 +135,12 @@ export function BottomTabs() {
               {/* Header */}
               <div className="flex items-center justify-between px-1 pb-5">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
                     <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" strokeWidth={1.5} />
                   </div>
                   <span className="text-base font-bold text-foreground">LoveNest</span>
                 </div>
-                <span className="text-[11px] font-medium text-[#717171]">Mais funcionalidades</span>
+                <span className="text-[11px] font-medium text-muted-foreground">Mais funcionalidades</span>
               </div>
 
               <div className="grid grid-cols-4 gap-3">
@@ -213,7 +213,7 @@ function TabItem({
     <NavLink
       to={to}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-[#717171] transition-colors duration-150 active:opacity-60"
+        "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors duration-150 active:opacity-60"
       )}
       activeClassName="text-rose-500"
       aria-label={label}

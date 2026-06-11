@@ -124,10 +124,10 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
-      <DialogContent className="max-w-md p-6 rounded-3xl border border-[#f0f0f0] bg-white shadow-xl animate-in fade-in zoom-in duration-200">
+      <DialogContent className="max-w-md p-6 rounded-3xl border border-border bg-card shadow-xl animate-in fade-in zoom-in duration-200">
         <DialogHeader className="text-center pb-1">
           <DialogTitle className="text-xl font-semibold tracking-tight text-center w-full">Nova Memória</DialogTitle>
-          <DialogDescription className="text-center w-full text-[13px] text-[#717171]">Regista este momento especial no vosso ninho.</DialogDescription>
+          <DialogDescription className="text-center w-full text-[13px] text-muted-foreground">Regista este momento especial no vosso ninho.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
@@ -135,7 +135,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
             <div className="relative overflow-hidden rounded-2xl shadow-sm">
               <img src={preview} alt="Preview" className="w-full h-56 object-cover" />
               <button
-                className="absolute top-2.5 right-2.5 rounded-full bg-white/90 backdrop-blur shadow px-3 py-1 text-xs font-semibold text-foreground border border-[#f0f0f0]"
+                className="absolute top-2.5 right-2.5 rounded-full bg-background/90 backdrop-blur shadow px-3 py-1 text-xs font-semibold text-foreground border border-border"
                 onClick={() => { setFile(null); setPreview(null); }}
               >
                 Trocar
@@ -144,34 +144,34 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
           ) : (
             <button
               type="button"
-              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#e0e0e0] bg-[#fafafa] p-10 active:scale-[0.98] transition-all"
+              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted p-10 active:scale-[0.98] transition-all"
               onClick={() => inputRef.current?.click()}
             >
-              <div className="h-12 w-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400">
+              <div className="h-12 w-12 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-400">
                 <ImagePlus className="h-6 w-6" />
               </div>
               <div className="text-center">
                 <span className="text-sm font-semibold text-foreground block">Escolher foto da galeria</span>
-                <span className="text-[11px] text-[#aaa] mt-0.5 block">JPG, PNG, WEBP</span>
+                <span className="text-[11px] text-muted-foreground/65 mt-0.5 block">JPG, PNG, WEBP</span>
               </div>
             </button>
           )}
           <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-          <div className="bg-white border border-[#f0f0f0] rounded-2xl divide-y divide-[#f0f0f0]">
+          <div className="bg-card border border-border rounded-2xl divide-y divide-border">
             <div className="p-4 space-y-1">
-              <Label className="text-[11px] font-semibold text-[#717171]">Legenda</Label>
+              <Label className="text-[11px] font-semibold text-muted-foreground">Legenda</Label>
               <Textarea
                 rows={2}
                 placeholder="O que aconteceu neste momento..."
-                className="resize-none border-none bg-transparent focus-visible:ring-0 p-0 text-sm placeholder:text-[#c0c0c0]"
+                className="resize-none border-none bg-transparent focus-visible:ring-0 p-0 text-sm placeholder:text-muted-foreground/50"
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 maxLength={300}
               />
             </div>
             <div className="p-4 space-y-1">
-              <Label className="text-[11px] font-semibold text-[#717171]">Data do momento</Label>
+              <Label className="text-[11px] font-semibold text-muted-foreground">Data do momento</Label>
               <Input
                 type="date"
                 className="bg-transparent border-none focus-visible:ring-0 p-0 h-auto text-sm cursor-pointer"

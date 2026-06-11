@@ -25,7 +25,7 @@ interface MoodFormProps {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] mb-3">
+    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
       {children}
     </p>
   );
@@ -63,8 +63,8 @@ export function MoodForm({
               className={cn(
                 "flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-xs font-medium transition-all duration-150 active:scale-95",
                 moodKey === m.key
-                  ? "border-rose-300 bg-rose-50 text-rose-500"
-                  : "border-[#e5e5e5] text-[#717171] hover:bg-[#f5f5f5]"
+                  ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                  : "border-border text-muted-foreground hover:bg-muted"
               )}
             >
               <span className="text-2xl leading-none">{m.emoji}</span>
@@ -101,8 +101,8 @@ export function MoodForm({
                 className={cn(
                   "px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-150 active:scale-95",
                   active
-                    ? "border-rose-300 bg-rose-50 text-rose-500"
-                    : "border-[#e5e5e5] text-[#717171] hover:bg-[#f5f5f5]"
+                    ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                    : "border-border text-muted-foreground hover:bg-muted"
                 )}
               >
                 {e}
@@ -126,8 +126,8 @@ export function MoodForm({
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-150 active:scale-95",
                   active
-                    ? "border-rose-300 bg-rose-50 text-rose-500"
-                    : "border-[#e5e5e5] text-[#717171] hover:bg-[#f5f5f5]"
+                    ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                    : "border-border text-muted-foreground hover:bg-muted"
                 )}
               >
                 <span>{act.emoji}</span>
@@ -152,8 +152,8 @@ export function MoodForm({
                 className={cn(
                   "flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-xs font-medium transition-all duration-150 active:scale-95",
                   active
-                    ? "border-rose-300 bg-rose-50 text-rose-500"
-                    : "border-[#e5e5e5] text-[#717171] hover:bg-[#f5f5f5]"
+                    ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                    : "border-border text-muted-foreground hover:bg-muted"
                 )}
               >
                 <span className="text-2xl leading-none">{sq.emoji}</span>
@@ -171,7 +171,7 @@ export function MoodForm({
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="Alguma nota sobre o dia de hoje?"
-          className="min-h-[80px] resize-none border-[#e5e5e5] text-sm focus-visible:ring-rose-400/30"
+          className="min-h-[80px] resize-none border-border text-sm focus-visible:ring-rose-400/30"
           maxLength={500}
         />
       </div>

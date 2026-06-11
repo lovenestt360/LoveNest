@@ -96,14 +96,14 @@ export function MilestoneModal({ value, onClose }: MilestoneModalProps) {
       {/* Card */}
       <div
         className={cn(
-          "relative w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl",
+          "relative w-full max-w-sm bg-card rounded-[2.5rem] p-8 shadow-2xl",
           "transition-all duration-300 ease-out",
           visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
         )}
       >
         {/* Icon */}
         <div className="flex justify-center mb-6">
-          <div className="w-14 h-14 rounded-3xl bg-rose-50 flex items-center justify-center border border-rose-100">
+          <div className="w-14 h-14 rounded-3xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center border border-rose-100 dark:border-rose-900/40">
             <Icon className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
           </div>
         </div>
@@ -113,7 +113,7 @@ export function MilestoneModal({ value, onClose }: MilestoneModalProps) {
           <span className="text-6xl font-bold text-foreground tabular-nums leading-none">
             {value}
           </span>
-          <span className="text-xl font-semibold text-[#717171] ml-2">dias</span>
+          <span className="text-xl font-semibold text-muted-foreground ml-2">dias</span>
         </div>
 
         {/* Title */}
@@ -122,7 +122,7 @@ export function MilestoneModal({ value, onClose }: MilestoneModalProps) {
         </h2>
 
         {/* Description */}
-        <p className="text-center text-sm text-[#717171] leading-relaxed mb-8">
+        <p className="text-center text-sm text-muted-foreground leading-relaxed mb-8">
           {data.description}
         </p>
 

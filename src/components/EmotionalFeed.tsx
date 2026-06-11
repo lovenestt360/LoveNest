@@ -23,7 +23,7 @@ function FeedRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
   return (
     <div className={cn(
       "flex items-start gap-3 px-4 py-3.5",
-      !isLast && "border-b border-[#f8f8f8]"
+      !isLast && "border-b border-border"
     )}>
       <div className={cn("w-6 h-6 shrink-0 flex items-center justify-center mt-0.5", item.iconColor)}>
         <Icon className="w-4 h-4" strokeWidth={1.5} />
@@ -33,10 +33,10 @@ function FeedRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
           {item.message}
         </p>
         {item.detail && (
-          <p className="text-[11px] text-[#bbb] mt-0.5">{item.detail}</p>
+          <p className="text-[11px] text-muted-foreground/65 mt-0.5">{item.detail}</p>
         )}
       </div>
-      <span className="text-[10px] text-[#ccc] shrink-0 font-medium mt-0.5 min-w-[32px] text-right">
+      <span className="text-[10px] text-muted-foreground/50 shrink-0 font-medium mt-0.5 min-w-[32px] text-right">
         {item.timeAgo}
       </span>
     </div>
@@ -48,10 +48,10 @@ function FeedRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
 function DayHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 px-1 pt-1 pb-0.5">
-      <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#ccc]">
+      <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
         {label}
       </span>
-      <span className="flex-1 h-px bg-[#f0f0f0]" />
+      <span className="flex-1 h-px bg-border" />
     </div>
   );
 }
@@ -82,7 +82,7 @@ export function EmotionalFeed({ items, loading, limit, onRefresh }: Props) {
         <p className="text-sm font-medium text-foreground/60">
           O vosso espaço ainda está silencioso.
         </p>
-        <p className="text-[11px] text-[#bbb]">
+        <p className="text-[11px] text-muted-foreground/65">
           Pequenos gestos vão criar história aqui.
         </p>
       </div>
@@ -106,7 +106,7 @@ export function EmotionalFeed({ items, loading, limit, onRefresh }: Props) {
         <div className="flex justify-end">
           <button
             onClick={onRefresh}
-            className="flex items-center gap-1 text-[11px] text-[#bbb] hover:text-[#aaa] transition-colors"
+            className="flex items-center gap-1 text-[11px] text-muted-foreground/65 hover:text-muted-foreground transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             Atualizar

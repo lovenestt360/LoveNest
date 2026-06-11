@@ -6,7 +6,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { logActivity } from "@/lib/logActivity";
+import { logActivity, fireMissionIfNotFired } from "@/lib/logActivity";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -166,7 +166,7 @@ function WaveformBars({ progress, isMine }: { progress: number; isMine: boolean 
           className={cn("w-[2px] rounded-full transition-colors",
             i / WH.length <= progress
               ? isMine ? "bg-white" : "bg-rose-500"
-              : isMine ? "bg-white/35" : "bg-[#ccc]"
+              : isMine ? "bg-white/35" : "bg-muted-foreground/30"
           )}
           style={{ height: `${h}px` }}
         />
@@ -210,7 +210,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
         onClick={toggle}
         className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90",
-          isMine ? "bg-white/25 text-white" : "bg-rose-50 text-rose-500"
+          isMine ? "bg-white/25 text-white" : "bg-rose-50 dark:bg-rose-950/30 text-rose-500"
         )}
       >
         {playing
@@ -221,7 +221,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
       <div className="flex flex-col gap-1">
         <WaveformBars progress={progress} isMine={isMine} />
         <span className={cn("text-[10px] font-mono tabular-nums",
-          isMine ? "text-white/65" : "text-[#999]")}>
+          isMine ? "text-white/65" : "text-muted-foreground")}>
           {fmt(playing ? currentTime : dur)}
         </span>
       </div>
@@ -238,7 +238,7 @@ function ImagePickerButton({ onPick }: { onPick: (f: File) => void }) {
       <input ref={ref} type="file" accept="image/*" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) { onPick(f); e.target.value = ""; } }} />
       <button type="button" onClick={() => ref.current?.click()}
-        className="w-9 h-9 flex items-center justify-center text-[#999] hover:text-[#666] shrink-0 transition-colors">
+        className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 transition-colors">
         <ImageIcon className="h-5 w-5" />
       </button>
     </>
@@ -260,7 +260,7 @@ function DateSeparator({ date }: { date: string }) {
 
   return (
     <div className="flex justify-center py-3">
-      <span className="text-[11px] font-medium text-[#666] bg-white/85 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+      <span className="text-[11px] font-medium text-muted-foreground bg-card/85 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
         {label}
       </span>
     </div>
@@ -275,9 +275,9 @@ function PinnedBar({ messages, onJump }: { messages: Message[]; onJump: (id: str
   const last = pinned[pinned.length - 1];
   return (
     <button type="button" onClick={() => onJump(last.id)}
-      className="flex w-full items-center gap-2 px-4 py-2 bg-rose-50 border-b border-rose-100/80 text-left">
+      className="flex w-full items-center gap-2 px-4 py-2 bg-rose-50 dark:bg-rose-950/20 border-b border-rose-100/80 dark:border-rose-900/40 text-left">
       <Pin className="h-3 w-3 text-rose-400 shrink-0" />
-      <p className="flex-1 text-xs text-rose-600 font-medium line-clamp-1">
+      <p className="flex-1 text-xs text-rose-600 dark:text-rose-300 font-medium line-clamp-1">
         {last.content || (last.image_url ? "Foto" : last.audio_url ? "Áudio" : "")}
       </p>
       <span className="text-[10px] text-rose-400 shrink-0">
@@ -298,31 +298,31 @@ function ActionSheet({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/25" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
-        <div className="w-10 h-1 bg-[#e0e0e0] rounded-full mx-auto mb-4" />
-        <p className="text-xs text-[#aaa] mb-3 line-clamp-2 px-1">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
+        <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+        <p className="text-xs text-muted-foreground/65 mb-3 line-clamp-2 px-1">
           {msg.content || (msg.image_url ? "Foto" : msg.audio_url ? "Áudio" : "")}
         </p>
         <div className="grid gap-0.5">
-          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left transition-colors" onClick={onReply}>
+          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onReply}>
             <Reply className="h-5 w-5 text-rose-500" /><span className="text-[15px]">Responder</span>
           </button>
           {isMine && (
-            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left transition-colors" onClick={onEdit}>
-              <Pencil className="h-5 w-5 text-[#717171]" /><span className="text-[15px]">Editar</span>
+            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onEdit}>
+              <Pencil className="h-5 w-5 text-muted-foreground" /><span className="text-[15px]">Editar</span>
             </button>
           )}
-          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left transition-colors" onClick={onPin}>
+          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onPin}>
             {msg.is_pinned
-              ? <><PinOff className="h-5 w-5 text-[#717171]" /><span className="text-[15px]">Desafixar</span></>
-              : <><Pin className="h-5 w-5 text-[#717171]" /><span className="text-[15px]">Fixar</span></>}
+              ? <><PinOff className="h-5 w-5 text-muted-foreground" /><span className="text-[15px]">Desafixar</span></>
+              : <><Pin className="h-5 w-5 text-muted-foreground" /><span className="text-[15px]">Fixar</span></>}
           </button>
           {isMine && (
-            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left text-red-500 transition-colors" onClick={onDelete}>
+            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left text-red-500 transition-colors" onClick={onDelete}>
               <Trash2 className="h-5 w-5" /><span className="text-[15px]">Apagar</span>
             </button>
           )}
-          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#f5f5f5] text-left text-[#aaa] transition-colors" onClick={onClose}>
+          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left text-muted-foreground/65 transition-colors" onClick={onClose}>
             <X className="h-5 w-5" /><span className="text-[15px]">Cancelar</span>
           </button>
         </div>
@@ -356,7 +356,7 @@ function MessageBubble({
             "px-3 py-[7px] text-[15px] select-none shadow-sm",
             isMine
               ? "bg-rose-500 text-white rounded-[18px] rounded-br-[4px]"
-              : "bg-white text-[#1a1a1a] rounded-[18px] rounded-bl-[4px]",
+              : "bg-card text-foreground rounded-[18px] rounded-bl-[4px]",
             isDeleted && "opacity-60",
             msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
           )}
@@ -368,7 +368,7 @@ function MessageBubble({
               onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
               className={cn(
                 "flex items-start gap-1 rounded-lg px-2 py-1.5 mb-1.5 text-[11px] border-l-2 w-full text-left",
-                isMine ? "bg-white/20 border-white/50 text-white/80" : "bg-[#f5f5f5] border-rose-300 text-[#717171]"
+                isMine ? "bg-white/20 border-white/50 text-white/80" : "bg-muted border-rose-300 dark:border-rose-800 text-muted-foreground"
               )}
             >
               <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
@@ -400,7 +400,7 @@ function MessageBubble({
 
           {/* Time + status */}
           <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
-            isMine ? "text-white/55" : "text-[#aaa]")}>
+            isMine ? "text-white/55" : "text-muted-foreground/65")}>
             {msg.is_edited && !isDeleted && <span className="text-[10px]">editada ·</span>}
             <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
             {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
@@ -438,6 +438,9 @@ export default function Chat() {
   const [sheetMsg, setSheetMsg]     = useState<Message | null>(null);
   const [showCarinhoAnim, setShowCarinhoAnim] = useState(false);
 
+  const [myMessageToday, setMyMessageToday]         = useState(false);
+  const [partnerMessageToday, setPartnerMessageToday] = useState(false);
+
   const audio     = useAudioRecorder();
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
@@ -466,6 +469,31 @@ export default function Chat() {
     })();
   }, [spaceId, resetChatUnread, toast]);
 
+  /* mission "Conversar": verifica se ambos já enviaram mensagem hoje */
+  const checkMessageMissionStatus = useCallback(async () => {
+    if (!spaceId || !user) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const { data } = await supabase
+      .from("daily_activity" as any)
+      .select("user_id")
+      .eq("couple_space_id", spaceId)
+      .eq("activity_date", today)
+      .eq("type", "message") as any;
+    if (data) {
+      setMyMessageToday(data.some((r: any) => r.user_id === user.id));
+      setPartnerMessageToday(data.some((r: any) => r.user_id !== user.id));
+    }
+  }, [spaceId, user]);
+
+  useEffect(() => { checkMessageMissionStatus(); }, [checkMessageMissionStatus]);
+
+  // Dispara missão "Conversar" apenas quando AMBOS enviaram mensagem hoje
+  useEffect(() => {
+    if (myMessageToday && partnerMessageToday) {
+      fireMissionIfNotFired("message");
+    }
+  }, [myMessageToday, partnerMessageToday]);
+
   const loadMore = useCallback(async () => {
     if (!spaceId || loadingMore || messages.length === 0) return;
     setLoadingMore(true);
@@ -490,6 +518,7 @@ export default function Chat() {
               if (m.sender_user_id === user?.id) return [...prev.filter(x => !x.id.startsWith("temp-")), m];
               return [...prev, m];
             });
+            checkMessageMissionStatus();
           } else if (payload.eventType === "UPDATE") {
             setMessages(prev => prev.map(m => m.id === (payload.new as Message).id ? (payload.new as Message) : m));
           } else if (payload.eventType === "DELETE") {
@@ -498,7 +527,7 @@ export default function Chat() {
         })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [spaceId, user?.id]);
+  }, [spaceId, user?.id, checkMessageMissionStatus]);
 
   /* auto scroll */
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -579,7 +608,7 @@ export default function Chat() {
       });
       if (insertErr) throw insertErr;
 
-      if (sp) logActivity(sp, "message");
+      if (sp) { logActivity(sp, "message", { skipMission: true }); setMyMessageToday(true); }
 
       let body = input;
       if (!body && imageUrl) body = "Enviou uma foto";
@@ -613,7 +642,7 @@ export default function Chat() {
         couple_space_id: sp, sender_user_id: user.id, content: "Só para te lembrar que te amo",
       });
       if (error) throw error;
-      if (sp) logActivity(sp, "message");
+      if (sp) { logActivity(sp, "message", { skipMission: true }); setMyMessageToday(true); }
       notifyPartner({ couple_space_id: sp, title: "Recebeste carinho!", body: "Só para te lembrar que te amo", url: "/chat", type: "chat" }).catch(() => {});
       setTimeout(() => setShowCarinhoAnim(false), 2000);
     } catch (err: any) {
@@ -700,16 +729,16 @@ export default function Chat() {
       )}
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 bg-white border-b border-[#e8e8e8]">
+      <header className="relative z-20 shrink-0 bg-card border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2.5">
           {/* Back */}
           <button onClick={() => navigate("/")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0">
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
             <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
           </button>
 
           {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center shrink-0 overflow-hidden border border-rose-200">
+          <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center shrink-0 overflow-hidden border border-rose-200 dark:border-rose-900/40">
             {partner?.avatar_url
               ? <img src={partner.avatar_url} alt="" className="w-full h-full object-cover" />
               : <span className="text-sm font-semibold text-rose-500">{partnerInitial}</span>
@@ -726,13 +755,13 @@ export default function Chat() {
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.5} />
               )}
             </div>
-            <p className="text-[11px] text-[#999]">Chat privado</p>
+            <p className="text-[11px] text-muted-foreground">Chat privado</p>
           </div>
 
           {/* Palette */}
           <button onClick={() => navigate("/configuracoes#customization")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0">
-            <Palette className="h-4.5 w-4.5 text-[#999]" strokeWidth={1.5} />
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
+            <Palette className="h-4.5 w-4.5 text-muted-foreground" strokeWidth={1.5} />
           </button>
         </div>
       </header>
@@ -744,14 +773,14 @@ export default function Chat() {
 
       {/* ── Messages ── */}
       <div
-        className="flex-1 relative z-10 overflow-y-auto"
-        style={{ scrollbarWidth: "none", backgroundColor: wallpaperUrl ? undefined : "#ece5dd" }}
+        className={cn("flex-1 relative z-10 overflow-y-auto", !wallpaperUrl && "bg-[#ece5dd] dark:bg-background")}
+        style={{ scrollbarWidth: "none" }}
       >
         <div className="flex flex-col gap-0 py-3 pb-4 min-h-full justify-end">
           {hasMore && (
             <div className="flex justify-center py-2">
               <button onClick={loadMore} disabled={loadingMore}
-                className="text-xs text-[#666] bg-white/80 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                className="text-xs text-muted-foreground bg-card/80 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
                 {loadingMore && <Loader2 className="h-3 w-3 animate-spin" />}
                 Carregar mais
               </button>
@@ -759,13 +788,13 @@ export default function Chat() {
           )}
           {loading && (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-[#aaa]" />
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/65" />
             </div>
           )}
           {!loading && messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-2">
               <Heart className="h-10 w-10 text-rose-300" strokeWidth={1} />
-              <p className="text-sm text-[#999]">Nenhuma mensagem ainda. Diz olá!</p>
+              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Diz olá!</p>
             </div>
           )}
 
@@ -805,12 +834,12 @@ export default function Chat() {
       )}
 
       {/* ── Bottom Input Bar (WhatsApp style) ── */}
-      <div className="relative z-50 shrink-0 bg-[#f0f0f0] px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="relative z-50 shrink-0 bg-muted px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
 
         {/* Edit mode banner */}
         {editingMsg && (
-          <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2 mb-1.5 border border-[#e0e0e0]">
-            <Pencil className="h-3.5 w-3.5 text-[#717171] shrink-0" />
+          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2 mb-1.5 border border-border">
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={editText}
               onChange={e => setEditText(e.target.value)}
@@ -818,35 +847,35 @@ export default function Chat() {
               autoFocus
               onKeyDown={e => { if (e.key === "Enter") handleEditSave(); if (e.key === "Escape") setEditingMsg(null); }}
             />
-            <button onClick={handleEditSave} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
+            <button onClick={handleEditSave} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted">
               <Check className="h-4 w-4 text-rose-500" />
             </button>
-            <button onClick={() => setEditingMsg(null)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
-              <X className="h-4 w-4 text-[#999]" />
+            <button onClick={() => setEditingMsg(null)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted">
+              <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
         )}
 
         {/* Reply banner */}
         {replyTo && !editingMsg && (
-          <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2 mb-1.5 border-l-2 border-rose-400">
+          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2 mb-1.5 border-l-2 border-rose-400">
             <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
-            <p className="flex-1 text-xs text-[#717171] line-clamp-1">
+            <p className="flex-1 text-xs text-muted-foreground line-clamp-1">
               {replyTo.content || (replyTo.image_url ? "Foto" : replyTo.audio_url ? "Audio" : "")}
             </p>
-            <button onClick={() => setReplyTo(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
-              <X className="h-3 w-3 text-[#999]" />
+            <button onClick={() => setReplyTo(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted">
+              <X className="h-3 w-3 text-muted-foreground" />
             </button>
           </div>
         )}
 
         {/* Image preview */}
         {imagePreview && !editingMsg && (
-          <div className="flex items-center gap-2 bg-white rounded-2xl px-2 py-1.5 mb-1.5">
+          <div className="flex items-center gap-2 bg-card rounded-2xl px-2 py-1.5 mb-1.5">
             <img src={imagePreview} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
-            <p className="flex-1 text-xs text-[#717171] truncate">{imageFile?.name}</p>
-            <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f0f0]">
-              <X className="h-3 w-3 text-[#999]" />
+            <p className="flex-1 text-xs text-muted-foreground truncate">{imageFile?.name}</p>
+            <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted">
+              <X className="h-3 w-3 text-muted-foreground" />
             </button>
           </div>
         )}
@@ -859,11 +888,11 @@ export default function Chat() {
             <div className="flex-1 relative">
               {/* Recording / Preview overlay inside the pill */}
               {inRecMode ? (
-                <div className="flex items-center gap-2 bg-white rounded-[24px] min-h-[48px] px-3 py-2">
+                <div className="flex items-center gap-2 bg-card rounded-[24px] min-h-[48px] px-3 py-2">
 
                   {/* Delete */}
                   <button onClick={audio.cancel}
-                    className="w-9 h-9 flex items-center justify-center text-[#bbb] hover:text-red-400 transition-colors shrink-0">
+                    className="w-9 h-9 flex items-center justify-center text-muted-foreground/65 hover:text-red-400 transition-colors shrink-0">
                     <Trash2 className="h-5 w-5" />
                   </button>
 
@@ -876,18 +905,18 @@ export default function Chat() {
                           "h-2 w-2 rounded-full bg-red-500 shrink-0",
                           !audio.isPaused && "animate-pulse"
                         )} />
-                        <span className="text-[16px] font-mono font-semibold text-[#333] tabular-nums">
+                        <span className="text-[16px] font-mono font-semibold text-foreground tabular-nums">
                           {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, "0")}
                         </span>
                         {/* Pause / Resume */}
                         {audio.isPaused ? (
                           <button onClick={audio.resume}
-                            className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 transition-transform active:scale-90">
+                            className="w-7 h-7 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-500 transition-transform active:scale-90">
                             <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
                           </button>
                         ) : (
                           <button onClick={audio.pause}
-                            className="w-7 h-7 rounded-full bg-[#f0f0f0] flex items-center justify-center text-[#888] transition-transform active:scale-90">
+                            className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground/90 transition-transform active:scale-90">
                             <Pause className="h-3.5 w-3.5 fill-current" />
                           </button>
                         )}
@@ -903,13 +932,13 @@ export default function Chat() {
                   {/* Stop to preview (only during recording) */}
                   {audio.recording && (
                     <button onClick={() => audio.stop()}
-                      className="w-9 h-9 rounded-full bg-[#f0f0f0] flex items-center justify-center text-[#666] shrink-0 transition-transform active:scale-90">
+                      className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0 transition-transform active:scale-90">
                       <div className="h-4 w-4 bg-current rounded-[3px]" />
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="flex items-end bg-white rounded-[24px] min-h-[44px] px-2 py-1">
+                <div className="flex items-end bg-card rounded-[24px] min-h-[44px] px-2 py-1">
                   <ImagePickerButton onPick={setImageFile} />
                   <input
                     ref={inputRef}
@@ -917,7 +946,7 @@ export default function Chat() {
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                     placeholder="Mensagem"
-                    className="flex-1 min-h-[36px] bg-transparent outline-none text-[15px] text-[#1a1a1a] placeholder:text-[#aaa] px-1 py-1.5 resize-none"
+                    className="flex-1 min-h-[36px] bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/65 px-1 py-1.5 resize-none"
                     autoComplete="off"
                   />
                   {/* Carinho heart — only when no text */}
@@ -1034,7 +1063,7 @@ function AudioPreviewInline({ blob, duration }: { blob: Blob; duration: number }
       </button>
       <div className="flex flex-col gap-1 flex-1 min-w-0">
         <WaveformBars progress={progress} isMine={false} />
-        <span className="text-[10px] font-mono text-[#999] tabular-nums">
+        <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
           {fmt(playing ? currentTime : dur)}
         </span>
       </div>

@@ -316,11 +316,11 @@ const AppIconButton = ({
         {icon}
       </div>
       {badge && badge !== 0 ? (
-        <span className="absolute top-2 right-2 bg-rose-500 text-white text-[9px] font-black h-4 min-w-4 px-1 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+        <span className="absolute top-2 right-2 bg-rose-500 text-white text-[9px] font-black h-4 min-w-4 px-1 rounded-full flex items-center justify-center border-2 border-card shadow-sm">
           {badge}
         </span>
       ) : null}
-      <span className="text-[10px] font-semibold text-[#717171]">{label}</span>
+      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
     </button>
   );
 };
@@ -470,7 +470,7 @@ const Index = () => {
           <LoveStreakCard />
           {/* Milestone micro-memory — visible for 24h after any streak milestone */}
           {recentMilestone && (
-            <p className="text-center text-[10px] text-[#bbb] font-medium px-2 mt-1.5 animate-in fade-in duration-500">
+            <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 mt-1.5 animate-in fade-in duration-500">
               {getMilestoneMicroMemory(recentMilestone)}
             </p>
           )}
@@ -485,7 +485,7 @@ const Index = () => {
 
         {/* Global Announcements */}
         {announcements.map((ann) => (
-          <div key={ann.id} className="glass-card border-amber-500/20 bg-amber-500/5 text-amber-700 p-4 rounded-3xl animate-in fade-in zoom-in duration-500 shadow-sm border">
+          <div key={ann.id} className="glass-card border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 p-4 rounded-3xl animate-in fade-in zoom-in duration-500 shadow-sm border">
             <h3 className="font-black text-[10px] flex items-center gap-2 mb-1 uppercase tracking-widest opacity-60">
               <Megaphone className="w-3 h-3" /> {ann.title}
             </h3>
@@ -502,7 +502,7 @@ const Index = () => {
       <section className="space-y-3 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700" style={{ animationDelay: "220ms" }}>
         <div className="flex items-center gap-3 px-1">
           <div className="w-0.5 h-4 rounded-full" style={{ background: "#FECDD3" }} />
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             O vosso dia a dia
           </h2>
         </div>
@@ -582,7 +582,7 @@ const Index = () => {
       <section className="space-y-3 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700" style={{ animationDelay: "340ms" }}>
         <div className="flex items-center gap-3 px-1">
           <div className="w-0.5 h-4 rounded-full" style={{ background: "#FECDD3" }} />
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Memórias & Aventuras
           </h2>
         </div>
@@ -647,7 +647,7 @@ const Index = () => {
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Partilha o código com quem amas</p>
              </div>
              <div className="flex gap-2">
-                <div className="flex-1 bg-white/50 border border-primary/10 rounded-2xl h-12 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
+                <div className="flex-1 bg-white/50 dark:bg-white/5 border border-primary/10 rounded-2xl h-12 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
                    {houseInviteCode}
                 </div>
                 <button 
@@ -670,10 +670,10 @@ const Index = () => {
             </div>
             <div className="text-left">
               <h4 className="text-[13px] font-semibold text-foreground">Partilha o amor</h4>
-              <p className="text-[11px] text-[#717171]">Ganha 50 pts por cada casal que convidas</p>
+              <p className="text-[11px] text-muted-foreground">Ganha 50 pts por cada casal que convidas</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-[#c0c0c0]" />
+          <ArrowRight className="w-4 h-4 text-muted-foreground/50" />
         </button>
       </div>
 

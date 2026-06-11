@@ -61,7 +61,7 @@ export function RoutineCalendar({
         <button
           type="button"
           onClick={prev}
-          className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
+          className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
         >
           <ChevronLeft className="h-4 w-4 text-foreground" strokeWidth={1.5} />
         </button>
@@ -69,7 +69,7 @@ export function RoutineCalendar({
         <button
           type="button"
           onClick={next}
-          className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
+          className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
         >
           <ChevronRight className="h-4 w-4 text-foreground" strokeWidth={1.5} />
         </button>
@@ -78,7 +78,7 @@ export function RoutineCalendar({
       {/* Week labels */}
       <div className="grid grid-cols-7 mb-2">
         {WEEK_LABELS.map((l, i) => (
-          <span key={i} className="text-center text-[10px] font-medium text-[#717171]">{l}</span>
+          <span key={i} className="text-center text-[10px] font-medium text-muted-foreground">{l}</span>
         ))}
       </div>
 
@@ -102,10 +102,10 @@ export function RoutineCalendar({
               className={cn(
                 "flex flex-col items-center justify-center h-10 w-full rounded-xl text-xs font-medium transition-all active:scale-95",
                 isSel
-                  ? "bg-foreground text-white"
+                  ? "bg-foreground text-background"
                   : isToday
                     ? "ring-1 ring-rose-400 text-rose-500 font-semibold"
-                    : "text-foreground hover:bg-[#f5f5f5]",
+                    : "text-foreground hover:bg-muted",
               )}
             >
               <span>{d}</span>
@@ -118,7 +118,7 @@ export function RoutineCalendar({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-[#717171]">
+      <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-muted-foreground">
         {!hideLegendStatus?.includes("completed") && (
           <span className="flex items-center gap-1">
             <span className="h-2 w-2 rounded-full bg-green-500" /> Completo

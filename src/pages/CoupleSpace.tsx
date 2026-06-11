@@ -242,7 +242,7 @@ export default function CoupleSpace() {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (state.status === "loading") {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-rose-300 animate-spin" />
       </div>
     );
@@ -251,15 +251,15 @@ export default function CoupleSpace() {
   // ── No house — create or join ─────────────────────────────────────────────
   if (state.status === "no_house") {
     return (
-      <div className="min-h-screen bg-white flex flex-col select-none">
+      <div className="min-h-screen bg-background flex flex-col select-none">
         {/* Top bar */}
         <div className="px-6 pt-12 shrink-0 h-16 flex items-center">
           {view === "join" && (
             <button
               onClick={() => setView("create")}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-all"
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all"
             >
-              <ChevronLeft className="w-5 h-5 text-[#bbb]" strokeWidth={1.5} />
+              <ChevronLeft className="w-5 h-5 text-muted-foreground/65" strokeWidth={1.5} />
             </button>
           )}
         </div>
@@ -279,7 +279,7 @@ export default function CoupleSpace() {
                   <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
                     O teu par ainda não chegou.
                   </h1>
-                  <p className="text-[14px] text-[#888] leading-relaxed">
+                  <p className="text-[14px] text-muted-foreground leading-relaxed">
                     Cria o vosso espaço, recebe um código e partilha-o com o teu par para se juntarem.
                   </p>
                 </div>
@@ -300,22 +300,22 @@ export default function CoupleSpace() {
 
                   {/* Divider */}
                   <div className="flex items-center gap-3 py-1">
-                    <div className="flex-1 h-px bg-[#f0f0f0]" />
-                    <span className="text-[11px] text-[#ccc] font-medium">ou</span>
-                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[11px] text-muted-foreground/50 font-medium">ou</span>
+                    <div className="flex-1 h-px bg-border" />
                   </div>
 
                   {/* Secondary — visible, with border */}
                   <button
                     onClick={() => setView("join")}
-                    className="w-full h-13 rounded-2xl border border-[#e8e8e8] bg-white text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
+                    className="w-full h-13 rounded-2xl border border-border bg-card text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
                   >
                     Já tenho um código de convite
                   </button>
                 </div>
 
                 {/* Explanation */}
-                <p className="text-center text-[11px] text-[#ccc] leading-relaxed">
+                <p className="text-center text-[11px] text-muted-foreground/50 leading-relaxed">
                   O teu par vai entrar com o código que recebes após criar o espaço.
                 </p>
               </>
@@ -326,7 +326,7 @@ export default function CoupleSpace() {
                   <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
                     Entrar no espaço do teu par.
                   </h1>
-                  <p className="text-[14px] text-[#888] leading-relaxed">
+                  <p className="text-[14px] text-muted-foreground leading-relaxed">
                     O teu par criou um espaço e partilhou um código contigo. Insere-o abaixo.
                   </p>
                 </div>
@@ -334,7 +334,7 @@ export default function CoupleSpace() {
                 {/* Code input */}
                 <form onSubmit={handleJoinSpace} className="space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[#999] px-1">
+                    <label className="text-[12px] font-semibold text-muted-foreground px-1">
                       Código de convite
                     </label>
                     <input
@@ -344,7 +344,7 @@ export default function CoupleSpace() {
                       onChange={e => setInviteCodeInput(e.target.value.toUpperCase())}
                       maxLength={12}
                       autoFocus
-                      className="w-full h-14 rounded-2xl border border-[#eeeeee] bg-white text-center text-[18px] font-black text-foreground placeholder:text-[#d4d4d4] tracking-[0.2em] focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
+                      className="w-full h-14 rounded-2xl border border-border bg-card text-center text-[18px] font-black text-foreground placeholder:text-muted-foreground/40 tracking-[0.2em] focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                     />
                   </div>
 
@@ -362,22 +362,22 @@ export default function CoupleSpace() {
 
                   {/* Divider */}
                   <div className="flex items-center gap-3 py-1">
-                    <div className="flex-1 h-px bg-[#f0f0f0]" />
-                    <span className="text-[11px] text-[#ccc] font-medium">ou</span>
-                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[11px] text-muted-foreground/50 font-medium">ou</span>
+                    <div className="flex-1 h-px bg-border" />
                   </div>
 
                   {/* Secondary — create instead */}
                   <button
                     type="button"
                     onClick={() => setView("create")}
-                    className="w-full h-13 rounded-2xl border border-[#e8e8e8] bg-white text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center py-3.5"
+                    className="w-full h-13 rounded-2xl border border-border bg-card text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center py-3.5"
                   >
                     Quero criar um novo espaço
                   </button>
                 </form>
 
-                <p className="text-center text-[11px] text-[#ccc] leading-relaxed">
+                <p className="text-center text-[11px] text-muted-foreground/50 leading-relaxed">
                   Não tens código? Pede ao teu par que crie o espaço primeiro.
                 </p>
               </>
@@ -393,7 +393,7 @@ export default function CoupleSpace() {
   // ── Has house — waiting for partner ──────────────────────────────────────
   if (state.status === "has_house" && memberCount < 2) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-8 select-none">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8 select-none">
         {/* Subtle ambient */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 blur-[90px] pointer-events-none" />
 
@@ -405,17 +405,17 @@ export default function CoupleSpace() {
             <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
               O vosso ninho está criado.
             </h1>
-            <p className="text-[14px] text-[#888] leading-relaxed">
+            <p className="text-[14px] text-muted-foreground leading-relaxed">
               Partilha o código com o teu par. Podes entrar na app enquanto esperas.
             </p>
           </div>
 
           {/* Invite code — prominent */}
           <div className="space-y-3">
-            <p className="text-[11px] font-semibold text-[#bbb] uppercase tracking-wider">
+            <p className="text-[11px] font-semibold text-muted-foreground/65 uppercase tracking-wider">
               Código do vosso espaço
             </p>
-            <div className="h-16 rounded-2xl border border-[#f0f0f0] bg-[#fafafa] flex items-center justify-center">
+            <div className="h-16 rounded-2xl border border-border bg-muted flex items-center justify-center">
               <span className="text-[22px] font-black text-foreground tracking-[0.25em]">
                 {state.inviteCode ?? "—"}
               </span>
@@ -432,9 +432,9 @@ export default function CoupleSpace() {
                 onClick={() => state.inviteCode && navigator.clipboard.writeText(state.inviteCode).then(() =>
                   toast({ title: "Código copiado" })
                 )}
-                className="h-12 w-12 rounded-2xl border border-[#eeeeee] bg-white flex items-center justify-center active:scale-95 transition-all"
+                className="h-12 w-12 rounded-2xl border border-border bg-card flex items-center justify-center active:scale-95 transition-all"
               >
-                <Copy className="w-4 h-4 text-[#bbb]" strokeWidth={1.5} />
+                <Copy className="w-4 h-4 text-muted-foreground/65" strokeWidth={1.5} />
               </button>
             </div>
           </div>
@@ -443,11 +443,11 @@ export default function CoupleSpace() {
           <div className="space-y-2 pt-2">
             <button
               onClick={() => navigate("/", { replace: true })}
-              className="w-full h-13 rounded-2xl border border-[#e8e8e8] bg-white text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
+              className="w-full h-13 rounded-2xl border border-border bg-card text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
             >
               Entrar na app <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
             </button>
-            <p className="text-[11px] text-[#ccc] text-center animate-ob-hint">
+            <p className="text-[11px] text-muted-foreground/50 text-center animate-ob-hint">
               O teu par pode juntar-se depois com o código acima.
             </p>
           </div>
@@ -458,14 +458,14 @@ export default function CoupleSpace() {
 
   // ── Has house — both connected (auto-navigates after 2.2s) ───────────────
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-8 select-none">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8 select-none">
       <div className="relative z-10 w-full max-w-[280px] text-center space-y-10 animate-in fade-in zoom-in-95 duration-500">
         <TogetherVisual />
         <div className="space-y-4">
           <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
             O vosso espaço está completo.
           </h1>
-          <p className="text-[14px] text-[#999] leading-relaxed">
+          <p className="text-[14px] text-muted-foreground leading-relaxed">
             {partnerName
               ? `Tu e ${partnerName} estão agora juntos no LoveNest.`
               : "Já podem começar a construir a vossa história."

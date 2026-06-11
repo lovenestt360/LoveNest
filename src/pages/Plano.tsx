@@ -110,13 +110,13 @@ export default function Plano() {
           <h1 className="text-2xl font-bold text-foreground">Plano do Dia</h1>
           <button
             onClick={() => navigate("/rotina/gerir")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
           >
-            <Settings2 className="h-5 w-5 text-[#717171]" strokeWidth={1.5} />
+            <Settings2 className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
           </button>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-sm text-[#717171] capitalize">
+          <span className="text-sm text-muted-foreground capitalize">
             {format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}
           </span>
           <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">Hoje</span>
@@ -170,7 +170,7 @@ export default function Plano() {
 
             {routineSubTab === "mine" ? (
                 itemsLoading || logsLoading ? (
-                  <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-slate-200" /></div>
+                  <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" /></div>
                 ) : (
                   <>
                     <RoutineProgressCards 
@@ -193,8 +193,8 @@ export default function Plano() {
 
                     <div className="space-y-3 pt-2">
                       <div className="flex items-center justify-between px-1">
-                        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">O Teu Checklist</p>
-                        <span className="text-[11px] font-semibold text-[#717171]">{todayDone}/{activeItems.length}</span>
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">O Teu Checklist</p>
+                        <span className="text-[11px] font-semibold text-muted-foreground">{todayDone}/{activeItems.length}</span>
                       </div>
                       <RoutineChecklist 
                         items={activeItems} 
@@ -221,7 +221,7 @@ export default function Plano() {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="O que vais fazer?"
-                  className="flex-1 h-11 rounded-xl border-none bg-slate-50 font-bold text-sm focus-visible:ring-1 focus-visible:ring-slate-100 placeholder:text-slate-300"
+                  className="flex-1 h-11 rounded-xl border-none bg-muted font-bold text-sm focus-visible:ring-1 focus-visible:ring-border placeholder:text-muted-foreground/50"
                   onKeyDown={e => {
                     if (e.key === "Enter") {
                       if (isAdding) handleAdd();
@@ -253,14 +253,14 @@ export default function Plano() {
                 )}
               >
                 {/* Selector de destinatário */}
-                <div className="flex p-0.5 bg-slate-100 rounded-lg w-fit">
+                <div className="flex p-0.5 bg-muted rounded-lg w-fit">
                   {(["ambos", "me", "partner"] as const).map((v) => (
                     <button
                       key={v}
                       onClick={() => setForWhom(v)}
                       className={cn(
                         "px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-md transition-all",
-                        forWhom === v ? "bg-white shadow-sm text-slate-900" : "text-slate-400"
+                        forWhom === v ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
                       )}
                     >
                       {v === "ambos" ? "Ambos" : v === "me" ? "Eu" : "Amor"}
@@ -275,18 +275,18 @@ export default function Plano() {
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="h-10 rounded-xl border-none bg-slate-50 font-bold text-xs pl-8 appearance-none focus-visible:ring-1 focus-visible:ring-slate-100"
+                      className="h-10 rounded-xl border-none bg-muted font-bold text-xs pl-8 appearance-none focus-visible:ring-1 focus-visible:ring-border"
                     />
-                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300 pointer-events-none" />
+                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
                   </div>
                   <div className="w-28 relative">
                     <Input
                       type="time"
                       value={newTime}
                       onChange={(e) => setNewTime(e.target.value)}
-                      className="h-10 rounded-xl border-none bg-slate-50 font-bold text-xs pl-8 focus-visible:ring-1 focus-visible:ring-slate-100"
+                      className="h-10 rounded-xl border-none bg-muted font-bold text-xs pl-8 focus-visible:ring-1 focus-visible:ring-border"
                     />
-                    <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300 pointer-events-none" />
+                    <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -304,22 +304,22 @@ export default function Plano() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {isSameDay(parseISO(selectedDate), new Date()) ? "Planos Hoje" : `Planos em ${format(parseISO(selectedDate), "d/MM")}`}
                 </p>
               </div>
 
               {planoLoading ? (
-                <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-slate-200" /></div>
+                <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" /></div>
               ) : items.filter(i => i.plan_at && i.plan_at.startsWith(selectedDate)).length === 0 ? (
                 <div className="glass-card py-14 text-center space-y-3 opacity-50">
-                  <CalendarIcon className="mx-auto h-12 w-12 text-slate-300" />
-                  <p className="font-bold text-slate-500">Nenhum plano marcado</p>
+                  <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                  <p className="font-bold text-muted-foreground">Nenhum plano marcado</p>
                 </div>
               ) : (
                 <div className="rounded-2xl border bg-card divide-y overflow-hidden shadow-sm">
                   {items.filter(i => i.plan_at && i.plan_at.startsWith(selectedDate)).map(item => (
-                    <div key={item.id} className="flex items-center gap-3 w-full px-4 py-4 transition-colors hover:bg-slate-50/50">
+                    <div key={item.id} className="flex items-center gap-3 w-full px-4 py-4 transition-colors hover:bg-muted/50">
                       {/* Custom Checkbox as in RoutineChecklist */}
                       <button
                         type="button"
@@ -329,7 +329,7 @@ export default function Plano() {
                             "flex items-center justify-center h-6 w-6 rounded-lg border-2 transition-all shrink-0",
                             item.completed
                                 ? "bg-green-500 border-green-500 text-white"
-                                : "border-[#e5e5e5]",
+                                : "border-border",
                         )}
                       >
                         {item.completed && (
@@ -340,8 +340,8 @@ export default function Plano() {
                       </button>
 
                       <div className="flex-1 min-w-0">
-                        <p className={cn("font-medium text-sm", item.completed ? "line-through text-[#c4c4c4]" : "text-foreground")}>{item.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#717171]">
+                        <p className={cn("font-medium text-sm", item.completed ? "line-through text-muted-foreground/50" : "text-foreground")}>{item.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
                            <div className="flex items-center gap-1 opacity-60">
                              <Clock className="h-2.5 w-2.5" />
                              {format(parseISO(item.plan_at!), "HH:mm")}
@@ -352,7 +352,7 @@ export default function Plano() {
                            </div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => isReady && deletePlan(item.id)} disabled={!isReady} className="text-slate-200 hover:text-red-500 rounded-full h-8 w-8">
+                      <Button variant="ghost" size="icon" onClick={() => isReady && deletePlan(item.id)} disabled={!isReady} className="text-muted-foreground/50 hover:text-red-500 rounded-full h-8 w-8">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

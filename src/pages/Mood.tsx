@@ -5,7 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { logActivity } from "@/lib/logActivity";
+import { logActivity, fireMissionIfNotFired } from "@/lib/logActivity";
 import { cn } from "@/lib/utils";
 
 import { CheckCircle2 } from "lucide-react";
@@ -35,6 +35,13 @@ export default function Mood() {
   const [sleepQuality, setSleepQuality] = useState<string | null>(null);
 
   const [existingId, setExistingId] = useState<string | null>(null);
+
+  // Fire mission only when BOTH members have registered mood today
+  useEffect(() => {
+    if (partnerRespondedToday && existingId) {
+      fireMissionIfNotFired("mood");
+    }
+  }, [partnerRespondedToday, existingId]);
   const [saving, setSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
@@ -181,7 +188,7 @@ export default function Mood() {
     loadData();
 
     // LoveStreak: registar atividade apenas na primeira gravação do dia (INSERT)
-    if (sp && !existingId) logActivity(sp, "mood");
+    if (sp && !existingId) logActivity(sp, "mood", { skipMission: true });
 
     // Notificação ao parceiro
     if (sp) {
@@ -226,11 +233,11 @@ export default function Mood() {
       {/* Header */}
       <header>
         <h1 className="text-2xl font-bold text-foreground">Humor do dia</h1>
-        <p className="text-sm text-[#717171] mt-0.5">Regista as tuas emoções, atividades e sono.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Regista as tuas emoções, atividades e sono.</p>
       </header>
 
       {/* Tabs */}
-      <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+      <div className="flex bg-muted rounded-2xl p-1 gap-1">
         {([
           { id: "hoje",      label: "Hoje" },
           { id: "historico", label: "Histórico e Par" },
@@ -241,8 +248,8 @@ export default function Mood() {
             className={cn(
               "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
               activeTab === tab.id
-                ? "bg-white text-foreground shadow-sm"
-                : "text-[#717171]"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground"
             )}
           >
             {tab.label}
@@ -270,14 +277,14 @@ export default function Mood() {
 
       {/* Success Overlay */}
       {showSuccessOverlay && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 dark:bg-background/90 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="text-center space-y-4">
-            <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
+            <div className="w-20 h-20 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 text-rose-500" strokeWidth={1.5} />
             </div>
             <div>
               <h2 className="text-xl font-bold text-foreground">Obrigado por partilhares</h2>
-              <p className="text-sm text-[#717171] mt-1">O teu par vai valorizar saber como estás.</p>
+              <p className="text-sm text-muted-foreground mt-1">O teu par vai valorizar saber como estás.</p>
             </div>
           </div>
         </div>

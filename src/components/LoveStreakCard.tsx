@@ -104,13 +104,13 @@ function getStreakNumberSize(streak: number): string {
 // ── Relationship state (footer) ───────────────────────────────────────────────
 
 function getRelationshipState(s: number): { name: string; color: string } {
-  if (s >= 90) return { name: "Eternidade",  color: "text-[#717171]"  };
-  if (s >= 30) return { name: "Farol",       color: "text-[#717171]"  };
-  if (s >= 14) return { name: "Chama Viva",  color: "text-[#717171]"  };
-  if (s >= 7)  return { name: "Chama",       color: "text-[#717171]"  };
-  if (s >= 3)  return { name: "Brasa",       color: "text-[#717171]"  };
-  if (s >= 1)  return { name: "Faísca",      color: "text-[#717171]"  };
-  return             { name: "Início",       color: "text-[#aaa]"     };
+  if (s >= 90) return { name: "Eternidade",  color: "text-muted-foreground"  };
+  if (s >= 30) return { name: "Farol",       color: "text-muted-foreground"  };
+  if (s >= 14) return { name: "Chama Viva",  color: "text-muted-foreground"  };
+  if (s >= 7)  return { name: "Chama",       color: "text-muted-foreground"  };
+  if (s >= 3)  return { name: "Brasa",       color: "text-muted-foreground"  };
+  if (s >= 1)  return { name: "Faísca",      color: "text-muted-foreground"  };
+  return             { name: "Início",       color: "text-muted-foreground/65"     };
 }
 
 function getRelationshipIcon(name: string) {
@@ -134,10 +134,10 @@ type MissionStatus = Record<MissionId, boolean>;
 // ── Card status ───────────────────────────────────────────────────────────────
 
 function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean) {
-  if (bothActive)      return { label: "Juntos hoje",       color: "text-[#717171]", dot: "bg-rose-400" };
-  if (shieldUsedToday) return { label: "Chama protegida",   color: "text-[#aaa]",    dot: "bg-sky-300"  };
-  if (myCheckedIn)     return { label: "A aguardar o par",  color: "text-[#aaa]",    dot: "bg-[#ccc]"   };
-  return               { label: "Aguardando presença",      color: "text-[#bbb]",    dot: "bg-[#ddd]"   };
+  if (bothActive)      return { label: "Juntos hoje",       color: "text-muted-foreground", dot: "bg-rose-400" };
+  if (shieldUsedToday) return { label: "Chama protegida",   color: "text-muted-foreground/65",    dot: "bg-sky-300"  };
+  if (myCheckedIn)     return { label: "A aguardar o par",  color: "text-muted-foreground/65",    dot: "bg-muted-foreground/30"   };
+  return               { label: "Aguardando presença",      color: "text-muted-foreground/65",    dot: "bg-muted-foreground/20"   };
 }
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
@@ -219,9 +219,9 @@ export function LoveStreakCard() {
   if (loading) {
     return (
       <div className="glass-card p-5 animate-pulse space-y-3">
-        <div className="h-3 w-24 bg-[#f5f5f5] rounded-full" />
-        <div className="h-10 w-16 bg-[#f5f5f5] rounded-lg" />
-        <div className="h-3 w-32 bg-[#f5f5f5] rounded-full" />
+        <div className="h-3 w-24 bg-muted rounded-full" />
+        <div className="h-10 w-16 bg-muted rounded-lg" />
+        <div className="h-3 w-32 bg-muted rounded-full" />
       </div>
     );
   }
@@ -244,11 +244,11 @@ export function LoveStreakCard() {
 
   // Visual system
   const cardBg    = getCardTemperature(currentStreak, bothActiveToday, perfectDay);
-  const dotColor  = bothActiveToday ? "#F87171" : "#e0e0e0";
-  const lineColor = bothActiveToday ? "rgba(248,113,113,0.18)" : "rgba(220,220,220,0.8)";
+  const dotColor  = bothActiveToday ? "#F87171" : "hsl(var(--border))";
+  const lineColor = bothActiveToday ? "rgba(248,113,113,0.18)" : "hsl(var(--border) / 0.8)";
   const daysLeft  = getJourneyDaysLeft(currentStreak);
   const nextName  = getJourneyNext(currentStreak);
-  const borderColor = "#f0f0f0";
+  const borderColor = "hsl(var(--border))";
 
   return (
     <div className="relative">
@@ -292,8 +292,8 @@ export function LoveStreakCard() {
           background:  cardBg,
           borderColor,
           boxShadow: bothActiveToday
-            ? "0 2px 4px rgba(0,0,0,0.04),0 12px 32px -4px rgba(0,0,0,0.09),inset 0 1px 0 rgba(255,255,255,0.95),inset 0 -1px 20px rgba(255,107,143,0.05)"
-            : "0 2px 4px rgba(0,0,0,0.04),0 8px 24px -2px rgba(0,0,0,0.07),inset 0 1px 0 rgba(255,255,255,0.90)",
+            ? "0 2px 4px rgba(0,0,0,0.04),0 12px 32px -4px rgba(0,0,0,0.09),inset 0 1px 0 hsl(var(--foreground) / 0.05),inset 0 -1px 20px rgba(255,107,143,0.05)"
+            : "0 2px 4px rgba(0,0,0,0.04),0 8px 24px -2px rgba(0,0,0,0.07),inset 0 1px 0 hsl(var(--foreground) / 0.04)",
         }}
       >
 
@@ -302,26 +302,26 @@ export function LoveStreakCard() {
           <div className="flex items-center gap-1.5">
             <Flame
               className={cn("w-4 h-4 transition-colors",
-                bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-[#c4c4c4]")}
+                bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-muted-foreground/50")}
               strokeWidth={1.5}
             />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               A vossa Chama
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             {perfectDay && (
-              <span className="flex items-center gap-1 bg-[#fafafa] border border-[#ebebeb] text-[#999] text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300">
+              <span className="flex items-center gap-1 bg-muted border border-border text-muted-foreground text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300">
                 <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
                 Dia Completo
               </span>
             )}
-            <ChevronRight className="w-4 h-4 text-[#c4c4c4]" strokeWidth={1.5} />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
           </div>
         </div>
 
         {/* ── Contextual phrase ── */}
-        <p className="text-[11px] text-[#aaa] mb-1.5 leading-snug">
+        <p className="text-[11px] text-muted-foreground/65 mb-1.5 leading-snug">
           {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk, perfectDay)}
         </p>
 
@@ -348,7 +348,7 @@ export function LoveStreakCard() {
               </span>
             </div>
             <span className={cn("text-[10px] leading-snug max-w-[130px]",
-              bothActiveToday ? "text-rose-400 font-medium" : "text-[#aaa]")}>
+              bothActiveToday ? "text-rose-400 font-medium" : "text-muted-foreground/65")}>
               {daysLabel}
             </span>
           </div>
@@ -363,11 +363,11 @@ export function LoveStreakCard() {
                       ? bothActiveToday
                         ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
                         : "fill-rose-500 text-rose-500 animate-heart-throb"
-                      : "text-[#e0e0e0]"
+                      : "text-muted-foreground/30"
                   )}
                   strokeWidth={myCheckedIn ? 0 : 1.5}
                 />
-                <span className="text-[9px] text-[#bbb] font-semibold">Tu</span>
+                <span className="text-[9px] text-muted-foreground/65 font-semibold">Tu</span>
               </div>
               <div className="relative flex items-center gap-1">
                 <Heart
@@ -376,21 +376,21 @@ export function LoveStreakCard() {
                       ? bothActiveToday
                         ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
                         : "fill-rose-500 text-rose-500 animate-heart-throb"
-                      : "text-[#e0e0e0]"
+                      : "text-muted-foreground/30"
                   )}
                   strokeWidth={partnerCheckedIn ? 0 : 1.5}
                 />
-                <span className="text-[9px] text-[#bbb] font-semibold">Par</span>
+                <span className="text-[9px] text-muted-foreground/65 font-semibold">Par</span>
               </div>
             </div>
             <div className="flex items-center gap-0.5">
               {[0, 1, 2].map(i => (
                 <Shield key={i}
-                  className={cn("w-3.5 h-3.5", i < shieldsRemaining ? "text-blue-400" : "text-[#e0e0e0]")}
+                  className={cn("w-3.5 h-3.5", i < shieldsRemaining ? "text-blue-400" : "text-muted-foreground/30")}
                   strokeWidth={1.5}
                 />
               ))}
-              <span className="text-[9px] text-[#bbb] font-semibold uppercase tracking-wide ml-1">
+              <span className="text-[9px] text-muted-foreground/65 font-semibold uppercase tracking-wide ml-1">
                 Proteção
               </span>
             </div>
@@ -411,7 +411,7 @@ export function LoveStreakCard() {
                   {idx > 0 && (
                     <div
                       className="flex-1 h-px transition-all duration-700"
-                      style={{ background: reached ? lineColor : "#f0f0f0" }}
+                      style={{ background: reached ? lineColor : "hsl(var(--border))" }}
                     />
                   )}
                   <div
@@ -422,7 +422,7 @@ export function LoveStreakCard() {
                     style={{
                       width:  isCurrent ? 14 : 7,
                       height: isCurrent ? 14 : 7,
-                      background: reached ? dotColor : "#f0f0f0",
+                      background: reached ? dotColor : "hsl(var(--border))",
                       boxShadow: isCurrent
                         ? `0 0 ${bothActiveToday ? 12 : 8}px rgba(244,63,94,${bothActiveToday ? 0.30 : 0.20})`
                         : "none",
@@ -434,15 +434,15 @@ export function LoveStreakCard() {
           </div>
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-[11px] font-semibold tracking-wide"
-              style={{ color: currentStreak >= 1 ? (bothActiveToday ? "#F87171" : "#aaa") : "#d4d4d4" }}>
+              style={{ color: currentStreak >= 1 ? (bothActiveToday ? "#F87171" : "hsl(var(--muted-foreground))") : "hsl(var(--muted-foreground) / 0.4)" }}>
               {getCurrentJourneyLevel(currentStreak)?.name ?? "Início"}
             </span>
             {nextName ? (
-              <span className="text-[9px]" style={{ color: "#ccc" }}>
+              <span className="text-[9px]" style={{ color: "hsl(var(--muted-foreground) / 0.5)" }}>
                 {daysLeft} {daysLeft === 1 ? "dia" : "dias"} para {nextName}
               </span>
             ) : currentStreak >= 90 ? (
-              <span className="text-[9px] font-medium text-[#aaa]">
+              <span className="text-[9px] font-medium text-muted-foreground/65">
                 Chegaram à Eternidade
               </span>
             ) : null}
@@ -450,7 +450,7 @@ export function LoveStreakCard() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-[#f0f0f0]">
+        <div className="flex items-center justify-between pt-2.5 border-t border-border">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1">
               <RelIcon
@@ -463,16 +463,16 @@ export function LoveStreakCard() {
             </div>
             <div className="flex items-center gap-1 text-[10px]">
               <span className={cn("font-semibold tabular-nums",
-                displayPoints > 0 ? "text-rose-400" : "text-[#ccc]")}>
+                displayPoints > 0 ? "text-rose-400" : "text-muted-foreground/50")}>
                 {displayPoints}
               </span>
-              <span className="text-[#ccc]">pts</span>
+              <span className="text-muted-foreground/50">pts</span>
               <span className="text-[#ddd]">·</span>
               <span className={cn("font-semibold tabular-nums",
-                gesturesDone > 0 ? "text-sky-400" : "text-[#ccc]")}>
+                gesturesDone > 0 ? "text-sky-400" : "text-muted-foreground/50")}>
                 {gesturesDone}
               </span>
-              <span className="text-[#ccc]">gestos</span>
+              <span className="text-muted-foreground/50">gestos</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -480,13 +480,13 @@ export function LoveStreakCard() {
               {MISSIONS.map(({ id, Icon, doneColor }) => (
                 <Icon key={id}
                   className={cn("w-3.5 h-3.5 transition-colors",
-                    missions[id] ? doneColor : "text-[#e0e0e0]")}
+                    missions[id] ? doneColor : "text-muted-foreground/30")}
                   strokeWidth={1.5}
                 />
               ))}
             </div>
             {allMissionsDone && (
-              <span className="text-[9px] font-semibold text-[#aaa] tracking-wide">
+              <span className="text-[9px] font-semibold text-muted-foreground/65 tracking-wide">
                 Missão cumprida
               </span>
             )}
@@ -496,7 +496,7 @@ export function LoveStreakCard() {
       </button>
 
       {perfectDay && (
-        <p className="text-center text-[10px] text-[#bbb] font-medium px-2 animate-in fade-in duration-500">
+        <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 animate-in fade-in duration-500">
           Hoje o vosso espaço esteve completo.
         </p>
       )}

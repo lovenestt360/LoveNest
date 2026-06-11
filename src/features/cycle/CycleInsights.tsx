@@ -45,9 +45,9 @@ export function CycleInsights({ data }: { data: CycleData }) {
     };
 
     return (
-      <div className="rounded-2xl border border-[#F8BBD0]/40 bg-[#FADADD]/20 px-5 py-4 flex items-start gap-3 shadow-sm">
+      <div className="rounded-2xl border border-[#F8BBD0]/40 dark:border-rose-900/40 bg-[#FADADD]/20 dark:bg-rose-950/20 px-5 py-4 flex items-start gap-3 shadow-sm">
         <span className="text-xl shrink-0">{config.emoji}</span>
-        <p className="text-sm font-medium leading-relaxed text-[#E94E77]">
+        <p className="text-sm font-medium leading-relaxed text-[#E94E77] dark:text-rose-300">
           {config.message}
         </p>
       </div>
@@ -64,11 +64,11 @@ export function CycleInsights({ data }: { data: CycleData }) {
   return (
     <div className="space-y-2">
       {/* Insight principal — rosa suave */}
-      <div className="rounded-2xl border border-[#F8BBD0]/50 bg-[#FADADD]/25 px-5 py-4 flex items-start gap-3 shadow-sm">
-        <Sparkles className="h-4 w-4 text-[#E94E77] shrink-0 mt-0.5" />
+      <div className="rounded-2xl border border-[#F8BBD0]/50 dark:border-rose-900/40 bg-[#FADADD]/25 dark:bg-rose-950/20 px-5 py-4 flex items-start gap-3 shadow-sm">
+        <Sparkles className="h-4 w-4 text-[#E94E77] dark:text-rose-300 shrink-0 mt-0.5" />
         <div className="space-y-0.5 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#E94E77]/60">{phaseLabel}</p>
-          <p className="text-sm leading-relaxed text-[#777777]">{primaryInsight}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#E94E77]/60 dark:text-rose-300/70">{phaseLabel}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{primaryInsight}</p>
         </div>
       </div>
 
@@ -79,17 +79,17 @@ export function CycleInsights({ data }: { data: CycleData }) {
           className={cn(
             "rounded-2xl border px-4 py-3 flex items-center gap-2.5 shadow-sm",
             isUrgent
-              ? "border-[#E94E77]/20 bg-[#FADADD]/30"      // próx. menstruação: pink mais forte
-              : "border-[#F8BBD0]/30 bg-[#F5F5F5]/60"     // outros: neutro suave
+              ? "border-[#E94E77]/20 dark:border-rose-800/40 bg-[#FADADD]/30 dark:bg-rose-950/20"      // próx. menstruação: pink mais forte
+              : "border-[#F8BBD0]/30 dark:border-rose-900/40 bg-muted/60"     // outros: neutro suave
           )}
         >
           <AlertCircle className={cn(
             "h-4 w-4 shrink-0",
-            isUrgent ? "text-[#E94E77]" : "text-[#777777]/50"
+            isUrgent ? "text-[#E94E77] dark:text-rose-300" : "text-muted-foreground/50"
           )} />
           <p className={cn(
             "text-xs font-medium leading-snug",
-            isUrgent ? "text-[#E94E77]" : "text-[#777777]"
+            isUrgent ? "text-[#E94E77] dark:text-rose-300" : "text-muted-foreground"
           )}>
             {alert}
           </p>

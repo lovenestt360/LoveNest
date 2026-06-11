@@ -29,16 +29,16 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
           className="relative active:opacity-70 transition-opacity"
         >
           <Avatar className={cn(
-            "h-11 w-11 ring-2 ring-white shadow-sm",
+            "h-11 w-11 ring-2 ring-background shadow-sm",
             loading && "animate-pulse"
           )}>
             {me?.avatarUrl && <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />}
-            <AvatarFallback className="bg-[#f5f5f5] text-[#171717] font-semibold text-sm">
+            <AvatarFallback className="bg-muted text-foreground font-semibold text-sm">
               {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "U")}
             </AvatarFallback>
           </Avatar>
           {me?.verificationStatus === "verified" && (
-            <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-px shadow-sm">
+            <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-px shadow-sm">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
             </div>
           )}
@@ -47,7 +47,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
         {/* Brand */}
         <div className="flex flex-col items-center">
           <span className="text-[22px] font-bold tracking-tight text-foreground">LoveNest</span>
-          <span className="text-[11px] text-[#717171] capitalize">{today}</span>
+          <span className="text-[11px] text-muted-foreground capitalize">{today}</span>
         </div>
 
         {/* Partner avatar */}
@@ -56,16 +56,16 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
           className="relative active:opacity-70 transition-opacity"
         >
           <Avatar className={cn(
-            "h-11 w-11 ring-2 ring-white shadow-sm",
+            "h-11 w-11 ring-2 ring-background shadow-sm",
             loading && "animate-pulse"
           )}>
             {partner?.avatarUrl && <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />}
-            <AvatarFallback className="bg-[#f5f5f5] text-[#171717] font-semibold text-sm">
+            <AvatarFallback className="bg-muted text-foreground font-semibold text-sm">
               {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
             </AvatarFallback>
           </Avatar>
           {partner?.verificationStatus === "verified" && (
-            <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-px shadow-sm">
+            <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-px shadow-sm">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
             </div>
           )}

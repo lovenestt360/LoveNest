@@ -117,39 +117,39 @@ export default function TimeCapsule() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <header className="px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm z-10 border-b border-[#f0f0f0] flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-[#717171]">
+            <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b border-border flex items-center gap-3">
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-muted-foreground">
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
                     <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-                        Cápsula do Tempo <Clock className="w-4 h-4 text-[#717171]" />
+                        Cápsula do Tempo <Clock className="w-4 h-4 text-muted-foreground" />
                     </h1>
                 </div>
             </header>
 
             <main className="p-4 space-y-4 max-w-md mx-auto">
-                <div className="bg-white border border-[#f0f0f0] rounded-2xl p-4 shadow-sm">
-                    <p className="text-[13px] text-[#717171]">Guarda mensagens hoje para serem lidas juntos no futuro.</p>
+                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+                    <p className="text-[13px] text-muted-foreground">Guarda mensagens hoje para serem lidas juntos no futuro.</p>
                 </div>
 
                 {/* Add Flow */}
                 {isAdding ? (
-                    <form onSubmit={handleCreate} className="bg-white border border-[#f0f0f0] rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
-                        <div className="p-4 border-b border-[#f0f0f0]">
+                    <form onSubmit={handleCreate} className="bg-card border border-border rounded-2xl shadow-sm animate-in slide-in-from-top-2 overflow-hidden">
+                        <div className="p-4 border-b border-border">
                             <h3 className="font-semibold text-[15px]">Nova Cápsula</h3>
                         </div>
-                        <div className="divide-y divide-[#f0f0f0]">
+                        <div className="divide-y divide-border">
                             <div className="p-4 space-y-1">
-                                <label className="text-[11px] font-semibold text-[#717171]">Para quando?</label>
+                                <label className="text-[11px] font-semibold text-muted-foreground">Para quando?</label>
                                 <Input type="date" value={unlockDate} onChange={(e) => setUnlockDate(e.target.value)} min={format(new Date(), "yyyy-MM-dd")} className="bg-transparent border-none p-0 h-auto text-sm focus-visible:ring-0 cursor-pointer" required />
                             </div>
                             <div className="p-4 space-y-1">
-                                <label className="text-[11px] font-semibold text-[#717171]">A tua mensagem</label>
-                                <Textarea placeholder="Escreve para o vosso eu do futuro..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} className="bg-transparent border-none p-0 resize-none text-sm focus-visible:ring-0 placeholder:text-[#c0c0c0]" rows={3} required />
+                                <label className="text-[11px] font-semibold text-muted-foreground">A tua mensagem</label>
+                                <Textarea placeholder="Escreve para o vosso eu do futuro..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} className="bg-transparent border-none p-0 resize-none text-sm focus-visible:ring-0 placeholder:text-muted-foreground/50" rows={3} required />
                             </div>
                             <div
-                                className={`p-4 flex items-center gap-3 cursor-pointer active:bg-[#fafafa] transition-colors ${selectedImage ? 'text-foreground' : 'text-[#717171]'}`}
+                                className={`p-4 flex items-center gap-3 cursor-pointer active:bg-muted transition-colors ${selectedImage ? 'text-foreground' : 'text-muted-foreground'}`}
                                 onClick={() => document.getElementById('capsule-img')?.click()}
                             >
                                 <ImageIcon className="w-5 h-5 shrink-0" />
@@ -158,28 +158,28 @@ export default function TimeCapsule() {
                             </div>
                         </div>
                         <div className="p-4 flex gap-2">
-                            <button type="button" className="flex-1 h-11 rounded-xl border border-[#e5e5e5] text-sm font-medium text-[#717171] active:scale-[0.98] transition-all" onClick={() => setIsAdding(false)}>Cancelar</button>
+                            <button type="button" className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground active:scale-[0.98] transition-all" onClick={() => setIsAdding(false)}>Cancelar</button>
                             <button type="submit" disabled={uploading || !newMessage.trim() || !unlockDate} className="flex-1 h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all">
                                 {uploading ? "A guardar..." : "Guardar Cápsula"}
                             </button>
                         </div>
                     </form>
                 ) : (
-                    <button onClick={() => setIsAdding(true)} className="w-full h-12 rounded-2xl gap-2 bg-white border border-[#f0f0f0] shadow-sm text-foreground font-semibold text-sm flex items-center justify-center active:scale-[0.98] transition-all">
-                        <Plus className="w-5 h-5 text-[#717171]" /> Criar Nova Cápsula
+                    <button onClick={() => setIsAdding(true)} className="w-full h-12 rounded-2xl gap-2 bg-card border border-border shadow-sm text-foreground font-semibold text-sm flex items-center justify-center active:scale-[0.98] transition-all">
+                        <Plus className="w-5 h-5 text-muted-foreground" /> Criar Nova Cápsula
                     </button>
                 )}
 
                 {/* List */}
                 {loading ? (
                     <div className="flex justify-center py-10">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#c0c0c0]" />
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
                     </div>
                 ) : capsules.length === 0 ? (
-                    <div className="text-center p-10 bg-white border border-[#f0f0f0] rounded-2xl shadow-sm space-y-2">
-                        <Lock className="w-9 h-9 text-[#c0c0c0] mx-auto" />
+                    <div className="text-center p-10 bg-card border border-border rounded-2xl shadow-sm space-y-2">
+                        <Lock className="w-9 h-9 text-muted-foreground/50 mx-auto" />
                         <p className="font-semibold text-foreground">Nenhuma cápsula ainda</p>
-                        <p className="text-[12px] text-[#717171]">O vosso eu do futuro ainda não tem surpresas guardadas.</p>
+                        <p className="text-[12px] text-muted-foreground">O vosso eu do futuro ainda não tem surpresas guardadas.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -189,7 +189,7 @@ export default function TimeCapsule() {
                             const daysDiff = Math.abs(differenceInDays(new Date(), unlockDateObj));
 
                             return (
-                                <div key={c.id} className="bg-white border border-[#f0f0f0] rounded-2xl overflow-hidden shadow-sm transition-all">
+                                <div key={c.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm transition-all">
                                     {c.is_unlocked ? (
                                         <div className="p-5 animate-in fade-in zoom-in-95 duration-500">
                                             <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground font-bold uppercase tracking-wider">
@@ -208,7 +208,7 @@ export default function TimeCapsule() {
 
                                             {canUnlock ? (
                                                 <div className="space-y-4">
-                                                    <p className="text-sm text-green-600 font-bold">A cápsula já pode ser revelada!</p>
+                                                    <p className="text-sm text-green-600 dark:text-green-400 font-bold">A cápsula já pode ser revelada!</p>
                                                     <Button onClick={() => handleUnlock(c)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-full">Abrir Cápsula Agora 🗝️</Button>
                                                 </div>
                                             ) : (

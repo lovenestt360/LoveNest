@@ -108,7 +108,7 @@ export function PartnerRoutinePanel() {
     if (loadingPartner) {
         return (
             <div className="flex justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
             </div>
         );
     }
@@ -116,12 +116,12 @@ export function PartnerRoutinePanel() {
     // ── Parceiro não encontrado em members
     if (!partnerId) {
         return (
-            <div className="rounded-3xl border border-dashed border-slate-200 bg-white/40 backdrop-blur-sm p-10 text-center space-y-3">
-                <div className="mx-auto h-14 w-14 rounded-full bg-rose-50 flex items-center justify-center">
+            <div className="rounded-3xl border border-dashed border-border bg-card/40 backdrop-blur-sm p-10 text-center space-y-3">
+                <div className="mx-auto h-14 w-14 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center">
                     <Heart className="h-7 w-7 text-rose-300" />
                 </div>
-                <p className="font-bold text-slate-500">O teu parceiro ainda não está ligado</p>
-                <p className="text-xs text-slate-400">Convida-o para se juntar ao vosso ninho 💛</p>
+                <p className="font-bold text-muted-foreground">O teu parceiro ainda não está ligado</p>
+                <p className="text-xs text-muted-foreground">Convida-o para se juntar ao vosso ninho 💛</p>
             </div>
         );
     }
@@ -130,7 +130,7 @@ export function PartnerRoutinePanel() {
     if (loadingItems || loadingLogs) {
         return (
             <div className="flex justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
             </div>
         );
     }
@@ -139,19 +139,19 @@ export function PartnerRoutinePanel() {
         <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 border border-[#e5e5e5] bg-rose-50 flex items-center justify-center text-sm font-semibold text-rose-400 shadow-sm">
+                <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 border border-border bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-sm font-semibold text-rose-400 shadow-sm">
                     {partnerAvatar
                         ? <img src={partnerAvatar} alt={partnerName} className="h-full w-full object-cover" />
                         : <span>{partnerName.charAt(0).toUpperCase()}</span>
                     }
                 </div>
                 <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Rotina de</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Rotina de</p>
                     <p className="text-sm font-semibold text-foreground leading-tight">{partnerName}</p>
                 </div>
-                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#e5e5e5] bg-white">
+                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-card">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                    <span className="text-[11px] font-medium text-[#717171]">
+                    <span className="text-[11px] font-medium text-muted-foreground">
                         {todayChecked.length}/{items.length} hoje
                     </span>
                 </div>
@@ -168,7 +168,7 @@ export function PartnerRoutinePanel() {
             {/* Checklist read-only */}
             {items.length > 0 ? (
                 <div className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171] px-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">
                         Hábitos de hoje
                     </p>
                     <RoutineChecklist
@@ -180,8 +180,8 @@ export function PartnerRoutinePanel() {
                 </div>
             ) : (
                 <div className="glass-card py-10 text-center space-y-2">
-                    <UserRound className="mx-auto h-7 w-7 text-[#c4c4c4]" strokeWidth={1.5} />
-                    <p className="text-sm text-[#717171]">{partnerName} ainda não criou hábitos</p>
+                    <UserRound className="mx-auto h-7 w-7 text-muted-foreground/50" strokeWidth={1.5} />
+                    <p className="text-sm text-muted-foreground">{partnerName} ainda não criou hábitos</p>
                 </div>
             )}
         </div>

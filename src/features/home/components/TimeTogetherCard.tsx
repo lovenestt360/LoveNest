@@ -39,7 +39,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
     <div className="glass-card overflow-hidden">
       <div className="px-4 py-1.5">
 
-        <p className="text-[9px] font-semibold uppercase tracking-widest text-[#aaa] mb-1">
+        <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/65 mb-1">
           Tempo juntos
         </p>
 
@@ -50,7 +50,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             <span className="text-xl font-bold tabular-nums tracking-tight text-rose-500">
               {days}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">
+            <span className="text-[9px] uppercase tracking-widest font-medium text-muted-foreground/65 mt-0.5">
               dias
             </span>
           </div>
@@ -62,7 +62,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             <span className="text-base font-bold tabular-nums tracking-tight text-foreground">
               {String(hours).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">
+            <span className="text-[9px] uppercase tracking-widest font-medium text-muted-foreground/65 mt-0.5">
               hrs
             </span>
           </div>
@@ -74,7 +74,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             <span className="text-base font-bold tabular-nums tracking-tight text-foreground">
               {String(minutes).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">
+            <span className="text-[9px] uppercase tracking-widest font-medium text-muted-foreground/65 mt-0.5">
               min
             </span>
           </div>
@@ -86,7 +86,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
             <span className="text-base font-bold tabular-nums tracking-tight text-foreground/70">
               {String(seconds).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-medium text-[#aaa] mt-0.5">
+            <span className="text-[9px] uppercase tracking-widest font-medium text-muted-foreground/65 mt-0.5">
               seg
             </span>
           </div>

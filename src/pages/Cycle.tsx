@@ -49,14 +49,14 @@ export default function Cycle() {
       {/* Header */}
       <header>
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
             <Flower2 className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               {isPartner ? "Ciclo da Parceira" : "Ciclo"}
             </h1>
-            <p className="text-sm text-[#717171]">
+            <p className="text-sm text-muted-foreground">
               {isPartner ? "Acompanha o ciclo da tua parceira." : "O teu rastreio menstrual privado."}
             </p>
           </div>
@@ -69,14 +69,14 @@ export default function Cycle() {
       </header>
 
       {/* Tabs */}
-      <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+      <div className="flex bg-muted rounded-2xl p-1 gap-1">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
             className={cn(
               "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-              activeTab === t.id ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
+              activeTab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
             )}
           >
             {t.label}

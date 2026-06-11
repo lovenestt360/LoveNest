@@ -19,7 +19,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
     <div
       ref={ref}
       className={cn(
-        "rounded-[1.25rem] border border-[#e5e5e5] bg-white",
+        "rounded-[1.25rem] border border-border bg-card",
         elevated
           ? "shadow-md shadow-black/8"
           : "shadow-sm shadow-black/5",

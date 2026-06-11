@@ -576,18 +576,18 @@ export default function Settings() {
         <section className="space-y-6">
           <header className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">Definições</h1>
-            <p className="text-sm text-[#717171] mt-0.5">Personalizem o vosso espaço.</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Personalizem o vosso espaço.</p>
           </header>
 
           {/* Profile summary */}
           <div className="glass-card p-5 flex items-center gap-4 mb-6">
-            <Avatar className="h-16 w-16 ring-2 ring-white shadow-sm">
+            <Avatar className="h-16 w-16 ring-2 ring-card shadow-sm">
               {avatarUrl ? <AvatarImage src={avatarUrl} /> : null}
-              <AvatarFallback className="text-lg bg-rose-50 text-rose-400 font-semibold border border-rose-100">{initials}</AvatarFallback>
+              <AvatarFallback className="text-lg bg-rose-50 dark:bg-rose-950/30 text-rose-400 font-semibold border border-rose-100 dark:border-rose-900/40">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold text-foreground truncate">{displayName || "Utilizador"}</h3>
-              <p className="text-sm text-[#717171] truncate">{user?.email}</p>
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
 
@@ -599,21 +599,21 @@ export default function Settings() {
                 onClick={() => setCurrentCategory(item.id)}
                 className="glass-card glass-card-hover w-full p-4 flex items-center gap-4 text-left active:scale-[0.98]"
               >
-                <div className="h-10 w-10 rounded-2xl bg-white border border-[#e5e5e5] flex items-center justify-center text-rose-400 shrink-0">
+                <div className="h-10 w-10 rounded-2xl bg-muted border border-border flex items-center justify-center text-rose-400 shrink-0">
                   {item.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                  <p className="text-[11px] text-[#717171]">{item.sub}</p>
+                  <p className="text-[11px] text-muted-foreground">{item.sub}</p>
                 </div>
-                <ChevronLeft className="h-4 w-4 text-[#c4c4c4] rotate-180 shrink-0" strokeWidth={1.5} />
+                <ChevronLeft className="h-4 w-4 text-muted-foreground/60 rotate-180 shrink-0" strokeWidth={1.5} />
               </button>
             ))}
           </div>
 
           <button
             onClick={() => signOut()}
-            className="w-full mt-6 h-12 rounded-2xl border border-[#e5e5e5] text-sm font-medium text-rose-500 flex items-center justify-center gap-2 hover:bg-rose-50 transition-colors active:scale-[0.98]"
+            className="w-full mt-6 h-12 rounded-2xl border border-border text-sm font-medium text-rose-500 flex items-center justify-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors active:scale-[0.98]"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.5} /> Terminar Sessão
           </button>
@@ -623,7 +623,7 @@ export default function Settings() {
           <div className="flex items-center gap-3 mb-6">
             <button
               onClick={() => setCurrentCategory('menu')}
-              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors"
+              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
             >
               <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
             </button>
@@ -658,7 +658,7 @@ export default function Settings() {
 
                 {referralCode && (
                   <div className="pt-4 border-t border-border space-y-2">
-                    <Label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Teu Código LoveNest (Amigos)</Label>
+                    <Label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Teu Código LoveNest (Amigos)</Label>
                     <div className="flex gap-2">
                       <Input value={referralCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
                       <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(referralCode, "Código de parceiro copiado!")}>
@@ -685,7 +685,7 @@ export default function Settings() {
 
                 {houseInviteCode && (
                   <div className="pt-4 border-t border-border space-y-2">
-                    <Label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">Código da Casa (Parceiro)</Label>
+                    <Label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Código da Casa (Parceiro)</Label>
                     <div className="flex gap-2">
                       <Input value={houseInviteCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
                       <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(houseInviteCode, "Código da casa copiado!")}>
@@ -710,11 +710,11 @@ export default function Settings() {
                   {pushSubscribed ? <Bell className="text-green-500" /> : <BellOff className="text-muted-foreground" />}
                 </div>
                 {pushPermission === "unsupported" ? (
-                  <div className="bg-[#f8f5f5] border border-[#ece8e8] rounded-2xl p-4">
+                  <div className="bg-muted border border-border rounded-2xl p-4">
                     <p className="text-[12px] font-semibold text-foreground leading-snug mb-1">
                       Notificações indisponíveis neste dispositivo.
                     </p>
-                    <p className="text-[11px] text-[#999] leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
                       A Apple requer iOS 16.4 ou superior com a app instalada no ecrã inicial para suportar notificações push.
                     </p>
                   </div>
@@ -724,14 +724,14 @@ export default function Settings() {
                       <Button variant="outline" size="sm" onClick={handleDisablePush} disabled={pushLoading} className="flex-1 rounded-xl">Desativar</Button>
                       <Button variant="outline" size="sm" onClick={handleTestNotification} disabled={testLoading} className="flex-1 rounded-xl">Testar</Button>
                     </div>
-                    <p className="text-[10px] text-[#bbb] text-center">Notificações ativas neste dispositivo.</p>
+                    <p className="text-[10px] text-muted-foreground/65 text-center">Notificações ativas neste dispositivo.</p>
                   </div>
                 ) : pushPermission === "denied" ? (
-                  <div className="bg-[#f8f5f5] border border-[#ece8e8] rounded-2xl p-4">
+                  <div className="bg-muted border border-border rounded-2xl p-4">
                     <p className="text-[12px] font-semibold text-foreground leading-snug mb-1">
                       Permissão bloqueada.
                     </p>
-                    <p className="text-[11px] text-[#999] leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
                       Para ativar, vai às Definições do teu dispositivo e permite notificações para o LoveNest.
                     </p>
                   </div>
@@ -747,9 +747,9 @@ export default function Settings() {
               </div>
               {/* Smart notifications */}
               <div className="glass-card p-5 space-y-0">
-                <div className="pb-4 border-b border-[#f5f5f5]">
+                <div className="pb-4 border-b border-border">
                   <p className="text-[13px] font-semibold text-foreground">Lembretes automáticos</p>
-                  <p className="text-[11px] text-[#999] mt-0.5 leading-relaxed">Enviados nos momentos certos, com base no vosso ritmo.</p>
+                  <p className="text-[11px] text-muted-foreground/80 mt-0.5 leading-relaxed">Enviados nos momentos certos, com base no vosso ritmo.</p>
                 </div>
                 {[
                   { id: 'engagement', label: 'Presença e conexão',  desc: 'Quando o espaço está silencioso' },
@@ -757,18 +757,18 @@ export default function Settings() {
                   { id: 'partner',    label: 'Atividade do par',    desc: 'Quando o teu par aparece no espaço' },
                   { id: 'system',     label: 'Agenda e tarefas',    desc: 'Alertas sobre tarefas e eventos' },
                 ].map((cat, i, arr) => (
-                  <div key={cat.id} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-[#f5f5f5]')}>
+                  <div key={cat.id} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-border')}>
                     <div className="space-y-0.5">
                       <p className="text-[13px] font-medium text-foreground">{cat.label}</p>
-                      <p className="text-[11px] text-[#bbb]">{cat.desc}</p>
+                      <p className="text-[11px] text-muted-foreground/65">{cat.desc}</p>
                     </div>
                     <Switch checked={smartSettings.find(s => s.category === cat.id)?.enabled !== false} onCheckedChange={() => toggleSmartNotif(cat.id)} />
                   </div>
                 ))}
-                <div className="pt-4 border-t border-[#f5f5f5]">
-                  <p className="text-[11px] font-medium text-[#999] mb-2">Horário preferido para lembretes</p>
+                <div className="pt-4 border-t border-border">
+                  <p className="text-[11px] font-medium text-muted-foreground/80 mb-2">Horário preferido para lembretes</p>
                   <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
-                    <SelectTrigger className="h-11 bg-white border-[#eeeeee] rounded-xl text-[13px]">
+                    <SelectTrigger className="h-11 bg-white dark:bg-white/5 border border-border rounded-xl text-[13px]">
                       <SelectValue placeholder="Escolhe uma hora..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -782,9 +782,9 @@ export default function Settings() {
 
               {/* Real-time activity notifications */}
               <div className="glass-card p-5 space-y-0">
-                <div className="pb-4 border-b border-[#f5f5f5]">
+                <div className="pb-4 border-b border-border">
                   <p className="text-[13px] font-semibold text-foreground">Avisos em tempo real</p>
-                  <p className="text-[11px] text-[#999] mt-0.5 leading-relaxed">Alertas imediatos quando há atividade no vosso espaço.</p>
+                  <p className="text-[11px] text-muted-foreground/80 mt-0.5 leading-relaxed">Alertas imediatos quando há atividade no vosso espaço.</p>
                 </div>
                 {([
                   { key: 'chat',      label: 'Mensagens',  desc: 'Nova mensagem do teu par' },
@@ -794,26 +794,26 @@ export default function Settings() {
                   { key: 'oracao',    label: 'Oração',     desc: 'Momento de oração em conjunto' },
                   { key: 'conflitos', label: 'Desabafos',  desc: 'Novos desabafos para resolver' },
                 ] as const).map((item, i, arr) => (
-                  <div key={item.key} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-[#f5f5f5]')}>
+                  <div key={item.key} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-border')}>
                     <div className="space-y-0.5">
                       <p className="text-[13px] font-medium text-foreground">{item.label}</p>
-                      <p className="text-[11px] text-[#bbb]">{item.desc}</p>
+                      <p className="text-[11px] text-muted-foreground/65">{item.desc}</p>
                     </div>
                     <Switch checked={notifPrefs[item.key] ?? true} onCheckedChange={() => toggleNotif(item.key)} />
                   </div>
                 ))}
-                <div className="pt-4 border-t border-[#f5f5f5]">
-                  <p className="text-[11px] font-medium text-[#bbb] pb-2">Ciclo menstrual</p>
+                <div className="pt-4 border-t border-border">
+                  <p className="text-[11px] font-medium text-muted-foreground/65 pb-2">Ciclo menstrual</p>
                   {([
                     { key: 'ciclo_lembrete',    label: 'Lembretes gerais', desc: 'Avisos sobre o ciclo' },
                     { key: 'ciclo_menstruacao', label: 'Menstruação',      desc: 'Início do período' },
                     { key: 'ciclo_fertil',      label: 'Período fértil',   desc: 'Janela de fertilidade' },
                     { key: 'ciclo_par',         label: 'Partilha do par',  desc: 'Quando o par partilha dados' },
                   ] as const).map((item, i, arr) => (
-                    <div key={item.key} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-[#f5f5f5]')}>
+                    <div key={item.key} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-border')}>
                       <div className="space-y-0.5">
                         <p className="text-[13px] font-medium text-foreground">{item.label}</p>
-                        <p className="text-[11px] text-[#bbb]">{item.desc}</p>
+                        <p className="text-[11px] text-muted-foreground/65">{item.desc}</p>
                       </div>
                       <Switch checked={notifPrefs[item.key] ?? false} onCheckedChange={() => toggleNotif(item.key)} />
                     </div>
@@ -872,7 +872,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="space-y-4 pt-4 border-t border-border">
                   <div>
                     <Label className="text-base font-bold mb-1 block">Papel de Parede do Chat</Label>
                     <p className="text-xs text-muted-foreground mb-4">Escolha uma foto para o fundo das conversas.</p>
@@ -898,7 +898,7 @@ export default function Settings() {
                   ) : (
                   <>
                   <div className="flex items-center gap-4">
-                    <div className="relative h-24 w-16 rounded-lg overflow-hidden border border-white/20 bg-muted shrink-0">
+                    <div className="relative h-24 w-16 rounded-lg overflow-hidden border border-border bg-muted shrink-0">
                       {wallpaperUrl ? (
                         <img src={wallpaperUrl} className="h-full w-full object-cover" style={{ opacity: wallpaperOpacity }} />
                       ) : (
@@ -978,23 +978,23 @@ export default function Settings() {
               {!leaveConfirming ? (
                 <button
                   onClick={() => setLeaveConfirming(true)}
-                  className="glass-card p-4 flex items-center justify-between w-full text-rose-500 hover:bg-rose-50/40 transition-colors"
+                  className="glass-card p-4 flex items-center justify-between w-full text-rose-500 hover:bg-rose-50/40 dark:hover:bg-rose-950/20 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <LogOut className="h-5 w-5" strokeWidth={1.5} />
                     <div className="text-left">
                       <p className="text-sm font-semibold">Sair do espaço partilhado</p>
-                      <p className="text-[11px] text-[#bbb] font-normal">Deixar este ninho</p>
+                      <p className="text-[11px] text-muted-foreground/65 font-normal">Deixar este ninho</p>
                     </div>
                   </div>
-                  <ChevronLeft className="h-4 w-4 rotate-180 text-[#ccc]" strokeWidth={1.5} />
+                  <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground/55" strokeWidth={1.5} />
                 </button>
               ) : (
-                <div className="glass-card border-rose-100 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="glass-card border-rose-100 dark:border-rose-900/40 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   {/* Header */}
                   <div className="space-y-1">
                     <p className="text-[15px] font-bold text-foreground">Sair do espaço partilhado?</p>
-                    <p className="text-[12px] text-[#999] leading-relaxed">
+                    <p className="text-[12px] text-muted-foreground/80 leading-relaxed">
                       Esta ação não pode ser desfeita.
                     </p>
                   </div>
@@ -1007,8 +1007,8 @@ export default function Settings() {
                       "Poderás criar ou entrar noutro espaço no futuro.",
                     ].map((text) => (
                       <div key={text} className="flex items-start gap-2.5">
-                        <div className="w-1 h-1 rounded-full bg-[#ccc] mt-2 shrink-0" />
-                        <p className="text-[12px] text-[#888] leading-relaxed">{text}</p>
+                        <div className="w-1 h-1 rounded-full bg-muted-foreground/30 mt-2 shrink-0" />
+                        <p className="text-[12px] text-muted-foreground/90 leading-relaxed">{text}</p>
                       </div>
                     ))}
                   </div>
@@ -1017,7 +1017,7 @@ export default function Settings() {
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setLeaveConfirming(false)}
-                      className="flex-1 h-11 rounded-xl bg-[#f5f5f5] text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                      className="flex-1 h-11 rounded-xl bg-muted text-[13px] font-semibold text-foreground active:scale-95 transition-all"
                     >
                       Cancelar
                     </button>
@@ -1042,21 +1042,21 @@ export default function Settings() {
                     onClick={() => setDeleteConfirming(true)}
                     className="w-full text-left px-1 py-2 flex items-center gap-2"
                   >
-                    <span className="text-[12px] text-[#ccc] hover:text-rose-400 transition-colors">
+                    <span className="text-[12px] text-muted-foreground/55 hover:text-rose-400 transition-colors">
                       Eliminar conta permanentemente
                     </span>
                   </button>
                 ) : (
-                  <div className="glass-card border-rose-200/60 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="glass-card border-rose-200/60 dark:border-rose-900/50 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="space-y-1">
                       <p className="text-[15px] font-bold text-foreground">Eliminar conta?</p>
-                      <p className="text-[12px] text-[#999] leading-relaxed">
+                      <p className="text-[12px] text-muted-foreground/80 leading-relaxed">
                         Esta ação é permanente e não pode ser revertida.
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-[11px] font-medium text-[#bbb] uppercase tracking-wide">O que será eliminado</p>
+                      <p className="text-[11px] font-medium text-muted-foreground/65 uppercase tracking-wide">O que será eliminado</p>
                       {[
                         "O teu perfil e dados pessoais",
                         "As tuas subscrições de notificações",
@@ -1065,14 +1065,14 @@ export default function Settings() {
                         "A tua conta de autenticação",
                       ].map((text) => (
                         <div key={text} className="flex items-start gap-2.5">
-                          <div className="w-1 h-1 rounded-full bg-[#ddd] mt-2 shrink-0" />
-                          <p className="text-[12px] text-[#888] leading-relaxed">{text}</p>
+                          <div className="w-1 h-1 rounded-full bg-muted-foreground/30 mt-2 shrink-0" />
+                          <p className="text-[12px] text-muted-foreground/90 leading-relaxed">{text}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="bg-rose-50/60 border border-rose-100 rounded-xl p-3">
-                      <p className="text-[11px] text-[#999] leading-relaxed">
+                    <div className="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 rounded-xl p-3">
+                      <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
                         As mensagens e memórias partilhadas permanecem no espaço do teu par.
                       </p>
                     </div>
@@ -1080,7 +1080,7 @@ export default function Settings() {
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => setDeleteConfirming(false)}
-                        className="flex-1 h-11 rounded-xl bg-[#f5f5f5] text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                        className="flex-1 h-11 rounded-xl bg-muted text-[13px] font-semibold text-foreground active:scale-95 transition-all"
                       >
                         Cancelar
                       </button>

@@ -19,7 +19,7 @@ const STATUS_MAP: Record<string, { label: string; dot: string; text: string }> =
   open:     { label: "Aberta",      dot: "bg-rose-500",   text: "text-rose-500" },
   talking:  { label: "Em conversa", dot: "bg-amber-400",  text: "text-amber-500" },
   resolved: { label: "Resolvida",   dot: "bg-green-500",  text: "text-green-600" },
-  archived: { label: "Arquivada",   dot: "bg-[#c4c4c4]",  text: "text-[#717171]" },
+  archived: { label: "Arquivada",   dot: "bg-muted-foreground/40",  text: "text-muted-foreground" },
 };
 
 const SEVERITY_LABELS = ["", "Leve", "Baixa", "Média", "Alta", "Crítica"];
@@ -101,7 +101,7 @@ export default function Complaints() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Conflitos</h1>
-          <p className="text-sm text-[#717171]">Resolve com calma e amor</p>
+          <p className="text-sm text-muted-foreground">Resolve com calma e amor</p>
         </div>
         <button
           onClick={() => setCreateOpen(true)}
@@ -128,7 +128,7 @@ export default function Complaints() {
                   : "bg-card text-muted-foreground border-border hover:bg-muted/50"
               )}
             >
-              <span className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-white" : dot)} />
+              <span className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-background" : dot)} />
               {label}
               {count > 0 && <span className="opacity-60">({count})</span>}
             </button>
@@ -139,12 +139,12 @@ export default function Complaints() {
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-10">
-          <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="glass-card py-12 text-center space-y-2">
-          <Heart className="mx-auto h-7 w-7 text-[#c4c4c4]" strokeWidth={1.5} />
-          <p className="text-sm text-[#717171]">Nenhum conflito {STATUS_MAP[filter]?.label.toLowerCase()}</p>
+          <Heart className="mx-auto h-7 w-7 text-muted-foreground/50" strokeWidth={1.5} />
+          <p className="text-sm text-muted-foreground">Nenhum conflito {STATUS_MAP[filter]?.label.toLowerCase()}</p>
         </div>
       ) : (
         <div className="glass-card divide-y divide-border">
@@ -159,11 +159,11 @@ export default function Complaints() {
                 <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", s?.dot)} />
                 <div className="flex-1 min-w-0 space-y-0.5">
                   <p className="text-sm font-semibold text-foreground truncate">{c.title}</p>
-                  <p className="text-xs text-[#717171]">
+                  <p className="text-xs text-muted-foreground">
                     {s?.label} · Sev. {c.severity} {SEVERITY_LABELS[c.severity] && `— ${SEVERITY_LABELS[c.severity]}`}
                     {c.feeling && ` · ${c.feeling}`}
                   </p>
-                  <p className="text-[11px] text-[#c4c4c4]">{format(new Date(c.created_at), "d MMM, HH:mm", { locale: pt })}</p>
+                  <p className="text-[11px] text-muted-foreground/50">{format(new Date(c.created_at), "d MMM, HH:mm", { locale: pt })}</p>
                 </div>
               </button>
             );
@@ -197,7 +197,7 @@ export default function Complaints() {
             </div>
             <div className="space-y-1">
               <h2 className="text-2xl font-bold text-foreground">Mais fortes juntos</h2>
-              <p className="text-sm text-[#717171] max-w-[260px] mx-auto">O diálogo cura e o compromisso fortalece a vossa história.</p>
+              <p className="text-sm text-muted-foreground max-w-[260px] mx-auto">O diálogo cura e o compromisso fortalece a vossa história.</p>
             </div>
           </div>
         </div>
@@ -311,12 +311,12 @@ function CreateComplaintForm({
             </button>
           ))}
         </div>
-        <p className="text-xs text-[#717171]">{SEVERITY_LABELS[severity]}</p>
+        <p className="text-xs text-muted-foreground">{SEVERITY_LABELS[severity]}</p>
       </div>
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-foreground">
-          O que eu preciso é… <span className="text-[#717171] font-normal">(opcional)</span>
+          O que eu preciso é… <span className="text-muted-foreground font-normal">(opcional)</span>
         </label>
         <Textarea
           value={clearRequest}
@@ -471,13 +471,13 @@ function ComplaintDetail({
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors shrink-0"
+          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-bold text-foreground truncate">{complaint.title}</h1>
-          <div className="flex items-center gap-1.5 text-xs text-[#717171]">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className={cn("h-1.5 w-1.5 rounded-full", s?.dot)} />
             <span>{s?.label}</span>
             <span>· Sev. {complaint.severity}</span>
@@ -490,12 +490,12 @@ function ComplaintDetail({
       <div className="glass-card p-4 space-y-3">
         <p className="text-sm text-foreground whitespace-pre-wrap">{complaint.description}</p>
         {complaint.clear_request && (
-          <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2.5">
+          <div className="rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 px-3 py-2.5">
             <p className="text-[11px] font-semibold text-rose-400 uppercase tracking-wider mb-0.5">O que preciso</p>
             <p className="text-sm text-foreground">{complaint.clear_request}</p>
           </div>
         )}
-        <p className="text-[11px] text-[#c4c4c4]">
+        <p className="text-[11px] text-muted-foreground/50">
           {isMine ? "Criada por ti" : "Criada pelo teu par"} — {format(new Date(complaint.created_at), "d MMM, HH:mm", { locale: pt })}
         </p>
       </div>
@@ -503,12 +503,12 @@ function ComplaintDetail({
       {/* Tips */}
       {complaint.status !== "resolved" && complaint.status !== "archived" && (
         <div className="glass-card p-4 flex items-start gap-3">
-          <div className="h-8 w-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
             <Heart className="h-4 w-4 text-rose-400 fill-rose-100" strokeWidth={1.5} />
           </div>
           <div className="space-y-1">
             <p className="text-xs font-semibold text-foreground">Dicas para uma resolução saudável</p>
-            <ul className="text-[11px] text-[#717171] list-disc list-inside space-y-0.5">
+            <ul className="text-[11px] text-muted-foreground list-disc list-inside space-y-0.5">
               <li>Respirem antes de responder</li>
               <li>Evitem responder com raiva</li>
               <li>Foquem-se em como se sentem, não em culpar</li>
@@ -522,7 +522,7 @@ function ComplaintDetail({
         {complaint.status !== "talking" && complaint.status !== "resolved" && complaint.status !== "archived" && (
           <button
             onClick={() => updateStatus("talking")}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-[#e5e5e5] bg-white text-xs font-semibold text-foreground hover:bg-[#f5f5f5] transition-all"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-all"
           >
             <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} /> Em conversa
           </button>
@@ -530,7 +530,7 @@ function ComplaintDetail({
         {complaint.status !== "resolved" && complaint.status !== "archived" && (
           <button
             onClick={() => updateStatus("resolved")}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-green-200 bg-green-50 text-xs font-semibold text-green-600 hover:bg-green-100 transition-all"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-green-200 dark:border-green-800/40 bg-green-50 dark:bg-green-950/30 text-xs font-semibold text-green-600 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all"
           >
             <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Resolvida
           </button>
@@ -538,7 +538,7 @@ function ComplaintDetail({
         {complaint.status !== "archived" && (
           <button
             onClick={() => updateStatus("archived")}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-[#e5e5e5] bg-white text-xs font-semibold text-[#717171] hover:bg-[#f5f5f5] transition-all"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-border bg-card text-xs font-semibold text-muted-foreground hover:bg-muted transition-all"
           >
             <Archive className="h-3.5 w-3.5" strokeWidth={1.5} /> Arquivar
           </button>
@@ -546,7 +546,7 @@ function ComplaintDetail({
         {complaint.status === "archived" && (
           <button
             onClick={deleteComplaint}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-500 hover:bg-rose-100 transition-all"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-xs font-semibold text-rose-500 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all"
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Apagar
           </button>
@@ -565,7 +565,7 @@ function ComplaintDetail({
         />
         <button
           onClick={saveSolution}
-          className="h-9 px-4 rounded-2xl border border-[#e5e5e5] text-sm font-semibold text-foreground hover:bg-[#f5f5f5] transition-all"
+          className="h-9 px-4 rounded-2xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-all"
         >
           Guardar
         </button>
@@ -573,10 +573,10 @@ function ComplaintDetail({
 
       {/* Messages */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#717171]">Conversa</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Conversa</p>
         <div className="glass-card p-3 space-y-2 max-h-64 overflow-y-auto">
           {messages.length === 0 && (
-            <p className="text-xs text-[#717171] text-center py-4">Sem mensagens ainda. Inicia o diálogo.</p>
+            <p className="text-xs text-muted-foreground text-center py-4">Sem mensagens ainda. Inicia o diálogo.</p>
           )}
           {messages.map(m => {
             const mine = m.user_id === user?.id;
@@ -586,10 +586,10 @@ function ComplaintDetail({
                   "max-w-[80%] rounded-[18px] px-3 py-2 text-sm",
                   mine
                     ? "rounded-br-[4px] bg-rose-500 text-white"
-                    : "rounded-bl-[4px] bg-white border border-[#e5e5e5] text-foreground"
+                    : "rounded-bl-[4px] bg-card border border-border text-foreground"
                 )}>
                   <p className="whitespace-pre-wrap">{m.content}</p>
-                  <p className={cn("text-[10px] mt-0.5", mine ? "text-white/60" : "text-[#c4c4c4]")}>
+                  <p className={cn("text-[10px] mt-0.5", mine ? "text-white/60" : "text-muted-foreground/50")}>
                     {format(new Date(m.created_at), "HH:mm")}
                   </p>
                 </div>
@@ -607,7 +607,7 @@ function ComplaintDetail({
             value={newMsg}
             onChange={e => setNewMsg(e.target.value)}
             placeholder="Escreve uma resposta…"
-            className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+            className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           />
           <button

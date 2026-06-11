@@ -62,7 +62,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
       {/* Card */}
       <div
         className={cn(
-          "relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden",
+          "relative w-full max-w-sm bg-card rounded-[2rem] shadow-2xl overflow-hidden",
           "transition-all duration-300 ease-out",
           visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         )}
@@ -73,7 +73,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
         <div className="p-7">
           {/* Icon */}
           <div className="flex justify-center mb-5">
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
               <Bell className="w-6 h-6 text-rose-400" strokeWidth={1.5} />
             </div>
           </div>
@@ -82,7 +82,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
           <h2 className="text-center text-[21px] font-bold text-foreground leading-tight tracking-tight mb-2">
             Fiquem ligados.
           </h2>
-          <p className="text-center text-[13px] text-[#999] leading-relaxed mb-6">
+          <p className="text-center text-[13px] text-muted-foreground leading-relaxed mb-6">
             Lembretes suaves para cuidarem do vosso espaço — sem spam, sem pressão.
           </p>
 
@@ -90,10 +90,10 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
           <div className="space-y-3 mb-7">
             {REASONS.map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
                   <Icon className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
                 </div>
-                <p className="text-[13px] text-[#717171] leading-snug">{text}</p>
+                <p className="text-[13px] text-muted-foreground leading-snug">{text}</p>
               </div>
             ))}
           </div>
@@ -108,7 +108,7 @@ export function NotificationPrePermissionModal({ onConfirm, onDismiss }: Props) 
             </button>
             <button
               onClick={handleDismiss}
-              className="w-full h-10 rounded-2xl text-[13px] font-medium text-[#bbb] hover:text-[#717171] transition-colors"
+              className="w-full h-10 rounded-2xl text-[13px] font-medium text-muted-foreground/65 hover:text-muted-foreground transition-colors"
             >
               Agora não
             </button>

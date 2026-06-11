@@ -18,12 +18,12 @@ interface PartnerSummary {
 
 // ── Todas as fases → variações de pink/neutro ──
 const PHASE_BADGE: Record<string, string> = {
-  "Menstruação": "bg-[#FADADD] text-[#E94E77]",
-  "Fértil":      "bg-[#FADADD]/50 text-[#F06292]",
-  "Ovulação":    "bg-[#FADADD]/50 text-[#F06292]",
-  "TPM":         "bg-[#F5F5F5] text-[#777777]",
-  "Folicular":   "bg-[#F5F5F5] text-[#777777]",
-  "Lútea":       "bg-[#F5F5F5] text-[#777777]",
+  "Menstruação": "bg-[#FADADD] dark:bg-rose-950/30 text-[#E94E77] dark:text-rose-300",
+  "Fértil":      "bg-[#FADADD]/50 dark:bg-rose-950/30 text-[#F06292] dark:text-rose-300",
+  "Ovulação":    "bg-[#FADADD]/50 dark:bg-rose-950/30 text-[#F06292] dark:text-rose-300",
+  "TPM":         "bg-muted text-muted-foreground",
+  "Folicular":   "bg-muted text-muted-foreground",
+  "Lútea":       "bg-muted text-muted-foreground",
 };
 
 export function CyclePartnerSummary() {
@@ -58,9 +58,9 @@ export function CyclePartnerSummary() {
   // ── Sem partilha ──────────────────────────────────────
   if (!summary || !summary.shared) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#F8BBD0]/40 bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
-        <Lock className="h-4 w-4 text-[#777777]/40 shrink-0" />
-        <p className="text-xs text-[#777777]/60">Resumo do ciclo não partilhado pelo teu par.</p>
+      <div className="rounded-2xl border border-dashed border-[#F8BBD0]/40 dark:border-rose-900/40 bg-card px-4 py-3 flex items-center gap-3 shadow-sm">
+        <Lock className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+        <p className="text-xs text-muted-foreground/60">Resumo do ciclo não partilhado pelo teu par.</p>
       </div>
     );
   }
@@ -70,9 +70,9 @@ export function CyclePartnerSummary() {
 
   // ── Resumo com dados ──────────────────────────────────
   return (
-    <div className="rounded-[24px] border border-[#F8BBD0]/30 bg-white overflow-hidden shadow-sm">
-      <div className="px-4 pt-4 pb-2 border-b border-[#F5F5F5]">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[#777777]/50">
+    <div className="rounded-[24px] border border-[#F8BBD0]/30 dark:border-rose-900/40 bg-card overflow-hidden shadow-sm">
+      <div className="px-4 pt-4 pb-2 border-b border-border">
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
           Resumo do teu par 💖
         </p>
       </div>
@@ -80,21 +80,21 @@ export function CyclePartnerSummary() {
         <div className="flex items-center gap-2 flex-wrap">
           <Badge className={cn(
             "text-[10px] uppercase font-black tracking-wider px-3 py-1 rounded-full border-none shadow-sm",
-            PHASE_BADGE[summary.phase ?? ""] ?? "bg-[#F5F5F5] text-[#777777]"
+            PHASE_BADGE[summary.phase ?? ""] ?? "bg-muted text-muted-foreground"
           )}>
             {summary.phase ?? "—"}
           </Badge>
           {summary.cycle_day && summary.cycle_day > 0 && (
-            <span className="text-[11px] font-bold text-[#777777]/60">
+            <span className="text-[11px] font-bold text-muted-foreground/60">
               Dia {summary.cycle_day}
             </span>
           )}
         </div>
 
         {summary.next_period && (
-          <p className="text-xs text-[#777777]/60">
+          <p className="text-xs text-muted-foreground/60">
             Próxima menstruação:{" "}
-            <span className="font-black text-[#E94E77]">{formatDate(summary.next_period)}</span>
+            <span className="font-black text-[#E94E77] dark:text-rose-300">{formatDate(summary.next_period)}</span>
           </p>
         )}
 
@@ -102,14 +102,14 @@ export function CyclePartnerSummary() {
           <div className="flex gap-4 pt-1">
             {summary.pain_level && (
               <div className="space-y-0.5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#777777]/40">Dor</p>
-                <p className="text-xs font-black text-[#E94E77]">{summary.pain_level}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Dor</p>
+                <p className="text-xs font-black text-[#E94E77] dark:text-rose-300">{summary.pain_level}</p>
               </div>
             )}
             {summary.energy_level && (
               <div className="space-y-0.5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#777777]/40">Energia</p>
-                <p className="text-xs font-black text-[#E94E77]">{summary.energy_level}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Energia</p>
+                <p className="text-xs font-black text-[#E94E77] dark:text-rose-300">{summary.energy_level}</p>
               </div>
             )}
           </div>

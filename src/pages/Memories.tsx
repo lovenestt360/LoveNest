@@ -96,10 +96,10 @@ export default function Memories() {
 
   return (
     <section className="space-y-5 pb-24 animate-fade-in max-w-lg mx-auto">
-      <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-white/90 backdrop-blur-sm z-40 border-b border-[#f0f0f0]">
+      <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-40 border-b border-border">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Memórias</h1>
-          <p className="text-[12px] text-[#717171]">{photos.length} momento{photos.length !== 1 ? "s" : ""} guardado{photos.length !== 1 ? "s" : ""}</p>
+          <p className="text-[12px] text-muted-foreground">{photos.length} momento{photos.length !== 1 ? "s" : ""} guardado{photos.length !== 1 ? "s" : ""}</p>
         </div>
         <Button size="sm" onClick={() => setUploadOpen(true)} className="rounded-2xl bg-rose-500 hover:bg-rose-600 text-white border-0 shadow-sm">
           <Plus className="mr-1 h-4 w-4" /> Novo
@@ -108,13 +108,13 @@ export default function Memories() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#c0c0c0]" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
         </div>
       ) : photos.length === 0 ? (
-        <div className="mx-4 bg-white border border-[#f0f0f0] rounded-2xl p-10 text-center shadow-sm space-y-2">
+        <div className="mx-4 bg-card border border-border rounded-2xl p-10 text-center shadow-sm space-y-2">
           <p className="text-2xl">📸</p>
           <p className="text-sm font-semibold text-foreground">Ainda sem memórias</p>
-          <p className="text-[12px] text-[#717171]">Adiciona a primeira foto do casal</p>
+          <p className="text-[12px] text-muted-foreground">Adiciona a primeira foto do casal</p>
         </div>
       ) : (
         <>

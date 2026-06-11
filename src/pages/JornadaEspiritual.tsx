@@ -32,13 +32,13 @@ export default function JornadaEspiritual() {
       </header>
 
       {/* Tab switcher */}
-      <div className="flex gap-1 bg-[#f5f5f5] rounded-xl p-1">
+      <div className="flex gap-1 bg-muted rounded-xl p-1">
         <button
           onClick={() => switchTab("oracao")}
           className={cn(
             "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.97]",
             tab === "oracao"
-              ? "bg-white shadow-sm text-purple-600"
+              ? "bg-card shadow-sm text-purple-600 dark:text-purple-400"
               : "text-muted-foreground"
           )}
         >
@@ -50,7 +50,7 @@ export default function JornadaEspiritual() {
           className={cn(
             "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.97]",
             tab === "jejum"
-              ? "bg-white shadow-sm text-orange-500"
+              ? "bg-card shadow-sm text-orange-500"
               : "text-muted-foreground"
           )}
         >

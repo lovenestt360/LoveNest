@@ -19,7 +19,7 @@ const SYMPTOM_LABEL_MAP: Record<string, string> = {
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">{children}</p>;
+  return <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{children}</p>;
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -118,7 +118,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
       {insights.length > 0 && (
         <div className="glass-card p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <Lightbulb className="h-4 w-4 text-[#717171]" strokeWidth={1.5} />
+            <Lightbulb className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
             <SectionLabel>Insights do ciclo</SectionLabel>
           </div>
           <ul className="space-y-2">
@@ -134,7 +134,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
 
       {/* Estatísticas */}
       <div className="glass-card overflow-hidden">
-        <div className="px-5 pt-5 pb-3 border-b border-[#f5f5f5]">
+        <div className="px-5 pt-5 pb-3 border-b border-border">
           <SectionLabel>Estatísticas</SectionLabel>
         </div>
         <div className="p-5">
@@ -148,13 +148,13 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
           </div>
 
           {topSymptoms.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-[#f5f5f5]">
+            <div className="mt-5 pt-4 border-t border-border">
               <SectionLabel>Sintomas recorrentes</SectionLabel>
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {topSymptoms.map(([k, count]) => (
-                  <span key={k} className="px-3 py-1 rounded-full border border-[#e5e5e5] text-[11px] font-medium text-foreground">
+                  <span key={k} className="px-3 py-1 rounded-full border border-border text-[11px] font-medium text-foreground">
                     {SYMPTOM_LABEL_MAP[k] ?? k}
-                    <span className="ml-1 text-[#717171]">·{count}</span>
+                    <span className="ml-1 text-muted-foreground">·{count}</span>
                   </span>
                 ))}
               </div>
@@ -165,31 +165,31 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
 
       {/* Histórico */}
       <div className="glass-card overflow-hidden">
-        <div className="px-5 pt-5 pb-3 border-b border-[#f5f5f5]">
+        <div className="px-5 pt-5 pb-3 border-b border-border">
           <SectionLabel>Histórico</SectionLabel>
         </div>
         <div className="p-5">
           {cycles.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-[#717171]">Sem registos ainda.</p>
+              <p className="text-sm text-muted-foreground">Sem registos ainda.</p>
             </div>
           ) : (
-            <div className="divide-y divide-[#f5f5f5]">
+            <div className="divide-y divide-border">
               {cycles.slice(0, 12).map((c, i) => (
                 <div key={i} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       {formatDate(c.start)}
-                      <span className="mx-1.5 text-[#c4c4c4] text-xs">→</span>
+                      <span className="mx-1.5 text-muted-foreground/50 text-xs">→</span>
                       {c.end ? formatDate(c.end) : <span className="text-rose-400">em curso</span>}
                     </p>
-                    <p className="text-[11px] text-[#717171] mt-0.5">
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
                       {c.periodLength ? `${c.periodLength} dias de período` : "Aberto"}
                       {c.cycleLength  ? ` · ciclo de ${c.cycleLength}d` : ""}
                     </p>
                   </div>
                   {!c.end && (
-                    <span className="px-2.5 py-0.5 rounded-full border border-rose-200 bg-rose-50 text-rose-500 text-[11px] font-medium">ativo</span>
+                    <span className="px-2.5 py-0.5 rounded-full border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-500 text-[11px] font-medium">ativo</span>
                   )}
                 </div>
               ))}
@@ -201,7 +201,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
       {/* Configurações */}
       {!data.isMale && (
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-[#f5f5f5]">
+          <div className="px-5 pt-5 pb-3 border-b border-border">
             <SectionLabel>Configurações</SectionLabel>
           </div>
           <div className="p-5 space-y-5">
@@ -213,22 +213,22 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
                 { label: "Dias TPM",       min: 1,  max: 14, val: pmsDays,   set: setPmsDays },
               ].map(f => (
                 <div key={f.label} className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">{f.label}</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{f.label}</label>
                   <Input
                     type="number" min={f.min} max={f.max} value={f.val}
                     onChange={e => f.set(+e.target.value)}
-                    className="rounded-2xl border-[#e5e5e5] bg-white h-11 text-sm focus-visible:ring-rose-400/30"
+                    className="rounded-2xl border-border bg-card h-11 text-sm focus-visible:ring-rose-400/30"
                   />
                 </div>
               ))}
             </div>
 
             <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Partilha com o par
               </label>
               <Select value={shareLevel} onValueChange={setShareLevel}>
-                <SelectTrigger className="rounded-2xl border-[#e5e5e5] h-11 text-sm">
+                <SelectTrigger className="rounded-2xl border-border h-11 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
@@ -237,8 +237,8 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
                   <SelectItem value="summary_signals">Resumo + sinais (dor/energia)</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="rounded-2xl border border-[#e5e5e5] bg-[#f9f9f9] p-4">
-                <p className="text-sm text-[#717171] leading-relaxed">
+              <div className="rounded-2xl border border-border bg-muted p-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {shareLevel === "private"         && "O teu par não terá nenhum acesso aos dados do teu ciclo."}
                   {shareLevel === "summary"          && "O teu par verá apenas a tua fase actual e a data prevista."}
                   {shareLevel === "summary_signals"  && "O teu par verá a fase, data prevista e níveis médios de dor/energia."}

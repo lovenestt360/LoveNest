@@ -44,7 +44,7 @@ function Avatar({
   const sz = size === "md" ? "h-11 w-11 text-sm" : "h-9 w-9 text-xs";
   return (
     <div className={cn(
-      "rounded-2xl overflow-hidden shrink-0 flex items-center justify-center font-semibold bg-[#f5f5f5] text-foreground",
+      "rounded-2xl overflow-hidden shrink-0 flex items-center justify-center font-semibold bg-muted text-foreground",
       sz,
       isMe && "ring-2 ring-rose-400/50 ring-offset-1"
     )}>
@@ -77,14 +77,14 @@ function RankRow({
   const medal = rank >= 1 && rank <= 3 ? MEDAL_CFG[rank - 1] : null;
   const MedalIcon = medal?.icon;
   const value = rankType === "streak" ? entry.current_streak : entry.total_points;
-  const rankColor = RANK_COLOR[rank] ?? "text-[#717171]";
+  const rankColor = RANK_COLOR[rank] ?? "text-muted-foreground";
 
   return (
     <div className={cn(
       "flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-150",
       isMe
         ? "border-rose-200/60 bg-rose-50/30"
-        : "border-[#e5e5e5] bg-white",
+        : "border-border bg-card",
     )}>
 
       {/* Avatar + optional medal badge */}
@@ -111,7 +111,7 @@ function RankRow({
           )}
           {isMe && <YouPill />}
         </div>
-        <div className="flex items-center gap-1 mt-0.5 text-[11px] text-[#717171]">
+        <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
           {rankType === "streak"
             ? <><Flame className="w-3 h-3 text-orange-400" strokeWidth={1.5} /> {value} dias</>
             : <><Coins className="w-3 h-3 text-amber-400" strokeWidth={1.5} /> {value} pts</>
@@ -132,12 +132,12 @@ function RankRow({
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
-      <div className="w-14 h-14 rounded-3xl bg-[#f5f5f5] flex items-center justify-center">
-        <Trophy className="w-6 h-6 text-[#c4c4c4]" strokeWidth={1.5} />
+      <div className="w-14 h-14 rounded-3xl bg-muted flex items-center justify-center">
+        <Trophy className="w-6 h-6 text-muted-foreground/50" strokeWidth={1.5} />
       </div>
       <div className="text-center">
         <p className="text-sm font-medium text-foreground/60">Ainda sem casais no ranking</p>
-        <p className="text-[11px] text-[#717171] mt-0.5">Façam check-in e sejam os primeiros</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">Façam check-in e sejam os primeiros</p>
       </div>
     </div>
   );
@@ -207,16 +207,16 @@ export function RankingCard({
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-2xl bg-[#f5f5f5] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-2xl bg-muted flex items-center justify-center">
             <Trophy className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
           </div>
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Ranking Global
           </span>
         </div>
 
         {!hideToggle && (
-          <div className="flex items-center bg-[#f5f5f5] rounded-xl p-0.5 gap-0.5">
+          <div className="flex items-center bg-muted rounded-xl p-0.5 gap-0.5">
             {(["streak", "points"] as RankType[]).map(type => (
               <button
                 key={type}
@@ -224,8 +224,8 @@ export function RankingCard({
                 className={cn(
                   "flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all duration-150",
                   rankType === type
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-[#717171] hover:text-foreground"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {type === "streak"
@@ -244,7 +244,7 @@ export function RankingCard({
         {loading ? (
           <div className="flex flex-col items-center py-10 gap-2">
             <Loader2 className="w-5 h-5 text-rose-300 animate-spin" />
-            <p className="text-[11px] text-[#717171]">A carregar...</p>
+            <p className="text-[11px] text-muted-foreground">A carregar...</p>
           </div>
         ) : entries.length === 0 ? (
           <EmptyState />
@@ -261,8 +261,8 @@ export function RankingCard({
 
             {/* Minha posição se não estiver na lista */}
             {myEntry && !myInList && (
-              <div className="pt-2 border-t border-[#f0f0f0]">
-                <p className="text-[9px] uppercase tracking-widest text-[#717171] font-medium mb-1.5 px-1">
+              <div className="pt-2 border-t border-border">
+                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-medium mb-1.5 px-1">
                   A tua posição
                 </p>
                 <RankRow entry={myEntry} rankType={rankType} isMe />
@@ -272,7 +272,7 @@ export function RankingCard({
             {compact && entries.length > 3 && (
               <button
                 onClick={() => navigate("/ranking")}
-                className="w-full flex items-center justify-center gap-1.5 pt-3 text-[11px] font-medium text-[#717171] hover:text-rose-500 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 pt-3 text-[11px] font-medium text-muted-foreground hover:text-rose-500 transition-colors"
               >
                 Ver ranking completo
                 <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />

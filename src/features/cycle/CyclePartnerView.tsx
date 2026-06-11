@@ -43,18 +43,18 @@ function closest(val: number, opts: number[]) {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">{children}</p>;
+  return <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{children}</p>;
 }
 
 function MetricRow({ label, value, sub, highlight = false }: {
   label: string; value: string; sub?: string; highlight?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[#f5f5f5] last:border-0">
-      <p className="text-sm text-[#717171]">{label}</p>
+    <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
+      <p className="text-sm text-muted-foreground">{label}</p>
       <div className="text-right">
         <p className={cn("text-sm font-medium", highlight ? "text-rose-500" : "text-foreground")}>{value}</p>
-        {sub && <p className="text-[11px] text-[#717171] mt-0.5">{sub}</p>}
+        {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -69,7 +69,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       <div className="glass-card p-10 text-center space-y-3">
         <p className="text-4xl">🌸</p>
         <p className="text-base font-semibold text-foreground">Ciclo não configurado</p>
-        <p className="text-sm text-[#717171] max-w-[240px] mx-auto leading-relaxed">
+        <p className="text-sm text-muted-foreground max-w-[240px] mx-auto leading-relaxed">
           A tua parceira ainda não começou a acompanhar o ciclo menstrual.
         </p>
       </div>
@@ -80,11 +80,11 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
   if (profile.share_level === "private") {
     return (
       <div className="glass-card p-10 text-center space-y-3">
-        <div className="w-14 h-14 rounded-full border border-[#e5e5e5] bg-[#f5f5f5] flex items-center justify-center mx-auto">
-          <Lock className="h-6 w-6 text-[#717171]" strokeWidth={1.5} />
+        <div className="w-14 h-14 rounded-full border border-border bg-muted flex items-center justify-center mx-auto">
+          <Lock className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
         </div>
         <p className="text-base font-semibold text-foreground">Dados privados</p>
-        <p className="text-sm text-[#717171] max-w-[220px] mx-auto leading-relaxed">
+        <p className="text-sm text-muted-foreground max-w-[220px] mx-auto leading-relaxed">
           A tua parceira não partilhou o ciclo. É o espaço dela.
         </p>
       </div>
@@ -137,13 +137,13 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
         {/* Progress */}
         {engine && (
           <div className="space-y-1.5">
-            <div className="h-1.5 rounded-full bg-[#f5f5f5] overflow-hidden">
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full bg-rose-400 transition-all duration-700"
                 style={{ width: `${engine.cycleProgress}%` }}
               />
             </div>
-            <div className="flex justify-between text-[11px] text-[#717171]">
+            <div className="flex justify-between text-[11px] text-muted-foreground">
               <span>Dia 1</span>
               <span>{engine.cycleProgress.toFixed(0)}% concluído</span>
               <span>Fim</span>
@@ -155,19 +155,19 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
         {engine && (engine.nextPeriodStr || engine.ovulationDateStr) && (
           <div className="flex gap-2">
             {engine.nextPeriodStr && (
-              <div className="flex-1 rounded-2xl border border-[#e5e5e5] p-3">
+              <div className="flex-1 rounded-2xl border border-border p-3">
                 <SectionLabel>Próx. menstruação</SectionLabel>
                 <p className="text-sm font-semibold text-foreground mt-1">{formatShortDate(engine.nextPeriodStr)}</p>
                 {engine.daysUntilNextPeriod > 0 && (
-                  <p className="text-[11px] text-[#717171] mt-0.5">em {engine.daysUntilNextPeriod} dias</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">em {engine.daysUntilNextPeriod} dias</p>
                 )}
               </div>
             )}
             {engine.ovulationDateStr && (
-              <div className="flex-1 rounded-2xl border border-[#e5e5e5] p-3">
+              <div className="flex-1 rounded-2xl border border-border p-3">
                 <SectionLabel>Ovulação</SectionLabel>
                 <p className="text-sm font-semibold text-foreground mt-1">{formatShortDate(engine.ovulationDateStr)}</p>
-                <p className="text-[11px] text-[#717171] mt-0.5">estimada</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">estimada</p>
               </div>
             )}
           </div>
@@ -176,15 +176,15 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
 
       {/* ── Insight ── */}
       <div className="glass-card p-5 flex gap-3 items-start">
-        <Lightbulb className="h-4 w-4 text-[#717171] shrink-0 mt-0.5" strokeWidth={1.5} />
+        <Lightbulb className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
         <p className="text-sm text-foreground leading-relaxed">{PHASE_INSIGHTS[phaseKey]}</p>
       </div>
 
       {/* ── Métricas ── */}
       {isSignalsShared && hasSymptoms && (
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-[#f5f5f5] flex items-center gap-2">
-            <Zap className="h-4 w-4 text-[#717171]" strokeWidth={1.5} />
+          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+            <Zap className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
             <SectionLabel>Como ela se sente hoje</SectionLabel>
           </div>
           <div className="px-5 pb-1 pt-1">
@@ -208,13 +208,13 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       {/* ── Sintomas ── */}
       {isSignalsShared && activeGroups.length > 0 && (
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-[#f5f5f5]">
+          <div className="px-5 pt-5 pb-3 border-b border-border">
             <SectionLabel>Sintomas reportados</SectionLabel>
           </div>
           <div className="px-5 pb-4 pt-3 space-y-4">
             {activeGroups.map((group, gi) => (
-              <div key={group.key} className={gi > 0 ? "pt-3 border-t border-[#f5f5f5]" : ""}>
-                <p className="text-[11px] font-semibold text-[#717171] mb-2">{group.label}</p>
+              <div key={group.key} className={gi > 0 ? "pt-3 border-t border-border" : ""}>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-2">{group.label}</p>
                 <div className="space-y-1.5">
                   {group.active.map(item => (
                     <div key={item.key} className="flex items-center gap-2">
@@ -232,8 +232,8 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       {/* ── Sono ── */}
       {isSignalsShared && (s?.sleep_hours || s?.sleep_quality) && (
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-[#f5f5f5] flex items-center gap-2">
-            <Moon className="h-4 w-4 text-[#717171]" strokeWidth={1.5} />
+          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+            <Moon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
             <SectionLabel>Sono</SectionLabel>
           </div>
           <div className="px-5 pb-1 pt-1">
@@ -255,7 +255,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       {/* ── Notas ── */}
       {isSignalsShared && s?.notes && (
         <div className="glass-card p-5 flex gap-3 items-start">
-          <FileText className="h-4 w-4 text-[#717171] shrink-0 mt-0.5" strokeWidth={1.5} />
+          <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
           <p className="text-sm text-foreground leading-relaxed italic">"{s.notes}"</p>
         </div>
       )}
@@ -264,22 +264,22 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       {isSignalsShared && !hasSymptoms && (
         <div className="glass-card py-10 text-center space-y-2">
           <p className="text-3xl">🌸</p>
-          <p className="text-sm text-[#717171]">Sem registo de sintomas hoje.</p>
+          <p className="text-sm text-muted-foreground">Sem registo de sintomas hoje.</p>
         </div>
       )}
 
       {/* ── Partilha limitada ── */}
       {profile.share_level === "summary" && (
         <div className="glass-card p-5 flex gap-3 items-start">
-          <Lock className="h-4 w-4 text-[#717171] shrink-0 mt-0.5" strokeWidth={1.5} />
-          <p className="text-sm text-[#717171] leading-relaxed">
+          <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
+          <p className="text-sm text-muted-foreground leading-relaxed">
             A tua parceira partilhou apenas a fase e os eventos. Os sintomas diários não estão disponíveis.
           </p>
         </div>
       )}
 
       {/* ── Footer ── */}
-      <p className="text-center text-[11px] text-[#717171] font-medium pb-2">
+      <p className="text-center text-[11px] text-muted-foreground font-medium pb-2">
         Apenas o que ela escolheu partilhar
       </p>
     </div>

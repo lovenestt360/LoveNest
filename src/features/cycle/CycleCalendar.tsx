@@ -35,7 +35,7 @@ const LEGEND = [
   { dot: "bg-green-400",   label: "Fértil" },
   { dot: "bg-emerald-500", label: "Ovulação" },
   { dot: "bg-purple-400",  label: "TPM" },
-  { dot: "bg-[#d4d4d4]",   label: "Registo" },
+  { dot: "bg-muted-foreground/40",   label: "Registo" },
 ];
 
 export function CycleCalendar({ data }: { data: CycleData }) {
@@ -78,14 +78,14 @@ export function CycleCalendar({ data }: { data: CycleData }) {
       <div className="glass-card overflow-hidden">
 
         {/* Month nav */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#f5f5f5]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
           <button onClick={prevMonth}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors">
+            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
             <ChevronLeft className="h-4 w-4 text-foreground" strokeWidth={1.5} />
           </button>
           <h2 className="text-sm font-semibold text-foreground capitalize">{monthName}</h2>
           <button onClick={nextMonth}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] transition-colors">
+            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
             <ChevronRight className="h-4 w-4 text-foreground" strokeWidth={1.5} />
           </button>
         </div>
@@ -94,7 +94,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
           {/* Week labels */}
           <div className="grid grid-cols-7 text-center mb-2">
             {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d, i) => (
-              <span key={i} className="text-[10px] font-medium text-[#717171] py-1">{d}</span>
+              <span key={i} className="text-[10px] font-medium text-muted-foreground py-1">{d}</span>
             ))}
           </div>
 
@@ -116,14 +116,14 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   onClick={() => setSelectedDay(dayStr === selectedDay ? null : dayStr)}
                   className={cn(
                     "flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-150 active:scale-95",
-                    isSel   ? "bg-foreground text-white"
+                    isSel   ? "bg-foreground text-background"
                     : isToday ? "ring-1 ring-rose-400"
-                    : "hover:bg-[#f5f5f5]"
+                    : "hover:bg-muted"
                   )}
                 >
                   <span className={cn(
                     "text-[13px] leading-none font-medium",
-                    isSel    ? "text-white"
+                    isSel    ? "text-background"
                     : isToday ? "text-rose-500 font-semibold"
                     : "text-foreground"
                   )}>
@@ -133,7 +133,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                     {dot && !isSel ? (
                       <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
                     ) : !dot && hasLog && !isSel ? (
-                      <span className="h-1 w-1 rounded-full bg-[#d4d4d4]" />
+                      <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
                     ) : null}
                   </div>
                 </button>
@@ -142,9 +142,9 @@ export function CycleCalendar({ data }: { data: CycleData }) {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-[#f5f5f5]">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-border">
             {LEGEND.map(({ dot, label }) => (
-              <span key={label} className="flex items-center gap-1.5 text-[11px] text-[#717171] font-medium">
+              <span key={label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
                 <span className={cn("h-2 w-2 rounded-full shrink-0", dot)} />
                 {label}
               </span>
@@ -167,7 +167,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
               const label   = BADGE_TEXT[dayType];
               if (!label) return null;
               return (
-                <span className="inline-flex mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-500 border border-rose-200/50">
+                <span className="inline-flex mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200/50 dark:border-rose-800/50">
                   {label}
                 </span>
               );
@@ -183,8 +183,8 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   { label: "Stress", value: (daySymptoms as any).stress,         show: (daySymptoms as any).stress > 0 },
                   { label: "Libido", value: daySymptoms.libido,                  show: true },
                 ].filter(m => m.show).map(m => (
-                  <div key={m.label} className="rounded-2xl border border-[#e5e5e5] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-[#717171]">{m.label}</p>
+                  <div key={m.label} className="rounded-2xl border border-border p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{m.label}</p>
                     <p className="text-base font-semibold text-foreground mt-0.5">{m.value}/10</p>
                   </div>
                 ))}
@@ -194,14 +194,14 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(SYMPTOM_LABELS).map(([k, v]) =>
                     (daySymptoms as any)[k]
-                      ? <span key={k} className="px-2.5 py-1 rounded-full border border-[#e5e5e5] text-[11px] font-medium text-foreground">{v}</span>
+                      ? <span key={k} className="px-2.5 py-1 rounded-full border border-border text-[11px] font-medium text-foreground">{v}</span>
                       : null
                   )}
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-sm text-[#717171]">Sem registos para este dia.</p>
+            <p className="text-sm text-muted-foreground">Sem registos para este dia.</p>
           )}
         </div>
       )}
