@@ -1,4 +1,5 @@
-import { Lock, Lightbulb, Moon, Zap, Droplets, FileText } from "lucide-react";
+import { Lock, Lightbulb, Moon, Zap, Droplets, FileText, Flower2, Droplet, Sprout, Sparkles } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { formatShortDate } from "./engine";
 import type { CycleData } from "./useCycleData";
 import { cn } from "@/lib/utils";
@@ -12,8 +13,8 @@ const PHASE_INSIGHTS: Record<string, string> = {
   sem_dados: "A aguardar dados suficientes para gerar insights personalizados.",
 };
 
-const PHASE_EMOJIS: Record<string, string> = {
-  menstrual: "🌹", folicular: "🌸", ovulacao: "✨", luteal: "💜", sem_dados: "🌸",
+const PHASE_ICONS: Record<string, LucideIcon> = {
+  menstrual: Droplet, folicular: Sprout, ovulacao: Sparkles, luteal: Moon, sem_dados: Flower2,
 };
 
 const ENERGY_LABELS: Record<number, string>  = { 2: "Baixa", 5: "Normal", 9: "Alta" };
@@ -67,7 +68,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
   if (!profile) {
     return (
       <div className="glass-card p-10 text-center space-y-3">
-        <p className="text-4xl">🌸</p>
+        <Flower2 className="h-10 w-10 mx-auto text-rose-300" strokeWidth={1.5} />
         <p className="text-base font-semibold text-foreground">Ciclo não configurado</p>
         <p className="text-sm text-muted-foreground max-w-[240px] mx-auto leading-relaxed">
           A tua parceira ainda não começou a acompanhar o ciclo menstrual.
@@ -104,6 +105,8 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
     ...g, active: g.items.filter(item => s?.[item.key] === true),
   })).filter(g => g.active.length > 0);
 
+  const PhaseIcon = PHASE_ICONS[phaseKey] ?? Flower2;
+
   return (
     <div className="space-y-4 pb-10">
 
@@ -113,8 +116,9 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
         <div className="flex items-start justify-between">
           <div>
             <SectionLabel>Ciclo da parceira</SectionLabel>
-            <h2 className="text-2xl font-bold text-foreground mt-1">
-              {PHASE_EMOJIS[phaseKey]} {engine?.phaseLabel ?? "A aguardar"}
+            <h2 className="text-2xl font-bold text-foreground mt-1 flex items-center gap-2">
+              <PhaseIcon className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
+              {engine?.phaseLabel ?? "A aguardar"}
             </h2>
             {openPeriod && (
               <div className="flex items-center gap-1.5 mt-1.5">
@@ -263,7 +267,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       {/* ── Sem sintomas ── */}
       {isSignalsShared && !hasSymptoms && (
         <div className="glass-card py-10 text-center space-y-2">
-          <p className="text-3xl">🌸</p>
+          <Flower2 className="h-8 w-8 mx-auto text-rose-300" strokeWidth={1.5} />
           <p className="text-sm text-muted-foreground">Sem registo de sintomas hoje.</p>
         </div>
       )}

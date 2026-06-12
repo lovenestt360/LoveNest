@@ -371,6 +371,16 @@ export function CycleToday({ data }: { data: CycleData }) {
 
             <p className="text-sm text-muted-foreground leading-relaxed italic">"{engine.insights[0]}"</p>
 
+            {engine.insights.slice(1).map((insight, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-rose-200/50 dark:border-rose-800/50 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-2 flex items-start gap-2"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
+                <p className="text-xs text-muted-foreground leading-relaxed">{insight}</p>
+              </div>
+            ))}
+
             <div className="space-y-1.5">
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <div
