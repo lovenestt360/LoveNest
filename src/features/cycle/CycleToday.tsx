@@ -446,27 +446,43 @@ export function CycleToday({ data }: { data: CycleData }) {
                   <span className="text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200 dark:border-rose-800 px-3 py-1 rounded-full">{periodDays}d</span>
                 </div>
                 {!data.isMale && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => { setEndDate(today); setShowEndDate(false); handleEndPeriod(); }}
+                  <div className="space-y-3">
+                    <Textarea
+                      value={periodNotes}
+                      onChange={e => setPeriodNotes(e.target.value)}
+                      placeholder="Notas sobre este período (opcional)"
                       disabled={saving}
-                      className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-2xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-all disabled:opacity-60"
-                    >
-                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" strokeWidth={1.5} />}
-                      Terminou hoje
-                    </button>
-                    <button
-                      onClick={() => setShowEndDate(!showEndDate)}
-                      className="h-10 px-3 rounded-2xl border border-border text-xs text-muted-foreground flex items-center gap-1 hover:bg-muted transition-all"
-                    >
-                      <Calendar className="h-3 w-3" strokeWidth={1.5} /> Outra data
-                    </button>
+                      className="rounded-xl border-border bg-card text-sm resize-none min-h-[60px]"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setEndDate(today); setShowEndDate(false); handleEndPeriod(); }}
+                        disabled={saving}
+                        className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-2xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-all disabled:opacity-60"
+                      >
+                        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                        Terminou hoje
+                      </button>
+                      <button
+                        onClick={() => setShowEndDate(!showEndDate)}
+                        className="h-10 px-3 rounded-2xl border border-border text-xs text-muted-foreground flex items-center gap-1 hover:bg-muted transition-all"
+                      >
+                        <Calendar className="h-3 w-3" strokeWidth={1.5} /> Outra data
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
             ) : (
               <div className="space-y-4">
                 <FlowChip value={flowLevel} flowLevel={flowLevel} onChange={setFlowLevel} />
+                <Textarea
+                  value={periodNotes}
+                  onChange={e => setPeriodNotes(e.target.value)}
+                  placeholder="Notas sobre este período (opcional)"
+                  disabled={saving}
+                  className="rounded-xl border-border bg-card text-sm resize-none min-h-[60px]"
+                />
                 <button
                   onClick={() => { setStartDate(today); handleStartPeriod(); }}
                   disabled={saving}
