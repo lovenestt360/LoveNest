@@ -27,6 +27,8 @@ const PHASE_ACCENT: Record<string, string> = {
   sem_dados: "text-muted-foreground",
 };
 
+const CYCLE_RING_CIRCUMFERENCE = 2 * Math.PI * 44;
+
 const PHASE_ICONS: Record<string, LucideIcon> = {
   menstrual: Droplet,
   folicular: Sprout,
@@ -358,17 +360,31 @@ export function CycleToday({ data }: { data: CycleData }) {
     <div className="space-y-5 pb-10">
         {engine ? (
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Fase actual</p>
-                <h2 className={cn("text-xl font-bold flex items-center gap-2", accentColor)}>
-                  <PhaseIcon className="h-5 w-5" strokeWidth={1.5} />
-                  {engine.phaseLabel}
-                </h2>
+            <div className="flex items-center gap-5">
+              <div className="relative h-24 w-24 shrink-0">
+                <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
+                  <circle cx="50" cy="50" r="44" fill="none" strokeWidth="8" stroke="currentColor" className="text-rose-100 dark:text-rose-900/30" />
+                  <circle
+                    cx="50" cy="50" r="44" fill="none" strokeWidth="8" stroke="currentColor" strokeLinecap="round"
+                    strokeDasharray={CYCLE_RING_CIRCUMFERENCE}
+                    strokeDashoffset={CYCLE_RING_CIRCUMFERENCE * (1 - engine.cycleProgress / 100)}
+                    className={cn("transition-all duration-700", accentColor)}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <PhaseIcon className={cn("h-5 w-5 mb-0.5", accentColor)} strokeWidth={1.5} />
+                  <span className="text-2xl font-bold text-foreground tabular-nums leading-none">{engine.cycleDay}</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">de {engine.cycleLength}</span>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Dia</p>
-                <p className={cn("text-4xl font-bold leading-none tabular-nums", accentColor)}>{engine.cycleDay}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Fase actual</p>
+                <h2 className={cn("text-xl font-bold", accentColor)}>{engine.phaseLabel}</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {engine.daysUntilNextPeriod > 0
+                    ? `${engine.daysUntilNextPeriod}d até menstruação`
+                    : engine.daysUntilNextPeriod === 0 ? "Menstruação chega hoje" : ""}
+                </p>
               </div>
             </div>
 
@@ -383,23 +399,6 @@ export function CycleToday({ data }: { data: CycleData }) {
                 <p className="text-xs text-muted-foreground leading-relaxed">{insight}</p>
               </div>
             ))}
-
-            <div className="space-y-1.5">
-              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-rose-400 transition-all duration-700"
-                  style={{ width: `${engine.cycleProgress}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px] text-muted-foreground">
-                <span>Dia 1</span>
-                <span>
-                  {engine.daysUntilNextPeriod > 0
-                    ? `${engine.daysUntilNextPeriod}d até menstruação`
-                    : engine.daysUntilNextPeriod === 0 ? "Chega hoje" : ""}
-                </span>
-              </div>
-            </div>
 
             <div className="flex gap-2 flex-wrap">
               {engine.isInPeriod && (
