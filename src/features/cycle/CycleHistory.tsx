@@ -84,6 +84,11 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
   const avgEnergy = allSymptoms.length > 0 ? (allSymptoms.reduce((s, d) => s + ((d as any).energy_level ?? 5), 0) / allSymptoms.length).toFixed(1) : null;
   const tpmDays   = allSymptoms.filter(s => s.tpm).length;
 
+  const tempReadings = allSymptoms.filter(s => (s as any).temperature_c != null);
+  const avgTemp = tempReadings.length > 0
+    ? (tempReadings.reduce((s, d) => s + (d as any).temperature_c, 0) / tempReadings.length).toFixed(1)
+    : null;
+
   const insights: string[] = [];
   if (avg6 !== null && irregularity !== null) {
     insights.push(irregularity <= 3
@@ -145,6 +150,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
             <Stat label="Período médio"      value={avgPeriodCalc ? `${avgPeriodCalc} dias` : "—"} />
             <Stat label="Variação ciclo"     value={irregularity !== null ? `${irregularity}d` : "—"} />
             <Stat label="Dias com TPM"       value={tpmDays} />
+            {avgTemp && <Stat label="Temp. basal média" value={`${avgTemp}°C`} />}
           </div>
 
           {topSymptoms.length > 0 && (

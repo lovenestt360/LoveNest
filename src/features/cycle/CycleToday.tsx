@@ -260,6 +260,7 @@ export function CycleToday({ data }: { data: CycleData }) {
   const [sleepQuality, setSleepQuality] = useState<string>((todaySymptoms as any)?.sleep_quality ?? "ok");
   const [sleepHours, setSleepHours] = useState<string>((todaySymptoms as any)?.sleep_hours?.toString() ?? "");
   const [dischargeType, setDischargeType] = useState<string>((todaySymptoms as any)?.discharge_type ?? "seco");
+  const [temperature, setTemperature] = useState<string>((todaySymptoms as any)?.temperature_c?.toString() ?? "");
   const [notes, setNotes] = useState(todaySymptoms?.notes ?? "");
 
   useEffect(() => {
@@ -274,6 +275,7 @@ export function CycleToday({ data }: { data: CycleData }) {
     setSleepQuality((todaySymptoms as any)?.sleep_quality ?? "ok");
     setSleepHours((todaySymptoms as any)?.sleep_hours?.toString() ?? "");
     setDischargeType((todaySymptoms as any)?.discharge_type ?? "seco");
+    setTemperature((todaySymptoms as any)?.temperature_c?.toString() ?? "");
     setNotes(todaySymptoms.notes ?? "");
   }, [todaySymptoms]);
 
@@ -318,6 +320,7 @@ export function CycleToday({ data }: { data: CycleData }) {
       user_id: user.id, couple_space_id: spaceId, day_key: today,
       pain_level: painLevel, energy_level: energyLevel, stress, libido,
       sleep_hours: sleepHours ? parseFloat(sleepHours) : null,
+      temperature_c: temperature ? parseFloat(temperature) : null,
       sleep_quality: sleepQuality, discharge_type: dischargeType, discharge: "none",
       notes: notes || null, tpm: engine?.phase === "luteal", ...symptoms,
     } as any;
@@ -508,6 +511,12 @@ export function CycleToday({ data }: { data: CycleData }) {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                  <Thermometer className="h-3 w-3" strokeWidth={1.5} /> Temp. basal (°C)
+                </p>
+                <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
               </div>
             </div>
           </div>
