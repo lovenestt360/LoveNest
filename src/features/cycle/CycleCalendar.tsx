@@ -1,17 +1,36 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getDayType, formatShortDate } from "./engine";
+import { ChevronLeft, ChevronRight, Droplet, Sprout, Sparkles, Moon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { getDayType } from "./engine";
 import type { DayType } from "./engine";
 import type { DailySymptom, CycleData } from "./useCycleData";
 
-// Dot color per day type — cells stay white, only dot changes
-const DAY_DOTS: Partial<Record<DayType, string>> = {
-  period:   "bg-rose-400",
-  ovulation:"bg-emerald-500",
-  fertile:  "bg-green-400",
-  pms:      "bg-purple-400",
+// Cell background per day type — soft phase tinting, rose/graphite only
+const DAY_BG: Partial<Record<DayType, string>> = {
+  period:    "bg-rose-100/80 dark:bg-rose-950/40",
+  fertile:   "bg-rose-50 dark:bg-rose-950/20",
+  ovulation: "bg-rose-50 dark:bg-rose-950/20",
+  pms:       "bg-muted",
+};
+
+// Marker dot per day type (ovulation gets a Sparkles icon instead)
+const DAY_DOT: Partial<Record<DayType, string>> = {
+  period:  "bg-rose-500",
+  fertile: "bg-rose-300",
+  pms:     "bg-foreground/30",
+};
+
+const DAY_ICONS: Partial<Record<DayType, LucideIcon>> = {
+  period: Droplet, fertile: Sprout, ovulation: Sparkles, pms: Moon,
+};
+
+const DAY_BADGE_STYLE: Partial<Record<DayType, string>> = {
+  period:    "bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200/50 dark:border-rose-800/50",
+  fertile:   "bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200/50 dark:border-rose-800/50",
+  ovulation: "bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200/50 dark:border-rose-800/50",
+  pms:       "bg-muted text-muted-foreground border-border",
 };
 
 const BADGE_TEXT: Partial<Record<DayType, string>> = {
@@ -30,12 +49,14 @@ const SYMPTOM_LABELS: Record<string, string> = {
   constipation: "Obstipação", gas: "Gases", increased_appetite: "Apetite+",
 };
 
-const LEGEND = [
-  { dot: "bg-rose-400",    label: "Menstruação" },
-  { dot: "bg-green-400",   label: "Fértil" },
-  { dot: "bg-emerald-500", label: "Ovulação" },
-  { dot: "bg-purple-400",  label: "TPM" },
-  { dot: "bg-muted-foreground/40",   label: "Registo" },
+type LegendItem = { swatch?: string; markerDot?: string; markerIcon?: LucideIcon; label: string };
+
+const LEGEND: LegendItem[] = [
+  { swatch: "bg-rose-100 dark:bg-rose-950/40", markerDot: "bg-rose-500",   label: "Menstruação" },
+  { swatch: "bg-rose-50 dark:bg-rose-950/20",  markerDot: "bg-rose-300",   label: "Fértil" },
+  { swatch: "bg-rose-50 dark:bg-rose-950/20",  markerIcon: Sparkles,       label: "Ovulação" },
+  { swatch: "bg-muted",                        markerDot: "bg-foreground/30", label: "TPM" },
+  { markerDot: "bg-muted-foreground/50",       label: "Registo" },
 ];
 
 export function CycleCalendar({ data }: { data: CycleData }) {
@@ -105,7 +126,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
               const day    = i + 1;
               const dayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const dayType  = getDayType(dayStr, engine, periods, today);
-              const dot      = DAY_DOTS[dayType];
+              const bg        = DAY_BG[dayType];
               const isToday  = dayStr === today;
               const isSel    = dayStr === selectedDay;
               const hasLog   = loggedDays.has(dayStr);
@@ -115,12 +136,14 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   key={day}
                   onClick={() => setSelectedDay(dayStr === selectedDay ? null : dayStr)}
                   className={cn(
-                    "flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-150 active:scale-95",
-                    isSel   ? "bg-foreground text-background"
-                    : isToday ? "ring-1 ring-rose-400"
-                    : "hover:bg-muted"
+                    "relative flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-150 active:scale-95",
+                    isSel ? "bg-foreground text-background" : bg ?? "hover:bg-muted",
+                    isToday && !isSel && "ring-1 ring-rose-400"
                   )}
                 >
+                  {hasLog && !isSel && (
+                    <span className="absolute top-1.5 right-1.5 h-1 w-1 rounded-full bg-muted-foreground/50" />
+                  )}
                   <span className={cn(
                     "text-[13px] leading-none font-medium",
                     isSel    ? "text-background"
@@ -129,12 +152,11 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   )}>
                     {day}
                   </span>
-                  <div className="h-1.5 mt-1 flex items-center">
-                    {dot && !isSel ? (
-                      <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
-                    ) : !dot && hasLog && !isSel ? (
-                      <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-                    ) : null}
+                  <div className="h-3 mt-1 flex items-center justify-center">
+                    {isSel ? null
+                      : dayType === "ovulation" ? <Sparkles className="h-3 w-3 text-rose-400" strokeWidth={2} />
+                      : DAY_DOT[dayType] ? <span className={cn("h-1.5 w-1.5 rounded-full", DAY_DOT[dayType])} />
+                      : null}
                   </div>
                 </button>
               );
@@ -142,10 +164,13 @@ export function CycleCalendar({ data }: { data: CycleData }) {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-border">
-            {LEGEND.map(({ dot, label }) => (
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-3 border-t border-border">
+            {LEGEND.map(({ swatch, markerDot, markerIcon: Icon, label }) => (
               <span key={label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-                <span className={cn("h-2 w-2 rounded-full shrink-0", dot)} />
+                <span className={cn("h-4 w-4 rounded-md flex items-center justify-center shrink-0", swatch)}>
+                  {Icon ? <Icon className="h-2.5 w-2.5 text-rose-400" strokeWidth={2} />
+                   : markerDot ? <span className={cn("h-1.5 w-1.5 rounded-full", markerDot)} /> : null}
+                </span>
                 {label}
               </span>
             ))}
@@ -166,8 +191,10 @@ export function CycleCalendar({ data }: { data: CycleData }) {
               const dayType = getDayType(selectedDay, engine, periods, today);
               const label   = BADGE_TEXT[dayType];
               if (!label) return null;
+              const Icon = DAY_ICONS[dayType];
               return (
-                <span className="inline-flex mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200/50 dark:border-rose-800/50">
+                <span className={cn("inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border", DAY_BADGE_STYLE[dayType])}>
+                  {Icon && <Icon className="h-3 w-3" strokeWidth={1.5} />}
                   {label}
                 </span>
               );
