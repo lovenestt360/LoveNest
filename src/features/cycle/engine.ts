@@ -395,9 +395,9 @@ export function getDayType(
 ): DayType {
   if (!engineOutput) return dayStr === today ? "today" : "none";
 
-  // Período real registado
+  // Período real registado — em curso (sem end_date) conta até hoje
   for (const p of periods) {
-    const end = p.end_date ?? p.start_date;
+    const end = p.end_date ?? today;
     if (dayStr >= p.start_date && dayStr <= end) return "period";
   }
 
