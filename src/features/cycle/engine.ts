@@ -35,6 +35,7 @@ export interface CycleEngineInput {
 
 export interface CycleEngineOutput {
   cycleDay: number;
+  cycleLength: number;
   phase: CyclePhase;
   /** Fase em português para exibição na UI */
   phaseLabel: string;
@@ -324,6 +325,7 @@ export function runCycleEngine(
 
   return {
     cycleDay,
+    cycleLength,
     phase,
     phaseLabel: PHASE_LABELS[phase],
     nextPeriod,

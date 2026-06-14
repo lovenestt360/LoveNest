@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { CyclePartnerSummary } from "./CyclePartnerSummary";
+import { CycleHistoryStrip } from "./CycleHistoryStrip";
 import { differenceInDays } from "date-fns";
 import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
@@ -422,6 +423,8 @@ export function CycleToday({ data }: { data: CycleData }) {
             <p className="text-sm text-muted-foreground">Regista a tua menstruação para receber insights personalizados</p>
           </div>
         )}
+
+        {engine && <CycleHistoryStrip data={data} />}
 
         {/* ── Menstruação ── */}
         <div className="glass-card overflow-hidden">
