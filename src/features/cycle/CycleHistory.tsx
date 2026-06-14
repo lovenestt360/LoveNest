@@ -1,13 +1,18 @@
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Lightbulb, CheckCircle2 } from "lucide-react";
+import { Loader2, Lightbulb, CheckCircle2, Circle, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { ALL_SYMPTOM_BOOLEANS, daysBetween } from "./useCycleData";
 import type { useCycleData } from "./useCycleData";
 import type { DailySymptom } from "./useCycleData";
 
 type CycleData = ReturnType<typeof useCycleData>;
+
+const SHARE_OPTIONS: { value: string; label: string; desc: string }[] = [
+  { value: "private", label: "Privado", desc: "O teu par não terá nenhum acesso aos dados do teu ciclo." },
+  { value: "summary", label: "Resumo", desc: "O teu par verá apenas a tua fase actual e a data prevista." },
+  { value: "summary_signals", label: "Resumo + sinais", desc: "O teu par verá a fase, data prevista e níveis médios de dor/energia." },
+];
 
 const SYMPTOM_LABEL_MAP: Record<string, string> = {
   cramps: "Cólicas", headache: "Dor de cabeça", nausea: "Náusea", back_pain: "Dor lombar",
@@ -27,6 +32,33 @@ function Stat({ label, value }: { label: string; value: string | number }) {
     <div>
       <SectionLabel>{label}</SectionLabel>
       <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function Stepper({
+  label, value, onChange, min, max, suffix = "",
+}: {
+  label: string; value: number; onChange: (v: number) => void; min: number; max: number; suffix?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</label>
+      <div className="flex items-center justify-between rounded-2xl border border-border bg-card h-11 pl-1.5 pr-1.5">
+        <button
+          type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
+          className="h-8 w-8 flex items-center justify-center rounded-xl text-foreground hover:bg-muted transition-colors active:scale-90 disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <Minus className="h-4 w-4" strokeWidth={2} />
+        </button>
+        <span className="text-sm font-semibold text-foreground tabular-nums">{value}{suffix}</span>
+        <button
+          type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}
+          className="h-8 w-8 flex items-center justify-center rounded-xl text-foreground hover:bg-muted transition-colors active:scale-90 disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -212,43 +244,37 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
           </div>
           <div className="p-5 space-y-5">
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Ciclo (dias)",   min: 18, max: 45, val: avgCycle,  set: setAvgCycle },
-                { label: "Período (dias)", min: 1,  max: 12, val: avgPeriod, set: setAvgPeriod },
-                { label: "Fase lútea",     min: 8,  max: 20, val: luteal,    set: setLuteal },
-                { label: "Dias TPM",       min: 1,  max: 14, val: pmsDays,   set: setPmsDays },
-              ].map(f => (
-                <div key={f.label} className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{f.label}</label>
-                  <Input
-                    type="number" min={f.min} max={f.max} value={f.val}
-                    onChange={e => f.set(+e.target.value)}
-                    className="rounded-2xl border-border bg-card h-11 text-sm focus-visible:ring-rose-400/30"
-                  />
-                </div>
-              ))}
+              <Stepper label="Ciclo"      value={avgCycle}  onChange={setAvgCycle}  min={18} max={45} suffix=" dias" />
+              <Stepper label="Período"    value={avgPeriod} onChange={setAvgPeriod} min={1}  max={12} suffix=" dias" />
+              <Stepper label="Fase lútea" value={luteal}    onChange={setLuteal}    min={8}  max={20} suffix=" dias" />
+              <Stepper label="Dias TPM"   value={pmsDays}   onChange={setPmsDays}   min={1}  max={14} suffix=" dias" />
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Partilha com o par
               </label>
-              <Select value={shareLevel} onValueChange={setShareLevel}>
-                <SelectTrigger className="rounded-2xl border-border h-11 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value="private">Privado — nada partilhado</SelectItem>
-                  <SelectItem value="summary">Resumo — fase e data</SelectItem>
-                  <SelectItem value="summary_signals">Resumo + sinais (dor/energia)</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="rounded-2xl border border-border bg-muted p-4">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {shareLevel === "private"         && "O teu par não terá nenhum acesso aos dados do teu ciclo."}
-                  {shareLevel === "summary"          && "O teu par verá apenas a tua fase actual e a data prevista."}
-                  {shareLevel === "summary_signals"  && "O teu par verá a fase, data prevista e níveis médios de dor/energia."}
-                </p>
+              <div className="space-y-2">
+                {SHARE_OPTIONS.map(opt => {
+                  const selected = shareLevel === opt.value;
+                  return (
+                    <button
+                      key={opt.value} type="button" onClick={() => setShareLevel(opt.value)}
+                      className={cn(
+                        "w-full text-left rounded-2xl border p-3.5 transition-all active:scale-[0.99]",
+                        selected ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30" : "border-border hover:bg-muted"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className={cn("text-sm font-semibold", selected ? "text-rose-500" : "text-foreground")}>{opt.label}</p>
+                        {selected
+                          ? <CheckCircle2 className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={1.5} />
+                          : <Circle className="h-4 w-4 text-muted-foreground/30 shrink-0" strokeWidth={1.5} />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{opt.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
