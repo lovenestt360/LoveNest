@@ -46,14 +46,14 @@ export default function ConfirmEmail() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       {/* Ambient glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 blur-[90px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[300px] text-center space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
         {/* Icon */}
-        <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900 flex items-center justify-center mx-auto">
           <Mail className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
         </div>
 
@@ -62,7 +62,7 @@ export default function ConfirmEmail() {
           <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
             Verifica o teu email.
           </h1>
-          <p className="text-[14px] text-[#888] leading-relaxed">
+          <p className="text-[14px] text-muted-foreground leading-relaxed">
             Enviámos um link de confirmação para{" "}
             {email && <span className="font-semibold text-foreground">{email}</span>}.
             Clica no link para activares a tua conta.
@@ -83,7 +83,7 @@ export default function ConfirmEmail() {
             <button
               onClick={handleResend}
               disabled={resending}
-              className="w-full h-11 rounded-2xl text-[13px] font-medium text-[#bbb] hover:text-[#717171] transition-colors flex items-center justify-center gap-1.5"
+              className="w-full h-11 rounded-2xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
             >
               {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Reenviar email de confirmação
@@ -96,7 +96,7 @@ export default function ConfirmEmail() {
         </div>
 
         {/* Help text */}
-        <p className="text-[11px] text-[#ccc] leading-relaxed">
+        <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
           Não encontras o email? Verifica a pasta de spam ou tenta com outro endereço.
         </p>
       </div>

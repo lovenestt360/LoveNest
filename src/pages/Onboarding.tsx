@@ -91,7 +91,7 @@ function IntroVisual({ reduced }: { reduced: boolean }) {
 
 // ── Input shared style ────────────────────────────────────────────────────────
 
-const INPUT = "w-full h-12 rounded-2xl border border-[#eeeeee] bg-white px-4 text-[15px] font-medium text-foreground placeholder:text-[#d4d4d4] focus:outline-none focus:border-[#ddd0d0] focus:ring-2 focus:ring-rose-50 transition-all";
+const INPUT = "w-full h-12 rounded-2xl border border-border bg-card px-4 text-[15px] font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/30 transition-all";
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -231,7 +231,7 @@ export default function Onboarding() {
 
   if (phase === "intro") {
     return (
-      <div className="relative min-h-screen bg-white flex flex-col select-none overflow-hidden">
+      <div className="relative min-h-screen bg-background flex flex-col select-none overflow-hidden">
 
         {/* ── Ambient background glows ── */}
         {!reduced && (
@@ -284,7 +284,7 @@ export default function Onboarding() {
           </div>
           <button
             onClick={() => { markSeen(); navigate("/entrar"); }}
-            className="text-[12px] font-medium text-[#ccc] hover:text-[#999] transition-colors px-2 py-1"
+            className="text-[12px] font-medium text-muted-foreground/40 hover:text-muted-foreground transition-colors px-2 py-1"
           >
             Já tenho conta
           </button>
@@ -308,7 +308,7 @@ export default function Onboarding() {
 
           {/* Sub */}
           <p
-            className="text-[14px] text-[#999] leading-[1.7] text-center mt-4"
+            className="text-[14px] text-muted-foreground leading-[1.7] text-center mt-4"
             style={enter(450, 20)}
           >
             Cria o vosso espaço em menos de um minuto.
@@ -338,10 +338,7 @@ export default function Onboarding() {
             Começar
             <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
           </button>
-          <p
-            className="text-center text-[10px] tracking-[0.06em] animate-ob-hint"
-            style={{ color: "#d8d8d8" }}
-          >
+          <p className="text-center text-[10px] tracking-[0.06em] text-muted-foreground/40 animate-ob-hint">
             grátis · privado · sem publicidade
           </p>
         </div>
@@ -353,17 +350,17 @@ export default function Onboarding() {
   // ── Signup form ───────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white flex flex-col relative">
+    <div className="min-h-screen bg-background flex flex-col relative">
       {/* Ambient warmth */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 blur-[90px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
 
       {/* Back */}
       <div className="px-5 pt-12 shrink-0">
         <button
           onClick={() => setPhase("intro")}
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f7f7] transition-all"
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all"
         >
-          <ChevronLeft className="w-5 h-5 text-[#c0c0c0]" strokeWidth={1.5} />
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
         </button>
       </div>
 
@@ -374,23 +371,23 @@ export default function Onboarding() {
             <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
               Criar o vosso espaço.
             </h1>
-            <p className="text-[13px] text-[#999]">Começa em segundos.</p>
+            <p className="text-[13px] text-muted-foreground">Começa em segundos.</p>
           </div>
 
           <button
             type="button"
             onClick={handleGoogle}
             disabled={googleLoading || loading}
-            className="w-full h-12 rounded-2xl border border-[#e8e8e8] bg-white text-[13px] font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-[#f9f9f9] active:scale-[0.98] transition-all disabled:opacity-60"
+            className="w-full h-12 rounded-2xl border border-border bg-card text-[13px] font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-60"
           >
-            {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-[#717171]" /> : <GoogleIcon className="w-4 h-4" />}
+            {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <GoogleIcon className="w-4 h-4" />}
             Continuar com Google
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-[#f0f0f0]" />
-            <span className="text-[11px] text-[#bbb]">ou</span>
-            <div className="flex-1 h-px bg-[#f0f0f0]" />
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[11px] text-muted-foreground">ou</span>
+            <div className="flex-1 h-px bg-border" />
           </div>
 
           <form onSubmit={handleSignup} className="space-y-3">
@@ -425,7 +422,7 @@ export default function Onboarding() {
               <button
                 type="button"
                 onClick={() => setShowInvite(true)}
-                className="text-[12px] text-[#bbb] hover:text-[#717171] transition-colors w-full text-left px-1"
+                className="text-[12px] text-muted-foreground hover:text-foreground transition-colors w-full text-left px-1"
               >
                 + Tenho um código de convite do meu par
               </button>
@@ -452,7 +449,7 @@ export default function Onboarding() {
             </button>
           </form>
 
-          <p className="text-center text-[11px] text-[#bbb]">
+          <p className="text-center text-[11px] text-muted-foreground">
             Já tens conta?{" "}
             <button onClick={() => { markSeen(); navigate("/entrar"); }} className="text-rose-500 font-semibold hover:underline">
               Entrar

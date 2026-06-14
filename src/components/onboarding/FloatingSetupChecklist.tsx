@@ -41,36 +41,36 @@ function TaskRow({
       disabled={status !== "active"}
       className={cn(
         "w-full flex items-center gap-3.5 px-5 py-4 text-left transition-colors",
-        "border-b border-[#f8f8f8] last:border-0",
-        status === "active" && "hover:bg-rose-50/40 active:bg-rose-50/60 cursor-pointer",
+        "border-b border-border last:border-0",
+        status === "active" && "hover:bg-rose-50/40 dark:hover:bg-rose-950/30 active:bg-rose-50/60 dark:active:bg-rose-950/40 cursor-pointer",
         status !== "active" && "cursor-default"
       )}
     >
       {/* Status icon */}
       <div className={cn(
         "w-9 h-9 rounded-2xl flex items-center justify-center shrink-0",
-        status === "done"   && "bg-rose-50",
-        status === "active" && "bg-rose-50",
-        status === "locked" && "bg-[#f5f5f5]",
+        status === "done"   && "bg-rose-50 dark:bg-rose-950/30",
+        status === "active" && "bg-rose-50 dark:bg-rose-950/30",
+        status === "locked" && "bg-muted",
       )}>
         {status === "done" && <CheckCircle2 className="w-4.5 h-4.5 w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />}
         {status === "active" && <Icon className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />}
-        {status === "locked" && <Lock className="w-[14px] h-[14px] text-[#ccc]" strokeWidth={1.5} />}
+        {status === "locked" && <Lock className="w-[14px] h-[14px] text-muted-foreground/60" strokeWidth={1.5} />}
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0 space-y-0.5">
         <p className={cn(
           "text-[13px] font-semibold leading-snug",
-          status === "done"   && "text-[#bbb] line-through",
+          status === "done"   && "text-muted-foreground line-through",
           status === "active" && "text-foreground",
-          status === "locked" && "text-[#ccc]",
+          status === "locked" && "text-muted-foreground/60",
         )}>
           {label}
         </p>
         <p className={cn(
           "text-[11px] leading-snug",
-          status === "locked" ? "text-[#ddd]" : "text-[#bbb]"
+          status === "locked" ? "text-muted-foreground/40" : "text-muted-foreground"
         )}>
           {desc}
         </p>
@@ -78,7 +78,7 @@ function TaskRow({
 
       {/* Arrow — only on active */}
       {status === "active" && (
-        <ChevronRight className="w-4 h-4 text-[#ccc] shrink-0" strokeWidth={1.5} />
+        <ChevronRight className="w-4 h-4 text-muted-foreground/60 shrink-0" strokeWidth={1.5} />
       )}
     </button>
   );
@@ -147,22 +147,22 @@ export function FloatingSetupChecklist() {
       {/* Checklist panel */}
       {open && (
         <div
-          className="fixed z-[9995] bottom-[88px] right-4 w-[290px] bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] overflow-hidden animate-in slide-in-from-bottom-3 fade-in duration-300"
+          className="fixed z-[9995] bottom-[88px] right-4 w-[290px] bg-card rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-border overflow-hidden animate-in slide-in-from-bottom-3 fade-in duration-300"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#f5f5f5]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div>
               <p className="text-[14px] font-bold text-foreground">Configurar o espaço</p>
-              <p className="text-[11px] text-[#bbb] mt-0.5">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 {pendingCount === 1 ? "1 passo em falta" : `${pendingCount} passos em falta`}
               </p>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="w-7 h-7 rounded-full bg-[#f5f5f5] flex items-center justify-center hover:bg-[#eeeeee] transition-colors"
+              className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-border transition-colors"
             >
-              <X className="w-3.5 h-3.5 text-[#aaa]" strokeWidth={2} />
+              <X className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
             </button>
           </div>
 
@@ -177,8 +177,8 @@ export function FloatingSetupChecklist() {
           ))}
 
           {/* Footer */}
-          <div className="px-5 py-3 bg-[#fafafa] border-t border-[#f5f5f5]">
-            <p className="text-[10px] text-[#ccc] leading-relaxed text-center">
+          <div className="px-5 py-3 bg-muted border-t border-border">
+            <p className="text-[10px] text-muted-foreground/60 leading-relaxed text-center">
               Completa cada passo pela ordem indicada.
             </p>
           </div>

@@ -153,7 +153,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-8">
 
         {/* Brand */}
@@ -163,7 +163,7 @@ export default function Login() {
           </div>
           <div>
             <h1 className="text-[28px] font-bold text-foreground tracking-tight">Bem-vindo</h1>
-            <p className="text-[14px] text-[#888] mt-1">O teu espaço privado de casal</p>
+            <p className="text-[14px] text-muted-foreground mt-1">O teu espaço privado de casal</p>
           </div>
         </div>
 
@@ -176,10 +176,10 @@ export default function Login() {
               <button
                 onClick={handleGoogle}
                 disabled={googleLoading || loading}
-                className="w-full h-12 rounded-2xl border border-[#e5e5e5] bg-white text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-[#f9f9f9] active:scale-[0.98] transition-all disabled:opacity-60"
+                className="w-full h-12 rounded-2xl border border-border bg-card text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-60"
               >
                 {googleLoading
-                  ? <Loader2 className="w-4 h-4 animate-spin text-[#717171]" />
+                  ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                   : <GoogleIcon className="w-5 h-5" />
                 }
                 Continuar com Google
@@ -187,20 +187,20 @@ export default function Login() {
 
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-[#f0f0f0]" />
-                <span className="text-[11px] font-medium text-[#717171]">ou</span>
-                <div className="flex-1 h-px bg-[#f0f0f0]" />
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[11px] font-medium text-muted-foreground">ou</span>
+                <div className="flex-1 h-px bg-border" />
               </div>
 
               {/* Tabs */}
-              <div className="flex bg-[#f5f5f5] rounded-2xl p-1 gap-1">
+              <div className="flex bg-muted rounded-2xl p-1 gap-1">
                 {(["password", "magic"] as const).map(t => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
                     className={cn(
                       "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                      tab === t ? "bg-white text-foreground shadow-sm" : "text-[#717171]"
+                      tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                     )}
                   >
                     {t === "password" ? "Senha" : "Link Mágico"}
@@ -223,7 +223,7 @@ export default function Login() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                  className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
                 />
               </div>
               <div className="space-y-1.5">
@@ -243,7 +243,7 @@ export default function Login() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                  className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
                 />
               </div>
               <button
@@ -263,12 +263,12 @@ export default function Login() {
           {tab === "password" && forgotView && (
             forgotSent ? (
               <div className="text-center space-y-4 py-4">
-                <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mx-auto">
                   <Mail className="w-8 h-8 text-rose-400" strokeWidth={1.5} />
                 </div>
                 <div>
                   <p className="text-base font-semibold text-foreground">Link enviado!</p>
-                  <p className="text-sm text-[#717171] mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Verifica o teu e-mail em <span className="font-medium text-foreground">{forgotEmail}</span> e clica no link para definir uma nova senha.
                   </p>
                 </div>
@@ -284,13 +284,13 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setForgotView(false)}
-                  className="flex items-center gap-1 text-sm text-[#717171] hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" /> Voltar
                 </button>
                 <div>
                   <p className="text-base font-semibold text-foreground">Recuperar senha</p>
-                  <p className="text-sm text-[#717171] mt-0.5">Envia-mos um link para redefinires a tua senha.</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Envia-mos um link para redefinires a tua senha.</p>
                 </div>
                 <form onSubmit={handleForgot} className="space-y-4">
                   <div className="space-y-1.5">
@@ -303,7 +303,7 @@ export default function Login() {
                       value={forgotEmail}
                       onChange={e => setForgotEmail(e.target.value)}
                       required
-                      className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                      className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
                     />
                   </div>
                   <button
@@ -330,7 +330,7 @@ export default function Login() {
                 </div>
                 <div>
                   <p className="text-base font-semibold text-foreground">Link enviado!</p>
-                  <p className="text-sm text-[#717171] mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Verifica o teu e-mail em <span className="font-medium text-foreground">{email}</span>
                   </p>
                 </div>
@@ -353,7 +353,7 @@ export default function Login() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
-                    className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                    className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
                   />
                 </div>
                 <button
@@ -371,8 +371,8 @@ export default function Login() {
           )}
 
           {/* Sign up link */}
-          <div className="pt-4 border-t border-[#f5f5f5] text-center">
-            <p className="text-sm text-[#717171]">
+          <div className="pt-4 border-t border-border text-center">
+            <p className="text-sm text-muted-foreground">
               Novo por aqui?{" "}
               <button
                 onClick={() => navigate("/criar-conta")}

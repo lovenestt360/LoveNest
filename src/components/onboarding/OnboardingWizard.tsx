@@ -60,7 +60,7 @@ export function OnboardingWizard() {
         title: "Fiquem ligados",
         description:
           "Ativa as notificações para receberes os mimos e alertas do teu par em tempo real.",
-        icon: <Bell className="h-12 w-12 text-indigo-500" />,
+        icon: <Bell className="h-12 w-12 text-rose-500" />,
         button: "Ativar Notificações",
         showSkip: true,
         skipLabel: "Continuar sem notificações",
@@ -69,7 +69,7 @@ export function OnboardingWizard() {
         title: "Notificações indisponíveis",
         description:
           "O teu dispositivo não suporta notificações push nesta versão. Podes continuar a usar o LoveNest normalmente — as notificações ficam disponíveis ao atualizar o sistema.",
-        icon: <BellOff className="h-12 w-12 text-[#aaa]" />,
+        icon: <BellOff className="h-12 w-12 text-muted-foreground" />,
         button: "Continuar",
         showSkip: false,
         skipLabel: "",
@@ -129,7 +129,7 @@ export function OnboardingWizard() {
           {isNotifStep && current.showSkip && (
             <button
               onClick={handleSkipNotifications}
-              className="w-full h-11 rounded-2xl text-sm text-[#aaa] hover:text-[#717171] transition-colors font-medium"
+              className="w-full h-11 rounded-2xl text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               {current.skipLabel}
             </button>

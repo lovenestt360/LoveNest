@@ -88,7 +88,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-8">
 
         {/* Brand */}
@@ -98,7 +98,7 @@ export default function Signup() {
           </div>
           <div>
             <h1 className="text-[28px] font-bold text-foreground tracking-tight">Criar conta</h1>
-            <p className="text-[14px] text-[#888] mt-1">A tua jornada de casal começa aqui</p>
+            <p className="text-[14px] text-muted-foreground mt-1">A tua jornada de casal começa aqui</p>
           </div>
         </div>
 
@@ -123,19 +123,19 @@ export default function Signup() {
               }
             }}
             disabled={googleLoading || loading}
-            className="w-full h-12 rounded-2xl border border-[#e5e5e5] bg-white text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-[#f9f9f9] active:scale-[0.98] transition-all disabled:opacity-60"
+            className="w-full h-12 rounded-2xl border border-border bg-card text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-60"
           >
             {googleLoading
-              ? <Loader2 className="w-4 h-4 animate-spin text-[#717171]" />
+              ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
               : <GoogleIcon className="w-5 h-5" />
             }
             Continuar com Google
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-[#f0f0f0]" />
-            <span className="text-[11px] font-medium text-[#717171]">ou cria com email</span>
-            <div className="flex-1 h-px bg-[#f0f0f0]" />
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[11px] font-medium text-muted-foreground">ou cria com email</span>
+            <div className="flex-1 h-px bg-border" />
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
@@ -148,7 +148,7 @@ export default function Signup() {
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 required
-                className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
               />
             </div>
 
@@ -162,7 +162,7 @@ export default function Signup() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
               />
             </div>
 
@@ -175,20 +175,20 @@ export default function Signup() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">
-                Código de convite <span className="text-[#717171] font-normal">(opcional)</span>
+                Código de convite <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <Input
                 type="text"
                 placeholder="Ex: AMOR2024"
                 value={inviteCode}
                 onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                className="h-12 rounded-2xl border-[#e5e5e5] bg-white text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
               />
               {inviteCode && (
                 <p className="text-[11px] text-rose-500 font-medium px-1">
@@ -209,8 +209,8 @@ export default function Signup() {
             </button>
           </form>
 
-          <div className="pt-4 border-t border-[#f5f5f5] text-center">
-            <p className="text-sm text-[#717171]">
+          <div className="pt-4 border-t border-border text-center">
+            <p className="text-sm text-muted-foreground">
               Já tens conta?{" "}
               <button
                 onClick={() => navigate("/entrar")}
