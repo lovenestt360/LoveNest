@@ -21,7 +21,7 @@ function pillClass(dayType: DayType, isFuture: boolean): string {
         ? "border border-dashed border-border"
         : "bg-muted-foreground/15";
     default:
-      return "bg-muted";
+      return "bg-muted border border-border";
   }
 }
 
