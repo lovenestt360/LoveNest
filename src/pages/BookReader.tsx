@@ -75,9 +75,9 @@ export default function BookReader() {
                         <p className="text-sm text-muted-foreground">{error ?? "Ficheiro não disponível."}</p>
                     </div>
                 ) : book.file_type === "pdf" ? (
-                    <PdfReader fileUrl={signedUrl} />
+                    <PdfReader fileUrl={signedUrl} bookId={book.id} />
                 ) : book.file_type === "epub" ? (
-                    <EpubReader fileUrl={signedUrl} />
+                    <EpubReader fileUrl={signedUrl} bookId={book.id} />
                 ) : (
                     <div className="h-full flex items-center justify-center px-6 text-center">
                         <p className="text-sm text-muted-foreground">Formato de livro não suportado.</p>

@@ -51,36 +51,34 @@ export function useBiblioteca() {
     const [loading, setLoading] = useState(true);
 
     const fetchAll = useCallback(async () => {
+        // Aguarda o couple_space_id resolver — evita um instante em que
+        // ownedBookIds fica vazio e canRead falha para livros já comprados.
+        if (!spaceId) return;
+
         setLoading(true);
 
-        const [booksRes, categoriesRes, settingsRes] = await Promise.all([
+        const [booksRes, categoriesRes, settingsRes, purchasesRes] = await Promise.all([
             supabase.from("books" as any).select("*").eq("is_published", true).order("sort_order"),
             supabase.from("book_categories" as any).select("*").order("sort_order"),
             supabase.from("library_settings" as any).select("*").maybeSingle(),
+            supabase.from("book_purchases" as any).select("id, book_id, status, admin_notes").eq("couple_space_id", spaceId),
         ]);
 
         if (booksRes.data) setBooks(booksRes.data as unknown as Book[]);
         if (categoriesRes.data) setCategories(categoriesRes.data as unknown as BookCategory[]);
         if (settingsRes.data) setSettings(settingsRes.data as unknown as LibrarySettings);
 
-        if (spaceId) {
-            const { data: purchases } = await supabase
-                .from("book_purchases" as any)
-                .select("id, book_id, status, admin_notes")
-                .eq("couple_space_id", spaceId);
-
-            const owned = new Set<string>();
-            const pending = new Set<string>();
-            const rejected = new Map<string, RejectedPurchase>();
-            for (const p of (purchases ?? []) as { id: string; book_id: string; status: string; admin_notes: string | null }[]) {
-                if (p.status === "approved") owned.add(p.book_id);
-                else if (p.status === "pending") pending.add(p.book_id);
-                else if (p.status === "rejected") rejected.set(p.book_id, { id: p.id, admin_notes: p.admin_notes });
-            }
-            setOwnedBookIds(owned);
-            setPendingBookIds(pending);
-            setRejectedPurchases(rejected);
+        const owned = new Set<string>();
+        const pending = new Set<string>();
+        const rejected = new Map<string, RejectedPurchase>();
+        for (const p of (purchasesRes.data ?? []) as { id: string; book_id: string; status: string; admin_notes: string | null }[]) {
+            if (p.status === "approved") owned.add(p.book_id);
+            else if (p.status === "pending") pending.add(p.book_id);
+            else if (p.status === "rejected") rejected.set(p.book_id, { id: p.id, admin_notes: p.admin_notes });
         }
+        setOwnedBookIds(owned);
+        setPendingBookIds(pending);
+        setRejectedPurchases(rejected);
 
         setLoading(false);
     }, [spaceId]);
