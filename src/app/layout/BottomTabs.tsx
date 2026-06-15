@@ -20,6 +20,7 @@ import {
   ClipboardList,
   CreditCard,
   Heart,
+  Library,
 } from "lucide-react";
 import {
   Sheet,
@@ -33,7 +34,7 @@ const mainTabs = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/chat", label: "Chat", Icon: MessageCircle },
   { to: "/humor", label: "Mood", Icon: Smile },
-  { to: "/plano", label: "Plano", Icon: CheckSquare },
+  { to: "/biblioteca", label: "Biblioteca", Icon: Library },
 ] as const;
 
 const moreItems = [
@@ -41,6 +42,7 @@ const moreItems = [
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
   { to: "/jornada-espiritual", label: "Espiritual", Icon: BookOpen },
   { to: "/conflitos", label: "Conflitos", Icon: HeartHandshake },
+  { to: "/plano", label: "Plano", Icon: CheckSquare },
   { to: "/configuracoes", label: "Definições", Icon: Settings },
   { to: "/subscricao", label: "Subscrição", Icon: CreditCard },
 ] as const;
@@ -63,7 +65,7 @@ export function BottomTabs() {
   const location = useLocation();
 
   const moreBadge =
-    memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread;
+    memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread + tasksUnread;
   const isMoreActive = MORE_PATHS.some((p) => location.pathname === p);
 
   const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread;
@@ -73,7 +75,6 @@ export function BottomTabs() {
       case "/": return totalUnread;
       case "/chat": return chatUnread;
       case "/humor": return moodUnread;
-      case "/plano": return tasksUnread + scheduleUnread;
       default: return 0;
     }
   };
@@ -84,6 +85,7 @@ export function BottomTabs() {
       case "/agenda": return scheduleUnread;
       case "/jornada-espiritual": return prayerUnread;
       case "/conflitos": return complaintsUnread;
+      case "/plano": return tasksUnread + scheduleUnread;
       default: return 0;
     }
   };

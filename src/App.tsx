@@ -53,6 +53,8 @@ const LoveStreak = lazy(() => import("./pages/LoveStreak"));
 const Ranking = lazy(() => import("./pages/Ranking"));
 const Descobrir = lazy(() => import("./pages/Descobrir"));
 const Momentos  = lazy(() => import("./pages/Momentos"));
+const Biblioteca = lazy(() => import("./pages/Biblioteca"));
+const BookDetail = lazy(() => import("./pages/BookDetail"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -91,6 +93,8 @@ const AppRoutes = () => (
         <Route path="configuracoes" element={<Settings />} />
         <Route path="subscricao" element={<Subscription />} />
         <Route path="plano" element={<Plano />} />
+        <Route path="biblioteca" element={<Biblioteca />} />
+        <Route path="biblioteca/:bookId" element={<BookDetail />} />
 
         {/* Premium Routes — controlled by plan features in admin */}
         <Route element={<PremiumGuard requiredFeature="mood" />}>

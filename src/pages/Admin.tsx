@@ -8,7 +8,7 @@ import {
     ShieldCheck, Check, X, FileText, Users, User, Home, Hash, FileImage, FileQuestion,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
     CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
-    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw, Smartphone, Upload
+    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw, Smartphone, Upload, Library
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
+import AdminBiblioteca from "./admin/AdminBiblioteca";
 
 function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminToken: string | null }) {
     const [freeMode, setFreeMode] = useState(false);
@@ -91,7 +92,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "feature_flags">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "feature_flags" | "biblioteca">("overview");
     const [verifications, setVerifications] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -190,6 +191,7 @@ export default function Admin() {
         { id: "lovestreak", label: "LoveStreak" },
         { id: "ranking", label: "Ranking" },
         { id: "descobrir", label: "Descobrir" },
+        { id: "biblioteca", label: "Biblioteca" },
     ];
 
     const { toast } = useToast();
@@ -944,6 +946,9 @@ export default function Admin() {
                     </Button>
                     <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
                         <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
+                    </Button>
+                    <Button variant={tab === "biblioteca" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("biblioteca")}>
+                        <Library className="w-4 h-4" /> <span className="hidden md:inline">Biblioteca</span>
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 w-full" onClick={() => navigate("/admin/features")}>
                         <Hash className="w-4 h-4" /> <span className="hidden md:inline">Feature Control</span>
@@ -2142,6 +2147,9 @@ export default function Admin() {
                     </div>
                 </div>
                 )}
+
+                {/* BIBLIOTECA TAB */}
+                {tab === "biblioteca" && <AdminBiblioteca adminClient={adminClient} />}
             </main>
         </div>
     );
