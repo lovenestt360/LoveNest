@@ -17,7 +17,7 @@ export default function BookDetail() {
     const canRead = book?.is_free || owned;
 
     const handleRead = () => {
-        toast({ title: "Em breve", description: "O leitor de livros estará disponível brevemente." });
+        navigate(`/biblioteca/${bookId}/ler`);
     };
 
     const handleBuy = () => {

@@ -55,6 +55,7 @@ const Descobrir = lazy(() => import("./pages/Descobrir"));
 const Momentos  = lazy(() => import("./pages/Momentos"));
 const Biblioteca = lazy(() => import("./pages/Biblioteca"));
 const BookDetail = lazy(() => import("./pages/BookDetail"));
+const BookReader = lazy(() => import("./pages/BookReader"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -86,6 +87,9 @@ const AppRoutes = () => (
 
     {/* Protected routes (login + pareamento) */}
     <Route element={<ProtectedRoute />}>
+      {/* Fullscreen reader — sem bottom nav */}
+      <Route path="biblioteca/:bookId/ler" element={<BookReader />} />
+
       <Route element={<AppShell />}>
         {/* Always free routes */}
         <Route index element={<Index />} />
