@@ -1,27 +1,25 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BookText, BookOpenText, Loader2, Lock, Clock } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
+import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { PurchaseSection } from "@/features/biblioteca/PurchaseSection";
 
 export default function BookDetail() {
     const { bookId } = useParams<{ bookId: string }>();
     const navigate = useNavigate();
-    const { toast } = useToast();
-    const { books, categories, ownedBookIds, pendingBookIds, loading } = useBiblioteca();
+    const spaceId = useCoupleSpaceId();
+    const { books, categories, ownedBookIds, pendingBookIds, rejectedPurchases, loading, refetch } = useBiblioteca();
 
     const book = books.find(b => b.id === bookId);
     const category = categories.find(c => c.id === book?.category_id);
     const owned = bookId ? ownedBookIds.has(bookId) : false;
     const pending = bookId ? pendingBookIds.has(bookId) : false;
+    const rejected = bookId ? rejectedPurchases.get(bookId) : undefined;
     const canRead = book?.is_free || owned;
 
     const handleRead = () => {
         navigate(`/biblioteca/${bookId}/ler`);
-    };
-
-    const handleBuy = () => {
-        toast({ title: "Em breve", description: "A compra de livros estará disponível brevemente." });
     };
 
     if (loading) {
@@ -103,9 +101,23 @@ export default function BookDetail() {
                         <Clock className="w-4 h-4" /> Pedido em análise
                     </div>
                 ) : (
-                    <Button onClick={handleBuy} className="w-full h-12 rounded-2xl font-bold text-[15px] gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg">
-                        <Lock className="w-[18px] h-[18px]" /> Comprar — {Number(book.price).toFixed(2)} {book.currency}
-                    </Button>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Lock className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />
+                            <p className="text-sm font-bold text-foreground">
+                                Comprar — {Number(book.price).toFixed(2)} {book.currency}
+                            </p>
+                        </div>
+                        {spaceId && (
+                            <PurchaseSection
+                                book={book}
+                                coupleSpaceId={spaceId}
+                                existingPurchaseId={rejected?.id}
+                                adminNotes={rejected?.admin_notes}
+                                onSubmitted={refetch}
+                            />
+                        )}
+                    </div>
                 )}
             </div>
         </section>

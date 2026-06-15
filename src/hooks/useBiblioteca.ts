@@ -35,6 +35,11 @@ export interface LibrarySettings {
     banner_link_book_id: string | null;
 }
 
+export interface RejectedPurchase {
+    id: string;
+    admin_notes: string | null;
+}
+
 export function useBiblioteca() {
     const spaceId = useCoupleSpaceId();
     const [books, setBooks] = useState<Book[]>([]);
@@ -42,6 +47,7 @@ export function useBiblioteca() {
     const [settings, setSettings] = useState<LibrarySettings | null>(null);
     const [ownedBookIds, setOwnedBookIds] = useState<Set<string>>(new Set());
     const [pendingBookIds, setPendingBookIds] = useState<Set<string>>(new Set());
+    const [rejectedPurchases, setRejectedPurchases] = useState<Map<string, RejectedPurchase>>(new Map());
     const [loading, setLoading] = useState(true);
 
     const fetchAll = useCallback(async () => {
@@ -60,17 +66,20 @@ export function useBiblioteca() {
         if (spaceId) {
             const { data: purchases } = await supabase
                 .from("book_purchases" as any)
-                .select("book_id, status")
+                .select("id, book_id, status, admin_notes")
                 .eq("couple_space_id", spaceId);
 
             const owned = new Set<string>();
             const pending = new Set<string>();
-            for (const p of (purchases ?? []) as { book_id: string; status: string }[]) {
+            const rejected = new Map<string, RejectedPurchase>();
+            for (const p of (purchases ?? []) as { id: string; book_id: string; status: string; admin_notes: string | null }[]) {
                 if (p.status === "approved") owned.add(p.book_id);
                 else if (p.status === "pending") pending.add(p.book_id);
+                else if (p.status === "rejected") rejected.set(p.book_id, { id: p.id, admin_notes: p.admin_notes });
             }
             setOwnedBookIds(owned);
             setPendingBookIds(pending);
+            setRejectedPurchases(rejected);
         }
 
         setLoading(false);
@@ -78,5 +87,5 @@ export function useBiblioteca() {
 
     useEffect(() => { fetchAll(); }, [fetchAll]);
 
-    return { books, categories, settings, ownedBookIds, pendingBookIds, loading, refetch: fetchAll };
+    return { books, categories, settings, ownedBookIds, pendingBookIds, rejectedPurchases, loading, refetch: fetchAll };
 }
