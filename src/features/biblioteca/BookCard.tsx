@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { BookText, Check, Clock } from "lucide-react";
 import type { Book } from "@/hooks/useBiblioteca";
 
-export function BookCard({ book, owned, pending }: { book: Book; owned: boolean; pending: boolean }) {
+export function BookCard({ book, owned, pending, progress }: { book: Book; owned: boolean; pending: boolean; progress?: number }) {
     return (
         <Link
             to={`/biblioteca/${book.id}`}
@@ -36,6 +36,12 @@ export function BookCard({ book, owned, pending }: { book: Book; owned: boolean;
                         </span>
                     )}
                 </div>
+
+                {owned && progress !== undefined && progress > 0 && progress < 100 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+                        <div className="h-full bg-rose-500" style={{ width: `${progress}%` }} />
+                    </div>
+                )}
             </div>
 
             <div className="px-0.5 space-y-0.5">

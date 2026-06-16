@@ -5,7 +5,7 @@ import type { Rendition } from "epubjs";
 
 const FONT_STEPS = [90, 100, 110, 125, 140, 160, 180];
 
-export function EpubReader({ fileUrl, bookId }: { fileUrl: string; bookId: string }) {
+export function EpubReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bookId: string; onProgress?: (percent: number, location: string) => void }) {
     const [location, setLocation] = useState<string | number | null>(
         () => localStorage.getItem(`book-progress-${bookId}`)
     );
@@ -24,7 +24,9 @@ export function EpubReader({ fileUrl, bookId }: { fileUrl: string; bookId: strin
 
         const book = renditionRef.current?.book;
         if (book?.locations.length()) {
-            setProgress(Math.round(book.locations.percentageFromCfi(epubcfi) * 100));
+            const percent = Math.round(book.locations.percentageFromCfi(epubcfi) * 100);
+            setProgress(percent);
+            onProgress?.(percent, epubcfi);
         }
     };
 

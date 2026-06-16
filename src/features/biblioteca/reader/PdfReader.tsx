@@ -11,7 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 const ZOOM_STEPS = [1, 1.25, 1.5, 1.75, 2, 2.5];
 
-export function PdfReader({ fileUrl, bookId }: { fileUrl: string; bookId: string }) {
+export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bookId: string; onProgress?: (percent: number, location: string) => void }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [numPages, setNumPages] = useState<number | null>(null);
@@ -37,6 +37,7 @@ export function PdfReader({ fileUrl, bookId }: { fileUrl: string; bookId: string
     const goToPage = (page: number) => {
         setPageNumber(page);
         localStorage.setItem(`book-progress-${bookId}`, String(page));
+        if (numPages) onProgress?.(Math.round((page / numPages) * 100), String(page));
     };
 
     const zoom = ZOOM_STEPS[zoomIndex];

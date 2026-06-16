@@ -6,7 +6,7 @@ import { CategoryFilterBar } from "@/features/biblioteca/CategoryFilterBar";
 import { BookGrid } from "@/features/biblioteca/BookGrid";
 
 export default function Biblioteca() {
-    const { books, categories, settings, ownedBookIds, pendingBookIds, loading } = useBiblioteca();
+    const { books, categories, settings, ownedBookIds, pendingBookIds, myProgressByBook, loading } = useBiblioteca();
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     const filteredBooks = useMemo(() => {
@@ -61,6 +61,7 @@ export default function Biblioteca() {
                             columns={settings?.grid_columns ?? 2}
                             ownedBookIds={ownedBookIds}
                             pendingBookIds={pendingBookIds}
+                            myProgressByBook={myProgressByBook}
                         />
                     )}
                 </>

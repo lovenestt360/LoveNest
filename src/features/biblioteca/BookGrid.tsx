@@ -9,11 +9,12 @@ const GRID_COLS: Record<number, string> = {
     4: "grid-cols-4",
 };
 
-export function BookGrid({ books, columns, ownedBookIds, pendingBookIds }: {
+export function BookGrid({ books, columns, ownedBookIds, pendingBookIds, myProgressByBook }: {
     books: Book[];
     columns: number;
     ownedBookIds: Set<string>;
     pendingBookIds: Set<string>;
+    myProgressByBook?: Map<string, number>;
 }) {
     const cols = GRID_COLS[columns] ?? GRID_COLS[2];
 
@@ -25,6 +26,7 @@ export function BookGrid({ books, columns, ownedBookIds, pendingBookIds }: {
                     book={book}
                     owned={ownedBookIds.has(book.id)}
                     pending={pendingBookIds.has(book.id)}
+                    progress={myProgressByBook?.get(book.id)}
                 />
             ))}
         </div>

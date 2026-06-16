@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BookText, BookOpenText, Loader2, Lock, Clock } from "lucide-react";
+import { ArrowLeft, BookText, BookOpenText, CheckCircle2, Loader2, Lock, Clock } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { Button } from "@/components/ui/button";
 import { PurchaseSection } from "@/features/biblioteca/PurchaseSection";
 
@@ -10,6 +12,8 @@ export default function BookDetail() {
     const navigate = useNavigate();
     const spaceId = useCoupleSpaceId();
     const { books, categories, ownedBookIds, pendingBookIds, rejectedPurchases, loading, refetch } = useBiblioteca();
+    const { myProgress, partnerProgress } = useReadingProgress(bookId);
+    const { partner } = usePartnerProfile();
 
     const book = books.find(b => b.id === bookId);
     const category = categories.find(c => c.id === book?.category_id);
@@ -17,6 +21,9 @@ export default function BookDetail() {
     const pending = bookId ? pendingBookIds.has(bookId) : false;
     const rejected = bookId ? rejectedPurchases.get(bookId) : undefined;
     const canRead = book?.is_free || owned;
+
+    const myPercent = myProgress?.progress_percent ?? 0;
+    const readLabel = myPercent >= 100 ? "Ler novamente" : myPercent > 0 ? "Continuar leitura" : "Ler agora";
 
     const handleRead = () => {
         navigate(`/biblioteca/${bookId}/ler`);
@@ -91,10 +98,40 @@ export default function BookDetail() {
                 </div>
             )}
 
+            {canRead && (myPercent > 0 || (partnerProgress?.progress_percent ?? 0) > 0) && (
+                <div className="px-4 pt-6 space-y-3">
+                    {myPercent > 0 && (
+                        <div>
+                            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground mb-1">
+                                <span className="flex items-center gap-1">
+                                    {myPercent >= 100 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                                    A tua leitura
+                                </span>
+                                <span>{myPercent}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full bg-rose-500 transition-all" style={{ width: `${myPercent}%` }} />
+                            </div>
+                        </div>
+                    )}
+                    {(partnerProgress?.progress_percent ?? 0) > 0 && (
+                        <div>
+                            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground mb-1">
+                                <span>Leitura de {partner?.display_name || "o teu par"}</span>
+                                <span>{partnerProgress?.progress_percent}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full bg-foreground/40 transition-all" style={{ width: `${partnerProgress?.progress_percent}%` }} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="px-4 pt-8">
                 {canRead ? (
                     <Button onClick={handleRead} className="w-full h-12 rounded-2xl font-bold text-[15px] gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg">
-                        <BookOpenText className="w-[18px] h-[18px]" /> Ler agora
+                        <BookOpenText className="w-[18px] h-[18px]" /> {readLabel}
                     </Button>
                 ) : pending ? (
                     <div className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-muted text-muted-foreground font-semibold text-[14px]">
