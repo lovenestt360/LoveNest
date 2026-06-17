@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -9,14 +10,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-const ZOOM_STEPS = [1, 1.25, 1.5, 1.75, 2, 2.5];
-
 export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bookId: string; onProgress?: (percent: number, location: string) => void }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [numPages, setNumPages] = useState<number | null>(null);
     const [pageNumber, setPageNumber] = useState(1);
-    const [zoomIndex, setZoomIndex] = useState(0);
 
     useEffect(() => {
         const el = containerRef.current;
@@ -40,7 +38,6 @@ export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bo
         if (numPages) onProgress?.(Math.round((page / numPages) * 100), String(page));
     };
 
-    const zoom = ZOOM_STEPS[zoomIndex];
     const progress = numPages ? (pageNumber / numPages) * 100 : 0;
 
     return (
@@ -49,46 +46,38 @@ export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bo
                 <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
 
-            <div className="flex-1 relative overflow-hidden">
-                <div ref={containerRef} className="absolute inset-0 overflow-auto flex justify-center px-4 py-4">
-                    <Document
-                        file={fileUrl}
-                        onLoadSuccess={handleLoadSuccess}
-                        loading={
-                            <div className="flex items-center justify-center py-24">
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
-                            </div>
-                        }
-                        error={
-                            <div className="flex items-center justify-center py-24 px-6 text-center">
-                                <p className="text-sm text-muted-foreground">Não foi possível abrir este PDF.</p>
-                            </div>
-                        }
-                    >
-                        {containerWidth > 0 && (
-                            <Page pageNumber={pageNumber} width={Math.min(containerWidth, 720) * zoom} className="shadow-sm" />
-                        )}
-                    </Document>
-                </div>
-
-                <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
-                    <button
-                        type="button"
-                        onClick={() => setZoomIndex(i => Math.min(ZOOM_STEPS.length - 1, i + 1))}
-                        disabled={zoomIndex >= ZOOM_STEPS.length - 1}
-                        className="w-8 h-8 rounded-full bg-background/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-foreground active:scale-95 transition-all disabled:opacity-30"
-                    >
-                        <ZoomIn className="h-4 w-4" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setZoomIndex(i => Math.max(0, i - 1))}
-                        disabled={zoomIndex <= 0}
-                        className="w-8 h-8 rounded-full bg-background/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-foreground active:scale-95 transition-all disabled:opacity-30"
-                    >
-                        <ZoomOut className="h-4 w-4" />
-                    </button>
-                </div>
+            <div ref={containerRef} className="flex-1 overflow-hidden">
+                <Document
+                    file={fileUrl}
+                    onLoadSuccess={handleLoadSuccess}
+                    loading={
+                        <div className="flex items-center justify-center py-24">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
+                        </div>
+                    }
+                    error={
+                        <div className="flex items-center justify-center py-24 px-6 text-center">
+                            <p className="text-sm text-muted-foreground">Não foi possível abrir este PDF.</p>
+                        </div>
+                    }
+                >
+                    {containerWidth > 0 && (
+                        // key={pageNumber} reinicia o zoom/posição sempre que a página muda
+                        <TransformWrapper
+                            key={pageNumber}
+                            minScale={1}
+                            maxScale={4}
+                            doubleClick={{ mode: "toggle", step: 1.5 }}
+                        >
+                            <TransformComponent
+                                wrapperStyle={{ width: "100%", height: "100%" }}
+                                contentStyle={{ width: "100%", height: "100%", display: "flex", justifyContent: "center" }}
+                            >
+                                <Page pageNumber={pageNumber} width={Math.min(containerWidth, 720)} className="shadow-sm" />
+                            </TransformComponent>
+                        </TransformWrapper>
+                    )}
+                </Document>
             </div>
 
             {numPages !== null && numPages > 1 && (
