@@ -56,6 +56,7 @@ const Momentos  = lazy(() => import("./pages/Momentos"));
 const Biblioteca = lazy(() => import("./pages/Biblioteca"));
 const BookDetail = lazy(() => import("./pages/BookDetail"));
 const BookReader = lazy(() => import("./pages/BookReader"));
+const BookReflections = lazy(() => import("./pages/BookReflections"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -99,6 +100,7 @@ const AppRoutes = () => (
         <Route path="plano" element={<Plano />} />
         <Route path="biblioteca" element={<Biblioteca />} />
         <Route path="biblioteca/:bookId" element={<BookDetail />} />
+        <Route path="biblioteca/:bookId/reflexoes" element={<BookReflections />} />
 
         {/* Premium Routes — controlled by plan features in admin */}
         <Route element={<PremiumGuard requiredFeature="mood" />}>

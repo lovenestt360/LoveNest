@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactReader, ReactReaderStyle } from "react-reader";
-import type { Rendition } from "epubjs";
+import type { Rendition, NavItem, Location } from "epubjs";
 import {
     FONT_SIZE_STEPS, FONT_FAMILY_MAP, SPACING_MAP, MARGIN_MAP, THEME_COLORS,
     type ReaderSettings,
 } from "@/hooks/useReaderSettings";
+import { useBookReflections } from "@/hooks/useBookReflections";
 
 export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
     fileUrl: string;
@@ -17,6 +18,13 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
     );
     const [progress, setProgress] = useState(0);
     const renditionRef = useRef<Rendition | null>(null);
+    const prevHrefRef = useRef<string | null>(null);
+    const tocRef = useRef<NavItem[]>([]);
+
+    const { addReflection } = useBookReflections(bookId);
+    const [chapterPrompt, setChapterPrompt] = useState<{ chapterId: string; title: string } | null>(null);
+    const [reflectionText, setReflectionText] = useState("");
+    const [savingReflection, setSavingReflection] = useState(false);
 
     const applyTheme = (rendition: Rendition, s: ReaderSettings) => {
         const colors = THEME_COLORS[s.theme];
@@ -47,9 +55,23 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
         }
     };
 
+    const handleTocChanged = (toc: NavItem[]) => {
+        tocRef.current = toc;
+    };
+
     const handleRendition = (rendition: Rendition) => {
         renditionRef.current = rendition;
         applyTheme(rendition, settings);
+
+        rendition.on("relocated", (loc: Location) => {
+            const href = loc.start.href;
+            if (prevHrefRef.current && href !== prevHrefRef.current) {
+                const finishedHref = prevHrefRef.current;
+                const navItem = tocRef.current.find(item => item.href.split("#")[0] === finishedHref.split("#")[0]);
+                setChapterPrompt({ chapterId: finishedHref, title: navItem?.label?.trim() || "este capítulo" });
+            }
+            prevHrefRef.current = href;
+        });
 
         const book = rendition.book;
         const cacheKey = `book-locations-${bookId}`;
@@ -66,6 +88,19 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
                 if (cfi) setProgress(Math.round(book.locations.percentageFromCfi(cfi) * 100));
             });
         });
+    };
+
+    const dismissPrompt = () => {
+        setChapterPrompt(null);
+        setReflectionText("");
+    };
+
+    const submitReflection = async () => {
+        if (!chapterPrompt || !reflectionText.trim()) return;
+        setSavingReflection(true);
+        await addReflection(reflectionText, chapterPrompt.chapterId);
+        setSavingReflection(false);
+        dismissPrompt();
     };
 
     const colors = THEME_COLORS[settings.theme];
@@ -87,10 +122,47 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
                     url={fileUrl}
                     location={location}
                     locationChanged={handleLocationChanged}
+                    tocChanged={handleTocChanged}
                     getRendition={handleRendition}
                     readerStyles={readerStyles}
                     epubOptions={{ flow: settings.flow === "scrolled" ? "scrolled-doc" : "paginated" }}
                 />
+
+                {chapterPrompt && (
+                    <div className="absolute inset-0 z-20 bg-black/50 flex items-end" onClick={dismissPrompt}>
+                        <div
+                            className="w-full bg-card rounded-t-3xl p-5 space-y-3 animate-in slide-in-from-bottom-4"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <p className="text-[14px] font-bold text-foreground">
+                                O que aprendeste em "{chapterPrompt.title}"?
+                            </p>
+                            <textarea
+                                value={reflectionText}
+                                onChange={e => setReflectionText(e.target.value)}
+                                placeholder="Escreve a tua reflexão para partilhar com o teu par..."
+                                className="w-full min-h-24 rounded-2xl border border-border bg-background p-3 text-[13px] text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-rose-300"
+                            />
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={dismissPrompt}
+                                    className="flex-1 h-11 rounded-2xl font-bold text-[13px] text-muted-foreground bg-muted active:scale-95 transition-all"
+                                >
+                                    Agora não
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!reflectionText.trim() || savingReflection}
+                                    onClick={submitReflection}
+                                    className="flex-1 h-11 rounded-2xl font-bold text-[13px] text-white bg-rose-500 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {savingReflection ? "A guardar..." : "Guardar"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

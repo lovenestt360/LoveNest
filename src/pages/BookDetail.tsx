@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft, BookText, BookOpenText, CheckCircle2, Loader2, Lock, Clock,
-    Bookmark, BookmarkCheck, Share2, Eye, Hash, ChevronDown, ChevronUp,
+    Bookmark, BookmarkCheck, Share2, Eye, Hash, ChevronDown, ChevronUp, HeartHandshake, ChevronRight,
 } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -222,6 +222,25 @@ export default function BookDetail() {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {canRead && book.file_type === "epub" && (
+                <div className="px-4 pt-4">
+                    <button
+                        type="button"
+                        onClick={() => navigate(`/biblioteca/${bookId}/reflexoes`)}
+                        className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 shadow-sm active:scale-[0.98] transition-all"
+                    >
+                        <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
+                            <HeartHandshake className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />
+                        </div>
+                        <div className="flex-1 text-left">
+                            <p className="text-[13px] font-bold text-foreground">Reflexões do Casal</p>
+                            <p className="text-[11px] text-muted-foreground">Partilhem o que aprenderam com este livro</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </button>
                 </div>
             )}
 
