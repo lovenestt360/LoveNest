@@ -1,22 +1,39 @@
-import { useRef, useState } from "react";
-import { ReactReader } from "react-reader";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ReactReader, ReactReaderStyle } from "react-reader";
 import type { Rendition } from "epubjs";
+import {
+    FONT_SIZE_STEPS, FONT_FAMILY_MAP, SPACING_MAP, MARGIN_MAP, THEME_COLORS,
+    type ReaderSettings,
+} from "@/hooks/useReaderSettings";
 
-const FONT_STEPS = [90, 100, 110, 125, 140, 160, 180];
-
-export function EpubReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bookId: string; onProgress?: (percent: number, location: string) => void }) {
+export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
+    fileUrl: string;
+    bookId: string;
+    settings: ReaderSettings;
+    onProgress?: (percent: number, location: string) => void;
+}) {
     const [location, setLocation] = useState<string | number | null>(
         () => localStorage.getItem(`book-progress-${bookId}`)
     );
     const [progress, setProgress] = useState(0);
-    const [fontIndex, setFontIndex] = useState(1);
     const renditionRef = useRef<Rendition | null>(null);
 
-    const applyFontSize = (index: number) => {
-        renditionRef.current?.themes.fontSize(`${FONT_STEPS[index]}%`);
-        setFontIndex(index);
+    const applyTheme = (rendition: Rendition, s: ReaderSettings) => {
+        const colors = THEME_COLORS[s.theme];
+        rendition.themes.register("lovenest", {
+            body: { background: colors.bg, color: colors.fg },
+        });
+        rendition.themes.select("lovenest");
+        rendition.themes.fontSize(`${FONT_SIZE_STEPS[s.fontSizeIndex]}%`);
+        rendition.themes.font(FONT_FAMILY_MAP[s.font]);
+        rendition.themes.override("line-height", SPACING_MAP[s.spacing]);
+        rendition.themes.override("padding", `0 ${MARGIN_MAP[s.margin]}`);
     };
+
+    useEffect(() => {
+        if (renditionRef.current) applyTheme(renditionRef.current, settings);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [settings.theme, settings.fontSizeIndex, settings.font, settings.spacing, settings.margin]);
 
     const handleLocationChanged = (epubcfi: string) => {
         setLocation(epubcfi);
@@ -32,7 +49,7 @@ export function EpubReader({ fileUrl, bookId, onProgress }: { fileUrl: string; b
 
     const handleRendition = (rendition: Rendition) => {
         renditionRef.current = rendition;
-        rendition.themes.fontSize(`${FONT_STEPS[fontIndex]}%`);
+        applyTheme(rendition, settings);
 
         const book = rendition.book;
         const cacheKey = `book-locations-${bookId}`;
@@ -51,38 +68,29 @@ export function EpubReader({ fileUrl, bookId, onProgress }: { fileUrl: string; b
         });
     };
 
+    const colors = THEME_COLORS[settings.theme];
+    const readerStyles = {
+        ...ReactReaderStyle,
+        readerArea: { ...ReactReaderStyle.readerArea, backgroundColor: colors.bg, transition: "none" },
+        titleArea: { ...ReactReaderStyle.titleArea, color: colors.fg },
+    };
+
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
             <div className="h-1 bg-muted shrink-0">
                 <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
 
             <div className="flex-1 relative">
                 <ReactReader
+                    key={settings.flow}
                     url={fileUrl}
                     location={location}
                     locationChanged={handleLocationChanged}
                     getRendition={handleRendition}
+                    readerStyles={readerStyles}
+                    epubOptions={{ flow: settings.flow === "scrolled" ? "scrolled-doc" : "paginated" }}
                 />
-
-                <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
-                    <button
-                        type="button"
-                        onClick={() => applyFontSize(Math.min(FONT_STEPS.length - 1, fontIndex + 1))}
-                        disabled={fontIndex >= FONT_STEPS.length - 1}
-                        className="w-8 h-8 rounded-full bg-background/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-foreground active:scale-95 transition-all disabled:opacity-30"
-                    >
-                        <ZoomIn className="h-4 w-4" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => applyFontSize(Math.max(0, fontIndex - 1))}
-                        disabled={fontIndex <= 0}
-                        className="w-8 h-8 rounded-full bg-background/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-foreground active:scale-95 transition-all disabled:opacity-30"
-                    >
-                        <ZoomOut className="h-4 w-4" />
-                    </button>
-                </div>
             </div>
         </div>
     );

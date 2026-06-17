@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Navigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Type } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useReaderSettings, THEME_COLORS } from "@/hooks/useReaderSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { PdfReader } from "@/features/biblioteca/reader/PdfReader";
 import { EpubReader } from "@/features/biblioteca/reader/EpubReader";
+import { ReaderSettingsSheet } from "@/features/biblioteca/reader/ReaderSettingsSheet";
 
 const PROGRESS_SAVE_DELAY_MS = 1500;
 
@@ -14,9 +16,11 @@ export default function BookReader() {
     const navigate = useNavigate();
     const { books, ownedBookIds, loading: libraryLoading } = useBiblioteca();
     const { saveProgress } = useReadingProgress(bookId);
+    const { settings, update: updateSettings } = useReaderSettings();
     const [signedUrl, setSignedUrl] = useState<string | null>(null);
     const [urlLoading, setUrlLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     const book = books.find(b => b.id === bookId);
     const canRead = !!book && (book.is_free || ownedBookIds.has(book.id));
@@ -74,17 +78,28 @@ export default function BookReader() {
     if (!book) return <Navigate to="/biblioteca" replace />;
     if (!canRead) return <Navigate to={`/biblioteca/${book.id}`} replace />;
 
+    const colors = THEME_COLORS[settings.theme];
+
     return (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: colors.bg }}>
             <header className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
                 <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground"
+                    className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all"
+                    style={{ color: colors.fg }}
                 >
                     <ArrowLeft className="h-5 w-5" />
                 </button>
-                <h1 className="text-[15px] font-bold tracking-tight line-clamp-1 flex-1">{book.title}</h1>
+                <h1 className="text-[15px] font-bold tracking-tight line-clamp-1 flex-1" style={{ color: colors.fg }}>{book.title}</h1>
+                <button
+                    type="button"
+                    onClick={() => setSettingsOpen(true)}
+                    className="p-2 -mr-2 rounded-full hover:bg-muted active:scale-95 transition-all"
+                    style={{ color: colors.fg }}
+                >
+                    <Type className="h-5 w-5" />
+                </button>
             </header>
 
             <div className="flex-1 overflow-hidden relative">
@@ -97,15 +112,23 @@ export default function BookReader() {
                         <p className="text-sm text-muted-foreground">{error ?? "Ficheiro não disponível."}</p>
                     </div>
                 ) : book.file_type === "pdf" ? (
-                    <PdfReader fileUrl={signedUrl} bookId={book.id} onProgress={handleProgress} />
+                    <PdfReader fileUrl={signedUrl} bookId={book.id} settings={settings} onProgress={handleProgress} />
                 ) : book.file_type === "epub" ? (
-                    <EpubReader fileUrl={signedUrl} bookId={book.id} onProgress={handleProgress} />
+                    <EpubReader fileUrl={signedUrl} bookId={book.id} settings={settings} onProgress={handleProgress} />
                 ) : (
                     <div className="h-full flex items-center justify-center px-6 text-center">
                         <p className="text-sm text-muted-foreground">Formato de livro não suportado.</p>
                     </div>
                 )}
             </div>
+
+            <ReaderSettingsSheet
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
+                settings={settings}
+                onChange={updateSettings}
+                mode={book.file_type === "epub" ? "epub" : "pdf"}
+            />
         </div>
     );
 }

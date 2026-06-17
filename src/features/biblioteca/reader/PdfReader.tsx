@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { THEME_COLORS, type ReaderSettings } from "@/hooks/useReaderSettings";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -10,7 +11,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bookId: string; onProgress?: (percent: number, location: string) => void }) {
+export function PdfReader({ fileUrl, bookId, settings, onProgress }: {
+    fileUrl: string;
+    bookId: string;
+    settings: ReaderSettings;
+    onProgress?: (percent: number, location: string) => void;
+}) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [numPages, setNumPages] = useState<number | null>(null);
@@ -39,14 +45,15 @@ export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bo
     };
 
     const progress = numPages ? (pageNumber / numPages) * 100 : 0;
+    const colors = THEME_COLORS[settings.theme];
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
             <div className="h-1 bg-muted shrink-0">
                 <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
 
-            <div ref={containerRef} className="flex-1 overflow-hidden">
+            <div ref={containerRef} className="flex-1 overflow-hidden" style={{ backgroundColor: colors.bg }}>
                 <Document
                     file={fileUrl}
                     onLoadSuccess={handleLoadSuccess}
@@ -81,23 +88,25 @@ export function PdfReader({ fileUrl, bookId, onProgress }: { fileUrl: string; bo
             </div>
 
             {numPages !== null && numPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border shrink-0 bg-background">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border shrink-0" style={{ backgroundColor: colors.bg }}>
                     <button
                         type="button"
                         onClick={() => goToPage(Math.max(1, pageNumber - 1))}
                         disabled={pageNumber <= 1}
-                        className="p-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground disabled:opacity-30"
+                        className="p-2 rounded-full hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
+                        style={{ color: colors.fg }}
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <span className="text-[13px] font-semibold text-muted-foreground">
+                    <span className="text-[13px] font-semibold" style={{ color: colors.fg }}>
                         Página {pageNumber} de {numPages}
                     </span>
                     <button
                         type="button"
                         onClick={() => goToPage(Math.min(numPages, pageNumber + 1))}
                         disabled={pageNumber >= numPages}
-                        className="p-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground disabled:opacity-30"
+                        className="p-2 rounded-full hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
+                        style={{ color: colors.fg }}
                     >
                         <ChevronRight className="h-5 w-5" />
                     </button>
