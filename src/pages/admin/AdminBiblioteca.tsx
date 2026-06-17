@@ -40,7 +40,13 @@ type Book = {
     price: number;
     currency: string;
     category_id: string | null;
-    is_published: boolean;
+    status: "published" | "draft" | "archived";
+    tags: string[];
+    is_recommended: boolean;
+    is_featured: boolean;
+    estimated_minutes: number | null;
+    page_count: number | null;
+    chapter_count: number | null;
     sort_order: number;
 };
 
@@ -472,7 +478,13 @@ type BookFormState = {
     category_id: string | null;
     is_free: boolean;
     price: string;
-    is_published: boolean;
+    status: "published" | "draft" | "archived";
+    tags: string;
+    is_recommended: boolean;
+    is_featured: boolean;
+    estimated_minutes: string;
+    page_count: string;
+    chapter_count: string;
     sort_order: string;
     cover_url: string | null;
     file_path: string | null;
@@ -481,9 +493,19 @@ type BookFormState = {
 
 const EMPTY_BOOK_FORM: BookFormState = {
     title: "", author: "", description: "", category_id: null,
-    is_free: false, price: "0", is_published: true, sort_order: "0",
+    is_free: false, price: "0", status: "published", tags: "",
+    is_recommended: false, is_featured: false,
+    estimated_minutes: "", page_count: "", chapter_count: "", sort_order: "0",
     cover_url: null, file_path: null, file_type: null,
 };
+
+function tagsToText(tags: string[]): string {
+    return tags.join(", ");
+}
+
+function textToTags(text: string): string[] {
+    return text.split(",").map(t => t.trim()).filter(Boolean);
+}
 
 function BooksPanel({ adminClient, books, categories, onChanged }: {
     adminClient: any;
@@ -516,7 +538,13 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
             category_id: book.category_id,
             is_free: book.is_free,
             price: String(book.price ?? 0),
-            is_published: book.is_published,
+            status: book.status,
+            tags: tagsToText(book.tags ?? []),
+            is_recommended: book.is_recommended,
+            is_featured: book.is_featured,
+            estimated_minutes: book.estimated_minutes != null ? String(book.estimated_minutes) : "",
+            page_count: book.page_count != null ? String(book.page_count) : "",
+            chapter_count: book.chapter_count != null ? String(book.chapter_count) : "",
             sort_order: String(book.sort_order ?? 0),
             cover_url: book.cover_url,
             file_path: book.file_path,
@@ -573,7 +601,13 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                 is_free: form.is_free,
                 price: form.is_free ? 0 : Number(form.price) || 0,
                 currency: "MZN",
-                is_published: form.is_published,
+                status: form.status,
+                tags: textToTags(form.tags),
+                is_recommended: form.is_recommended,
+                is_featured: form.is_featured,
+                estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : null,
+                page_count: form.page_count ? Number(form.page_count) : null,
+                chapter_count: form.chapter_count ? Number(form.chapter_count) : null,
                 sort_order: Number(form.sort_order) || 0,
                 cover_url: form.cover_url,
                 file_path: form.file_path,
@@ -672,8 +706,37 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                             />
                         </div>
                         <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Ordem</Label>
-                            <Input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: e.target.value }))} className="bg-background" />
+                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Estado</Label>
+                            <Select value={form.status} onValueChange={(v) => setForm(f => ({ ...f, status: v as BookFormState["status"] }))}>
+                                <SelectTrigger className="bg-background">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="published">Publicado</SelectItem>
+                                    <SelectItem value="draft">Rascunho</SelectItem>
+                                    <SelectItem value="archived">Arquivado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tags (separadas por vírgula)</Label>
+                        <Input value={form.tags} onChange={(e) => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="Ex: romance, autoajuda, casal" className="bg-background" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tempo estimado (min)</Label>
+                            <Input type="number" min="0" value={form.estimated_minutes} onChange={(e) => setForm(f => ({ ...f, estimated_minutes: e.target.value }))} className="bg-background" />
+                        </div>
+                        <div>
+                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Páginas (PDF)</Label>
+                            <Input type="number" min="0" value={form.page_count} onChange={(e) => setForm(f => ({ ...f, page_count: e.target.value }))} className="bg-background" />
+                        </div>
+                        <div>
+                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Capítulos (EPUB)</Label>
+                            <Input type="number" min="0" value={form.chapter_count} onChange={(e) => setForm(f => ({ ...f, chapter_count: e.target.value }))} className="bg-background" />
                         </div>
                     </div>
 
@@ -683,9 +746,20 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                             <span className="text-sm font-bold">Livro gratuito</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <Switch checked={form.is_published} onCheckedChange={(v) => setForm(f => ({ ...f, is_published: v }))} />
-                            <span className="text-sm font-bold">Publicado</span>
+                            <Switch checked={form.is_recommended} onCheckedChange={(v) => setForm(f => ({ ...f, is_recommended: v }))} />
+                            <span className="text-sm font-bold">Recomendado</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Switch checked={form.is_featured} onCheckedChange={(v) => setForm(f => ({ ...f, is_featured: v }))} />
+                            <span className="text-sm font-bold">Destaque</span>
+                        </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Ordem</Label>
+                            <Input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: e.target.value }))} className="bg-background" />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -775,9 +849,19 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
                                     {categoryName(book.category_id)}
                                 </span>
-                                {!book.is_published && (
+                                {book.status !== "published" && (
                                     <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-destructive/10 text-destructive">
-                                        Rascunho
+                                        {book.status === "draft" ? "Rascunho" : "Arquivado"}
+                                    </span>
+                                )}
+                                {book.is_recommended && (
+                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600">
+                                        Recomendado
+                                    </span>
+                                )}
+                                {book.is_featured && (
+                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600">
+                                        Destaque
                                     </span>
                                 )}
                                 {book.file_type && (

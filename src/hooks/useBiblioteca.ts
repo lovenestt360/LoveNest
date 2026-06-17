@@ -22,7 +22,14 @@ export interface Book {
     price: number;
     currency: string;
     category_id: string | null;
-    is_published: boolean;
+    status: "published" | "draft" | "archived";
+    tags: string[];
+    is_recommended: boolean;
+    is_featured: boolean;
+    estimated_minutes: number | null;
+    page_count: number | null;
+    chapter_count: number | null;
+    views_count: number;
     sort_order: number;
 }
 
@@ -61,7 +68,7 @@ export function useBiblioteca() {
         setLoading(true);
 
         const [booksRes, categoriesRes, settingsRes, purchasesRes, progressRes] = await Promise.all([
-            supabase.from("books" as any).select("*").eq("is_published", true).order("sort_order"),
+            supabase.from("books" as any).select("*").eq("status", "published").order("sort_order"),
             supabase.from("book_categories" as any).select("*").order("sort_order"),
             supabase.from("library_settings" as any).select("*").maybeSingle(),
             supabase.from("book_purchases" as any).select("id, book_id, status, admin_notes").eq("couple_space_id", spaceId),
