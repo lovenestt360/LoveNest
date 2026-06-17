@@ -27,19 +27,37 @@ export default function BookReader() {
 
     const pendingProgressRef = useRef<{ percent: number; location: string } | null>(null);
     const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const minutesAccumulatedRef = useRef(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!document.hidden) minutesAccumulatedRef.current += 1 / 60;
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const flushMinutes = () => {
+        const delta = Math.floor(minutesAccumulatedRef.current);
+        minutesAccumulatedRef.current -= delta;
+        return delta;
+    };
 
     const handleProgress = (percent: number, location: string) => {
         pendingProgressRef.current = { percent, location };
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
-            if (pendingProgressRef.current) saveProgress(pendingProgressRef.current.percent, pendingProgressRef.current.location);
+            if (pendingProgressRef.current) {
+                saveProgress(pendingProgressRef.current.percent, pendingProgressRef.current.location, flushMinutes());
+            }
         }, PROGRESS_SAVE_DELAY_MS);
     };
 
     useEffect(() => {
         return () => {
             if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-            if (pendingProgressRef.current) saveProgress(pendingProgressRef.current.percent, pendingProgressRef.current.location);
+            if (pendingProgressRef.current) {
+                saveProgress(pendingProgressRef.current.percent, pendingProgressRef.current.location, flushMinutes());
+            }
         };
     }, [saveProgress]);
 

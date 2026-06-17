@@ -7,6 +7,7 @@ import { BookRow } from "@/features/biblioteca/BookRow";
 import { CategoryFilterBar } from "@/features/biblioteca/CategoryFilterBar";
 import { BookGrid } from "@/features/biblioteca/BookGrid";
 import { BibliotecaSkeleton } from "@/features/biblioteca/BibliotecaSkeleton";
+import { ReadingStatsCard } from "@/features/biblioteca/ReadingStatsCard";
 
 const TRENDING_LIMIT = 10;
 
@@ -68,6 +69,8 @@ export default function Biblioteca() {
             ) : (
                 <>
                     <HeroCarousel settings={settings} books={books} />
+
+                    <ReadingStatsCard />
 
                     {continueReading.length > 0 && (
                         <div className="space-y-3 animate-fade-in">
