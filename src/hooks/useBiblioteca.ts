@@ -31,6 +31,7 @@ export interface Book {
     chapter_count: number | null;
     views_count: number;
     sort_order: number;
+    created_at: string;
 }
 
 export interface LibrarySettings {
