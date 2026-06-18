@@ -21,6 +21,7 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
     const [chapterPrompt, setChapterPrompt] = useState<ChapterPrompt | null>(null);
     const promptedRef = useRef<Set<string>>(new Set());
     const contentRef = useRef<HTMLDivElement>(null);
+    const endMarkerRef = useRef<HTMLDivElement>(null);
     const initializedRef = useRef(false);
     const rafRef = useRef<number>();
 
@@ -38,7 +39,18 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
         const el = contentRef.current;
         if (!el || !currentChapter || chapters.length === 0) return;
         const maxScroll = el.scrollHeight - el.clientHeight;
-        const fraction = maxScroll <= 0 ? 1 : Math.min(1, Math.max(0, el.scrollTop / maxScroll));
+        let fraction = maxScroll <= 0 ? 1 : Math.min(1, Math.max(0, el.scrollTop / maxScroll));
+
+        // Na última página, considera-se concluído assim que o marcador de
+        // fim do livro entra na área visível — exigir o último pixel exato
+        // de scroll falha porque a maioria das pessoas para de arrastar logo
+        // que vê a confirmação "Chegaste ao fim do livro".
+        if (currentIndex === chapters.length - 1 && endMarkerRef.current) {
+            const containerBottom = el.getBoundingClientRect().bottom;
+            const markerTop = endMarkerRef.current.getBoundingClientRect().top;
+            if (markerTop <= containerBottom) fraction = 1;
+        }
+
         const percent = Math.round(((currentIndex + fraction) / chapters.length) * 100);
         onProgress?.(percent, currentChapter.id);
     };
@@ -117,7 +129,7 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
                                     Próximo Capítulo <ChevronRight className="h-4 w-4" />
                                 </button>
                             ) : (
-                                <div className="flex flex-col items-center gap-1.5 py-2 text-center" style={{ color: colors.fg }}>
+                                <div ref={endMarkerRef} className="flex flex-col items-center gap-1.5 py-2 text-center" style={{ color: colors.fg }}>
                                     <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                                     <p className="text-[13px] font-bold">Chegaste ao fim do livro</p>
                                 </div>
