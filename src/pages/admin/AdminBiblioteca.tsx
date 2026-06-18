@@ -523,6 +523,19 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
     const [uploadingFile, setUploadingFile] = useState(false);
     const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
 
+    // Para LoveNest Book, chapter_count é mantido por trigger na BD — sincroniza
+    // o valor mostrado sempre que a lista de livros é atualizada (ex: ao publicar
+    // um capítulo no gestor), sem nunca o tornar editável/submetível.
+    useEffect(() => {
+        if (!editingId || form.file_type !== "lovenest") return;
+        const latest = books.find(b => b.id === editingId);
+        const latestCount = latest?.chapter_count != null ? String(latest.chapter_count) : "0";
+        if (latest && latestCount !== form.chapter_count) {
+            setForm(f => ({ ...f, chapter_count: latestCount }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [books, editingId, form.file_type]);
+
     const categoryName = (id: string | null) => categories.find(c => c.id === id)?.name ?? "Sem categoria";
 
     const startCreate = () => {
@@ -595,7 +608,7 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
         if (!form.title.trim()) return;
         setSaving(true);
         try {
-            const payload = {
+            const payload: Record<string, unknown> = {
                 title: form.title.trim(),
                 author: form.author.trim() || null,
                 description: form.description.trim() || null,
@@ -609,12 +622,17 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                 is_featured: form.is_featured,
                 estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : null,
                 page_count: form.page_count ? Number(form.page_count) : null,
-                chapter_count: form.chapter_count ? Number(form.chapter_count) : null,
                 sort_order: Number(form.sort_order) || 0,
                 cover_url: form.cover_url,
                 file_path: form.file_path,
                 file_type: form.file_type,
             };
+            // Para LoveNest Book, chapter_count é mantido automaticamente por
+            // trigger a partir dos capítulos publicados — nunca o sobrescrever
+            // aqui, ou desfaz-se o valor real sempre que o livro é guardado.
+            if (form.file_type !== "lovenest") {
+                payload.chapter_count = form.chapter_count ? Number(form.chapter_count) : null;
+            }
             if (editingId) {
                 const { error } = await adminClient.from("books" as any).update(payload).eq("id", editingId);
                 if (error) throw error;
@@ -738,7 +756,13 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                         </div>
                         <div>
                             <Label className="text-sm font-bold text-muted-foreground mb-1 block">Capítulos (EPUB)</Label>
-                            <Input type="number" min="0" value={form.chapter_count} onChange={(e) => setForm(f => ({ ...f, chapter_count: e.target.value }))} className="bg-background" />
+                            {form.file_type === "lovenest" ? (
+                                <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
+                                    {form.chapter_count || 0} (automático)
+                                </div>
+                            ) : (
+                                <Input type="number" min="0" value={form.chapter_count} onChange={(e) => setForm(f => ({ ...f, chapter_count: e.target.value }))} className="bg-background" />
+                            )}
                         </div>
                     </div>
 
