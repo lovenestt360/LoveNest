@@ -106,7 +106,8 @@ export function useBiblioteca() {
 
         hasLoadedRef.current = true;
         setLoading(false);
-    }, [spaceId, user]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [spaceId, user?.id]);
 
     useEffect(() => { fetchAll(); }, [fetchAll]);
 

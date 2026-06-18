@@ -21,19 +21,24 @@ export function useCoupleSpaceId() {
         const { data, error } = await supabase.rpc("get_user_couple_space_id");
         if (error) {
           console.error("Error fetching couple_space_id:", error.message);
-          setSpaceId(null);
         } else {
           console.log("Fetched couple_space_id:", data);
           setSpaceId(data ?? null);
         }
       } catch (err) {
         console.error("Unexpected error fetching couple_space_id:", err);
-        setSpaceId(null);
       }
     };
 
     fetchSpaceId();
-  }, [user]);
+    // Depende só do id (estável), não do objeto "user" inteiro — o Supabase
+    // troca a referência de "user" sempre que renova o token (ex: quando a
+    // app volta do background depois de abrir a galeria/câmara). Sem isto,
+    // cada renovação refazia este pedido e, em caso de erro transitório
+    // nesse instante, "spaceId" ia a null e desmontava a secção de compra,
+    // perdendo o comprovativo já selecionado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   return spaceId;
 }

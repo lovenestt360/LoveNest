@@ -21,6 +21,8 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
     const [loadingSettings, setLoadingSettings] = useState(true);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+    const [proofUrl, setProofUrl] = useState<string | null>(null);
+    const [uploadingReceipt, setUploadingReceipt] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -42,12 +44,46 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
         return () => { active = false; };
     }, []);
 
+    // Envia o comprovativo para o storage logo que é escolhido, em vez de
+    // esperar pelo botão "Confirmar" — reduz o tempo em que o ficheiro só
+    // existe em memória local (vulnerável a o telemóvel descarregar a app em
+    // segundo plano enquanto a galeria/câmara está aberta).
+    const handleFileSelected = async (file: File) => {
+        setReceiptFile(file);
+        setReceiptPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+        setProofUrl(null);
+        setUploadingReceipt(true);
+        try {
+            const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+            const fileName = `book-${book.id}-${coupleSpaceId}-${Date.now()}.${ext}`;
+            const { error: uploadError } = await supabase.storage
+                .from("receipts")
+                .upload(fileName, file, { contentType: file.type || "image/jpeg", upsert: false });
+            if (uploadError) throw uploadError;
+
+            const { data: publicUrlData } = supabase.storage.from("receipts").getPublicUrl(fileName);
+            setProofUrl(publicUrlData.publicUrl);
+        } catch (err: any) {
+            toast({ variant: "destructive", title: "Erro ao enviar comprovativo", description: err.message });
+            setReceiptFile(null);
+            setReceiptPreview(null);
+        } finally {
+            setUploadingReceipt(false);
+        }
+    };
+
+    const resetReceipt = () => {
+        setReceiptFile(null);
+        setReceiptPreview(null);
+        setProofUrl(null);
+    };
+
     const handleSubmit = async () => {
         if (!selectedMethod) {
             toast({ variant: "destructive", title: "Escolhe um método de pagamento" });
             return;
         }
-        if (!receiptFile) {
+        if (!proofUrl) {
             toast({ variant: "destructive", title: "Falta comprovativo", description: "Envia o comprovativo de pagamento." });
             return;
         }
@@ -56,22 +92,13 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
-            const ext = (receiptFile.name.split(".").pop() || "jpg").toLowerCase();
-            const fileName = `book-${book.id}-${coupleSpaceId}-${Date.now()}.${ext}`;
-            const { error: uploadError } = await supabase.storage
-                .from("receipts")
-                .upload(fileName, receiptFile, { contentType: receiptFile.type || "image/jpeg", upsert: false });
-            if (uploadError) throw uploadError;
-
-            const { data: publicUrlData } = supabase.storage.from("receipts").getPublicUrl(fileName);
-
             const payload = {
                 couple_space_id: coupleSpaceId,
                 book_id: book.id,
                 status: "pending",
                 amount: `${Number(book.price).toFixed(2)} ${book.currency}`,
                 method: selectedMethod.name,
-                proof_url: publicUrlData.publicUrl,
+                proof_url: proofUrl,
                 requested_by: user?.id ?? null,
                 admin_notes: null,
             };
@@ -154,13 +181,31 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
                                 <p className="text-[12px] font-bold text-foreground truncate flex-1">{receiptFile.name}</p>
                             </div>
                         )}
-                        <button
-                            type="button"
-                            className="w-full p-2 border-t border-rose-200 dark:border-rose-900/40 text-[12px] text-rose-500 font-semibold"
-                            onClick={() => { setReceiptFile(null); setReceiptPreview(null); }}
-                        >
-                            Alterar
-                        </button>
+                        <div className="p-2 border-t border-rose-200 dark:border-rose-900/40 flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-semibold flex items-center gap-1.5 px-1">
+                                {uploadingReceipt ? (
+                                    <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                                        <span className="text-rose-500">A enviar comprovativo...</span>
+                                    </>
+                                ) : proofUrl ? (
+                                    <>
+                                        <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                                        <span className="text-emerald-600">Comprovativo enviado</span>
+                                    </>
+                                ) : (
+                                    <span className="text-destructive">Falha ao enviar — tenta de novo</span>
+                                )}
+                            </span>
+                            <button
+                                type="button"
+                                disabled={uploadingReceipt}
+                                className="text-[12px] text-rose-500 font-semibold disabled:opacity-40 shrink-0"
+                                onClick={resetReceipt}
+                            >
+                                Alterar
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="relative border-2 border-dashed border-border rounded-2xl">
@@ -175,8 +220,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
                             onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
-                                setReceiptFile(file);
-                                setReceiptPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+                                handleFileSelected(file);
                             }}
                             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", fontSize: "0" }}
                         />
@@ -186,7 +230,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
 
             <Button
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || uploadingReceipt || !proofUrl}
                 className="w-full h-12 rounded-2xl font-bold text-[15px] bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
             >
                 {submitting ? "A enviar..." : "Confirmar pedido de compra"}
