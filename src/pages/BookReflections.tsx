@@ -25,7 +25,7 @@ export default function BookReflections() {
     const handleSend = async () => {
         if (!text.trim()) return;
         setSending(true);
-        await addReflection(text, GENERAL_CHAPTER_ID);
+        await addReflection(text, GENERAL_CHAPTER_ID, book?.title);
         setSending(false);
         setText("");
     };

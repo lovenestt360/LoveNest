@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 export interface BookReflection {
     id: string;
@@ -34,7 +35,7 @@ export function useBookReflections(bookId: string | undefined) {
 
     useEffect(() => { fetchReflections(); }, [fetchReflections]);
 
-    const addReflection = useCallback(async (content: string, chapterId: string) => {
+    const addReflection = useCallback(async (content: string, chapterId: string, bookTitle?: string) => {
         if (!bookId || !spaceId || !user || !content.trim()) return;
 
         await supabase.from("book_reflections" as any).insert({
@@ -45,6 +46,14 @@ export function useBookReflections(bookId: string | undefined) {
             content: content.trim(),
         });
         fetchReflections();
+
+        notifyPartner({
+            couple_space_id: spaceId,
+            title: "Nova reflexão partilhada",
+            body: bookTitle ? `O teu par escreveu uma reflexão sobre "${bookTitle}".` : "O teu par escreveu uma nova reflexão de leitura.",
+            url: `/biblioteca/${bookId}/reflexoes`,
+            type: "biblioteca",
+        }).catch(() => {});
     }, [bookId, spaceId, user, fetchReflections]);
 
     return { reflections, loading, addReflection, refetch: fetchReflections };

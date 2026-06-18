@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type NotifType = "chat" | "humor" | "tarefas" | "memorias" | "oracao" | "conflitos" | "agenda" | "ciclo_par" | "routine" | "plano" | "streak_alert";
+type NotifType = "chat" | "humor" | "tarefas" | "memorias" | "oracao" | "conflitos" | "agenda" | "ciclo_par" | "routine" | "plano" | "streak_alert" | "biblioteca";
 
 interface PushPayload {
   couple_space_id: string;

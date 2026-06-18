@@ -7,9 +7,10 @@ import {
 } from "@/hooks/useReaderSettings";
 import { useBookReflections } from "@/hooks/useBookReflections";
 
-export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
+export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }: {
     fileUrl: string;
     bookId: string;
+    bookTitle?: string;
     settings: ReaderSettings;
     onProgress?: (percent: number, location: string) => void;
 }) {
@@ -20,6 +21,8 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
     const renditionRef = useRef<Rendition | null>(null);
     const prevHrefRef = useRef<string | null>(null);
     const tocRef = useRef<NavItem[]>([]);
+    const promptedHrefsRef = useRef<Set<string>>(new Set());
+    const relocateDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
     const { addReflection } = useBookReflections(bookId);
     const [chapterPrompt, setChapterPrompt] = useState<{ chapterId: string; title: string } | null>(null);
@@ -43,6 +46,12 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings.theme, settings.fontSizeIndex, settings.font, settings.spacing, settings.margin]);
 
+    useEffect(() => {
+        return () => {
+            if (relocateDebounceRef.current) clearTimeout(relocateDebounceRef.current);
+        };
+    }, []);
+
     const handleLocationChanged = (epubcfi: string) => {
         setLocation(epubcfi);
         localStorage.setItem(`book-progress-${bookId}`, epubcfi);
@@ -65,12 +74,22 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
 
         rendition.on("relocated", (loc: Location) => {
             const href = loc.start.href;
-            if (prevHrefRef.current && href !== prevHrefRef.current) {
-                const finishedHref = prevHrefRef.current;
-                const navItem = tocRef.current.find(item => item.href.split("#")[0] === finishedHref.split("#")[0]);
-                setChapterPrompt({ chapterId: finishedHref, title: navItem?.label?.trim() || "este capítulo" });
-            }
-            prevHrefRef.current = href;
+            if (relocateDebounceRef.current) clearTimeout(relocateDebounceRef.current);
+
+            // Debounce: só considera um capitulo "terminado" depois da posicao
+            // assentar — evita disparos repetidos por flutuacao do epubjs no
+            // modo de scroll continuo perto de uma fronteira de capitulo.
+            relocateDebounceRef.current = setTimeout(() => {
+                if (prevHrefRef.current && href !== prevHrefRef.current) {
+                    const finishedHref = prevHrefRef.current;
+                    if (!promptedHrefsRef.current.has(finishedHref)) {
+                        promptedHrefsRef.current.add(finishedHref);
+                        const navItem = tocRef.current.find(item => item.href.split("#")[0] === finishedHref.split("#")[0]);
+                        setChapterPrompt({ chapterId: finishedHref, title: navItem?.label?.trim() || "este capítulo" });
+                    }
+                }
+                prevHrefRef.current = href;
+            }, 1200);
         });
 
         const book = rendition.book;
@@ -98,7 +117,7 @@ export function EpubReader({ fileUrl, bookId, settings, onProgress }: {
     const submitReflection = async () => {
         if (!chapterPrompt || !reflectionText.trim()) return;
         setSavingReflection(true);
-        await addReflection(reflectionText, chapterPrompt.chapterId);
+        await addReflection(reflectionText, chapterPrompt.chapterId, bookTitle);
         setSavingReflection(false);
         dismissPrompt();
     };

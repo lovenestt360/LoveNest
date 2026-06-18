@@ -3,8 +3,10 @@ import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Type } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useReaderSettings, THEME_COLORS } from "@/hooks/useReaderSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyPartner } from "@/lib/notifyPartner";
 import { PdfReader } from "@/features/biblioteca/reader/PdfReader";
 import { EpubReader } from "@/features/biblioteca/reader/EpubReader";
 import { ReaderSettingsSheet } from "@/features/biblioteca/reader/ReaderSettingsSheet";
@@ -15,7 +17,8 @@ export default function BookReader() {
     const { bookId } = useParams<{ bookId: string }>();
     const navigate = useNavigate();
     const { books, ownedBookIds, loading: libraryLoading } = useBiblioteca();
-    const { saveProgress } = useReadingProgress(bookId);
+    const { myProgress, saveProgress } = useReadingProgress(bookId);
+    const spaceId = useCoupleSpaceId();
     const { settings, update: updateSettings } = useReaderSettings();
     const [signedUrl, setSignedUrl] = useState<string | null>(null);
     const [urlLoading, setUrlLoading] = useState(true);
@@ -43,6 +46,17 @@ export default function BookReader() {
     };
 
     const handleProgress = (percent: number, location: string) => {
+        const wasCompleted = (myProgress?.progress_percent ?? 0) >= 100;
+        if (percent >= 100 && !wasCompleted && spaceId && book) {
+            notifyPartner({
+                couple_space_id: spaceId,
+                title: "Livro terminado!",
+                body: `O teu par terminou de ler "${book.title}".`,
+                url: `/biblioteca/${book.id}`,
+                type: "biblioteca",
+            }).catch(() => {});
+        }
+
         pendingProgressRef.current = { percent, location };
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
@@ -132,7 +146,7 @@ export default function BookReader() {
                 ) : book.file_type === "pdf" ? (
                     <PdfReader fileUrl={signedUrl} bookId={book.id} settings={settings} onProgress={handleProgress} />
                 ) : book.file_type === "epub" ? (
-                    <EpubReader fileUrl={signedUrl} bookId={book.id} settings={settings} onProgress={handleProgress} />
+                    <EpubReader fileUrl={signedUrl} bookId={book.id} bookTitle={book.title} settings={settings} onProgress={handleProgress} />
                 ) : (
                     <div className="h-full flex items-center justify-center px-6 text-center">
                         <p className="text-sm text-muted-foreground">Formato de livro não suportado.</p>
