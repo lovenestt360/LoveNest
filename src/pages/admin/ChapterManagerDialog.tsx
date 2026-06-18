@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, ArrowUp, ArrowDown, Bold, Italic, Image as ImageIcon, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { Plus, Trash2, ArrowUp, ArrowDown, Bold, Italic, Image as ImageIcon, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChapterContent, countChapterWords } from "@/features/biblioteca/reader/ChapterContent";
 import type { ReaderSettings } from "@/hooks/useReaderSettings";
@@ -35,10 +36,12 @@ export function ChapterManagerDialog({ open, onOpenChange, adminClient, bookId, 
     bookTitle: string;
     onChanged: () => void;
 }) {
+    const { toast } = useToast();
     const [chapters, setChapters] = useState<AdminChapter[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
     const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -62,14 +65,21 @@ export function ChapterManagerDialog({ open, onOpenChange, adminClient, bookId, 
 
     const selected = chapters.find(c => c.id === selectedId) ?? null;
 
+    const persistChapter = async (chapter: AdminChapter) => {
+        await adminClient.from("book_chapters" as any).update({
+            title: chapter.title,
+            content: chapter.content,
+            word_count: countChapterWords(chapter.content),
+        }).eq("id", chapter.id);
+    };
+
     const scheduleSave = (chapter: AdminChapter) => {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = setTimeout(() => {
-            adminClient.from("book_chapters" as any).update({
-                title: chapter.title,
-                content: chapter.content,
-                word_count: countChapterWords(chapter.content),
-            }).eq("id", chapter.id);
+        setSaveStatus("idle");
+        saveTimerRef.current = setTimeout(async () => {
+            setSaveStatus("saving");
+            await persistChapter(chapter);
+            setSaveStatus("saved");
         }, 1000);
     };
 
@@ -78,6 +88,25 @@ export function ChapterManagerDialog({ open, onOpenChange, adminClient, bookId, 
         const updated = { ...selected, ...patch };
         setChapters(prev => prev.map(c => (c.id === selected.id ? updated : c)));
         scheduleSave(updated);
+    };
+
+    const handleSelectChapter = (id: string) => {
+        setSelectedId(id);
+        setSaveStatus("idle");
+    };
+
+    const handleSaveNow = async () => {
+        if (!selected) return;
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        setSaveStatus("saving");
+        try {
+            await persistChapter(selected);
+            setSaveStatus("saved");
+            toast({ title: "Capítulo guardado" });
+        } catch (err: any) {
+            setSaveStatus("idle");
+            toast({ variant: "destructive", title: "Erro ao guardar capítulo", description: err.message });
+        }
     };
 
     const handleAddChapter = async () => {
@@ -89,7 +118,7 @@ export function ChapterManagerDialog({ open, onOpenChange, adminClient, bookId, 
             .single();
         if (!error && data) {
             setChapters(prev => [...prev, data as AdminChapter]);
-            setSelectedId((data as AdminChapter).id);
+            handleSelectChapter((data as AdminChapter).id);
         }
         onChanged();
     };
@@ -190,7 +219,7 @@ export function ChapterManagerDialog({ open, onOpenChange, adminClient, bookId, 
                                         "rounded-xl border p-2 cursor-pointer transition-colors",
                                         c.id === selectedId ? "border-primary bg-primary/5" : "border-border"
                                     )}
-                                    onClick={() => setSelectedId(c.id)}
+                                    onClick={() => handleSelectChapter(c.id)}
                                 >
                                     <p className="text-[12px] font-bold line-clamp-1">{i + 1}. {c.title}</p>
                                     <div className="flex items-center justify-between mt-1">
@@ -227,6 +256,20 @@ export function ChapterManagerDialog({ open, onOpenChange, adminClient, bookId, 
                                             onChange={(e) => updateSelected({ title: e.target.value })}
                                             className="font-bold"
                                         />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            disabled={saveStatus === "saving"}
+                                            onClick={handleSaveNow}
+                                            className="gap-1.5 shrink-0"
+                                        >
+                                            {saveStatus === "saving" ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                <Check className="w-3.5 h-3.5" />
+                                            )}
+                                            {saveStatus === "saving" ? "A guardar..." : saveStatus === "saved" ? "Guardado" : "Guardar"}
+                                        </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive shrink-0">
