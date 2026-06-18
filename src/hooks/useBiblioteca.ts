@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -60,13 +60,19 @@ export function useBiblioteca() {
     const [rejectedPurchases, setRejectedPurchases] = useState<Map<string, RejectedPurchase>>(new Map());
     const [myProgressByBook, setMyProgressByBook] = useState<Map<string, number>>(new Map());
     const [loading, setLoading] = useState(true);
+    const hasLoadedRef = useRef(false);
 
     const fetchAll = useCallback(async () => {
         // Aguarda o couple_space_id resolver — evita um instante em que
         // ownedBookIds fica vazio e canRead falha para livros já comprados.
         if (!spaceId || !user) return;
 
-        setLoading(true);
+        // Só mostra o estado de "loading" (que esconde a página inteira) no
+        // primeiro carregamento. Recargas em segundo plano — ex: quando o
+        // Supabase renova o token ao voltar do background (galeria/câmara) —
+        // não devem desmontar a página e perder estado local (como um
+        // ficheiro de comprovativo já selecionado no formulário de compra).
+        if (!hasLoadedRef.current) setLoading(true);
 
         const [booksRes, categoriesRes, settingsRes, purchasesRes, progressRes] = await Promise.all([
             supabase.from("books" as any).select("*").eq("status", "published").order("sort_order"),
@@ -98,6 +104,7 @@ export function useBiblioteca() {
         }
         setMyProgressByBook(progress);
 
+        hasLoadedRef.current = true;
         setLoading(false);
     }, [spaceId, user]);
 
