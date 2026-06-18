@@ -17,7 +17,7 @@ export interface Book {
     description: string | null;
     cover_url: string | null;
     file_path: string | null;
-    file_type: "pdf" | "epub" | null;
+    file_type: "pdf" | "epub" | "lovenest" | null;
     is_free: boolean;
     price: number;
     currency: string;

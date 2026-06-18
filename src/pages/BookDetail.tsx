@@ -169,7 +169,7 @@ export default function BookDetail() {
                         <Hash className="w-3.5 h-3.5" /> {book.page_count} págs.
                     </div>
                 )}
-                {book.file_type === "epub" && book.chapter_count != null && (
+                {(book.file_type === "epub" || book.file_type === "lovenest") && book.chapter_count != null && (
                     <div className="flex items-center gap-1">
                         <Hash className="w-3.5 h-3.5" /> {book.chapter_count} caps.
                     </div>
@@ -225,7 +225,7 @@ export default function BookDetail() {
                 </div>
             )}
 
-            {canRead && book.file_type === "epub" && (
+            {canRead && (book.file_type === "epub" || book.file_type === "lovenest") && (
                 <div className="px-4 pt-4">
                     <button
                         type="button"

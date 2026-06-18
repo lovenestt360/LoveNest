@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { PdfReader } from "@/features/biblioteca/reader/PdfReader";
 import { EpubReader } from "@/features/biblioteca/reader/EpubReader";
+import { NativeBookReader } from "@/features/biblioteca/reader/NativeBookReader";
 import { ReaderSettingsSheet } from "@/features/biblioteca/reader/ReaderSettingsSheet";
 
 const PROGRESS_SAVE_DELAY_MS = 1500;
@@ -135,7 +136,9 @@ export default function BookReader() {
             </header>
 
             <div className="flex-1 overflow-hidden relative">
-                {urlLoading ? (
+                {book.file_type === "lovenest" ? (
+                    <NativeBookReader bookId={book.id} bookTitle={book.title} settings={settings} onProgress={handleProgress} />
+                ) : urlLoading ? (
                     <div className="h-full flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
                     </div>
@@ -159,7 +162,7 @@ export default function BookReader() {
                 onOpenChange={setSettingsOpen}
                 settings={settings}
                 onChange={updateSettings}
-                mode={book.file_type === "epub" ? "epub" : "pdf"}
+                mode={book.file_type === "pdf" ? "pdf" : book.file_type === "lovenest" ? "lovenest" : "epub"}
             />
         </div>
     );

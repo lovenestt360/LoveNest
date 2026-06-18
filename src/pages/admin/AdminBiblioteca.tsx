@@ -16,8 +16,9 @@ import {
 import { cn } from "@/lib/utils";
 import {
     Library, Plus, Trash2, Pencil, Upload, RefreshCw, Check, X,
-    Image as ImageIcon, FileText, LayoutGrid, ShoppingBag, BookText,
+    Image as ImageIcon, FileText, LayoutGrid, ShoppingBag, BookText, Layers,
 } from "lucide-react";
+import { ChapterManagerDialog } from "./ChapterManagerDialog";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ type Book = {
     description: string | null;
     cover_url: string | null;
     file_path: string | null;
-    file_type: "pdf" | "epub" | null;
+    file_type: "pdf" | "epub" | "lovenest" | null;
     is_free: boolean;
     price: number;
     currency: string;
@@ -488,7 +489,7 @@ type BookFormState = {
     sort_order: string;
     cover_url: string | null;
     file_path: string | null;
-    file_type: "pdf" | "epub" | null;
+    file_type: "pdf" | "epub" | "lovenest" | null;
 };
 
 const EMPTY_BOOK_FORM: BookFormState = {
@@ -520,6 +521,7 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
     const [saving, setSaving] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
+    const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
 
     const categoryName = (id: string | null) => categories.find(c => c.id === id)?.name ?? "Sem categoria";
 
@@ -760,6 +762,27 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                             <Label className="text-sm font-bold text-muted-foreground mb-1 block">Ordem</Label>
                             <Input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: e.target.value }))} className="bg-background" />
                         </div>
+                        <div>
+                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tipo de livro</Label>
+                            <Select
+                                value={form.file_type ?? "none"}
+                                onValueChange={(v) => setForm(f => ({
+                                    ...f,
+                                    file_type: v === "none" ? null : (v as BookFormState["file_type"]),
+                                    ...(v === "lovenest" ? { file_path: null } : {}),
+                                }))}
+                            >
+                                <SelectTrigger className="bg-background">
+                                    <SelectValue placeholder="Por definir" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Por definir</SelectItem>
+                                    <SelectItem value="pdf">PDF</SelectItem>
+                                    <SelectItem value="epub">EPUB</SelectItem>
+                                    <SelectItem value="lovenest">LoveNest Book</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -784,31 +807,64 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                             </Button>
                         </div>
 
-                        {/* Book file upload */}
-                        <div className="flex items-center gap-4">
-                            <div className={cn(
-                                "w-16 h-24 rounded-lg border flex items-center justify-center shrink-0",
-                                form.file_path ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                            )}>
-                                <FileText className="w-6 h-6" />
+                        {/* Book file upload (PDF/EPUB) ou gestor de capítulos (LoveNest Book) */}
+                        {form.file_type === "lovenest" ? (
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-24 rounded-lg border bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <Layers className="w-6 h-6" />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="gap-2"
+                                        disabled={!editingId}
+                                        onClick={() => setChapterManagerOpen(true)}
+                                    >
+                                        <Layers className="w-4 h-4" /> Gerir Capítulos
+                                    </Button>
+                                    {!editingId && (
+                                        <span className="text-[11px] text-muted-foreground italic">Guarda o livro primeiro para adicionar capítulos.</span>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Button variant="secondary" className="gap-2" disabled={uploadingFile} asChild>
-                                    <label className="cursor-pointer">
-                                        {uploadingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                        Ficheiro (PDF/EPUB)
-                                        <input type="file" accept=".pdf,.epub" hidden onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) handleUploadBookFile(file);
-                                        }} />
-                                    </label>
-                                </Button>
-                                {form.file_type && (
-                                    <span className="text-xs font-bold uppercase text-muted-foreground">{form.file_type} carregado</span>
-                                )}
+                        ) : (
+                            <div className="flex items-center gap-4">
+                                <div className={cn(
+                                    "w-16 h-24 rounded-lg border flex items-center justify-center shrink-0",
+                                    form.file_path ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                                )}>
+                                    <FileText className="w-6 h-6" />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Button variant="secondary" className="gap-2" disabled={uploadingFile} asChild>
+                                        <label className="cursor-pointer">
+                                            {uploadingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                            Ficheiro (PDF/EPUB)
+                                            <input type="file" accept=".pdf,.epub" hidden onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) handleUploadBookFile(file);
+                                            }} />
+                                        </label>
+                                    </Button>
+                                    {form.file_type && (
+                                        <span className="text-xs font-bold uppercase text-muted-foreground">{form.file_type} carregado</span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
+
+                    {editingId && form.file_type === "lovenest" && (
+                        <ChapterManagerDialog
+                            open={chapterManagerOpen}
+                            onOpenChange={setChapterManagerOpen}
+                            adminClient={adminClient}
+                            bookId={editingId}
+                            bookTitle={form.title || "Livro"}
+                            onChanged={onChanged}
+                        />
+                    )}
 
                     <div className="flex gap-2 pt-2">
                         <Button type="submit" disabled={saving} className="gap-2">

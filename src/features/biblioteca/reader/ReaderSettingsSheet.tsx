@@ -70,9 +70,9 @@ export function ReaderSettingsSheet({ open, onOpenChange, settings, onChange, mo
     onOpenChange: (open: boolean) => void;
     settings: ReaderSettings;
     onChange: (patch: Partial<ReaderSettings>) => void;
-    mode: "epub" | "pdf";
+    mode: "epub" | "pdf" | "lovenest";
 }) {
-    const isEpub = mode === "epub";
+    const isReflowable = mode !== "pdf";
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -89,7 +89,7 @@ export function ReaderSettingsSheet({ open, onOpenChange, settings, onChange, mo
                                 <button
                                     key={i}
                                     type="button"
-                                    disabled={!isEpub}
+                                    disabled={!isReflowable}
                                     onClick={() => onChange({ fontSizeIndex: i })}
                                     style={{ fontSize: `${12 + i * 2}px` }}
                                     className={cn(
@@ -103,13 +103,13 @@ export function ReaderSettingsSheet({ open, onOpenChange, settings, onChange, mo
                         </div>
                     </div>
 
-                    <OptionGroup label="Fonte" options={FONT_OPTIONS} value={settings.font} onChange={v => onChange({ font: v })} disabled={!isEpub} />
-                    <OptionGroup label="Espaçamento" options={SPACING_OPTIONS} value={settings.spacing} onChange={v => onChange({ spacing: v })} disabled={!isEpub} />
-                    <OptionGroup label="Margens" options={MARGIN_OPTIONS} value={settings.margin} onChange={v => onChange({ margin: v })} disabled={!isEpub} />
+                    <OptionGroup label="Fonte" options={FONT_OPTIONS} value={settings.font} onChange={v => onChange({ font: v })} disabled={!isReflowable} />
+                    <OptionGroup label="Espaçamento" options={SPACING_OPTIONS} value={settings.spacing} onChange={v => onChange({ spacing: v })} disabled={!isReflowable} />
+                    <OptionGroup label="Margens" options={MARGIN_OPTIONS} value={settings.margin} onChange={v => onChange({ margin: v })} disabled={!isReflowable} />
                     <OptionGroup label="Tema" options={THEME_OPTIONS} value={settings.theme} onChange={v => onChange({ theme: v })} />
-                    <OptionGroup label="Modo de leitura" options={FLOW_OPTIONS} value={settings.flow} onChange={v => onChange({ flow: v })} disabled={!isEpub} />
+                    <OptionGroup label="Modo de leitura" options={FLOW_OPTIONS} value={settings.flow} onChange={v => onChange({ flow: v })} disabled={!isReflowable} />
 
-                    {!isEpub && (
+                    {!isReflowable && (
                         <p className="text-[11px] text-muted-foreground italic">
                             Fonte, espaçamento, margens e modo de leitura só se aplicam a livros em EPUB — este ficheiro é um PDF.
                         </p>

@@ -6,6 +6,7 @@ import {
     type ReaderSettings,
 } from "@/hooks/useReaderSettings";
 import { useBookReflections } from "@/hooks/useBookReflections";
+import { ChapterReflectionPrompt, type ChapterPrompt } from "./ChapterReflectionPrompt";
 
 export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }: {
     fileUrl: string;
@@ -25,9 +26,7 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
     const relocateDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
     const { addReflection } = useBookReflections(bookId);
-    const [chapterPrompt, setChapterPrompt] = useState<{ chapterId: string; title: string } | null>(null);
-    const [reflectionText, setReflectionText] = useState("");
-    const [savingReflection, setSavingReflection] = useState(false);
+    const [chapterPrompt, setChapterPrompt] = useState<ChapterPrompt | null>(null);
 
     const applyTheme = (rendition: Rendition, s: ReaderSettings) => {
         const colors = THEME_COLORS[s.theme];
@@ -109,17 +108,12 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
         });
     };
 
-    const dismissPrompt = () => {
-        setChapterPrompt(null);
-        setReflectionText("");
-    };
+    const dismissPrompt = () => setChapterPrompt(null);
 
-    const submitReflection = async () => {
-        if (!chapterPrompt || !reflectionText.trim()) return;
-        setSavingReflection(true);
-        await addReflection(reflectionText, chapterPrompt.chapterId, bookTitle);
-        setSavingReflection(false);
-        dismissPrompt();
+    const handleReflectionSubmit = async (content: string) => {
+        if (!chapterPrompt) return;
+        await addReflection(content, chapterPrompt.chapterId, bookTitle);
+        setChapterPrompt(null);
     };
 
     const colors = THEME_COLORS[settings.theme];
@@ -148,39 +142,7 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
                 />
 
                 {chapterPrompt && (
-                    <div className="absolute inset-0 z-20 bg-black/50 flex items-end" onClick={dismissPrompt}>
-                        <div
-                            className="w-full bg-card rounded-t-3xl p-5 space-y-3 animate-in slide-in-from-bottom-4"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <p className="text-[14px] font-bold text-foreground">
-                                O que aprendeste em "{chapterPrompt.title}"?
-                            </p>
-                            <textarea
-                                value={reflectionText}
-                                onChange={e => setReflectionText(e.target.value)}
-                                placeholder="Escreve a tua reflexão para partilhar com o teu par..."
-                                className="w-full min-h-24 rounded-2xl border border-border bg-background p-3 text-[13px] text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-rose-300"
-                            />
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={dismissPrompt}
-                                    className="flex-1 h-11 rounded-2xl font-bold text-[13px] text-muted-foreground bg-muted active:scale-95 transition-all"
-                                >
-                                    Agora não
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={!reflectionText.trim() || savingReflection}
-                                    onClick={submitReflection}
-                                    className="flex-1 h-11 rounded-2xl font-bold text-[13px] text-white bg-rose-500 active:scale-95 transition-all disabled:opacity-50"
-                                >
-                                    {savingReflection ? "A guardar..." : "Guardar"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <ChapterReflectionPrompt prompt={chapterPrompt} onDismiss={dismissPrompt} onSubmit={handleReflectionSubmit} />
                 )}
             </div>
         </div>
