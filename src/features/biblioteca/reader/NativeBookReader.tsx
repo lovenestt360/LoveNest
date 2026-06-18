@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, CheckCircle2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { THEME_COLORS, FONT_FAMILY_MAP, type ReaderSettings } from "@/hooks/useReaderSettings";
 import { useBookChapters } from "@/hooks/useBookChapters";
@@ -106,6 +106,23 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
                             {currentChapter.title}
                         </h2>
                         <ChapterContent content={currentChapter.content} settings={settings} />
+
+                        <div className="px-6 pb-12 pt-2">
+                            {currentIndex < chapters.length - 1 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => goToChapter(currentIndex + 1)}
+                                    className="w-full h-12 rounded-2xl font-bold text-[14px] text-white bg-rose-500 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                >
+                                    Próximo Capítulo <ChevronRight className="h-4 w-4" />
+                                </button>
+                            ) : (
+                                <div className="flex flex-col items-center gap-1.5 py-2 text-center" style={{ color: colors.fg }}>
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                    <p className="text-[13px] font-bold">Chegaste ao fim do livro</p>
+                                </div>
+                            )}
+                        </div>
                     </>
                 )}
 

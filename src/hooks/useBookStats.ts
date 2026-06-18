@@ -44,8 +44,17 @@ export function useBookStats(bookId: string | undefined) {
         if (!bookId) return;
         const key = `book-viewed-${bookId}`;
         if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, "1");
-        supabase.rpc("fn_increment_book_views" as any, { p_book_id: bookId });
+        // Só marca como "vista" depois do pedido ter sucesso — se a chamada
+        // falhar (rede instável, app interrompida), a próxima visita tenta
+        // novamente em vez de ficar presa em 0 vistas para sempre.
+        (async () => {
+            const { error } = await supabase.rpc("fn_increment_book_views" as any, { p_book_id: bookId });
+            if (!error) {
+                sessionStorage.setItem(key, "1");
+            } else {
+                console.warn("Falha ao registar vista do livro:", error.message);
+            }
+        })();
     }, [bookId]);
 
     const rate = useCallback(async (rating: number) => {
