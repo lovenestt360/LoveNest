@@ -73,11 +73,6 @@ export function ReaderSettingsSheet({ open, onOpenChange, settings, onChange, mo
     mode: "epub" | "pdf" | "lovenest";
 }) {
     const isReflowable = mode !== "pdf";
-    // O modo de leitura (paginado/scroll contínuo) só existe de facto no
-    // EPUB (via epub.js). No LoveNest Book cada capítulo é a unidade de
-    // "virar página" por desenho — mostrar este controlo como editável
-    // sem efeito é mais confuso do que desativá-lo.
-    const supportsFlowToggle = mode === "epub";
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -112,16 +107,11 @@ export function ReaderSettingsSheet({ open, onOpenChange, settings, onChange, mo
                     <OptionGroup label="Espaçamento" options={SPACING_OPTIONS} value={settings.spacing} onChange={v => onChange({ spacing: v })} disabled={!isReflowable} />
                     <OptionGroup label="Margens" options={MARGIN_OPTIONS} value={settings.margin} onChange={v => onChange({ margin: v })} disabled={!isReflowable} />
                     <OptionGroup label="Tema" options={THEME_OPTIONS} value={settings.theme} onChange={v => onChange({ theme: v })} />
-                    <OptionGroup label="Modo de leitura" options={FLOW_OPTIONS} value={settings.flow} onChange={v => onChange({ flow: v })} disabled={!supportsFlowToggle} />
+                    <OptionGroup label="Modo de leitura" options={FLOW_OPTIONS} value={settings.flow} onChange={v => onChange({ flow: v })} disabled={!isReflowable} />
 
                     {!isReflowable && (
                         <p className="text-[11px] text-muted-foreground italic">
                             Fonte, espaçamento, margens e modo de leitura só se aplicam a livros em EPUB — este ficheiro é um PDF.
-                        </p>
-                    )}
-                    {isReflowable && !supportsFlowToggle && (
-                        <p className="text-[11px] text-muted-foreground italic">
-                            Modo de leitura não aplicável a este livro — cada capítulo funciona como uma página, com avanço por botão.
                         </p>
                     )}
                 </div>

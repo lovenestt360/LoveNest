@@ -31,10 +31,11 @@ export function countChapterWords(content: string): number {
     return trimmed ? trimmed.split(/\s+/).length : 0;
 }
 
-export function ChapterContent({ content, settings, className }: {
+export function ChapterContent({ content, settings, className, applyPadding = true }: {
     content: string;
     settings: ReaderSettings;
     className?: string;
+    applyPadding?: boolean;
 }) {
     const colors = THEME_COLORS[settings.theme];
     const blocks = content.split(/\n{2,}/);
@@ -46,7 +47,7 @@ export function ChapterContent({ content, settings, className }: {
                 fontFamily: FONT_FAMILY_MAP[settings.font],
                 fontSize: `${Math.round((BASE_FONT_PX * FONT_SIZE_STEPS[settings.fontSizeIndex]) / 100)}px`,
                 lineHeight: SPACING_MAP[settings.spacing],
-                padding: `0 ${MARGIN_MAP[settings.margin]}`,
+                ...(applyPadding ? { padding: `0 ${MARGIN_MAP[settings.margin]}` } : {}),
             }}
             className={className ?? "space-y-4 pb-16"}
         >
@@ -57,7 +58,13 @@ export function ChapterContent({ content, settings, className }: {
                 const imageMatch = trimmed.match(IMAGE_LINE);
                 if (imageMatch) {
                     return (
-                        <img key={idx} src={imageMatch[2]} alt={imageMatch[1]} className="w-full rounded-2xl" />
+                        <img
+                            key={idx}
+                            src={imageMatch[2]}
+                            alt={imageMatch[1]}
+                            className="w-full rounded-2xl"
+                            style={{ breakInside: "avoid" }}
+                        />
                     );
                 }
 

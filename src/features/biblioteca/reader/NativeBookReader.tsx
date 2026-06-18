@@ -7,6 +7,7 @@ import { useBookReflections } from "@/hooks/useBookReflections";
 import { cn } from "@/lib/utils";
 import { ChapterContent } from "./ChapterContent";
 import { ChapterReflectionPrompt, type ChapterPrompt } from "./ChapterReflectionPrompt";
+import { PaginatedChapterView } from "./PaginatedChapterView";
 
 export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
     bookId: string;
@@ -35,7 +36,13 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
 
     const currentChapter = chapters[currentIndex];
 
-    const reportProgress = () => {
+    const commitProgress = (fraction: number) => {
+        if (!currentChapter || chapters.length === 0) return;
+        const percent = Math.round(((currentIndex + fraction) / chapters.length) * 100);
+        onProgress?.(percent, currentChapter.id);
+    };
+
+    const reportScrollProgress = () => {
         const el = contentRef.current;
         if (!el || !currentChapter || chapters.length === 0) return;
         const maxScroll = el.scrollHeight - el.clientHeight;
@@ -51,23 +58,24 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
             if (markerTop <= containerBottom) fraction = 1;
         }
 
-        const percent = Math.round(((currentIndex + fraction) / chapters.length) * 100);
-        onProgress?.(percent, currentChapter.id);
+        commitProgress(fraction);
     };
 
     const handleScroll = () => {
         if (rafRef.current) return;
         rafRef.current = requestAnimationFrame(() => {
             rafRef.current = undefined;
-            reportProgress();
+            reportScrollProgress();
         });
     };
 
     useEffect(() => {
         if (!currentChapter) return;
         localStorage.setItem(`book-progress-${bookId}`, currentChapter.id);
-        contentRef.current?.scrollTo({ top: 0 });
-        reportProgress();
+        if (settings.flow !== "paginated") {
+            contentRef.current?.scrollTo({ top: 0 });
+            reportScrollProgress();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentIndex]);
 
@@ -108,34 +116,51 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
 
     return (
         <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
-            <div className="flex-1 overflow-y-auto relative" ref={contentRef} onScroll={handleScroll}>
-                {currentChapter && (
-                    <>
-                        <h2
-                            className="px-6 pt-6 pb-2 text-xl font-bold"
-                            style={{ color: colors.fg, fontFamily: FONT_FAMILY_MAP[settings.font] }}
-                        >
-                            {currentChapter.title}
-                        </h2>
-                        <ChapterContent content={currentChapter.content} settings={settings} />
-
-                        <div className="px-6 pb-12 pt-2">
-                            {currentIndex < chapters.length - 1 ? (
-                                <button
-                                    type="button"
-                                    onClick={() => goToChapter(currentIndex + 1)}
-                                    className="w-full h-12 rounded-2xl font-bold text-[14px] text-white bg-rose-500 active:scale-95 transition-all flex items-center justify-center gap-2"
+            <div className="flex-1 relative overflow-hidden">
+                {settings.flow === "paginated" ? (
+                    currentChapter && (
+                        <PaginatedChapterView
+                            key={currentChapter.id}
+                            chapter={currentChapter}
+                            settings={settings}
+                            textColor={colors.fg}
+                            isLastChapter={currentIndex === chapters.length - 1}
+                            onPageProgress={commitProgress}
+                            onRequestNextChapter={() => goToChapter(currentIndex + 1)}
+                            onRequestPrevChapter={() => goToChapter(currentIndex - 1)}
+                        />
+                    )
+                ) : (
+                    <div className="h-full overflow-y-auto" ref={contentRef} onScroll={handleScroll}>
+                        {currentChapter && (
+                            <>
+                                <h2
+                                    className="px-6 pt-6 pb-2 text-xl font-bold"
+                                    style={{ color: colors.fg, fontFamily: FONT_FAMILY_MAP[settings.font] }}
                                 >
-                                    Próximo Capítulo <ChevronRight className="h-4 w-4" />
-                                </button>
-                            ) : (
-                                <div ref={endMarkerRef} className="flex flex-col items-center gap-1.5 py-2 text-center" style={{ color: colors.fg }}>
-                                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                                    <p className="text-[13px] font-bold">Chegaste ao fim do livro</p>
+                                    {currentChapter.title}
+                                </h2>
+                                <ChapterContent content={currentChapter.content} settings={settings} />
+
+                                <div className="px-6 pb-12 pt-2">
+                                    {currentIndex < chapters.length - 1 ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => goToChapter(currentIndex + 1)}
+                                            className="w-full h-12 rounded-2xl font-bold text-[14px] text-white bg-rose-500 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            Próximo Capítulo <ChevronRight className="h-4 w-4" />
+                                        </button>
+                                    ) : (
+                                        <div ref={endMarkerRef} className="flex flex-col items-center gap-1.5 py-2 text-center" style={{ color: colors.fg }}>
+                                            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                            <p className="text-[13px] font-bold">Chegaste ao fim do livro</p>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </>
+                            </>
+                        )}
+                    </div>
                 )}
 
                 {chapterPrompt && (
