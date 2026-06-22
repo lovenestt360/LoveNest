@@ -20,7 +20,7 @@ export function PaginatedChapterView({ chapter, settings, textColor, isLastChapt
 }) {
     const { toast } = useToast();
     const viewportRef = useRef<HTMLDivElement>(null);
-    const columnsRef = useRef<HTMLDivElement>(null);
+    const probeRef = useRef<HTMLDivElement>(null);
     const touchStartXRef = useRef<number | null>(null);
     const [innerWidth, setInnerWidth] = useState(0);
     const [innerHeight, setInnerHeight] = useState(0);
@@ -35,8 +35,8 @@ export function PaginatedChapterView({ chapter, settings, textColor, isLastChapt
         if (!el) return;
         const marginPx = parseFloat(MARGIN_MAP[settings.margin]) || 0;
         const measure = () => {
-            setInnerWidth(Math.max(0, el.clientWidth - marginPx * 2));
-            setInnerHeight(el.clientHeight);
+            setInnerWidth(Math.max(0, Math.round(el.clientWidth - marginPx * 2)));
+            setInnerHeight(Math.round(el.clientHeight));
         };
         measure();
         const observer = new ResizeObserver(measure);
@@ -44,13 +44,16 @@ export function PaginatedChapterView({ chapter, settings, textColor, isLastChapt
         return () => observer.disconnect();
     }, [settings.margin]);
 
-    // Recalcula o numero de "paginas" (colunas CSS) sempre que o espaço
-    // disponivel ou as definicoes que afetam quanto texto cabe por pagina
-    // mudam.
+    // Mede a altura total do capítulo numa única "coluna" invisível desta
+    // largura, para saber exatamente quantas páginas (cada uma com a altura
+    // do ecrã) são necessárias. Calcular isto a partir do "column-width" do
+    // CSS (tentativa anterior) não é fiável: o motor redistribui a largura
+    // real de cada coluna para preencher o contentor, o que desalinha o
+    // deslize por página e deixa "vazar" texto da página seguinte.
     useLayoutEffect(() => {
-        const columnsEl = columnsRef.current;
-        if (!columnsEl || innerWidth === 0) return;
-        const pages = Math.max(1, Math.round(columnsEl.scrollWidth / innerWidth));
+        const probeEl = probeRef.current;
+        if (!probeEl || innerWidth === 0 || innerHeight === 0) return;
+        const pages = Math.max(1, Math.ceil(probeEl.scrollHeight / innerHeight));
         setTotalPages(pages);
         setPageIndex(p => Math.min(p, pages - 1));
     }, [innerWidth, innerHeight, chapter.content, settings.fontSizeIndex, settings.font, settings.spacing]);
@@ -91,23 +94,51 @@ export function PaginatedChapterView({ chapter, settings, textColor, isLastChapt
     return (
         <div
             ref={viewportRef}
-            className="h-full overflow-hidden"
+            className="h-full overflow-hidden relative"
             style={{ padding: `0 ${MARGIN_MAP[settings.margin]}` }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
+            {innerWidth > 0 && (
+                <div
+                    style={{
+                        // Largura e contagem de colunas explícitas (em vez de
+                        // só "column-width") para que cada página tenha
+                        // exatamente innerWidth — sem isto o motor ajusta a
+                        // largura real das colunas para preencher o
+                        // contentor, e o deslize fica ligeiramente desalinhado.
+                        width: innerWidth * totalPages,
+                        columnCount: totalPages,
+                        columnGap: 0,
+                        columnFill: "auto",
+                        height: innerHeight,
+                        transform: `translateX(-${pageIndex * innerWidth}px)`,
+                        transition: "transform 220ms ease",
+                    }}
+                >
+                    <h2 className="pb-2 text-xl font-bold" style={{ color: textColor, fontFamily: FONT_FAMILY_MAP[settings.font] }}>
+                        {chapter.title}
+                    </h2>
+                    <ChapterContent content={chapter.content} settings={settings} className="space-y-4" applyPadding={false} />
+                </div>
+            )}
+
+            {/* Sonda invisível: mede a altura total do capítulo numa coluna
+                única, para calcular o número exato de páginas. */}
             <div
-                ref={columnsRef}
+                ref={probeRef}
                 style={{
-                    columnWidth: innerWidth ? `${innerWidth}px` : undefined,
-                    columnGap: 0,
-                    columnFill: "auto",
-                    height: innerHeight ? `${innerHeight}px` : undefined,
-                    transform: `translateX(-${pageIndex * innerWidth}px)`,
-                    transition: "transform 220ms ease",
+                    position: "absolute",
+                    visibility: "hidden",
+                    pointerEvents: "none",
+                    width: innerWidth || undefined,
+                    height: "auto",
+                    top: 0,
+                    left: 0,
                 }}
+                aria-hidden="true"
             >
-                <h2 className="pb-2 text-xl font-bold" style={{ color: textColor, fontFamily: FONT_FAMILY_MAP[settings.font] }}>
+                <h2 className="pb-2 text-xl font-bold" style={{ fontFamily: FONT_FAMILY_MAP[settings.font] }}>
                     {chapter.title}
                 </h2>
                 <ChapterContent content={chapter.content} settings={settings} className="space-y-4" applyPadding={false} />
