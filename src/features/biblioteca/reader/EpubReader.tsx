@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { ReactReader, ReactReaderStyle } from "react-reader";
 import type { Rendition, NavItem, Location } from "epubjs";
 import {
@@ -6,15 +6,18 @@ import {
     type ReaderSettings,
 } from "@/hooks/useReaderSettings";
 import { useBookReflections } from "@/hooks/useBookReflections";
-import { ChapterReflectionPrompt, type ChapterPrompt } from "./ChapterReflectionPrompt";
+import { ChapterReflectionPrompt, type ChapterPrompt, type ChapterReaderHandle } from "./ChapterReflectionPrompt";
 
-export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }: {
+export const EpubReader = forwardRef<ChapterReaderHandle, {
     fileUrl: string;
     bookId: string;
     bookTitle?: string;
     settings: ReaderSettings;
     onProgress?: (percent: number, location: string) => void;
-}) {
+    autoPromptEnabled?: boolean;
+    showIntroInPrompt?: boolean;
+    onReflectionPromptClosed?: (wasAutoTriggered: boolean) => void;
+}>(function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress, autoPromptEnabled = true, showIntroInPrompt, onReflectionPromptClosed }, ref) {
     const [location, setLocation] = useState<string | number | null>(
         () => localStorage.getItem(`book-progress-${bookId}`)
     );
@@ -23,6 +26,7 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
     const prevHrefRef = useRef<string | null>(null);
     const tocRef = useRef<NavItem[]>([]);
     const promptedHrefsRef = useRef<Set<string>>(new Set());
+    const wasAutoTriggeredRef = useRef(false);
     const relocateDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
     const { addReflection } = useBookReflections(bookId);
@@ -79,11 +83,12 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
             // assentar — evita disparos repetidos por flutuacao do epubjs no
             // modo de scroll continuo perto de uma fronteira de capitulo.
             relocateDebounceRef.current = setTimeout(() => {
-                if (prevHrefRef.current && href !== prevHrefRef.current) {
+                if (autoPromptEnabled && prevHrefRef.current && href !== prevHrefRef.current) {
                     const finishedHref = prevHrefRef.current;
                     if (!promptedHrefsRef.current.has(finishedHref)) {
                         promptedHrefsRef.current.add(finishedHref);
                         const navItem = tocRef.current.find(item => item.href.split("#")[0] === finishedHref.split("#")[0]);
+                        wasAutoTriggeredRef.current = true;
                         setChapterPrompt({ chapterId: finishedHref, title: navItem?.label?.trim() || "este capítulo" });
                     }
                 }
@@ -108,12 +113,26 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
         });
     };
 
-    const dismissPrompt = () => setChapterPrompt(null);
+    useImperativeHandle(ref, () => ({
+        openManualReflection: () => {
+            const href = renditionRef.current?.location?.start?.href ?? prevHrefRef.current;
+            if (!href) return;
+            const navItem = tocRef.current.find(item => item.href.split("#")[0] === href.split("#")[0]);
+            wasAutoTriggeredRef.current = false;
+            setChapterPrompt({ chapterId: href, title: navItem?.label?.trim() || "este capítulo" });
+        },
+    }));
+
+    const dismissPrompt = () => {
+        setChapterPrompt(null);
+        onReflectionPromptClosed?.(wasAutoTriggeredRef.current);
+    };
 
     const handleReflectionSubmit = async (content: string) => {
         if (!chapterPrompt) return;
         await addReflection(content, chapterPrompt.chapterId, bookTitle);
         setChapterPrompt(null);
+        onReflectionPromptClosed?.(wasAutoTriggeredRef.current);
     };
 
     const colors = THEME_COLORS[settings.theme];
@@ -142,9 +161,14 @@ export function EpubReader({ fileUrl, bookId, bookTitle, settings, onProgress }:
                 />
 
                 {chapterPrompt && (
-                    <ChapterReflectionPrompt prompt={chapterPrompt} onDismiss={dismissPrompt} onSubmit={handleReflectionSubmit} />
+                    <ChapterReflectionPrompt
+                        prompt={chapterPrompt}
+                        onDismiss={dismissPrompt}
+                        onSubmit={handleReflectionSubmit}
+                        showIntro={showIntroInPrompt}
+                    />
                 )}
             </div>
         </div>
     );
-}
+});

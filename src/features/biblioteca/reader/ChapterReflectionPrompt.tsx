@@ -5,10 +5,15 @@ export interface ChapterPrompt {
     title: string;
 }
 
-export function ChapterReflectionPrompt({ prompt, onDismiss, onSubmit }: {
+export interface ChapterReaderHandle {
+    openManualReflection: () => void;
+}
+
+export function ChapterReflectionPrompt({ prompt, onDismiss, onSubmit, showIntro }: {
     prompt: ChapterPrompt;
     onDismiss: () => void;
     onSubmit: (content: string) => Promise<void>;
+    showIntro?: boolean;
 }) {
     const [text, setText] = useState("");
     const [saving, setSaving] = useState(false);
@@ -26,6 +31,11 @@ export function ChapterReflectionPrompt({ prompt, onDismiss, onSubmit }: {
                 className="w-full bg-card rounded-t-3xl p-5 space-y-3 animate-in slide-in-from-bottom-4"
                 onClick={e => e.stopPropagation()}
             >
+                {showIntro && (
+                    <p className="text-[12px] text-muted-foreground leading-relaxed bg-muted/60 rounded-2xl p-3">
+                        Sempre que terminares um capítulo podes escrever aqui o que aprendeste, para partilhar com o teu par.
+                    </p>
+                )}
                 <p className="text-[14px] font-bold text-foreground">
                     O que aprendeste em "{prompt.title}"?
                 </p>

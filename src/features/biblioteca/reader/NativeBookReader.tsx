@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, List, CheckCircle2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { THEME_COLORS, FONT_FAMILY_MAP, type ReaderSettings } from "@/hooks/useReaderSettings";
@@ -6,21 +6,25 @@ import { useBookChapters } from "@/hooks/useBookChapters";
 import { useBookReflections } from "@/hooks/useBookReflections";
 import { cn } from "@/lib/utils";
 import { ChapterContent } from "./ChapterContent";
-import { ChapterReflectionPrompt, type ChapterPrompt } from "./ChapterReflectionPrompt";
+import { ChapterReflectionPrompt, type ChapterPrompt, type ChapterReaderHandle } from "./ChapterReflectionPrompt";
 import { PaginatedChapterView } from "./PaginatedChapterView";
 
-export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
+export const NativeBookReader = forwardRef<ChapterReaderHandle, {
     bookId: string;
     bookTitle?: string;
     settings: ReaderSettings;
     onProgress?: (percent: number, location: string) => void;
-}) {
+    autoPromptEnabled?: boolean;
+    showIntroInPrompt?: boolean;
+    onReflectionPromptClosed?: (wasAutoTriggered: boolean) => void;
+}>(function NativeBookReader({ bookId, bookTitle, settings, onProgress, autoPromptEnabled = true, showIntroInPrompt, onReflectionPromptClosed }, ref) {
     const { chapters, loading } = useBookChapters(bookId);
     const { addReflection } = useBookReflections(bookId);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [tocOpen, setTocOpen] = useState(false);
     const [chapterPrompt, setChapterPrompt] = useState<ChapterPrompt | null>(null);
     const promptedRef = useRef<Set<string>>(new Set());
+    const wasAutoTriggeredRef = useRef(false);
     const contentRef = useRef<HTMLDivElement>(null);
     const endMarkerRef = useRef<HTMLDivElement>(null);
     const initializedRef = useRef(false);
@@ -80,8 +84,10 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
     }, [currentIndex]);
 
     const promptForChapter = (chapter: { id: string; title: string }) => {
+        if (!autoPromptEnabled) return;
         if (promptedRef.current.has(chapter.id)) return;
         promptedRef.current.add(chapter.id);
+        wasAutoTriggeredRef.current = true;
         setChapterPrompt({ chapterId: chapter.id, title: chapter.title });
     };
 
@@ -92,12 +98,24 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
         setTocOpen(false);
     };
 
-    const dismissPrompt = () => setChapterPrompt(null);
+    useImperativeHandle(ref, () => ({
+        openManualReflection: () => {
+            if (!currentChapter) return;
+            wasAutoTriggeredRef.current = false;
+            setChapterPrompt({ chapterId: currentChapter.id, title: currentChapter.title });
+        },
+    }));
+
+    const dismissPrompt = () => {
+        setChapterPrompt(null);
+        onReflectionPromptClosed?.(wasAutoTriggeredRef.current);
+    };
 
     const handleReflectionSubmit = async (content: string) => {
         if (!chapterPrompt) return;
         await addReflection(content, chapterPrompt.chapterId, bookTitle);
         setChapterPrompt(null);
+        onReflectionPromptClosed?.(wasAutoTriggeredRef.current);
     };
 
     const colors = THEME_COLORS[settings.theme];
@@ -164,7 +182,12 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
                 )}
 
                 {chapterPrompt && (
-                    <ChapterReflectionPrompt prompt={chapterPrompt} onDismiss={dismissPrompt} onSubmit={handleReflectionSubmit} />
+                    <ChapterReflectionPrompt
+                        prompt={chapterPrompt}
+                        onDismiss={dismissPrompt}
+                        onSubmit={handleReflectionSubmit}
+                        showIntro={showIntroInPrompt}
+                    />
                 )}
             </div>
 
@@ -221,4 +244,4 @@ export function NativeBookReader({ bookId, bookTitle, settings, onProgress }: {
             </Sheet>
         </div>
     );
-}
+});

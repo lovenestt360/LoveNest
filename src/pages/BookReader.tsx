@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Navigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Type } from "lucide-react";
+import { ArrowLeft, Loader2, Type, NotebookPen } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -11,8 +11,11 @@ import { PdfReader } from "@/features/biblioteca/reader/PdfReader";
 import { EpubReader } from "@/features/biblioteca/reader/EpubReader";
 import { NativeBookReader } from "@/features/biblioteca/reader/NativeBookReader";
 import { ReaderSettingsSheet } from "@/features/biblioteca/reader/ReaderSettingsSheet";
+import { ReflectionSpotlightTutorial } from "@/features/biblioteca/reader/ReflectionSpotlightTutorial";
+import type { ChapterReaderHandle } from "@/features/biblioteca/reader/ChapterReflectionPrompt";
 
 const PROGRESS_SAVE_DELAY_MS = 1500;
+const REFLECTION_ONBOARDING_KEY = "reflection-onboarding-done";
 
 export default function BookReader() {
     const { bookId } = useParams<{ bookId: string }>();
@@ -25,6 +28,10 @@ export default function BookReader() {
     const [urlLoading, setUrlLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [reflectionOnboardingDone, setReflectionOnboardingDone] = useState(
+        () => localStorage.getItem(REFLECTION_ONBOARDING_KEY) === "1"
+    );
+    const [showReflectionSpotlight, setShowReflectionSpotlight] = useState(false);
 
     const book = books.find(b => b.id === bookId);
     const canRead = !!book && (book.is_free || ownedBookIds.has(book.id));
@@ -32,6 +39,21 @@ export default function BookReader() {
     const pendingProgressRef = useRef<{ percent: number; location: string } | null>(null);
     const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
     const minutesAccumulatedRef = useRef(0);
+    const readerRef = useRef<ChapterReaderHandle>(null);
+    const noteButtonRef = useRef<HTMLButtonElement>(null);
+
+    // O prompt automático de reflexão só aparece para ensinar o gesto uma
+    // única vez (em qualquer livro). Depois disso, só este botão o abre —
+    // evita interromper a leitura a cada capítulo.
+    const handleReflectionPromptClosed = (wasAutoTriggered: boolean) => {
+        if (!reflectionOnboardingDone && wasAutoTriggered) setShowReflectionSpotlight(true);
+    };
+
+    const dismissReflectionSpotlight = () => {
+        setShowReflectionSpotlight(false);
+        localStorage.setItem(REFLECTION_ONBOARDING_KEY, "1");
+        setReflectionOnboardingDone(true);
+    };
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -125,6 +147,17 @@ export default function BookReader() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h1 className="text-[15px] font-bold tracking-tight line-clamp-1 flex-1" style={{ color: colors.fg }}>{book.title}</h1>
+                {(book.file_type === "epub" || book.file_type === "lovenest") && (
+                    <button
+                        ref={noteButtonRef}
+                        type="button"
+                        onClick={() => readerRef.current?.openManualReflection()}
+                        className="p-2 rounded-full hover:bg-muted active:scale-95 transition-all"
+                        style={{ color: colors.fg }}
+                    >
+                        <NotebookPen className="h-5 w-5" />
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={() => setSettingsOpen(true)}
@@ -137,7 +170,16 @@ export default function BookReader() {
 
             <div className="flex-1 overflow-hidden relative">
                 {book.file_type === "lovenest" ? (
-                    <NativeBookReader bookId={book.id} bookTitle={book.title} settings={settings} onProgress={handleProgress} />
+                    <NativeBookReader
+                        ref={readerRef}
+                        bookId={book.id}
+                        bookTitle={book.title}
+                        settings={settings}
+                        onProgress={handleProgress}
+                        autoPromptEnabled={!reflectionOnboardingDone}
+                        showIntroInPrompt={!reflectionOnboardingDone}
+                        onReflectionPromptClosed={handleReflectionPromptClosed}
+                    />
                 ) : urlLoading ? (
                     <div className="h-full flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
@@ -149,7 +191,17 @@ export default function BookReader() {
                 ) : book.file_type === "pdf" ? (
                     <PdfReader fileUrl={signedUrl} bookId={book.id} settings={settings} onProgress={handleProgress} />
                 ) : book.file_type === "epub" ? (
-                    <EpubReader fileUrl={signedUrl} bookId={book.id} bookTitle={book.title} settings={settings} onProgress={handleProgress} />
+                    <EpubReader
+                        ref={readerRef}
+                        fileUrl={signedUrl}
+                        bookId={book.id}
+                        bookTitle={book.title}
+                        settings={settings}
+                        onProgress={handleProgress}
+                        autoPromptEnabled={!reflectionOnboardingDone}
+                        showIntroInPrompt={!reflectionOnboardingDone}
+                        onReflectionPromptClosed={handleReflectionPromptClosed}
+                    />
                 ) : (
                     <div className="h-full flex items-center justify-center px-6 text-center">
                         <p className="text-sm text-muted-foreground">Formato de livro não suportado.</p>
@@ -164,6 +216,10 @@ export default function BookReader() {
                 onChange={updateSettings}
                 mode={book.file_type === "pdf" ? "pdf" : book.file_type === "lovenest" ? "lovenest" : "epub"}
             />
+
+            {showReflectionSpotlight && (
+                <ReflectionSpotlightTutorial targetRef={noteButtonRef} onDismiss={dismissReflectionSpotlight} />
+            )}
         </div>
     );
 }
