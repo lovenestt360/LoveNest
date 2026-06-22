@@ -86,7 +86,7 @@ export function HeroCarousel({ settings, books }: { settings: LibrarySettings | 
                 {slide.image && (
                     <img key={slide.key} src={slide.image} alt={slide.title} className="w-full h-full object-cover animate-fade-in" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent flex flex-col items-start justify-end p-4 text-left">
+                <div key={slide.key} className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent flex flex-col items-start justify-end p-4 text-left animate-fade-in">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-rose-300 mb-1">{slide.label}</span>
                     {slide.title && <p className="text-white font-bold text-lg leading-tight line-clamp-1">{slide.title}</p>}
                     {slide.subtitle && <p className="text-white/80 text-[12px] mt-0.5 line-clamp-1">{slide.subtitle}</p>}

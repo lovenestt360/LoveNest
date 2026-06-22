@@ -9,7 +9,7 @@ export function StarRating({ value, onRate, size = "sm" }: {
     const sizeClass = size === "md" ? "w-5 h-5" : "w-3.5 h-3.5";
 
     return (
-        <div className="flex items-center gap-0.5">
+        <div key={value} className="flex items-center gap-0.5 animate-scale-in">
             {[1, 2, 3, 4, 5].map(i => (
                 <button
                     key={i}

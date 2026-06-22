@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    ArrowLeft, BookText, BookOpenText, CheckCircle2, Loader2, Lock, Clock,
+    ArrowLeft, BookText, BookOpenText, CheckCircle2, Lock, Clock,
     Bookmark, BookmarkCheck, Share2, Eye, Hash, ChevronDown, ChevronUp, HeartHandshake, ChevronRight,
 } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { PurchaseSection } from "@/features/biblioteca/PurchaseSection";
 import { BookRow } from "@/features/biblioteca/BookRow";
 import { StarRating } from "@/features/biblioteca/StarRating";
+import { BookDetailSkeleton } from "@/features/biblioteca/BookDetailSkeleton";
 import { cn } from "@/lib/utils";
 
 export default function BookDetail() {
@@ -24,6 +25,16 @@ export default function BookDetail() {
     const { partner } = usePartnerProfile();
     const { stats, myRating, isFavorite, rate, toggleFavorite } = useBookStats(bookId);
     const [descExpanded, setDescExpanded] = useState(false);
+    const [scrollY, setScrollY] = useState(0);
+
+    // Parallax suave na capa: acompanha o scroll a uma velocidade menor,
+    // com um limite para não exagerar nem deslocar a capa para fora da área.
+    useEffect(() => {
+        const handleScroll = () => setScrollY(window.scrollY);
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+    const coverParallax = Math.min(20, Math.max(0, scrollY) * 0.15);
 
     const book = books.find(b => b.id === bookId);
     const category = categories.find(c => c.id === book?.category_id);
@@ -62,11 +73,7 @@ export default function BookDetail() {
     };
 
     if (loading) {
-        return (
-            <div className="flex justify-center py-24">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
-            </div>
-        );
+        return <BookDetailSkeleton />;
     }
 
     if (!book) {
@@ -96,7 +103,10 @@ export default function BookDetail() {
             </header>
 
             <div className="px-4 pt-6 flex flex-col items-center text-center">
-                <div className="w-40 aspect-[2/3] rounded-2xl overflow-hidden bg-muted border border-border shadow-lg mb-4">
+                <div
+                    className="w-40 aspect-[2/3] rounded-2xl overflow-hidden bg-muted border border-border shadow-lg mb-4"
+                    style={{ transform: `translateY(${coverParallax}px)` }}
+                >
                     {book.cover_url ? (
                         <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
@@ -135,9 +145,9 @@ export default function BookDetail() {
                 <div className="flex items-center gap-6 mt-4">
                     <button type="button" onClick={toggleFavorite} className="flex flex-col items-center gap-1 text-muted-foreground active:scale-95 transition-all">
                         {isFavorite ? (
-                            <BookmarkCheck className="w-5 h-5 text-rose-500" />
+                            <BookmarkCheck key="filled" className="w-5 h-5 text-rose-500 animate-scale-in" />
                         ) : (
-                            <Bookmark className="w-5 h-5" strokeWidth={1.5} />
+                            <Bookmark key="empty" className="w-5 h-5" strokeWidth={1.5} />
                         )}
                         <span className="text-[11px] font-semibold">Guardar</span>
                     </button>
