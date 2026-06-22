@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { THEME_COLORS, type ReaderSettings } from "@/hooks/useReaderSettings";
+import { useBookReflections } from "@/hooks/useBookReflections";
+import {
+    ChapterReflectionPrompt, GENERAL_CHAPTER_ID, type ChapterPrompt, type ChapterReaderHandle,
+} from "./ChapterReflectionPrompt";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -11,16 +15,34 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-export function PdfReader({ fileUrl, bookId, settings, onProgress }: {
+export const PdfReader = forwardRef<ChapterReaderHandle, {
     fileUrl: string;
     bookId: string;
+    bookTitle?: string;
     settings: ReaderSettings;
     onProgress?: (percent: number, location: string) => void;
-}) {
+    showIntroInPrompt?: boolean;
+}>(function PdfReader({ fileUrl, bookId, bookTitle, settings, onProgress, showIntroInPrompt }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [numPages, setNumPages] = useState<number | null>(null);
     const [pageNumber, setPageNumber] = useState(1);
+    const [chapterPrompt, setChapterPrompt] = useState<ChapterPrompt | null>(null);
+    const { addReflection } = useBookReflections(bookId);
+
+    useImperativeHandle(ref, () => ({
+        openManualReflection: () => {
+            setChapterPrompt({ chapterId: GENERAL_CHAPTER_ID, title: "este livro" });
+        },
+    }));
+
+    const dismissPrompt = () => setChapterPrompt(null);
+
+    const handleReflectionSubmit = async (content: string) => {
+        if (!chapterPrompt) return;
+        await addReflection(content, chapterPrompt.chapterId, bookTitle);
+        setChapterPrompt(null);
+    };
 
     useEffect(() => {
         const el = containerRef.current;
@@ -53,7 +75,7 @@ export function PdfReader({ fileUrl, bookId, settings, onProgress }: {
                 <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
 
-            <div ref={containerRef} className="flex-1 overflow-hidden" style={{ backgroundColor: colors.bg }}>
+            <div ref={containerRef} className="flex-1 overflow-hidden relative" style={{ backgroundColor: colors.bg }}>
                 <Document
                     file={fileUrl}
                     onLoadSuccess={handleLoadSuccess}
@@ -85,6 +107,15 @@ export function PdfReader({ fileUrl, bookId, settings, onProgress }: {
                         </TransformWrapper>
                     )}
                 </Document>
+
+                {chapterPrompt && (
+                    <ChapterReflectionPrompt
+                        prompt={chapterPrompt}
+                        onDismiss={dismissPrompt}
+                        onSubmit={handleReflectionSubmit}
+                        showIntro={showIntroInPrompt}
+                    />
+                )}
             </div>
 
             {numPages !== null && numPages > 1 && (
@@ -114,4 +145,4 @@ export function PdfReader({ fileUrl, bookId, settings, onProgress }: {
             )}
         </div>
     );
-}
+});

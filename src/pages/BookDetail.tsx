@@ -225,7 +225,7 @@ export default function BookDetail() {
                 </div>
             )}
 
-            {canRead && (book.file_type === "epub" || book.file_type === "lovenest") && (
+            {canRead && (book.file_type === "pdf" || book.file_type === "epub" || book.file_type === "lovenest") && (
                 <div className="px-4 pt-4">
                     <button
                         type="button"

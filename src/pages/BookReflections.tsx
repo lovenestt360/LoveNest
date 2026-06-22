@@ -7,8 +7,7 @@ import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useBookReflections } from "@/hooks/useBookReflections";
 import { useAuth } from "@/features/auth/AuthContext";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
-
-const GENERAL_CHAPTER_ID = "general";
+import { GENERAL_CHAPTER_ID } from "@/features/biblioteca/reader/ChapterReflectionPrompt";
 
 export default function BookReflections() {
     const { bookId } = useParams<{ bookId: string }>();

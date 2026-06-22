@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+export const GENERAL_CHAPTER_ID = "general";
+
 export interface ChapterPrompt {
     chapterId: string;
     title: string;

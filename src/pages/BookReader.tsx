@@ -147,7 +147,7 @@ export default function BookReader() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h1 className="text-[15px] font-bold tracking-tight line-clamp-1 flex-1" style={{ color: colors.fg }}>{book.title}</h1>
-                {(book.file_type === "epub" || book.file_type === "lovenest") && (
+                {(book.file_type === "pdf" || book.file_type === "epub" || book.file_type === "lovenest") && (
                     <button
                         ref={noteButtonRef}
                         type="button"
@@ -189,7 +189,15 @@ export default function BookReader() {
                         <p className="text-sm text-muted-foreground">{error ?? "Ficheiro não disponível."}</p>
                     </div>
                 ) : book.file_type === "pdf" ? (
-                    <PdfReader fileUrl={signedUrl} bookId={book.id} settings={settings} onProgress={handleProgress} />
+                    <PdfReader
+                        ref={readerRef}
+                        fileUrl={signedUrl}
+                        bookId={book.id}
+                        bookTitle={book.title}
+                        settings={settings}
+                        onProgress={handleProgress}
+                        showIntroInPrompt={!reflectionOnboardingDone}
+                    />
                 ) : book.file_type === "epub" ? (
                     <EpubReader
                         ref={readerRef}
