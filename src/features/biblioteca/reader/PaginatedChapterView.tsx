@@ -27,15 +27,16 @@ export function PaginatedChapterView({ chapter, settings, textColor, isLastChapt
     const [pageIndex, setPageIndex] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Mede a area util do ecra (descontando a margem horizontal, que é
-    // aplicada aqui no viewport em vez de no ChapterContent, para que fique
-    // consistente em todas as páginas — não só na primeira/última).
+    // Mede a área útil do ecrã. A margem horizontal é aplicada num wrapper
+    // EXTERIOR a este viewport (não aqui dentro) — se a margem fosse padding
+    // no mesmo elemento que recorta (overflow:hidden), o recorte ocorre no
+    // limite exterior (incluindo o padding), deixando sempre uma fresta do
+    // tamanho da margem onde a página seguinte aparece colada.
     useEffect(() => {
         const el = viewportRef.current;
         if (!el) return;
-        const marginPx = parseFloat(MARGIN_MAP[settings.margin]) || 0;
         const measure = () => {
-            setInnerWidth(Math.max(0, Math.round(el.clientWidth - marginPx * 2)));
+            setInnerWidth(Math.round(el.clientWidth));
             setInnerHeight(Math.round(el.clientHeight));
         };
         measure();
@@ -93,55 +94,56 @@ export function PaginatedChapterView({ chapter, settings, textColor, isLastChapt
 
     return (
         <div
-            ref={viewportRef}
-            className="h-full overflow-hidden relative"
+            className="h-full"
             style={{ padding: `0 ${MARGIN_MAP[settings.margin]}` }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            {innerWidth > 0 && (
+            <div ref={viewportRef} className="h-full overflow-hidden relative">
+                {innerWidth > 0 && (
+                    <div
+                        style={{
+                            // Largura e contagem de colunas explícitas (em vez
+                            // de só "column-width") para que cada página
+                            // tenha exatamente innerWidth — sem isto o motor
+                            // ajusta a largura real das colunas para
+                            // preencher o contentor, e o deslize desalinha-se.
+                            width: innerWidth * totalPages,
+                            columnCount: totalPages,
+                            columnGap: 0,
+                            columnFill: "auto",
+                            height: innerHeight,
+                            transform: `translateX(-${pageIndex * innerWidth}px)`,
+                            transition: "transform 220ms ease",
+                        }}
+                    >
+                        <h2 className="pb-2 text-xl font-bold" style={{ color: textColor, fontFamily: FONT_FAMILY_MAP[settings.font] }}>
+                            {chapter.title}
+                        </h2>
+                        <ChapterContent content={chapter.content} settings={settings} className="space-y-4" applyPadding={false} />
+                    </div>
+                )}
+
+                {/* Sonda invisível: mede a altura total do capítulo numa coluna
+                    única, para calcular o número exato de páginas. */}
                 <div
+                    ref={probeRef}
                     style={{
-                        // Largura e contagem de colunas explícitas (em vez de
-                        // só "column-width") para que cada página tenha
-                        // exatamente innerWidth — sem isto o motor ajusta a
-                        // largura real das colunas para preencher o
-                        // contentor, e o deslize fica ligeiramente desalinhado.
-                        width: innerWidth * totalPages,
-                        columnCount: totalPages,
-                        columnGap: 0,
-                        columnFill: "auto",
-                        height: innerHeight,
-                        transform: `translateX(-${pageIndex * innerWidth}px)`,
-                        transition: "transform 220ms ease",
+                        position: "absolute",
+                        visibility: "hidden",
+                        pointerEvents: "none",
+                        width: innerWidth || undefined,
+                        height: "auto",
+                        top: 0,
+                        left: 0,
                     }}
+                    aria-hidden="true"
                 >
-                    <h2 className="pb-2 text-xl font-bold" style={{ color: textColor, fontFamily: FONT_FAMILY_MAP[settings.font] }}>
+                    <h2 className="pb-2 text-xl font-bold" style={{ fontFamily: FONT_FAMILY_MAP[settings.font] }}>
                         {chapter.title}
                     </h2>
                     <ChapterContent content={chapter.content} settings={settings} className="space-y-4" applyPadding={false} />
                 </div>
-            )}
-
-            {/* Sonda invisível: mede a altura total do capítulo numa coluna
-                única, para calcular o número exato de páginas. */}
-            <div
-                ref={probeRef}
-                style={{
-                    position: "absolute",
-                    visibility: "hidden",
-                    pointerEvents: "none",
-                    width: innerWidth || undefined,
-                    height: "auto",
-                    top: 0,
-                    left: 0,
-                }}
-                aria-hidden="true"
-            >
-                <h2 className="pb-2 text-xl font-bold" style={{ fontFamily: FONT_FAMILY_MAP[settings.font] }}>
-                    {chapter.title}
-                </h2>
-                <ChapterContent content={chapter.content} settings={settings} className="space-y-4" applyPadding={false} />
             </div>
         </div>
     );
