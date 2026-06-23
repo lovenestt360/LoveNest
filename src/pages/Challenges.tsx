@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle, Plus, Trophy, Flame, Gift, Sparkles, Loader2, T
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
+import { useBiblioteca, type Book } from "@/hooks/useBiblioteca";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,12 +18,53 @@ const CATEGORIES = [
     { id: "comunicacao", label: "💬 Comunicação" },
     { id: "diversao", label: "🎲 Diversão" },
     { id: "crescimento", label: "🌱 Crescimento" },
+    { id: "livros", label: "📚 Livros" },
 ];
+
+// Sugestões de desafios de leitura geradas a partir dos livros reais do
+// casal (títulos e progresso verdadeiros) — sem IA, sem chamada de rede,
+// já que os dados já vêm de useBiblioteca().
+function generateBookSuggestions(
+    books: Book[],
+    ownedBookIds: Set<string>,
+    myProgressByBook: Map<string, number>
+): { title: string; description: string }[] {
+    const accessible = books.filter(b => b.is_free || ownedBookIds.has(b.id));
+    const unfinished = accessible
+        .filter(b => (myProgressByBook.get(b.id) ?? 0) < 100)
+        .sort((a, b) => (myProgressByBook.get(b.id) ?? 0) - (myProgressByBook.get(a.id) ?? 0))
+        .slice(0, 3);
+
+    const suggestions: { title: string; description: string }[] = [];
+
+    if (accessible.length === 0) {
+        suggestions.push({
+            title: "Escolham o vosso primeiro livro",
+            description: "Visitem a Biblioteca e escolham uma leitura para começarem juntos.",
+        });
+    } else {
+        for (const book of unfinished) {
+            const progress = myProgressByBook.get(book.id) ?? 0;
+            suggestions.push({
+                title: `Terminem de ler "${book.title}"`,
+                description: progress > 0 ? `Já leram ${progress}% — falta pouco!` : "Comecem a ler juntos.",
+            });
+        }
+    }
+
+    suggestions.push({
+        title: "Partilhem uma reflexão de leitura",
+        description: "Depois de um capítulo, escrevam uma reflexão na Biblioteca para o vosso par ler.",
+    });
+
+    return suggestions;
+}
 
 export default function Challenges() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { books, ownedBookIds, myProgressByBook } = useBiblioteca();
 
     const [loading, setLoading] = useState(true);
     const [challenges, setChallenges] = useState<any[]>([]);
@@ -120,10 +162,16 @@ export default function Challenges() {
     };
 
     const handleGenerateChallenges = async () => {
-        try {
-            setGenerating(true);
-            setAiSuggestions([]);
+        setGenerating(true);
+        setAiSuggestions([]);
 
+        if (selectedCategory === "livros") {
+            setAiSuggestions(generateBookSuggestions(books, ownedBookIds, myProgressByBook));
+            setGenerating(false);
+            return;
+        }
+
+        try {
             const { data, error } = await supabase.functions.invoke("generate-challenges", {
                 body: { category: selectedCategory }
             });
