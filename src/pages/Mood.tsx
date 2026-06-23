@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { useProfile } from "@/hooks/useProfile";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { logActivity, fireMissionIfNotFired } from "@/lib/logActivity";
@@ -24,6 +25,8 @@ export default function Mood() {
   const spaceId = useCoupleSpaceId();
   const { resetMoodUnread } = useAppNotifContext();
   const navigate = useNavigate();
+  const { profile } = useProfile();
+  const isSolo = profile?.usage_mode === "solo";
 
   const [partnerRespondedToday, setPartnerRespondedToday] = useState(false);
 
@@ -36,12 +39,13 @@ export default function Mood() {
 
   const [existingId, setExistingId] = useState<string | null>(null);
 
-  // Fire mission only when BOTH members have registered mood today
+  // Fire mission when BOTH members registered mood today — or just the
+  // one member, in modo solo (não há parceiro para esperar).
   useEffect(() => {
-    if (partnerRespondedToday && existingId) {
+    if ((partnerRespondedToday || isSolo) && existingId) {
       fireMissionIfNotFired("mood");
     }
-  }, [partnerRespondedToday, existingId]);
+  }, [partnerRespondedToday, existingId, isSolo]);
   const [saving, setSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
@@ -191,7 +195,7 @@ export default function Mood() {
     if (sp && !existingId) logActivity(sp, "mood", { skipMission: true });
 
     // Notificação ao parceiro
-    if (sp) {
+    if (sp && !isSolo) {
       const moodInfo = MOOD_OPTIONS.find(m => m.key === moodKey);
       notifyPartner({
         couple_space_id: sp,
@@ -208,11 +212,11 @@ export default function Mood() {
 
     // Emotional Feedback UI
     toast.success("Obrigado por partilhares como te sentes 💛", {
-      description: "O teu par vai sentir-se mais próximo de ti.",
+      description: isSolo ? "Continua a registar como te sentes todos os dias." : "O teu par vai sentir-se mais próximo de ti.",
       duration: 5000,
     });
 
-    if (!partnerRespondedToday) {
+    if (!isSolo && !partnerRespondedToday) {
       setTimeout(() => {
         toast("O teu par ainda não respondeu... 💬", {
           description: "Talvez precise de um empurrãozinho para partilhar também.",
@@ -240,7 +244,7 @@ export default function Mood() {
       <div className="flex bg-muted rounded-2xl p-1 gap-1">
         {([
           { id: "hoje",      label: "Hoje" },
-          { id: "historico", label: "Histórico e Par" },
+          { id: "historico", label: isSolo ? "Histórico" : "Histórico e Par" },
         ] as const).map(tab => (
           <button
             key={tab.id}
@@ -272,7 +276,7 @@ export default function Mood() {
       )}
 
       {activeTab === "historico" && (
-        <MoodHistory history={history} userId={user?.id || ""} />
+        <MoodHistory history={history} userId={user?.id || ""} isSolo={isSolo} />
       )}
 
       {/* Success Overlay */}

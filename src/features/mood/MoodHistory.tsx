@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 interface MoodHistoryProps {
     history: MoodCheckin[];
     userId: string;
+    isSolo?: boolean;
 }
 
 function getMoodEmoji(key: string) {
@@ -19,7 +20,7 @@ function getSleepEmoji(key: string | null) {
     return SLEEP_QUALITY_OPTIONS.find(s => s.key === key)?.emoji ?? null;
 }
 
-export function MoodHistory({ history, userId }: MoodHistoryProps) {
+export function MoodHistory({ history, userId, isSolo = false }: MoodHistoryProps) {
     const grouped = groupByDay(history, userId);
 
     if (grouped.length === 0) {
@@ -42,8 +43,8 @@ export function MoodHistory({ history, userId }: MoodHistoryProps) {
                     <CardContent className="p-0 divide-y">
                         {/* My Record */}
                         <RecordRow data={mine} isMe={true} />
-                        {/* Partner Record */}
-                        <RecordRow data={partner} isMe={false} />
+                        {/* Partner Record — não existe em modo solo */}
+                        {!isSolo && <RecordRow data={partner} isMe={false} />}
                     </CardContent>
                 </Card>
             ))}

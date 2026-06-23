@@ -5,6 +5,7 @@ import { useRoutineLogs } from "@/hooks/useRoutineLogs";
 import { useRoutineStats } from "@/hooks/useRoutineStats";
 import { useAuth } from "@/features/auth/AuthContext";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
+import { useProfile } from "@/hooks/useProfile";
 import { RoutineCalendar } from "@/components/routine/RoutineCalendar";
 import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
 import { RoutineProgressCards } from "@/components/routine/RoutineProgressCards";
@@ -38,6 +39,8 @@ const TABS = [
 export default function Plano() {
   const { user } = useAuth();
   const { partner } = usePartnerProfile();
+  const { profile } = useProfile();
+  const isSolo = profile?.usage_mode === "solo";
   const partnerFirstName = partner?.display_name?.split(" ")[0] ?? "Amor";
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -83,12 +86,12 @@ export default function Plano() {
 
   const handleAdd = async () => {
     if (!newTitle.trim() || !isReady) return;
-    await addPlan({ 
-      title: newTitle, 
-      description: newDesc, 
-      date: selectedDate, 
+    await addPlan({
+      title: newTitle,
+      description: newDesc,
+      date: selectedDate,
       time: newTime,
-      forWhom: forWhom 
+      forWhom: isSolo ? 'me' : forWhom
     });
     setNewTitle(""); setNewTime(""); setNewDesc(""); setIsAdding(false);
   };
@@ -150,7 +153,7 @@ export default function Plano() {
               {([
                 { id: "mine",    label: "Minha",         icon: User },
                 { id: "partner", label: partnerFirstName, icon: Users },
-              ] as const).map(sub => {
+              ] as const).filter(sub => !isSolo || sub.id !== "partner").map(sub => {
                 const Icon = sub.icon;
                 return (
                   <button
@@ -252,7 +255,8 @@ export default function Plano() {
                   isAdding ? "pb-3 max-h-[120px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"
                 )}
               >
-                {/* Selector de destinatário */}
+                {/* Selector de destinatário — não faz sentido sem parceiro */}
+                {!isSolo && (
                 <div className="flex p-0.5 bg-muted rounded-lg w-fit">
                   {(["ambos", "me", "partner"] as const).map((v) => (
                     <button
@@ -267,6 +271,7 @@ export default function Plano() {
                     </button>
                   ))}
                 </div>
+                )}
 
                 {/* Data + Hora na mesma row */}
                 <div className="flex gap-2">
