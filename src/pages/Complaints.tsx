@@ -12,6 +12,8 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfile";
+import { Navigate } from "react-router-dom";
 
 const FEELINGS = ["magoado", "frustrado", "triste", "ansioso", "zangado", "confuso", "ignorado", "sozinho", "outro"];
 
@@ -52,6 +54,7 @@ interface ComplaintMessage {
 export default function Complaints() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
+  const { profile, loading: profileLoading } = useProfile();
 
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [filter, setFilter] = useState("open");
@@ -81,6 +84,12 @@ export default function Complaints() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [spaceId, fetchComplaints]);
+
+  // Modo solo não tem parceiro com quem "resolver juntos" — sem forma de
+  // aceder a este ecrã, nem pelo URL direto.
+  if (!profileLoading && profile?.usage_mode === "solo") {
+    return <Navigate to="/" replace />;
+  }
 
   if (selected) {
     return (

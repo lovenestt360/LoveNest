@@ -66,14 +66,19 @@ export function BottomTabs() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isSolo = profile?.usage_mode === "solo";
+  const visibleMainTabs = isSolo ? mainTabs.filter(t => t.to !== "/chat") : mainTabs;
+
   const hasSpiritual = profile?.religion !== "none";
   const effectivePrayerUnread = hasSpiritual ? prayerUnread : 0;
+  const effectiveComplaintsUnread = isSolo ? 0 : complaintsUnread;
+  const effectiveChatUnread = isSolo ? 0 : chatUnread;
 
   const moreBadge =
-    memoriesUnread + scheduleUnread + effectivePrayerUnread + complaintsUnread + tasksUnread;
+    memoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + tasksUnread;
   const isMoreActive = MORE_PATHS.some((p) => location.pathname === p);
 
-  const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + effectivePrayerUnread + complaintsUnread;
+  const totalUnread = effectiveChatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread;
 
   const getBadge = (to: string) => {
     switch (to) {
@@ -101,8 +106,8 @@ export function BottomTabs() {
       aria-label="Navegação principal"
     >
       <div className="w-full">
-        <div className="grid grid-cols-5 h-14">
-          {mainTabs.map(({ to, label, Icon }) => (
+        <div className={cn("grid h-14", visibleMainTabs.length === 4 ? "grid-cols-5" : "grid-cols-4")}>
+          {visibleMainTabs.map(({ to, label, Icon }) => (
             <TabItem
               key={to}
               to={to}
@@ -154,6 +159,7 @@ export function BottomTabs() {
                 {moreItems
                   .filter(item => freeMode ? item.to !== "/subscricao" : true)
                   .filter(item => profile?.religion === "none" ? item.to !== "/jornada-espiritual" : true)
+                  .filter(item => isSolo ? item.to !== "/conflitos" : true)
                   .map(({ to, label, Icon }) => {
                     const badge = getMoreBadge(to);
                     const active = location.pathname === to;

@@ -461,13 +461,36 @@ const Index = () => {
 
       {/* ── Visual Highlights ── */}
       <div className="space-y-4 px-1">
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "0ms" }}>
-          <TimeTogetherCard
-            days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
-            streak={0} hasDate={!!time.startDate} startDate={time.startDate}
-            onSetDate={() => navigate("/configuracoes")}
-          />
-        </div>
+        {isSolo ? (
+          houseInviteCode && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 glass-card bg-gradient-to-br from-primary/15 to-transparent border-primary/20 rounded-[2.5rem] p-5 shadow-sm" style={{ animationDelay: "0ms" }}>
+              <div className="flex items-center gap-3 mb-4 text-center justify-center flex-col">
+                <HeartHandshake className="w-8 h-8 text-primary" />
+                <h3 className="text-sm font-black tracking-tight">Queres viver o LoveNest em casal?</h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Partilha este código com quem amas</p>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 bg-white/50 dark:bg-white/5 border border-primary/10 rounded-2xl h-12 flex items-center justify-center font-black text-lg tracking-widest text-primary shadow-inner">
+                  {houseInviteCode}
+                </div>
+                <button
+                  onClick={handleShareHouse}
+                  className="h-12 w-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "0ms" }}>
+            <TimeTogetherCard
+              days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
+              streak={0} hasDate={!!time.startDate} startDate={time.startDate}
+              onSetDate={() => navigate("/configuracoes")}
+            />
+          </div>
+        )}
 
         {!isSolo && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
@@ -572,14 +595,16 @@ const Index = () => {
             accent="text-pink-500"
           />
 
-          <DashCard
-            icon={<HeartHandshake className="h-5 w-5" strokeWidth={1.5} />}
-            title="Conflitos"
-            lines={["Resolver juntos", "Com calma e amor"]}
-            to="/conflitos"
-            badge={complaintsUnread}
-            accent="text-rose-500"
-          />
+          {!isSolo && (
+            <DashCard
+              icon={<HeartHandshake className="h-5 w-5" strokeWidth={1.5} />}
+              title="Conflitos"
+              lines={["Resolver juntos", "Com calma e amor"]}
+              to="/conflitos"
+              badge={complaintsUnread}
+              accent="text-rose-500"
+            />
+          )}
         </div>
       </section>
 

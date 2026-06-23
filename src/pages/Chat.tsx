@@ -8,6 +8,7 @@ import { notifyPartner } from "@/lib/notifyPartner";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { logActivity, fireMissionIfNotFired } from "@/lib/logActivity";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
+import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
 import {
   Send, Loader2, Image as ImageIcon, Mic, Pin, PinOff, Reply,
@@ -421,6 +422,7 @@ export default function Chat() {
   const { toast }                                  = useToast();
   const { wallpaperUrl, wallpaperOpacity }         = useUserSettings();
   const { partner }                                = usePartnerProfile();
+  const { profile: ownProfile }                    = useProfile();
 
   const [isReady, setIsReady]       = useState(false);
   const [messages, setMessages]     = useState<Message[]>([]);
@@ -450,6 +452,12 @@ export default function Chat() {
   useEffect(() => {
     if (spaceId) setIsReady(true);
   }, [spaceId]);
+
+  // Modo solo não tem com quem conversar — sem forma de aceder ao chat,
+  // nem pelo URL direto.
+  useEffect(() => {
+    if (ownProfile?.usage_mode === "solo") navigate("/", { replace: true });
+  }, [ownProfile?.usage_mode, navigate]);
 
   /* load messages */
   useEffect(() => {
