@@ -357,8 +357,11 @@ const Index = () => {
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
   const spaceId = useCoupleSpaceId();
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const isSolo = profile?.usage_mode === "solo";
+  // Evita o flash de cartões de casal antes do perfil carregar (profile
+  // começa null, logo isSolo seria false por um instante para quem é solo).
+  const profileReady = !profileLoading;
   const { streak: streakData } = useStreak();
   const { pendingMilestone, recentMilestone, confirmMilestone } = useMilestone(
     streakData?.currentStreak ?? 0,
@@ -461,7 +464,7 @@ const Index = () => {
 
       {/* ── Visual Highlights ── */}
       <div className="space-y-4 px-1">
-        {!isSolo && (
+        {profileReady && !isSolo && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "0ms" }}>
             <TimeTogetherCard
               days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
@@ -471,7 +474,7 @@ const Index = () => {
           </div>
         )}
 
-        {!isSolo && (
+        {profileReady && !isSolo && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
             <LoveStreakCard />
             {/* Milestone micro-memory — visible for 24h after any streak milestone */}
@@ -538,7 +541,7 @@ const Index = () => {
             accent="text-pink-500"
           />
 
-          {isEnabled("home_conversas") && !isSolo && (
+          {isEnabled("home_conversas") && profileReady && !isSolo && (
             <DashCard
               icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
               title="Chat"
@@ -552,7 +555,7 @@ const Index = () => {
             />
           )}
 
-          {(isEnabled("home_jejum") || isEnabled("home_oracao")) && profile?.religion !== "none" && (
+          {(isEnabled("home_jejum") || isEnabled("home_oracao")) && profileReady && profile?.religion !== "none" && (
             <DashCard
               icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
               title="Jornada Espiritual"
@@ -574,7 +577,7 @@ const Index = () => {
             accent="text-pink-500"
           />
 
-          {!isSolo && (
+          {profileReady && !isSolo && (
             <DashCard
               icon={<HeartHandshake className="h-5 w-5" strokeWidth={1.5} />}
               title="Conflitos"
@@ -607,7 +610,7 @@ const Index = () => {
             />
           )}
 
-          {isEnabled("home_desafios") && !isSolo && (
+          {isEnabled("home_desafios") && profileReady && !isSolo && (
             <AppIconButton
               icon={<Trophy className="w-5 h-5" />}
               label="Desafios"
@@ -626,7 +629,7 @@ const Index = () => {
             />
           )}
 
-          {isEnabled("home_capsula") && !isSolo && (
+          {isEnabled("home_capsula") && profileReady && !isSolo && (
             <AppIconButton
               icon={<Clock className="w-5 h-5" />}
               label="Cápsula"
@@ -648,7 +651,7 @@ const Index = () => {
 
 {/* ── Footer / Invite Section ── */}
       <div className="space-y-4 pt-4 px-1">
-        {!isSolo && !avatars.partner && houseInviteCode && (
+        {profileReady && !isSolo && !avatars.partner && houseInviteCode && (
           <div className="glass-card bg-gradient-to-br from-primary/15 to-transparent border-primary/20 rounded-[2.5rem] p-5 shadow-sm">
              <div className="flex items-center gap-3 mb-4 text-center justify-center flex-col">
                 <HeartHandshake className="w-8 h-8 text-primary" />
