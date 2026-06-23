@@ -780,25 +780,20 @@ export default function Settings() {
               </div>
 
               {usageMode === "solo" && (
-                <div className="glass-card p-6 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-500 shrink-0">
-                      <Users className="h-5 w-5" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm">Queres viver o LoveNest em casal?</h3>
-                      <p className="text-xs text-muted-foreground">Partilha o código abaixo com o teu par.</p>
-                    </div>
+                <div className="glass-card p-4 space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <Users className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={1.5} />
+                    <h3 className="font-bold text-[13px]">Queres viver o LoveNest em casal?</h3>
                   </div>
                   {houseInviteCode && (
                     <div className="flex gap-2">
-                      <Input value={houseInviteCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
-                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(houseInviteCode, "Código copiado!")}>
-                        <Copy className="h-4 w-4" />
+                      <Input value={houseInviteCode} readOnly className="h-10 bg-primary/5 border-primary/20 text-center font-bold tracking-widest text-primary text-sm rounded-xl" />
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-border shrink-0" onClick={() => copyToClipboard(houseInviteCode, "Código copiado!")}>
+                        <Copy className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   )}
-                  <p className="text-[9px] text-muted-foreground font-black italic px-1">Quando o teu par entrar com este código, as funcionalidades de casal são desbloqueadas automaticamente.</p>
+                  <p className="text-[10px] text-muted-foreground px-0.5">Partilha este código com o teu par para desbloquear o modo casal.</p>
                 </div>
               )}
             </div>
