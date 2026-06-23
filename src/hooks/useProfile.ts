@@ -28,12 +28,24 @@ export function useProfile() {
             setLoading(false);
             return;
         }
-        const { data } = await supabase
-            .from("profiles")
-            .select(SELECT_FIELDS)
-            .eq("user_id", user.id)
-            .maybeSingle();
-        setProfile((data as Profile) ?? null);
+        // AuthContext cria a linha em "profiles" de forma assíncrona (fire-and-forget)
+        // logo após o login/signup. Para um utilizador mesmo acabado de criar, esta
+        // consulta pode chegar antes desse insert terminar — sem retry, "profile"
+        // ficaria permanentemente null e o onboarding seria saltado por engano.
+        for (let attempt = 0; attempt < 4; attempt++) {
+            const { data } = await supabase
+                .from("profiles")
+                .select(SELECT_FIELDS)
+                .eq("user_id", user.id)
+                .maybeSingle();
+            if (data) {
+                setProfile(data as Profile);
+                setLoading(false);
+                return;
+            }
+            if (attempt < 3) await new Promise(r => setTimeout(r, 400));
+        }
+        setProfile(null);
         setLoading(false);
     }, [user?.id]);
 

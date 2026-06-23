@@ -91,6 +91,7 @@ export default function CoupleSpace() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [draft, setDraft] = useState<OnboardingDraft>({ countryCode: null, gender: null, religion: null, usageMode: null, primaryGoal: null });
   const [creatingSolo, setCreatingSolo] = useState(false);
+  const [soloCreateFailed, setSoloCreateFailed] = useState(false);
 
   const memberCount = useMemo(() => {
     if (state.status !== "has_house") return 0;
@@ -189,6 +190,7 @@ export default function CoupleSpace() {
   // etc. — sem ecrã de código/convite) e entra direto na app.
   const handleCreateSoloSpace = useCallback(async () => {
     setCreatingSolo(true);
+    setSoloCreateFailed(false);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/entrar"); return; }
@@ -212,16 +214,19 @@ export default function CoupleSpace() {
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro ao preparar o teu espaço", description: error.message });
       setCreatingSolo(false);
+      setSoloCreateFailed(true);
     }
   }, [navigate, toast]);
 
   // Assim que o questionário termina em modo solo, avança automaticamente —
   // não há ecrã de "à espera do parceiro" para quem escolheu usar sozinho.
+  // soloCreateFailed evita um loop de tentativas automáticas sem fim caso a
+  // criação do espaço falhe (ex: sem rede) — fica à espera de um novo toque.
   useEffect(() => {
-    if (profile?.onboarding_completed && profile.usage_mode === "solo" && state.status === "no_house" && !creatingSolo) {
+    if (profile?.onboarding_completed && profile.usage_mode === "solo" && state.status === "no_house" && !creatingSolo && !soloCreateFailed) {
       handleCreateSoloSpace();
     }
-  }, [profile?.onboarding_completed, profile?.usage_mode, state.status, creatingSolo, handleCreateSoloSpace]);
+  }, [profile?.onboarding_completed, profile?.usage_mode, state.status, creatingSolo, soloCreateFailed, handleCreateSoloSpace]);
 
   const finishOnboarding = async (primaryGoal: string) => {
     try {
