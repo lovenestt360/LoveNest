@@ -50,26 +50,31 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
           <span className="text-[11px] text-muted-foreground capitalize">{today}</span>
         </div>
 
-        {/* Partner avatar */}
-        <button
-          onClick={() => navigate("/configuracoes")}
-          className="relative active:opacity-70 transition-opacity"
-        >
-          <Avatar className={cn(
-            "h-11 w-11 ring-2 ring-background shadow-sm",
-            loading && "animate-pulse"
-          )}>
-            {partner?.avatarUrl && <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />}
-            <AvatarFallback className="bg-muted text-foreground font-semibold text-sm">
-              {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
-            </AvatarFallback>
-          </Avatar>
-          {partner?.verificationStatus === "verified" && (
-            <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-px shadow-sm">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-            </div>
-          )}
-        </button>
+        {/* Partner avatar — espaço reservado para manter a marca centrada;
+            escondido (mas o espaço fica) em modo solo, sem parceiro */}
+        {(loading || partner) ? (
+          <button
+            onClick={() => navigate("/configuracoes")}
+            className="relative active:opacity-70 transition-opacity"
+          >
+            <Avatar className={cn(
+              "h-11 w-11 ring-2 ring-background shadow-sm",
+              loading && "animate-pulse"
+            )}>
+              {partner?.avatarUrl && <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />}
+              <AvatarFallback className="bg-muted text-foreground font-semibold text-sm">
+                {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
+              </AvatarFallback>
+            </Avatar>
+            {partner?.verificationStatus === "verified" && (
+              <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-px shadow-sm">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              </div>
+            )}
+          </button>
+        ) : (
+          <div className="h-11 w-11" aria-hidden="true" />
+        )}
 
       </div>
     </header>
