@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ArrowLeft, Lock, Unlock, Plus, Clock, Image as ImageIcon, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,7 @@ export default function TimeCapsule() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { profile, loading: profileLoading } = useProfile();
 
     const [loading, setLoading] = useState(true);
     const [capsules, setCapsules] = useState<any[]>([]);
@@ -114,6 +116,10 @@ export default function TimeCapsule() {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
     };
+
+    if (!profileLoading && profile?.usage_mode === "solo") {
+        return <Navigate to="/" replace />;
+    }
 
     return (
         <div className="min-h-screen bg-background pb-20">
