@@ -7,6 +7,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useReaderSettings, THEME_COLORS } from "@/hooks/useReaderSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { logActivity } from "@/lib/logActivity";
 import { PdfReader } from "@/features/biblioteca/reader/PdfReader";
 import { EpubReader } from "@/features/biblioteca/reader/EpubReader";
 import { NativeBookReader } from "@/features/biblioteca/reader/NativeBookReader";
@@ -86,6 +87,7 @@ export default function BookReader() {
             if (pendingProgressRef.current) {
                 saveProgress(pendingProgressRef.current.percent, pendingProgressRef.current.location, flushMinutes());
             }
+            if (spaceId) logActivity(spaceId, "leitura");
         }, PROGRESS_SAVE_DELAY_MS);
     };
 

@@ -188,14 +188,14 @@ const MISSION_DEFS: Omit<Mission, "completed" | "completedCount">[] = [
   { id: "message",  title: "Conversar",   description: "Um beijo em texto para o vosso par",       emoji: "message",  activityType: "message",  points: 10 },
   { id: "checkin",  title: "Presença",    description: "Digam ao outro que estão presentes hoje",  emoji: "checkin",  activityType: "checkin",  points: 10 },
   { id: "mood",     title: "Sentimento",  description: "Partilhem como estão, de coração",         emoji: "mood",     activityType: "mood",     points: 5  },
-  { id: "prayer",   title: "Oração",      description: "Um momento sagrado criado juntos",          emoji: "prayer",   activityType: "prayer",   points: 5  },
+  { id: "leitura",  title: "Leitura",     description: "Leiam um pouco de um livro na Biblioteca",  emoji: "leitura",  activityType: "leitura",  points: 5  },
 ];
 
 const MISSION_ICONS: Record<string, React.ReactNode> = {
   message: <MessageCircle className="w-4 h-4" strokeWidth={1.5} />,
   checkin: <CheckSquare className="w-4 h-4" strokeWidth={1.5} />,
   mood:    <Smile className="w-4 h-4" strokeWidth={1.5} />,
-  prayer:  <BookOpen className="w-4 h-4" strokeWidth={1.5} />,
+  leitura: <BookOpen className="w-4 h-4" strokeWidth={1.5} />,
 };
 
 // ─────────────────────────────────────────────
@@ -378,19 +378,11 @@ export default function LoveStreak() {
       // Use UTC date to match server CURRENT_DATE (same fix already applied in useStreak)
       const today = new Date().toISOString().slice(0, 10);
 
-      // Fetch activity + spiritual logs in parallel
-      const [activityRes, spiritualRes] = await Promise.all([
-        supabase
-          .from("daily_activity" as any)
-          .select("type, user_id")
-          .eq("couple_space_id", spaceId)
-          .eq("activity_date", today),
-        supabase
-          .from("daily_spiritual_logs")
-          .select("user_id, prayed_today")
-          .eq("couple_space_id", spaceId)
-          .eq("day_key", today),
-      ]);
+      const activityRes = await supabase
+        .from("daily_activity" as any)
+        .select("type, user_id")
+        .eq("couple_space_id", spaceId)
+        .eq("activity_date", today);
 
       if (activityRes.error) {
         console.error("[LoveStreak] fetchMissions error:", activityRes.error.message);
@@ -400,13 +392,6 @@ export default function LoveStreak() {
       for (const row of (activityRes.data as any[]) || []) {
         if (!typeUsers[row.type]) typeUsers[row.type] = new Set();
         typeUsers[row.type].add(row.user_id);
-      }
-
-      // Prayer mission: also count users with prayed_today=true in spiritual logs
-      // (covers users who marked "Orei hoje" before the activity log fix)
-      if (!typeUsers["prayer"]) typeUsers["prayer"] = new Set();
-      for (const log of (spiritualRes.data as any[]) || []) {
-        if (log.prayed_today) typeUsers["prayer"].add(log.user_id);
       }
 
       const threshold = Math.max(totalMembers, 2);
