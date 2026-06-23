@@ -4,6 +4,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { logActivity } from "@/lib/logActivity";
 
 
 export interface PlanoItem {
@@ -143,6 +144,8 @@ export function usePlano() {
       return null;
     }
 
+    logActivity(sp, "plano");
+
     // Notificar parceiro
     if (sp) {
       await notifyPartner({
@@ -190,7 +193,7 @@ export function usePlano() {
         return;
       }
 
-      // Notificação e lógica de streak removidas para purga total
+      logActivity(sp, "plano");
     }
   };
 

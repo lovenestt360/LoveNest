@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { RankingCard } from "@/components/RankingCard";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import {
   Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star,
-  MessageCircle, CheckSquare, Smile, BookOpen,
+  CheckSquare, Smile, BookOpen, CalendarDays,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -185,14 +186,14 @@ interface Mission {
 }
 
 const MISSION_DEFS: Omit<Mission, "completed" | "completedCount">[] = [
-  { id: "message",  title: "Conversar",   description: "Um beijo em texto para o vosso par",       emoji: "message",  activityType: "message",  points: 10 },
+  { id: "plano",    title: "Plano",       description: "Adiciona ou conclui algo na Agenda hoje",  emoji: "plano",    activityType: "plano",    points: 10 },
   { id: "checkin",  title: "Presença",    description: "Digam ao outro que estão presentes hoje",  emoji: "checkin",  activityType: "checkin",  points: 10 },
   { id: "mood",     title: "Sentimento",  description: "Partilhem como estão, de coração",         emoji: "mood",     activityType: "mood",     points: 5  },
   { id: "leitura",  title: "Leitura",     description: "Leiam um pouco de um livro na Biblioteca",  emoji: "leitura",  activityType: "leitura",  points: 5  },
 ];
 
 const MISSION_ICONS: Record<string, React.ReactNode> = {
-  message: <MessageCircle className="w-4 h-4" strokeWidth={1.5} />,
+  plano:   <CalendarDays className="w-4 h-4" strokeWidth={1.5} />,
   checkin: <CheckSquare className="w-4 h-4" strokeWidth={1.5} />,
   mood:    <Smile className="w-4 h-4" strokeWidth={1.5} />,
   leitura: <BookOpen className="w-4 h-4" strokeWidth={1.5} />,
@@ -247,9 +248,16 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 export default function LoveStreak() {
   const navigate   = useNavigate();
   const spaceId    = useCoupleSpaceId();
+  const { profile } = useProfile();
   const { streak, loading, error: streakError, checkIn, checkingIn, refresh } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>("streaks");
   const hoursLeft = useHoursLeft();
+
+  // A Chama (streak/pontos/gestos de casal) não faz sentido sem parceiro —
+  // sem forma de aceder, nem pelo URL direto.
+  useEffect(() => {
+    if (profile?.usage_mode === "solo") navigate("/", { replace: true });
+  }, [profile?.usage_mode, navigate]);
 
   // — Points state —
   const [totalPoints, setTotalPoints]   = useState(0);
