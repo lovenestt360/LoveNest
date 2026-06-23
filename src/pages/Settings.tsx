@@ -21,7 +21,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles, Globe, Users } from "lucide-react";
+import { CountryPicker } from "@/components/onboarding/CountryPicker";
+import { COUNTRIES } from "@/data/countries";
 import { VerificationSection } from "@/features/verification/VerificationSection";
 import { NotificationPrePermissionModal } from "@/components/NotificationPrePermissionModal";
 import {
@@ -44,6 +46,24 @@ interface Profile {
   birthday: string | null;
   gender: "male" | "female" | null;
 }
+
+const RELIGION_OPTIONS = [
+  { value: "christian", label: "Cristão" },
+  { value: "muslim", label: "Muçulmano" },
+  { value: "hindu", label: "Hindu" },
+  { value: "jewish", label: "Judaico" },
+  { value: "other", label: "Outra" },
+  { value: "none", label: "Nenhuma" },
+  { value: "unspecified", label: "Prefiro não dizer" },
+];
+
+const PRIMARY_GOAL_OPTIONS = [
+  { value: "relationship", label: "Melhorar o meu relacionamento" },
+  { value: "books", label: "Ler livros" },
+  { value: "wellbeing", label: "Bem-estar emocional" },
+  { value: "growth", label: "Crescimento pessoal" },
+  { value: "explore", label: "Explorar a aplicação" },
+];
 
 const NOTIF_KEY = "lovenest_notif_prefs";
 const defaultPrefs = {
@@ -108,6 +128,13 @@ export default function Settings() {
 
   const [notifPrefs, setNotifPrefs] = useState(loadPrefs);
 
+  // Personalização (Onboarding V2)
+  const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [religion, setReligion] = useState<string | null>(null);
+  const [primaryGoal, setPrimaryGoal] = useState<string | null>(null);
+  const [usageMode, setUsageMode] = useState<"solo" | "couple" | null>(null);
+  const [savingPersonalization, setSavingPersonalization] = useState(false);
+
   const [exporting, setExporting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -134,7 +161,7 @@ export default function Settings() {
   const [preferredHour, setPreferredHour] = useState(10);
   const [savingSmart, setSavingSmart] = useState(false);
 
-  const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'notifications' | 'customization' | 'verification' | 'data'>('menu');
+  const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'personalization' | 'notifications' | 'customization' | 'verification' | 'data'>('menu');
 
   const copyToClipboard = async (text: string, message: string) => {
     try {
@@ -148,7 +175,7 @@ export default function Settings() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (["profile", "house", "notifications", "customization", "verification", "data"].includes(hash)) {
+      if (["profile", "house", "personalization", "notifications", "customization", "verification", "data"].includes(hash)) {
         setCurrentCategory(hash as any);
       }
     };
@@ -247,6 +274,10 @@ export default function Settings() {
         setGender(data.gender as any);
         setAvatarUrl(data.avatar_url);
         setReferralCode(data.referral_code ?? "");
+        setCountryCode((data as any).country_code ?? null);
+        setReligion((data as any).religion ?? null);
+        setPrimaryGoal((data as any).primary_goal ?? null);
+        setUsageMode((data as any).usage_mode ?? null);
       }
       
       // Load Smart Notif Settings
@@ -302,6 +333,20 @@ export default function Settings() {
     setSaving(false);
     toast({ title: "Perfil atualizado! ✨" });
     window.dispatchEvent(new CustomEvent("onboarding-refresh"));
+  };
+
+  const handleSavePersonalization = async () => {
+    if (!user) return;
+    setSavingPersonalization(true);
+    const countryName = COUNTRIES.find(c => c.code === countryCode)?.name ?? null;
+    await supabase.from("profiles").update({
+      country: countryName,
+      country_code: countryCode,
+      religion,
+      primary_goal: primaryGoal,
+    } as any).eq("user_id", user.id);
+    setSavingPersonalization(false);
+    toast({ title: "Personalização atualizada! ✨" });
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -564,6 +609,7 @@ export default function Settings() {
   const menuItems = [
     { id: 'profile',       label: 'Meu Perfil',           sub: 'Dados e foto de perfil',       icon: <User className="h-5 w-5" strokeWidth={1.5} /> },
     { id: 'house',         label: 'Nossa Casa',            sub: 'Dados do parceiro e namoro',   icon: <Heart className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'personalization', label: 'Sobre Ti',            sub: 'País, espiritualidade e objetivo', icon: <Globe className="h-5 w-5" strokeWidth={1.5} /> },
     { id: 'notifications', label: 'Notificações',          sub: 'Alertas e avisos do app',      icon: <Bell className="h-5 w-5" strokeWidth={1.5} /> },
     { id: 'verification',  label: 'Verificar Identidade',  sub: 'Segurança e confiança',        icon: <ShieldCheck className="h-5 w-5" strokeWidth={1.5} /> },
     { id: 'customization', label: 'Personalização',        sub: 'Fundo do chat e opacidade',    icon: <Palette className="h-5 w-5" strokeWidth={1.5} /> },
@@ -696,6 +742,65 @@ export default function Settings() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {currentCategory === 'personalization' && (
+            <div className="space-y-6">
+              <div className="glass-card p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label className="ml-1 font-bold text-sm">País</Label>
+                  <CountryPicker value={countryCode} onSelect={setCountryCode} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="ml-1 font-bold text-sm">Espiritualidade</Label>
+                  <Select value={religion || "unspecified"} onValueChange={(v) => setReligion(v)}>
+                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      {RELIGION_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="ml-1 font-bold text-sm">O que te trouxe ao LoveNest</Label>
+                  <Select value={primaryGoal || ""} onValueChange={(v) => setPrimaryGoal(v)}>
+                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue placeholder="Escolhe um objetivo" /></SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      {PRIMARY_GOAL_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleSavePersonalization} disabled={savingPersonalization} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">
+                  {savingPersonalization && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
+                </Button>
+              </div>
+
+              {usageMode === "solo" && (
+                <div className="glass-card p-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-500 shrink-0">
+                      <Users className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm">Queres viver o LoveNest em casal?</h3>
+                      <p className="text-xs text-muted-foreground">Partilha o código abaixo com o teu par.</p>
+                    </div>
+                  </div>
+                  {houseInviteCode && (
+                    <div className="flex gap-2">
+                      <Input value={houseInviteCode} readOnly className="h-12 bg-primary/5 border-primary/20 text-center font-black tracking-widest text-primary text-lg rounded-xl" />
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border" onClick={() => copyToClipboard(houseInviteCode, "Código copiado!")}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <p className="text-[9px] text-muted-foreground font-black italic px-1">Quando o teu par entrar com este código, as funcionalidades de casal são desbloqueadas automaticamente.</p>
+                </div>
+              )}
             </div>
           )}
 

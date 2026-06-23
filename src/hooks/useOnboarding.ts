@@ -16,7 +16,7 @@ function isPushCapable(): boolean {
   return major > 16 || (major === 16 && minor >= 4);
 }
 
-export type OnboardingStep = "profile" | "house" | "notifications" | "complete";
+export type OnboardingStep = "house" | "notifications" | "complete";
 
 export function useOnboarding() {
   const { user } = useAuth();
@@ -32,27 +32,7 @@ export function useOnboarding() {
     }
 
     try {
-      // 1. Check Profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name, gender, birthday")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const profileComplete = 
-        profile?.display_name && 
-        !profile.display_name.includes("@") && 
-        profile.display_name !== "LoveNest" &&
-        profile?.gender && 
-        profile?.birthday;
-
-      if (!profileComplete) {
-        setStep("profile");
-        setLoading(false);
-        return;
-      }
-
-      // 2. Check House (if paired)
+      // 1. Check House (if paired)
       if (spaceId) {
         const { data: space } = await supabase
           .from("couple_spaces")
@@ -78,7 +58,7 @@ export function useOnboarding() {
         // For now, let's focus on the case where they ARE in a house but it's empty.
       }
 
-      // 3. Check Notifications
+      // 2. Check Notifications
       // Skip if: device can't support push, user dismissed, or not enough app opens yet.
       // We defer the notification ask to the 3rd open — reduces early abandonment.
       const pushCapable = isPushCapable();

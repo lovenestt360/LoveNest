@@ -5,6 +5,22 @@ import { useToast } from "@/hooks/use-toast";
 import { track } from "@vercel/analytics";
 import { Share2, Copy, Loader2, ArrowRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfile";
+import { COUNTRIES } from "@/data/countries";
+import { WelcomeStep } from "@/components/onboarding/steps/WelcomeStep";
+import { CountryStep } from "@/components/onboarding/steps/CountryStep";
+import { GenderStep } from "@/components/onboarding/steps/GenderStep";
+import { ReligionStep } from "@/components/onboarding/steps/ReligionStep";
+import { UsageModeStep } from "@/components/onboarding/steps/UsageModeStep";
+import { PrimaryGoalStep } from "@/components/onboarding/steps/PrimaryGoalStep";
+
+type OnboardingDraft = {
+  countryCode: string | null;
+  gender: string | null;
+  religion: string | null;
+  usageMode: "solo" | "couple" | null;
+  primaryGoal: string | null;
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -65,6 +81,16 @@ export default function CoupleSpace() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Onboarding V2 — questionário de personalização (país/género/espiritualidade/
+  // modo/objetivo). Vive aqui porque /casa já é o gate obrigatório existente
+  // para qualquer utilizador sem couple_space_id; respostas ficam em estado
+  // local e só são persistidas no fim, para evitar ambiguidade de retoma
+  // (gender=null tanto significa "ainda não respondido" como "prefiro não dizer").
+  const { profile, loading: profileLoading, update: updateProfile, completeOnboarding } = useProfile();
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [draft, setDraft] = useState<OnboardingDraft>({ countryCode: null, gender: null, religion: null, usageMode: null, primaryGoal: null });
+  const [creatingSolo, setCreatingSolo] = useState(false);
 
   const memberCount = useMemo(() => {
     if (state.status !== "has_house") return 0;
@@ -158,6 +184,62 @@ export default function CoupleSpace() {
     }
   };
 
+  // Modo solo: cria um espaço de 1 membro em silêncio (reaproveita o mesmo
+  // couple_space_id que toda a app já depende de — Biblioteca, Mood, trial,
+  // etc. — sem ecrã de código/convite) e entra direto na app.
+  const handleCreateSoloSpace = useCallback(async () => {
+    setCreatingSolo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/entrar"); return; }
+
+      const { data: existing } = await supabase
+        .from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
+
+      if (!existing) {
+        const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const { data: space, error: spaceError } = await supabase
+          .from("couple_spaces").insert({ invite_code: inviteCode }).select().single();
+        if (spaceError) throw spaceError;
+
+        const { error: memberError } = await supabase.from("members")
+          .insert({ couple_space_id: space.id, user_id: user.id });
+        if (memberError && memberError.code !== "23505") throw memberError;
+        track("space_created_solo");
+      }
+
+      navigate("/", { replace: true });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro ao preparar o teu espaço", description: error.message });
+      setCreatingSolo(false);
+    }
+  }, [navigate, toast]);
+
+  // Assim que o questionário termina em modo solo, avança automaticamente —
+  // não há ecrã de "à espera do parceiro" para quem escolheu usar sozinho.
+  useEffect(() => {
+    if (profile?.onboarding_completed && profile.usage_mode === "solo" && state.status === "no_house" && !creatingSolo) {
+      handleCreateSoloSpace();
+    }
+  }, [profile?.onboarding_completed, profile?.usage_mode, state.status, creatingSolo, handleCreateSoloSpace]);
+
+  const finishOnboarding = async (primaryGoal: string) => {
+    try {
+      const countryName = COUNTRIES.find(c => c.code === draft.countryCode)?.name ?? null;
+      await updateProfile({
+        country: countryName,
+        country_code: draft.countryCode,
+        gender: draft.gender,
+        religion: draft.religion,
+        usage_mode: draft.usageMode,
+        primary_goal: primaryGoal,
+      });
+      await completeOnboarding();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro ao guardar as tuas respostas", description: error.message });
+    }
+  };
+
   const handleJoinSpace = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setLoadingAction(true);
@@ -239,13 +321,64 @@ export default function CoupleSpace() {
     }
   };
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  if (state.status === "loading") {
+  // ── Loading (perfil ou espaço) ───────────────────────────────────────────
+  if (profileLoading || state.status === "loading" || creatingSolo) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-rose-300 animate-spin" />
       </div>
     );
+  }
+
+  // ── Onboarding V2 — questionário de personalização (uma pergunta por ecrã) ─
+  if (profile && !profile.onboarding_completed) {
+    const goBack = () => setOnboardingStep(s => Math.max(0, s - 1));
+
+    switch (onboardingStep) {
+      case 0:
+        return <WelcomeStep onContinue={() => setOnboardingStep(1)} />;
+      case 1:
+        return (
+          <CountryStep
+            initialValue={draft.countryCode}
+            onBack={goBack}
+            onSubmit={(countryCode) => { setDraft(d => ({ ...d, countryCode })); setOnboardingStep(2); }}
+          />
+        );
+      case 2:
+        return (
+          <GenderStep
+            initialValue={draft.gender}
+            onBack={goBack}
+            onSubmit={(gender) => { setDraft(d => ({ ...d, gender })); setOnboardingStep(3); }}
+          />
+        );
+      case 3:
+        return (
+          <ReligionStep
+            initialValue={draft.religion}
+            onBack={goBack}
+            onSubmit={(religion) => { setDraft(d => ({ ...d, religion })); setOnboardingStep(4); }}
+          />
+        );
+      case 4:
+        return (
+          <UsageModeStep
+            initialValue={draft.usageMode}
+            onBack={goBack}
+            onSubmit={(usageMode) => { setDraft(d => ({ ...d, usageMode })); setOnboardingStep(5); }}
+          />
+        );
+      default:
+        return (
+          <PrimaryGoalStep
+            initialValue={draft.primaryGoal}
+            onBack={goBack}
+            continueLabel={draft.usageMode === "solo" ? "Entrar no LoveNest" : "Continuar"}
+            onSubmit={(primaryGoal) => { setDraft(d => ({ ...d, primaryGoal })); finishOnboarding(primaryGoal); }}
+          />
+        );
+    }
   }
 
   // ── No house — create or join ─────────────────────────────────────────────

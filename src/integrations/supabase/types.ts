@@ -1643,35 +1643,59 @@ export type Database = {
           age: number | null
           avatar_url: string | null
           birthday: string | null
+          country: string | null
+          country_code: string | null
           created_at: string
           display_name: string | null
           gender: string | null
+          language_preference: string | null
+          onboarding_completed: boolean
+          onboarding_completed_at: string | null
+          primary_goal: string | null
           referral_code: string | null
+          religion: string | null
           timezone: string | null
           updated_at: string
+          usage_mode: string | null
           user_id: string
           verification_status: string | null
         }
         Insert: {
           avatar_url?: string | null
           birthday?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           display_name?: string | null
           gender?: string | null
+          language_preference?: string | null
+          onboarding_completed?: boolean
+          onboarding_completed_at?: string | null
+          primary_goal?: string | null
           referral_code?: string | null
+          religion?: string | null
           timezone?: string | null
           updated_at?: string
+          usage_mode?: string | null
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           birthday?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           display_name?: string | null
           gender?: string | null
+          language_preference?: string | null
+          onboarding_completed?: boolean
+          onboarding_completed_at?: string | null
+          primary_goal?: string | null
           referral_code?: string | null
+          religion?: string | null
           timezone?: string | null
           updated_at?: string
+          usage_mode?: string | null
           user_id?: string
         }
         Relationships: []

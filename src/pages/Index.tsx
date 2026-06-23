@@ -17,6 +17,7 @@ import {
   ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
+import { useProfile } from "@/hooks/useProfile";
 
 
 import { cn } from "@/lib/utils";
@@ -356,6 +357,8 @@ const Index = () => {
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
   const spaceId = useCoupleSpaceId();
+  const { profile } = useProfile();
+  const isSolo = profile?.usage_mode === "solo";
   const { streak: streakData } = useStreak();
   const { pendingMilestone, recentMilestone, confirmMilestone } = useMilestone(
     streakData?.currentStreak ?? 0,
@@ -466,15 +469,17 @@ const Index = () => {
           />
         </div>
 
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
-          <LoveStreakCard />
-          {/* Milestone micro-memory — visible for 24h after any streak milestone */}
-          {recentMilestone && (
-            <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 mt-1.5 animate-in fade-in duration-500">
-              {getMilestoneMicroMemory(recentMilestone)}
-            </p>
-          )}
-        </div>
+        {!isSolo && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
+            <LoveStreakCard />
+            {/* Milestone micro-memory — visible for 24h after any streak milestone */}
+            {recentMilestone && (
+              <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 mt-1.5 animate-in fade-in duration-500">
+                {getMilestoneMicroMemory(recentMilestone)}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Partner Presence Indicator */}
         {avatars.partner && (
@@ -531,7 +536,7 @@ const Index = () => {
             accent="text-pink-500"
           />
 
-          {isEnabled("home_conversas") && (
+          {isEnabled("home_conversas") && !isSolo && (
             <DashCard
               icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
               title="Chat"
@@ -545,7 +550,7 @@ const Index = () => {
             />
           )}
 
-          {(isEnabled("home_jejum") || isEnabled("home_oracao")) && (
+          {(isEnabled("home_jejum") || isEnabled("home_oracao")) && profile?.religion !== "none" && (
             <DashCard
               icon={<BookHeart className="h-5 w-5" strokeWidth={1.5} />}
               title="Jornada Espiritual"
@@ -598,7 +603,7 @@ const Index = () => {
             />
           )}
 
-          {isEnabled("home_desafios") && (
+          {isEnabled("home_desafios") && !isSolo && (
             <AppIconButton
               icon={<Trophy className="w-5 h-5" />}
               label="Desafios"
@@ -617,7 +622,7 @@ const Index = () => {
             />
           )}
 
-          {isEnabled("home_capsula") && (
+          {isEnabled("home_capsula") && !isSolo && (
             <AppIconButton
               icon={<Clock className="w-5 h-5" />}
               label="Cápsula"
@@ -639,7 +644,7 @@ const Index = () => {
 
 {/* ── Footer / Invite Section ── */}
       <div className="space-y-4 pt-4 px-1">
-        {!avatars.partner && houseInviteCode && (
+        {!isSolo && !avatars.partner && houseInviteCode && (
           <div className="glass-card bg-gradient-to-br from-primary/15 to-transparent border-primary/20 rounded-[2.5rem] p-5 shadow-sm">
              <div className="flex items-center gap-3 mb-4 text-center justify-center flex-col">
                 <HeartHandshake className="w-8 h-8 text-primary" />

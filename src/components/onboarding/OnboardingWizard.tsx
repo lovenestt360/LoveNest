@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Heart, User, Bell, Sparkles, BellOff } from "lucide-react";
+import { Heart, Bell, Sparkles, BellOff } from "lucide-react";
 
 export function OnboardingWizard() {
   const { step, loading, refresh, userId } = useOnboarding();
@@ -35,9 +35,7 @@ export function OnboardingWizard() {
   }, [step, loading, location]);
 
   const handleAction = () => {
-    if (step === "profile") {
-      navigate("/configuracoes#profile");
-    } else if (step === "house") {
+    if (step === "house") {
       navigate("/configuracoes#house");
     } else if (step === "notifications") {
       navigate("/configuracoes#notifications");
@@ -76,15 +74,6 @@ export function OnboardingWizard() {
       };
 
   const content = {
-    profile: {
-      title: "Boas-vindas ao LoveNest",
-      description:
-        "Para começarmos, configura o teu perfil. É rápido e personaliza a vossa experiência.",
-      icon: <User className="h-12 w-12 text-rose-500" />,
-      button: "Configurar Perfil",
-      showSkip: false,
-      skipLabel: "",
-    },
     house: {
       title: "O vosso Ninho",
       description:
@@ -97,7 +86,7 @@ export function OnboardingWizard() {
     notifications: notificationsContent,
   };
 
-  const current = content[step as keyof typeof content] ?? content.profile;
+  const current = content[step as keyof typeof content] ?? content.house;
   const isNotifStep = step === "notifications";
 
   return (
