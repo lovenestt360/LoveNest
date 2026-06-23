@@ -523,16 +523,21 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
     const [uploadingFile, setUploadingFile] = useState(false);
     const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
 
-    // Para LoveNest Book, chapter_count é mantido por trigger na BD — sincroniza
-    // o valor mostrado sempre que a lista de livros é atualizada (ex: ao publicar
-    // um capítulo no gestor), sem nunca o tornar editável/submetível.
+    // Para LoveNest Book, chapter_count e estimated_minutes são mantidos por
+    // trigger na BD — sincroniza os valores mostrados sempre que a lista de
+    // livros é atualizada (ex: ao publicar um capítulo no gestor), sem nunca
+    // os tornar editáveis/submetíveis.
     useEffect(() => {
         if (!editingId || form.file_type !== "lovenest") return;
         const latest = books.find(b => b.id === editingId);
-        const latestCount = latest?.chapter_count != null ? String(latest.chapter_count) : "0";
-        if (latest && latestCount !== form.chapter_count) {
-            setForm(f => ({ ...f, chapter_count: latestCount }));
-        }
+        if (!latest) return;
+        const latestCount = latest.chapter_count != null ? String(latest.chapter_count) : "0";
+        const latestMinutes = latest.estimated_minutes != null ? String(latest.estimated_minutes) : "";
+        setForm(f => (
+            latestCount !== f.chapter_count || latestMinutes !== f.estimated_minutes
+                ? { ...f, chapter_count: latestCount, estimated_minutes: latestMinutes }
+                : f
+        ));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [books, editingId, form.file_type]);
 
@@ -627,11 +632,14 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                 file_path: form.file_path,
                 file_type: form.file_type,
             };
-            // Para LoveNest Book, chapter_count é mantido automaticamente por
-            // trigger a partir dos capítulos publicados — nunca o sobrescrever
-            // aqui, ou desfaz-se o valor real sempre que o livro é guardado.
+            // Para LoveNest Book, chapter_count e estimated_minutes são mantidos
+            // automaticamente por trigger a partir dos capítulos publicados —
+            // nunca sobrescrever aqui, ou desfaz-se o valor real sempre que o
+            // livro é guardado.
             if (form.file_type !== "lovenest") {
                 payload.chapter_count = form.chapter_count ? Number(form.chapter_count) : null;
+            } else {
+                delete payload.estimated_minutes;
             }
             if (editingId) {
                 const { error } = await adminClient.from("books" as any).update(payload).eq("id", editingId);
@@ -748,7 +756,13 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tempo estimado (min)</Label>
-                            <Input type="number" min="0" value={form.estimated_minutes} onChange={(e) => setForm(f => ({ ...f, estimated_minutes: e.target.value }))} className="bg-background" />
+                            {form.file_type === "lovenest" ? (
+                                <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
+                                    {form.estimated_minutes || 0} (automático)
+                                </div>
+                            ) : (
+                                <Input type="number" min="0" value={form.estimated_minutes} onChange={(e) => setForm(f => ({ ...f, estimated_minutes: e.target.value }))} className="bg-background" />
+                            )}
                         </div>
                         <div>
                             <Label className="text-sm font-bold text-muted-foreground mb-1 block">Páginas (PDF)</Label>
