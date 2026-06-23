@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ArrowLeft, CheckCircle, Plus, Trophy, Flame, Gift, Sparkles, Loader2, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useBiblioteca, type Book } from "@/hooks/useBiblioteca";
+import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +66,7 @@ export default function Challenges() {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { books, ownedBookIds, myProgressByBook } = useBiblioteca();
+    const { profile, loading: profileLoading } = useProfile();
 
     const [loading, setLoading] = useState(true);
     const [challenges, setChallenges] = useState<any[]>([]);
@@ -231,6 +233,10 @@ export default function Challenges() {
     };
 
     const completedCount = challenges.filter(c => c.is_completed).length;
+
+    if (!profileLoading && profile?.usage_mode === "solo") {
+        return <Navigate to="/" replace />;
+    }
 
     return (
         <div className="min-h-screen bg-background pb-20">
