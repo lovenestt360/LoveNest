@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { useFreeMode } from "@/hooks/useFreeMode";
+import { useProfile } from "@/hooks/useProfile";
 import {
   Home,
   MessageCircle,
@@ -60,15 +61,19 @@ export function BottomTabs() {
     complaintsUnread,
   } = useAppNotifContext();
   const { freeMode } = useFreeMode();
+  const { profile } = useProfile();
   const [moreOpen, setMoreOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const hasSpiritual = profile?.religion !== "none";
+  const effectivePrayerUnread = hasSpiritual ? prayerUnread : 0;
+
   const moreBadge =
-    memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread + tasksUnread;
+    memoriesUnread + scheduleUnread + effectivePrayerUnread + complaintsUnread + tasksUnread;
   const isMoreActive = MORE_PATHS.some((p) => location.pathname === p);
 
-  const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread;
+  const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + effectivePrayerUnread + complaintsUnread;
 
   const getBadge = (to: string) => {
     switch (to) {
@@ -148,6 +153,7 @@ export function BottomTabs() {
               <div className="grid grid-cols-4 gap-3">
                 {moreItems
                   .filter(item => freeMode ? item.to !== "/subscricao" : true)
+                  .filter(item => profile?.religion === "none" ? item.to !== "/jornada-espiritual" : true)
                   .map(({ to, label, Icon }) => {
                     const badge = getMoreBadge(to);
                     const active = location.pathname === to;
