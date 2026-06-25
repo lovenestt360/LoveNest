@@ -569,13 +569,15 @@ const Index = () => {
             />
           )}
 
-          <DashCard
-            icon={<Flower2 className="h-5 w-5" strokeWidth={1.5} />}
-            title="Ciclo"
-            lines={["Saúde & Sintonia", "Ver o vosso ciclo"]}
-            to="/ciclo"
-            accent="text-pink-500"
-          />
+          {!(profileReady && isSolo && profile?.gender === "male") && (
+            <DashCard
+              icon={<Flower2 className="h-5 w-5" strokeWidth={1.5} />}
+              title="Ciclo"
+              lines={["Saúde & Sintonia", "Ver o vosso ciclo"]}
+              to="/ciclo"
+              accent="text-pink-500"
+            />
+          )}
 
           {profileReady && !isSolo && (
             <DashCard

@@ -67,6 +67,7 @@ export function BottomTabs() {
   const location = useLocation();
 
   const isSolo = profile?.usage_mode === "solo";
+  const hideCiclo = isSolo && profile?.gender === "male";
   const visibleMainTabs = isSolo ? mainTabs.filter(t => t.to !== "/chat") : mainTabs;
 
   const hasSpiritual = profile?.religion !== "none";
@@ -160,6 +161,7 @@ export function BottomTabs() {
                   .filter(item => freeMode ? item.to !== "/subscricao" : true)
                   .filter(item => profile?.religion === "none" ? item.to !== "/jornada-espiritual" : true)
                   .filter(item => isSolo ? item.to !== "/conflitos" : true)
+                  .filter(item => hideCiclo ? item.to !== "/ciclo" : true)
                   .map(({ to, label, Icon }) => {
                     const badge = getMoreBadge(to);
                     const active = location.pathname === to;

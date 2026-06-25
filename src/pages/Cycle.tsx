@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useCycleData } from "@/features/cycle/useCycleData";
 import { CycleToday } from "@/features/cycle/CycleToday";
 import { CyclePartnerView } from "@/features/cycle/CyclePartnerView";
 import { CycleCalendar } from "@/features/cycle/CycleCalendar";
 import { CycleHistory } from "@/features/cycle/CycleHistory";
 import { useAuth } from "@/features/auth/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Flower2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +16,7 @@ export default function Cycle() {
   const data = useCycleData();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { profile, loading: profileLoading } = useProfile();
   const isPartner = data.isMale;
 
   const tabs = isPartner
@@ -21,6 +24,11 @@ export default function Cycle() {
     : [{ id: "hoje", label: "Hoje" }, { id: "calendario", label: "Calendário" }, { id: "historico", label: "Histórico" }];
 
   const [activeTab, setActiveTab] = useState("hoje");
+
+  // Homem em modo solo: não tem ciclo próprio nem parceira para acompanhar.
+  if (!profileLoading && profile?.usage_mode === "solo" && profile?.gender === "male") {
+    return <Navigate to="/" replace />;
+  }
 
   const handleReset = async () => {
     if (!user || !confirm("Apagar todos os dados do ciclo? Esta acção é irreversível.")) return;
