@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowRight } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { LogoIcon } from "@/components/Logo";
+import { getPasswordError } from "@/lib/passwordPolicy";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
@@ -50,8 +51,9 @@ export default function Signup() {
       toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
       return;
     }
-    if (password.length < 6) {
-      toast({ variant: "destructive", title: "Senha muito curta", description: "A senha deve ter pelo menos 6 caracteres." });
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      toast({ variant: "destructive", title: "Senha fraca", description: passwordError });
       return;
     }
     if (displayName.trim().length < 2) {
@@ -77,8 +79,8 @@ export default function Signup() {
         navigate("/casa");
       } else {
         track("signup_email_confirm", { has_invite: !!inviteCode });
-        toast({ title: "Verifica o teu e-mail!", description: "Enviámos um link de confirmação." });
-        navigate("/entrar");
+        localStorage.setItem("confirm_email", trimmedEmail);
+        navigate("/confirmar-email");
       }
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro ao criar", description: err.message });
@@ -170,11 +172,11 @@ export default function Signup() {
               <label className="text-sm font-medium text-foreground">Senha</label>
               <Input
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
               />
             </div>

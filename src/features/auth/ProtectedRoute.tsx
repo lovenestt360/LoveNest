@@ -142,6 +142,13 @@ export function ProtectedRoute() {
     />;
   }
 
+  // Email ainda não confirmado — sem isto, qualquer email (mesmo inexistente)
+  // dava acesso total à app.
+  if (!verifiedUser.email_confirmed_at) {
+    localStorage.setItem("confirm_email", verifiedUser.email ?? "");
+    return <Navigate to="/confirmar-email" replace />;
+  }
+
   if (checkError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">

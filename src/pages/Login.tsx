@@ -78,6 +78,11 @@ export default function Login() {
       track("login_completed", { method: "password" });
       navigate("/casa");
     } catch (err: any) {
+      if (err.message?.includes("Email not confirmed")) {
+        localStorage.setItem("confirm_email", trimmed);
+        navigate("/confirmar-email");
+        return;
+      }
       const msg = err.message.includes("Invalid login credentials")
         ? "Email ou senha incorretos."
         : err.message;

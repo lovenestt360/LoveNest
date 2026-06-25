@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
+import { getPasswordError } from "@/lib/passwordPolicy";
 
 export default function ResetPassword() {
   const [ready, setReady] = useState(false);
@@ -28,8 +29,9 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ variant: "destructive", title: "Senha muito curta", description: "A senha deve ter pelo menos 6 caracteres." });
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      toast({ variant: "destructive", title: "Senha fraca", description: passwordError });
       return;
     }
     if (password !== confirm) {
@@ -87,11 +89,11 @@ export default function ResetPassword() {
                 <label className="text-sm font-medium text-foreground">Nova senha</label>
                 <Input
                   type="password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
                 />
               </div>

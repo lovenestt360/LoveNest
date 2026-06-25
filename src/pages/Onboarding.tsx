@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { track } from "@vercel/analytics";
+import { getPasswordError } from "@/lib/passwordPolicy";
 
 // ── Brand ─────────────────────────────────────────────────────────────────────
 const PINK = "#FF6B8F";
@@ -173,8 +174,9 @@ export default function Onboarding() {
       toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
       return;
     }
-    if (password.length < 6) {
-      toast({ variant: "destructive", title: "Senha curta", description: "Mínimo de 6 caracteres." });
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      toast({ variant: "destructive", title: "Senha fraca", description: passwordError });
       return;
     }
 
@@ -411,7 +413,7 @@ export default function Onboarding() {
             />
             <input
               type="password"
-              placeholder="Senha (mín. 6 caracteres)"
+              placeholder="Senha (mín. 8 caracteres)"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
