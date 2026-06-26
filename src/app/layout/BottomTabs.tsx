@@ -22,7 +22,7 @@ import {
   CreditCard,
   Heart,
   Library,
-  BookHeart,
+  CalendarHeart,
 } from "lucide-react";
 import {
   Sheet,
@@ -41,7 +41,7 @@ const mainTabs = [
 
 const moreItems = [
   { to: "/memorias", label: "Memórias", Icon: Image },
-  { to: "/historia", label: "Nossa História", Icon: BookHeart },
+  { to: "/historia", label: "Nossa História", Icon: CalendarHeart },
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
   { to: "/jornada-espiritual", label: "Espiritual", Icon: BookOpen },
   { to: "/conflitos", label: "Conflitos", Icon: HeartHandshake },

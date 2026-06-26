@@ -12,7 +12,7 @@ import { computeCycleInfo, useCycleTarget, type CycleProfile, type PeriodEntry }
 import { getEasterDate, dayResultLabel } from "@/features/fasting/types";
 import { Progress } from "@/components/ui/progress";
 import {
-  CheckSquare, Smile, Camera, CalendarDays, BookHeart,
+  CheckSquare, Smile, Camera, CalendarDays, BookHeart, CalendarHeart,
   HeartHandshake, MessageCircle, Heart, Flower2,
   ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
@@ -618,7 +618,7 @@ const Index = () => {
 
           {isEnabled("home_historia") && profileReady && !isSolo && (
             <AppIconButton
-              icon={<BookHeart className="w-5 h-5" />}
+              icon={<CalendarHeart className="w-5 h-5" />}
               label="Nossa História"
               to="/historia"
               color="text-fuchsia-500"
