@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.generate-love-wrapped]
 verify_jwt = false
+
+[functions.create-paysuite-payment]
+verify_jwt = false
+
+[functions.paysuite-webhook]
+verify_jwt = false

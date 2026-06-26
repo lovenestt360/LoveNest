@@ -124,6 +124,7 @@ export default function Admin() {
 
     const [newPlanName, setNewPlanName] = useState("");
     const [newPlanPrice, setNewPlanPrice] = useState("");
+    const [newPlanPriceMzn, setNewPlanPriceMzn] = useState("");
     const [newPlanBillingType, setNewPlanBillingType] = useState("monthly");
     const [newPlanTierLevel, setNewPlanTierLevel] = useState(1);
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -133,6 +134,7 @@ export default function Admin() {
     const [editingPlan, setEditingPlan] = useState<any>(null);
     const [editPlanName, setEditPlanName] = useState("");
     const [editPlanPrice, setEditPlanPrice] = useState("");
+    const [editPlanPriceMzn, setEditPlanPriceMzn] = useState("");
     const [editPlanBillingType, setEditPlanBillingType] = useState("monthly");
     const [editPlanTierLevel, setEditPlanTierLevel] = useState(1);
     const [editPlanFeatures, setEditPlanFeatures] = useState<string[]>([]);
@@ -509,6 +511,7 @@ export default function Admin() {
             const { error } = await adminClient.from("subscription_plans").insert({
                 name: newPlanName,
                 price: newPlanPrice,
+                price_mzn: newPlanPriceMzn.trim() ? Number(newPlanPriceMzn) : null,
                 billing_type: newPlanBillingType,
                 tier_level: newPlanTierLevel,
                 features: selectedFeatures,
@@ -518,6 +521,7 @@ export default function Admin() {
             toast({ title: "Plano Criado", description: "Novo plano de subscrição adicionado." });
             setNewPlanName("");
             setNewPlanPrice("");
+            setNewPlanPriceMzn("");
             setNewPlanBillingType("monthly");
             setSelectedFeatures([]);
             fetchAllData();
@@ -589,6 +593,7 @@ export default function Admin() {
         setEditingPlan(plan);
         setEditPlanName(plan.name);
         setEditPlanPrice(plan.price);
+        setEditPlanPriceMzn(plan.price_mzn != null ? String(plan.price_mzn) : "");
         setEditPlanBillingType(plan.billing_type || "monthly");
         setEditPlanTierLevel(plan.tier_level ?? 1);
         const validIds = ALL_FEATURES.map(f => f.id);
@@ -602,6 +607,7 @@ export default function Admin() {
             const { error } = await adminClient.from("subscription_plans").update({
                 name: editPlanName,
                 price: editPlanPrice,
+                price_mzn: editPlanPriceMzn.trim() ? Number(editPlanPriceMzn) : null,
                 billing_type: editPlanBillingType,
                 tier_level: editPlanTierLevel,
                 features: editPlanFeatures
@@ -1267,6 +1273,13 @@ export default function Admin() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
+                                    <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço automático (MZN)</label>
+                                    <Input type="number" min="0" step="0.01" value={newPlanPriceMzn} onChange={e => setNewPlanPriceMzn(e.target.value)} placeholder="Ex: 5000" className="bg-background" />
+                                    <p className="text-[11px] text-muted-foreground mt-1">Só preenche se quiseres ativar o pagamento automático (PaySuite) para este plano.</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
                                     <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
                                     <div className="flex flex-wrap gap-2">
                                         {BILLING_TYPES.map(bt => (
@@ -1334,6 +1347,11 @@ export default function Admin() {
                                         <div>
                                             <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
                                             <Input value={editPlanPrice} onChange={e => setEditPlanPrice(e.target.value)} className="bg-background" />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço automático (MZN)</label>
+                                            <Input type="number" min="0" step="0.01" value={editPlanPriceMzn} onChange={e => setEditPlanPriceMzn(e.target.value)} placeholder="Ex: 5000" className="bg-background" />
+                                            <p className="text-[11px] text-muted-foreground mt-1">Só preenche se quiseres ativar o pagamento automático (PaySuite) para este plano.</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>

@@ -1462,30 +1462,36 @@ export type Database = {
           amount: string
           couple_space_id: string
           created_at: string | null
+          external_id: string | null
           id: string
           method: string
           plan_name: string
           proof_url: string | null
+          provider: string
           status: string | null
         }
         Insert: {
           amount: string
           couple_space_id: string
           created_at?: string | null
+          external_id?: string | null
           id?: string
           method: string
           plan_name: string
           proof_url?: string | null
+          provider?: string
           status?: string | null
         }
         Update: {
           amount?: string
           couple_space_id?: string
           created_at?: string | null
+          external_id?: string | null
           id?: string
           method?: string
           plan_name?: string
           proof_url?: string | null
+          provider?: string
           status?: string | null
         }
         Relationships: [
@@ -1945,6 +1951,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: string
+          price_mzn: number | null
         }
         Insert: {
           billing_type?: string | null
@@ -1954,6 +1961,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price: string
+          price_mzn?: number | null
         }
         Update: {
           billing_type?: string | null
@@ -1963,6 +1971,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: string
+          price_mzn?: number | null
         }
         Relationships: []
       }
