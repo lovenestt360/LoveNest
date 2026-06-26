@@ -147,7 +147,7 @@ export function FloatingSetupChecklist() {
       {/* Checklist panel */}
       {open && (
         <div
-          className="fixed z-[9995] bottom-[88px] right-4 w-[290px] bg-card rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-border overflow-hidden animate-in slide-in-from-bottom-3 fade-in duration-300"
+          className="fixed z-[9995] bottom-[108px] right-4 w-[290px] bg-card rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-border overflow-hidden animate-in slide-in-from-bottom-3 fade-in duration-300"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
@@ -189,7 +189,7 @@ export function FloatingSetupChecklist() {
       <button
         onClick={() => { setOpen(o => !o); setPulse(false); }}
         className={cn(
-          "fixed z-[9999] bottom-[76px] right-4",
+          "fixed z-[9999] bottom-24 right-4",
           "w-14 h-14 rounded-full bg-rose-500 text-white",
           "shadow-[0_4px_20px_rgba(244,63,94,0.40)]",
           "flex items-center justify-center",

@@ -25,7 +25,7 @@ export function Fab() {
   if (location.pathname !== "/") return null;
 
   return (
-    <div className="fixed bottom-24 right-5 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-[116px] right-5 z-50 flex flex-col items-end gap-3">
 
       {/* Action items — stagger upward */}
       {ITEMS.map(({ label, Icon, path, color }, i) => (
