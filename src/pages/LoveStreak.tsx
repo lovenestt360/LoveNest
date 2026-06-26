@@ -15,7 +15,7 @@ import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import {
   Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star,
-  CheckSquare, Smile, BookOpen, CalendarDays,
+  CheckSquare, Smile, Library, CalendarDays,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -196,7 +196,7 @@ const MISSION_ICONS: Record<string, React.ReactNode> = {
   plano:   <CalendarDays className="w-4 h-4" strokeWidth={1.5} />,
   checkin: <CheckSquare className="w-4 h-4" strokeWidth={1.5} />,
   mood:    <Smile className="w-4 h-4" strokeWidth={1.5} />,
-  leitura: <BookOpen className="w-4 h-4" strokeWidth={1.5} />,
+  leitura: <Library className="w-4 h-4" strokeWidth={1.5} />,
 };
 
 // ─────────────────────────────────────────────
