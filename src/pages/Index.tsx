@@ -29,6 +29,7 @@ import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
 import { useStreak } from "@/features/streak/useStreak";
 import { useMilestone } from "@/hooks/useMilestone";
 import { MilestoneModal, getMilestoneMicroMemory } from "@/components/MilestoneModal";
+import { useRelationshipEvents } from "@/features/relationship-events/useRelationshipEvents";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -357,6 +358,7 @@ const Index = () => {
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
   const spaceId = useCoupleSpaceId();
+  const { nextSpecialDate } = useRelationshipEvents(spaceId);
   const { profile, loading: profileLoading } = useProfile();
   const isSolo = profile?.usage_mode === "solo";
   // Evita o flash de cartões de casal antes do perfil carregar (profile
@@ -470,6 +472,8 @@ const Index = () => {
               days={time.days} hours={time.hours} minutes={time.minutes} seconds={time.seconds}
               streak={0} hasDate={!!time.startDate} startDate={time.startDate}
               onSetDate={() => navigate("/configuracoes")}
+              nextSpecialDate={isEnabled("home_historia") ? nextSpecialDate : null}
+              onViewHistory={() => navigate("/historia")}
             />
           </div>
         )}
@@ -609,6 +613,15 @@ const Index = () => {
               badge={memoriesUnread}
               to="/memorias"
               color="text-violet-500"
+            />
+          )}
+
+          {isEnabled("home_historia") && profileReady && !isSolo && (
+            <AppIconButton
+              icon={<BookHeart className="w-5 h-5" />}
+              label="Nossa História"
+              to="/historia"
+              color="text-fuchsia-500"
             />
           )}
 

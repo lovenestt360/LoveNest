@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Sparkles } from "lucide-react";
 
 interface TimeTogetherCardProps {
   days: number;
@@ -9,6 +9,8 @@ interface TimeTogetherCardProps {
   hasDate: boolean;
   streak?: number;
   startDate?: string | null;
+  nextSpecialDate?: { title: string; daysUntil: number } | null;
+  onViewHistory?: () => void;
 }
 
 const MONTHS = [
@@ -21,7 +23,7 @@ function formatStartDate(iso: string): string {
   return `${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
 }
 
-export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, hasDate, startDate }: TimeTogetherCardProps) {
+export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, hasDate, startDate, nextSpecialDate, onViewHistory }: TimeTogetherCardProps) {
   if (!hasDate) {
     return (
       <button
@@ -101,6 +103,21 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, onSetDate, has
               Desde {formatStartDate(startDate)}
             </span>
           </div>
+        )}
+
+        {/* Next special date — tap-through to /historia */}
+        {nextSpecialDate && (
+          <button
+            onClick={onViewHistory}
+            className="flex items-center justify-center gap-1 mt-1 w-full active:opacity-60 transition-opacity"
+          >
+            <Sparkles className="w-2.5 h-2.5 text-rose-300" strokeWidth={1.5} />
+            <span className="text-[9px] text-muted-foreground/50 font-medium">
+              {nextSpecialDate.daysUntil === 0
+                ? `Hoje é ${nextSpecialDate.title}`
+                : `${nextSpecialDate.title} em ${nextSpecialDate.daysUntil} ${nextSpecialDate.daysUntil === 1 ? "dia" : "dias"}`}
+            </span>
+          </button>
         )}
 
       </div>

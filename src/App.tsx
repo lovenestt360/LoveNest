@@ -29,6 +29,7 @@ const Prayer = lazy(() => import("./pages/Prayer"));
 const Plano = lazy(() => import("./pages/Plano"));
 const Complaints = lazy(() => import("./pages/Complaints"));
 const Memories = lazy(() => import("./pages/Memories"));
+const History = lazy(() => import("./pages/History"));
 const Cycle = lazy(() => import("./pages/Cycle"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
@@ -116,6 +117,9 @@ const AppRoutes = () => (
         </Route>
         <Route element={<PremiumGuard requiredFeature="memories" />}>
           <Route path="memorias" element={<Memories />} />
+        </Route>
+        <Route element={<PremiumGuard requiredFeature="historia" />}>
+          <Route path="historia" element={<History />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="cycle" />}>
           <Route path="ciclo" element={<Cycle />} />

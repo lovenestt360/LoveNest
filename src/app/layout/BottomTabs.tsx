@@ -22,6 +22,7 @@ import {
   CreditCard,
   Heart,
   Library,
+  BookHeart,
 } from "lucide-react";
 import {
   Sheet,
@@ -40,6 +41,7 @@ const mainTabs = [
 
 const moreItems = [
   { to: "/memorias", label: "Memórias", Icon: Image },
+  { to: "/historia", label: "Nossa História", Icon: BookHeart },
   { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
   { to: "/jornada-espiritual", label: "Espiritual", Icon: BookOpen },
   { to: "/conflitos", label: "Conflitos", Icon: HeartHandshake },
@@ -165,6 +167,7 @@ export function BottomTabs() {
                     .filter(item => freeMode ? item.to !== "/subscricao" : true)
                     .filter(item => profile?.religion === "none" ? item.to !== "/jornada-espiritual" : true)
                     .filter(item => isSolo ? item.to !== "/conflitos" : true)
+                    .filter(item => isSolo ? item.to !== "/historia" : true)
                     .filter(item => hideCiclo ? item.to !== "/ciclo" : true)
                     .map(({ to, label, Icon }) => {
                       const badge = getMoreBadge(to);

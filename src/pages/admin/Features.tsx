@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 const DEFAULT_FEATURE_KEYS = [
   "home_lovestreak",
   "home_memories",
+  "home_historia",
   "home_capsula",
   "home_desafios",
   "home_oracao",

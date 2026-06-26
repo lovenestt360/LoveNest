@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["'Nunito'", "ui-rounded", "system-ui", "sans-serif"],
+        serif: ["'Merriweather'", "Georgia", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
