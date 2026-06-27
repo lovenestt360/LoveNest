@@ -85,6 +85,16 @@ const SYMPTOM_SECTIONS = [
 
 const ALL_SYMPTOM_KEYS = SYMPTOM_SECTIONS.flatMap((s) => s.items.map((i) => i.key));
 
+// Cada secção tem a sua própria identidade de cor — em vez de tudo ficar
+// rosa genérico ao selecionar, dá vida e ajuda a distinguir categorias
+// num ecrã com 25 sintomas.
+const SECTION_STYLES: Record<string, { soft: string; solid: string; text: string; border: string }> = {
+  "Físicos":    { soft: "bg-rose-50 dark:bg-rose-950/30",      solid: "bg-rose-500",    text: "text-rose-500",    border: "border-rose-300 dark:border-rose-700" },
+  "Emocionais": { soft: "bg-violet-50 dark:bg-violet-950/30",  solid: "bg-violet-500",  text: "text-violet-500",  border: "border-violet-300 dark:border-violet-700" },
+  "Digestivo":  { soft: "bg-sky-50 dark:bg-sky-950/30",        solid: "bg-sky-500",     text: "text-sky-500",     border: "border-sky-300 dark:border-sky-700" },
+  "Outros":     { soft: "bg-emerald-50 dark:bg-emerald-950/30", solid: "bg-emerald-500", text: "text-emerald-500", border: "border-emerald-300 dark:border-emerald-700" },
+};
+
 type ChipOption = { value: number; label: string; icon?: LucideIcon };
 
 const PAIN_OPTIONS: ChipOption[] = [
@@ -549,29 +559,34 @@ export function CycleToday({ data }: { data: CycleData }) {
             )}
           </div>
           <div className="p-5 space-y-5">
-            {SYMPTOM_SECTIONS.map(section => (
-              <div key={section.title} className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{section.title}</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {section.items.map(s => {
-                    const Icon = s.icon;
-                    return (
-                      <button key={s.key} type="button" disabled={data.isMale}
-                        onClick={() => setSymptoms(prev => ({ ...prev, [s.key]: !prev[s.key] }))}
-                        className={cn("flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-[10px] font-medium transition-all active:scale-95",
-                          symptoms[s.key]
-                            ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                            : "border-border text-muted-foreground hover:bg-muted",
-                          data.isMale && "opacity-50 cursor-not-allowed"
-                        )}>
-                        <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
-                        <span className="leading-tight text-center">{s.label}</span>
-                      </button>
-                    );
-                  })}
+            {SYMPTOM_SECTIONS.map(section => {
+              const style = SECTION_STYLES[section.title];
+              return (
+                <div key={section.title} className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{section.title}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {section.items.map(s => {
+                      const Icon = s.icon;
+                      const active = symptoms[s.key];
+                      return (
+                        <button key={s.key} type="button" disabled={data.isMale}
+                          onClick={() => setSymptoms(prev => ({ ...prev, [s.key]: !prev[s.key] }))}
+                          className={cn("flex flex-col items-center gap-1.5 rounded-2xl border p-2.5 text-[10px] font-medium transition-all active:scale-95",
+                            active ? cn(style.border, style.soft) : "border-border hover:bg-muted",
+                            data.isMale && "opacity-50 cursor-not-allowed"
+                          )}>
+                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                            active ? style.solid : style.soft)}>
+                            <Icon className={cn("h-[16px] w-[16px]", active ? "text-white" : style.text)} strokeWidth={1.75} />
+                          </div>
+                          <span className={cn("leading-tight text-center", active ? style.text : "text-muted-foreground")}>{s.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="space-y-1.5">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Notas</p>
