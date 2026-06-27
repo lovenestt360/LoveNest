@@ -70,6 +70,7 @@ export function useAppNotifications() {
       checkin:  "Check-in — Ambos fizeram check-in hoje",
       mood:     "Humor — Ambos partilharam o humor hoje",
       prayer:   "Oração — Ambos oraram hoje",
+      leitura:  "Leitura — Ambos leram um pouco hoje",
       general:  "Missão completa — Os dois participaram hoje",
     };
 

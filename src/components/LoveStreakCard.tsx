@@ -3,11 +3,12 @@ import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import {
   Flame, Shield, ChevronRight, Heart,
-  MessageCircle, Zap, Smile, BookHeart, Sparkles
+  MessageCircle, Zap, Smile, BookHeart, Library, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { useProfile } from "@/hooks/useProfile";
 
 // ── Phrases ──────────────────────────────────────────────────────────────────
 
@@ -121,15 +122,23 @@ function getRelationshipIcon(name: string) {
 
 // ── Missions ──────────────────────────────────────────────────────────────────
 
-const MISSIONS = [
+// O 4º gesto é "Oração" para casais que usam a Jornada Espiritual, ou
+// "Leitura" (Biblioteca) para quem tem religião = "nenhuma" — sem isto,
+// o gesto de oração fica impossível de cumprir e confunde-se com leitura.
+const ALL_MISSIONS = [
   { id: "message", Icon: MessageCircle, doneColor: "text-sky-500"    },
   { id: "checkin", Icon: Zap,           doneColor: "text-rose-500"   },
   { id: "mood",    Icon: Smile,         doneColor: "text-pink-400"   },
   { id: "prayer",  Icon: BookHeart,     doneColor: "text-purple-500" },
+  { id: "leitura", Icon: Library,       doneColor: "text-violet-500" },
 ] as const;
 
-type MissionId = typeof MISSIONS[number]["id"];
+type MissionId = typeof ALL_MISSIONS[number]["id"];
 type MissionStatus = Record<MissionId, boolean>;
+
+function getActiveMissions(hasSpiritual: boolean) {
+  return ALL_MISSIONS.filter((m) => (hasSpiritual ? m.id !== "leitura" : m.id !== "prayer"));
+}
 
 // ── Card status ───────────────────────────────────────────────────────────────
 
@@ -146,7 +155,7 @@ function useCardData() {
   const spaceId = useCoupleSpaceId();
   const [points, setPoints] = useState<number | null>(null);
   const [missions, setMissions] = useState<MissionStatus>({
-    message: false, checkin: false, mood: false, prayer: false,
+    message: false, checkin: false, mood: false, prayer: false, leitura: false,
   });
 
   const fetchData = useCallback(async () => {
@@ -166,6 +175,7 @@ function useCardData() {
         checkin: uniqueUsers("checkin") >= 2,
         mood:    uniqueUsers("mood")    >= 2,
         prayer:  spiritual.filter(l => l.prayed_today).length >= 2,
+        leitura: uniqueUsers("leitura") >= 2,
       });
     });
   }, [spaceId]);
@@ -191,13 +201,17 @@ export function LoveStreakCard() {
   const { points, missions } = useCardData();
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
+  const { profile }         = useProfile();
+
+  const hasSpiritual    = profile?.religion !== "none";
+  const activeMissions  = getActiveMissions(hasSpiritual);
 
   const celebratedRef   = useRef(false);
   const perfectDayRef   = useRef(false);
   const bothActiveToday = streak?.bothActiveToday ?? false;
 
-  const gesturesDone    = Object.values(missions).filter(Boolean).length;
-  const allMissionsDone = gesturesDone === MISSIONS.length;
+  const gesturesDone    = activeMissions.filter((m) => missions[m.id]).length;
+  const allMissionsDone = gesturesDone === activeMissions.length;
   const perfectDay      = bothActiveToday && allMissionsDone;
 
   useEffect(() => {
@@ -477,7 +491,7 @@ export function LoveStreakCard() {
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-1.5">
-              {MISSIONS.map(({ id, Icon, doneColor }) => (
+              {activeMissions.map(({ id, Icon, doneColor }) => (
                 <Icon key={id}
                   className={cn("w-3.5 h-3.5 transition-colors",
                     missions[id] ? doneColor : "text-muted-foreground/30")}
