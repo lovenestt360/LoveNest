@@ -95,6 +95,17 @@ const SECTION_STYLES: Record<string, { soft: string; solid: string; text: string
   "Outros":     { soft: "bg-emerald-50 dark:bg-emerald-950/30", solid: "bg-emerald-500", text: "text-emerald-500", border: "border-emerald-300 dark:border-emerald-700" },
 };
 
+// Cores por métrica em "Como me sinto hoje" — mesmo espírito do
+// SECTION_STYLES dos sintomas, para os chips deixarem de ser todos rosa.
+const FEELING_STYLES: Record<string, { text: string; bg: string; border: string }> = {
+  rose:    { text: "text-rose-500",    bg: "bg-rose-50 dark:bg-rose-950/30",    border: "border-rose-300 dark:border-rose-700" },
+  orange:  { text: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-300 dark:border-orange-700" },
+  fuchsia: { text: "text-fuchsia-500", bg: "bg-fuchsia-50 dark:bg-fuchsia-950/30", border: "border-fuchsia-300 dark:border-fuchsia-700" },
+  red:     { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-300 dark:border-red-700" },
+  teal:    { text: "text-teal-500",    bg: "bg-teal-50 dark:bg-teal-950/30",    border: "border-teal-300 dark:border-teal-700" },
+  indigo:  { text: "text-indigo-500",  bg: "bg-indigo-50 dark:bg-indigo-950/30", border: "border-indigo-300 dark:border-indigo-700" },
+};
+
 type ChipOption = { value: number; label: string; icon?: LucideIcon };
 
 const PAIN_OPTIONS: ChipOption[] = [
@@ -142,26 +153,26 @@ function valueToChip(value: number, options: ChipOption[]): number {
 
 
 function ChipSelector({
-  label, options, value, onChange, disabled = false,
+  label, options, value, onChange, disabled = false, color = "rose",
 }: {
   label: string; options: ChipOption[];
-  value: number; onChange: (v: number) => void; disabled?: boolean;
+  value: number; onChange: (v: number) => void; disabled?: boolean; color?: keyof typeof FEELING_STYLES;
 }) {
+  const style = FEELING_STYLES[color];
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
+          const active = value === opt.value;
           return (
             <button
               key={opt.value} type="button" disabled={disabled}
               onClick={() => onChange(opt.value)}
               className={cn(
                 "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-medium border transition-all duration-150 active:scale-95",
-                value === opt.value
-                  ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                  : "border-border text-muted-foreground hover:bg-muted",
+                active ? cn(style.border, style.bg, style.text) : "border-border text-muted-foreground hover:bg-muted",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -176,27 +187,27 @@ function ChipSelector({
 }
 
 function StringChipSelector({
-  label, options, value, onChange, disabled = false,
+  label, options, value, onChange, disabled = false, color = "rose",
 }: {
   label: string;
   options: { value: string; label: string; icon?: LucideIcon }[];
-  value: string; onChange: (v: string) => void; disabled?: boolean;
+  value: string; onChange: (v: string) => void; disabled?: boolean; color?: keyof typeof FEELING_STYLES;
 }) {
+  const style = FEELING_STYLES[color];
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
+          const active = value === opt.value;
           return (
             <button
               key={opt.value} type="button" disabled={disabled}
               onClick={() => onChange(opt.value)}
               className={cn(
                 "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-medium border transition-all duration-150 active:scale-95",
-                value === opt.value
-                  ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                  : "border-border text-muted-foreground hover:bg-muted",
+                active ? cn(style.border, style.bg, style.text) : "border-border text-muted-foreground hover:bg-muted",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -514,11 +525,11 @@ export function CycleToday({ data }: { data: CycleData }) {
             <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Como me sinto hoje</p>
           </div>
           <div className="p-5 space-y-5">
-            <ChipSelector label="Dor" options={PAIN_OPTIONS} value={painLevel} onChange={setPainLevel} disabled={data.isMale || saving} />
-            <ChipSelector label="Energia" options={ENERGY_OPTIONS} value={energyLevel} onChange={setEnergyLevel} disabled={data.isMale || saving} />
-            <ChipSelector label="Stress" options={STRESS_OPTIONS} value={stress} onChange={setStress} disabled={data.isMale || saving} />
-            <ChipSelector label="Libido" options={LIBIDO_OPTIONS} value={libido} onChange={setLibido} disabled={data.isMale || saving} />
-            <StringChipSelector label="Secreção" options={DISCHARGE_OPTIONS} value={dischargeType} onChange={setDischargeType} disabled={data.isMale || saving} />
+            <ChipSelector label="Dor" options={PAIN_OPTIONS} value={painLevel} onChange={setPainLevel} disabled={data.isMale || saving} color="rose" />
+            <ChipSelector label="Energia" options={ENERGY_OPTIONS} value={energyLevel} onChange={setEnergyLevel} disabled={data.isMale || saving} color="orange" />
+            <ChipSelector label="Stress" options={STRESS_OPTIONS} value={stress} onChange={setStress} disabled={data.isMale || saving} color="fuchsia" />
+            <ChipSelector label="Libido" options={LIBIDO_OPTIONS} value={libido} onChange={setLibido} disabled={data.isMale || saving} color="red" />
+            <StringChipSelector label="Secreção" options={DISCHARGE_OPTIONS} value={dischargeType} onChange={setDischargeType} disabled={data.isMale || saving} color="teal" />
             <div className="grid grid-cols-2 gap-3 items-end">
               <div className="space-y-1.5">
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Sono (h)</p>
@@ -531,7 +542,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                     <button key={opt.value} type="button" disabled={data.isMale || saving} onClick={() => setSleepQuality(opt.value)}
                       className={cn("flex-1 h-10 flex items-center justify-center rounded-xl border transition-all",
                         sleepQuality === opt.value
-                          ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                          ? cn(FEELING_STYLES.indigo.border, FEELING_STYLES.indigo.bg, FEELING_STYLES.indigo.text)
                           : "border-border text-muted-foreground hover:bg-muted",
                         (data.isMale || saving) && "opacity-50 cursor-not-allowed"
                       )}>
