@@ -7,19 +7,21 @@ import { getDayType } from "./engine";
 import type { DayType } from "./engine";
 import type { DailySymptom, CycleData } from "./useCycleData";
 
-// Cell background per day type — soft phase tinting, rose/graphite only
+// Cell background per day type — cada fase com a sua própria intensidade,
+// para se distinguirem à primeira vista (fértil e ovulação já não são a
+// mesma cor; TPM ganha tom próprio em vez de cinzento neutro).
 const DAY_BG: Partial<Record<DayType, string>> = {
   period:    "bg-rose-100/80 dark:bg-rose-950/40",
   fertile:   "bg-rose-50 dark:bg-rose-950/20",
-  ovulation: "bg-rose-50 dark:bg-rose-950/20",
-  pms:       "bg-muted",
+  ovulation: "bg-rose-200/70 dark:bg-rose-900/40",
+  pms:       "bg-orange-50 dark:bg-orange-950/20",
 };
 
 // Marker dot per day type (ovulation gets a Sparkles icon instead)
 const DAY_DOT: Partial<Record<DayType, string>> = {
   period:  "bg-rose-500",
   fertile: "bg-rose-300",
-  pms:     "bg-foreground/30",
+  pms:     "bg-orange-400",
 };
 
 const DAY_ICONS: Partial<Record<DayType, LucideIcon>> = {
@@ -28,9 +30,9 @@ const DAY_ICONS: Partial<Record<DayType, LucideIcon>> = {
 
 const DAY_BADGE_STYLE: Partial<Record<DayType, string>> = {
   period:    "bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200/50 dark:border-rose-800/50",
-  fertile:   "bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200/50 dark:border-rose-800/50",
-  ovulation: "bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200/50 dark:border-rose-800/50",
-  pms:       "bg-muted text-muted-foreground border-border",
+  fertile:   "bg-rose-50 dark:bg-rose-950/30 text-rose-400 border-rose-200/50 dark:border-rose-800/50",
+  ovulation: "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 border-rose-300/50 dark:border-rose-700/50",
+  pms:       "bg-orange-50 dark:bg-orange-950/30 text-orange-500 border-orange-200/50 dark:border-orange-800/50",
 };
 
 const BADGE_TEXT: Partial<Record<DayType, string>> = {
@@ -54,8 +56,8 @@ type LegendItem = { swatch?: string; markerDot?: string; markerIcon?: LucideIcon
 const LEGEND: LegendItem[] = [
   { swatch: "bg-rose-100 dark:bg-rose-950/40", markerDot: "bg-rose-500",   label: "Menstruação" },
   { swatch: "bg-rose-50 dark:bg-rose-950/20",  markerDot: "bg-rose-300",   label: "Fértil" },
-  { swatch: "bg-rose-50 dark:bg-rose-950/20",  markerIcon: Sparkles,       label: "Ovulação" },
-  { swatch: "bg-muted",                        markerDot: "bg-foreground/30", label: "TPM" },
+  { swatch: "bg-rose-200 dark:bg-rose-900/40", markerIcon: Sparkles,       label: "Ovulação" },
+  { swatch: "bg-orange-50 dark:bg-orange-950/20", markerDot: "bg-orange-400", label: "TPM" },
   { markerDot: "bg-muted-foreground/50",       label: "Registo" },
 ];
 
@@ -154,7 +156,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                   </span>
                   <div className="h-3 mt-1 flex items-center justify-center">
                     {isSel ? null
-                      : dayType === "ovulation" ? <Sparkles className="h-3 w-3 text-rose-400" strokeWidth={2} />
+                      : dayType === "ovulation" ? <Sparkles className="h-3 w-3 text-rose-600 dark:text-rose-300" strokeWidth={2} />
                       : DAY_DOT[dayType] ? <span className={cn("h-1.5 w-1.5 rounded-full", DAY_DOT[dayType])} />
                       : null}
                   </div>
@@ -168,7 +170,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
             {LEGEND.map(({ swatch, markerDot, markerIcon: Icon, label }) => (
               <span key={label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
                 <span className={cn("h-4 w-4 rounded-md flex items-center justify-center shrink-0", swatch)}>
-                  {Icon ? <Icon className="h-2.5 w-2.5 text-rose-400" strokeWidth={2} />
+                  {Icon ? <Icon className="h-2.5 w-2.5 text-rose-600 dark:text-rose-300" strokeWidth={2} />
                    : markerDot ? <span className={cn("h-1.5 w-1.5 rounded-full", markerDot)} /> : null}
                 </span>
                 {label}
