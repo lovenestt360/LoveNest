@@ -7,8 +7,8 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { runCycleEngineFromProfile } from "./engine";
-import type { CycleEngineOutput } from "./engine";
+import { runCycleEngineFromProfile, getPregnancyRisk } from "./engine";
+import type { CycleEngineOutput, PregnancyRiskResult } from "./engine";
 
 // ─────────────────────────────────────────────
 // TIPOS DA BASE DE DADOS (sem alteração de schema)
@@ -81,6 +81,16 @@ export interface DailySymptom {
   sleep_quality: string;
   tpm: boolean;
   notes: string | null;
+}
+
+export interface IntimacyLog {
+  id: string;
+  user_id: string;
+  couple_space_id: string;
+  day_key: string;
+  protection_method: string; // "nenhum" | "preservativo" | "pilula" | "diu" | "outro"
+  notes: string | null;
+  created_at: string;
 }
 
 /** Todos os campos booleanos de sintomas para iteração */
@@ -230,6 +240,8 @@ export function useCycleData() {
   const [profile, setProfile] = useState<CycleProfile | null>(null);
   const [periods, setPeriods] = useState<PeriodEntry[]>([]);
   const [todaySymptoms, setTodaySymptoms] = useState<DailySymptom | null>(null);
+  const [todayIntimacy, setTodayIntimacy] = useState<IntimacyLog | null>(null);
+  const [intimacyLogs, setIntimacyLogs] = useState<IntimacyLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -238,17 +250,23 @@ export function useCycleData() {
     if (!targetUserId || !spaceId) return;
 
     setLoading(true);
-    const [profileRes, periodsRes, symptomsRes] = await Promise.all([
+    const [profileRes, periodsRes, symptomsRes, intimacyTodayRes, intimacyLogsRes] = await Promise.all([
       supabase.from("cycle_profiles").select("*").eq("user_id", targetUserId).maybeSingle(),
       supabase.from("period_entries").select("*").eq("user_id", targetUserId)
         .order("start_date", { ascending: false }).limit(50),
       supabase.from("daily_symptoms").select("*").eq("user_id", targetUserId)
         .eq("day_key", today).maybeSingle(),
+      (supabase.from("intimacy_logs" as any).select("*").eq("user_id", targetUserId)
+        .eq("day_key", today).maybeSingle() as any),
+      (supabase.from("intimacy_logs" as any).select("*").eq("user_id", targetUserId)
+        .order("day_key", { ascending: false }).limit(60) as any),
     ]);
 
     setProfile((profileRes.data as CycleProfile | null) ?? null);
     setPeriods((periodsRes.data as PeriodEntry[]) ?? []);
     setTodaySymptoms((symptomsRes.data as DailySymptom | null) ?? null);
+    setTodayIntimacy((intimacyTodayRes.data as IntimacyLog | null) ?? null);
+    setIntimacyLogs((intimacyLogsRes.data as IntimacyLog[]) ?? []);
     setLoading(false);
   }, [targetUserId, spaceId, today]);
 
@@ -288,12 +306,17 @@ export function useCycleData() {
 
   // Usar o engine para todos os cálculos
   const engineOutput: CycleEngineOutput | null = runCycleEngineFromProfile(profile, lastPeriod);
+  const pregnancyRisk: PregnancyRiskResult = getPregnancyRisk(
+    intimacyLogs, engineOutput, lastPeriod?.start_date ?? null
+  );
 
   return {
     // Dados brutos
     profile,
     periods,
     todaySymptoms,
+    todayIntimacy,
+    intimacyLogs,
     loading: loadingTarget || loading,
     // Operações
     reload,
@@ -308,6 +331,7 @@ export function useCycleData() {
     targetUserId,
     // ── Output do engine (toda a lógica calculada)
     engine: engineOutput,
+    pregnancyRisk,
     /**
      * @deprecated Use `engine` em vez de `cycleInfo`.
      * Mantido para compatibilidade temporária.

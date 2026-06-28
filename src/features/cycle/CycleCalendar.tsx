@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Droplet, Sprout, Sparkles, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplet, Sprout, Sparkles, Moon, HeartHandshake } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getDayType } from "./engine";
 import type { DayType } from "./engine";
@@ -51,19 +51,21 @@ const SYMPTOM_LABELS: Record<string, string> = {
   constipation: "Obstipação", gas: "Gases", increased_appetite: "Apetite+",
 };
 
-type LegendItem = { swatch?: string; markerDot?: string; markerIcon?: LucideIcon; label: string };
+type LegendItem = { swatch?: string; markerDot?: string; markerIcon?: LucideIcon; iconColor?: string; label: string };
 
 const LEGEND: LegendItem[] = [
   { swatch: "bg-rose-100 dark:bg-rose-950/40", markerDot: "bg-rose-500",   label: "Menstruação" },
   { swatch: "bg-rose-50 dark:bg-rose-950/20",  markerDot: "bg-rose-300",   label: "Fértil" },
-  { swatch: "bg-rose-200 dark:bg-rose-900/40", markerIcon: Sparkles,       label: "Ovulação" },
+  { swatch: "bg-rose-200 dark:bg-rose-900/40", markerIcon: Sparkles,       iconColor: "text-rose-600 dark:text-rose-300", label: "Ovulação" },
   { swatch: "bg-orange-50 dark:bg-orange-950/20", markerDot: "bg-orange-400", label: "TPM" },
   { markerDot: "bg-muted-foreground/50",       label: "Registo" },
+  { markerIcon: HeartHandshake,                iconColor: "text-pink-400", label: "Intimidade" },
 ];
 
 export function CycleCalendar({ data }: { data: CycleData }) {
-  const { periods, user, engine } = data;
+  const { periods, user, engine, intimacyLogs } = data;
   const today = new Date().toISOString().slice(0, 10);
+  const intimacyDays = new Set(intimacyLogs.map((l) => l.day_key));
 
   const [year,  setYear]  = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth());
@@ -132,6 +134,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
               const isToday  = dayStr === today;
               const isSel    = dayStr === selectedDay;
               const hasLog   = loggedDays.has(dayStr);
+              const hasIntimacy = intimacyDays.has(dayStr);
 
               return (
                 <button
@@ -145,6 +148,9 @@ export function CycleCalendar({ data }: { data: CycleData }) {
                 >
                   {hasLog && !isSel && (
                     <span className="absolute top-1.5 right-1.5 h-1 w-1 rounded-full bg-muted-foreground/50" />
+                  )}
+                  {hasIntimacy && !isSel && (
+                    <HeartHandshake className="absolute top-1 left-1 h-2.5 w-2.5 text-pink-400" strokeWidth={2} />
                   )}
                   <span className={cn(
                     "text-[13px] leading-none font-medium",
@@ -167,10 +173,10 @@ export function CycleCalendar({ data }: { data: CycleData }) {
 
           {/* Legend */}
           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-3 border-t border-border">
-            {LEGEND.map(({ swatch, markerDot, markerIcon: Icon, label }) => (
+            {LEGEND.map(({ swatch, markerDot, markerIcon: Icon, iconColor, label }) => (
               <span key={label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
                 <span className={cn("h-4 w-4 rounded-md flex items-center justify-center shrink-0", swatch)}>
-                  {Icon ? <Icon className="h-2.5 w-2.5 text-rose-600 dark:text-rose-300" strokeWidth={2} />
+                  {Icon ? <Icon className={cn("h-2.5 w-2.5", iconColor ?? "text-rose-600 dark:text-rose-300")} strokeWidth={2} />
                    : markerDot ? <span className={cn("h-1.5 w-1.5 rounded-full", markerDot)} /> : null}
                 </span>
                 {label}

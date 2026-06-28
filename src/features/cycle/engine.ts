@@ -407,3 +407,49 @@ export function getDayType(
 
   return "none";
 }
+
+// ─────────────────────────────────────────────
+// RISCO DE GRAVIDEZ
+// Cruza registos de intimidade (data + método de prevenção) com a
+// janela fértil do ciclo atual. Estimativa informativa — não é um
+// método contracetivo nem substitui aconselhamento médico.
+// ─────────────────────────────────────────────
+
+export type PregnancyRiskLevel = "alto" | "moderado" | "baixo" | "sem_registo";
+
+export interface PregnancyRiskResult {
+  level: PregnancyRiskLevel;
+  label: string;
+  description: string;
+}
+
+export function getPregnancyRisk(
+  logs: Array<{ day_key: string; protection_method: string }>,
+  engineOutput: CycleEngineOutput | null,
+  lastPeriodDate: string | null
+): PregnancyRiskResult {
+  if (!engineOutput || !lastPeriodDate) {
+    return { level: "sem_registo", label: "Sem dados", description: "Regista o ciclo para veres uma estimativa." };
+  }
+
+  // Só considera o ciclo atual (desde o último período) — o risco
+  // reflete a fase em curso, não o histórico todo.
+  const relevant = logs.filter((l) => l.day_key >= lastPeriodDate);
+  if (relevant.length === 0) {
+    return { level: "sem_registo", label: "Sem registo", description: "Ainda sem atividade registada neste ciclo." };
+  }
+
+  const unprotected = relevant.filter((l) => l.protection_method === "nenhum");
+  if (unprotected.length === 0) {
+    return { level: "baixo", label: "Risco baixo", description: "Toda a atividade registada teve prevenção." };
+  }
+
+  const inFertileWindow = unprotected.some(
+    (l) => l.day_key >= engineOutput.fertileStartStr && l.day_key <= engineOutput.fertileEndStr
+  );
+  if (inFertileWindow) {
+    return { level: "alto", label: "Risco alto", description: "Houve atividade sem prevenção dentro da janela fértil." };
+  }
+
+  return { level: "moderado", label: "Risco moderado", description: "Houve atividade sem prevenção, fora da janela fértil." };
+}

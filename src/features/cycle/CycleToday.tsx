@@ -10,6 +10,7 @@ import {
   RotateCw, HeartPulse, Frown, CircleDot, Shuffle, Flame, Waves,
   CloudRain, Heart, Wind, CircleSlash, Cloud, Smile, Meh, AlertTriangle,
   Snowflake, Thermometer, Rocket, Egg, Sun, Dot, Cookie, UtensilsCrossed,
+  HeartHandshake, Shield, ShieldOff, ShieldAlert, ShieldCheck, Pill, Disc, HelpCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
@@ -104,6 +105,22 @@ const FEELING_STYLES: Record<string, { text: string; bg: string; border: string 
   red:     { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-300 dark:border-red-700" },
   teal:    { text: "text-teal-500",    bg: "bg-teal-50 dark:bg-teal-950/30",    border: "border-teal-300 dark:border-teal-700" },
   indigo:  { text: "text-indigo-500",  bg: "bg-indigo-50 dark:bg-indigo-950/30", border: "border-indigo-300 dark:border-indigo-700" },
+  pink:    { text: "text-pink-500",    bg: "bg-pink-50 dark:bg-pink-950/30",    border: "border-pink-300 dark:border-pink-700" },
+};
+
+const PROTECTION_OPTIONS = [
+  { value: "nenhum", label: "Nenhum", icon: ShieldOff },
+  { value: "preservativo", label: "Preservativo", icon: Shield },
+  { value: "pilula", label: "Pílula", icon: Pill },
+  { value: "diu", label: "DIU", icon: Disc },
+  { value: "outro", label: "Outro", icon: HelpCircle },
+];
+
+const RISK_STYLES: Record<string, { text: string; bg: string; border: string; icon: LucideIcon }> = {
+  alto:        { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-200 dark:border-red-800",     icon: ShieldAlert },
+  moderado:    { text: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800", icon: Shield },
+  baixo:       { text: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", icon: ShieldCheck },
+  sem_registo: { text: "text-muted-foreground", bg: "bg-muted", border: "border-border", icon: ShieldOff },
 };
 
 type ChipOption = { value: number; label: string; icon?: LucideIcon };
@@ -259,6 +276,7 @@ export function CycleToday({ data }: { data: CycleData }) {
   const {
     profile, engine, openPeriod, todaySymptoms,
     reload, ensureProfile, spaceId, user, today,
+    todayIntimacy, pregnancyRisk,
   } = data;
 
   const [saving, setSaving] = useState(false);
@@ -270,6 +288,10 @@ export function CycleToday({ data }: { data: CycleData }) {
   const [endDate, setEndDate] = useState(today);
   const [showEndDate, setShowEndDate] = useState(false);
   const [periodNotes, setPeriodNotes] = useState("");
+
+  const [savingIntimacy, setSavingIntimacy] = useState(false);
+  const [hadActivityToday, setHadActivityToday] = useState(() => !!todayIntimacy);
+  const [protectionMethod, setProtectionMethod] = useState(() => todayIntimacy?.protection_method ?? "nenhum");
 
   const [symptoms, setSymptoms] = useState<Record<string, boolean>>(() => {
     const s: Record<string, boolean> = {};
@@ -302,6 +324,11 @@ export function CycleToday({ data }: { data: CycleData }) {
     setTemperature((todaySymptoms as any)?.temperature_c?.toString() ?? "");
     setNotes(todaySymptoms.notes ?? "");
   }, [todaySymptoms]);
+
+  useEffect(() => {
+    setHadActivityToday(!!todayIntimacy);
+    setProtectionMethod(todayIntimacy?.protection_method ?? "nenhum");
+  }, [todayIntimacy]);
 
   const activeSymptoms = Object.values(symptoms).filter(Boolean).length;
 
@@ -354,6 +381,29 @@ export function CycleToday({ data }: { data: CycleData }) {
       await supabase.from("daily_symptoms").insert(payload);
     }
     sendPartnerNotif(); setSaving(false);
+    triggerSavedFeedback(); reload();
+  };
+
+  const handleSaveIntimacy = async () => {
+    if (!user || !spaceId) return;
+    setSavingIntimacy(true);
+    await ensureProfile();
+    if (!hadActivityToday) {
+      if (todayIntimacy) {
+        await (supabase.from("intimacy_logs" as any).delete().eq("id", todayIntimacy.id) as any);
+      }
+    } else {
+      const payload = {
+        user_id: user.id, couple_space_id: spaceId, day_key: today,
+        protection_method: protectionMethod,
+      };
+      if (todayIntimacy) {
+        await (supabase.from("intimacy_logs" as any).update(payload).eq("id", todayIntimacy.id) as any);
+      } else {
+        await (supabase.from("intimacy_logs" as any).insert(payload) as any);
+      }
+    }
+    setSavingIntimacy(false);
     triggerSavedFeedback(); reload();
   };
 
@@ -446,6 +496,26 @@ export function CycleToday({ data }: { data: CycleData }) {
         )}
 
         {engine && <CycleHistoryStrip data={data} />}
+
+        {/* ── Risco de gravidez ── */}
+        {engine && (() => {
+          const riskStyle = RISK_STYLES[pregnancyRisk.level];
+          const RiskIcon = riskStyle.icon;
+          return (
+            <div className={cn("glass-card p-4 flex items-start gap-3 border", riskStyle.border)}>
+              <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0", riskStyle.bg)}>
+                <RiskIcon className={cn("h-4.5 w-4.5", riskStyle.text)} strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={cn("text-sm font-semibold", riskStyle.text)}>{pregnancyRisk.label}</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{pregnancyRisk.description}</p>
+                <p className="text-[10px] text-muted-foreground/60 leading-relaxed mt-1">
+                  Estimativa informativa — não substitui um método contracetivo nem aconselhamento médico.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Menstruação ── */}
         <div className="glass-card overflow-hidden">
@@ -558,6 +628,52 @@ export function CycleToday({ data }: { data: CycleData }) {
                 <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* ── Intimidade ── */}
+        <div className="glass-card overflow-hidden">
+          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+            <HeartHandshake className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Intimidade</p>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Houve relação hoje?</p>
+              <div className="flex gap-2">
+                {[{ value: false, label: "Não" }, { value: true, label: "Sim" }].map(opt => (
+                  <button key={String(opt.value)} type="button" disabled={data.isMale || savingIntimacy}
+                    onClick={() => setHadActivityToday(opt.value)}
+                    className={cn("flex-1 py-2.5 rounded-2xl border text-xs font-medium transition-all active:scale-95",
+                      hadActivityToday === opt.value
+                        ? cn(FEELING_STYLES.pink.border, FEELING_STYLES.pink.bg, FEELING_STYLES.pink.text)
+                        : "border-border text-muted-foreground hover:bg-muted",
+                      (data.isMale || savingIntimacy) && "opacity-50 cursor-not-allowed"
+                    )}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {hadActivityToday && (
+              <StringChipSelector
+                label="Prevenção"
+                options={PROTECTION_OPTIONS}
+                value={protectionMethod}
+                onChange={setProtectionMethod}
+                disabled={data.isMale || savingIntimacy}
+                color="pink"
+              />
+            )}
+
+            {!data.isMale && (
+              <button onClick={handleSaveIntimacy} disabled={savingIntimacy}
+                className="w-full h-11 rounded-2xl bg-pink-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                {savingIntimacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+                Guardar
+              </button>
+            )}
           </div>
         </div>
 

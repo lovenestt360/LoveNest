@@ -1,8 +1,22 @@
-import { Lock, Lightbulb, Moon, Zap, Droplets, FileText, Flower2, Droplet, Sprout, Sparkles } from "lucide-react";
+import {
+  Lock, Lightbulb, Moon, Zap, Droplets, FileText, Flower2, Droplet, Sprout, Sparkles,
+  HeartHandshake, Shield, ShieldOff, ShieldAlert, ShieldCheck,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { formatShortDate } from "./engine";
+import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
 import { cn } from "@/lib/utils";
+
+const RISK_STYLES: Record<string, { text: string; bg: string; border: string; icon: LucideIcon }> = {
+  alto:        { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-200 dark:border-red-800",     icon: ShieldAlert },
+  moderado:    { text: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800", icon: Shield },
+  baixo:       { text: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", icon: ShieldCheck },
+  sem_registo: { text: "text-muted-foreground", bg: "bg-muted", border: "border-border", icon: ShieldOff },
+};
+
+const PROTECTION_LABELS: Record<string, string> = {
+  nenhum: "Sem prevenção", preservativo: "Preservativo", pilula: "Pílula", diu: "DIU", outro: "Outro",
+};
 
 // Phase insights — kept as content, clean text
 const PHASE_INSIGHTS: Record<string, string> = {
@@ -62,7 +76,7 @@ function MetricRow({ label, value, sub, highlight = false }: {
 }
 
 export function CyclePartnerView({ data }: { data: CycleData }) {
-  const { engine, profile, todaySymptoms, openPeriod } = data;
+  const { engine, profile, todaySymptoms, openPeriod, pregnancyRisk, intimacyLogs } = data;
 
   // No profile
   if (!profile) {
@@ -183,6 +197,43 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
         <Lightbulb className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
         <p className="text-sm text-foreground leading-relaxed">{PHASE_INSIGHTS[phaseKey]}</p>
       </div>
+
+      {/* ── Risco de gravidez + intimidade ── */}
+      {isSignalsShared && pregnancyRisk.level !== "sem_registo" && (() => {
+        const riskStyle = RISK_STYLES[pregnancyRisk.level];
+        const RiskIcon = riskStyle.icon;
+        const recentLogs = intimacyLogs.slice(0, 5);
+        return (
+          <div className="glass-card overflow-hidden">
+            <div className="px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+              <HeartHandshake className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <SectionLabel>Risco de gravidez</SectionLabel>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className={cn("flex items-start gap-3 rounded-2xl border p-3.5", riskStyle.border, riskStyle.bg)}>
+                <RiskIcon className={cn("h-5 w-5 shrink-0", riskStyle.text)} strokeWidth={1.5} />
+                <div>
+                  <p className={cn("text-sm font-semibold", riskStyle.text)}>{pregnancyRisk.label}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{pregnancyRisk.description}</p>
+                </div>
+              </div>
+              {recentLogs.length > 0 && (
+                <div className="space-y-1.5">
+                  {recentLogs.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{formatLongDate(log.day_key)}</span>
+                      <span className="text-foreground font-medium">{PROTECTION_LABELS[log.protection_method] ?? log.protection_method}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                Estimativa informativa — não substitui um método contracetivo nem aconselhamento médico.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Métricas ── */}
       {isSignalsShared && hasSymptoms && (
