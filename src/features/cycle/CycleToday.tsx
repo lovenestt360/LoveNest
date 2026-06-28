@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { CyclePartnerSummary } from "./CyclePartnerSummary";
 import { CycleHistoryStrip } from "./CycleHistoryStrip";
 import { differenceInDays } from "date-fns";
 import { formatShortDate, formatLongDate } from "./engine";
@@ -735,7 +734,6 @@ export function CycleToday({ data }: { data: CycleData }) {
             )}
           </div>
         </div>
-        <CyclePartnerSummary />
     </div>
   );
 }
