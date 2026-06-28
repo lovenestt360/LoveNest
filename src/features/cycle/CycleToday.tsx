@@ -524,18 +524,18 @@ export function CycleToday({ data }: { data: CycleData }) {
           <div className="p-5 space-y-4">
             {openPeriod ? (
               <>
-                <div className="rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 p-4 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-400" />
-                      </span>
-                      <p className="text-sm font-semibold text-rose-500">Em curso</p>
+                <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-950/10 border border-rose-100 dark:border-rose-900/40 p-4 flex items-center gap-3">
+                  <div className="relative w-10 h-10 shrink-0">
+                    <div className="absolute inset-0 rounded-full bg-rose-400/25 animate-pulse" style={{ animationDuration: "2.5s" }} />
+                    <div className="relative w-10 h-10 rounded-full bg-white/80 dark:bg-rose-950/40 flex items-center justify-center shadow-sm">
+                      <Droplet className="w-4.5 h-4.5 text-rose-500" fill="currentColor" strokeWidth={0} />
                     </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-rose-500">Em curso</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">Desde {formatLongDate(openPeriod.start_date)}</p>
                   </div>
-                  <span className="text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200 dark:border-rose-800 px-3 py-1 rounded-full">{periodDays}d</span>
+                  <span className="text-xs font-semibold bg-white/80 dark:bg-rose-950/40 text-rose-500 border border-rose-200 dark:border-rose-800 px-3 py-1 rounded-full tabular-nums shrink-0">{periodDays}d</span>
                 </div>
                 {!data.isMale && (
                   <div className="space-y-3">
