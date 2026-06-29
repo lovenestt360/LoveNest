@@ -654,9 +654,9 @@ export function CycleToday({ data }: { data: CycleData }) {
                 if (showIntimacyDate) { setShowIntimacyDate(false); setIntimacyDate(today); }
                 else setShowIntimacyDate(true);
               }}
-              className="text-[11px] text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors disabled:opacity-50"
+              className="h-7 px-3 rounded-full bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800 text-pink-500 text-[11px] font-semibold flex items-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
             >
-              <Calendar className="h-3 w-3" strokeWidth={1.5} />
+              <Calendar className="h-3 w-3" strokeWidth={2} />
               {intimacyDate === today ? "Hoje" : formatShortDate(intimacyDate)}
             </button>
           </div>
