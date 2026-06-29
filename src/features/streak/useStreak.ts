@@ -87,7 +87,7 @@ function buildState(
   // member_count from get_streak is the authoritative DB count
   // memberListCount from get_couple_member_ids is for member profile display
   const realMembersCount = Number(raw.member_count ?? memberListCount ?? 0);
-  const totalMembers     = Math.max(realMembersCount, 2);
+  const totalMembers     = Math.max(realMembersCount, 1);
 
   const streakAtRisk =
     !bothActive && totalMembers >= 2 && current > 0 && yesterdayServerISO(lastDate);

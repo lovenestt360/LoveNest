@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -12,10 +12,10 @@ import { toast } from "sonner";
 import { useCountUp } from "@/hooks/useCountUp";
 import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
+import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
 import {
   Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star,
-  CheckSquare, Smile, Library, CalendarDays,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -54,7 +54,7 @@ interface StatusConfig {
 function getCoupleStatus(
   bothActive: boolean, myCheckedIn: boolean,
   shieldUsedToday: boolean, isPerfectDay: boolean,
-  hoursLeft: number, isZero: boolean
+  hoursLeft: number, isZero: boolean, isSolo: boolean
 ): StatusConfig {
   if (isPerfectDay)
     return { label: "Ligados ✨",             bg: "bg-rose-50 dark:bg-rose-950/30",   text: "text-rose-600 dark:text-rose-300",  dot: "bg-rose-500"  };
@@ -67,7 +67,7 @@ function getCoupleStatus(
   if (!isZero && hoursLeft <= 3)
     return { label: "Última chance 🕯️",        bg: "bg-red-50 dark:bg-red-950/30",    text: "text-red-600 dark:text-red-300",   dot: "bg-red-500"   };
   if (isZero)
-    return { label: "Comecem hoje 🌱",          bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
+    return { label: isSolo ? "Começa hoje 🌱" : "Comecem hoje 🌱", bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
   return   { label: "Aguardando conexão",      bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-500 dark:text-slate-400", dot: "bg-slate-300" };
 }
 
@@ -88,15 +88,16 @@ function CoupleStatusBadge({ status }: { status: StatusConfig }) {
 }
 
 function FlameAlertBar({
-  bothActive, myCheckedIn, shieldUsedToday, missionsDone,
-  hoursLeft, currentStreak,
+  bothActive, myCheckedIn, shieldUsedToday, missionsDone, totalMissions,
+  hoursLeft, currentStreak, isSolo,
 }: {
   bothActive: boolean; myCheckedIn: boolean; shieldUsedToday: boolean;
-  missionsDone: number; hoursLeft: number; currentStreak: number;
+  missionsDone: number; totalMissions: number; hoursLeft: number; currentStreak: number;
+  isSolo: boolean;
 }) {
   if (bothActive) return null;
   const urgency = getUrgency(hoursLeft);
-  const fillPct = Math.round((missionsDone / MISSION_DEFS.length) * 100);
+  const fillPct = totalMissions > 0 ? Math.round((missionsDone / totalMissions) * 100) : 0;
 
   const barColor =
     shieldUsedToday   ? "bg-blue-400" :
@@ -108,7 +109,7 @@ function FlameAlertBar({
   const message = shieldUsedToday
     ? "O escudo guardou a sequência hoje — boa proteção 🛡️"
     : urgency === "critical"
-    ? `Menos de 1h — ${myCheckedIn ? "o teu par ainda não apareceu ❤️" : "a chama precisa de vocês agora"}`
+    ? `Menos de 1h — ${myCheckedIn ? "o teu par ainda não apareceu ❤️" : isSolo ? "a chama precisa de ti agora" : "a chama precisa de vocês agora"}`
     : urgency === "warning"
     ? `Faltam ${hoursLeft}h — ainda dá tempo de proteger a chama`
     : myCheckedIn
@@ -174,30 +175,13 @@ function FlameAlertBar({
 // ─────────────────────────────────────────────
 type Tab = "streaks" | "pontos" | "missoes";
 
-interface Mission {
-  id: string;
-  title: string;
-  description: string;
-  emoji: string;
-  activityType: string;
-  points: number;
+// Definições das missões vêm de src/features/streak/missions.ts —
+// fonte única partilhada com o widget "Faísca" da Home, para os dois
+// ecrãs mostrarem sempre exatamente os mesmos 4 gestos.
+interface Mission extends MissionDef {
   completed: boolean;
   completedCount: number;
 }
-
-const MISSION_DEFS: Omit<Mission, "completed" | "completedCount">[] = [
-  { id: "plano",    title: "Plano",       description: "Adiciona ou conclui algo na Agenda hoje",  emoji: "plano",    activityType: "plano",    points: 10 },
-  { id: "checkin",  title: "Presença",    description: "Digam ao outro que estão presentes hoje",  emoji: "checkin",  activityType: "checkin",  points: 10 },
-  { id: "mood",     title: "Sentimento",  description: "Partilhem como estão, de coração",         emoji: "mood",     activityType: "mood",     points: 5  },
-  { id: "leitura",  title: "Leitura",     description: "Leiam um pouco de um livro na Biblioteca",  emoji: "leitura",  activityType: "leitura",  points: 5  },
-];
-
-const MISSION_ICONS: Record<string, React.ReactNode> = {
-  plano:   <CalendarDays className="w-4 h-4" strokeWidth={1.5} />,
-  checkin: <CheckSquare className="w-4 h-4" strokeWidth={1.5} />,
-  mood:    <Smile className="w-4 h-4" strokeWidth={1.5} />,
-  leitura: <Library className="w-4 h-4" strokeWidth={1.5} />,
-};
 
 // ─────────────────────────────────────────────
 // TAB BAR
@@ -253,11 +237,12 @@ export default function LoveStreak() {
   const [activeTab, setActiveTab] = useState<Tab>("streaks");
   const hoursLeft = useHoursLeft();
 
-  // A Chama (streak/pontos/gestos de casal) não faz sentido sem parceiro —
-  // sem forma de aceder, nem pelo URL direto.
-  useEffect(() => {
-    if (profile?.usage_mode === "solo") navigate("/", { replace: true });
-  }, [profile?.usage_mode, navigate]);
+  const isSolo = profile?.usage_mode === "solo";
+  const hasSpiritual = profile?.religion !== "none";
+  const missionDefs = useMemo(
+    () => getDailyMissions({ isSolo, hasSpiritual }),
+    [isSolo, hasSpiritual]
+  );
 
   // — Points state —
   const [totalPoints, setTotalPoints]   = useState(0);
@@ -303,8 +288,8 @@ export default function LoveStreak() {
   const missionsDone   = missions.filter(m => m.completed).length;
   const missionsPts    = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
   const canBuyShield   = totalPoints >= 200;
-  const isPerfectDay   = bothActive && missionsDone === MISSION_DEFS.length;
-  const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero);
+  const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
+  const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
@@ -333,16 +318,16 @@ export default function LoveStreak() {
   // Detect perfect day (both active + all missions) → extra celebration
   const prevPerfectRef = useRef(false);
   useEffect(() => {
-    const perfect = bothActive && missionsDone === MISSION_DEFS.length;
+    const perfect = bothActive && missionsDone === missionDefs.length;
     if (perfect && !prevPerfectRef.current) {
       prevPerfectRef.current = true;
       hapticCelebrate();
       setTimeout(() => {
-        toast.success("Dia perfeito! 🔥 A vossa chama nunca esteve tão viva", { duration: 4000 });
+        toast.success(isSolo ? "Dia perfeito! 🔥 A tua chama nunca esteve tão viva" : "Dia perfeito! 🔥 A vossa chama nunca esteve tão viva", { duration: 4000 });
       }, 800);
     }
     if (!perfect) prevPerfectRef.current = false;
-  }, [bothActive, missionsDone]);
+  }, [bothActive, missionsDone, missionDefs.length]);
 
   // Detect newly completed missions → shimmer + haptic
   useEffect(() => {
@@ -402,16 +387,16 @@ export default function LoveStreak() {
         typeUsers[row.type].add(row.user_id);
       }
 
-      const threshold = Math.max(totalMembers, 2);
+      const threshold = Math.max(totalMembers, 1);
 
-      setMissions(MISSION_DEFS.map(m => {
-        const count = typeUsers[m.activityType]?.size ?? 0;
+      setMissions(missionDefs.map(m => {
+        const count = typeUsers[m.id]?.size ?? 0;
         return { ...m, completedCount: count, completed: count >= threshold };
       }));
     } finally {
       setLoadingMissions(false);
     }
-  }, [spaceId, totalMembers]);
+  }, [spaceId, totalMembers, missionDefs]);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -440,11 +425,11 @@ export default function LoveStreak() {
       if (status === "insufficient_points" || status === "error_insufficient_points") {
         toast.error("Pontos insuficientes para comprar LoveShield.");
       } else if (status === "already_purchased_this_month") {
-        toast.error("Já compraram 1 escudo este mês 🛡️ — volta no próximo mês.");
+        toast.error(isSolo ? "Já compraste 1 escudo este mês 🛡️ — volta no próximo mês." : "Já compraram 1 escudo este mês 🛡️ — volta no próximo mês.");
       } else if (status === "limit_reached" || status === "error_limit_reached") {
-        toast.error("Já têm 3 escudos — o máximo mensal 🛡️");
+        toast.error(isSolo ? "Já tens 3 escudos — o máximo mensal 🛡️" : "Já têm 3 escudos — o máximo mensal 🛡️");
       } else if (status === "ok" || !status) {
-        toast.success("LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
+        toast.success(isSolo ? "LoveShield comprado! 💎 A tua chama ganhou proteção extra." : "LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
         await Promise.all([fetchPoints(), refresh()]);
         window.dispatchEvent(new CustomEvent("streak-updated"));
       }
@@ -460,9 +445,9 @@ export default function LoveStreak() {
     const { ok, message } = await checkIn();
     if (ok) {
       hapticSuccess();
-      toast.success("Vocês protegeram a chama hoje 🔥");
+      toast.success(isSolo ? "Protegeste a chama hoje 🔥" : "Vocês protegeram a chama hoje 🔥");
     } else {
-      toast.error(message || "Não foi possível registar a vossa presença.");
+      toast.error(message || (isSolo ? "Não foi possível registar a tua presença." : "Não foi possível registar a vossa presença."));
     }
   };
 
@@ -544,7 +529,7 @@ export default function LoveStreak() {
                 strokeWidth={1.5}
               />
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                {isZero ? "O amor começa aqui" : "A vossa chama"}
+                {isZero ? "O amor começa aqui" : (isSolo ? "A tua chama" : "A vossa chama")}
               </p>
             </div>
 
@@ -580,8 +565,10 @@ export default function LoveStreak() {
             myCheckedIn={myCheckedIn}
             shieldUsedToday={shieldUsedToday}
             missionsDone={missionsDone}
+            totalMissions={missionDefs.length}
             hoursLeft={hoursLeft}
             currentStreak={currentStreak}
+            isSolo={isSolo}
           />
 
           {/* Status card */}
@@ -589,10 +576,10 @@ export default function LoveStreak() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
-                  {bothActive ? "A vossa chama está acesa 🔥"
+                  {bothActive ? (isSolo ? "A tua chama está acesa 🔥" : "A vossa chama está acesa 🔥")
                     : myCheckedIn ? "O teu gesto foi registado 💛"
-                    : isZero ? "Façam o primeiro gesto hoje 🌱"
-                    : "A chama ainda espera pelo vosso momento"}
+                    : isZero ? (isSolo ? "Faz o primeiro gesto hoje 🌱" : "Façam o primeiro gesto hoje 🌱")
+                    : (isSolo ? "A chama ainda espera pelo teu momento" : "A chama ainda espera pelo vosso momento")}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {totalMembers > 0
@@ -636,7 +623,7 @@ export default function LoveStreak() {
           </div>
 
           {/* Ranking */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">Casais mais dedicados — Chama</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">{isSolo ? "Mais dedicados" : "Casais mais dedicados"} — Chama</p>
           <RankingCard compact={false} initialRankType="streak" hideToggle myCoupleId={spaceId ?? undefined} refreshTrigger={refreshKey} />
         </div>
       )}
@@ -675,9 +662,9 @@ export default function LoveStreak() {
               <p className="text-[11px] text-muted-foreground mt-0.5">pontos de amor</p>
             </div>
             <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Por dia juntos</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{isSolo ? "Por dia ativo" : "Por dia juntos"}</p>
               <p className="text-3xl font-bold tabular-nums text-foreground">10</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">quando ambos presentes</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{isSolo ? "quando estás presente" : "quando ambos presentes"}</p>
             </div>
           </div>
 
@@ -685,12 +672,16 @@ export default function LoveStreak() {
           <div className="glass-card p-4 flex items-start gap-3">
             <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️
+              {isSolo ? (
+                <>Ganhas <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidas de ti. Troca por proteção para a tua chama 🛡️</>
+              ) : (
+                <>Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️</>
+              )}
             </p>
           </div>
 
           {/* ── LOJA: LOVE SHIELD ─────────────────────── */}
-          <SectionHeader icon={<ShoppingBag className="w-4 h-4" />} title="Protejam a Chama" />
+          <SectionHeader icon={<ShoppingBag className="w-4 h-4" />} title={isSolo ? "Protege a Chama" : "Protejam a Chama"} />
 
           <div className="glass-card rounded-[20px] p-4 border-primary/10 flex flex-col gap-3">
             <div className="flex items-center gap-4">
@@ -718,9 +709,9 @@ export default function LoveStreak() {
                   ) : shieldsRemaining === 1 && shieldsPurchased === 0 ? (
                     `Última proteção do mês 🛡️ — renova em breve`
                   ) : shieldsRemaining === 1 && shieldsPurchased > 0 ? (
-                    `Proteção extra ativa — a vossa chama está segura`
+                    isSolo ? `Proteção extra ativa — a tua chama está segura` : `Proteção extra ativa — a vossa chama está segura`
                   ) : shieldsRemaining === 0 && shieldsPurchased === 0 ? (
-                    `A vossa chama precisa de proteção`
+                    isSolo ? `A tua chama precisa de proteção` : `A vossa chama precisa de proteção`
                   ) : (
                     `Chama totalmente protegida este mês 💙`
                   )}
@@ -742,7 +733,7 @@ export default function LoveStreak() {
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-blue-400" />
                   <span className="text-[11px] text-muted-foreground leading-snug">
-                    Já compraram 1 escudo este mês
+                    {isSolo ? "Já compraste 1 escudo este mês" : "Já compraram 1 escudo este mês"}
                   </span>
                 </div>
                 <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest px-2 py-1 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
@@ -774,7 +765,7 @@ export default function LoveStreak() {
           </div>
 
           {/* Ranking pontos */}
-          <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Casais mais dedicados — Amor" />
+          <SectionHeader icon={<Trophy className="w-4 h-4" />} title={`${isSolo ? "Mais dedicados" : "Casais mais dedicados"} — Amor`} />
           <RankingCard 
             compact={false} 
             initialRankType="points" 
@@ -797,28 +788,28 @@ export default function LoveStreak() {
               <div>
                 <h2 className="text-base font-semibold text-foreground">
                   {missionsDone === 0 ? "Pequenos gestos fortalecem o amor ✨"
-                    : missionsDone === MISSION_DEFS.length ? "Hoje foram extraordinários 🔥"
-                    : "Continuem — a chama agradece 💛"}
+                    : missionsDone === missionDefs.length ? "Hoje foram extraordinários 🔥"
+                    : (isSolo ? "Continua — a chama agradece 💛" : "Continuem — a chama agradece 💛")}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {missionsDone === 0
                     ? "Nenhum gesto ainda hoje"
-                    : `${missionsDone} de ${MISSION_DEFS.length} gestos dados · +${missionsPts} pts`}
+                    : `${missionsDone} de ${missionDefs.length} gestos dados · +${missionsPts} pts`}
                 </p>
               </div>
               <Target className="w-5 h-5 text-rose-400 shrink-0" strokeWidth={1.5} />
             </div>
             <Progress
-              value={MISSION_DEFS.length > 0 ? (missionsDone / MISSION_DEFS.length) * 100 : 0}
+              value={missionDefs.length > 0 ? (missionsDone / missionDefs.length) * 100 : 0}
               className="h-1.5 bg-muted"
             />
             <p className="text-[11px] text-muted-foreground mt-3">
-              O amor conta quando ambos participam
+              {isSolo ? "O amor conta quando apareces todos os dias" : "O amor conta quando ambos participam"}
             </p>
           </div>
 
           {/* Missions list */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">Os vossos gestos de hoje</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">{isSolo ? "Os teus gestos de hoje" : "Os vossos gestos de hoje"}</p>
 
           {loadingMissions ? (
             <div className="flex justify-center py-8">
@@ -852,7 +843,7 @@ export default function LoveStreak() {
                       ? "bg-rose-100 dark:bg-rose-950/40 text-rose-500 shadow-sm shadow-rose-100 dark:shadow-none"
                       : "bg-muted text-muted-foreground"
                   )}>
-                    {MISSION_ICONS[m.emoji] ?? <Target className="w-4 h-4" strokeWidth={1.5} />}
+                    <m.Icon className="w-4 h-4" strokeWidth={1.5} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn(
@@ -912,7 +903,7 @@ export default function LoveStreak() {
                 {checkingIn ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    A guardar o vosso momento...
+                    {isSolo ? "A guardar o teu momento..." : "A guardar o vosso momento..."}
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">

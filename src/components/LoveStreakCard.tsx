@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
+import { getDailyMissions, type MissionId } from "@/features/streak/missions";
 import {
-  Flame, Shield, ChevronRight, Heart,
-  MessageCircle, Zap, Smile, BookHeart, Library, Sparkles
+  Flame, Shield, ChevronRight, Heart, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,24 +121,11 @@ function getRelationshipIcon(name: string) {
 }
 
 // ── Missions ──────────────────────────────────────────────────────────────────
+// Definições partilhadas com a aba "Gestos" de /lovestreak — ver
+// src/features/streak/missions.ts (fonte única, evita as duas listas
+// divergirem como antes).
 
-// O 4º gesto é "Oração" para casais que usam a Jornada Espiritual, ou
-// "Leitura" (Biblioteca) para quem tem religião = "nenhuma" — sem isto,
-// o gesto de oração fica impossível de cumprir e confunde-se com leitura.
-const ALL_MISSIONS = [
-  { id: "message", Icon: MessageCircle, doneColor: "text-sky-500"    },
-  { id: "checkin", Icon: Zap,           doneColor: "text-rose-500"   },
-  { id: "mood",    Icon: Smile,         doneColor: "text-pink-400"   },
-  { id: "prayer",  Icon: BookHeart,     doneColor: "text-purple-500" },
-  { id: "leitura", Icon: Library,       doneColor: "text-violet-500" },
-] as const;
-
-type MissionId = typeof ALL_MISSIONS[number]["id"];
 type MissionStatus = Record<MissionId, boolean>;
-
-function getActiveMissions(hasSpiritual: boolean) {
-  return ALL_MISSIONS.filter((m) => (hasSpiritual ? m.id !== "leitura" : m.id !== "prayer"));
-}
 
 // ── Card status ───────────────────────────────────────────────────────────────
 
@@ -151,11 +138,11 @@ function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToda
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
 
-function useCardData() {
+function useCardData(threshold: number) {
   const spaceId = useCoupleSpaceId();
   const [points, setPoints] = useState<number | null>(null);
   const [missions, setMissions] = useState<MissionStatus>({
-    message: false, checkin: false, mood: false, prayer: false, leitura: false,
+    message: false, plano: false, checkin: false, mood: false, prayer: false, leitura: false,
   });
 
   const fetchData = useCallback(async () => {
@@ -171,14 +158,15 @@ function useCardData() {
       const spiritual: any[]  = logs ?? [];
       const uniqueUsers = (t: string) => new Set(activities.filter(a => a.type === t).map(a => a.user_id)).size;
       setMissions({
-        message: uniqueUsers("message") >= 2,
-        checkin: uniqueUsers("checkin") >= 2,
-        mood:    uniqueUsers("mood")    >= 2,
-        prayer:  spiritual.filter(l => l.prayed_today).length >= 2,
-        leitura: uniqueUsers("leitura") >= 2,
+        message: uniqueUsers("message") >= threshold,
+        plano:   uniqueUsers("plano")   >= threshold,
+        checkin: uniqueUsers("checkin") >= threshold,
+        mood:    uniqueUsers("mood")    >= threshold,
+        prayer:  spiritual.filter(l => l.prayed_today).length >= threshold,
+        leitura: uniqueUsers("leitura") >= threshold,
       });
     });
-  }, [spaceId]);
+  }, [spaceId, threshold]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
@@ -198,13 +186,16 @@ function useCardData() {
 
 export function LoveStreakCard() {
   const { streak, loading } = useStreak();
-  const { points, missions } = useCardData();
-  const spaceId             = useCoupleSpaceId();
-  const navigate            = useNavigate();
   const { profile }         = useProfile();
 
+  const isSolo          = profile?.usage_mode === "solo";
   const hasSpiritual    = profile?.religion !== "none";
-  const activeMissions  = getActiveMissions(hasSpiritual);
+  const threshold        = isSolo ? 1 : (streak?.totalMembers ?? 2);
+  const { points, missions } = useCardData(threshold);
+  const spaceId             = useCoupleSpaceId();
+  const navigate            = useNavigate();
+
+  const activeMissions  = getDailyMissions({ isSolo, hasSpiritual });
 
   const celebratedRef   = useRef(false);
   const perfectDayRef   = useRef(false);

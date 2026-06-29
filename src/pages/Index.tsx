@@ -478,7 +478,7 @@ const Index = () => {
           </div>
         )}
 
-        {profileReady && !isSolo && (
+        {profileReady && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
             <LoveStreakCard />
             {/* Milestone micro-memory — visible for 24h after any streak milestone */}
