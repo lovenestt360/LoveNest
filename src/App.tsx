@@ -51,7 +51,6 @@ const Challenges = lazy(() => import("./pages/Challenges"));
 const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const LoveStreak = lazy(() => import("./pages/LoveStreak"));
-const Ranking = lazy(() => import("./pages/Ranking"));
 const Descobrir = lazy(() => import("./pages/Descobrir"));
 const Momentos  = lazy(() => import("./pages/Momentos"));
 const Biblioteca = lazy(() => import("./pages/Biblioteca"));
@@ -141,9 +140,6 @@ const AppRoutes = () => (
         </Route>
         <Route element={<PremiumGuard requiredFeature="lovestreak" />}>
           <Route path="lovestreak" element={<LoveStreak />} />
-        </Route>
-        <Route element={<PremiumGuard requiredFeature="ranking" />}>
-          <Route path="ranking" element={<Ranking />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="descobrir" />}>
           <Route path="descobrir" element={<Descobrir />} />

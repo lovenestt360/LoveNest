@@ -2134,18 +2134,6 @@ export type Database = {
         Args: { p_couple_space_id: string }
         Returns: number
       }
-      fn_get_global_ranking: {
-        Args: { p_rank_type?: string }
-        Returns: {
-          rank: number
-          couple_space_id: string
-          house_name: string
-          house_image: string | null
-          is_verified: boolean
-          current_streak: number
-          total_points: number
-        }[]
-      }
       fn_get_or_create_daily_missions_v5: {
         Args: { p_couple_space_id: string }
         Returns: {
@@ -2167,10 +2155,6 @@ export type Database = {
       }
       get_partner_cycle_summary: {
         Args: { _partner_user_id: string }
-        Returns: Json
-      }
-      get_ranking_snapshot: {
-        Args: { p_couple_space_id: string }
         Returns: Json
       }
       get_streak: {

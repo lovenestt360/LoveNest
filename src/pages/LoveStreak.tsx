@@ -4,7 +4,6 @@ import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { RankingCard } from "@/components/RankingCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,7 @@ import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
 import {
   Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
-  Coins, Target, CheckCircle2, Circle, Trophy, Shield, ShoppingBag, Star,
+  Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag, Star,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -261,9 +260,6 @@ export default function LoveStreak() {
   const [recentlyCompletedMissions, setRecentlyCompletedMissions] = useState<Set<string>>(new Set());
   const prevStreakRef  = useRef(0);
   const prevBothRef   = useRef(false);
-
-  // Sincronização
-  const [refreshKey, setRefreshKey] = useState(0);
 
   // Show streak error non-silently
   useEffect(() => {
@@ -621,10 +617,6 @@ export default function LoveStreak() {
               </div>
             ))}
           </div>
-
-          {/* Ranking */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">{isSolo ? "Mais dedicados" : "Casais mais dedicados"} — Chama</p>
-          <RankingCard compact={false} initialRankType="streak" hideToggle myCoupleId={spaceId ?? undefined} refreshTrigger={refreshKey} />
         </div>
       )}
 
@@ -763,16 +755,6 @@ export default function LoveStreak() {
               </div>
             )}
           </div>
-
-          {/* Ranking pontos */}
-          <SectionHeader icon={<Trophy className="w-4 h-4" />} title={`${isSolo ? "Mais dedicados" : "Casais mais dedicados"} — Amor`} />
-          <RankingCard 
-            compact={false} 
-            initialRankType="points" 
-            hideToggle 
-            myCoupleId={spaceId ?? undefined}
-            refreshTrigger={refreshKey}
-          />
         </div>
       )}
 

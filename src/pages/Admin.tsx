@@ -191,7 +191,6 @@ export default function Admin() {
         { id: "challenges", label: "Desafios" },
         { id: "wrapped", label: "LoveWrapped" },
         { id: "lovestreak", label: "LoveStreak" },
-        { id: "ranking", label: "Ranking" },
         { id: "descobrir", label: "Descobrir" },
         { id: "biblioteca", label: "Biblioteca" },
     ];
