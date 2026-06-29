@@ -427,6 +427,12 @@ export function CycleToday({ data }: { data: CycleData }) {
   const accentColor = PHASE_ACCENT[phaseKey] ?? "text-muted-foreground";
   const PhaseIcon = PHASE_ICONS[phaseKey] ?? Flower2;
 
+  // Posição do ponto "vivo" na ponta do anel de progresso — ângulo medido
+  // a partir do topo, no sentido horário (mesmo referencial visual do anel).
+  const ringAngle = ((engine?.cycleProgress ?? 0) / 100) * 2 * Math.PI;
+  const ringDotX = 50 + 44 * Math.sin(ringAngle);
+  const ringDotY = 50 - 44 * Math.cos(ringAngle);
+
   return (
     <div className="space-y-5 pb-10">
         {engine ? (
@@ -442,6 +448,10 @@ export function CycleToday({ data }: { data: CycleData }) {
                     className={cn("transition-all duration-700", accentColor)}
                   />
                 </svg>
+                <div
+                  className={cn("absolute w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 animate-glow-pulse", accentColor.replace("text-", "bg-"))}
+                  style={{ left: `${ringDotX}%`, top: `${ringDotY}%` }}
+                />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <PhaseIcon className={cn("h-5 w-5 mb-0.5", accentColor)} strokeWidth={1.5} />
                   <span className="text-2xl font-bold text-foreground tabular-nums leading-none">{engine.cycleDay}</span>
@@ -525,11 +535,8 @@ export function CycleToday({ data }: { data: CycleData }) {
             {openPeriod ? (
               <>
                 <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-950/10 border border-rose-100 dark:border-rose-900/40 p-4 flex items-center gap-3">
-                  <div className="relative w-10 h-10 shrink-0">
-                    <div className="absolute inset-0 rounded-full bg-rose-400/25 animate-pulse" style={{ animationDuration: "2.5s" }} />
-                    <div className="relative w-10 h-10 rounded-full bg-white/80 dark:bg-rose-950/40 flex items-center justify-center shadow-sm">
-                      <Droplet className="w-4.5 h-4.5 text-rose-500" fill="currentColor" strokeWidth={0} />
-                    </div>
+                  <div className="w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center shrink-0 animate-glow-pulse">
+                    <Droplet className="w-4.5 h-4.5 text-white" fill="currentColor" strokeWidth={0} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-rose-500">Em curso</p>

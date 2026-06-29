@@ -1,4 +1,4 @@
-import { Loader2, Lightbulb, CheckCircle2, Circle, Minus, Plus } from "lucide-react";
+import { Loader2, Lightbulb, CheckCircle2, Circle, Minus, Plus, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -134,6 +134,20 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
     insights.push(`Dor média: ${avgPain}/10 · Energia média: ${avgEnergy}/10 em ${allSymptoms.length} registos.`);
   }
 
+  if (data.isMale && profile?.share_level === "private") {
+    return (
+      <div className="glass-card p-10 text-center space-y-3">
+        <div className="w-14 h-14 rounded-full border border-border bg-muted flex items-center justify-center mx-auto">
+          <Lock className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+        </div>
+        <p className="text-base font-semibold text-foreground">Dados privados</p>
+        <p className="text-sm text-muted-foreground max-w-[220px] mx-auto leading-relaxed">
+          A tua parceira não partilhou o ciclo. É o espaço dela.
+        </p>
+      </div>
+    );
+  }
+
   const handleSave = async () => {
     setSaving(true);
     const p = await ensureProfile();
@@ -150,6 +164,15 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
 
   return (
     <div className="space-y-5 pb-10">
+
+      {data.isMale && profile?.share_level === "summary" && (
+        <div className="glass-card p-5 flex gap-3 items-start">
+          <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            A tua parceira partilhou apenas a fase e os eventos. Sintomas e médias diárias não estão disponíveis.
+          </p>
+        </div>
+      )}
 
       {/* Insights */}
       {insights.length > 0 && (

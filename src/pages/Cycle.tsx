@@ -19,9 +19,11 @@ export default function Cycle() {
   const { profile, loading: profileLoading } = useProfile();
   const isPartner = data.isMale;
 
-  const tabs = isPartner
-    ? [{ id: "hoje", label: "Resumo" }, { id: "calendario", label: "Calendário" }]
-    : [{ id: "hoje", label: "Hoje" }, { id: "calendario", label: "Calendário" }, { id: "historico", label: "Histórico" }];
+  const tabs = [
+    { id: "hoje", label: isPartner ? "Resumo" : "Hoje" },
+    { id: "calendario", label: "Calendário" },
+    { id: "historico", label: "Histórico" },
+  ];
 
   const [activeTab, setActiveTab] = useState("hoje");
 
@@ -98,8 +100,8 @@ export default function Cycle() {
           isPartner ? <CyclePartnerView data={data} /> : <CycleToday data={data} />
         )}
         {activeTab === "calendario" && <CycleCalendar data={data} />}
-        {activeTab === "historico" && !isPartner && (
-          <CycleHistory data={data} onReset={handleReset} />
+        {activeTab === "historico" && (
+          <CycleHistory data={data} onReset={isPartner ? undefined : handleReset} />
         )}
       </div>
     </section>

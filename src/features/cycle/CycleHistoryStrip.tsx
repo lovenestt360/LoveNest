@@ -54,7 +54,7 @@ export function CycleHistoryStrip({ data }: { data: CycleData }) {
             className={cn(
               "flex-1 h-7 rounded-full transition-colors",
               pillClass(dayType, isFuture),
-              isToday && "ring-1 ring-foreground/40 ring-offset-1 ring-offset-card"
+              isToday && "ring-1 ring-foreground/40 ring-offset-1 ring-offset-card animate-glow-pulse"
             )}
           />
         ))}
