@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { awardLovePoints } from "@/lib/lovePoints";
 
 export interface ReadingProgress {
     progress_percent: number;
@@ -46,6 +47,7 @@ export function useReadingProgress(bookId: string | undefined) {
     const saveProgress = useCallback(async (percent: number, location: string, minutesDelta = 0) => {
         if (!bookId || !spaceId || !user) return;
         const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+        const justCompleted = clamped >= 100 && (myProgressRef.current?.progress_percent ?? 0) < 100;
         const totalMinutesRead = (myProgressRef.current?.total_minutes_read ?? 0) + Math.max(0, minutesDelta);
 
         const payload = {
@@ -59,6 +61,9 @@ export function useReadingProgress(bookId: string | undefined) {
         };
 
         await supabase.from("book_reading_progress" as any).upsert(payload, { onConflict: "book_id,user_id" });
+        if (justCompleted) {
+            awardLovePoints(spaceId, 50, "livro_concluido", "Livro terminado", user.id);
+        }
         const updated = { progress_percent: clamped, location, updated_at: new Date().toISOString(), total_minutes_read: totalMinutesRead };
         setMyProgress(updated);
         myProgressRef.current = updated;

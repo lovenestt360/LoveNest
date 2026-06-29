@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { awardLovePoints } from "@/lib/lovePoints";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,8 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
       });
 
       if (insertErr) throw insertErr;
+
+      awardLovePoints(sp, 5, "memoria", "Nova memória guardada", userId);
 
       toast({ title: "📸 Memória guardada!" });
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { addYears, differenceInDays, isBefore, setYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { awardLovePoints } from "@/lib/lovePoints";
 import type { RelationshipEvent, RelationshipEventType } from "./types";
 
 function parseDateOnly(iso: string): Date {
@@ -63,7 +64,10 @@ export function useRelationshipEvents(coupleSpaceId: string | null) {
       event_date: input.event_date,
       image_path: input.image_path ?? null,
     }) as any);
-    if (!error) await fetchEvents();
+    if (!error) {
+      await fetchEvents();
+      awardLovePoints(coupleSpaceId, 15, "data_especial", `Data importante: ${input.title}`, userId);
+    }
     return { error };
   }, [coupleSpaceId, fetchEvents]);
 

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { awardLovePoints } from "@/lib/lovePoints";
 
 const CATEGORIES = [
     { id: "romantico", label: "💕 Romântico" },
@@ -154,6 +155,7 @@ export default function Challenges() {
             if (error) throw error;
             loadChallenges();
             if (!currentStatus) {
+                awardLovePoints(houseId, 20, "desafio", "Desafio concluído", user?.id);
                 setShowSuccessOverlay(true);
                 setTimeout(() => setShowSuccessOverlay(false), 2500);
                 toast({ title: "Desafio Concluído! 🎉", description: "Continuem a colecionar memórias!", className: "bg-green-500 text-white" });

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { awardLovePoints } from "@/lib/lovePoints";
 
 export default function TimeCapsule() {
     const { user } = useAuth();
@@ -87,6 +88,8 @@ export default function TimeCapsule() {
             });
 
             if (error) throw error;
+
+            awardLovePoints(houseId, 10, "capsula_tempo", "Cápsula do tempo criada", user.id);
 
             toast({ title: "Cápsula Enterrada! ⏳", description: "O segredo foi guardado até essa data especial." });
             setNewMessage("");

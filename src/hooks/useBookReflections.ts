@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { awardLovePoints } from "@/lib/lovePoints";
 
 export interface BookReflection {
     id: string;
@@ -46,6 +47,7 @@ export function useBookReflections(bookId: string | undefined) {
             content: content.trim(),
         });
         fetchReflections();
+        awardLovePoints(spaceId, 5, "reflexao", "Reflexão de leitura partilhada", user.id);
 
         notifyPartner({
             couple_space_id: spaceId,
