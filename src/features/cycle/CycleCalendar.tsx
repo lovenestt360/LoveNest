@@ -63,7 +63,7 @@ const LEGEND: LegendItem[] = [
 ];
 
 export function CycleCalendar({ data }: { data: CycleData }) {
-  const { periods, user, engine, intimacyLogs } = data;
+  const { periods, engine, intimacyLogs, targetUserId } = data;
   const today = new Date().toISOString().slice(0, 10);
   const intimacyDays = new Set(intimacyLogs.map((l) => l.day_key));
 
@@ -90,11 +90,11 @@ export function CycleCalendar({ data }: { data: CycleData }) {
   }, [data.targetUserId, year, month, daysInMonth]);
 
   useEffect(() => {
-    if (!selectedDay || !user) { setDaySymptoms(null); return; }
+    if (!selectedDay || !targetUserId) { setDaySymptoms(null); return; }
     supabase.from("daily_symptoms").select("*")
-      .eq("user_id", user.id).eq("day_key", selectedDay).maybeSingle()
+      .eq("user_id", targetUserId).eq("day_key", selectedDay).maybeSingle()
       .then(({ data }) => setDaySymptoms(data as DailySymptom | null));
-  }, [selectedDay, user]);
+  }, [selectedDay, targetUserId]);
 
   const monthName = new Date(year, month).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
