@@ -18,6 +18,7 @@ import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
 import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CeremonyOverlay } from "@/features/journey/CeremonyOverlay";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -194,6 +195,7 @@ const App = () => (
                 </AppNotifProvider>
                 <PWAInstallButton />
                 <PWATutorialModal />
+                <CeremonyOverlay />
               </PWATutorialProvider>
             </FeatureAccessProvider>
           </AuthProvider>

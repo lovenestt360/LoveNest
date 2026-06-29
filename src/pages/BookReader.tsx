@@ -8,6 +8,7 @@ import { useReaderSettings, THEME_COLORS } from "@/hooks/useReaderSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { logActivity } from "@/lib/logActivity";
+import { triggerCeremony } from "@/lib/ceremonies";
 import { PdfReader } from "@/features/biblioteca/reader/PdfReader";
 import { EpubReader } from "@/features/biblioteca/reader/EpubReader";
 import { NativeBookReader } from "@/features/biblioteca/reader/NativeBookReader";
@@ -79,6 +80,12 @@ export default function BookReader() {
                 url: `/biblioteca/${book.id}`,
                 type: "biblioteca",
             }).catch(() => {});
+            triggerCeremony(spaceId, "livro_concluido", book.id, {
+                type: "livro_concluido",
+                eyebrow: "Livro terminado",
+                title: book.title,
+                subtitle: "Mais uma história que passa a fazer parte da Jornada.",
+            });
         }
 
         pendingProgressRef.current = { percent, location };

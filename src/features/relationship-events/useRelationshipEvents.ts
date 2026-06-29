@@ -14,6 +14,7 @@ function nextOccurrence(eventDate: Date, today: Date): Date {
 }
 
 export interface NextSpecialDate {
+  id: string;
   title: string;
   daysUntil: number;
 }
@@ -92,7 +93,7 @@ export function useRelationshipEvents(coupleSpaceId: string | null) {
     const upcoming = events
       .map((e) => {
         const next = nextOccurrence(parseDateOnly(e.event_date), today);
-        return { title: e.title, daysUntil: differenceInDays(next, today) };
+        return { id: e.id, title: e.title, daysUntil: differenceInDays(next, today) };
       })
       .sort((a, b) => a.daysUntil - b.daysUntil);
     nextSpecialDate = upcoming[0] ?? null;

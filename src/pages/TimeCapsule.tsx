@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { awardLovePoints } from "@/lib/lovePoints";
+import { triggerCeremony } from "@/lib/ceremonies";
 
 export default function TimeCapsule() {
     const { user } = useAuth();
@@ -115,6 +116,14 @@ export default function TimeCapsule() {
             if (error) throw error;
             loadCapsules();
             toast({ title: "Cápsula Aberta! 🎉", description: "Vê a mensagem que foi guardada para ti!" });
+            if (houseId) {
+                triggerCeremony(houseId, "capsula", capsule.id, {
+                    type: "capsula",
+                    eyebrow: "Cápsula do tempo",
+                    title: "Uma cápsula foi aberta",
+                    subtitle: "O passado encontrou o presente.",
+                });
+            }
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         }

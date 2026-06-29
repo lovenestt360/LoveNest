@@ -28,8 +28,10 @@ import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext
 import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
 import { useStreak } from "@/features/streak/useStreak";
 import { useMilestone } from "@/hooks/useMilestone";
-import { MilestoneModal, getMilestoneMicroMemory } from "@/components/MilestoneModal";
+import { getMilestoneMicroMemory, getMilestoneCeremonyContent } from "@/components/MilestoneModal";
 import { useRelationshipEvents } from "@/features/relationship-events/useRelationshipEvents";
+import { getJourneyLevel } from "@/features/streak/journeyLevels";
+import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -371,6 +373,57 @@ const Index = () => {
   );
   const bothActiveToday = streakData?.bothActiveToday ?? false;
 
+  // ── Cerimónias ──────────────────────────────────────────────────────────
+  // Marcos de streak já têm o seu próprio dedupe (relationship_milestones,
+  // via useMilestone acima) — quando um novo marco aparece, mostramos a
+  // Cerimónia em vez do antigo modal e confirmamos como já visto.
+  useEffect(() => {
+    if (!pendingMilestone) return;
+    const content = getMilestoneCeremonyContent(pendingMilestone);
+    if (content) dispatchCeremony(content);
+    confirmMilestone();
+  }, [pendingMilestone, confirmMilestone]);
+
+  // Subida de Nível da Jornada — dedupe via ceremonies_log (ver lib/ceremonies.ts).
+  const [totalPoints, setTotalPoints] = useState(0);
+  useEffect(() => {
+    if (!spaceId) return;
+    const fetchPoints = () => {
+      supabase.rpc("get_total_points", { p_couple_space_id: spaceId }).then(({ data }) => {
+        if (typeof data === "number") setTotalPoints(data);
+      });
+    };
+    fetchPoints();
+    window.addEventListener("streak-updated", fetchPoints);
+    return () => window.removeEventListener("streak-updated", fetchPoints);
+  }, [spaceId]);
+
+  useEffect(() => {
+    if (!spaceId || totalPoints <= 0) return;
+    const journey = getJourneyLevel(totalPoints);
+    if (journey.level <= 1) return;
+    triggerCeremony(spaceId, "level_up", String(journey.level), {
+      type: "level_up",
+      eyebrow: "Novo nível da Jornada",
+      title: `Nível ${journey.level} — ${journey.name}`,
+      subtitle: isSolo
+        ? "O teu cuidado contigo próprio fez-te crescer."
+        : "O vosso cuidado diário fez-vos crescer.",
+    });
+  }, [spaceId, totalPoints, isSolo]);
+
+  // Aniversário de relação — recorrência anual, dispara no próprio dia.
+  useEffect(() => {
+    if (!spaceId || !nextSpecialDate || nextSpecialDate.daysUntil !== 0) return;
+    const year = new Date().getFullYear();
+    triggerCeremony(spaceId, "aniversario", `${nextSpecialDate.id}_${year}`, {
+      type: "aniversario",
+      eyebrow: "Aniversário",
+      title: nextSpecialDate.title,
+      subtitle: isSolo ? "Mais um ano da tua história." : "Mais um ano a escolherem-se.",
+    });
+  }, [spaceId, nextSpecialDate, isSolo]);
+
   const handleShareReferral = () => {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}/signup?ref=${referralCode}`;
@@ -703,11 +756,6 @@ const Index = () => {
           <ArrowRight className="w-4 h-4 text-muted-foreground/50" />
         </button>
       </div>
-
-      {/* Emotional Milestone Modal — shown once per milestone, never again */}
-      {pendingMilestone && (
-        <MilestoneModal value={pendingMilestone} onClose={confirmMilestone} />
-      )}
     </div>
   </>
   );
