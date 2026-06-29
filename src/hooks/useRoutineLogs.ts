@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { logActivity } from "@/lib/logActivity";
 
 
 export interface RoutineDayLog {
@@ -107,6 +108,12 @@ export function useRoutineLogs(userId?: string) {
                 .eq("id", existing.id);
         } else {
             await supabase.from("routine_day_logs").insert(payload);
+        }
+
+        // Gesto diário "Plano" — conta a rotina de hoje, não a Agenda.
+        const todayStr = new Date().toISOString().slice(0, 10);
+        if (day === todayStr && checkedItemIds.length > 0) {
+            logActivity(sp, "plano");
         }
 
         // Notificação e lógica de streak removidas para purga total

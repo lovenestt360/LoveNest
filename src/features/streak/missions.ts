@@ -20,7 +20,7 @@ export interface MissionDef {
 
 function getSocialMission(isSolo: boolean): MissionDef {
   return isSolo
-    ? { id: "plano", title: "Plano", description: "Adiciona ou conclui algo na Agenda hoje", points: 10, Icon: CalendarDays, doneColor: "text-blue-500" }
+    ? { id: "plano", title: "Plano", description: "Marca a tua rotina de hoje", points: 10, Icon: CalendarDays, doneColor: "text-blue-500" }
     : { id: "message", title: "Chat", description: "Enviem uma mensagem hoje", points: 10, Icon: MessageCircle, doneColor: "text-sky-500" };
 }
 

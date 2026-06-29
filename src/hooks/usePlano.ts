@@ -4,7 +4,6 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { logActivity } from "@/lib/logActivity";
 
 
 export interface PlanoItem {
@@ -144,8 +143,6 @@ export function usePlano() {
       return null;
     }
 
-    logActivity(sp, "plano");
-
     // Notificar parceiro
     if (sp) {
       await notifyPartner({
@@ -176,24 +173,6 @@ export function usePlano() {
     if (error) {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       fetchItems(); // Rollback
-    } else if (completed) {
-      let sp = spaceId;
-      if (!sp && user) {
-        const { data: member } = await supabase
-          .from('members')
-          .select('couple_space_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-        sp = member?.couple_space_id;
-      }
-
-      if (!sp) {
-        console.error("CRITICAL: couple_space_id ainda null ao Concluir Plano", user?.id);
-        return;
-      }
-
-      logActivity(sp, "plano");
     }
   };
 
