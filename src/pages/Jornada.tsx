@@ -66,7 +66,7 @@ function getCoupleStatus(
     return { label: "Chama acesa ❤️",          bg: "bg-rose-50 dark:bg-rose-950/30",   text: "text-rose-500 dark:text-rose-300",  dot: "bg-rose-400"  };
   if (shieldUsedToday)
     return { label: "Chama protegida 🛡️",     bg: "bg-blue-50 dark:bg-blue-950/30",   text: "text-blue-600 dark:text-blue-300",  dot: "bg-blue-400"  };
-  if (myCheckedIn)
+  if (myCheckedIn && !isSolo)
     return { label: "A aguardar o par 💛",     bg: "bg-amber-50 dark:bg-amber-950/30",  text: "text-amber-600 dark:text-amber-300", dot: "bg-amber-400" };
   if (!isZero && hoursLeft <= 3)
     return { label: "Última chance 🕯️",        bg: "bg-red-50 dark:bg-red-950/30",    text: "text-red-600 dark:text-red-300",   dot: "bg-red-500"   };
@@ -113,10 +113,10 @@ function FlameAlertBar({
   const message = shieldUsedToday
     ? "O escudo guardou a sequência hoje — boa proteção 🛡️"
     : urgency === "critical"
-    ? `Menos de 1h — ${myCheckedIn ? "o teu par ainda não apareceu ❤️" : isSolo ? "a chama precisa de ti agora" : "a chama precisa de vocês agora"}`
+    ? `Menos de 1h — ${myCheckedIn && !isSolo ? "o teu par ainda não apareceu ❤️" : isSolo ? "a chama precisa de ti agora" : "a chama precisa de vocês agora"}`
     : urgency === "warning"
     ? `Faltam ${hoursLeft}h — ainda dá tempo de proteger a chama`
-    : myCheckedIn
+    : myCheckedIn && !isSolo
     ? `O teu gesto está guardado · ${hoursLeft}h para o par aparecer ❤️`
     : currentStreak > 0
     ? `Faltam ${hoursLeft}h para proteger ${currentStreak} dias de amor`
@@ -221,7 +221,12 @@ export default function Jornada() {
   );
 
   // — LovePoints state —
+  // totalPoints = saldo gastável (desce ao comprar); lifetimePoints =
+  // total alguma vez ganho (nunca desce) — é este que define o Nível
+  // da Jornada, para a regra "o nível nunca desce" se manter verdadeira
+  // mesmo depois de compras na loja.
   const [totalPoints, setTotalPoints]   = useState(0);
+  const [lifetimePoints, setLifetimePoints] = useState(0);
   const [loadingPoints, setLoadingPoints] = useState(false);
 
   // — Shields state (reduzido, dados no hook) —
@@ -262,7 +267,7 @@ export default function Jornada() {
   const canBuyShield   = totalPoints >= 200;
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
   const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
-  const journey        = useMemo(() => getJourneyLevel(totalPoints), [totalPoints]);
+  const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
@@ -320,10 +325,18 @@ export default function Jornada() {
     if (!spaceId) return;
     setLoadingPoints(true);
     try {
-      const { data, error } = await supabase.rpc("get_total_points", { p_couple_space_id: spaceId });
+      const [{ data, error }, { data: lifetimeData, error: lifetimeError }] = await Promise.all([
+        supabase.rpc("get_total_points", { p_couple_space_id: spaceId }),
+        supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }),
+      ]);
       if (error) {
         console.error("[Jornada] get_total_points error:", error.message);
         return;
+      }
+      if (lifetimeError) {
+        console.error("[Jornada] get_lifetime_points error:", lifetimeError.message);
+      } else {
+        setLifetimePoints((lifetimeData as number) ?? 0);
       }
       setTotalPoints((data as number) ?? 0);
     } catch (err: any) {
@@ -478,13 +491,13 @@ export default function Jornada() {
         {/* ══════════════════════════════════════════════ */}
         <div className="glass-card p-5 text-center">
           <div className="flex justify-center mb-2">
-            <Guardian level={journey.level} glowColor={guardianState.glowColor} ringUnlocked={guardianState.ringUnlocked} size={88} />
+            <Guardian level={journey.level} glowColor={guardianState.glowColor} ringUnlocked={guardianState.ringUnlocked} ringEnabled={guardianState.ringEnabled} size={88} />
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             Nível {journey.level} — {journey.name}
           </p>
           <p className="text-2xl font-bold text-foreground tabular-nums">
-            {totalPoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints</span>
+            {lifetimePoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints conquistados</span>
           </p>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-3">
             <div
@@ -621,7 +634,7 @@ export default function Jornada() {
 
           {/* Hero LovePoints */}
           <section className="text-center py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">LovePoints acumulados ✨</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">LovePoints disponíveis ✨</p>
             {loadingPoints ? (
               <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
             ) : (
@@ -658,9 +671,9 @@ export default function Jornada() {
             <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
             <p className="text-sm text-muted-foreground leading-relaxed">
               {isSolo ? (
-                <>Ganhas <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidas de ti. Troca por proteção para a tua chama 🛡️</>
+                <>Ganhas <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidas de ti. Troca por proteção ou personalizações — gastar LovePoints nunca faz descer o teu Nível da Jornada.</>
               ) : (
-                <>Ganham <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️</>
+                <>Ganham <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidam um do outro. Troquem por proteção ou personalizações — gastar LovePoints nunca faz descer o vosso Nível da Jornada.</>
               )}
             </p>
           </div>

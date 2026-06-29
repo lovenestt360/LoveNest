@@ -385,12 +385,14 @@ const Index = () => {
   }, [pendingMilestone, confirmMilestone]);
 
   // Subida de Nível da Jornada — dedupe via ceremonies_log (ver lib/ceremonies.ts).
-  const [totalPoints, setTotalPoints] = useState(0);
+  // lifetimePoints = total alguma vez ganho (nunca desce ao gastar) — é
+  // este que define o Nível da Jornada, nunca o saldo gastável.
+  const [lifetimePoints, setLifetimePoints] = useState(0);
   useEffect(() => {
     if (!spaceId) return;
     const fetchPoints = () => {
-      supabase.rpc("get_total_points", { p_couple_space_id: spaceId }).then(({ data }) => {
-        if (typeof data === "number") setTotalPoints(data);
+      supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }).then(({ data }) => {
+        if (typeof data === "number") setLifetimePoints(data);
       });
     };
     fetchPoints();
@@ -399,8 +401,8 @@ const Index = () => {
   }, [spaceId]);
 
   useEffect(() => {
-    if (!spaceId || totalPoints <= 0) return;
-    const journey = getJourneyLevel(totalPoints);
+    if (!spaceId || lifetimePoints <= 0) return;
+    const journey = getJourneyLevel(lifetimePoints);
     if (journey.level <= 1) return;
     triggerCeremony(spaceId, "level_up", String(journey.level), {
       type: "level_up",
@@ -410,7 +412,7 @@ const Index = () => {
         ? "O teu cuidado contigo próprio fez-te crescer."
         : "O vosso cuidado diário fez-vos crescer.",
     });
-  }, [spaceId, totalPoints, isSolo]);
+  }, [spaceId, lifetimePoints, isSolo]);
 
   // Aniversário de relação — recorrência anual, dispara no próprio dia.
   useEffect(() => {

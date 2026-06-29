@@ -25,6 +25,16 @@ const PHRASES = [
   { min: 90, max: Infinity, msg: "O vosso amor tornou-se uma força viva" },
 ];
 
+const PHRASES_SOLO = [
+  { min: 0,  max: 0,        msg: "O teu cuidado contigo começa aqui" },
+  { min: 1,  max: 2,        msg: "Uma faísca que vai tornar-se chama" },
+  { min: 3,  max: 6,        msg: "A tua chama está a crescer" },
+  { min: 7,  max: 13,       msg: "Sete dias a aparecer por ti" },
+  { min: 14, max: 29,       msg: "Em sintonia contigo" },
+  { min: 30, max: 89,       msg: "Um mês a cuidar de ti" },
+  { min: 90, max: Infinity, msg: "O teu cuidado tornou-se uma força viva" },
+];
+
 const PERFECT_DAY_PHRASES = [
   "Hoje escolheram um ao outro",
   "O vosso ninho esteve completo hoje",
@@ -33,24 +43,42 @@ const PERFECT_DAY_PHRASES = [
   "A chama ficou completa hoje",
 ];
 
-function getCountPhrase(s: number) {
-  return PHRASES.find(p => s >= p.min && s <= p.max)?.msg ?? "";
+const PERFECT_DAY_PHRASES_SOLO = [
+  "Hoje escolheste cuidar de ti",
+  "O teu espaço esteve completo hoje",
+  "Cuidaste de todos os pequenos momentos",
+  "Hoje apareceste por ti",
+  "A chama ficou completa hoje",
+];
+
+function getCountPhrase(s: number, isSolo: boolean) {
+  return (isSolo ? PHRASES_SOLO : PHRASES).find(p => s >= p.min && s <= p.max)?.msg ?? "";
 }
 
 function getContextualPhrase(
   streak: number, bothActive: boolean, myIn: boolean,
-  partnerIn: boolean, atRisk: boolean, perfectDay: boolean,
+  partnerIn: boolean, atRisk: boolean, perfectDay: boolean, isSolo: boolean,
 ): string {
   const day = Math.floor(Date.now() / 86400000);
-  if (perfectDay) return PERFECT_DAY_PHRASES[day % PERFECT_DAY_PHRASES.length];
+  if (perfectDay) {
+    const pool = isSolo ? PERFECT_DAY_PHRASES_SOLO : PERFECT_DAY_PHRASES;
+    return pool[day % pool.length];
+  }
   if (bothActive) {
-    const msgs = ["Hoje cuidaram um do outro", "A chama esteve protegida hoje", "Vocês encontraram-se aqui hoje"];
+    const msgs = isSolo
+      ? ["Hoje cuidaste de ti", "A chama esteve protegida hoje", "Apareceste por ti hoje"]
+      : ["Hoje cuidaram um do outro", "A chama esteve protegida hoje", "Vocês encontraram-se aqui hoje"];
     return msgs[day % msgs.length];
   }
-  if (atRisk) return ["A chama sente saudades", "Hoje ainda podem proteger o vosso momento"][day % 2];
+  if (atRisk) {
+    return isSolo
+      ? ["A chama sente a tua falta", "Hoje ainda podes proteger o teu momento"][day % 2]
+      : ["A chama sente saudades", "Hoje ainda podem proteger o vosso momento"][day % 2];
+  }
+  if (isSolo) return getCountPhrase(streak, true);
   if (myIn && !partnerIn) return "O teu par ainda não chegou hoje";
   if (partnerIn && !myIn) return "A chama continua à espera do teu gesto";
-  return getCountPhrase(streak);
+  return getCountPhrase(streak, false);
 }
 
 // ── Journey — Faísca → Eternidade ────────────────────────────────────────────
@@ -132,10 +160,10 @@ type MissionStatus = Record<MissionId, boolean>;
 
 // ── Card status ───────────────────────────────────────────────────────────────
 
-function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean) {
-  if (bothActive)      return { label: "Juntos hoje",       color: "text-muted-foreground", dot: "bg-rose-400" };
+function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean, isSolo: boolean) {
+  if (bothActive)      return { label: isSolo ? "Presente hoje" : "Juntos hoje", color: "text-muted-foreground", dot: "bg-rose-400" };
   if (shieldUsedToday) return { label: "Chama protegida",   color: "text-muted-foreground/65",    dot: "bg-sky-300"  };
-  if (myCheckedIn)     return { label: "A aguardar o par",  color: "text-muted-foreground/65",    dot: "bg-muted-foreground/30"   };
+  if (myCheckedIn && !isSolo) return { label: "A aguardar o par",  color: "text-muted-foreground/65",    dot: "bg-muted-foreground/30"   };
   return               { label: "Aguardando presença",      color: "text-muted-foreground/65",    dot: "bg-muted-foreground/20"   };
 }
 
@@ -144,6 +172,7 @@ function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToda
 function useCardData(threshold: number) {
   const spaceId = useCoupleSpaceId();
   const [points, setPoints] = useState<number | null>(null);
+  const [lifetimePoints, setLifetimePoints] = useState<number | null>(null);
   const [missions, setMissions] = useState<MissionStatus>({
     message: false, plano: false, checkin: false, mood: false, prayer: false, leitura: false,
   });
@@ -153,6 +182,8 @@ function useCardData(threshold: number) {
     const today = new Date().toISOString().slice(0, 10);
     (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
       .then(({ data }: any) => { if (typeof data === "number") setPoints(data); });
+    (supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }) as any)
+      .then(({ data }: any) => { if (typeof data === "number") setLifetimePoints(data); });
     Promise.all([
       (supabase.from("daily_activity" as any).select("type,user_id").eq("couple_space_id", spaceId).eq("activity_date", today) as any),
       (supabase.from("daily_spiritual_logs" as any).select("prayed_today,user_id").eq("couple_space_id", spaceId).eq("day_key", today) as any),
@@ -182,7 +213,7 @@ function useCardData(threshold: number) {
     return () => clearInterval(t);
   }, [fetchData]);
 
-  return { points, missions };
+  return { points, lifetimePoints, missions };
 }
 
 // ── Card ──────────────────────────────────────────────────────────────────────
@@ -194,11 +225,11 @@ export function LoveStreakCard() {
   const isSolo          = profile?.usage_mode === "solo";
   const hasSpiritual    = profile?.religion !== "none";
   const threshold        = isSolo ? 1 : (streak?.totalMembers ?? 2);
-  const { points, missions } = useCardData(threshold);
+  const { points, lifetimePoints, missions } = useCardData(threshold);
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
   const guardianState       = useGuardianState(spaceId);
-  const journeyLevel        = getJourneyLevel(points ?? 0).level;
+  const journeyLevel        = getJourneyLevel(lifetimePoints ?? 0).level;
 
   const activeMissions  = getDailyMissions({ isSolo, hasSpiritual });
 
@@ -241,16 +272,15 @@ export function LoveStreakCard() {
     shieldUsedToday, myCheckedIn, activeCount, streakAtRisk,
   } = streak;
 
-  const partnerCheckedIn = activeCount >= (myCheckedIn ? 2 : 1);
-  const cardStatus       = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday);
+  const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
+  const cardStatus       = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday, isSolo);
   const relState         = getRelationshipState(currentStreak);
   const RelIcon          = getRelationshipIcon(relState.name);
   const displayPoints    = points ?? 0;
 
-  const daysLabel = bothActiveToday
-    ? "dias a aparecer um pelo outro"
-    : streakAtRisk ? "dias · a chama espera por vocês"
-    : currentStreak === 0 ? "dias" : "dias juntos";
+  const daysLabel = isSolo
+    ? (bothActiveToday ? "dias a aparecer por ti" : streakAtRisk ? "dias · a chama espera por ti" : currentStreak === 0 ? "dias" : "dias de cuidado")
+    : (bothActiveToday ? "dias a aparecer um pelo outro" : streakAtRisk ? "dias · a chama espera por vocês" : currentStreak === 0 ? "dias" : "dias juntos");
 
   // Visual system
   const cardBg    = getCardTemperature(currentStreak, bothActiveToday, perfectDay);
@@ -316,7 +346,7 @@ export function LoveStreakCard() {
               strokeWidth={1.5}
             />
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              A vossa Chama
+              {isSolo ? "A tua Chama" : "A vossa Chama"}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -326,14 +356,14 @@ export function LoveStreakCard() {
                 Dia Completo
               </span>
             )}
-            <Guardian level={journeyLevel} glowColor={guardianState.glowColor} ringUnlocked={guardianState.ringUnlocked} size={26} />
+            <Guardian level={journeyLevel} glowColor={guardianState.glowColor} ringUnlocked={guardianState.ringUnlocked} ringEnabled={guardianState.ringEnabled} size={26} />
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
           </div>
         </div>
 
         {/* ── Contextual phrase ── */}
         <p className="text-[11px] text-muted-foreground/65 mb-1.5 leading-snug">
-          {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk, perfectDay)}
+          {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk, perfectDay, isSolo)}
         </p>
 
         {/* ── Status badge ── */}
@@ -380,19 +410,21 @@ export function LoveStreakCard() {
                 />
                 <span className="text-[9px] text-muted-foreground/65 font-semibold">Tu</span>
               </div>
-              <div className="relative flex items-center gap-1">
-                <Heart
-                  className={cn("w-4 h-4 transition-all duration-500",
-                    partnerCheckedIn
-                      ? bothActiveToday
-                        ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
-                        : "fill-rose-500 text-rose-500 animate-heart-throb"
-                      : "text-muted-foreground/30"
-                  )}
-                  strokeWidth={partnerCheckedIn ? 0 : 1.5}
-                />
-                <span className="text-[9px] text-muted-foreground/65 font-semibold">Par</span>
-              </div>
+              {!isSolo && (
+                <div className="relative flex items-center gap-1">
+                  <Heart
+                    className={cn("w-4 h-4 transition-all duration-500",
+                      partnerCheckedIn
+                        ? bothActiveToday
+                          ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
+                          : "fill-rose-500 text-rose-500 animate-heart-throb"
+                        : "text-muted-foreground/30"
+                    )}
+                    strokeWidth={partnerCheckedIn ? 0 : 1.5}
+                  />
+                  <span className="text-[9px] text-muted-foreground/65 font-semibold">Par</span>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-0.5">
               {[0, 1, 2].map(i => (
@@ -508,7 +540,7 @@ export function LoveStreakCard() {
 
       {perfectDay && (
         <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 animate-in fade-in duration-500">
-          Hoje o vosso espaço esteve completo.
+          {isSolo ? "Hoje o teu espaço esteve completo." : "Hoje o vosso espaço esteve completo."}
         </p>
       )}
       </div>

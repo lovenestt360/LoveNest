@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Loader2, Droplets, CircleDashed, Check } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { buyGuardianItem, type ShopItemKey } from "@/lib/shop";
+import { buyGuardianItem, setGuardianAppearance, type ShopItemKey } from "@/lib/shop";
 import { useGuardianState } from "./useGuardianState";
 
 interface ShopItem {
@@ -39,8 +40,9 @@ interface ShopProps {
 }
 
 export function Shop({ coupleSpaceId, totalPoints, userId, isSolo, onPurchased }: ShopProps) {
-  const { purchasedItems, refresh } = useGuardianState(coupleSpaceId);
+  const { glowColor, ringEnabled, purchasedItems, refresh } = useGuardianState(coupleSpaceId);
   const [buying, setBuying] = useState<ShopItemKey | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   const handleBuy = async (item: ShopItem) => {
     if (!coupleSpaceId || buying) return;
@@ -62,11 +64,42 @@ export function Shop({ coupleSpaceId, totalPoints, userId, isSolo, onPurchased }
     }
   };
 
+  const handleColorToggle = async (color: "rose" | "graphite") => {
+    if (!coupleSpaceId || toggling || color === glowColor) return;
+    setToggling(true);
+    try {
+      const { status } = await setGuardianAppearance(coupleSpaceId, { glowColor: color });
+      if (status === "ok") {
+        await refresh();
+      } else {
+        toast.error("Não foi possível trocar o brilho.");
+      }
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  const handleRingToggle = async (enabled: boolean) => {
+    if (!coupleSpaceId || toggling) return;
+    setToggling(true);
+    try {
+      const { status } = await setGuardianAppearance(coupleSpaceId, { ringEnabled: enabled });
+      if (status === "ok") {
+        await refresh();
+      } else {
+        toast.error("Não foi possível alterar o anel.");
+      }
+    } finally {
+      setToggling(false);
+    }
+  };
+
   return (
     <div className="glass-card divide-y divide-border overflow-hidden">
       {ITEMS.map((item) => {
         const owned = purchasedItems.has(item.key);
         const canAfford = totalPoints >= item.price;
+
         return (
           <div key={item.key} className="flex items-center gap-4 p-4">
             <div className={cn(
@@ -79,10 +112,44 @@ export function Shop({ coupleSpaceId, totalPoints, userId, isSolo, onPurchased }
               <p className="text-sm font-medium text-foreground">{item.title}</p>
               <p className="text-[11px] text-muted-foreground leading-snug">{item.description}</p>
             </div>
-            {owned ? (
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 shrink-0">
-                <Check className="w-3.5 h-3.5" strokeWidth={1.5} /> Ativo
-              </span>
+
+            {item.key === "glow_graphite" && owned ? (
+              <div className="flex items-center shrink-0 rounded-xl overflow-hidden border border-border text-xs font-semibold">
+                <button
+                  onClick={() => handleColorToggle("rose")}
+                  disabled={toggling}
+                  className={cn(
+                    "h-8 px-3 transition-colors",
+                    glowColor === "rose"
+                      ? "bg-rose-500 text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70"
+                  )}
+                >
+                  Rosa
+                </button>
+                <button
+                  onClick={() => handleColorToggle("graphite")}
+                  disabled={toggling}
+                  className={cn(
+                    "h-8 px-3 transition-colors",
+                    glowColor === "graphite"
+                      ? "bg-slate-600 text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70"
+                  )}
+                >
+                  Grafite
+                </button>
+              </div>
+            ) : item.key === "guardian_ring" && owned ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[11px] text-muted-foreground">{ringEnabled ? "Ativo" : "Oculto"}</span>
+                <Switch
+                  checked={ringEnabled}
+                  onCheckedChange={handleRingToggle}
+                  disabled={toggling}
+                  className="data-[state=checked]:bg-rose-500"
+                />
+              </div>
             ) : (
               <button
                 onClick={() => handleBuy(item)}
