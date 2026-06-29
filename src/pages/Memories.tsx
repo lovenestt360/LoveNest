@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { UploadMemoryDialog } from "@/features/memories/UploadMemoryDialog";
@@ -24,6 +25,7 @@ const BATCH_SIZE = 20;
 
 export default function Memories() {
   const { user } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const spaceId = useCoupleSpaceId();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,6 +95,10 @@ export default function Memories() {
     setLoadingMore(true);
     fetchPhotos(true);
   };
+
+  if (!profileLoading && profile?.usage_mode === "solo") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <section className="space-y-5 pb-24 animate-fade-in max-w-lg mx-auto">

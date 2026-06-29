@@ -76,12 +76,13 @@ export function BottomTabs() {
   const effectivePrayerUnread = hasSpiritual ? prayerUnread : 0;
   const effectiveComplaintsUnread = isSolo ? 0 : complaintsUnread;
   const effectiveChatUnread = isSolo ? 0 : chatUnread;
+  const effectiveMemoriesUnread = isSolo ? 0 : memoriesUnread;
 
   const moreBadge =
-    memoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + tasksUnread;
+    effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + tasksUnread;
   const isMoreActive = MORE_PATHS.some((p) => location.pathname === p);
 
-  const totalUnread = effectiveChatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread;
+  const totalUnread = effectiveChatUnread + moodUnread + tasksUnread + effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread;
 
   const getBadge = (to: string) => {
     switch (to) {
@@ -168,6 +169,7 @@ export function BottomTabs() {
                     .filter(item => profile?.religion === "none" ? item.to !== "/jornada-espiritual" : true)
                     .filter(item => isSolo ? item.to !== "/conflitos" : true)
                     .filter(item => isSolo ? item.to !== "/historia" : true)
+                    .filter(item => isSolo ? item.to !== "/memorias" : true)
                     .filter(item => hideCiclo ? item.to !== "/ciclo" : true)
                     .map(({ to, label, Icon }) => {
                       const badge = getMoreBadge(to);

@@ -606,7 +606,7 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          {isEnabled("home_memories") && (
+          {isEnabled("home_memories") && profileReady && !isSolo && (
             <AppIconButton
               icon={<Camera className="w-5 h-5" />}
               label="Memórias"
