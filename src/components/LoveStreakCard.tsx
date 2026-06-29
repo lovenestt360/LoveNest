@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
+import { getJourneyLevel } from "@/features/streak/journeyLevels";
+import { Guardian } from "@/features/journey/Guardian";
+import { useGuardianState } from "@/features/journey/useGuardianState";
 import {
   Flame, Shield, ChevronRight, Heart, Sparkles
 } from "lucide-react";
@@ -194,6 +197,8 @@ export function LoveStreakCard() {
   const { points, missions } = useCardData(threshold);
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
+  const guardianState       = useGuardianState(spaceId);
+  const journeyLevel        = getJourneyLevel(points ?? 0).level;
 
   const activeMissions  = getDailyMissions({ isSolo, hasSpiritual });
 
@@ -321,6 +326,7 @@ export function LoveStreakCard() {
                 Dia Completo
               </span>
             )}
+            <Guardian level={journeyLevel} glowColor={guardianState.glowColor} ringUnlocked={guardianState.ringUnlocked} size={26} />
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
           </div>
         </div>

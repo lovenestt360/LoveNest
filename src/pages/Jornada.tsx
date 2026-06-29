@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/features/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +14,9 @@ import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
 import { getJourneyLevel } from "@/features/streak/journeyLevels";
+import { Guardian } from "@/features/journey/Guardian";
+import { useGuardianState } from "@/features/journey/useGuardianState";
+import { Shop } from "@/features/journey/Shop";
 import {
   Flame, ArrowLeft, Heart, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag,
@@ -204,8 +208,10 @@ export default function Jornada() {
   const navigate   = useNavigate();
   const spaceId    = useCoupleSpaceId();
   const { profile } = useProfile();
+  const { user } = useAuth();
   const { streak, loading, error: streakError, checkIn, checkingIn, refresh } = useStreak();
   const hoursLeft = useHoursLeft();
+  const guardianState = useGuardianState(spaceId);
 
   const isSolo = profile?.usage_mode === "solo";
   const hasSpiritual = profile?.religion !== "none";
@@ -471,6 +477,9 @@ export default function Jornada() {
         {/* NÍVEL DA JORNADA                                */}
         {/* ══════════════════════════════════════════════ */}
         <div className="glass-card p-5 text-center">
+          <div className="flex justify-center mb-2">
+            <Guardian level={journey.level} glowColor={guardianState.glowColor} ringUnlocked={guardianState.ringUnlocked} size={88} />
+          </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             Nível {journey.level} — {journey.name}
           </p>
@@ -739,6 +748,16 @@ export default function Jornada() {
               </div>
             )}
           </div>
+
+          {/* ── LOJA: GUARDIÃO ─────────────────────────── */}
+          <SectionHeader icon={<Sparkles className="w-4 h-4" />} title="Personaliza o Guardião" />
+          <Shop
+            coupleSpaceId={spaceId}
+            totalPoints={totalPoints}
+            userId={user?.id}
+            isSolo={isSolo}
+            onPurchased={fetchPoints}
+          />
         </div>
 
         <div className="h-px bg-border" />

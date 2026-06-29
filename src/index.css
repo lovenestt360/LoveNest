@@ -623,6 +623,41 @@ input, textarea, [contenteditable="true"] {
 .animate-hearts-warm-pulse   { animation: hearts-warm-pulse 3s ease-in-out infinite; }
 .animate-journey-dot-pulse   { animation: journey-dot-pulse 3.5s ease-in-out infinite; }
 
+/* ── O Guardião — forma procedural, sem ilustração (Fase 4) ── */
+@keyframes guardian-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes guardian-orbit {
+    from, to { transform: rotate(0deg); }
+  }
+}
+
+@keyframes guardian-flame-flicker {
+  0%, 100% { transform: translate(-50%, -50%) scaleY(1)     scaleX(1)    rotate(-1deg); }
+  50%       { transform: translate(-50%, -50%) scaleY(1.07) scaleX(0.96) rotate(1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes guardian-flame-flicker {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  }
+}
+
+@keyframes guardian-point-pulse {
+  0%, 100% { opacity: 0.35; transform: translate(-50%, -50%) scale(1); }
+  50%       { opacity: 0.65; transform: translate(-50%, -50%) scale(1.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes guardian-point-pulse {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  }
+}
+
+.animate-guardian-orbit          { animation: guardian-orbit linear infinite; }
+.animate-guardian-flame-flicker  { animation: guardian-flame-flicker 3.4s ease-in-out infinite; }
+.animate-guardian-point-pulse    { animation: guardian-point-pulse 3s ease-in-out infinite; }
+
 /* ── Landing ambient + logo motion ──────────────────────────────────────── */
 @keyframes blob-a {
   0%, 100% { transform: translateY(0px) scale(1); }
