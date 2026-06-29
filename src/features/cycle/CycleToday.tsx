@@ -275,7 +275,7 @@ export function CycleToday({ data }: { data: CycleData }) {
   const {
     profile, engine, openPeriod, todaySymptoms,
     reload, ensureProfile, spaceId, user, today,
-    todayIntimacy, pregnancyRisk,
+    todayIntimacy, intimacyLogs, pregnancyRisk,
   } = data;
 
   const [saving, setSaving] = useState(false);
@@ -289,6 +289,8 @@ export function CycleToday({ data }: { data: CycleData }) {
   const [periodNotes, setPeriodNotes] = useState("");
 
   const [savingIntimacy, setSavingIntimacy] = useState(false);
+  const [intimacyDate, setIntimacyDate] = useState(today);
+  const [showIntimacyDate, setShowIntimacyDate] = useState(false);
   const [hadActivityToday, setHadActivityToday] = useState(() => !!todayIntimacy);
   const [protectionMethod, setProtectionMethod] = useState(() => todayIntimacy?.protection_method ?? "nenhum");
 
@@ -325,9 +327,10 @@ export function CycleToday({ data }: { data: CycleData }) {
   }, [todaySymptoms]);
 
   useEffect(() => {
-    setHadActivityToday(!!todayIntimacy);
-    setProtectionMethod(todayIntimacy?.protection_method ?? "nenhum");
-  }, [todayIntimacy]);
+    const log = intimacyLogs.find((l) => l.day_key === intimacyDate) ?? null;
+    setHadActivityToday(!!log);
+    setProtectionMethod(log?.protection_method ?? "nenhum");
+  }, [intimacyDate, intimacyLogs]);
 
   const activeSymptoms = Object.values(symptoms).filter(Boolean).length;
 
@@ -387,22 +390,24 @@ export function CycleToday({ data }: { data: CycleData }) {
     if (!user || !spaceId) return;
     setSavingIntimacy(true);
     await ensureProfile();
+    const existing = intimacyLogs.find((l) => l.day_key === intimacyDate) ?? null;
     if (!hadActivityToday) {
-      if (todayIntimacy) {
-        await (supabase.from("intimacy_logs" as any).delete().eq("id", todayIntimacy.id) as any);
+      if (existing) {
+        await (supabase.from("intimacy_logs" as any).delete().eq("id", existing.id) as any);
       }
     } else {
       const payload = {
-        user_id: user.id, couple_space_id: spaceId, day_key: today,
+        user_id: user.id, couple_space_id: spaceId, day_key: intimacyDate,
         protection_method: protectionMethod,
       };
-      if (todayIntimacy) {
-        await (supabase.from("intimacy_logs" as any).update(payload).eq("id", todayIntimacy.id) as any);
+      if (existing) {
+        await (supabase.from("intimacy_logs" as any).update(payload).eq("id", existing.id) as any);
       } else {
         await (supabase.from("intimacy_logs" as any).insert(payload) as any);
       }
     }
     setSavingIntimacy(false);
+    setShowIntimacyDate(false); setIntimacyDate(today);
     triggerSavedFeedback(); reload();
   };
 
@@ -639,13 +644,34 @@ export function CycleToday({ data }: { data: CycleData }) {
 
         {/* ── Intimidade ── */}
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
-            <HeartHandshake className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Intimidade</p>
+          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HeartHandshake className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Intimidade</p>
+            </div>
+            <button type="button" disabled={data.isMale}
+              onClick={() => {
+                if (showIntimacyDate) { setShowIntimacyDate(false); setIntimacyDate(today); }
+                else setShowIntimacyDate(true);
+              }}
+              className="text-[11px] text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <Calendar className="h-3 w-3" strokeWidth={1.5} />
+              {intimacyDate === today ? "Hoje" : formatShortDate(intimacyDate)}
+            </button>
           </div>
           <div className="p-5 space-y-4">
+            {showIntimacyDate && (
+              <Input
+                type="date" value={intimacyDate} max={today}
+                onChange={(e) => setIntimacyDate(e.target.value)}
+                disabled={data.isMale || savingIntimacy}
+                className="rounded-xl border-border bg-card h-10 text-sm"
+              />
+            )}
+
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Houve relação hoje?</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Houve relação?</p>
               <div className="flex gap-2">
                 {[{ value: false, label: "Não" }, { value: true, label: "Sim" }].map(opt => (
                   <button key={String(opt.value)} type="button" disabled={data.isMale || savingIntimacy}
