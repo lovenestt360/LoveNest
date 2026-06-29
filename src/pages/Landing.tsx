@@ -176,7 +176,7 @@ function PhoneMockup() {
           <Flame className="w-3 h-3" style={{ color: PINK }} strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-[9px] text-[#bbb] font-medium leading-none mb-0.5">LoveStreak</p>
+          <p className="text-[9px] text-[#bbb] font-medium leading-none mb-0.5">Jornada</p>
           <p className="text-[13px] font-black leading-none" style={{ color: NAVY }}>14 dias</p>
         </div>
       </div>
@@ -212,7 +212,7 @@ function PhoneMockup() {
                 <Flame className="w-4 h-4" style={{ color: PINK }} strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px]" style={{ color: "#aaa" }}>LoveStreak</p>
+                <p className="text-[10px]" style={{ color: "#aaa" }}>Jornada</p>
                 <p className="text-[15px] font-black leading-tight" style={{ color: NAVY }}>14 dias juntos</p>
               </div>
               <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: `${PINK}15`, color: PINK }}>
@@ -540,7 +540,7 @@ export default function Landing() {
           </Reveal>
 
           <Reveal delay={200} className="mt-12 flex flex-wrap gap-2 justify-center" reduced={reduced}>
-            <FeaturePill icon={Flame}         accent={PINK}    label="LoveStreak" />
+            <FeaturePill icon={Flame}         accent={PINK}    label="Jornada" />
             <FeaturePill icon={Heart}         accent={PINK}    label="Humor diário" />
             <FeaturePill icon={MessageCircle} accent="#4D7CFE" label="Mensagens" />
             <FeaturePill icon={Camera}        accent="#4D7CFE" label="Memórias" />

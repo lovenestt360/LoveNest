@@ -190,7 +190,7 @@ export default function Admin() {
         { id: "time_capsules", label: "Cápsulas" },
         { id: "challenges", label: "Desafios" },
         { id: "wrapped", label: "LoveWrapped" },
-        { id: "lovestreak", label: "LoveStreak" },
+        { id: "lovestreak", label: "Jornada" },
         { id: "descobrir", label: "Descobrir" },
         { id: "biblioteca", label: "Biblioteca" },
     ];

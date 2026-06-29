@@ -1,7 +1,7 @@
 import { MessageCircle, Zap, Smile, BookHeart, Library, CalendarDays, type LucideIcon } from "lucide-react";
 
 // Fonte única das 4 missões diárias da Chama — usada pelo widget
-// "Faísca" da Home e pela aba "Gestos" de /lovestreak. Antes cada um
+// "Faísca" da Home e pela secção "Gestos" de /jornada. Antes cada um
 // mantinha a sua própria lista à mão e divergiam (ex: um casal com
 // religião via "Leitura" num sítio e "Oração" no outro). A missão
 // social varia com isSolo (sem parceiro para conversar, troca para

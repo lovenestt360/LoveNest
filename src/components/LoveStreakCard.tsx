@@ -121,7 +121,7 @@ function getRelationshipIcon(name: string) {
 }
 
 // ── Missions ──────────────────────────────────────────────────────────────────
-// Definições partilhadas com a aba "Gestos" de /lovestreak — ver
+// Definições partilhadas com a secção "Gestos" de /jornada — ver
 // src/features/streak/missions.ts (fonte única, evita as duas listas
 // divergirem como antes).
 
@@ -288,7 +288,7 @@ export function LoveStreakCard() {
 
       <div className="relative space-y-1.5" style={{ zIndex: 1 }}>
       <button
-        onClick={() => navigate("/lovestreak")}
+        onClick={() => navigate("/jornada")}
         className={cn(
           "glass-card glass-card-hover w-full p-5 text-left",
           "transition-[box-shadow,border-color,transform] duration-[400ms] ease-in-out"

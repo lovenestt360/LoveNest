@@ -13,8 +13,8 @@ import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
 import {
-  Flame, ArrowLeft, Heart, AlertCircle, Sparkles, Loader2,
-  Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag, Star,
+  Flame, ArrowLeft, Heart, Sparkles, Loader2,
+  Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -172,7 +172,6 @@ function FlameAlertBar({
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type Tab = "streaks" | "pontos" | "missoes";
 
 // Definições das missões vêm de src/features/streak/missions.ts —
 // fonte única partilhada com o widget "Faísca" da Home, para os dois
@@ -180,37 +179,6 @@ type Tab = "streaks" | "pontos" | "missoes";
 interface Mission extends MissionDef {
   completed: boolean;
   completedCount: number;
-}
-
-// ─────────────────────────────────────────────
-// TAB BAR
-// ─────────────────────────────────────────────
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "streaks", label: "Chama",   icon: <Flame   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
-  { id: "pontos",  label: "Amor",    icon: <Coins   className="w-3.5 h-3.5" strokeWidth={1.5} /> },
-  { id: "missoes", label: "Gestos",  icon: <Target  className="w-3.5 h-3.5" strokeWidth={1.5} /> },
-];
-
-function TabBar({ activeTab, onChange }: { activeTab: Tab; onChange: (t: Tab) => void }) {
-  return (
-    <div className="flex bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-white/70 dark:border-white/10 rounded-2xl p-1 gap-1 shadow-sm">
-      {TABS.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200",
-            activeTab === tab.id
-              ? "bg-white dark:bg-white/10 text-foreground/80 shadow-sm"
-              : "text-foreground/30 hover:text-foreground/60 active:scale-95"
-          )}
-        >
-          {tab.icon}
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 // ─────────────────────────────────────────────
@@ -226,14 +194,16 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 }
 
 // ─────────────────────────────────────────────
-// MAIN PAGE
+// MAIN PAGE — Jornada
+// Antes era "LoveStreak" com 3 separadores (Chama/Amor/Gestos). Agora é
+// uma única página de scroll contínuo: A Nossa Chama → LovePoints →
+// Gestos de hoje. Ver docs/LOVENEST_PROGRESS_SYSTEM.md, Fase 1.
 // ─────────────────────────────────────────────
-export default function LoveStreak() {
+export default function Jornada() {
   const navigate   = useNavigate();
   const spaceId    = useCoupleSpaceId();
   const { profile } = useProfile();
   const { streak, loading, error: streakError, checkIn, checkingIn, refresh } = useStreak();
-  const [activeTab, setActiveTab] = useState<Tab>("streaks");
   const hoursLeft = useHoursLeft();
 
   const isSolo = profile?.usage_mode === "solo";
@@ -243,7 +213,7 @@ export default function LoveStreak() {
     [isSolo, hasSpiritual]
   );
 
-  // — Points state —
+  // — LovePoints state —
   const [totalPoints, setTotalPoints]   = useState(0);
   const [loadingPoints, setLoadingPoints] = useState(false);
 
@@ -272,7 +242,6 @@ export default function LoveStreak() {
   const longestStreak    = streak?.longestStreak  ?? 0;
   const bothActive       = streak?.bothActiveToday ?? false;
   const myCheckedIn      = streak?.myCheckedIn     ?? false;
-  const streakAtRisk     = streak?.streakAtRisk   ?? false;
   const activeCount      = streak?.activeCount    ?? 0;
   const totalMembers     = streak?.totalMembers   ?? 0;
   const progress         = streak?.progressPercentage ?? 0;
@@ -337,7 +306,7 @@ export default function LoveStreak() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [missions]);
 
-  // ── Fetch pontos ──────────────────────────
+  // ── Fetch LovePoints ──────────────────────
 
   const fetchPoints = useCallback(async () => {
     if (!spaceId) return;
@@ -345,20 +314,16 @@ export default function LoveStreak() {
     try {
       const { data, error } = await supabase.rpc("get_total_points", { p_couple_space_id: spaceId });
       if (error) {
-        console.error("[LoveStreak] get_total_points error:", error.message);
+        console.error("[Jornada] get_total_points error:", error.message);
         return;
       }
       setTotalPoints((data as number) ?? 0);
     } catch (err: any) {
-      console.error("[LoveStreak] fetchPoints exception:", err?.message);
+      console.error("[Jornada] fetchPoints exception:", err?.message);
     } finally {
       setLoadingPoints(false);
     }
   }, [spaceId]);
-
-  // ── Fetch shields ─────────────────────────
-
-  // Fetch shields removido (usamos o estado do streak)
 
   const fetchMissions = useCallback(async () => {
     if (!spaceId) return;
@@ -374,7 +339,7 @@ export default function LoveStreak() {
         .eq("activity_date", today);
 
       if (activityRes.error) {
-        console.error("[LoveStreak] fetchMissions error:", activityRes.error.message);
+        console.error("[Jornada] fetchMissions error:", activityRes.error.message);
       }
 
       const typeUsers: Record<string, Set<string>> = {};
@@ -416,10 +381,10 @@ export default function LoveStreak() {
         p_couple_space_id: spaceId
       });
       if (error) { toast.error("Erro ao comprar LoveShield."); return; }
-      
+
       const status = (data as any)?.status;
       if (status === "insufficient_points" || status === "error_insufficient_points") {
-        toast.error("Pontos insuficientes para comprar LoveShield.");
+        toast.error("LovePoints insuficientes para comprar LoveShield.");
       } else if (status === "already_purchased_this_month") {
         toast.error(isSolo ? "Já compraste 1 escudo este mês 🛡️ — volta no próximo mês." : "Já compraram 1 escudo este mês 🛡️ — volta no próximo mês.");
       } else if (status === "limit_reached" || status === "error_limit_reached") {
@@ -453,12 +418,6 @@ export default function LoveStreak() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (spaceId) fetchAllData(); }, [spaceId]);
 
-  // ── Load by tab ───────────────────────────
-  useEffect(() => {
-    if (activeTab === "pontos")  { fetchPoints(); }
-    if (activeTab === "missoes") fetchMissions();
-  }, [activeTab, fetchPoints, fetchMissions]);
-
   // Refresh quando outra página regista actividade (Chat, Humor, Oração, check-in)
   useEffect(() => {
     const handleUpdate = () => fetchAllData();
@@ -488,28 +447,28 @@ export default function LoveStreak() {
     <div className="min-h-screen bg-background pb-32">
 
       {/* ── HEADER ── */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 pt-3 pb-0">
-        <div className="flex items-center gap-3 mb-3">
+      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
             className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted active:scale-95 transition-all"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
           </button>
-          <h1 className="text-lg font-semibold text-foreground flex-1">LoveStreak</h1>
+          <h1 className="text-lg font-semibold text-foreground flex-1">Jornada</h1>
           <div className="flex items-center gap-1 text-rose-500">
             <Flame className="w-4 h-4" strokeWidth={1.5} />
             <span className="text-sm font-semibold tabular-nums">{currentStreak}</span>
           </div>
         </div>
-        <TabBar activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      {/* ══════════════════════════════════════════════ */}
-      {/* ABA: STREAKS                                   */}
-      {/* ══════════════════════════════════════════════ */}
-      {activeTab === "streaks" && (
-        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-md mx-auto px-4 py-6 space-y-10">
+
+        {/* ══════════════════════════════════════════════ */}
+        {/* A NOSSA CHAMA                                   */}
+        {/* ══════════════════════════════════════════════ */}
+        <div className="space-y-4">
 
           {/* Hero — número grande */}
           <section className={cn(
@@ -618,17 +577,17 @@ export default function LoveStreak() {
             ))}
           </div>
         </div>
-      )}
 
-      {/* ══════════════════════════════════════════════ */}
-      {/* ABA: PONTOS                                    */}
-      {/* ══════════════════════════════════════════════ */}
-      {activeTab === "pontos" && (
-        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+        <div className="h-px bg-border" />
 
-          {/* Hero pontos */}
-          <section className="text-center py-8">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Amor acumulado ✨</p>
+        {/* ══════════════════════════════════════════════ */}
+        {/* LOVEPOINTS                                      */}
+        {/* ══════════════════════════════════════════════ */}
+        <div className="space-y-4">
+
+          {/* Hero LovePoints */}
+          <section className="text-center py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">LovePoints acumulados ✨</p>
             {loadingPoints ? (
               <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
             ) : (
@@ -646,12 +605,12 @@ export default function LoveStreak() {
             )}
           </section>
 
-          {/* Stats pontos */}
+          {/* Stats LovePoints */}
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-card p-4 text-center">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Hoje ganhámos</p>
               <p className="text-3xl font-bold tabular-nums text-rose-500">+{pointsToday}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">pontos de amor</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">LovePoints</p>
             </div>
             <div className="glass-card p-4 text-center">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{isSolo ? "Por dia ativo" : "Por dia juntos"}</p>
@@ -665,9 +624,9 @@ export default function LoveStreak() {
             <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
             <p className="text-sm text-muted-foreground leading-relaxed">
               {isSolo ? (
-                <>Ganhas <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidas de ti. Troca por proteção para a tua chama 🛡️</>
+                <>Ganhas <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidas de ti. Troca por proteção para a tua chama 🛡️</>
               ) : (
-                <>Ganham <span className="font-semibold text-foreground">+10 pontos</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️</>
+                <>Ganham <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidam um do outro. Troquem por proteção para a vossa chama 🛡️</>
               )}
             </p>
           </div>
@@ -679,8 +638,8 @@ export default function LoveStreak() {
             <div className="flex items-center gap-4">
               <div className={cn(
                 "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0",
-                shieldsPurchased > 0 
-                  ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/10 text-amber-500" 
+                shieldsPurchased > 0
+                  ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/10 text-amber-500"
                   : "bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-blue-500"
               )}>
                 <Shield className="w-6 h-6" />
@@ -694,7 +653,7 @@ export default function LoveStreak() {
                      </span>
                   )}
                 </div>
-                
+
                 <p className="text-[11px] font-medium text-muted-foreground/80 leading-snug">
                   {shieldsRemaining > 1 && shieldsPurchased === 0 ? (
                     `${shieldsRemaining} dias protegidos este mês 🛡️`
@@ -756,13 +715,13 @@ export default function LoveStreak() {
             )}
           </div>
         </div>
-      )}
 
-      {/* ══════════════════════════════════════════════ */}
-      {/* ABA: MISSÕES                                   */}
-      {/* ══════════════════════════════════════════════ */}
-      {activeTab === "missoes" && (
-        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+        <div className="h-px bg-border" />
+
+        {/* ══════════════════════════════════════════════ */}
+        {/* GESTOS DE HOJE                                  */}
+        {/* ══════════════════════════════════════════════ */}
+        <div className="space-y-4">
 
           {/* Progress header */}
           <div className="glass-card p-5">
@@ -864,7 +823,7 @@ export default function LoveStreak() {
             </p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── CTA fixo ── */}
       {!bothActive && (
