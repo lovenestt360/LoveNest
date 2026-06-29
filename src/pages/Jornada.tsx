@@ -12,6 +12,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
+import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import {
   Flame, ArrowLeft, Heart, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag,
@@ -255,6 +256,7 @@ export default function Jornada() {
   const canBuyShield   = totalPoints >= 200;
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
   const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
+  const journey        = useMemo(() => getJourneyLevel(totalPoints), [totalPoints]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
@@ -464,6 +466,29 @@ export default function Jornada() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-10">
+
+        {/* ══════════════════════════════════════════════ */}
+        {/* NÍVEL DA JORNADA                                */}
+        {/* ══════════════════════════════════════════════ */}
+        <div className="glass-card p-5 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+            Nível {journey.level} — {journey.name}
+          </p>
+          <p className="text-2xl font-bold text-foreground tabular-nums">
+            {totalPoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints</span>
+          </p>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-3">
+            <div
+              className="h-full rounded-full bg-rose-400 transition-all duration-700"
+              style={{ width: `${journey.progressPct}%` }}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            {journey.nextLevelName
+              ? `${journey.pointsToNextLevel} pts até ${journey.nextLevelName}`
+              : "Nível máximo da Jornada — Eternidade"}
+          </p>
+        </div>
 
         {/* ══════════════════════════════════════════════ */}
         {/* A NOSSA CHAMA                                   */}
