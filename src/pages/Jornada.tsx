@@ -489,8 +489,8 @@ export default function Jornada() {
         {/* ══════════════════════════════════════════════ */}
         <div className="glass-card p-5 text-center">
           <div className="flex justify-center mb-2">
-            <div style={{ width: 180, height: 180 }} className="mx-auto">
-              <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" />
+            <div style={{ width: 220, height: 220 }} className="mx-auto">
+              <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" compact />
             </div>
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">

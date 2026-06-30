@@ -133,9 +133,9 @@ export function FlamePet({
       <motion.img
         src={src}
         alt={`Guardião da Chama — fase ${stage}`}
-        className="relative w-3/4 h-3/4 object-contain select-none"
+        className={`relative object-contain select-none ${compact ? "w-full h-full" : "w-3/4 h-3/4"}`}
         draggable={false}
-        animate={{ scale: [1, 1.03, 1], y: [0, compact ? -2 : -6, 0] }}
+        animate={{ scale: [1, 1.03, 1], y: [0, compact ? -3 : -6, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
 
