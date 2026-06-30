@@ -8,13 +8,14 @@ import { cn } from "@/lib/utils";
 // para avaliação rápida em produção sem precisar subir de nível de
 // verdade. Não está ligada à navegação principal.
 
+// Nomes oficiais — ver src/features/streak/journeyLevels.ts
 const STAGE_NAMES: Record<number, string> = {
-  1: "Faísca — Início",
-  2: "Brasa",
-  3: "Chama",
-  4: "Chama Viva",
-  5: "Guardião",
-  6: "Elo Eterno",
+  1: "Início",
+  2: "Faísca",
+  3: "Brasa",
+  4: "Chama",
+  5: "Chama Viva",
+  6: "Farol",
   7: "Eternidade",
 };
 

@@ -128,19 +128,23 @@ export function Guardian({
         {/* Grupo escalado e centrado */}
         <g transform={`translate(${t},${t}) scale(${s})`}>
 
-          {/* Braços — desenhados antes do corpo para o corpo cobrir a base */}
+          {/* Pernas / pés — curtos, espreitam por baixo da ponta do corpo */}
+          <ellipse cx="44" cy="89" rx="4.5" ry="3.5" fill={pal.dark} />
+          <ellipse cx="56" cy="89" rx="4.5" ry="3.5" fill={pal.dark} />
+
+          {/* Braços — desenhados antes do corpo para o corpo cobrir a base; mãozinha na ponta */}
           {stg.arms && (
             <>
               {/* Braço esquerdo: rotate positivo levanta a ponta exterior */}
-              <ellipse cx="10" cy="65" rx="9" ry="5"
-                fill={`url(#${uid}-b)`}
-                transform={`rotate(${stg.armAngle},10,65)`}
-              />
+              <g transform={`rotate(${stg.armAngle},10,65)`}>
+                <ellipse cx="10" cy="65" rx="9" ry="5" fill={`url(#${uid}-b)`} />
+                <circle cx="2" cy="65" r="3.3" fill={pal.core} />
+              </g>
               {/* Braço direito: rotate negativo levanta a ponta exterior */}
-              <ellipse cx="90" cy="65" rx="9" ry="5"
-                fill={`url(#${uid}-b)`}
-                transform={`rotate(${-stg.armAngle},90,65)`}
-              />
+              <g transform={`rotate(${-stg.armAngle},90,65)`}>
+                <ellipse cx="90" cy="65" rx="9" ry="5" fill={`url(#${uid}-b)`} />
+                <circle cx="98" cy="65" r="3.3" fill={pal.core} />
+              </g>
             </>
           )}
 
@@ -157,52 +161,52 @@ export function Guardian({
           {/* Rosto */}
           {stg.face !== "none" && (
             <>
-              {/* Sobrancelhas — dão a expressão antes mesmo dos olhos */}
+              {/* Sobrancelhas — finas e bem acima dos olhos, não os sufocam */}
               {stg.face === "sleeping" ? (
                 <>
-                  <path d="M 27 48 Q 36 44 46 47" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
-                  <path d="M 54 47 Q 64 44 73 48" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 20 42 Q 33 37 46 41" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 54 41 Q 67 37 80 42" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
                 </>
               ) : stg.face === "cute" ? (
                 <>
-                  <path d="M 26 47 Q 36 41 47 45" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
-                  <path d="M 53 45 Q 64 41 74 47" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 19 41 Q 33 34 47 39" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 53 39 Q 67 34 81 41" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
                 </>
               ) : stg.face === "happy" ? (
                 <>
-                  <path d="M 25 46 Q 36 39 48 44" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
-                  <path d="M 52 44 Q 64 39 75 46" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+                  <path d="M 18 39 Q 33 31 48 37" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+                  <path d="M 52 37 Q 67 31 82 39" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
                 </>
               ) : stg.face === "ecstatic" ? (
                 <>
-                  <path d="M 24 44 Q 36 36 49 42" stroke={pal.dark} strokeWidth="3.4" fill="none" strokeLinecap="round" />
-                  <path d="M 51 42 Q 64 36 76 44" stroke={pal.dark} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+                  <path d="M 16 37 Q 33 27 49 35" stroke={pal.dark} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+                  <path d="M 51 35 Q 67 27 84 37" stroke={pal.dark} strokeWidth="3.4" fill="none" strokeLinecap="round" />
                 </>
               ) : null}
 
-              {/* Branco dos olhos */}
-              <circle cx="36" cy="58" r="12" fill="white" />
-              <circle cx="64" cy="58" r="12" fill="white" />
+              {/* Branco dos olhos — mais afastados, com "testa" visível por cima */}
+              <circle cx="33" cy="58" r="11" fill="white" />
+              <circle cx="67" cy="58" r="11" fill="white" />
 
               {stg.face === "sleeping" ? (
                 /* Olhos fechados — arcos simples */
                 <>
-                  <path d="M 25 58 Q 36 65 47 58" stroke={pal.core} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                  <path d="M 53 58 Q 64 65 75 58" stroke={pal.core} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  <path d="M 22 58 Q 33 65 44 58" stroke={pal.core} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  <path d="M 56 58 Q 67 65 78 58" stroke={pal.core} strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </>
               ) : (
                 /* Olhos abertos: íris + pupila + brilhos */
                 <>
-                  <circle cx="36" cy="59" r="8"   fill={`url(#${uid}-i)`} />
-                  <circle cx="64" cy="59" r="8"   fill={`url(#${uid}-i)`} />
-                  <circle cx="37" cy="60" r="5"   fill="#0f172a" />
-                  <circle cx="65" cy="60" r="5"   fill="#0f172a" />
+                  <circle cx="33" cy="59" r="7.5" fill={`url(#${uid}-i)`} />
+                  <circle cx="67" cy="59" r="7.5" fill={`url(#${uid}-i)`} />
+                  <circle cx="34" cy="60" r="4.6" fill="#0f172a" />
+                  <circle cx="66" cy="60" r="4.6" fill="#0f172a" />
                   {/* Brilho principal */}
-                  <circle cx="40" cy="55" r="2.5" fill="white" />
-                  <circle cx="68" cy="55" r="2.5" fill="white" />
+                  <circle cx="37" cy="55" r="2.3" fill="white" />
+                  <circle cx="63" cy="55" r="2.3" fill="white" />
                   {/* Brilho secundário menor */}
-                  <circle cx="33" cy="63" r="1.3" fill="white" opacity="0.6" />
-                  <circle cx="61" cy="63" r="1.3" fill="white" opacity="0.6" />
+                  <circle cx="30" cy="63" r="1.2" fill="white" opacity="0.6" />
+                  <circle cx="70" cy="63" r="1.2" fill="white" opacity="0.6" />
                 </>
               )}
 
