@@ -39,12 +39,12 @@ interface Stage {
 }
 
 const STAGES: Record<number, Stage> = {
-  1: { scale: 0.30, face: "newborn",   limbs: false, armAngle: 0,  particles: 1, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  2: { scale: 0.46, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  3: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  4: { scale: 0.72, face: "happy",     limbs: true,  armAngle: 14, particles: 2, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
-  5: { scale: 0.83, face: "confident", limbs: true,  armAngle: 10, particles: 3, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
-  6: { scale: 0.92, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, aura: true,  crown: true,  cape: true,  shield: false, tail: false, rainbow: false },
+  1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 0, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  3: { scale: 0.69, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  4: { scale: 0.78, face: "happy",     limbs: true,  armAngle: 14, particles: 2, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
+  5: { scale: 0.86, face: "confident", limbs: true,  armAngle: 10, particles: 3, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
+  6: { scale: 0.93, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, aura: true,  crown: true,  cape: true,  shield: false, tail: false, rainbow: false },
   7: { scale: 1.00, face: "ecstatic",  limbs: true,  armAngle: 80, particles: 8, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: true  },
 };
 
@@ -151,15 +151,22 @@ export function Guardian({ level, size = 96, className }: GuardianProps) {
             </>
           )}
 
-          {/* Corpo principal */}
-          <path d={BODY_PATH} fill={showRainbow ? `url(#${uid}-rb)` : `url(#${uid}-b)`} />
+          {/* Corpo principal — contorno subtil dá um acabamento "sticker" */}
+          <path
+            d={BODY_PATH}
+            fill={showRainbow ? `url(#${uid}-rb)` : `url(#${uid}-b)`}
+            stroke={pal.dark}
+            strokeWidth="1.6"
+            strokeOpacity="0.35"
+          />
 
           {/* Brilho glossy no canto superior esquerdo do corpo */}
           <ellipse
-            cx="35" cy="38" rx="11" ry="8"
-            fill="white" opacity="0.22"
-            transform="rotate(-22,35,38)"
+            cx="35" cy="36" rx="13" ry="9"
+            fill="white" opacity="0.30"
+            transform="rotate(-22,35,36)"
           />
+          <circle cx="31" cy="30" r="3.4" fill="white" opacity="0.55" />
 
           {/* Faísca de luz no topo — só na fase 1, dá vida ao recém-nascido */}
           {lvl === 1 && (
@@ -184,22 +191,22 @@ export function Guardian({ level, size = 96, className }: GuardianProps) {
               )}
 
               {/* Branco dos olhos */}
-              <circle cx="35" cy="56" r="11" fill="white" />
-              <circle cx="65" cy="56" r="11" fill="white" />
+              <circle cx="34" cy="56" r="12" fill="white" />
+              <circle cx="66" cy="56" r="12" fill="white" />
 
               {/* Íris + pupila + brilhos */}
-              <circle cx="35" cy="57" r="7.5" fill={`url(#${uid}-i)`} />
-              <circle cx="65" cy="57" r="7.5" fill={`url(#${uid}-i)`} />
-              <circle cx="36" cy="58" r="4.6" fill="#0f172a" />
-              <circle cx="64" cy="58" r="4.6" fill="#0f172a" />
-              <circle cx="38" cy="53" r="2.3" fill="white" />
-              <circle cx="62" cy="53" r="2.3" fill="white" />
-              <circle cx="32" cy="61" r="1.2" fill="white" opacity="0.6" />
-              <circle cx="68" cy="61" r="1.2" fill="white" opacity="0.6" />
+              <circle cx="34" cy="57" r="8.2" fill={`url(#${uid}-i)`} />
+              <circle cx="66" cy="57" r="8.2" fill={`url(#${uid}-i)`} />
+              <circle cx="35" cy="58" r="5" fill="#0f172a" />
+              <circle cx="65" cy="58" r="5" fill="#0f172a" />
+              <circle cx="37" cy="52.5" r="2.6" fill="white" />
+              <circle cx="63" cy="52.5" r="2.6" fill="white" />
+              <circle cx="31" cy="61" r="1.3" fill="white" opacity="0.6" />
+              <circle cx="69" cy="61" r="1.3" fill="white" opacity="0.6" />
 
               {/* Pálpebra semicerrada no olho direito — ar confiante */}
               {stg.face === "confident" && (
-                <path d="M 58 49 Q 65 44 76 49 L 76 53 Q 65 48 58 53 Z" fill={pal.core} />
+                <path d="M 56 49 Q 66 42 80 49 L 80 54 Q 66 47 56 54 Z" fill={pal.core} />
               )}
 
               {/* Boca — varia com a expressão */}
