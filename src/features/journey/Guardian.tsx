@@ -43,7 +43,7 @@ interface Stage {
 
 const STAGES: Record<number, Stage> = {
   1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 1, heartParticle: true,  aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 1, heartParticle: true,  aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 1, heartParticle: true,  aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
   3: { scale: 0.69, face: "curious",   limbs: true,  armAngle: 18, particles: 2, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
   4: { scale: 0.78, face: "happy",     limbs: true,  armAngle: 14, particles: 2, heartParticle: false, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
   5: { scale: 0.86, face: "confident", limbs: true,  armAngle: 10, particles: 3, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
