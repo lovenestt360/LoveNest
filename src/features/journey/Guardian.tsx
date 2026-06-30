@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // O Guardião — mascote SVG que evolui nos 7 níveis da Jornada.
@@ -31,6 +32,7 @@ interface Stage {
   limbs: boolean;
   armAngle: number;   // graus; positivo = braço levantado
   particles: number;
+  heartParticle: boolean; // partículas em forma de coração, em vez de pontos
   aura: boolean;
   crown: boolean;
   cape: boolean;
@@ -40,13 +42,13 @@ interface Stage {
 }
 
 const STAGES: Record<number, Stage> = {
-  1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 0, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  3: { scale: 0.69, face: "curious",   limbs: true,  armAngle: 18, particles: 2, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  4: { scale: 0.78, face: "happy",     limbs: true,  armAngle: 14, particles: 2, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
-  5: { scale: 0.86, face: "confident", limbs: true,  armAngle: 10, particles: 3, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
-  6: { scale: 0.93, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, aura: true,  crown: true,  cape: true,  shield: false, tail: false, rainbow: false },
-  7: { scale: 1.00, face: "ecstatic",  limbs: true,  armAngle: 80, particles: 8, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: true  },
+  1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 1, heartParticle: true,  aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 1, heartParticle: true,  aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  3: { scale: 0.69, face: "curious",   limbs: true,  armAngle: 18, particles: 2, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  4: { scale: 0.78, face: "happy",     limbs: true,  armAngle: 14, particles: 2, heartParticle: false, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
+  5: { scale: 0.86, face: "confident", limbs: true,  armAngle: 10, particles: 3, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
+  6: { scale: 0.93, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, heartParticle: false, aura: true,  crown: true,  cape: true,  shield: false, tail: false, rainbow: false },
+  7: { scale: 1.00, face: "ecstatic",  limbs: true,  armAngle: 80, particles: 8, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: true  },
 };
 
 // Corpo em gota simples e arredondado — igual em todas as fases,
@@ -262,9 +264,9 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
         </g>
       </svg>
 
-      {/* Partículas em órbita */}
+      {/* Partículas em órbita — coração nas fases iniciais, ponto de luz depois */}
       {Array.from({ length: stg.particles }, (_, i) => {
-        const pSize = Math.max(size * 0.055, 2.5);
+        const pSize = stg.heartParticle ? Math.max(size * 0.16, 9) : Math.max(size * 0.055, 2.5);
         return (
           <div
             key={i}
@@ -274,18 +276,34 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
               transform: `rotate(${i * (360 / stg.particles)}deg)`,
             }}
           >
-            <span
-              className="absolute rounded-full"
-              style={{
-                top: size * 0.03,
-                left: "50%",
-                width: pSize,
-                height: pSize,
-                marginLeft: -pSize / 2,
-                background: pal.light,
-                boxShadow: `0 0 5px 2px ${rgba(pal.rgb, 0.85)}`,
-              }}
-            />
+            {stg.heartParticle ? (
+              <Heart
+                className="absolute"
+                style={{
+                  top: size * 0.01,
+                  left: "50%",
+                  width: pSize,
+                  height: pSize,
+                  marginLeft: -pSize / 2,
+                  color: pal.core,
+                  fill: pal.core,
+                  filter: `drop-shadow(0 0 4px ${rgba(pal.rgb, 0.85)})`,
+                }}
+              />
+            ) : (
+              <span
+                className="absolute rounded-full"
+                style={{
+                  top: size * 0.03,
+                  left: "50%",
+                  width: pSize,
+                  height: pSize,
+                  marginLeft: -pSize / 2,
+                  background: pal.light,
+                  boxShadow: `0 0 5px 2px ${rgba(pal.rgb, 0.85)}`,
+                }}
+              />
+            )}
           </div>
         );
       })}
