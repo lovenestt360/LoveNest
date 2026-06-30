@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 // (escudo, cauda, coroa+capa, arco-íris). Cor 100% automática por nível.
 
 export interface GuardianProps {
-  level: number;  // 1-7, ver journeyLevels.ts
-  size?: number;  // px do contentor quadrado
+  level: number;          // 1-7, ver journeyLevels.ts
+  size?: number;          // px do contentor quadrado
+  uniformScale?: boolean; // ignora a escala progressiva por nível (ex: ícone do card da Home, onde todos devem parecer do mesmo tamanho)
   className?: string;
 }
 
@@ -26,7 +27,7 @@ const LEVEL_PALETTE: Record<number, { light: string; core: string; dark: string;
 
 interface Stage {
   scale: number;
-  face: "newborn" | "happy" | "confident" | "ecstatic";
+  face: "newborn" | "happy" | "curious" | "confident" | "ecstatic";
   limbs: boolean;
   armAngle: number;   // graus; positivo = braço levantado
   particles: number;
@@ -41,7 +42,7 @@ interface Stage {
 const STAGES: Record<number, Stage> = {
   1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 0, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
   2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  3: { scale: 0.69, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  3: { scale: 0.69, face: "curious",   limbs: true,  armAngle: 18, particles: 2, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
   4: { scale: 0.78, face: "happy",     limbs: true,  armAngle: 14, particles: 2, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
   5: { scale: 0.86, face: "confident", limbs: true,  armAngle: 10, particles: 3, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
   6: { scale: 0.93, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, aura: true,  crown: true,  cape: true,  shield: false, tail: false, rainbow: false },
@@ -54,7 +55,7 @@ const BODY_PATH = "M 50 92 C 27 92 12 76 12 58 C 12 39 24 22 50 6 C 76 22 88 39 
 
 function rgba(rgb: string, a: number) { return `rgba(${rgb},${a})`; }
 
-export function Guardian({ level, size = 96, className }: GuardianProps) {
+export function Guardian({ level, size = 96, uniformScale = false, className }: GuardianProps) {
   // ID único por instância para isolar gradientes SVG no mesmo documento
   const uid = useRef(`g${Math.random().toString(36).slice(2, 7)}`).current;
   const lvl  = Math.min(7, Math.max(1, level));
@@ -62,7 +63,9 @@ export function Guardian({ level, size = 96, className }: GuardianProps) {
   const pal  = LEVEL_PALETTE[lvl];
   const showRainbow = stg.rainbow;
 
-  const s = stg.scale;
+  // Em contextos como o ícone do card da Home, todas as fases devem
+  // parecer do mesmo tamanho — a escala progressiva fica só para a Jornada.
+  const s = uniformScale ? 0.92 : stg.scale;
   const t = +(50 * (1 - s)).toFixed(2); // translação para centrar na viewport
 
   return (
@@ -190,6 +193,14 @@ export function Guardian({ level, size = 96, className }: GuardianProps) {
                 <path d="M 55 32 Q 67 23 81 30" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
               )}
 
+              {/* Sobrancelhas erguidas — expressão curiosa (Brasa) */}
+              {stg.face === "curious" && (
+                <>
+                  <path d="M 18 38 Q 33 27 49 36" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 51 36 Q 67 27 82 38" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                </>
+              )}
+
               {/* Branco dos olhos */}
               <circle cx="34" cy="56" r="12" fill="white" />
               <circle cx="66" cy="56" r="12" fill="white" />
@@ -217,6 +228,9 @@ export function Guardian({ level, size = 96, className }: GuardianProps) {
               {stg.face === "confident" && (
                 <path d="M 42 71 Q 53 76 61 68"
                   stroke="white" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+              )}
+              {stg.face === "curious" && (
+                <ellipse cx="50" cy="72" rx="5.5" ry="6.5" fill="white" opacity="0.92" />
               )}
               {stg.face === "ecstatic" && (
                 <>

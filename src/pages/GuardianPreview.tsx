@@ -49,10 +49,10 @@ export default function GuardianPreview() {
         </div>
 
         <div className="glass-card p-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase mb-4">Tamanho real — card da Home (26px)</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-4">Tamanho real — card da Home (48px, uniforme)</p>
           <div className="flex items-center gap-4">
             {[1, 2, 3, 4, 5, 6, 7].map((level) => (
-              <Guardian key={level} level={level} size={26} />
+              <Guardian key={level} level={level} size={48} uniformScale />
             ))}
           </div>
         </div>

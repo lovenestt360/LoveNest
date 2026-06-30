@@ -354,7 +354,7 @@ export function LoveStreakCard() {
                 Dia Completo
               </span>
             )}
-            <Guardian level={journeyLevel} size={26} />
+            <Guardian level={journeyLevel} size={48} uniformScale />
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
           </div>
         </div>
