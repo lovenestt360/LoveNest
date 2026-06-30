@@ -4,18 +4,11 @@ import { cn } from "@/lib/utils";
 // O Guardião — mascote SVG que evolui nos 7 níveis da Jornada.
 // Réplica fiel ao infográfico de referência: corpo-gota simples e fofo,
 // braços/pernas curtos da mesma cor do corpo, acessórios por fase
-// (escudo, cauda, coroa+capa, arco-íris).
-
-// "rose" = cor automática que evolui com o nível (default);
-// "graphite" = skin fixa comprável na loja, ignora o nível.
-export type GuardianGlowColor = "rose" | "graphite";
+// (escudo, cauda, coroa+capa, arco-íris). Cor 100% automática por nível.
 
 export interface GuardianProps {
-  level: number;                 // 1-7, ver journeyLevels.ts
-  glowColor?: GuardianGlowColor; // "rose" = automático por nível, "graphite" = skin fixa
-  ringUnlocked?: boolean;        // anel desbloqueado na loja ou nível 7
-  ringEnabled?: boolean;         // interruptor on/off após desbloqueio
-  size?: number;                 // px do contentor quadrado
+  level: number;  // 1-7, ver journeyLevels.ts
+  size?: number;  // px do contentor quadrado
   className?: string;
 }
 
@@ -30,10 +23,6 @@ const LEVEL_PALETTE: Record<number, { light: string; core: string; dark: string;
   6: { light: "#fef08a", core: "#facc15", dark: "#a16207", rgb: "250,204,21"  }, // dourado
   7: { light: "#fbcfe8", core: "#ec4899", dark: "#831843", rgb: "236,72,153"  }, // base p/ arco-íris
 };
-
-// "graphite" é uma skin fixa comprável na loja — substitui a progressão
-// automática por um tom monocromático, independente do nível.
-const GRAPHITE_PALETTE = { light: "#e2e8f0", core: "#64748b", dark: "#0f172a", rgb: "71,85,105" } as const;
 
 interface Stage {
   scale: number;
@@ -50,7 +39,7 @@ interface Stage {
 }
 
 const STAGES: Record<number, Stage> = {
-  1: { scale: 0.30, face: "newborn",   limbs: false, armAngle: 0,  particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
+  1: { scale: 0.30, face: "newborn",   limbs: false, armAngle: 0,  particles: 1, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
   2: { scale: 0.46, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
   3: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 0, aura: false, crown: false, cape: false, shield: false, tail: false, rainbow: false },
   4: { scale: 0.72, face: "happy",     limbs: true,  armAngle: 14, particles: 2, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
@@ -65,21 +54,13 @@ const BODY_PATH = "M 50 92 C 27 92 12 76 12 58 C 12 39 24 22 50 6 C 76 22 88 39 
 
 function rgba(rgb: string, a: number) { return `rgba(${rgb},${a})`; }
 
-export function Guardian({
-  level,
-  glowColor = "rose",
-  ringUnlocked = false,
-  ringEnabled = true,
-  size = 96,
-  className,
-}: GuardianProps) {
+export function Guardian({ level, size = 96, className }: GuardianProps) {
   // ID único por instância para isolar gradientes SVG no mesmo documento
   const uid = useRef(`g${Math.random().toString(36).slice(2, 7)}`).current;
   const lvl  = Math.min(7, Math.max(1, level));
   const stg  = STAGES[lvl];
-  const pal  = glowColor === "graphite" ? GRAPHITE_PALETTE : LEVEL_PALETTE[lvl];
-  const showRing = (ringUnlocked || level >= 7) && ringEnabled;
-  const showRainbow = stg.rainbow && glowColor !== "graphite";
+  const pal  = LEVEL_PALETTE[lvl];
+  const showRainbow = stg.rainbow;
 
   const s = stg.scale;
   const t = +(50 * (1 - s)).toFixed(2); // translação para centrar na viewport
@@ -180,6 +161,11 @@ export function Guardian({
             transform="rotate(-22,35,38)"
           />
 
+          {/* Faísca de luz no topo — só na fase 1, dá vida ao recém-nascido */}
+          {lvl === 1 && (
+            <path d="M 50 -4 L 53 4 L 61 6 L 53 8 L 50 16 L 47 8 L 39 6 L 47 4 Z" fill={pal.light} opacity="0.85" />
+          )}
+
           {/* Rosto */}
           {stg.face === "newborn" ? (
             /* Recém-nascido: olhinhos fechados e contentes + bochecha */
@@ -254,14 +240,6 @@ export function Guardian({
           )}
         </g>
       </svg>
-
-      {/* Anel ornamental */}
-      {showRing && (
-        <div
-          className="absolute rounded-full pointer-events-none"
-          style={{ inset: size * 0.07, border: `1.5px solid ${rgba(pal.rgb, 0.48)}` }}
-        />
-      )}
 
       {/* Partículas em órbita */}
       {Array.from({ length: stg.particles }, (_, i) => {
