@@ -355,7 +355,7 @@ export function LoveStreakCard() {
                 Dia Completo
               </span>
             )}
-            <div style={{ width: 48, height: 48 }} className="shrink-0">
+            <div style={{ width: 48, height: 48 }} className="shrink-0 bg-card">
               <FlamePet stage={levelToStage(journeyLevel)} mood="alegre" environment="suave" compact />
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
