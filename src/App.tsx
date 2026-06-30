@@ -59,6 +59,7 @@ const BookDetail = lazy(() => import("./pages/BookDetail"));
 const BookReader = lazy(() => import("./pages/BookReader"));
 const BookReflections = lazy(() => import("./pages/BookReflections"));
 const GuardianPreview = lazy(() => import("./pages/GuardianPreview"));
+const FlameDemo = lazy(() => import("./pages/FlameDemo"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeaturesControl = lazy(() => import("./pages/admin/Features"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -83,6 +84,7 @@ const AppRoutes = () => (
     <Route path="/signup" element={<Signup />} />
     <Route path="/redefinir-senha" element={<ResetPassword />} />
     <Route path="/guardiao-preview" element={<GuardianPreview />} />
+    <Route path="/flame-demo" element={<FlameDemo />} />
 
     {/* Auth-only routes (login required, sem pareamento obrigatório) */}
     <Route element={<AuthOnlyRoute />}>
