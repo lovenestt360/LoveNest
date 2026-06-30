@@ -14,7 +14,8 @@ import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
 import { getJourneyLevel } from "@/features/streak/journeyLevels";
-import { Guardian } from "@/features/journey/Guardian";
+import { FlamePet } from "@/components/FlamePet";
+import { levelToStage } from "@/types/flame";
 import {
   Flame, ArrowLeft, Heart, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag,
@@ -488,7 +489,9 @@ export default function Jornada() {
         {/* ══════════════════════════════════════════════ */}
         <div className="glass-card p-5 text-center">
           <div className="flex justify-center mb-2">
-            <Guardian level={journey.level} size={88} />
+            <div style={{ width: 180, height: 180 }} className="mx-auto">
+              <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" />
+            </div>
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             Nível {journey.level} — {journey.name}
