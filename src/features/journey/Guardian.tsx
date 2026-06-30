@@ -2,10 +2,13 @@ import { useRef } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// O Guardião — mascote SVG que evolui nos 7 níveis da Jornada.
-// Réplica fiel ao infográfico de referência: corpo-gota simples e fofo,
-// braços/pernas curtos da mesma cor do corpo, acessórios por fase
-// (escudo, cauda, coroa+capa, arco-íris). Cor 100% automática por nível.
+// O Guardião — mascote de chama que evolui nos 7 níveis da Jornada.
+// Anatomia em camadas (ver GUARDIAO_DA_CHAMA_SPEC.md secção 3), adaptada
+// para SVG web: sombra do chão → corpo-chama (silhueta com lóbulos no
+// topo) → brilho interno → rosto → bochechas → marca de coração no peito
+// → membros (só a partir do Guardião) → acessórios → partículas.
+// Os 7 níveis/nomes/pontos continuam os de journeyLevels.ts — esta spec
+// serve só de referência visual, não de fonte de nomenclatura.
 
 export interface GuardianProps {
   level: number;          // 1-7, ver journeyLevels.ts
@@ -29,31 +32,33 @@ const LEVEL_PALETTE: Record<number, { light: string; core: string; dark: string;
 interface Stage {
   scale: number;
   face: "newborn" | "happy" | "curious" | "confident" | "ecstatic";
-  limbs: boolean;
-  armAngle: number;   // graus; positivo = braço levantado
+  limbs: boolean;      // braços/mãos + pernas — só a partir do Guardião (Nv4)
+  armAngle: number;    // graus; positivo = braço levantado
   particles: number;
   heartParticle: boolean; // partículas em forma de coração, em vez de pontos
+  heartMark: boolean;  // marca de coração no peito
   aura: boolean;
   crown: boolean;
   cape: boolean;
-  shield: boolean;
-  tail: boolean;
+  shield: boolean;     // emblema de escudo (substitui a marca de coração simples)
+  gem: boolean;        // joia no peito (substitui o coração na fase lendária)
   rainbow: boolean;
 }
 
 const STAGES: Record<number, Stage> = {
-  1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 1, heartParticle: true,  aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  2: { scale: 0.60, face: "happy",     limbs: true,  armAngle: 18, particles: 1, heartParticle: true,  aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  3: { scale: 0.69, face: "curious",   limbs: true,  armAngle: 18, particles: 2, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: false },
-  4: { scale: 0.78, face: "happy",     limbs: true,  armAngle: 14, particles: 2, heartParticle: false, aura: false, crown: false, cape: false, shield: true,  tail: false, rainbow: false },
-  5: { scale: 0.86, face: "confident", limbs: true,  armAngle: 10, particles: 3, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: true,  rainbow: false },
-  6: { scale: 0.93, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, heartParticle: false, aura: true,  crown: true,  cape: true,  shield: false, tail: false, rainbow: false },
-  7: { scale: 1.00, face: "ecstatic",  limbs: true,  armAngle: 80, particles: 8, heartParticle: false, aura: true,  crown: false, cape: false, shield: false, tail: false, rainbow: true  },
+  1: { scale: 0.50, face: "newborn",   limbs: false, armAngle: 0,  particles: 1, heartParticle: true,  heartMark: false, aura: true,  crown: false, cape: false, shield: false, gem: false, rainbow: false },
+  2: { scale: 0.62, face: "happy",     limbs: false, armAngle: 0,  particles: 1, heartParticle: true,  heartMark: true,  aura: true,  crown: false, cape: false, shield: false, gem: false, rainbow: false },
+  3: { scale: 0.74, face: "curious",   limbs: false, armAngle: 0,  particles: 2, heartParticle: false, heartMark: true,  aura: true,  crown: false, cape: false, shield: false, gem: false, rainbow: false },
+  4: { scale: 0.84, face: "happy",     limbs: true,  armAngle: 14, particles: 2, heartParticle: false, heartMark: true,  aura: true,  crown: false, cape: false, shield: false, gem: false, rainbow: false },
+  5: { scale: 0.90, face: "confident", limbs: true,  armAngle: 10, particles: 3, heartParticle: false, heartMark: false, aura: true,  crown: false, cape: true,  shield: true,  gem: false, rainbow: false },
+  6: { scale: 0.95, face: "ecstatic",  limbs: true,  armAngle: 30, particles: 5, heartParticle: false, heartMark: true,  aura: true,  crown: true,  cape: false, shield: false, gem: false, rainbow: false },
+  7: { scale: 1.00, face: "ecstatic",  limbs: true,  armAngle: 80, particles: 8, heartParticle: false, heartMark: false, aura: true,  crown: false, cape: false, shield: false, gem: true,  rainbow: true  },
 };
 
-// Corpo em gota simples e arredondado — igual em todas as fases,
-// só a escala e a cor mudam (como na referência).
-const BODY_PATH = "M 50 92 C 27 92 12 76 12 58 C 12 39 24 22 50 6 C 76 22 88 39 88 58 C 88 76 73 92 50 92 Z";
+// Corpo em forma de chama — silhueta com 2 línguas de fogo no topo que se
+// fundem num corpo arredondado em baixo (igual em todas as fases, só a
+// escala e a cor mudam, como na referência).
+const BODY_PATH = "M 50 4 C 54 14 58 20 56 28 C 64 22 70 28 68 38 C 80 42 90 56 90 70 C 90 88 72 96 50 96 C 28 96 10 88 10 70 C 10 56 20 42 32 38 C 30 28 36 22 44 28 C 42 20 46 14 50 4 Z";
 
 function rgba(rgb: string, a: number) { return `rgba(${rgb},${a})`; }
 
@@ -123,35 +128,33 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
         {/* Grupo escalado e centrado */}
         <g transform={`translate(${t},${t}) scale(${s})`}>
 
-          {/* Cauda de chama (Sentinela) — atrás do corpo */}
-          {stg.tail && (
-            <path d="M 78 66 Q 96 60 94 76 Q 86 73 78 75 Z" fill={`url(#${uid}-b)`} />
-          )}
+          {/* Sombra do chão — elipse translúcida sob o personagem */}
+          <ellipse cx="50" cy="97" rx="32" ry="7" fill={pal.dark} opacity="0.22" />
 
-          {/* Capa (Eterno) — atrás do corpo, em vermelho contrastante */}
+          {/* Capa (Sentinela) — atrás do corpo, em vermelho contrastante */}
           {stg.cape && (
             <>
-              <path d="M 30 28 Q 8 50 16 84 Q 26 74 31 56 Z" fill="#be123c" opacity="0.88" />
-              <path d="M 70 28 Q 92 50 84 84 Q 74 74 69 56 Z" fill="#be123c" opacity="0.88" />
+              <path d="M 30 30 Q 8 52 16 86 Q 26 76 31 58 Z" fill="#be123c" opacity="0.88" />
+              <path d="M 70 30 Q 92 52 84 86 Q 74 76 69 58 Z" fill="#be123c" opacity="0.88" />
             </>
           )}
 
-          {/* Pernas — curtas, mesma cor do corpo, presas por baixo */}
+          {/* Pernas — curtas, mesma cor do corpo, só a partir do Guardião */}
           {stg.limbs && (
             <>
-              <ellipse cx="40" cy="86" rx="7" ry="9" fill={`url(#${uid}-b)`} />
-              <ellipse cx="60" cy="86" rx="7" ry="9" fill={`url(#${uid}-b)`} />
+              <ellipse cx="40" cy="88" rx="7" ry="9" fill={`url(#${uid}-b)`} />
+              <ellipse cx="60" cy="88" rx="7" ry="9" fill={`url(#${uid}-b)`} />
             </>
           )}
 
-          {/* Braços — curtos, mesma cor do corpo, saem dos lados */}
+          {/* Braços — curtos, mesma cor do corpo, só a partir do Guardião */}
           {stg.limbs && (
             <>
-              <g transform={`rotate(${stg.armAngle},18,60)`}>
-                <ellipse cx="18" cy="60" rx="8" ry="11" fill={`url(#${uid}-b)`} />
+              <g transform={`rotate(${stg.armAngle},18,62)`}>
+                <ellipse cx="18" cy="62" rx="8" ry="11" fill={`url(#${uid}-b)`} />
               </g>
-              <g transform={`rotate(${-stg.armAngle},82,60)`}>
-                <ellipse cx="82" cy="60" rx="8" ry="11" fill={`url(#${uid}-b)`} />
+              <g transform={`rotate(${-stg.armAngle},82,62)`}>
+                <ellipse cx="82" cy="62" rx="8" ry="11" fill={`url(#${uid}-b)`} />
               </g>
             </>
           )}
@@ -164,6 +167,11 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
             strokeWidth="1.6"
             strokeOpacity="0.35"
           />
+
+          {/* Brilho interno — núcleo translúcido mais claro, dá sensação de chama acesa */}
+          <g transform="translate(50,58) scale(0.6) translate(-50,-58)">
+            <path d={BODY_PATH} fill={pal.light} opacity="0.22" />
+          </g>
 
           {/* Brilho glossy no canto superior esquerdo do corpo — mais forte na Faísca (Nv 2) */}
           <ellipse
@@ -255,12 +263,24 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
             </>
           )}
 
-          {/* Escudo em coração (Guardião) — junto à mão esquerda */}
+          {/* Marca de coração no peito — surge a partir da Brasa (Nv 2) */}
+          {stg.heartMark && (
+            <path d="M 50 78 C 46 72 38 72 38 79 C 38 85 44 89 50 94 C 56 89 62 85 62 79 C 62 72 54 72 50 78 Z"
+              fill="white" opacity="0.85" />
+          )}
+
+          {/* Emblema de escudo com coração — Sentinela (Nv 5) */}
           {stg.shield && (
-            <g transform="translate(16,68)">
-              <path d="M0 -8 C-7 -14 -13 -7 -13 -1 C-13 7 -6 13 0 17 C6 13 13 7 13 -1 C13 -7 7 -14 0 -8 Z"
-                fill={pal.light} stroke={pal.dark} strokeWidth="1.6" />
+            <g transform="translate(50,84)">
+              <path d="M0 -14 C-11 -14 -16 -9 -16 -9 C-16 4 -9 14 0 20 C9 14 16 4 16 -9 C16 -9 11 -14 0 -14 Z"
+                fill={pal.light} stroke={pal.dark} strokeWidth="1.6" opacity="0.95" />
+              <path d="M0 -3 C-2 -6 -6 -6 -6 -2 C-6 1 -3 4 0 7 C3 4 6 1 6 -2 C6 -6 2 -6 0 -3 Z" fill={pal.dark} />
             </g>
+          )}
+
+          {/* Joia no peito — Lendário (Nv 7), substitui o coração */}
+          {stg.gem && (
+            <path d="M 50 76 L 59 84 L 50 94 L 41 84 Z" fill="white" opacity="0.9" stroke={pal.dark} strokeWidth="1" />
           )}
 
           {/* Coroa (Eterno) */}
