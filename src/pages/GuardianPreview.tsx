@@ -47,7 +47,7 @@ export default function GuardianPreview() {
         {(["rose", "graphite"] as GuardianGlowColor[]).map((color) => (
           <div key={color} className="glass-card p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-4">
-              Brilho: {color === "rose" ? "Rosa" : "Grafite"}
+              Brilho: {color === "rose" ? "Automático (por nível)" : "Grafite (fixo)"}
             </p>
             <div className="grid grid-cols-4 gap-4">
               {[1, 2, 3, 4, 5, 6, 7].map((level) => (

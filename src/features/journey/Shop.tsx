@@ -19,7 +19,7 @@ const ITEMS: ShopItem[] = [
     key: "glow_graphite",
     Icon: Droplets,
     title: "Brilho Grafite",
-    description: "Troca o brilho do Guardião de rosa para grafite.",
+    description: "Troca a cor automática (que evolui com o nível) por um tom grafite fixo.",
     price: 150,
   },
   {
@@ -125,7 +125,7 @@ export function Shop({ coupleSpaceId, totalPoints, userId, isSolo, onPurchased }
                       : "bg-muted text-muted-foreground hover:bg-muted/70"
                   )}
                 >
-                  Rosa
+                  Automático
                 </button>
                 <button
                   onClick={() => handleColorToggle("graphite")}

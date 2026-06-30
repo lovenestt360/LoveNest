@@ -5,23 +5,36 @@ import { cn } from "@/lib/utils";
 // Inspirado nos personagens de chama fofinhos (estilo Duolingo): corpo
 // em gota/chama, olhos grandes com brilho, expressão que cresce com o nível.
 
+// "rose" = cor automática que evolui com o nível (default);
+// "graphite" = skin fixa comprável na loja, ignora o nível.
 export type GuardianGlowColor = "rose" | "graphite";
 
 export interface GuardianProps {
   level: number;                 // 1-7, ver journeyLevels.ts
-  glowColor?: GuardianGlowColor; // personalização visual
+  glowColor?: GuardianGlowColor; // "rose" = automático por nível, "graphite" = skin fixa
   ringUnlocked?: boolean;        // anel desbloqueado na loja ou nível 7
   ringEnabled?: boolean;         // interruptor on/off após desbloqueio
   size?: number;                 // px do contentor quadrado
   className?: string;
 }
 
-// Vermelho-fogo saturado (não rosa-pastel) — para ler como chama, não como
-// gota/coração à distância/escala pequena, mantendo a família rose/graphite.
-const PALETTE = {
-  rose:     { light: "#fca5a5", core: "#ef4444", dark: "#7f1d1d", rgb: "239,68,68"  },
-  graphite: { light: "#e2e8f0", core: "#64748b", dark: "#0f172a", rgb: "71,85,105" },
-} as const;
+// Progressão automática de cor por nível (estilo "selos de sequência"):
+// vermelho → rosa → fúcsia → roxo conforme sobe de nível. Mantém-se sempre
+// dentro da família rose/red/pink/purple — nunca amarelo/amber (regra do
+// projeto) — para não se confundir com o aviso/streak-risk em laranja.
+const LEVEL_PALETTE: Record<number, { light: string; core: string; dark: string; rgb: string }> = {
+  1: { light: "#fda4af", core: "#fb7185", dark: "#9f1239", rgb: "251,113,133" },
+  2: { light: "#fb7185", core: "#f43f5e", dark: "#881337", rgb: "244,63,94"  },
+  3: { light: "#f87171", core: "#ef4444", dark: "#7f1d1d", rgb: "239,68,68"  },
+  4: { light: "#f9a8d4", core: "#db2777", dark: "#831843", rgb: "219,39,119" },
+  5: { light: "#e879f9", core: "#c026d3", dark: "#701a75", rgb: "192,38,211" },
+  6: { light: "#c084fc", core: "#9333ea", dark: "#581c87", rgb: "147,51,234" },
+  7: { light: "#a78bfa", core: "#7c3aed", dark: "#4c1d95", rgb: "124,58,237" },
+};
+
+// "graphite" é uma skin fixa comprável na loja — substitui a progressão
+// automática por um tom monocromático, independente do nível.
+const GRAPHITE_PALETTE = { light: "#e2e8f0", core: "#64748b", dark: "#0f172a", rgb: "71,85,105" } as const;
 
 interface Stage {
   scale: number;
@@ -62,8 +75,9 @@ export function Guardian({
 }: GuardianProps) {
   // ID único por instância para isolar gradientes SVG no mesmo documento
   const uid = useRef(`g${Math.random().toString(36).slice(2, 7)}`).current;
-  const stg  = STAGES[Math.min(7, Math.max(1, level))];
-  const pal  = PALETTE[glowColor];
+  const lvl  = Math.min(7, Math.max(1, level));
+  const stg  = STAGES[lvl];
+  const pal  = glowColor === "graphite" ? GRAPHITE_PALETTE : LEVEL_PALETTE[lvl];
   const showRing = (ringUnlocked || level >= 7) && ringEnabled;
 
   const s = stg.scale;
@@ -143,6 +157,29 @@ export function Guardian({
           {/* Rosto */}
           {stg.face !== "none" && (
             <>
+              {/* Sobrancelhas — dão a expressão antes mesmo dos olhos */}
+              {stg.face === "sleeping" ? (
+                <>
+                  <path d="M 27 48 Q 36 44 46 47" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 54 47 Q 64 44 73 48" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                </>
+              ) : stg.face === "cute" ? (
+                <>
+                  <path d="M 26 47 Q 36 41 47 45" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <path d="M 53 45 Q 64 41 74 47" stroke={pal.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+                </>
+              ) : stg.face === "happy" ? (
+                <>
+                  <path d="M 25 46 Q 36 39 48 44" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+                  <path d="M 52 44 Q 64 39 75 46" stroke={pal.dark} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+                </>
+              ) : stg.face === "ecstatic" ? (
+                <>
+                  <path d="M 24 44 Q 36 36 49 42" stroke={pal.dark} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+                  <path d="M 51 42 Q 64 36 76 44" stroke={pal.dark} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+
               {/* Branco dos olhos */}
               <circle cx="36" cy="58" r="12" fill="white" />
               <circle cx="64" cy="58" r="12" fill="white" />
