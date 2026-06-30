@@ -81,7 +81,7 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
         <div
           className="absolute inset-0 rounded-full animate-glow-pulse pointer-events-none"
           style={{
-            background: `radial-gradient(circle, ${rgba(pal.rgb, 0.28)} 0%, transparent 68%)`,
+            background: `radial-gradient(circle, ${rgba(pal.rgb, 0.20)} 0%, transparent 68%)`,
             filter: "blur(5px)",
           }}
         />
@@ -95,7 +95,7 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
         className={cn("absolute inset-0", level >= 3 && "animate-flame-breathe")}
         style={{
           overflow: "visible",
-          filter: `drop-shadow(0 0 ${Math.round(size * (stg.aura ? 0.09 : 0.04))}px ${rgba(pal.rgb, stg.aura ? 0.55 : 0.28)})`,
+          filter: `drop-shadow(0 0 ${Math.round(size * (stg.aura ? 0.07 : 0.03))}px ${rgba(pal.rgb, stg.aura ? 0.42 : 0.22)})`,
         }}
       >
         <defs>
@@ -165,17 +165,26 @@ export function Guardian({ level, size = 96, uniformScale = false, className }: 
             strokeOpacity="0.35"
           />
 
-          {/* Brilho glossy no canto superior esquerdo do corpo */}
+          {/* Brilho glossy no canto superior esquerdo do corpo — mais forte na Faísca (Nv 2) */}
           <ellipse
             cx="35" cy="36" rx="13" ry="9"
-            fill="white" opacity="0.30"
+            fill="white" opacity={lvl === 2 ? 0.42 : 0.30}
             transform="rotate(-22,35,36)"
           />
-          <circle cx="31" cy="30" r="3.4" fill="white" opacity="0.55" />
+          <circle cx="31" cy="30" r={lvl === 2 ? 4.2 : 3.4} fill="white" opacity={lvl === 2 ? 0.7 : 0.55} />
 
-          {/* Faísca de luz no topo — só na fase 1, dá vida ao recém-nascido */}
+          {/* Faísca de luz no topo — fase 1, dá vida ao recém-nascido */}
           {lvl === 1 && (
             <path d="M 50 -4 L 53 4 L 61 6 L 53 8 L 50 16 L 47 8 L 39 6 L 47 4 Z" fill={pal.light} opacity="0.85" />
+          )}
+
+          {/* Faíscas extra — fase 2 ("Faísca"), mais detalhe e brilho a saltar do corpo */}
+          {lvl === 2 && (
+            <>
+              <path d="M 24 16 L 26 21 L 31 23 L 26 25 L 24 30 L 22 25 L 17 23 L 22 21 Z" fill={pal.light} opacity="0.9" />
+              <path d="M 76 24 L 77.5 27.5 L 81 29 L 77.5 30.5 L 76 34 L 74.5 30.5 L 71 29 L 74.5 27.5 Z" fill={pal.light} opacity="0.8" />
+              <circle cx="50" cy="8" r="2" fill={pal.light} opacity="0.85" />
+            </>
           )}
 
           {/* Rosto */}
