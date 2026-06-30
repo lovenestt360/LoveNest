@@ -16,8 +16,10 @@ export interface GuardianProps {
   className?: string;
 }
 
+// Vermelho-fogo saturado (não rosa-pastel) — para ler como chama, não como
+// gota/coração à distância/escala pequena, mantendo a família rose/graphite.
 const PALETTE = {
-  rose:     { light: "#fda4af", core: "#f43f5e", dark: "#881337", rgb: "244,63,94"  },
+  rose:     { light: "#fca5a5", core: "#ef4444", dark: "#7f1d1d", rgb: "239,68,68"  },
   graphite: { light: "#e2e8f0", core: "#64748b", dark: "#0f172a", rgb: "71,85,105" },
 } as const;
 
@@ -33,8 +35,8 @@ interface Stage {
 }
 
 const STAGES: Record<number, Stage> = {
-  1: { scale: 0.28, face: "none",     arms: false, armAngle: 0,  particles: 0, aura: false, crown: false, doubleTip: false },
-  2: { scale: 0.46, face: "sleeping", arms: false, armAngle: 0,  particles: 0, aura: false, crown: false, doubleTip: false },
+  1: { scale: 0.34, face: "sleeping", arms: false, armAngle: 0,  particles: 0, aura: false, crown: false, doubleTip: false },
+  2: { scale: 0.50, face: "sleeping", arms: false, armAngle: 0,  particles: 0, aura: false, crown: false, doubleTip: false },
   3: { scale: 0.62, face: "cute",     arms: false, armAngle: 0,  particles: 0, aura: false, crown: false, doubleTip: true  },
   4: { scale: 0.74, face: "cute",     arms: true,  armAngle: 22, particles: 3, aura: false, crown: false, doubleTip: true  },
   5: { scale: 0.85, face: "happy",    arms: true,  armAngle: 40, particles: 3, aura: false, crown: false, doubleTip: true  },
