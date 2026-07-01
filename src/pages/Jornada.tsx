@@ -507,65 +507,77 @@ export default function Jornada() {
         {/* ══════════════════════════════════════════════ */}
         {/* NÍVEL DA JORNADA                                */}
         {/* ══════════════════════════════════════════════ */}
-        <div className="glass-card p-5 text-center">
-          <div className="flex justify-center mb-2">
-            <div style={{ width: 314, height: 314 }} className="mx-auto bg-card">
-              <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" compact />
+        {(() => {
+          // Paleta cromática por nível — tudo no card segue a cor do Guardião
+          const PHASE_CORE = ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"];
+          const PHASE_DARK = ["#be123c","#c2410c","#0f766e","#1e40af","#5b21b6","#a16207","#831843"];
+          const phaseColor = PHASE_CORE[journey.level - 1] ?? "#fb7185";
+          const phaseDark  = PHASE_DARK[journey.level - 1] ?? "#be123c";
+          const phaseGrad  = `linear-gradient(90deg, ${phaseDark} 0%, ${phaseColor} 100%)`;
+
+          return (
+            <div className="glass-card p-5 text-center">
+              <div className="flex justify-center mb-2">
+                <div style={{ width: 314, height: 314 }} className="mx-auto bg-card">
+                  <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" compact />
+                </div>
+              </div>
+
+              {/* Badge da fase — cor do Guardião */}
+              <div className="flex justify-center mb-2">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border"
+                  style={{ color: phaseColor, borderColor: phaseColor + "44", background: phaseColor + "12" }}
+                >
+                  <Sparkles className="w-3 h-3" strokeWidth={2} />
+                  {journey.name}
+                </span>
+              </div>
+
+              <p className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: phaseColor }}>
+                Nível {journey.level}
+              </p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">
+                {lifetimePoints.toLocaleString("pt-PT")}
+                <span className="text-sm font-medium text-muted-foreground"> LovePoints conquistados</span>
+              </p>
+
+              {/* Barra de progresso — cor do Guardião */}
+              <div className="relative h-2 bg-muted rounded-full overflow-hidden mt-1.5">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: phaseGrad }}
+                  initial={{ width: "0%" }}
+                  animate={{ width: `${journey.progressPct}%` }}
+                  transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1], delay: 0.3 }}
+                />
+                {journey.progressPct > 5 && journey.progressPct < 100 && (
+                  <motion.div
+                    className="absolute top-0 h-full w-3 rounded-full pointer-events-none"
+                    style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
+                    animate={{ left: ["0%", `${journey.progressPct - 3}%`, "0%"] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                  />
+                )}
+                {journey.progressPct >= 100 && (
+                  <motion.div
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: `linear-gradient(90deg, ${phaseDark}, ${phaseColor}, white, ${phaseColor}, ${phaseDark})` }}
+                    animate={{ backgroundPosition: ["0% 0%", "200% 0%"] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  />
+                )}
+              </div>
+
+              {/* Texto "X pts até Y" — cor subtil da fase */}
+              <p className="text-[11px] mt-1.5 font-medium" style={{ color: phaseColor + "bb" }}>
+                {journey.nextLevelName
+                  ? `${journey.pointsToNextLevel} pts até ${journey.nextLevelName}`
+                  : "Nível máximo da Jornada — Eternidade"}
+              </p>
             </div>
-          </div>
-          {/* Badge da fase atual */}
-          <div className="flex justify-center mb-2">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border"
-              style={{
-                color: ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"][journey.level - 1],
-                borderColor: ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"][journey.level - 1] + "44",
-                background: ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"][journey.level - 1] + "12",
-              }}
-            >
-              <Sparkles className="w-3 h-3" strokeWidth={2} />
-              {journey.name}
-            </span>
-          </div>
-          <p className="text-sm font-bold uppercase tracking-widest text-foreground mb-1">
-            Nível {journey.level}
-          </p>
-          <p className="text-2xl font-bold text-foreground tabular-nums">
-            {lifetimePoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints conquistados</span>
-          </p>
-          <div className="relative h-2 bg-muted rounded-full overflow-hidden mt-1.5">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: "linear-gradient(90deg, #fb2d6b 0%, #ff6b9d 100%)" }}
-              initial={{ width: "0%" }}
-              animate={{ width: `${journey.progressPct}%` }}
-              transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1], delay: 0.3 }}
-            />
-            {/* Partícula a correr pela barra */}
-            {journey.progressPct > 5 && journey.progressPct < 100 && (
-              <motion.div
-                className="absolute top-0 h-full w-3 rounded-full pointer-events-none"
-                style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
-                animate={{ left: ["0%", `${journey.progressPct - 3}%`, "0%"] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-              />
-            )}
-            {/* Brilho de celebração nos 100% */}
-            {journey.progressPct >= 100 && (
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ background: "linear-gradient(90deg, #fb2d6b, #ff6b9d, #fda4af, #ff6b9d, #fb2d6b)" }}
-                animate={{ backgroundPosition: ["0% 0%", "200% 0%"] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-              />
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-1.5">
-            {journey.nextLevelName
-              ? `${journey.pointsToNextLevel} pts até ${journey.nextLevelName}`
-              : "Nível máximo da Jornada — Eternidade"}
-          </p>
-        </div>
+          );
+        })()}
 
         {/* ══════════════════════════════════════════════ */}
         {/* A NOSSA CHAMA                                   */}
