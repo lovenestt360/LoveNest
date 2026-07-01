@@ -23,12 +23,18 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
   const color = LEVEL_COLOR[newLevel] ?? "#fb7185";
   const stage = levelToStage(newLevel);
 
-  // Bloqueia só o overflow — sem position:fixed no body para não causar
-  // saltos nem interferir com o portal que já resolve o stacking context.
   useEffect(() => {
-    if (show) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => { document.body.style.overflow = ""; };
+    if (show) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
   }, [show]);
 
   // 20 partículas com ângulos e tamanhos variados
@@ -59,8 +65,12 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.82)", backdropFilter: "blur(6px)" }}
+          className="fixed inset-x-0 top-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
+          style={{
+            height: "100svh",
+            background: "rgba(0,0,0,0.82)",
+            backdropFilter: "blur(6px)",
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
