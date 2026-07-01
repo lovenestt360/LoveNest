@@ -271,10 +271,13 @@ export default function Jornada() {
   const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
 
   // ── Deteção de level-up entre sessões ──────────────────────────────────
+  // Chave por user.id (não spaceId) para cada membro ter a sua própria
+  // celebração. Só corre depois de lifetimePoints estar carregado (> 0)
+  // para evitar falsos positivos durante o loading inicial (0 → valor real).
   const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
   useEffect(() => {
-    if (!spaceId || !journey) return;
-    const key = `lovenest_last_level_${spaceId}`;
+    if (!user?.id || lifetimePoints === 0) return;
+    const key = `lovenest_last_level_${user.id}`;
     const stored = parseInt(localStorage.getItem(key) ?? "0");
     if (stored > 0 && journey.level > stored) {
       const prev = JOURNEY_LEVELS.find(l => l.level === stored);
@@ -282,7 +285,7 @@ export default function Jornada() {
       hapticCelebrate();
     }
     localStorage.setItem(key, String(journey.level));
-  }, [spaceId, journey?.level]);
+  }, [user?.id, lifetimePoints > 0 ? journey.level : 0]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
