@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { FlamePet } from "@/components/FlamePet";
@@ -22,31 +23,12 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
   const color = LEVEL_COLOR[newLevel] ?? "#fb7185";
   const stage = levelToStage(newLevel);
 
-  // Bloqueia o scroll do body enquanto o overlay está aberto — impede
-  // rolar o fundo em mobile e evita a área escura vazia abaixo do popup.
+  // Bloqueia só o overflow — sem position:fixed no body para não causar
+  // saltos nem interferir com o portal que já resolve o stacking context.
   useEffect(() => {
-    if (show) {
-      const y = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${y}px`;
-      document.body.style.width = "100%";
-      document.body.style.overflow = "hidden";
-    } else {
-      const y = Math.abs(parseInt(document.body.style.top || "0"));
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      window.scrollTo(0, y);
-    }
-    return () => {
-      const y = Math.abs(parseInt(document.body.style.top || "0"));
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      window.scrollTo(0, y);
-    };
+    if (show) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
   }, [show]);
 
   // 20 partículas com ângulos e tamanhos variados
@@ -70,7 +52,10 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
     { x: -30, y: -95 }, { x: 35, y: -90 },
   ];
 
-  return (
+  // Portal garante que o overlay é filho directo do document.body,
+  // escapando a qualquer CSS transform de elementos pai (Framer Motion)
+  // que quebraria o posicionamento fixed relativo ao viewport.
+  return createPortal(
     <AnimatePresence>
       {show && (
         <motion.div
@@ -221,6 +206,8 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
+}
 }
