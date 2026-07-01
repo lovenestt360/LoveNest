@@ -489,12 +489,26 @@ export default function Jornada() {
         {/* ══════════════════════════════════════════════ */}
         <div className="glass-card p-5 text-center">
           <div className="flex justify-center mb-2">
-            <div style={{ width: 252, height: 252 }} className="mx-auto bg-card">
+            <div style={{ width: 285, height: 285 }} className="mx-auto bg-card">
               <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" compact />
             </div>
           </div>
+          {/* Badge da fase atual */}
+          <div className="flex justify-center mb-2">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border"
+              style={{
+                color: ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"][journey.level - 1],
+                borderColor: ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"][journey.level - 1] + "44",
+                background: ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"][journey.level - 1] + "12",
+              }}
+            >
+              <Sparkles className="w-3 h-3" strokeWidth={2} />
+              {journey.name}
+            </span>
+          </div>
           <p className="text-sm font-bold uppercase tracking-widest text-foreground mb-1">
-            Nível {journey.level} — {journey.name}
+            Nível {journey.level}
           </p>
           <p className="text-2xl font-bold text-foreground tabular-nums">
             {lifetimePoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints conquistados</span>
