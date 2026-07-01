@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { JOURNEY_LEVELS, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
+import { getJourneyLevel, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -16,9 +16,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
-import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
-import { levelToStage } from "@/types/flame";
 import {
   Flame, ArrowLeft, Heart, Sparkles, Loader2,
   Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag,
@@ -982,8 +980,8 @@ export default function Jornada() {
       {/* ── Celebração de level-up ───────────────────────────────────────── */}
       <LevelUpCelebration
         show={!!levelUpData}
-        newLevel={journey.level}
-        newName={journey.name}
+        newLevel={streakPhase.level}
+        newName={streakPhase.name}
         prevName={levelUpData?.prevName ?? ""}
         onClose={() => setLevelUpData(null)}
       />
