@@ -220,4 +220,3 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
     document.body
   );
 }
-}
