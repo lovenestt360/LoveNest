@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { JOURNEY_LEVELS } from "@/features/streak/journeyLevels";
+import { JOURNEY_LEVELS, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -269,6 +269,8 @@ export default function Jornada() {
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
   const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
   const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
+  // Fase do Guardião baseada em dias de streak — fonte de verdade única
+  const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
 
   // ── Deteção de level-up entre sessões ──────────────────────────────────
   // Chave por user.id (não spaceId) para cada membro ter a sua própria
@@ -276,16 +278,16 @@ export default function Jornada() {
   // para evitar falsos positivos durante o loading inicial (0 → valor real).
   const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
   useEffect(() => {
-    if (!user?.id || lifetimePoints === 0) return;
-    const key = `lovenest_last_level_${user.id}`;
+    if (!user?.id || currentStreak === 0) return;
+    const key = `lovenest_last_streak_level_${user.id}`;
     const stored = parseInt(localStorage.getItem(key) ?? "0");
-    if (stored > 0 && journey.level > stored) {
-      const prev = JOURNEY_LEVELS.find(l => l.level === stored);
-      setLevelUpData({ prevName: prev?.name ?? "Início" });
+    if (stored > 0 && streakPhase.level > stored) {
+      const prev = STREAK_LEVELS.find(l => l.level === stored);
+      setLevelUpData({ prevName: prev?.name ?? "Faísca" });
       hapticCelebrate();
     }
-    localStorage.setItem(key, String(journey.level));
-  }, [user?.id, lifetimePoints > 0 ? journey.level : 0]);
+    localStorage.setItem(key, String(streakPhase.level));
+  }, [user?.id, streakPhase.level]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
@@ -511,15 +513,15 @@ export default function Jornada() {
           // Paleta cromática por nível — tudo no card segue a cor do Guardião
           const PHASE_CORE = ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"];
           const PHASE_DARK = ["#be123c","#c2410c","#0f766e","#1e40af","#5b21b6","#a16207","#831843"];
-          const phaseColor = PHASE_CORE[journey.level - 1] ?? "#fb7185";
-          const phaseDark  = PHASE_DARK[journey.level - 1] ?? "#be123c";
+          const phaseColor = PHASE_CORE[streakPhase.level - 1] ?? "#fb7185";
+          const phaseDark  = PHASE_DARK[streakPhase.level - 1] ?? "#be123c";
           const phaseGrad  = `linear-gradient(90deg, ${phaseDark} 0%, ${phaseColor} 100%)`;
 
           return (
             <div className="glass-card p-5 text-center">
               <div className="flex justify-center mb-2">
                 <div style={{ width: 314, height: 314 }} className="mx-auto bg-card">
-                  <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" compact />
+                  <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
                 </div>
               </div>
 
@@ -530,36 +532,36 @@ export default function Jornada() {
                   style={{ color: phaseColor, borderColor: phaseColor + "44", background: phaseColor + "12" }}
                 >
                   <Sparkles className="w-3 h-3" strokeWidth={2} />
-                  {journey.name}
+                  {streakPhase.name}
                 </span>
               </div>
 
               <p className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: phaseColor }}>
-                Nível {journey.level}
+                {currentStreak} {currentStreak === 1 ? "dia" : "dias"} juntos
               </p>
               <p className="text-2xl font-bold text-foreground tabular-nums">
                 {lifetimePoints.toLocaleString("pt-PT")}
                 <span className="text-sm font-medium text-muted-foreground"> LovePoints conquistados</span>
               </p>
 
-              {/* Barra de progresso — cor do Guardião */}
+              {/* Barra de progresso — dias até ao próximo nível */}
               <div className="relative h-2 bg-muted rounded-full overflow-hidden mt-1.5">
                 <motion.div
                   className="h-full rounded-full"
                   style={{ background: phaseGrad }}
                   initial={{ width: "0%" }}
-                  animate={{ width: `${journey.progressPct}%` }}
+                  animate={{ width: `${streakPhase.progressPct}%` }}
                   transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1], delay: 0.3 }}
                 />
-                {journey.progressPct > 5 && journey.progressPct < 100 && (
+                {streakPhase.progressPct > 5 && streakPhase.progressPct < 100 && (
                   <motion.div
                     className="absolute top-0 h-full w-3 rounded-full pointer-events-none"
                     style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
-                    animate={{ left: ["0%", `${journey.progressPct - 3}%`, "0%"] }}
+                    animate={{ left: ["0%", `${streakPhase.progressPct - 3}%`, "0%"] }}
                     transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
                   />
                 )}
-                {journey.progressPct >= 100 && (
+                {streakPhase.progressPct >= 100 && (
                   <motion.div
                     className="absolute inset-0 rounded-full"
                     style={{ background: `linear-gradient(90deg, ${phaseDark}, ${phaseColor}, white, ${phaseColor}, ${phaseDark})` }}
@@ -569,11 +571,11 @@ export default function Jornada() {
                 )}
               </div>
 
-              {/* Texto "X pts até Y" — cor subtil da fase */}
+              {/* Legenda — dias até próxima fase */}
               <p className="text-[11px] mt-1.5 font-medium" style={{ color: phaseColor + "bb" }}>
-                {journey.nextLevelName
-                  ? `${journey.pointsToNextLevel} pts até ${journey.nextLevelName}`
-                  : "Nível máximo da Jornada — Eternidade"}
+                {streakPhase.nextLevelName
+                  ? `${streakPhase.daysToNext} ${streakPhase.daysToNext === 1 ? "dia" : "dias"} até ${streakPhase.nextLevelName}`
+                  : "Forma suprema atingida — Eternidade"}
               </p>
             </div>
           );

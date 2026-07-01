@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
-import { getJourneyLevel } from "@/features/streak/journeyLevels";
+import { getJourneyLevel, getStreakLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
-import { levelToStage } from "@/types/flame";
 import {
   Flame, Shield, ChevronRight, Heart, Sparkles
 } from "lucide-react";
@@ -229,6 +228,7 @@ export function LoveStreakCard() {
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
   const journeyLevel        = getJourneyLevel(lifetimePoints ?? 0).level;
+  const streakPhase         = getStreakLevel(currentStreak);
 
   const activeMissions  = getDailyMissions({ isSolo, hasSpiritual });
 
@@ -356,7 +356,7 @@ export function LoveStreakCard() {
               </span>
             )}
             <div style={{ width: 48, height: 48 }} className="shrink-0 bg-card">
-              <FlamePet stage={levelToStage(journeyLevel)} mood="alegre" environment="suave" compact />
+              <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
           </div>

@@ -1,8 +1,64 @@
-// Nível da Jornada — extensão da escada que já existia em
-// LoveStreakCard.tsx (getRelationshipState: Faísca → Eternidade), agora
-// calculada a partir de LovePoints acumulados em vez de só dias de
-// streak. Por ser baseado em pontos (que nunca diminuem), o nível
-// nunca desce, mesmo que a Chama quebre — ver docs/LOVENEST_PROGRESS_SYSTEM.md.
+// Sistemas de progressão da Jornada.
+// STREAK_LEVELS: fonte de verdade única para nome e fase visual do
+// Guardião, baseada em dias de streak consecutivos.
+// JOURNEY_LEVELS: mantido para o contador de LovePoints acumulados
+// (nunca desce) mas já não define o nome/fase do Guardião.
+
+import type { FlameStage } from "@/types/flame";
+
+// ── Sistema de dias (fonte de verdade do Guardião) ────────────────────────
+
+export interface StreakLevelDef {
+  level: number;
+  name: string;
+  stage: FlameStage;
+  minDays: number;
+}
+
+export const STREAK_LEVELS: StreakLevelDef[] = [
+  { level: 1, name: "Faísca",     stage: "faisca",    minDays: 0  },
+  { level: 2, name: "Brasa",      stage: "brasa",     minDays: 3  },
+  { level: 3, name: "Chama",      stage: "chama",     minDays: 7  },
+  { level: 4, name: "Chama Viva", stage: "guardiao",  minDays: 14 },
+  { level: 5, name: "Farol",      stage: "sentinela", minDays: 30 },
+  { level: 6, name: "Eternidade", stage: "eterno",    minDays: 90 },
+];
+
+export interface StreakProgress {
+  level: number;
+  name: string;
+  stage: FlameStage;
+  currentDays: number;
+  nextLevelName: string | null;
+  daysToNext: number | null;
+  progressPct: number;
+}
+
+export function getStreakLevel(days: number): StreakProgress {
+  let idx = 0;
+  for (let i = 0; i < STREAK_LEVELS.length; i++) {
+    if (days >= STREAK_LEVELS[i].minDays) idx = i;
+  }
+  const current = STREAK_LEVELS[idx];
+  const next    = STREAK_LEVELS[idx + 1] ?? null;
+
+  if (!next) {
+    return { level: current.level, name: current.name, stage: current.stage,
+      currentDays: days, nextLevelName: null, daysToNext: null, progressPct: 100 };
+  }
+
+  const span = next.minDays - current.minDays;
+  const into = days - current.minDays;
+  return {
+    level: current.level, name: current.name, stage: current.stage,
+    currentDays: days,
+    nextLevelName: next.name,
+    daysToNext: next.minDays - days,
+    progressPct: Math.min(100, Math.round((into / span) * 100)),
+  };
+}
+
+// ── Sistema de pontos (contador LovePoints — mantido) ─────────────────────
 
 export interface JourneyLevelDef {
   level: number;
