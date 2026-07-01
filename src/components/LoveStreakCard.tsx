@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { useStreak } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
-import { getJourneyLevel, getEffectivePhase } from "@/features/streak/journeyLevels";
+import { getJourneyLevel, getStreakLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
 import {
   Flame, Shield, ChevronRight, Heart, Sparkles
@@ -228,7 +228,7 @@ export function LoveStreakCard() {
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
   const journeyLevel        = getJourneyLevel(lifetimePoints ?? 0).level;
-  const streakPhase         = getEffectivePhase(currentStreak, lifetimePoints ?? 0);
+  const streakPhase         = getStreakLevel(currentStreak);
 
   const activeMissions  = getDailyMissions({ isSolo, hasSpiritual });
 

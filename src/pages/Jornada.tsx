@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { JOURNEY_LEVELS, getEffectivePhase, STREAK_LEVELS } from "@/features/streak/journeyLevels";
+import { JOURNEY_LEVELS, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -269,11 +269,8 @@ export default function Jornada() {
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
   const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
   const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
-  // Fase do Guardião — modelo TikTok: avança por streak OU por pontos
-  const streakPhase    = useMemo(
-    () => getEffectivePhase(currentStreak, lifetimePoints),
-    [currentStreak, lifetimePoints]
-  );
+  // Fase do Guardião — streak puro. Pontos são moeda gastável, não contam.
+  const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
 
   // ── Deteção de level-up entre sessões ──────────────────────────────────
   // Chave por user.id (não spaceId) para cada membro ter a sua própria
