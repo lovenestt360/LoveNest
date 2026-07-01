@@ -47,6 +47,17 @@ const STAGE_COLORS: Record<FlamePetProps["stage"], string> = {
   eterno: "#FFC83D", soberano: "#9B5DE5",
 };
 
+// Intensidade do glow por fase — cresce com a evolução (item 5).
+const STAGE_GLOW: Record<FlamePetProps["stage"], { opacity: number; blur: number; size: string }> = {
+  faisca:    { opacity: 0.22, blur: 5,  size: "58%" },
+  brasa:     { opacity: 0.30, blur: 7,  size: "63%" },
+  chama:     { opacity: 0.38, blur: 10, size: "68%" },
+  guardiao:  { opacity: 0.46, blur: 13, size: "73%" },
+  sentinela: { opacity: 0.54, blur: 16, size: "78%" },
+  eterno:    { opacity: 0.63, blur: 20, size: "84%" },
+  soberano:  { opacity: 0.74, blur: 25, size: "90%" },
+};
+
 const ENVIRONMENT_BG: Record<FlameEnvironment, string> = {
   suave:     "radial-gradient(circle at 50% 35%, #fff1eb 0%, #fde2e2 55%, #fde2e2 100%)",
   quente:    "radial-gradient(circle at 50% 35%, #ffd9b3 0%, #ff8b5e 55%, #e85d3d 100%)",
@@ -104,17 +115,18 @@ export function FlamePet({
 }: FlamePetProps & { compact?: boolean }) {
   const color = personalization?.auraColor ?? STAGE_COLORS[stage];
   const src   = compact ? STAGE_THUMBS[stage] : STAGE_ASSETS[stage];
+  const glow  = STAGE_GLOW[stage];
 
   const inner = (
     <>
-      {/* Aura/glow — pulsa suavemente (secção 10.4) */}
+      {/* Aura/glow — intensidade cresce com a fase (item 5) */}
       <motion.div
         className="absolute rounded-full pointer-events-none"
         style={{
-          width: compact ? "80%" : "70%",
-          height: compact ? "80%" : "70%",
-          background: `radial-gradient(circle, ${rgba(color, compact ? 0.40 : 0.55)} 0%, transparent 70%)`,
-          filter: `blur(${compact ? 6 : 12}px)`,
+          width: compact ? glow.size : "70%",
+          height: compact ? glow.size : "70%",
+          background: `radial-gradient(circle, ${rgba(color, compact ? glow.opacity : 0.55)} 0%, transparent 70%)`,
+          filter: `blur(${compact ? glow.blur : 12}px)`,
         }}
         animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}

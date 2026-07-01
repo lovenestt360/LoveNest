@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { motion, useSpring, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -513,11 +514,32 @@ export default function Jornada() {
           <p className="text-2xl font-bold text-foreground tabular-nums">
             {lifetimePoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints conquistados</span>
           </p>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${journey.progressPct}%`, background: "linear-gradient(90deg, #fb2d6b 0%, #ff6b9d 100%)" }}
+          <div className="relative h-2 bg-muted rounded-full overflow-hidden mt-1.5">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: "linear-gradient(90deg, #fb2d6b 0%, #ff6b9d 100%)" }}
+              initial={{ width: "0%" }}
+              animate={{ width: `${journey.progressPct}%` }}
+              transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1], delay: 0.3 }}
             />
+            {/* Partícula a correr pela barra */}
+            {journey.progressPct > 5 && journey.progressPct < 100 && (
+              <motion.div
+                className="absolute top-0 h-full w-3 rounded-full pointer-events-none"
+                style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
+                animate={{ left: ["0%", `${journey.progressPct - 3}%`, "0%"] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+              />
+            )}
+            {/* Brilho de celebração nos 100% */}
+            {journey.progressPct >= 100 && (
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{ background: "linear-gradient(90deg, #fb2d6b, #ff6b9d, #fda4af, #ff6b9d, #fb2d6b)" }}
+                animate={{ backgroundPosition: ["0% 0%", "200% 0%"] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              />
+            )}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">
             {journey.nextLevelName
