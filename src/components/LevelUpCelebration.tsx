@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { FlamePet } from "@/components/FlamePet";
 import { levelToStage } from "@/types/flame";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,33 @@ interface Props {
 export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose }: Props) {
   const color = LEVEL_COLOR[newLevel] ?? "#fb7185";
   const stage = levelToStage(newLevel);
+
+  // Bloqueia o scroll do body enquanto o overlay está aberto — impede
+  // rolar o fundo em mobile e evita a área escura vazia abaixo do popup.
+  useEffect(() => {
+    if (show) {
+      const y = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${y}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+    } else {
+      const y = Math.abs(parseInt(document.body.style.top || "0"));
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, y);
+    }
+    return () => {
+      const y = Math.abs(parseInt(document.body.style.top || "0"));
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, y);
+    };
+  }, [show]);
 
   // 20 partículas com ângulos e tamanhos variados
   const particles = Array.from({ length: 20 }).map((_, i) => {
@@ -187,7 +215,6 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
                 style={{ background: color, color: "#fff", border: "none" }}
                 onClick={onClose}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
                 Continuar
               </Button>
             </motion.div>
