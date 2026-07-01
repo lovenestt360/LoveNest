@@ -489,23 +489,23 @@ export default function Jornada() {
         {/* ══════════════════════════════════════════════ */}
         <div className="glass-card p-5 text-center">
           <div className="flex justify-center mb-2">
-            <div style={{ width: 220, height: 220 }} className="mx-auto bg-card">
+            <div style={{ width: 252, height: 252 }} className="mx-auto bg-card">
               <FlamePet stage={levelToStage(journey.level)} mood="alegre" environment="suave" compact />
             </div>
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+          <p className="text-sm font-bold uppercase tracking-widest text-foreground mb-1">
             Nível {journey.level} — {journey.name}
           </p>
           <p className="text-2xl font-bold text-foreground tabular-nums">
             {lifetimePoints.toLocaleString("pt-PT")} <span className="text-sm font-medium text-muted-foreground">LovePoints conquistados</span>
           </p>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-3">
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5">
             <div
-              className="h-full rounded-full bg-rose-400 transition-all duration-700"
-              style={{ width: `${journey.progressPct}%` }}
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${journey.progressPct}%`, background: "linear-gradient(90deg, #fb2d6b 0%, #ff6b9d 100%)" }}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground mt-2">
+          <p className="text-[11px] text-muted-foreground mt-1.5">
             {journey.nextLevelName
               ? `${journey.pointsToNextLevel} pts até ${journey.nextLevelName}`
               : "Nível máximo da Jornada — Eternidade"}
