@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { JOURNEY_LEVELS } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -267,6 +269,20 @@ export default function Jornada() {
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
   const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
   const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
+
+  // ── Deteção de level-up entre sessões ──────────────────────────────────
+  const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
+  useEffect(() => {
+    if (!spaceId || !journey) return;
+    const key = `lovenest_last_level_${spaceId}`;
+    const stored = parseInt(localStorage.getItem(key) ?? "0");
+    if (stored > 0 && journey.level > stored) {
+      const prev = JOURNEY_LEVELS.find(l => l.level === stored);
+      setLevelUpData({ prevName: prev?.name ?? "Início" });
+      hapticCelebrate();
+    }
+    localStorage.setItem(key, String(journey.level));
+  }, [spaceId, journey?.level]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
@@ -945,6 +961,15 @@ export default function Jornada() {
           </div>
         </div>
       )}
+
+      {/* ── Celebração de level-up ───────────────────────────────────────── */}
+      <LevelUpCelebration
+        show={!!levelUpData}
+        newLevel={journey.level}
+        newName={journey.name}
+        prevName={levelUpData?.prevName ?? ""}
+        onClose={() => setLevelUpData(null)}
+      />
     </div>
   );
 }
