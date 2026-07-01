@@ -147,8 +147,8 @@ export function FlamePet({
         alt={`Guardião da Chama — fase ${stage}`}
         className={`relative object-contain select-none ${compact ? "w-full h-full" : "w-3/4 h-3/4"}`}
         draggable={false}
-        animate={{ scale: [1, 1.03, 1], y: [0, compact ? -3 : -6, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ scale: [1, 1.025, 1], y: [0, compact ? -4 : -7, 0] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Partículas — apenas no modo full (secção 8) */}

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { Flame, ArrowRight } from "lucide-react";
 import { FlamePet } from "@/components/FlamePet";
 import { levelToStage } from "@/types/flame";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,17 @@ import { Button } from "@/components/ui/button";
 const LEVEL_COLOR: Record<number, string> = {
   1: "#fb7185", 2: "#fb923c", 3: "#2dd4bf",
   4: "#3b82f6", 5: "#8b5cf6", 6: "#facc15", 7: "#ec4899",
+};
+
+// Texto emocional variável — cria ligação com a progressão do casal
+const LEVEL_SUBTITLE: Record<number, string> = {
+  1: "A primeira faísca do vosso amor foi acesa.",
+  2: "O vosso cuidado fez a chama crescer.",
+  3: "A chama está mais viva do que nunca.",
+  4: "O Guardião está a tornar-se mais forte convosco.",
+  5: "A vossa dedicação criou algo especial.",
+  6: "O amor de vocês está a transformar-se em lenda.",
+  7: "Atingiram a forma suprema. O vosso amor é eterno.",
 };
 
 interface Props {
@@ -20,8 +31,9 @@ interface Props {
 }
 
 export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose }: Props) {
-  const color = LEVEL_COLOR[newLevel] ?? "#fb7185";
-  const stage = levelToStage(newLevel);
+  const color    = LEVEL_COLOR[newLevel] ?? "#fb7185";
+  const stage    = levelToStage(newLevel);
+  const subtitle = LEVEL_SUBTITLE[newLevel] ?? "Continuem assim. O Guardião está a ficar mais forte.";
 
   useEffect(() => {
     if (show) {
@@ -68,8 +80,8 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
           className="fixed inset-x-0 top-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
           style={{
             height: "100svh",
-            background: "rgba(0,0,0,0.82)",
-            backdropFilter: "blur(6px)",
+            background: "rgba(0,0,0,0.88)",
+            backdropFilter: "blur(14px)",
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -144,58 +156,60 @@ export function LevelUpCelebration({ show, newLevel, newName, prevName, onClose 
               transition={{ duration: 2, delay: 0.9, repeat: Infinity, ease: "easeInOut" }}
             />
 
-            {/* Mascote — bounce + wiggle + segundo pulso */}
-            <motion.div style={{ width: 210, height: 210 }}>
+            {/* Mascote — bounce + wiggle + pulso contínuo de escala */}
+            <motion.div style={{ width: 220, height: 220 }}>
               <motion.div
                 style={{ width: "100%", height: "100%" }}
                 initial={{ scale: 0.1, opacity: 0, rotate: -10 }}
                 animate={{
-                  scale:   [0.1, 1.25, 0.92, 1.08, 0.97, 1.04, 1],
-                  opacity: [0, 1, 1, 1, 1, 1, 1],
-                  rotate:  [0, 0, 8, -7, 5, -3, 0],
+                  scale:   [0.1, 1.30, 0.90, 1.12, 0.96, 1.05, 1.0, 1.08, 1.0],
+                  opacity: [0, 1, 1, 1, 1, 1, 1, 1, 1],
+                  rotate:  [0, 0, 9, -8, 6, -3, 0, 0, 0],
                 }}
-                transition={{ duration: 1.1, delay: 0.3, times: [0, 0.35, 0.5, 0.65, 0.78, 0.9, 1] }}
+                transition={{ duration: 1.4, delay: 0.3, times: [0, 0.3, 0.45, 0.58, 0.7, 0.82, 0.9, 0.95, 1] }}
               >
                 <FlamePet stage={stage} mood="empolgado" environment="suave" compact />
               </motion.div>
             </motion.div>
 
-            {/* "Evolução!" */}
-            <motion.p
-              className="text-3xl font-extrabold mt-2"
-              style={{ color, textShadow: `0 0 20px ${color}88` }}
+            {/* "A vossa chama evoluiu!" */}
+            <motion.div
+              className="flex items-center gap-2 mt-2"
               initial={{ opacity: 0, y: 24, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, delay: 1.0, ease: "backOut" }}
+              transition={{ duration: 0.5, delay: 1.05, ease: "backOut" }}
             >
-              Evolução!
-            </motion.p>
+              <Flame className="w-6 h-6" style={{ color }} strokeWidth={2} />
+              <p className="text-2xl font-extrabold" style={{ color, textShadow: `0 0 20px ${color}88` }}>
+                A vossa chama evoluiu!
+              </p>
+            </motion.div>
 
             {/* prevFase → novaFase */}
             <motion.div
-              className="flex items-center gap-2 mt-2"
+              className="flex items-center gap-2 mt-3"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 1.2 }}
+              transition={{ duration: 0.4, delay: 1.25 }}
             >
-              <span className="text-sm font-semibold text-white/60">{prevName}</span>
+              <span className="text-sm font-semibold text-white/55">{prevName}</span>
               <motion.div
                 animate={{ x: [0, 4, 0] }}
-                transition={{ duration: 0.8, delay: 1.4, repeat: 3, ease: "easeInOut" }}
+                transition={{ duration: 0.8, delay: 1.45, repeat: 3, ease: "easeInOut" }}
               >
                 <ArrowRight className="w-4 h-4" style={{ color }} />
               </motion.div>
               <span className="text-base font-bold text-white">{newName}</span>
             </motion.div>
 
-            {/* Subtítulo */}
+            {/* Subtítulo emocional por fase */}
             <motion.p
-              className="text-sm text-white/50 mt-2"
+              className="text-sm text-white/55 mt-2 leading-relaxed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 1.45 }}
+              transition={{ duration: 0.4, delay: 1.5 }}
             >
-              O vosso amor ficou mais forte.
+              {subtitle}
             </motion.p>
 
             {/* Botão Continuar */}
