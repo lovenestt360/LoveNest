@@ -4,14 +4,16 @@
 // JOURNEY_LEVELS: mantido para o contador de LovePoints acumulados
 // (nunca desce) mas já não define o nome/fase do Guardião.
 
-import type { FlameStage } from "@/types/flame";
-
 // ── Sistema de dias (fonte de verdade do Guardião) ────────────────────────
+// FlameStage inline para evitar dependência circular com @/types/flame
+export type GuardianStage =
+  | "faisca" | "brasa" | "chama" | "guardiao"
+  | "sentinela" | "eterno" | "soberano";
 
 export interface StreakLevelDef {
   level: number;
   name: string;
-  stage: FlameStage;
+  stage: GuardianStage;
   minDays: number;
   minPoints: number;
 }
@@ -32,7 +34,7 @@ export const STREAK_LEVELS: StreakLevelDef[] = [
 export interface StreakProgress {
   level: number;
   name: string;
-  stage: FlameStage;
+  stage: GuardianStage;
   currentDays: number;
   nextLevelName: string | null;
   daysToNext: number | null;

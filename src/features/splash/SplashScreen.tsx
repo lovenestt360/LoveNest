@@ -99,7 +99,7 @@ function Avatar({ url, name, size = 64 }: { url: string | null; name: string; si
 
 function SplashOverlay({ onDone }: { onDone: () => void }) {
   const [stage, setStage] = useState<0 | 1 | 2 | 3>(0);
-  const [coupleData, setCoupleData] = useState<SplashCache | null>(readCache);
+  const [coupleData, setCoupleData] = useState<SplashCache | null>(() => readCache());
 
   useEffect(() => {
     let mounted = true;
