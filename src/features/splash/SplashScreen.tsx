@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 // ── SplashOverlay ─────────────────────────────────────────────────────────────
@@ -95,22 +96,45 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* Iniciais do casal */}
-      <div style={{
-        position: "absolute", bottom: 64,
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
-        transition: "opacity 700ms ease-out",
-        opacity: stage >= 2 && initials ? 1 : 0,
-      }}>
-        <p style={{
-          fontSize: 28, fontWeight: 700, letterSpacing: "0.18em",
-          color: "rgba(255,255,255,0.92)", margin: 0,
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      {/* Iniciais do casal — cada caracter anima individualmente */}
+      {stage >= 2 && initials && (
+        <div style={{
+          position: "absolute", bottom: 64,
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
         }}>
-          {initials ? formatInitials(initials) : ""}
-        </p>
-        <div style={{ width: 40, height: 2, borderRadius: 1, background: "rgba(244,63,94,0.5)" }} />
-      </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            {formatInitials(initials).split("").map((char, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, y: 18, scale: 0.7 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  duration: 0.45,
+                  delay: 0.08 * i,
+                  ease: [0.34, 1.56, 0.64, 1],
+                }}
+                style={{
+                  fontSize: char === " " ? 14 : 28,
+                  fontWeight: 700,
+                  letterSpacing: "0.05em",
+                  color: char === "♥" ? "rgba(244,63,94,0.9)" : "rgba(255,255,255,0.92)",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                  display: "inline-block",
+                  minWidth: char === " " ? 8 : undefined,
+                }}
+              >
+                {char}
+              </motion.span>
+            ))}
+          </div>
+          <motion.div
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+            style={{ width: 40, height: 2, borderRadius: 1, background: "rgba(244,63,94,0.5)", transformOrigin: "center" }}
+          />
+        </div>
+      )}
 
       {/* Tagline quando sem iniciais */}
       <div style={{
