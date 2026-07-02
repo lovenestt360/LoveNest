@@ -1,139 +1,106 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// ── SplashOverlay ─────────────────────────────────────────────────────────────
-//
-// Performance rules (iPhone 7 / low-end Safari):
-//   - Apenas transitions de opacity + transform (compositor-only)
-//   - Sem blur, sem animate-ping, sem SVG complexo
-//   - Dados do casal carregados em paralelo, nunca bloqueiam a animação
-//   - Cache de URLs dos avatares em localStorage (TTL 24h)
-//
-// Timing:
-//   0ms   → logo fade in
-//   500ms → wordmark aparece
-//   900ms → fotos/iniciais aparecem
-//   2800ms → começa fade out
-//   3400ms → onDone
+// ── Chave partilhada entre SplashScreen e saveSplashData ─────────────────────
+// O splash LÊ desta chave. O app ESCREVE nela depois de autenticado.
+export const SPLASH_DATA_KEY = "ln_splash_v2";
 
-const SPLASH_CACHE_KEY = "ln_splash_cache_v1";
-const SPLASH_CACHE_TTL = 86400000; // 24h em ms
+export interface SplashData {
+  name1: string;
+  name2: string;
+  av1: string | null;
+  av2: string | null;
+}
 
-function loadSplashCache() {
+function readSplashData(): SplashData | null {
   try {
-    const raw = localStorage.getItem(SPLASH_CACHE_KEY);
-    if (!raw) return null;
-    const c = JSON.parse(raw) as { name1: string; name2: string; av1: string | null; av2: string | null; ts: number };
-    if (Date.now() - c.ts > SPLASH_CACHE_TTL) return null;
-    return c;
+    const raw = localStorage.getItem(SPLASH_DATA_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-function saveSplashCache(data: { name1: string; name2: string; av1: string | null; av2: string | null }) {
-  try { localStorage.setItem(SPLASH_CACHE_KEY, JSON.stringify({ ...data, ts: Date.now() })); } catch {}
+// Chamado pelo app após autenticação para popular o cache do splash
+export function saveSplashData(data: SplashData) {
+  try { localStorage.setItem(SPLASH_DATA_KEY, JSON.stringify(data)); } catch {}
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 function SplashOverlay({ onDone }: { onDone: () => void }) {
-  const [stage, setStage] = useState<0 | 1 | 2 | 3>(0);
-  const [couple, setCouple] = useState<{ name1: string; name2: string; av1: string | null; av2: string | null } | null>(null);
+  const [stage, setStage]       = useState<0 | 1 | 2 | 3>(0);
+  const [couple, setCouple]     = useState<SplashData | null>(() => readSplashData());
   const [av1Loaded, setAv1Loaded] = useState(false);
   const [av2Loaded, setAv2Loaded] = useState(false);
+  const alive = useRef(true);
 
   useEffect(() => {
-    let alive = true;
+    alive.current = true;
 
-    // Usa cache primeiro — sem esperar rede
-    const cached = loadSplashCache();
-    if (cached) setCouple(cached);
+    // Tentativa de fetch como fallback (se cache vazio).
+    // Só corre se não houver cache — não bloqueia nunca a animação.
+    if (!couple) {
+      (async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.user || !alive.current) return;
 
-    // Busca dados frescos em paralelo com a animação.
-    // Usa onAuthStateChange para garantir que o auth está restaurado —
-    // getSession() sozinho pode devolver null se o JWT ainda não foi
-    // carregado do localStorage no primeiro render.
-    async function fetchCouple() {
-      try {
-        // Tenta sessão imediata
-        let { data: { session } } = await supabase.auth.getSession();
+          const { data: member } = await supabase
+            .from("members").select("couple_space_id")
+            .eq("user_id", session.user.id).maybeSingle();
+          if (!member?.couple_space_id || !alive.current) return;
 
-        // Se sem sessão, aguarda o evento INITIAL_SESSION (máx 2s)
-        if (!session?.user) {
-          session = await new Promise((resolve) => {
-            const timer = setTimeout(() => resolve(null as any), 2000);
-            const { data: { subscription } } = supabase.auth.onAuthStateChange(
-              (event, s) => {
-                if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-                  clearTimeout(timer);
-                  subscription.unsubscribe();
-                  resolve(s as any);
-                }
-              }
-            );
-          });
-        }
+          const { data: members } = await supabase
+            .from("members").select("user_id")
+            .eq("couple_space_id", member.couple_space_id).limit(2);
+          if (!members?.length || !alive.current) return;
 
-        if (!session?.user || !alive) return;
+          const { data: profiles } = await supabase
+            .from("profiles").select("id, display_name, avatar_url")
+            .in("id", members.map((m) => m.user_id));
+          if (!profiles?.length || !alive.current) return;
 
-        const { data: member } = await supabase
-          .from("members").select("couple_space_id")
-          .eq("user_id", session.user.id).maybeSingle();
-        if (!member?.couple_space_id || !alive) return;
-
-        const { data: members } = await supabase
-          .from("members").select("user_id")
-          .eq("couple_space_id", member.couple_space_id).limit(2);
-        if (!members?.length || !alive) return;
-
-        const { data: profiles } = await supabase
-          .from("profiles").select("id, display_name, avatar_url")
-          .in("id", members.map((m) => m.user_id));
-        if (!profiles?.length || !alive) return;
-
-        const p1 = profiles[0];
-        const p2 = profiles[1] ?? null;
-        const fresh = {
-          name1: p1?.display_name ?? "",
-          name2: p2?.display_name ?? "",
-          av1: p1?.avatar_url ?? null,
-          av2: p2?.avatar_url ?? null,
-        };
-        saveSplashCache(fresh);
-        if (alive) setCouple(fresh);
-      } catch { /* fail silently */ }
+          const p1 = profiles[0];
+          const p2 = profiles[1] ?? null;
+          const fresh: SplashData = {
+            name1: p1?.display_name ?? "",
+            name2: p2?.display_name ?? "",
+            av1:   p1?.avatar_url ?? null,
+            av2:   p2?.avatar_url ?? null,
+          };
+          saveSplashData(fresh);
+          if (alive.current) setCouple(fresh);
+        } catch { /* fail silently */ }
+      })();
     }
 
-    fetchCouple();
-
-    const t1 = setTimeout(() => { if (alive) setStage(1); }, 500);
-    const t2 = setTimeout(() => { if (alive) setStage(2); }, 900);
-    const t3 = setTimeout(() => { if (alive) setStage(3); }, 2800);
+    const t1 = setTimeout(() => { if (alive.current) setStage(1); }, 500);
+    const t2 = setTimeout(() => { if (alive.current) setStage(2); }, 900);
+    const t3 = setTimeout(() => { if (alive.current) setStage(3); }, 2800);
     const t4 = setTimeout(onDone, 3400);
 
     return () => {
-      alive = false;
+      alive.current = false;
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
     };
-  }, [onDone]);
+  }, [onDone, couple]);
 
-  const initial1 = couple?.name1 ? couple.name1[0].toUpperCase() : "";
-  const initial2 = couple?.name2 ? couple.name2[0].toUpperCase() : "";
+  const initial1 = couple?.name1?.[0]?.toUpperCase() ?? "";
+  const initial2 = couple?.name2?.[0]?.toUpperCase() ?? "";
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      background: "#000000", willChange: "opacity",
+      background: "#000000",
       transition: "opacity 600ms ease-in-out",
       opacity: stage === 3 ? 0 : 1,
       pointerEvents: stage === 3 ? "none" : "auto",
     }}>
-      {/* Logo + wordmark */}
+      {/* Logo */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
-        <div style={{
-          transition: "opacity 600ms ease-out, transform 600ms ease-out",
-          opacity: 1, transform: "scale(1)",
-        }}>
-          <img src="/icon-512.png" alt="LoveNest" width={96} height={96} style={{ borderRadius: 22, display: "block" }} />
-        </div>
+        <img src="/icon-512.png" alt="LoveNest" width={96} height={96}
+          style={{ borderRadius: 22, display: "block" }} />
+
         <div style={{
           textAlign: "center",
           transition: "opacity 600ms ease-out, transform 600ms ease-out",
@@ -148,14 +115,14 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* Fotos do casal — fundo */}
+      {/* Fotos / iniciais do casal */}
       <div style={{
         position: "absolute", bottom: 52,
         display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
         transition: "opacity 700ms ease-out",
         opacity: stage >= 2 ? 1 : 0,
       }}>
-        {couple ? (
+        {couple && (couple.name1 || couple.name2) ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               {/* Avatar 1 */}
@@ -166,21 +133,17 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
               }}>
                 <span style={{
                   position: "absolute", fontSize: 22, fontWeight: 700,
-                  color: "rgba(255,255,255,0.6)",
+                  color: "rgba(255,255,255,0.65)",
                   fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                   opacity: av1Loaded ? 0 : 1, transition: "opacity 300ms",
                 }}>{initial1}</span>
                 {couple.av1 && (
-                  <img
-                    src={couple.av1} alt={couple.name1}
-                    width={60} height={60}
-                    decoding="async"
-                    onLoad={() => setAv1Loaded(true)}
+                  <img src={couple.av1} alt={couple.name1} width={60} height={60}
+                    decoding="async" onLoad={() => setAv1Loaded(true)}
                     style={{
                       position: "absolute", inset: 0, width: "100%", height: "100%",
                       objectFit: "cover", opacity: av1Loaded ? 1 : 0, transition: "opacity 400ms",
-                    }}
-                  />
+                    }} />
                 )}
               </div>
 
@@ -197,32 +160,27 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
               }}>
                 <span style={{
                   position: "absolute", fontSize: 22, fontWeight: 700,
-                  color: "rgba(255,255,255,0.6)",
+                  color: "rgba(255,255,255,0.65)",
                   fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                   opacity: av2Loaded ? 0 : 1, transition: "opacity 300ms",
                 }}>{initial2}</span>
                 {couple.av2 && (
-                  <img
-                    src={couple.av2} alt={couple.name2}
-                    width={60} height={60}
-                    decoding="async"
-                    onLoad={() => setAv2Loaded(true)}
+                  <img src={couple.av2} alt={couple.name2} width={60} height={60}
+                    decoding="async" onLoad={() => setAv2Loaded(true)}
                     style={{
                       position: "absolute", inset: 0, width: "100%", height: "100%",
                       objectFit: "cover", opacity: av2Loaded ? 1 : 0, transition: "opacity 400ms",
-                    }}
-                  />
+                    }} />
                 )}
               </div>
             </div>
 
-            {/* Nomes */}
             <p style={{
               fontSize: 11, fontWeight: 700, letterSpacing: "0.2em",
               color: "rgba(255,255,255,0.5)", textTransform: "uppercase", margin: 0,
               fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             }}>
-              {couple.name1}{couple.name1 && couple.name2 ? " · " : ""}{couple.name2}
+              {[couple.name1, couple.name2].filter(Boolean).join(" · ")}
             </p>
           </>
         ) : (
@@ -236,6 +194,8 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
     </div>
   );
 }
+
+// ── SplashGate ────────────────────────────────────────────────────────────────
 
 export function SplashGate({ children }: { children: React.ReactNode }) {
   const [show, setShow] = useState(() => {
