@@ -195,7 +195,7 @@ function useCardData(threshold: number) {
         plano:   uniqueUsers("plano")   >= threshold,
         checkin: uniqueUsers("checkin") >= threshold,
         mood:    uniqueUsers("mood")    >= threshold,
-        prayer:  spiritual.filter(l => l.prayed_today).length >= threshold,
+        prayer:  new Set(spiritual.filter(l => l.prayed_today).map((l: any) => l.user_id)).size >= threshold,
         leitura: uniqueUsers("leitura") >= threshold,
       });
     });
