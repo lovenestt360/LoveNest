@@ -227,8 +227,8 @@ export function LoveStreakCard() {
   const { points, lifetimePoints, missions } = useCardData(threshold);
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
-  const journeyLevel        = getJourneyLevel(lifetimePoints ?? 0).level;
-  const streakPhase         = getStreakLevel(currentStreak);
+  // streakPhase calculado depois do early-return de loading,
+  // pois currentStreak só fica disponível após o streak?.currentStreak destructure
 
   const activeMissions  = getDailyMissions({ isSolo, hasSpiritual });
 
@@ -270,6 +270,8 @@ export function LoveStreakCard() {
     currentStreak, longestStreak: _ls, shieldsRemaining,
     shieldUsedToday, myCheckedIn, activeCount, streakAtRisk,
   } = streak;
+
+  const streakPhase = getStreakLevel(currentStreak);
 
   const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
   const cardStatus       = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday, isSolo);
