@@ -121,11 +121,24 @@ function buildState(
 // useStreak
 // ─────────────────────────────────────────────
 
+function readStreakCache(spaceId: string | null): StreakState | null {
+  if (!spaceId) return null;
+  try {
+    const raw = sessionStorage.getItem(`ln_streak_${spaceId}`);
+    return raw ? (JSON.parse(raw) as StreakState) : null;
+  } catch { return null; }
+}
+
+function writeStreakCache(spaceId: string, state: StreakState) {
+  try { sessionStorage.setItem(`ln_streak_${spaceId}`, JSON.stringify(state)); } catch {}
+}
+
 export function useStreak() {
   const spaceId = useCoupleSpaceId();
 
-  const [streak, setStreak] = useState<StreakState>(EMPTY);
-  const [loading, setLoading]     = useState(true);
+  // Se houver cache da sessão, mostra imediatamente sem skeleton
+  const [streak, setStreak] = useState<StreakState>(() => readStreakCache(spaceId) ?? EMPTY);
+  const [loading, setLoading]     = useState(() => !readStreakCache(spaceId));
   const [error,   setError]       = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
 
@@ -209,6 +222,7 @@ export function useStreak() {
       prevStreakRef.current  = newState.currentStreak;
       prevShieldsRef.current = newState.shieldsRemaining;
 
+      if (spaceId) writeStreakCache(spaceId, newState);
       setStreak(newState);
     } catch (err: any) {
       setError(err?.message ?? "Erro inesperado em useStreak");

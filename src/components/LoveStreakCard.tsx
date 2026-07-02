@@ -168,21 +168,48 @@ function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToda
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
 
+type CardCache = { points: number; lifetimePoints: number; missions: MissionStatus };
+
+function readCardCache(spaceId: string | null): CardCache | null {
+  if (!spaceId) return null;
+  try {
+    const raw = sessionStorage.getItem(`ln_card_${spaceId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function writeCardCache(spaceId: string, c: CardCache) {
+  try { sessionStorage.setItem(`ln_card_${spaceId}`, JSON.stringify(c)); } catch {}
+}
+
+const EMPTY_MISSIONS: MissionStatus = {
+  message: false, plano: false, checkin: false, mood: false, prayer: false, leitura: false,
+};
+
 function useCardData(threshold: number) {
   const spaceId = useCoupleSpaceId();
-  const [points, setPoints] = useState<number | null>(null);
-  const [lifetimePoints, setLifetimePoints] = useState<number | null>(null);
-  const [missions, setMissions] = useState<MissionStatus>({
-    message: false, plano: false, checkin: false, mood: false, prayer: false, leitura: false,
-  });
+  const cached = readCardCache(spaceId);
+  const [points, setPoints] = useState<number | null>(cached?.points ?? null);
+  const [lifetimePoints, setLifetimePoints] = useState<number | null>(cached?.lifetimePoints ?? null);
+  const [missions, setMissions] = useState<MissionStatus>(cached?.missions ?? EMPTY_MISSIONS);
 
   const fetchData = useCallback(async () => {
     if (!spaceId) return;
     const today = new Date().toISOString().slice(0, 10);
     (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
-      .then(({ data }: any) => { if (typeof data === "number") setPoints(data); });
+      .then(({ data }: any) => {
+        if (typeof data === "number") {
+          setPoints(data);
+          if (spaceId) writeCardCache(spaceId, { points: data, lifetimePoints: lifetimePoints ?? 0, missions });
+        }
+      });
     (supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }) as any)
-      .then(({ data }: any) => { if (typeof data === "number") setLifetimePoints(data); });
+      .then(({ data }: any) => {
+        if (typeof data === "number") {
+          setLifetimePoints(data);
+          if (spaceId) writeCardCache(spaceId, { points: points ?? 0, lifetimePoints: data, missions });
+        }
+      });
     Promise.all([
       (supabase.from("daily_activity" as any).select("type,user_id").eq("couple_space_id", spaceId).eq("activity_date", today) as any),
       (supabase.from("daily_spiritual_logs" as any).select("prayed_today,user_id").eq("couple_space_id", spaceId).eq("day_key", today) as any),
@@ -190,13 +217,19 @@ function useCardData(threshold: number) {
       const activities: any[] = acts ?? [];
       const spiritual: any[]  = logs ?? [];
       const uniqueUsers = (t: string) => new Set(activities.filter(a => a.type === t).map(a => a.user_id)).size;
-      setMissions({
+      const newMissions: MissionStatus = {
         message: uniqueUsers("message") >= threshold,
         plano:   uniqueUsers("plano")   >= threshold,
         checkin: uniqueUsers("checkin") >= threshold,
         mood:    uniqueUsers("mood")    >= threshold,
         prayer:  new Set(spiritual.filter(l => l.prayed_today).map((l: any) => l.user_id)).size >= threshold,
         leitura: uniqueUsers("leitura") >= threshold,
+      };
+      setMissions(newMissions);
+      if (spaceId) writeCardCache(spaceId, {
+        points: points ?? 0,
+        lifetimePoints: lifetimePoints ?? 0,
+        missions: newMissions,
       });
     });
   }, [spaceId, threshold]);
