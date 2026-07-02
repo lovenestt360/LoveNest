@@ -103,13 +103,13 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
         opacity: stage >= 2 && initials ? 1 : 0,
       }}>
         <p style={{
-          fontSize: 11, fontWeight: 800, letterSpacing: "0.4em",
-          color: "rgba(255,255,255,0.7)", textTransform: "uppercase", margin: 0,
+          fontSize: 28, fontWeight: 700, letterSpacing: "0.18em",
+          color: "rgba(255,255,255,0.92)", margin: 0,
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         }}>
           {initials ? formatInitials(initials) : ""}
         </p>
-        <div style={{ width: 32, height: 2, borderRadius: 1, background: "rgba(244,63,94,0.35)" }} />
+        <div style={{ width: 40, height: 2, borderRadius: 1, background: "rgba(244,63,94,0.5)" }} />
       </div>
 
       {/* Tagline quando sem iniciais */}
