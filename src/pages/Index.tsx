@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { saveSplashData } from "@/features/splash/SplashScreen";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -350,19 +349,6 @@ const Index = () => {
   } = useAppNotifContext();
 
   const avatars = useCoupleAvatars();
-
-  // Guarda nomes + avatares no cache do splash assim que estiverem disponíveis
-  useEffect(() => {
-    if (!avatars.loading && (avatars.me || avatars.partner)) {
-      saveSplashData({
-        name1: avatars.me?.displayName ?? "",
-        name2: avatars.partner?.displayName ?? "",
-        av1:   avatars.me?.avatarUrl ?? null,
-        av2:   avatars.partner?.avatarUrl ?? null,
-      });
-    }
-  }, [avatars.loading, avatars.me, avatars.partner]);
-
   const plano = usePlanoStats();
   const mood = useMoodToday();
   const photoCount = usePhotoCount();
