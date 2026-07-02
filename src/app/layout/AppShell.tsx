@@ -9,25 +9,18 @@ import { cn } from "@/lib/utils";
 import { ChatWallpaper } from "@/features/chat/components/ChatWallpaper";
 import { toast } from "sonner";
 
-// ANTES: key={location.pathname} forçava o React a destruir e recriar
-// toda a árvore de componentes em cada navegação — causa raiz do flickering.
-// AGORA: sem key, as páginas mantêm-se em memória; a animação CSS de entrada
-// dispara na primeira montagem de cada página e não volta a repetir ao regressar
-// (comportamento igual ao TikTok / Instagram / WhatsApp).
-function PageTransition({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="animate-fade-slide-up w-full">
-      {children}
-    </div>
-  );
-}
+// Import directo (não lazy) para que o keep-alive funcione —
+// AppShell mantém Index montado em memória e apenas o mostra/oculta via CSS.
+// Este import é intencional: Index deve carregar junto com AppShell
+// porque é a página mais usada e nunca deve ser destruída.
+import IndexPage from "@/pages/Index";
 
 export function AppShell() {
   const isOnline = useOnlineStatus();
   const location = useLocation();
   const isChat = location.pathname === "/chat";
+  const isHome = location.pathname === "/";
 
-  // Listen for streak events dispatched by useStreak after recalculation
   useEffect(() => {
     const onBroke = (e: Event) => {
       const prev = (e as CustomEvent).detail?.prev ?? 0;
@@ -62,13 +55,9 @@ export function AppShell() {
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
       isChat ? "bg-transparent" : "bg-background"
     )}>
-      {/* Global Chat Wallpaper (Fixed, outside transitions) */}
       <ChatWallpaper />
-
-      {/* Dynamic Background Mesh */}
       <div className="bg-mesh" aria-hidden="true" />
 
-      {/* Offline Indicator */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-destructive text-destructive-foreground px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 backdrop-blur-md">
           <WifiOff className="w-3 h-3" />
@@ -80,14 +69,30 @@ export function AppShell() {
         "mx-auto w-full max-w-md relative z-10",
         isChat ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-6"
       )}>
-        <PageTransition>
-          <Outlet />
-        </PageTransition>
+        {/*
+          ── KEEP-ALIVE DA HOME ───────────────────────────────────────────
+          Index é mantido montado permanentemente. Apenas é ocultado via
+          CSS quando o utilizador navega para outra página — nunca é
+          destruído nem recriado. Ao regressar, aparece instantaneamente
+          com o estado exactamente como foi deixado.
+          ─────────────────────────────────────────────────────────────────
+        */}
+        <div
+          style={{ display: isHome ? "block" : "none" }}
+          aria-hidden={!isHome}
+        >
+          <IndexPage />
+        </div>
+
+        {/* Todas as outras rotas via Outlet com animação de entrada */}
+        {!isHome && (
+          <div className="animate-fade-slide-up w-full">
+            <Outlet />
+          </div>
+        )}
       </main>
 
       {!isChat && <BottomTabs />}
-      
-      {/* System Components */}
       <FloatingSetupChecklist />
       <VerificationPrompt />
     </div>
