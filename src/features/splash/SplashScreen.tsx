@@ -46,10 +46,31 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
     const cached = loadSplashCache();
     if (cached) setCouple(cached);
 
-    // Busca dados frescos em paralelo com a animação
+    // Busca dados frescos em paralelo com a animação.
+    // Usa onAuthStateChange para garantir que o auth está restaurado —
+    // getSession() sozinho pode devolver null se o JWT ainda não foi
+    // carregado do localStorage no primeiro render.
     async function fetchCouple() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Tenta sessão imediata
+        let { data: { session } } = await supabase.auth.getSession();
+
+        // Se sem sessão, aguarda o evento INITIAL_SESSION (máx 2s)
+        if (!session?.user) {
+          session = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(null as any), 2000);
+            const { data: { subscription } } = supabase.auth.onAuthStateChange(
+              (event, s) => {
+                if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+                  clearTimeout(timer);
+                  subscription.unsubscribe();
+                  resolve(s as any);
+                }
+              }
+            );
+          });
+        }
+
         if (!session?.user || !alive) return;
 
         const { data: member } = await supabase
