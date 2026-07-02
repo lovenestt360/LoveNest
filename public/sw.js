@@ -1,4 +1,4 @@
-const CACHE_NAME = "dk-cache-v6";
+const CACHE_NAME = "dk-cache-v7";
 const OFFLINE_URL = "/offline.html";
 const APP_SHELL = [
   "/",
