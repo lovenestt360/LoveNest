@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -44,29 +45,25 @@ import { Coffee } from "lucide-react";
 
 function usePlanoStats() {
   const spaceId = useCoupleSpaceId();
-  const [pending, setPending] = useState(0);
-  const [next, setNext] = useState<{ title: string; time: string | null } | null>(null);
-
-  useEffect(() => {
-    if (!spaceId) return;
-    (supabase.from("plano_items" as any)
-      .select("title,plan_at,completed")
-      .eq("couple_space_id", spaceId) as any)
-      .then(({ data }: any) => {
-        if (!data) return;
-        setPending(data.filter(t => !t.completed).length);
-        const upcoming = data
-          .filter(t => !t.completed && t.plan_at)
-          .sort((a, b) => a.plan_at!.localeCompare(b.plan_at!))[0];
-        if (upcoming) {
-          setNext({ 
-            title: upcoming.title, 
-            time: format(new Date(upcoming.plan_at!), "HH:mm") 
-          });
-        }
-      });
-  }, [spaceId]);
-  return { pending, next };
+  const { data } = useQuery({
+    queryKey: ["plano-stats", spaceId],
+    enabled: !!spaceId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: rows } = await (supabase.from("plano_items" as any)
+        .select("title,plan_at,completed").eq("couple_space_id", spaceId) as any);
+      if (!rows) return { pending: 0, next: null };
+      const pending = (rows as any[]).filter(t => !t.completed).length;
+      const upcoming = (rows as any[])
+        .filter(t => !t.completed && t.plan_at)
+        .sort((a, b) => a.plan_at!.localeCompare(b.plan_at!))[0];
+      return {
+        pending,
+        next: upcoming ? { title: upcoming.title, time: format(new Date(upcoming.plan_at!), "HH:mm") } : null,
+      };
+    },
+  });
+  return { pending: data?.pending ?? 0, next: data?.next ?? null };
 }
 
 const MOOD_MAP: Record<string, [string, string]> = {
@@ -78,223 +75,218 @@ const MOOD_MAP: Record<string, [string, string]> = {
 function useMoodToday() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const [mine, setMine] = useState<{ emoji: string; label: string } | null>(null);
-  const [partner, setPartner] = useState<{ emoji: string; label: string } | null>(null);
-  useEffect(() => {
-    if (!spaceId || !user) return;
-    const today = new Date().toISOString().slice(0, 10);
-    (supabase.from("mood_checkins" as any).select("mood_key,mood_percent,user_id")
-      .eq("couple_space_id", spaceId).eq("day_key", today) as any)
-      .then(({ data }: any) => {
-        if (!data) return;
-        const myCheckin = data.find(d => d.user_id === user.id);
-        if (myCheckin) {
-          const [emoji, label] = MOOD_MAP[myCheckin.mood_key] ?? ["😶", myCheckin.mood_key];
-          setMine({ emoji, label });
-        }
-        const partnerCheckin = data.find(d => d.user_id !== user.id);
-        if (partnerCheckin) {
-          const [emoji, label] = MOOD_MAP[partnerCheckin.mood_key] ?? ["😶", partnerCheckin.mood_key];
-          setPartner({ emoji, label });
-        }
-      });
-  }, [spaceId, user]);
-  return { mine, partner };
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = useQuery({
+    queryKey: ["mood-today", spaceId, user?.id, today],
+    enabled: !!spaceId && !!user,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data: rows } = await (supabase.from("mood_checkins" as any)
+        .select("mood_key,user_id").eq("couple_space_id", spaceId).eq("day_key", today) as any);
+      if (!rows) return { mine: null, partner: null };
+      const myRow = rows.find((d: any) => d.user_id === user!.id);
+      const partnerRow = rows.find((d: any) => d.user_id !== user!.id);
+      const toMood = (row: any) => {
+        const [emoji, label] = MOOD_MAP[row.mood_key] ?? ["😶", row.mood_key];
+        return { emoji, label };
+      };
+      return { mine: myRow ? toMood(myRow) : null, partner: partnerRow ? toMood(partnerRow) : null };
+    },
+  });
+  return { mine: data?.mine ?? null, partner: data?.partner ?? null };
 }
 
 function usePhotoCount() {
   const spaceId = useCoupleSpaceId();
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!spaceId) return;
-    (supabase.from("photos" as any).select("id", { count: "exact", head: true })
-      .eq("couple_space_id", spaceId) as any)
-      .then(({ count: c }: any) => setCount(c ?? 0));
-  }, [spaceId]);
-  return count;
+  const { data } = useQuery({
+    queryKey: ["photo-count", spaceId],
+    enabled: !!spaceId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { count: c } = await (supabase.from("photos" as any)
+        .select("id", { count: "exact", head: true }).eq("couple_space_id", spaceId) as any);
+      return c ?? 0;
+    },
+  });
+  return data ?? 0;
 }
 function usePrayerStatus() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const [myPrayed, setMyPrayed] = useState(false);
-  const [partnerPrayed, setPartnerPrayed] = useState(false);
-  useEffect(() => {
-    if (!spaceId || !user) return;
-    const today = format(new Date(), "yyyy-MM-dd");
-    (supabase.from("daily_spiritual_logs" as any).select("prayed_today,user_id")
-      .eq("couple_space_id", spaceId).eq("day_key", today) as any)
-      .then(({ data }: any) => {
-        if (!data) return;
-        setMyPrayed(data.some(d => d.user_id === user.id && d.prayed_today));
-        setPartnerPrayed(data.some(d => d.user_id !== user.id && d.prayed_today));
-      });
-  }, [spaceId, user]);
-  return { myPrayed, partnerPrayed };
+  const today = format(new Date(), "yyyy-MM-dd");
+  const { data } = useQuery({
+    queryKey: ["prayer-status", spaceId, user?.id, today],
+    enabled: !!spaceId && !!user,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data: rows } = await (supabase.from("daily_spiritual_logs" as any)
+        .select("prayed_today,user_id").eq("couple_space_id", spaceId).eq("day_key", today) as any);
+      if (!rows) return { myPrayed: false, partnerPrayed: false };
+      return {
+        myPrayed: (rows as any[]).some(d => d.user_id === user!.id && d.prayed_today),
+        partnerPrayed: (rows as any[]).some(d => d.user_id !== user!.id && d.prayed_today),
+      };
+    },
+  });
+  return { myPrayed: data?.myPrayed ?? false, partnerPrayed: data?.partnerPrayed ?? false };
 }
 
 function useOpenComplaints() {
   const spaceId = useCoupleSpaceId();
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!spaceId) return;
-    supabase.from("complaints").select("id", { count: "exact", head: true })
-      .eq("couple_space_id", spaceId).in("status", ["open", "talking"])
-      .then(({ count: c }) => setCount(c ?? 0));
-  }, [spaceId]);
-  return count;
+  const { data } = useQuery({
+    queryKey: ["open-complaints", spaceId],
+    enabled: !!spaceId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { count: c } = await supabase.from("complaints")
+        .select("id", { count: "exact", head: true })
+        .eq("couple_space_id", spaceId!).in("status", ["open", "talking"]);
+      return c ?? 0;
+    },
+  });
+  return data ?? 0;
 }
 
 function useWrappedStatus() {
   const spaceId = useCoupleSpaceId();
-  const [hasNew, setHasNew] = useState(false);
-  useEffect(() => {
-    if (!spaceId) return;
-    const now = new Date();
-    let month = now.getMonth(); 
-    let year = now.getFullYear();
-    if (month === 0) {
-      month = 12;
-      year -= 1;
-    }
-    supabase.from("love_wrapped").select("id")
-      .eq("couple_space_id", spaceId)
-      .eq("month", month)
-      .eq("year", year)
-      .maybeSingle()
-      .then(({ data }) => setHasNew(!!data));
-  }, [spaceId]);
-  return hasNew;
+  const { data } = useQuery({
+    queryKey: ["wrapped-status", spaceId],
+    enabled: !!spaceId,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const now = new Date();
+      let month = now.getMonth();
+      let year = now.getFullYear();
+      if (month === 0) { month = 12; year -= 1; }
+      const { data: row } = await supabase.from("love_wrapped").select("id")
+        .eq("couple_space_id", spaceId!).eq("month", month).eq("year", year).maybeSingle();
+      return !!row;
+    },
+  });
+  return data ?? false;
 }
 
 function useMessagePreview() {
-  const spaceId = useCoupleSpaceId();
   const { user } = useAuth();
-  const [data, setData] = useState<{ preview: string | null; lastTime: string | null }>({ preview: null, lastTime: null });
-  useEffect(() => {
-    if (!spaceId) return;
-    supabase.from("messages").select("content,sender_user_id,created_at")
-      .eq("couple_space_id", spaceId).order("created_at", { ascending: false }).limit(1)
-      .then(({ data: msgs }) => {
-        if (msgs?.[0]) {
-          const prefix = msgs[0].sender_user_id === user?.id ? "Tu: " : "";
-          const text = msgs[0].content;
-          setData({
-            preview: prefix + (text.length > 40 ? text.slice(0, 40) + "…" : text),
-            lastTime: msgs[0].created_at
-          });
-        }
-      });
-  }, [spaceId, user]);
-  return data;
+  const spaceId = useCoupleSpaceId();
+  const { data } = useQuery({
+    queryKey: ["message-preview", spaceId],
+    enabled: !!spaceId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data: msgs } = await supabase.from("messages")
+        .select("content,sender_user_id,created_at")
+        .eq("couple_space_id", spaceId!).order("created_at", { ascending: false }).limit(1);
+      if (!msgs?.[0]) return { preview: null, lastTime: null };
+      const prefix = msgs[0].sender_user_id === user?.id ? "Tu: " : "";
+      const text = msgs[0].content;
+      return {
+        preview: prefix + (text.length > 40 ? text.slice(0, 40) + "…" : text),
+        lastTime: msgs[0].created_at,
+      };
+    },
+  });
+  return { preview: data?.preview ?? null, lastTime: data?.lastTime ?? null };
 }
 
 
 
 function useReferralCode() {
   const { user } = useAuth();
-  const [code, setCode] = useState<string | null>(null);
-  useEffect(() => {
-    if (!user) return;
-    supabase.from("profiles").select("referral_code").eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => {
-        if (data?.referral_code) setCode(data.referral_code);
-      });
-  }, [user]);
-  return code;
+  const { data } = useQuery({
+    queryKey: ["referral-code", user?.id],
+    enabled: !!user,
+    staleTime: 60 * 60_000,
+    queryFn: async () => {
+      const { data: row } = await supabase.from("profiles")
+        .select("referral_code").eq("user_id", user!.id).maybeSingle();
+      return row?.referral_code ?? null;
+    },
+  });
+  return data ?? null;
 }
 
 function useHouseInviteCode() {
   const spaceId = useCoupleSpaceId();
-  const [code, setCode] = useState<string | null>(null);
-  useEffect(() => {
-    if (!spaceId) return;
-    supabase.from("couple_spaces").select("invite_code").eq("id", spaceId).maybeSingle()
-      .then(({ data }) => {
-        if (data?.invite_code) setCode(data.invite_code);
-      });
-  }, [spaceId]);
-  return code;
+  const { data } = useQuery({
+    queryKey: ["house-invite-code", spaceId],
+    enabled: !!spaceId,
+    staleTime: 60 * 60_000,
+    queryFn: async () => {
+      const { data: row } = await supabase.from("couple_spaces")
+        .select("invite_code").eq("id", spaceId!).maybeSingle();
+      return row?.invite_code ?? null;
+    },
+  });
+  return data ?? null;
 }
 
 function useFastingHome() {
   const { user } = useAuth();
-  const [plan, setPlan] = useState<{
-    plan_name: string; start_date: string; end_date: string; total_days: number
-  } | null>(null);
-  const [loggedDays, setLoggedDays] = useState(0);
-  const [todayResult, setTodayResult] = useState<string | null>(null);
-  const [streak, setStreak] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase.from("fasting_profiles" as any).select("*")
-      .eq("user_id", user.id).eq("is_active", true)
-      .order("created_at", { ascending: false }).limit(1).maybeSingle()
-      .then(({ data: p }) => {
-        if (!p) return;
-        const profile = p as any;
-        setPlan({
-          plan_name: profile.plan_name,
-          start_date: profile.start_date,
-          end_date: profile.end_date,
-          total_days: profile.total_days,
-        });
-        supabase.from("fasting_day_logs" as any).select("day_key,result,finalized")
-          .eq("user_id", user.id).eq("profile_id", profile.id)
-          .then(({ data: logs }) => {
-            if (!logs) return;
-            const today = new Date().toISOString().slice(0, 10);
-            const finalized = (logs as any[]).filter(l => l.finalized);
-            setLoggedDays(finalized.length);
-            const todayLog = (logs as any[]).find(l => l.day_key === today);
-            setTodayResult(todayLog?.result ?? null);
-            let s = 0;
-            const d = new Date();
-            for (let i = 0; i < 100; i++) {
-              const dd = new Date(d);
-              dd.setDate(dd.getDate() - i);
-              const key = dd.toISOString().slice(0, 10);
-              const log = finalized.find((l: any) => l.day_key === key && l.result === "cumprido");
-              if (log) s++; else break;
-            }
-            setStreak(s);
-          });
-      });
-  }, [user]);
-
-  return { plan, loggedDays, todayResult, streak };
+  const { data } = useQuery({
+    queryKey: ["fasting-home", user?.id],
+    enabled: !!user,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: p } = await (supabase.from("fasting_profiles" as any).select("*")
+        .eq("user_id", user!.id).eq("is_active", true)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle() as any);
+      if (!p) return { plan: null, loggedDays: 0, todayResult: null, streak: 0 };
+      const profile = p as any;
+      const plan = { plan_name: profile.plan_name, start_date: profile.start_date,
+        end_date: profile.end_date, total_days: profile.total_days };
+      const { data: logs } = await (supabase.from("fasting_day_logs" as any)
+        .select("day_key,result,finalized").eq("user_id", user!.id).eq("profile_id", profile.id) as any);
+      if (!logs) return { plan, loggedDays: 0, todayResult: null, streak: 0 };
+      const today = new Date().toISOString().slice(0, 10);
+      const finalized = (logs as any[]).filter(l => l.finalized);
+      const todayResult = (logs as any[]).find(l => l.day_key === today)?.result ?? null;
+      let s = 0;
+      for (let i = 0; i < 100; i++) {
+        const dd = new Date(); dd.setDate(dd.getDate() - i);
+        const key = dd.toISOString().slice(0, 10);
+        if (finalized.find((l: any) => l.day_key === key && l.result === "cumprido")) s++; else break;
+      }
+      return { plan, loggedDays: finalized.length, todayResult, streak: s };
+    },
+  });
+  return { plan: data?.plan ?? null, loggedDays: data?.loggedDays ?? 0,
+    todayResult: data?.todayResult ?? null, streak: data?.streak ?? 0 };
 }
 
 function useCycleHome() {
   const { user } = useAuth();
   const { targetUserId, isMale, loadingTarget } = useCycleTarget();
-  const [profile, setProfile] = useState<CycleProfile | null>(null);
-  const [lastPeriod, setLastPeriod] = useState<PeriodEntry | null>(null);
-
-  useEffect(() => {
-    if (!user || loadingTarget || !targetUserId) return;
-    Promise.all([
-      supabase.from("cycle_profiles").select("*").eq("user_id", targetUserId).maybeSingle(),
-      supabase.from("period_entries").select("*").eq("user_id", targetUserId)
-        .order("start_date", { ascending: false }).limit(1).maybeSingle(),
-    ]).then(([pRes, peRes]) => {
-      setProfile(pRes.data as CycleProfile | null);
-      setLastPeriod(peRes.data as PeriodEntry | null);
-    });
-  }, [user, targetUserId, loadingTarget]);
-
+  const { data } = useQuery({
+    queryKey: ["cycle-home", targetUserId],
+    enabled: !!user && !loadingTarget && !!targetUserId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const [pRes, peRes] = await Promise.all([
+        supabase.from("cycle_profiles").select("*").eq("user_id", targetUserId!).maybeSingle(),
+        supabase.from("period_entries").select("*").eq("user_id", targetUserId!)
+          .order("start_date", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      return { profile: pRes.data as CycleProfile | null, lastPeriod: peRes.data as PeriodEntry | null };
+    },
+  });
+  const profile = data?.profile ?? null;
+  const lastPeriod = data?.lastPeriod ?? null;
   const info = computeCycleInfo(profile, lastPeriod);
   return { profile, info, isMale };
 }
 
 function useGlobalAnnouncements() {
-  const [announcements, setAnnouncements] = useState<any[]>([]);
-  useEffect(() => {
-    supabase.from("admin_announcements").select("*")
-      .eq("active", true).order("created_at", { ascending: false })
-      .then(({ data }) => setAnnouncements(data || []));
-  }, []);
-  return announcements;
+  const { data } = useQuery({
+    queryKey: ["global-announcements"],
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("admin_announcements").select("*")
+        .eq("active", true).order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+  return data ?? [];
 }
 
 const AppIconButton = ({

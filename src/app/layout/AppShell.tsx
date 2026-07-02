@@ -9,10 +9,14 @@ import { cn } from "@/lib/utils";
 import { ChatWallpaper } from "@/features/chat/components/ChatWallpaper";
 import { toast } from "sonner";
 
+// ANTES: key={location.pathname} forçava o React a destruir e recriar
+// toda a árvore de componentes em cada navegação — causa raiz do flickering.
+// AGORA: sem key, as páginas mantêm-se em memória; a animação CSS de entrada
+// dispara na primeira montagem de cada página e não volta a repetir ao regressar
+// (comportamento igual ao TikTok / Instagram / WhatsApp).
 function PageTransition({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
   return (
-    <div key={location.pathname} className="animate-fade-slide-up w-full">
+    <div className="animate-fade-slide-up w-full">
       {children}
     </div>
   );
