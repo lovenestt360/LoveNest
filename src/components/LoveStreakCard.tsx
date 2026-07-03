@@ -193,21 +193,32 @@ function useCardData(threshold: number) {
   const [lifetimePoints, setLifetimePoints] = useState<number | null>(cached?.lifetimePoints ?? null);
   const [missions, setMissions] = useState<MissionStatus>(cached?.missions ?? EMPTY_MISSIONS);
 
+  // Refs para evitar stale closure no writeCardCache — o callback captura
+  // sempre o valor mais recente sem precisar de entrar nas dependências.
+  const pointsRef        = useRef(points);
+  const lifetimePointsRef = useRef(lifetimePoints);
+  useEffect(() => { pointsRef.current = points; }, [points]);
+  useEffect(() => { lifetimePointsRef.current = lifetimePoints; }, [lifetimePoints]);
+
   const fetchData = useCallback(async () => {
     if (!spaceId) return;
     const today = new Date().toISOString().slice(0, 10);
+
+    // Busca pontos, pontos lifetime e missões em paralelo.
+    // Cache só é escrita uma vez, na resolução do Promise.all de missões,
+    // quando já temos todos os valores frescos via refs.
     (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
       .then(({ data }: any) => {
         if (typeof data === "number") {
           setPoints(data);
-          if (spaceId) writeCardCache(spaceId, { points: data, lifetimePoints: lifetimePoints ?? 0, missions });
+          pointsRef.current = data;
         }
       });
     (supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }) as any)
       .then(({ data }: any) => {
         if (typeof data === "number") {
           setLifetimePoints(data);
-          if (spaceId) writeCardCache(spaceId, { points: points ?? 0, lifetimePoints: data, missions });
+          lifetimePointsRef.current = data;
         }
       });
     Promise.all([
@@ -227,9 +238,9 @@ function useCardData(threshold: number) {
       };
       setMissions(newMissions);
       if (spaceId) writeCardCache(spaceId, {
-        points: points ?? 0,
-        lifetimePoints: lifetimePoints ?? 0,
-        missions: newMissions,
+        points:        pointsRef.current ?? 0,
+        lifetimePoints: lifetimePointsRef.current ?? 0,
+        missions:      newMissions,
       });
     });
   }, [spaceId, threshold]);
@@ -238,7 +249,11 @@ function useCardData(threshold: number) {
   useEffect(() => {
     const h = () => fetchData();
     window.addEventListener("streak-updated", h);
-    return () => window.removeEventListener("streak-updated", h);
+    window.addEventListener("home-visible", h);
+    return () => {
+      window.removeEventListener("streak-updated", h);
+      window.removeEventListener("home-visible", h);
+    };
   }, [fetchData]);
   useEffect(() => {
     const t = setInterval(fetchData, 3 * 60_000);

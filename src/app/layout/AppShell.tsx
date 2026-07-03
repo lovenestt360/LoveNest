@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { BottomTabs } from "@/app/layout/BottomTabs";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { WifiOff } from "lucide-react";
@@ -20,6 +20,17 @@ export function AppShell() {
   const location = useLocation();
   const isChat = location.pathname === "/chat";
   const isHome = location.pathname === "/";
+
+  // Quando o utilizador navega de volta para a Home (keep-alive esconde/mostra),
+  // nenhum useEffect remonta — notifica os hooks via evento para que
+  // sincronizem os dados imediatamente (streak, missões, pontos).
+  const wasMountedRef = useRef(false);
+  useEffect(() => {
+    if (wasMountedRef.current && isHome) {
+      window.dispatchEvent(new CustomEvent("home-visible"));
+    }
+    wasMountedRef.current = true;
+  }, [isHome]);
 
   useEffect(() => {
     const onBroke = (e: Event) => {

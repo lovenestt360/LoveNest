@@ -239,6 +239,15 @@ export function useStreak() {
     return () => clearInterval(interval);
   }, [refresh]);
 
+  // Sincroniza quando o utilizador regressa à Home (keep-alive — sem remount).
+  // Não ouvimos "streak-updated" aqui porque checkIn() já chama refresh()
+  // directamente — ouvir o evento causaria um segundo refresh desnecessário.
+  useEffect(() => {
+    const h = () => refresh();
+    window.addEventListener("home-visible", h);
+    return () => window.removeEventListener("home-visible", h);
+  }, [refresh]);
+
   // Day-change detection: check every minute for UTC date rollover
   // This ensures the UI resets when midnight passes (server CURRENT_DATE changes)
   useEffect(() => {
