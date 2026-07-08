@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -352,7 +352,7 @@ const Index = () => {
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
   const spaceId = useCoupleSpaceId();
-  const { nextSpecialDate } = useRelationshipEvents(spaceId);
+  const { nextSpecialDate, fetchEvents: refreshRelEvents } = useRelationshipEvents(spaceId);
   const { profile, loading: profileLoading } = useProfile();
   const isSolo = profile?.usage_mode === "solo";
   // Evita o flash de cartões de casal antes do perfil carregar (profile
@@ -364,6 +364,26 @@ const Index = () => {
     spaceId
   );
   const bothActiveToday = streakData?.bothActiveToday ?? false;
+
+  // ── Refresh ao regressar à Home (keep-alive — componente nunca desmonta) ──
+  // Invalida os React Query cujos dados mudam durante uma sessão normal,
+  // e actualiza os hooks de estado directo que não têm polling próprio.
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const refresh = () => {
+      queryClient.invalidateQueries({ queryKey: ["mood-today"] });
+      queryClient.invalidateQueries({ queryKey: ["prayer-status"] });
+      queryClient.invalidateQueries({ queryKey: ["message-preview", spaceId] });
+      queryClient.invalidateQueries({ queryKey: ["plano-stats", spaceId] });
+      queryClient.invalidateQueries({ queryKey: ["open-complaints", spaceId] });
+      queryClient.invalidateQueries({ queryKey: ["fasting-home"] });
+      queryClient.invalidateQueries({ queryKey: ["cycle-home"] });
+      queryClient.invalidateQueries({ queryKey: ["photo-count", spaceId] });
+      refreshRelEvents();
+    };
+    window.addEventListener("home-visible", refresh);
+    return () => window.removeEventListener("home-visible", refresh);
+  }, [queryClient, spaceId, refreshRelEvents]);
 
   // ── Cerimónias ──────────────────────────────────────────────────────────
   // Marcos de streak já têm o seu próprio dedupe (relationship_milestones,
@@ -389,7 +409,11 @@ const Index = () => {
     };
     fetchPoints();
     window.addEventListener("streak-updated", fetchPoints);
-    return () => window.removeEventListener("streak-updated", fetchPoints);
+    window.addEventListener("home-visible", fetchPoints);
+    return () => {
+      window.removeEventListener("streak-updated", fetchPoints);
+      window.removeEventListener("home-visible", fetchPoints);
+    };
   }, [spaceId]);
 
   useEffect(() => {
