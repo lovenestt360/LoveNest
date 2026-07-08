@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "./useCoupleSpaceId";
 
@@ -15,7 +15,7 @@ export function useTimeTogether() {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [time, setTime] = useState<TimeTogether>({ days: 0, hours: 0, minutes: 0, seconds: 0, startDate: null });
 
-  useEffect(() => {
+  const fetchStartDate = useCallback(() => {
     if (!spaceId) return;
     supabase
       .from("couple_spaces")
@@ -26,6 +26,20 @@ export function useTimeTogether() {
         setStartDate((data as any)?.relationship_start_date ?? null);
       });
   }, [spaceId]);
+
+  // Busca inicial quando spaceId fica disponível
+  useEffect(() => { fetchStartDate(); }, [fetchStartDate]);
+
+  // Re-busca quando: utilizador regressa à Home (keep-alive) OU
+  // o perfil do casal foi guardado nas Definições
+  useEffect(() => {
+    window.addEventListener("home-visible", fetchStartDate);
+    window.addEventListener("onboarding-refresh", fetchStartDate);
+    return () => {
+      window.removeEventListener("home-visible", fetchStartDate);
+      window.removeEventListener("onboarding-refresh", fetchStartDate);
+    };
+  }, [fetchStartDate]);
 
   useEffect(() => {
     if (!startDate) return;
