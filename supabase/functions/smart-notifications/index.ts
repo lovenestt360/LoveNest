@@ -114,9 +114,9 @@ const COOLDOWNS: Record<string, number> = {
 const RULE_URLS: Record<string, string> = {
   silent_day:     "/",
   partner_active: "/",
-  flame_risk:     "/lovestreak",
-  perfect_day:    "/lovestreak",
-  milestone:      "/lovestreak",
+  flame_risk:     "/jornada",
+  perfect_day:    "/jornada",
+  milestone:      "/jornada",
   capsule_soon:   "/capsula",
   wrapped_ready:  "/wrapped",
 };
