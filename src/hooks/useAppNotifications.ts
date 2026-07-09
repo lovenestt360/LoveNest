@@ -43,6 +43,8 @@ export function useAppNotifications() {
   const [prayerUnread, setPrayerUnread] = useState(0);
   const [complaintsUnread, setComplaintsUnread] = useState(0);
   const locationRef = useRef(location.pathname);
+  // Incrementar força o useEffect do canal a recriar a subscrição Realtime
+  const [channelKey, setChannelKey] = useState(0);
 
   useEffect(() => {
     locationRef.current = location.pathname;
@@ -87,8 +89,9 @@ export function useAppNotifications() {
   useEffect(() => {
     if (!spaceId || !user) return;
 
+    const channelName = `app-notif-${spaceId}`;
     const channel = supabase
-      .channel("app-notifications")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `couple_space_id=eq.${spaceId}` },
@@ -280,21 +283,20 @@ export function useAppNotifications() {
       )
       .subscribe((status, err) => {
         if (status === "SUBSCRIBED") {
-          console.log("✅ Realtime: Subscribed to app-notifications");
+          console.log("✅ Realtime:", channelName);
         }
         if (status === "CHANNEL_ERROR") {
-          console.error("❌ Realtime: Subscription error", err);
+          console.error("❌ Realtime: Channel error", err);
+          setTimeout(() => setChannelKey(k => k + 1), 5_000);
         }
         if (status === "TIMED_OUT") {
-          console.warn("⚠️ Realtime: Subscription timed out");
+          console.warn("⚠️ Realtime: Timed out — a reconectar...");
+          setTimeout(() => setChannelKey(k => k + 1), 5_000);
         }
       });
 
-    return () => {
-      console.log("🧹 Realtime: Removing app-notifications channel");
-      supabase.removeChannel(channel);
-    };
-  }, [spaceId, user]);
+    return () => { supabase.removeChannel(channel); };
+  }, [spaceId, user, channelKey]);
 
   useEffect(() => {
     const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread;

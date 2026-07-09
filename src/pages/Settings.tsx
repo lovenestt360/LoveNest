@@ -472,10 +472,10 @@ export default function Settings() {
         const reg = await navigator.serviceWorker.register("/sw.js");
         const subscription = await (reg as any).pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey).buffer,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
         });
         const subJson = subscription.toJSON();
-        await supabase.from("push_subscriptions").upsert({
+        const { error: upsertErr } = await supabase.from("push_subscriptions").upsert({
           couple_space_id: spaceId,
           user_id: user.id,
           endpoint: subJson.endpoint!,
@@ -483,6 +483,7 @@ export default function Settings() {
           auth: subJson.keys!.auth!,
           user_agent: navigator.userAgent,
         }, { onConflict: "user_id,endpoint" });
+        if (upsertErr) throw new Error("Subscrição não guardada: " + upsertErr.message);
         setPushSubscribed(true);
         toast({ title: "Notificações ativadas" });
         window.dispatchEvent(new CustomEvent("onboarding-refresh"));
