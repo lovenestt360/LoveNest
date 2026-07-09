@@ -10,6 +10,15 @@ import { LogoIcon } from "@/components/Logo";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
+async function getPostLoginDestination(userId: string): Promise<string> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.onboarding_completed ? "/casa" : "/onboarding";
+}
+
 // Google "G" SVG icon — official brand colour
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -39,9 +48,10 @@ export default function Login() {
   const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        navigate("/casa", { replace: true });
+        const dest = await getPostLoginDestination(session.user.id);
+        navigate(dest, { replace: true });
         return;
       }
       // First-time visitors see the landing page before onboarding.
@@ -76,7 +86,9 @@ export default function Login() {
       });
       if (error) throw error;
       track("login_completed", { method: "password" });
-      navigate("/casa");
+      const { data: { user } } = await supabase.auth.getUser();
+      const dest = user ? await getPostLoginDestination(user.id) : "/casa";
+      navigate(dest);
     } catch (err: any) {
       if (err.message?.includes("Email not confirmed")) {
         localStorage.setItem("confirm_email", trimmed);
@@ -103,7 +115,7 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmed,
-        options: { emailRedirectTo: window.location.origin + "/casa" },
+        options: { emailRedirectTo: window.location.origin + "/onboarding" },
       });
       if (error) throw error;
       track("login_magic_link_sent");
@@ -142,7 +154,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + "/casa",
+          redirectTo: window.location.origin + "/onboarding",
           queryParams: {
             access_type: "offline",
             prompt: "consent",
