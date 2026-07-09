@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { track } from "@vercel/analytics";
 import { getPasswordError } from "@/lib/passwordPolicy";
+import { CountryPicker } from "@/components/onboarding/CountryPicker";
+import { COUNTRIES } from "@/data/countries";
 
 // ── Brand ─────────────────────────────────────────────────────────────────────
 const PINK = "#FF6B8F";
@@ -96,7 +98,39 @@ const INPUT = "w-full h-12 rounded-2xl border border-border bg-card px-4 text-[1
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-type Phase = "intro" | "form";
+type Phase = "intro" | "form" | "welcome" | "country" | "gender" | "spiritual" | "mode" | "goal";
+
+const PERS_STEPS: Phase[] = ["country", "gender", "spiritual", "mode", "goal"];
+
+const GENDER_OPTIONS = [
+  { value: "male",        label: "Masculino" },
+  { value: "female",      label: "Feminino" },
+  { value: "non_binary",  label: "Não-binário" },
+  { value: "unspecified", label: "Prefiro não dizer" },
+];
+
+const RELIGION_OPTIONS = [
+  { value: "christian",   label: "Cristão" },
+  { value: "muslim",      label: "Muçulmano" },
+  { value: "hindu",       label: "Hindu" },
+  { value: "jewish",      label: "Judaico" },
+  { value: "other",       label: "Outra" },
+  { value: "none",        label: "Nenhuma" },
+  { value: "unspecified", label: "Prefiro não dizer" },
+];
+
+const MODE_OPTIONS = [
+  { value: "couple", label: "A dois",  desc: "Conectado ao teu par" },
+  { value: "solo",   label: "A solo",  desc: "O teu espaço pessoal" },
+];
+
+const GOAL_OPTIONS = [
+  { value: "relationship", label: "Melhorar o meu relacionamento" },
+  { value: "books",        label: "Ler livros" },
+  { value: "wellbeing",    label: "Bem-estar emocional" },
+  { value: "growth",       label: "Crescimento pessoal" },
+  { value: "explore",      label: "Explorar a aplicação" },
+];
 
 export default function Onboarding() {
   const [phase, setPhase] = useState<Phase>("intro");
@@ -112,6 +146,17 @@ export default function Onboarding() {
   );
   const [loading, setLoading]           = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Personalization state
+  const [signedInUserId, setSignedInUserId] = useState<string | null>(null);
+  const [country, setCountry]       = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [gender, setGender]         = useState("");
+  const [religion, setReligion]     = useState("");
+  const [usageMode, setUsageMode]   = useState("");
+  const [primaryGoal, setPrimaryGoal] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [stepVisible, setStepVisible] = useState(true);
 
   // Entry animation
   const reduced = useReducedMotion();
@@ -159,6 +204,34 @@ export default function Onboarding() {
       : `opacity 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
   });
 
+  const goToStep = (next: Phase) => {
+    setStepVisible(false);
+    setTimeout(() => { setPhase(next); setStepVisible(true); }, 160);
+  };
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const uid = signedInUserId ?? (await supabase.auth.getUser()).data.user?.id;
+      if (uid) {
+        await supabase.from("profiles").update({
+          country:                  country || null,
+          country_code:             countryCode || null,
+          gender:                   gender || null,
+          religion:                 religion || null,
+          usage_mode:               usageMode || "couple",
+          primary_goal:             primaryGoal || null,
+          onboarding_completed:     true,
+          onboarding_completed_at:  new Date().toISOString(),
+          timezone:                 Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }).eq("user_id", uid);
+        track("onboarding_v2_completed", { usage_mode: usageMode, religion, primary_goal: primaryGoal });
+      }
+    } catch { /* silent */ }
+    setSavingProfile(false);
+    navigate("/casa");
+  };
+
   // ── Signup ────────────────────────────────────────────────────────────────
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -202,7 +275,8 @@ export default function Onboarding() {
 
       if (data.session) {
         track("signup_completed", { method: "email", has_invite: !!inviteCode });
-        navigate("/casa");
+        setSignedInUserId(data.session.user.id);
+        goToStep("welcome");
       } else {
         track("signup_email_confirm", { has_invite: !!inviteCode });
         localStorage.setItem("confirm_email", trimmedEmail);
@@ -346,6 +420,227 @@ export default function Onboarding() {
         </div>
 
       </div>
+    );
+  }
+
+  // ── Personalization screens ───────────────────────────────────────────────
+
+  const stepIdx = PERS_STEPS.indexOf(phase);
+
+  const StepShell = ({ onBack, children }: { onBack: () => void; children: React.ReactNode }) => (
+    <div
+      className="min-h-screen bg-background flex flex-col relative overflow-hidden"
+      style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(16px)", transition: "opacity 160ms ease, transform 160ms ease" }}
+    >
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
+      <div className="flex items-center justify-between px-5 pt-12 shrink-0 relative z-10">
+        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all">
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+        </button>
+        {stepIdx >= 0 && (
+          <span className="text-[12px] text-muted-foreground font-medium">{stepIdx + 1} de {PERS_STEPS.length}</span>
+        )}
+        <div className="w-9" />
+      </div>
+      <div className="flex-1 flex flex-col px-8 pt-10 pb-10 relative z-10">
+        {children}
+      </div>
+    </div>
+  );
+
+  const CtaBtn = ({ onClick, disabled, label }: { onClick: () => void; disabled?: boolean; label: string }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+      style={{ background: PINK, boxShadow: `0 6px 28px ${PINK}44` }}
+    >
+      {label} <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+    </button>
+  );
+
+  const SkipBtn = ({ onClick }: { onClick: () => void }) => (
+    <button onClick={onClick} className="w-full py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+      Saltar
+    </button>
+  );
+
+  const OptionBtn = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full h-[52px] rounded-2xl border text-[14px] font-medium transition-all active:scale-[0.98]",
+        selected
+          ? "bg-rose-500 border-rose-500 text-white"
+          : "bg-card border-border text-foreground hover:border-rose-300 dark:hover:border-rose-700"
+      )}
+    >
+      {children}
+    </button>
+  );
+
+  if (phase === "welcome") {
+    return (
+      <div
+        className="min-h-screen bg-background flex flex-col relative overflow-hidden"
+        style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(16px)", transition: "opacity 160ms ease, transform 160ms ease" }}
+      >
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
+        <div className="flex-1 flex flex-col justify-center px-8 relative z-10">
+          <div className="w-full max-w-[320px] mx-auto space-y-8">
+            <div className="space-y-3">
+              <p className="text-[13px] font-medium text-rose-500 uppercase tracking-widest">Bem-vindo</p>
+              <h1 className="text-[28px] font-bold text-foreground leading-tight tracking-tight">
+                {name ? `Olá, ${name.split(" ")[0]}.` : "Olá."}<br />
+                Falta pouco.
+              </h1>
+              <p className="text-[15px] text-muted-foreground leading-relaxed">
+                Algumas perguntas rápidas para personalizar a tua experiência.
+              </p>
+            </div>
+            <CtaBtn onClick={() => goToStep("country")} label="Vamos lá" />
+            <button onClick={() => navigate("/casa")} className="w-full py-2 text-[12px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              Saltar personalização
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "country") {
+    const selectedCountryName = COUNTRIES.find(c => c.code === countryCode)?.name ?? "";
+    return (
+      <StepShell onBack={() => goToStep("welcome")}>
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Onde estás?</h2>
+            <p className="text-[13px] text-muted-foreground">Ajuda-nos a adaptar o conteúdo à tua região.</p>
+          </div>
+          <CountryPicker
+            value={countryCode || null}
+            onSelect={(code) => {
+              setCountryCode(code);
+              setCountry(COUNTRIES.find(c => c.code === code)?.name ?? "");
+            }}
+          />
+          <div className="space-y-2 pt-2">
+            <CtaBtn onClick={() => goToStep("gender")} disabled={!countryCode} label="Continuar" />
+            <SkipBtn onClick={() => goToStep("gender")} />
+          </div>
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (phase === "gender") {
+    return (
+      <StepShell onBack={() => goToStep("country")}>
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Como te identificas?</h2>
+            <p className="text-[13px] text-muted-foreground">Opcional. Só para personalizar linguagem.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {GENDER_OPTIONS.map(o => (
+              <OptionBtn key={o.value} selected={gender === o.value} onClick={() => setGender(o.value)}>
+                {o.label}
+              </OptionBtn>
+            ))}
+          </div>
+          <div className="space-y-2 pt-2">
+            <CtaBtn onClick={() => goToStep("spiritual")} disabled={!gender} label="Continuar" />
+            <SkipBtn onClick={() => goToStep("spiritual")} />
+          </div>
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (phase === "spiritual") {
+    return (
+      <StepShell onBack={() => goToStep("gender")}>
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Tens fé?</h2>
+            <p className="text-[13px] text-muted-foreground">Ativamos recursos espirituais se quiseres.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {RELIGION_OPTIONS.map(o => (
+              <OptionBtn key={o.value} selected={religion === o.value} onClick={() => setReligion(o.value)}>
+                {o.label}
+              </OptionBtn>
+            ))}
+          </div>
+          <div className="space-y-2 pt-2">
+            <CtaBtn onClick={() => goToStep("mode")} disabled={!religion} label="Continuar" />
+            <SkipBtn onClick={() => goToStep("mode")} />
+          </div>
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (phase === "mode") {
+    return (
+      <StepShell onBack={() => goToStep("spiritual")}>
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Como vais usar o LoveNest?</h2>
+            <p className="text-[13px] text-muted-foreground">Podes mudar nas definições a qualquer momento.</p>
+          </div>
+          <div className="space-y-3">
+            {MODE_OPTIONS.map(o => (
+              <button
+                key={o.value}
+                onClick={() => setUsageMode(o.value)}
+                className={cn(
+                  "w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]",
+                  usageMode === o.value
+                    ? "bg-rose-500 border-rose-500 text-white"
+                    : "bg-card border-border text-foreground hover:border-rose-300 dark:hover:border-rose-700"
+                )}
+              >
+                <div className="text-[15px] font-semibold">{o.label}</div>
+                <div className={cn("text-[12px] mt-0.5", usageMode === o.value ? "text-white/80" : "text-muted-foreground")}>{o.desc}</div>
+              </button>
+            ))}
+          </div>
+          <CtaBtn onClick={() => goToStep("goal")} disabled={!usageMode} label="Continuar" />
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (phase === "goal") {
+    return (
+      <StepShell onBack={() => goToStep("mode")}>
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Qual é o teu objetivo principal?</h2>
+          </div>
+          <div className="space-y-2">
+            {GOAL_OPTIONS.map(o => (
+              <OptionBtn key={o.value} selected={primaryGoal === o.value} onClick={() => setPrimaryGoal(o.value)}>
+                {o.label}
+              </OptionBtn>
+            ))}
+          </div>
+          <div className="space-y-2 pt-2">
+            <button
+              onClick={handleSaveProfile}
+              disabled={!primaryGoal || savingProfile}
+              className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              style={{ background: PINK, boxShadow: `0 6px 28px ${PINK}44` }}
+            >
+              {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Entrar no espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>}
+            </button>
+            <button onClick={handleSaveProfile} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              Saltar
+            </button>
+          </div>
+        </div>
+      </StepShell>
     );
   }
 
