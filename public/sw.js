@@ -95,6 +95,16 @@ self.addEventListener("push", (event) => {
   );
 });
 
+// Quando o browser invalida a subscrição push (ex: SW update, expiração),
+// notifica a app para recriar automaticamente a subscrição no BD.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      clients.forEach((client) => client.postMessage({ type: "PUSH_SUBSCRIPTION_CHANGED" }));
+    })
+  );
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetPath = event.notification.data?.url || "/";

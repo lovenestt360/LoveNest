@@ -5,6 +5,32 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
 
+function vapidKeyToUint8Array(base64: string): Uint8Array {
+  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
+
+async function upsertPushSubscription(
+  sub: PushSubscription,
+  userId: string,
+  spaceId: string
+) {
+  const j = sub.toJSON();
+  if (!j.endpoint || !j.keys?.p256dh || !j.keys?.auth) return;
+  await supabase.from("push_subscriptions").upsert(
+    {
+      couple_space_id: spaceId,
+      user_id: userId,
+      endpoint: j.endpoint,
+      p256dh: j.keys.p256dh,
+      auth: j.keys.auth,
+      user_agent: navigator.userAgent,
+    },
+    { onConflict: "user_id,endpoint" }
+  );
+}
+
 const NOTIF_KEY = "lovenest_notif_prefs";
 const defaultPrefs = {
   chat: true,
@@ -309,6 +335,47 @@ export function useAppNotifications() {
       }
     }
   }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread]);
+
+  // ── Auto-refresh da subscrição push ──────────────────────────────────────
+  // 1. No arranque: se permissão já concedida, garante que a subscrição
+  //    existe no BD com o couple_space_id correto (recupera após SW update).
+  // 2. Mensagem SW: o sw.js envia PUSH_SUBSCRIPTION_CHANGED quando o browser
+  //    invalida a subscrição; recria e guarda silenciosamente.
+  useEffect(() => {
+    if (!user || !spaceId) return;
+    if (typeof Notification === "undefined" || !("PushManager" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+    if (!vapidKey) return;
+
+    const refreshSubscription = async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: vapidKeyToUint8Array(vapidKey),
+          });
+        }
+        await upsertPushSubscription(sub, user.id, spaceId);
+      } catch (e) {
+        console.warn("[push] auto-refresh falhou:", e);
+      }
+    };
+
+    refreshSubscription();
+
+    const onSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED") {
+        refreshSubscription();
+      }
+    };
+
+    navigator.serviceWorker.addEventListener("message", onSwMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", onSwMessage);
+  }, [user, spaceId]);
 
   return { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, resetChatUnread, resetMoodUnread, resetTasksUnread, resetMemoriesUnread, resetScheduleUnread, resetPrayerUnread, resetComplaintsUnread };
 }
