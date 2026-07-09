@@ -186,6 +186,26 @@ export default function Onboarding() {
     return () => clearTimeout(t);
   }, []);
 
+  // Detect Google OAuth return: user already logged in, check onboarding status
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      setSignedInUserId(session.user.id);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (profile?.onboarding_completed) {
+        navigate("/casa", { replace: true });
+      } else {
+        markSeen();
+        goToStep("welcome");
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Entrance helper
   const enter = (
     delay: number,
@@ -295,7 +315,7 @@ export default function Onboarding() {
     markSeen();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/casa" },
+      options: { redirectTo: window.location.origin + "/onboarding" },
     });
     if (error) {
       toast({ variant: "destructive", title: "Erro com Google", description: error.message });
