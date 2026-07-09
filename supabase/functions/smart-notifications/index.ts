@@ -28,43 +28,63 @@ const CORS = {
 // ── Message banks ──────────────────────────────────────────────────────
 // Tone: calm · intimate · emotionally warm · no emojis · no urgency
 const MSGS = {
-  // 1. Silent Day Reminder — neither partner active, 19h–21h
+  // 1. Silent Day Reminder — casal: nenhum ativo; solo: utilizador inativo
   silent_day: [
     { title: "O vosso espaço", body: "O vosso espaço esteve silencioso hoje." },
     { title: "Ainda há tempo", body: "Hoje ainda podem aparecer um para o outro." },
     { title: "O vosso ninho", body: "Pequenos gestos mantêm o ninho vivo." },
     { title: "Um momento", body: "Ainda há espaço para um momento hoje." },
   ],
+  silent_day_solo: [
+    { title: "O teu espaço", body: "O teu espaço esteve silencioso hoje." },
+    { title: "Ainda há tempo", body: "Hoje ainda podes aparecer por ti." },
+    { title: "Um pequeno gesto", body: "Pequenos gestos mantêm a chama viva." },
+  ],
 
-  // 2. Partner Presence — partner active, user hasn't checked in
+  // 2. Partner Presence — parceiro ativo, utilizador não (só casal)
   partner_active: [
     { title: "Presença no ninho", body: "O teu par esteve presente hoje." },
     { title: "Um gesto no vosso espaço", body: "O teu par deixou um gesto no vosso espaço." },
     { title: "Presença", body: "Hoje alguém apareceu para vocês." },
   ],
 
-  // 3. Flame Risk — streak at risk after 19h
+  // 3. Flame Risk — streak em risco
   flame_risk: [
     { title: "A chama", body: "A chama sente falta dos dois." },
     { title: "Ainda a tempo", body: "Hoje ainda podem proteger o vosso momento." },
     { title: "A presença conta", body: "A presença de hoje ainda conta." },
   ],
+  flame_risk_solo: [
+    { title: "A tua chama", body: "A chama sente falta de ti." },
+    { title: "Ainda a tempo", body: "Hoje ainda podes cuidar do teu momento." },
+    { title: "A tua presença conta", body: "A tua presença de hoje ainda conta." },
+  ],
 
-  // 4. Perfect Day — both partners completed all missions
+  // 4. Perfect Day — todas as missões completas
   perfect_day: [
     { title: "O vosso espaço", body: "Hoje o vosso espaço esteve completo." },
     { title: "Todos os momentos", body: "Todos os pequenos momentos foram cuidados hoje." },
     { title: "Presença mútua", body: "Hoje escolheram aparecer um para o outro." },
   ],
+  perfect_day_solo: [
+    { title: "O teu espaço", body: "Hoje o teu espaço esteve completo." },
+    { title: "Todos os momentos", body: "Todos os teus pequenos momentos foram cuidados." },
+    { title: "Presença plena", body: "Hoje apareceste por ti." },
+  ],
 
-  // 5. Milestone — streak milestone reached
+  // 5. Milestone — marco de sequência
   milestone: [
     { title: "Uma etapa juntos", body: "O vosso espaço continua a ganhar raízes." },
     { title: "Dias que ficam", body: "Pequenos dias tornam-se grandes memórias." },
     { title: "História em construção", body: "Chegaram a uma nova etapa juntos." },
   ],
+  milestone_solo: [
+    { title: "Uma etapa", body: "O teu espaço continua a ganhar raízes." },
+    { title: "Dias que ficam", body: "Pequenos dias tornam-se grandes memórias." },
+    { title: "O teu caminho", body: "Chegaste a uma nova etapa." },
+  ],
 
-  // Extra — capsule / wrapped (product value, kept from previous version)
+  // Extra — capsule / wrapped
   capsule_soon: [
     { title: "A vossa cápsula", body: "Uma mensagem do passado está prestes a chegar." },
     { title: "O tempo passa", body: "A vossa cápsula do tempo abre nos próximos dias." },
@@ -138,8 +158,9 @@ Deno.serve(async (req) => {
     for (const space of (spaces || [])) {
       const spaceId = space.id;
       const members = (space.members as any[]) || [];
-      if (members.length < 2) continue;
+      if (members.length < 1) continue;
 
+      const isSolo = members.length === 1;
       scannedSpaces++;
 
       // ── Shared couple data ────────────────────────────────────────
@@ -152,24 +173,27 @@ Deno.serve(async (req) => {
 
       const activeUsersToday = new Set((todayActivity || []).map((r: any) => r.user_id));
 
-      // Perfect day: all 4 missions complete by both partners
+      // Perfect day: all missions complete (threshold: 1 solo, 2 casal)
       const typeMap: Record<string, Set<string>> = {};
       for (const row of (todayActivity || []) as any[]) {
         if (!typeMap[row.type]) typeMap[row.type] = new Set();
         typeMap[row.type].add(row.user_id);
       }
-      const missionTypes  = ["message", "checkin", "mood", "prayer"];
-      const missionsDone  = missionTypes.filter(t => (typeMap[t]?.size ?? 0) >= 2).length;
+      const missionThreshold = isSolo ? 1 : 2;
+      // Universal missions (chat/plano + checkin + mood). Prayer/leitura ignorado aqui
+      // pois não temos religion em memória nesta query — conservador mas correcto.
+      const missionTypes  = isSolo ? ["plano", "checkin", "mood"] : ["message", "checkin", "mood"];
+      const missionsDone  = missionTypes.filter(t => (typeMap[t]?.size ?? 0) >= missionThreshold).length;
       const isPerfectDay  = missionsDone === missionTypes.length;
 
       // Capsule about to open (1–5 days)
       const in5Days = new Date(nowMs + 5 * 86400000).toISOString();
       const { data: capsules } = await sb
-        .from("time_capsules")
+        .from("time_capsule_messages")
         .select("id")
         .eq("couple_space_id", spaceId)
-        .gt("unlock_at", now.toISOString())
-        .lte("unlock_at", in5Days);
+        .gt("unlock_date", now.toISOString())
+        .lte("unlock_date", in5Days);
 
       // Monthly wrapped
       const { data: wrapped } = await sb
@@ -227,12 +251,11 @@ Deno.serve(async (req) => {
         let msg: { title: string; body: string } | null = null;
 
         // ── RULE 1: Perfect Day (highest emotional value) ───────────
-        // Trigger: all missions done by both. Send to both members.
         if (!rule && isPerfectDay && myActiveToday) {
           const mKey = `perfect_day_${todayISO}`;
           if (!(await recentlySent(mKey))) {
             rule = mKey;
-            msg  = pick(MSGS.perfect_day);
+            msg  = pick(isSolo ? MSGS.perfect_day_solo : MSGS.perfect_day);
           }
         }
 
@@ -242,7 +265,7 @@ Deno.serve(async (req) => {
           const mKey = `milestone_${streak}`;
           if (!(await recentlySent(mKey))) {
             rule = mKey;
-            const base = pick(MSGS.milestone);
+            const base = pick(isSolo ? MSGS.milestone_solo : MSGS.milestone);
             msg  = { title: base.title, body: `${streak} dias. ${base.body}` };
           }
         }
@@ -263,28 +286,32 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 5: Flame Risk — streak > 0, after 19h, not both active
-        if (!rule && streak > 0 && localHour >= 19 && (!myActiveToday || !partnerActive)) {
+        // ── RULE 5: Flame Risk — streak > 0, after 19h, not active ──
+        const flameRisk = isSolo
+          ? (streak > 0 && localHour >= 19 && !myActiveToday)
+          : (streak > 0 && localHour >= 19 && (!myActiveToday || !partnerActive));
+        if (!rule && flameRisk) {
           if (!(await recentlySent("flame_risk"))) {
             rule = "flame_risk";
-            msg  = pick(MSGS.flame_risk);
+            msg  = pick(isSolo ? MSGS.flame_risk_solo : MSGS.flame_risk);
           }
         }
 
-        // ── RULE 6: Partner Presence — partner active, user isn't ───
-        // Only fires ~35% of valid triggers — keeps it rare and meaningful
-        if (!rule && partnerUserId && partnerActive && !myActiveToday) {
+        // ── RULE 6: Partner Presence — só para casal ────────────────
+        // ~35% dos triggers — mantém raro e significativo
+        if (!rule && !isSolo && partnerUserId && partnerActive && !myActiveToday) {
           if (!(await recentlySent("partner_active")) && Math.random() <= 0.35) {
             rule = "partner_active";
             msg  = pick(MSGS.partner_active);
           }
         }
 
-        // ── RULE 7: Silent Day — neither active, 19h–21h ────────────
-        // Smarter filtering: skip if yesterday was active or a perfect day happened recently
-        if (!rule && !myActiveToday && !partnerActive && localHour >= 19 && localHour < 21) {
+        // ── RULE 7: Silent Day — 19h–21h, sem actividade ────────────
+        const silentCondition = isSolo
+          ? (!myActiveToday && localHour >= 19 && localHour < 21)
+          : (!myActiveToday && !partnerActive && localHour >= 19 && localHour < 21);
+        if (!rule && silentCondition) {
           if (!(await recentlySent("silent_day"))) {
-            // Skip if user was highly active yesterday (engaged couple, just had an off-day)
             const { count: yesterdayCount } = await sb
               .from("daily_activity")
               .select("id", { count: "exact", head: true })
@@ -292,14 +319,13 @@ Deno.serve(async (req) => {
               .eq("user_id", userId)
               .eq("activity_date", yesterdayISO);
 
-            // Skip if perfect_day notification was sent today or yesterday (positive momentum)
             const recentPerfect =
               await recentlySent(`perfect_day_${todayISO}`) ||
               await recentlySent(`perfect_day_${yesterdayISO}`);
 
             if ((yesterdayCount ?? 0) < 3 && !recentPerfect) {
               rule = "silent_day";
-              msg  = pick(MSGS.silent_day);
+              msg  = pick(isSolo ? MSGS.silent_day_solo : MSGS.silent_day);
             }
           }
         }
