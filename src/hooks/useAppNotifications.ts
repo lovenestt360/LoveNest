@@ -353,12 +353,30 @@ export function useAppNotifications() {
       try {
         const reg = await navigator.serviceWorker.ready;
         let sub = await reg.pushManager.getSubscription();
-        if (!sub) {
+
+        if (sub) {
+          // Verifica se esta subscrição ainda existe no BD.
+          // Se não existe (foi apagada após 410 Gone), cria uma nova.
+          const { data: dbRow } = await supabase
+            .from("push_subscriptions")
+            .select("id")
+            .eq("endpoint", sub.toJSON().endpoint ?? "")
+            .maybeSingle();
+
+          if (!dbRow) {
+            await sub.unsubscribe();
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: vapidKeyToUint8Array(vapidKey),
+            });
+          }
+        } else {
           sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: vapidKeyToUint8Array(vapidKey),
           });
         }
+
         await upsertPushSubscription(sub, user.id, spaceId);
       } catch (e) {
         console.warn("[push] auto-refresh falhou:", e);
