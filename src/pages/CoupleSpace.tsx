@@ -87,7 +87,7 @@ export default function CoupleSpace() {
   // para qualquer utilizador sem couple_space_id; respostas ficam em estado
   // local e só são persistidas no fim, para evitar ambiguidade de retoma
   // (gender=null tanto significa "ainda não respondido" como "prefiro não dizer").
-  const { profile, loading: profileLoading, update: updateProfile, completeOnboarding } = useProfile();
+  const { profile, loading: profileLoading, update: updateProfile, completeOnboarding, refresh: refreshProfile } = useProfile();
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [draft, setDraft] = useState<OnboardingDraft>({ countryCode: null, gender: null, religion: null, usageMode: null, primaryGoal: null });
   const [creatingSolo, setCreatingSolo] = useState(false);
@@ -276,7 +276,9 @@ export default function CoupleSpace() {
       localStorage.removeItem("lovenest_ref");
 
       track("space_joined");
-      await refresh();
+      // O trigger fn_auto_couple_mode_on_join actualiza usage_mode='couple'
+      // server-side. Fazemos refresh do perfil para a UI reflectir imediatamente.
+      await Promise.all([refresh(), refreshProfile()]);
       navigate("/", { replace: true });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
