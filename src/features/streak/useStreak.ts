@@ -160,20 +160,18 @@ export function useStreak() {
   const prevStreakRef  = useRef<number | null>(null);
   const prevShieldsRef = useRef<number | null>(null);
 
-  const refresh = useCallback(async () => {
+  // silent=true: dados existentes ficam visíveis durante o fetch (sem skeleton).
+  // Usado em polling, home-visible e checkIn — o skeleton só aparece no
+  // primeiro carregamento (quando não há ainda nenhum dado em memória).
+  const refresh = useCallback(async (silent = false) => {
     if (!spaceId) { setLoading(false); return; }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
-      // Step 1: Force streak recalculation for the current UTC day.
-      // update_streak() is idempotent — if it already ran today it's a no-op.
-      // This ensures breaks and shield consumption happen immediately on open,
-      // without waiting for the user to do any activity.
       await supabase.rpc("update_streak", { p_couple_space_id: spaceId });
 
-      // Step 2: Fetch authoritative state after recalculation
       const [streakRes, membersRes] = await Promise.all([
         supabase.rpc("get_streak", { p_couple_space_id: spaceId }),
         supabase.rpc("get_couple_member_ids", { p_couple_space_id: spaceId }),
@@ -185,7 +183,6 @@ export function useStreak() {
       }
 
       const raw = (streakRes.data as Record<string, any> | null) ?? {};
-
       const memberListCount = membersRes.error
         ? 0
         : (membersRes.data as { user_id: string }[] | null)?.length ?? 0;
@@ -196,19 +193,13 @@ export function useStreak() {
 
       const newState = buildState(raw, memberListCount);
 
-      // Step 3: Detect meaningful changes and notify the UI
       const prev        = prevStreakRef.current;
       const prevShields = prevShieldsRef.current;
 
       if (prev !== null && prevShields !== null) {
-        // Streak just broke — had streak, now zero, shields didn't save it
         if (prev > 0 && newState.currentStreak === 0) {
-          window.dispatchEvent(new CustomEvent("streak-broke", {
-            detail: { prev }
-          }));
-        }
-        // Shield was auto-consumed — streak stayed same but shields dropped
-        else if (
+          window.dispatchEvent(new CustomEvent("streak-broke", { detail: { prev } }));
+        } else if (
           newState.currentStreak > 0 &&
           prevShields > newState.shieldsRemaining &&
           newState.shieldsRemaining >= 0
@@ -231,31 +222,29 @@ export function useStreak() {
     }
   }, [spaceId]);
 
+  // Primeiro carregamento — mostra skeleton se não houver cache
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Polling: refresh every 5 minutes to prevent stale UI
+  // Polling silencioso — dados ficam visíveis, atualizam em background
   useEffect(() => {
-    const interval = setInterval(refresh, 5 * 60_000);
+    const interval = setInterval(() => refresh(true), 5 * 60_000);
     return () => clearInterval(interval);
   }, [refresh]);
 
-  // Sincroniza quando o utilizador regressa à Home (keep-alive — sem remount).
-  // Não ouvimos "streak-updated" aqui porque checkIn() já chama refresh()
-  // directamente — ouvir o evento causaria um segundo refresh desnecessário.
+  // Regresso à Home (keep-alive) — silencioso, sem skeleton
   useEffect(() => {
-    const h = () => refresh();
+    const h = () => refresh(true);
     window.addEventListener("home-visible", h);
     return () => window.removeEventListener("home-visible", h);
   }, [refresh]);
 
-  // Day-change detection: check every minute for UTC date rollover
-  // This ensures the UI resets when midnight passes (server CURRENT_DATE changes)
+  // Rollover de meia-noite — silencioso
   useEffect(() => {
     const timer = setInterval(() => {
       const todayUTC = new Date().toISOString().slice(0, 10);
       if (todayUTC !== todayUTCRef.current) {
         todayUTCRef.current = todayUTC;
-        refresh();
+        refresh(true);
       }
     }, 60_000);
     return () => clearInterval(timer);
@@ -299,12 +288,11 @@ export function useStreak() {
         return { ok: false, message: "Resposta inesperada do servidor." };
       }
 
-      // Minimal optimistic update — only what we know for certain:
-      // current user checked in. Everything else comes from refresh().
+      // Optimistic update imediato para resposta visual instantânea
       setStreak(prev => ({ ...prev, myCheckedIn: true }));
 
-      // Authoritative state from server (uses CURRENT_DATE — no timezone issues)
-      await refresh();
+      // Refresh silencioso — card actualiza no lugar sem skeleton
+      await refresh(true);
 
       window.dispatchEvent(new CustomEvent("streak-updated", { detail: { spaceId } }));
       return { ok: true };
