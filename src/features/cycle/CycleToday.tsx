@@ -439,7 +439,7 @@ export function CycleToday({ data }: { data: CycleData }) {
   const ringDotY = 50 - 44 * Math.cos(ringAngle);
 
   return (
-    <div className="space-y-5 pb-10">
+    <div className="space-y-5">
         {engine ? (
           <div className="glass-card p-6 space-y-4">
             <div className="flex items-center gap-5">

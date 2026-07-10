@@ -122,7 +122,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
   const PhaseIcon = PHASE_ICONS[phaseKey] ?? Flower2;
 
   return (
-    <div className="space-y-4 pb-10">
+    <div className="space-y-4">
 
       {/* ── Hero card ── */}
       <div className="glass-card p-5 space-y-4">
