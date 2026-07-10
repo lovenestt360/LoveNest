@@ -4,22 +4,25 @@ import type { DayType } from "./engine";
 import type { CycleData } from "./useCycleData";
 
 // Pill fill per day type — solid = já aconteceu, tracejado = previsto
+// Each phase has its own hue so they're distinguishable at a glance.
 function pillClass(dayType: DayType, isFuture: boolean): string {
   switch (dayType) {
     case "period":
-      return "bg-rose-500";
+      return isFuture
+        ? "border border-dashed border-rose-400 dark:border-rose-700"
+        : "bg-rose-500";
     case "ovulation":
       return isFuture
-        ? "border border-dashed border-rose-300 dark:border-rose-800"
-        : "bg-rose-300 dark:bg-rose-800/60";
+        ? "border border-dashed border-emerald-400 dark:border-emerald-600"
+        : "bg-emerald-400 dark:bg-emerald-600/70";
     case "fertile":
       return isFuture
-        ? "border border-dashed border-rose-200 dark:border-rose-900"
-        : "bg-rose-100 dark:bg-rose-950/40";
+        ? "border border-dashed border-sky-300 dark:border-sky-600"
+        : "bg-sky-300 dark:bg-sky-600/60";
     case "pms":
       return isFuture
-        ? "border border-dashed border-border"
-        : "bg-muted-foreground/15";
+        ? "border border-dashed border-violet-300 dark:border-violet-600"
+        : "bg-violet-300 dark:bg-violet-600/50";
     default:
       return "bg-muted border border-border";
   }
@@ -66,16 +69,16 @@ export function CycleHistoryStrip({ data }: { data: CycleData }) {
           Período
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-          <span className="h-2.5 w-2.5 rounded-full bg-rose-300 dark:bg-rose-800/60" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 dark:bg-emerald-600/70" />
           Ovulação
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-          <span className="h-2.5 w-2.5 rounded-full bg-rose-100 dark:bg-rose-950/40" />
+          <span className="h-2.5 w-2.5 rounded-full bg-sky-300 dark:bg-sky-600/60" />
           Fértil
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-          <span className="h-2.5 w-2.5 rounded-full border border-dashed border-rose-300 dark:border-rose-800" />
-          Previsto
+          <span className="h-2.5 w-2.5 rounded-full bg-violet-300 dark:bg-violet-600/50" />
+          TPM
         </span>
       </div>
     </div>

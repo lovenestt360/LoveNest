@@ -19,12 +19,12 @@ import { differenceInDays } from "date-fns";
 import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
 
-// Phase accent colors — white cards, rose accents only where meaningful
+// Phase accent colors — one distinct hue per phase, consistent with HomeCard
 const PHASE_ACCENT: Record<string, string> = {
   menstrual: "text-rose-500",
-  folicular: "text-muted-foreground",
-  ovulacao:  "text-rose-400",
-  luteal:    "text-muted-foreground",
+  folicular: "text-sky-500",
+  ovulacao:  "text-emerald-500",
+  luteal:    "text-violet-500",
   sem_dados: "text-muted-foreground",
 };
 
@@ -445,7 +445,7 @@ export function CycleToday({ data }: { data: CycleData }) {
             <div className="flex items-center gap-5">
               <div className="relative h-24 w-24 shrink-0">
                 <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
-                  <circle cx="50" cy="50" r="44" fill="none" strokeWidth="8" stroke="currentColor" className="text-rose-100 dark:text-rose-900/30" />
+                  <circle cx="50" cy="50" r="44" fill="none" strokeWidth="8" stroke="currentColor" className="text-muted/50 dark:text-muted/30" />
                   <circle
                     cx="50" cy="50" r="44" fill="none" strokeWidth="8" stroke="currentColor" strokeLinecap="round"
                     strokeDasharray={CYCLE_RING_CIRCUMFERENCE}
@@ -491,10 +491,10 @@ export function CycleToday({ data }: { data: CycleData }) {
                 <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200/50 dark:border-rose-800/50">Em período</span>
               )}
               {engine.isInFertileWindow && (
-                <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200/50 dark:border-rose-800/50">Janela fértil</span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-sky-50 dark:bg-sky-950/30 text-sky-500 border border-sky-200/50 dark:border-sky-800/50">Janela fértil</span>
               )}
               {engine.isInPmsWindow && !engine.isInPeriod && (
-                <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">TPM</span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-500 border border-violet-200/50 dark:border-violet-800/50">TPM</span>
               )}
               <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
                 Próx. {formatShortDate(engine.nextPeriodStr)}
