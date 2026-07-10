@@ -261,16 +261,19 @@ function useCardData(threshold: number) {
   }, [fetchData]);
   // Realtime — reage imediatamente quando qualquer membro insere/atualiza
   // uma atividade ou registo espiritual neste couple_space.
+  // Dispara streak-updated em vez de fetchData() directamente para que
+  // tanto useCardData (missões) como useStreak (contagem) actualizem.
   useEffect(() => {
     if (!spaceId) return;
+    const notify = () => window.dispatchEvent(new CustomEvent("streak-updated"));
     const channel = supabase
       .channel(`card-rt-${spaceId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_activity",       filter: `couple_space_id=eq.${spaceId}` }, () => fetchData())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, () => fetchData())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, () => fetchData())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_activity",       filter: `couple_space_id=eq.${spaceId}` }, notify)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, notify)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, notify)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [spaceId, fetchData]);
+  }, [spaceId]);
 
   return { points, lifetimePoints, missions };
 }

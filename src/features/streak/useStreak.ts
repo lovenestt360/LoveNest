@@ -231,11 +231,15 @@ export function useStreak() {
     return () => clearInterval(interval);
   }, [refresh]);
 
-  // Regresso à Home (keep-alive) — silencioso, sem skeleton
+  // Regresso à Home (keep-alive) e qualquer actividade registada — silencioso
   useEffect(() => {
     const h = () => refresh(true);
     window.addEventListener("home-visible", h);
-    return () => window.removeEventListener("home-visible", h);
+    window.addEventListener("streak-updated", h);
+    return () => {
+      window.removeEventListener("home-visible", h);
+      window.removeEventListener("streak-updated", h);
+    };
   }, [refresh]);
 
   // Rollover de meia-noite — silencioso
