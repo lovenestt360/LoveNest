@@ -19,7 +19,7 @@ const FEELINGS = ["magoado", "frustrado", "triste", "ansioso", "zangado", "confu
 
 const STATUS_MAP: Record<string, { label: string; dot: string; text: string }> = {
   open:     { label: "Aberta",      dot: "bg-rose-500",   text: "text-rose-500" },
-  talking:  { label: "Em conversa", dot: "bg-amber-400",  text: "text-amber-500" },
+  talking:  { label: "Em conversa", dot: "bg-orange-400",  text: "text-orange-500" },
   resolved: { label: "Resolvida",   dot: "bg-green-500",  text: "text-green-600" },
   archived: { label: "Arquivada",   dot: "bg-muted-foreground/40",  text: "text-muted-foreground" },
 };

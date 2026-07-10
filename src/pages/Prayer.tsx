@@ -195,7 +195,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     if (spaceId) {
       notifyPartner({
         couple_space_id: spaceId,
-        title: "🙏 Oração do dia atualizada",
+        title: "Oração do dia atualizada",
         body: prayerText.trim().slice(0, 80),
         url: "/jornada-espiritual?tab=oracao",
         type: "oracao",
@@ -204,11 +204,11 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
 
     // Emotional feedback
     if (partnerLog?.prayed_today) {
-      toast({ title: "Vocês cresceram juntos hoje ✨", description: "A união espiritual fortalece o vosso amor." });
+      toast({ title: "Vocês cresceram juntos hoje", description: "A união espiritual fortalece o vosso amor." });
     } else {
-      toast({ 
-        title: "🙏 Oração guardada", 
-        description: "Partilha com o teu par para rezarem juntos 💛",
+      toast({
+        title: "Oração guardada",
+        description: "Partilha com o teu par para rezarem juntos",
         action: <ToastAction altText="Convidar par" onClick={handleJoinPrayer}>Convidar</ToastAction>
       });
     }
@@ -246,7 +246,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     // Emotional feedback
     if (prayedToday) {
       if (partnerLog?.prayed_today) {
-        toast({ title: "Vocês cresceram juntos hoje ✨", description: "A vossa conexão espiritual é linda." });
+        toast({ title: "Vocês cresceram juntos hoje", description: "A vossa conexão espiritual é linda." });
       } else {
         toast({
           title: "Diário guardado",
@@ -263,12 +263,12 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
     if (!spaceId) return;
     notifyPartner({
       couple_space_id: spaceId,
-      title: "🙏 Convite Especial",
-      body: "O teu par está à tua espera para rezarem juntos! ✨",
+      title: "Convite Especial",
+      body: "O teu par está à tua espera para rezarem juntos!",
       url: "/jornada-espiritual?tab=oracao",
       type: "oracao",
     });
-    toast({ title: "✨ Convite enviado!", description: "O teu par foi notificado para rezarem juntos." });
+    toast({ title: "Convite enviado!", description: "O teu par foi notificado para rezarem juntos." });
   };
 
   const togglePrayed = (val: boolean) => {
@@ -296,7 +296,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
           {!editingPrayer && prayer ? (
             <div className="space-y-2">
               <p className="text-sm whitespace-pre-wrap">{prayer.prayer_text}</p>
-              {prayer.verse_ref && <p className="text-xs text-muted-foreground italic">📖 {prayer.verse_ref}</p>}
+              {prayer.verse_ref && <p className="text-xs text-muted-foreground italic">{prayer.verse_ref}</p>}
               <Button variant="ghost" size="sm" onClick={() => setEditingPrayer(true)}>
                 <Pencil className="mr-1 h-3 w-3" /> Editar
               </Button>
@@ -388,10 +388,10 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
           {partnerLog ? (
             <div className="space-y-3 text-sm">
               <div className="flex gap-4">
-                <span className={cn("font-medium", partnerLog.prayed_today ? "text-green-600" : "text-amber-600")}>
-                  {partnerLog.prayed_today ? "🙏 Já orou hoje" : "— Ainda não orou"}
+                <span className={cn("font-medium", partnerLog.prayed_today ? "text-green-600" : "text-slate-500 dark:text-slate-400")}>
+                  {partnerLog.prayed_today ? "Já orou hoje" : "— Ainda não orou"}
                 </span>
-                {partnerLog.cried_today && <span>😢 Chorou hoje</span>}
+                {partnerLog.cried_today && <span>Chorou hoje</span>}
               </div>
               
               {!partnerLog.prayed_today && (
@@ -443,16 +443,16 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
                 </p>
                 {dayPrayer && (
                   <div className="space-y-1">
-                    <p className="text-sm">🙏 {dayPrayer.prayer_text.length > 80 ? dayPrayer.prayer_text.slice(0, 80) + "…" : dayPrayer.prayer_text}</p>
-                    {dayPrayer.verse_ref && <p className="text-xs text-muted-foreground italic">📖 {dayPrayer.verse_ref}</p>}
+                    <p className="text-sm">{dayPrayer.prayer_text.length > 80 ? dayPrayer.prayer_text.slice(0, 80) + "…" : dayPrayer.prayer_text}</p>
+                    {dayPrayer.verse_ref && <p className="text-xs text-muted-foreground italic">{dayPrayer.verse_ref}</p>}
                   </div>
                 )}
                 {dayLogs.map(l => (
                   <div key={l.id} className="text-xs text-muted-foreground flex flex-wrap gap-2">
                     <span>{l.user_id === user?.id ? "Eu" : "Par"}:</span>
-                    {l.prayed_today && <span>🙏</span>}
-                    {l.cried_today && <span>😢</span>}
-                    {l.gratitude_note && <span>💛 {l.gratitude_note.slice(0, 40)}</span>}
+                    {l.prayed_today && <span>Orou</span>}
+                    {l.cried_today && <span>Chorou</span>}
+                    {l.gratitude_note && <span>{l.gratitude_note.slice(0, 40)}</span>}
                   </div>
                 ))}
               </CardContent>

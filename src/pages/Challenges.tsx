@@ -415,12 +415,12 @@ export default function Challenges() {
                             <CheckCircle className="w-20 h-20 text-green-500" />
                         </div>
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-black text-foreground font-italy tracking-tight">Missão concluída ✨</h2>
+                            <h2 className="text-2xl font-black text-foreground font-italy tracking-tight">Missão concluída</h2>
                             <p className="text-sm text-muted-foreground font-medium italic">Continuem a crescer juntos, um desafio de cada vez.</p>
                         </div>
                         <div className="flex justify-center gap-1">
                             {Array.from({ length: 5 }).map((_, i) => (
-                                <Sparkles key={i} className={cn("w-4 h-4 text-yellow-500 animate-pulse", i % 2 === 0 ? "animation-delay-200" : "animation-delay-500")} />
+                                <Sparkles key={i} className={cn("w-4 h-4 text-primary animate-pulse", i % 2 === 0 ? "animation-delay-200" : "animation-delay-500")} />
                             ))}
                         </div>
                     </div>

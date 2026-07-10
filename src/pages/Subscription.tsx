@@ -252,7 +252,7 @@ export default function Subscription() {
                 ) : pendingPayment ? (
                     <div className="p-4 animate-in zoom-in-95">
                         <div className="glass-card p-8 text-center">
-                            <Clock className="w-12 h-12 text-amber-500 mx-auto mb-5" strokeWidth={1.5} />
+                            <Clock className="w-12 h-12 text-slate-400 mx-auto mb-5" strokeWidth={1.5} />
                             <h2 className="text-2xl font-bold mb-2 tracking-tight">Em Análise</h2>
                             <p className="text-[14px] text-muted-foreground leading-relaxed">
                                 {pendingPayment.provider === "paysuite"

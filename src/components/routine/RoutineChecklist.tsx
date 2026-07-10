@@ -54,8 +54,7 @@ export function RoutineChecklist({ items, checkedIds, onToggle, readOnly }: Rout
                             "flex-1 text-sm font-medium",
                             checked && "line-through text-muted-foreground",
                         )}>
-                            {item.emoji && <span className="mr-1.5">{item.emoji}</span>}
-                            {item.title}
+                                {item.title}
                         </span>
                     </button>
                 );

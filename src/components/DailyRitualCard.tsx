@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Smile, Heart, Camera, Gift, MessageCircle, Sparkles, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Ritual {
   question: string;
-  emoji: string;
+  Icon: LucideIcon;
   to: string;
   label: string;
   bg: string;
@@ -15,16 +15,16 @@ interface Ritual {
 const RITUALS: Ritual[] = [
   {
     question: "O que te fez sorrir hoje?",
-    emoji: "😊",
+    Icon: Smile,
     to: "/humor",
     label: "Partilhar o meu humor",
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    border: "border-amber-100 dark:border-amber-800/40",
-    accent: "text-amber-700 dark:text-amber-300",
+    bg: "bg-rose-50 dark:bg-rose-950/30",
+    border: "border-rose-100 dark:border-rose-800/40",
+    accent: "text-rose-600 dark:text-rose-300",
   },
   {
     question: "O que mais aprecia no teu par neste momento?",
-    emoji: "🙏",
+    Icon: Heart,
     to: "/oracao",
     label: "Gratidão de casal",
     bg: "bg-purple-50 dark:bg-purple-950/30",
@@ -33,7 +33,7 @@ const RITUALS: Ritual[] = [
   },
   {
     question: "Como está o teu coração hoje?",
-    emoji: "💛",
+    Icon: Heart,
     to: "/humor",
     label: "Registar o meu estado",
     bg: "bg-rose-50 dark:bg-rose-950/30",
@@ -42,7 +42,7 @@ const RITUALS: Ritual[] = [
   },
   {
     question: "Que memória queres guardar desta semana?",
-    emoji: "📸",
+    Icon: Camera,
     to: "/memorias",
     label: "Ver as nossas memórias",
     bg: "bg-violet-50 dark:bg-violet-950/30",
@@ -51,7 +51,7 @@ const RITUALS: Ritual[] = [
   },
   {
     question: "Que gesto pequeno podes fazer hoje pelo teu par?",
-    emoji: "❤️",
+    Icon: Gift,
     to: "/desafios",
     label: "Ver desafios de casal",
     bg: "bg-rose-50 dark:bg-rose-950/30",
@@ -60,7 +60,7 @@ const RITUALS: Ritual[] = [
   },
   {
     question: "O que sentes que o teu par precisa hoje?",
-    emoji: "✨",
+    Icon: MessageCircle,
     to: "/chat",
     label: "Enviar uma mensagem",
     bg: "bg-sky-50 dark:bg-sky-950/30",
@@ -69,7 +69,7 @@ const RITUALS: Ritual[] = [
   },
   {
     question: "Como podem surpreender-se um ao outro hoje?",
-    emoji: "🎁",
+    Icon: Sparkles,
     to: "/descobrir",
     label: "Explorar juntos",
     bg: "bg-emerald-50 dark:bg-emerald-950/30",
@@ -88,6 +88,7 @@ function getTodayRitual(): Ritual {
 export function DailyRitualCard() {
   const navigate = useNavigate();
   const ritual = getTodayRitual();
+  const { Icon } = ritual;
 
   return (
     <button
@@ -100,7 +101,9 @@ export function DailyRitualCard() {
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="text-2xl mt-0.5 shrink-0">{ritual.emoji}</span>
+        <div className={cn("mt-0.5 shrink-0", ritual.accent)}>
+          <Icon className="w-5 h-5" strokeWidth={1.5} />
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/65 mb-1">
             Ritual do dia
@@ -117,7 +120,7 @@ export function DailyRitualCard() {
         </div>
       </div>
       <p className={cn(
-        "text-[11px] font-medium mt-2.5 pl-[calc(2rem+12px)]",
+        "text-[11px] font-medium mt-2.5 pl-[calc(1.25rem+12px)]",
         ritual.accent, "opacity-70"
       )}>
         {ritual.label}

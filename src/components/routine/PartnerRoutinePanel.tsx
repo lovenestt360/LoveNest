@@ -121,7 +121,7 @@ export function PartnerRoutinePanel() {
                     <Heart className="h-7 w-7 text-rose-300" />
                 </div>
                 <p className="font-bold text-muted-foreground">O teu parceiro ainda não está ligado</p>
-                <p className="text-xs text-muted-foreground">Convida-o para se juntar ao vosso ninho 💛</p>
+                <p className="text-xs text-muted-foreground">Convida-o para se juntar ao vosso ninho</p>
             </div>
         );
     }
