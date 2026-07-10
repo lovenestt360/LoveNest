@@ -204,8 +204,8 @@ Deno.serve(async (req) => {
             );
 
             const payload = JSON.stringify({
-              title: "💛 O vosso mês está pronto!",
-              body: "O resumo LoveWrapped deste mês já está disponível... querem reviver?",
+              title: "O vosso mês está pronto",
+              body: "O resumo LoveWrapped deste mês já está disponível. Querem reviver?",
               icon: "/icon-192.png",
               data: { url: "/wrapped", type: "system" }
             });
