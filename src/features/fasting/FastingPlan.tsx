@@ -15,7 +15,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Edit2, Check, X, Trash2 } from "lucide-react";
+import { Loader2, Edit2, Check, X, Trash2, AlertTriangle } from "lucide-react";
 import { UseFastingReturn } from "./useFasting";
 import { PLAN_TYPES } from "./types";
 import { format } from "date-fns";
@@ -109,17 +109,17 @@ export function FastingPlan({ data }: Props) {
                         )}
 
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-green-600">✅ O que é permitido</label>
+                            <label className="text-xs font-medium text-green-600">O que é permitido</label>
                             <Textarea value={allowed} onChange={e => setAllowed(e.target.value)} rows={2}
                                 placeholder="Água, chá, fruta…" />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-red-600">🚫 O que é proibido</label>
+                            <label className="text-xs font-medium text-red-600">O que é proibido</label>
                             <Textarea value={forbidden} onChange={e => setForbidden(e.target.value)} rows={2}
                                 placeholder="Doces, redes sociais, carne…" />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-yellow-600">⚠️ Excepções</label>
+                            <label className="text-xs font-medium text-orange-500 flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Excepções</label>
                             <Textarea value={exceptions} onChange={e => setExceptions(e.target.value)} rows={2}
                                 placeholder="Saúde, viagens, domingos…" />
                         </div>
@@ -142,13 +142,13 @@ export function FastingPlan({ data }: Props) {
                             </div>
                         </div>
                         {profile.rules_allowed && (
-                            <p><span className="text-green-600 font-medium">✅ Permitido:</span> {profile.rules_allowed}</p>
+                            <p><span className="text-green-600 font-medium">Permitido:</span> {profile.rules_allowed}</p>
                         )}
                         {profile.rules_forbidden && (
-                            <p><span className="text-red-600 font-medium">🚫 Proibido:</span> {profile.rules_forbidden}</p>
+                            <p><span className="text-red-600 font-medium">Proibido:</span> {profile.rules_forbidden}</p>
                         )}
                         {profile.rules_exceptions && (
-                            <p><span className="text-yellow-600 font-medium">⚠️ Excepções:</span> {profile.rules_exceptions}</p>
+                            <p><span className="text-orange-500 font-medium">Excepções:</span> {profile.rules_exceptions}</p>
                         )}
                     </div>
                 )}

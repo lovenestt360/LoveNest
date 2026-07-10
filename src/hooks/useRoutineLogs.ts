@@ -120,16 +120,15 @@ export function useRoutineLogs(userId?: string) {
 
         if (status !== oldStatus && status !== "unlogged") {
             let msg = "";
-            let emoji = "📋";
-            if (status === "completed") { msg = "completou toda a sua rotina de hoje!"; emoji = "🎉"; }
-            else if (status === "partial") { msg = "chegou a metade da sua rotina de hoje."; emoji = "💪"; }
-            else if (status === "failed") { msg = "deixou a rotina por fazer hoje..."; emoji = "👀"; }
+            if (status === "completed") { msg = "completou toda a sua rotina de hoje!"; }
+            else if (status === "partial") { msg = "chegou a metade da sua rotina de hoje."; }
+            else if (status === "failed") { msg = "deixou a rotina por fazer hoje..."; }
 
             if (msg) {
                 notifyPartner({
                     couple_space_id: spaceId,
                     type: "routine",
-                    title: `Rotina ${emoji}`,
+                    title: "Rotina",
                     body: `${user.user_metadata?.display_name || "O seu parceiro"} ${msg}`,
                     url: "/rotina"
                 });

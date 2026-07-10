@@ -1,3 +1,4 @@
+import { Flame, CheckCircle2, XCircle, TrendingUp, AlertTriangle } from "lucide-react";
 import { UseFastingReturn } from "./useFasting";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +11,7 @@ function Bar({ rate }: { rate: number }) {
         <div className="flex flex-col items-center gap-1 flex-1">
             <div className="w-full rounded-full bg-muted h-24 flex flex-col-reverse overflow-hidden">
                 <div
-                    className={cn("rounded-full w-full transition-all", rate >= 70 ? "bg-green-500" : rate >= 40 ? "bg-yellow-400" : "bg-red-400")}
+                    className={cn("rounded-full w-full transition-all", rate >= 70 ? "bg-green-500" : rate >= 40 ? "bg-orange-400" : "bg-red-400")}
                     style={{ height: `${Math.max(rate, 3)}%` }}
                 />
             </div>
@@ -40,7 +41,10 @@ export function FastingStats({ data }: Props) {
             {/* Main metrics */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="glass-card rounded-2xl p-4 text-center space-y-1">
-                    <p className="text-4xl font-extrabold text-amber-500">🔥{stats.streak}</p>
+                    <div className="flex items-center justify-center gap-2">
+                        <Flame className="h-5 w-5 text-rose-500" strokeWidth={1.5} />
+                        <p className="text-4xl font-extrabold text-rose-500">{stats.streak}</p>
+                    </div>
                     <p className="text-xs text-muted-foreground">Dias seguidos</p>
                 </div>
                 <div className="glass-card rounded-2xl p-4 text-center space-y-1">
@@ -55,15 +59,15 @@ export function FastingStats({ data }: Props) {
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="space-y-1">
                         <p className="text-2xl font-extrabold text-green-600">{cumpridos}</p>
-                        <p className="text-[10px] text-muted-foreground">✅ Cumpridos</p>
+                        <p className="text-[10px] text-muted-foreground">Cumpridos</p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-2xl font-extrabold text-yellow-600">{parciais}</p>
-                        <p className="text-[10px] text-muted-foreground">⚠️ Parciais</p>
+                        <p className="text-2xl font-extrabold text-orange-500">{parciais}</p>
+                        <p className="text-[10px] text-muted-foreground">Parciais</p>
                     </div>
                     <div className="space-y-1">
                         <p className="text-2xl font-extrabold text-red-600">{falhados}</p>
-                        <p className="text-[10px] text-muted-foreground">❌ Falhados</p>
+                        <p className="text-[10px] text-muted-foreground">Falhados</p>
                     </div>
                 </div>
                 <div className="text-center pt-1">
@@ -82,7 +86,7 @@ export function FastingStats({ data }: Props) {
                             <div className="w-full rounded-t-lg bg-muted h-20 flex flex-col-reverse overflow-hidden">
                                 <div
                                     className={cn("w-full transition-all",
-                                        w.rate >= 70 ? "bg-green-500" : w.rate >= 40 ? "bg-yellow-400" : w.rate > 0 ? "bg-red-400" : "")}
+                                        w.rate >= 70 ? "bg-green-500" : w.rate >= 40 ? "bg-orange-400" : w.rate > 0 ? "bg-red-400" : "")}
                                     style={{ height: `${Math.max(w.rate, w.rate > 0 ? 5 : 0)}%` }}
                                 />
                             </div>
@@ -98,22 +102,22 @@ export function FastingStats({ data }: Props) {
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Resumo</p>
                 {bestWeek.rate > 0 && (
                     <p className="text-sm">
-                        💪 <strong>Semana mais forte:</strong> {bestWeek.weekLabel} ({bestWeek.rate}% de cumprimento)
+                        <strong>Semana mais forte:</strong> {bestWeek.weekLabel} ({bestWeek.rate}% de cumprimento)
                     </p>
                 )}
                 {worstWeek.rate < 100 && worstWeek.rate > 0 && worstWeek.weekLabel !== bestWeek.weekLabel && (
                     <p className="text-sm">
-                        ⚠️ <strong>Semana mais difícil:</strong> {worstWeek.weekLabel} ({worstWeek.rate}% de cumprimento)
+                        <strong>Semana mais difícil:</strong> {worstWeek.weekLabel} ({worstWeek.rate}% de cumprimento)
                     </p>
                 )}
                 {stats.completionRate === 0 && (
                     <p className="text-sm text-muted-foreground">Começa a registar os teus dias para ver as estatísticas!</p>
                 )}
                 {stats.completionRate >= 80 && (
-                    <p className="text-sm text-green-600">🌟 Excelente desempenho! Continua assim.</p>
+                    <p className="text-sm text-green-600">Excelente desempenho! Continua assim.</p>
                 )}
                 {stats.completionRate > 0 && stats.completionRate < 40 && (
-                    <p className="text-sm text-muted-foreground">Não desistas! Cada dia é uma nova oportunidade. 🙏</p>
+                    <p className="text-sm text-muted-foreground">Não desistas! Cada dia é uma nova oportunidade.</p>
                 )}
             </div>
         </div>

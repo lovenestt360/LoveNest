@@ -200,7 +200,7 @@ export function getEasterDate(): string {
 export function dayResultColor(result: DayResult): string {
   switch (result) {
     case "cumprido": return "bg-green-500";
-    case "parcial":  return "bg-yellow-400";
+    case "parcial":  return "bg-orange-400";
     case "falhei":   return "bg-red-500";
     default:         return "bg-muted";
   }
@@ -208,9 +208,9 @@ export function dayResultColor(result: DayResult): string {
 
 export function dayResultLabel(result: DayResult): string {
   switch (result) {
-    case "cumprido": return "✅ Cumprido";
-    case "parcial":  return "⚠️ Parcial";
-    case "falhei":   return "❌ Falhei";
-    default:         return "— Não registado";
+    case "cumprido": return "Cumprido";
+    case "parcial":  return "Parcial";
+    case "falhei":   return "Falhei";
+    default:         return "Não registado";
   }
 }

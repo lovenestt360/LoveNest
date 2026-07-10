@@ -14,7 +14,7 @@ interface Props {
 
 const RESULT_CLASSES: Record<NonNullable<DayResult>, string> = {
     cumprido: "bg-green-500 text-white",
-    parcial: "bg-yellow-400 text-white",
+    parcial: "bg-orange-400 text-white",
     falhei: "bg-red-500 text-white",
 };
 
@@ -45,7 +45,7 @@ export function FastingCalendar({ data, onDaySelect }: Props) {
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500 inline-block" />Cumprido</span>
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-yellow-400 inline-block" />Parcial</span>
+                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-orange-400 inline-block" />Parcial</span>
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-500 inline-block" />Falhei</span>
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-muted inline-block" />Não registado</span>
             </div>

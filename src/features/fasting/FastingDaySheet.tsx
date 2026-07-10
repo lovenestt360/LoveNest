@@ -113,7 +113,7 @@ export function FastingDaySheet({ data, dayKey, open, onClose }: Props) {
                 }
             }
 
-            toast({ title: "Dia finalizado! 🙏" });
+            toast({ title: "Dia finalizado" });
             onClose();
         } catch (err: any) {
             toast({ title: "Erro ao finalizar", description: err?.message, variant: "destructive" });
@@ -191,7 +191,7 @@ export function FastingDaySheet({ data, dayKey, open, onClose }: Props) {
                                         "rounded-xl border py-2 text-xs font-bold transition-all",
                                         result === r
                                             ? r === "cumprido" ? "bg-green-500 text-white border-green-500"
-                                                : r === "parcial" ? "bg-yellow-400 text-white border-yellow-400"
+                                                : r === "parcial" ? "bg-orange-400 text-white border-orange-400"
                                                     : "bg-red-500 text-white border-red-500"
                                             : "border-border text-muted-foreground hover:bg-muted"
                                     )}
@@ -206,14 +206,14 @@ export function FastingDaySheet({ data, dayKey, open, onClose }: Props) {
                     <div className="space-y-2">
                         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Como me senti (opcional)</p>
                         <div className="flex gap-2">
-                            {[{ v: "otimo", l: "😄" }, { v: "bom", l: "🙂" }, { v: "neutro", l: "😐" }, { v: "mau", l: "😔" }].map(m => (
+                            {[{ v: "otimo", l: "Ótimo" }, { v: "bom", l: "Bom" }, { v: "neutro", l: "Neutro" }, { v: "mau", l: "Difícil" }].map(m => (
                                 <button
                                     key={m.v}
                                     type="button"
                                     onClick={() => setMood(prev => prev === m.v ? "" : m.v)}
                                     className={cn(
-                                        "flex-1 rounded-xl border py-2 text-xl transition-all",
-                                        mood === m.v ? "border-primary bg-primary/10" : "border-border hover:bg-muted"
+                                        "flex-1 rounded-xl border py-2 text-xs font-medium transition-all",
+                                        mood === m.v ? "border-primary bg-primary/10 text-foreground" : "border-border hover:bg-muted text-muted-foreground"
                                     )}
                                 >
                                     {m.l}

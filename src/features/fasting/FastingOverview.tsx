@@ -15,7 +15,7 @@ function Countdown() {
     const diff = easter.getTime() - now.getTime();
 
     if (diff <= 0) return (
-        <div className="text-center text-sm text-muted-foreground">🎉 A Páscoa chegou!</div>
+        <div className="text-center text-sm text-muted-foreground">A Páscoa chegou!</div>
     );
 
     const days = Math.floor(diff / 86400000);
@@ -25,7 +25,7 @@ function Countdown() {
     return (
         <div className="glass-card rounded-2xl p-4 text-center space-y-1">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                🕯️ Tempo para a Páscoa
+                Tempo para a Páscoa
             </p>
             <div className="flex items-center justify-center gap-3">
                 {[{ v: days, l: "dias" }, { v: hours, l: "hrs" }, { v: mins, l: "min" }].map(({ v, l }, i) => (
@@ -107,7 +107,7 @@ export function FastingOverview({ data, onRegister }: Props) {
                             <div className={cn(
                                 "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white",
                                 todayResult === "cumprido" ? "bg-green-500" :
-                                    todayResult === "parcial" ? "bg-yellow-500" :
+                                    todayResult === "parcial" ? "bg-orange-400" :
                                         todayResult === "falhei" ? "bg-red-500" :
                                             "bg-muted text-muted-foreground"
                             )}>
@@ -123,8 +123,8 @@ export function FastingOverview({ data, onRegister }: Props) {
                                 </p>
                                 <p className="text-[10px] text-muted-foreground">Cumpridos</p>
                             </div>
-                            <div className="rounded-xl bg-yellow-400/10 p-2 text-center">
-                                <p className="text-lg font-extrabold text-yellow-600">
+                            <div className="rounded-xl bg-orange-400/10 p-2 text-center">
+                                <p className="text-lg font-extrabold text-orange-500">
                                     {Object.values(dayLogs).filter(l => l.result === "parcial").length}
                                 </p>
                                 <p className="text-[10px] text-muted-foreground">Parciais</p>
@@ -146,8 +146,8 @@ export function FastingOverview({ data, onRegister }: Props) {
                     {/* Streak */}
                     {stats.streak > 0 && (
                         <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/20 text-amber-500 text-xl">
-                                🔥
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/20">
+                                <Flame className="h-5 w-5 text-rose-500" strokeWidth={1.5} />
                             </div>
                             <div>
                                 <p className="text-sm font-bold">{stats.streak} dia{stats.streak !== 1 ? "s" : ""} seguidos</p>

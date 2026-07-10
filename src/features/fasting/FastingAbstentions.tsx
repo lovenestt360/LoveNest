@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Plus, Trash2, ChevronDown, ChevronUp, UtensilsCrossed, Brain, Smartphone, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UseFastingReturn } from "./useFasting";
 import { Abstention, AbstentionCategory, Priority } from "./types";
@@ -13,15 +13,15 @@ interface Props {
     data: UseFastingReturn;
 }
 
-const CATEGORIES: { value: AbstentionCategory; label: string; emoji: string; color: string }[] = [
-    { value: "alimentar", label: "Alimentar", emoji: "🥗", color: "bg-orange-500/10 border-orange-500/30" },
-    { value: "comportamental", label: "Comportamental", emoji: "🧠", color: "bg-purple-500/10 border-purple-500/30" },
-    { value: "digital", label: "Digital", emoji: "📱", color: "bg-blue-500/10 border-blue-500/30" },
+const CATEGORIES: { value: AbstentionCategory; label: string; Icon: LucideIcon; iconCls: string; color: string }[] = [
+    { value: "alimentar", label: "Alimentar", Icon: UtensilsCrossed, iconCls: "text-orange-500", color: "bg-orange-500/10 border-orange-500/30" },
+    { value: "comportamental", label: "Comportamental", Icon: Brain, iconCls: "text-purple-500", color: "bg-purple-500/10 border-purple-500/30" },
+    { value: "digital", label: "Digital", Icon: Smartphone, iconCls: "text-blue-500", color: "bg-blue-500/10 border-blue-500/30" },
 ];
 
 const PRIORITIES: { value: Priority; label: string; cls: string }[] = [
     { value: "alta", label: "Alta", cls: "text-red-600" },
-    { value: "media", label: "Média", cls: "text-yellow-600" },
+    { value: "media", label: "Média", cls: "text-orange-500" },
     { value: "baixa", label: "Baixa", cls: "text-muted-foreground" },
 ];
 
@@ -92,7 +92,7 @@ export function FastingAbstentions({ data }: Props) {
                     <Select value={newCategory} onValueChange={v => setNewCategory(v as AbstentionCategory)}>
                         <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.emoji} {c.label}</SelectItem>)}
+                            {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
@@ -123,7 +123,7 @@ export function FastingAbstentions({ data }: Props) {
                             className="flex w-full items-center justify-between p-4"
                         >
                             <div className="flex items-center gap-2">
-                                <span>{cat.emoji}</span>
+                                <cat.Icon className={cn("h-4 w-4", cat.iconCls)} />
                                 <span className="font-bold text-sm">{cat.label}</span>
                                 <span className="text-xs text-muted-foreground">({items.length})</span>
                             </div>
