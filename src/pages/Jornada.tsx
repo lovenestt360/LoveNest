@@ -61,18 +61,18 @@ function getCoupleStatus(
   hoursLeft: number, isZero: boolean, isSolo: boolean
 ): StatusConfig {
   if (isPerfectDay)
-    return { label: "Ligados ✨",             bg: "bg-rose-50 dark:bg-rose-950/30",   text: "text-rose-600 dark:text-rose-300",  dot: "bg-rose-500"  };
+    return { label: "Ligados",          bg: "bg-rose-50 dark:bg-rose-950/30",  text: "text-rose-600 dark:text-rose-300", dot: "bg-rose-500" };
   if (bothActive)
-    return { label: "Chama acesa ❤️",          bg: "bg-rose-50 dark:bg-rose-950/30",   text: "text-rose-500 dark:text-rose-300",  dot: "bg-rose-400"  };
+    return { label: "Chama acesa",      bg: "bg-rose-50 dark:bg-rose-950/30",  text: "text-rose-500 dark:text-rose-300", dot: "bg-rose-400" };
   if (shieldUsedToday)
-    return { label: "Chama protegida 🛡️",     bg: "bg-blue-50 dark:bg-blue-950/30",   text: "text-blue-600 dark:text-blue-300",  dot: "bg-blue-400"  };
+    return { label: "Chama protegida",  bg: "bg-blue-50 dark:bg-blue-950/30",  text: "text-blue-600 dark:text-blue-300", dot: "bg-blue-400" };
   if (myCheckedIn && !isSolo)
-    return { label: "A aguardar o par 💛",     bg: "bg-amber-50 dark:bg-amber-950/30",  text: "text-amber-600 dark:text-amber-300", dot: "bg-amber-400" };
+    return { label: "A aguardar o par", bg: "bg-slate-50 dark:bg-slate-900/40", text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
   if (!isZero && hoursLeft <= 3)
-    return { label: "Última chance 🕯️",        bg: "bg-red-50 dark:bg-red-950/30",    text: "text-red-600 dark:text-red-300",   dot: "bg-red-500"   };
+    return { label: "Última chance",    bg: "bg-red-50 dark:bg-red-950/30",    text: "text-red-600 dark:text-red-300",   dot: "bg-red-500"  };
   if (isZero)
-    return { label: isSolo ? "Começa hoje 🌱" : "Comecem hoje 🌱", bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
-  return   { label: "Aguardando conexão",      bg: "bg-slate-50 dark:bg-slate-900/40",  text: "text-slate-500 dark:text-slate-400", dot: "bg-slate-300" };
+    return { label: isSolo ? "Começa hoje" : "Comecem hoje", bg: "bg-slate-50 dark:bg-slate-900/40", text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
+  return   { label: "Aguardando conexão", bg: "bg-slate-50 dark:bg-slate-900/40", text: "text-slate-500 dark:text-slate-400", dot: "bg-slate-300" };
 }
 
 // ─────────────────────────────────────────────
@@ -104,30 +104,30 @@ function FlameAlertBar({
   const fillPct = totalMissions > 0 ? Math.round((missionsDone / totalMissions) * 100) : 0;
 
   const barColor =
-    shieldUsedToday   ? "bg-blue-400" :
+    shieldUsedToday        ? "bg-blue-400" :
     urgency === "critical" ? "bg-red-400" :
     urgency === "warning"  ? "bg-orange-400" :
-    urgency === "notice"   ? "bg-amber-400" :
+    urgency === "notice"   ? "bg-orange-300" :
     "bg-emerald-400";
 
   const message = shieldUsedToday
-    ? "O escudo guardou a sequência hoje — boa proteção 🛡️"
+    ? "O escudo guardou a sequência hoje — boa proteção"
     : urgency === "critical"
-    ? `Menos de 1h — ${myCheckedIn && !isSolo ? "o teu par ainda não apareceu ❤️" : isSolo ? "a chama precisa de ti agora" : "a chama precisa de vocês agora"}`
+    ? `Menos de 1h — ${myCheckedIn && !isSolo ? "o teu par ainda não apareceu" : isSolo ? "a chama precisa de ti agora" : "a chama precisa de vocês agora"}`
     : urgency === "warning"
     ? `Faltam ${hoursLeft}h — ainda dá tempo de proteger a chama`
     : myCheckedIn && !isSolo
-    ? `O teu gesto está guardado · ${hoursLeft}h para o par aparecer ❤️`
+    ? `O teu gesto está guardado · ${hoursLeft}h para o par aparecer`
     : currentStreak > 0
     ? `Faltam ${hoursLeft}h para proteger ${currentStreak} dias de amor`
-    : "Hoje é um bom dia para começar ❤️";
+    : "Hoje é um bom dia para começar";
 
   return (
     <div className={cn(
       "glass-card p-4 space-y-2.5",
       urgency === "critical" && !shieldUsedToday && "border-red-200 dark:border-red-800/50 animate-flame-pulse-alert",
       urgency === "warning"  && !shieldUsedToday && "border-orange-200 dark:border-orange-800/50",
-      urgency === "notice"   && !shieldUsedToday && "border-amber-100 dark:border-amber-900/40",
+      urgency === "notice"   && !shieldUsedToday && "border-orange-100 dark:border-orange-900/40",
     )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -137,7 +137,7 @@ function FlameAlertBar({
               shieldUsedToday ? "text-blue-500" :
               urgency === "critical" ? "text-red-500 animate-flame-breathe" :
               urgency === "warning"  ? "text-orange-500" :
-              "text-amber-500"
+              "text-orange-400"
             )}
             strokeWidth={1.5}
           />
@@ -319,7 +319,7 @@ export default function Jornada() {
       prevPerfectRef.current = true;
       hapticCelebrate();
       setTimeout(() => {
-        toast.success(isSolo ? "Dia perfeito! 🔥 A tua chama nunca esteve tão viva" : "Dia perfeito! 🔥 A vossa chama nunca esteve tão viva", { duration: 4000 });
+        toast.success(isSolo ? "Dia perfeito! A tua chama nunca esteve tão viva" : "Dia perfeito! A vossa chama nunca esteve tão viva", { duration: 4000 });
       }, 800);
     }
     if (!perfect) prevPerfectRef.current = false;
@@ -425,9 +425,9 @@ export default function Jornada() {
       if (status === "insufficient_points" || status === "error_insufficient_points") {
         toast.error("LovePoints insuficientes para comprar LoveShield.");
       } else if (status === "already_purchased_this_month") {
-        toast.error(isSolo ? "Já compraste 1 escudo este mês 🛡️ — volta no próximo mês." : "Já compraram 1 escudo este mês 🛡️ — volta no próximo mês.");
+        toast.error(isSolo ? "Já compraste 1 escudo este mês — volta no próximo mês." : "Já compraram 1 escudo este mês — volta no próximo mês.");
       } else if (status === "limit_reached" || status === "error_limit_reached") {
-        toast.error(isSolo ? "Já tens 3 escudos — o máximo mensal 🛡️" : "Já têm 3 escudos — o máximo mensal 🛡️");
+        toast.error(isSolo ? "Já tens 3 escudos — o máximo mensal" : "Já têm 3 escudos — o máximo mensal");
       } else if (status === "ok" || !status) {
         toast.success(isSolo ? "LoveShield comprado! 💎 A tua chama ganhou proteção extra." : "LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
         await Promise.all([fetchPoints(), refresh()]);
@@ -445,7 +445,7 @@ export default function Jornada() {
     const { ok, message } = await checkIn();
     if (ok) {
       hapticSuccess();
-      toast.success(isSolo ? "Protegeste a chama hoje 🔥" : "Vocês protegeram a chama hoje 🔥");
+      toast.success(isSolo ? "Protegeste a chama hoje" : "Vocês protegeram a chama hoje");
     } else {
       toast.error(message || (isSolo ? "Não foi possível registar a tua presença." : "Não foi possível registar a vossa presença."));
     }
@@ -621,7 +621,7 @@ export default function Jornada() {
             </div>
 
             <p className="text-sm text-muted-foreground mt-3 mb-4">
-              {isZero ? "Cada gesto conta — comecem hoje 💛" : `${currentStreak} dias a cuidar um do outro`}
+              {isZero ? "Cada gesto conta — comecem hoje" : `${currentStreak} dias a cuidar um do outro`}
             </p>
 
             {/* Couple status badge */}
@@ -645,9 +645,9 @@ export default function Jornada() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
-                  {bothActive ? (isSolo ? "A tua chama está acesa 🔥" : "A vossa chama está acesa 🔥")
-                    : myCheckedIn ? "O teu gesto foi registado 💛"
-                    : isZero ? (isSolo ? "Faz o primeiro gesto hoje 🌱" : "Façam o primeiro gesto hoje 🌱")
+                  {bothActive ? (isSolo ? "A tua chama está acesa" : "A vossa chama está acesa")
+                    : myCheckedIn ? "O teu gesto foi registado"
+                    : isZero ? (isSolo ? "Faz o primeiro gesto hoje" : "Façam o primeiro gesto hoje")
                     : (isSolo ? "A chama ainda espera pelo teu momento" : "A chama ainda espera pelo vosso momento")}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
@@ -656,8 +656,8 @@ export default function Jornada() {
                     : "A preparar..."}
                 </p>
                 {myCheckedIn && !bothActive && totalMembers >= 2 && (
-                  <p className="text-[11px] text-amber-500 mt-1">
-                    O teu par ainda não apareceu hoje ❤️
+                  <p className="text-[11px] text-rose-400 mt-1">
+                    O teu par ainda não apareceu hoje
                   </p>
                 )}
               </div>
@@ -701,7 +701,7 @@ export default function Jornada() {
 
           {/* Hero LovePoints */}
           <section className="text-center py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">LovePoints disponíveis ✨</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">LovePoints disponíveis</p>
             {loadingPoints ? (
               <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
             ) : (
@@ -753,7 +753,7 @@ export default function Jornada() {
               <div className={cn(
                 "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0",
                 shieldsPurchased > 0
-                  ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/10 text-amber-500"
+                  ? "bg-gradient-to-br from-rose-400/20 to-rose-500/10 text-rose-500"
                   : "bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-blue-500"
               )}>
                 <Shield className="w-6 h-6" />
@@ -762,17 +762,17 @@ export default function Jornada() {
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-[15px] font-black text-foreground leading-none">LoveShield</h3>
                   {shieldsPurchased > 0 && (
-                     <span className="text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-300 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                       EXTRA 💎
+                     <span className="text-[9px] font-black bg-rose-500/10 text-rose-600 dark:text-rose-300 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                       EXTRA
                      </span>
                   )}
                 </div>
 
                 <p className="text-[11px] font-medium text-muted-foreground/80 leading-snug">
                   {shieldsRemaining > 1 && shieldsPurchased === 0 ? (
-                    `${shieldsRemaining} dias protegidos este mês 🛡️`
+                    `${shieldsRemaining} dias protegidos este mês`
                   ) : shieldsRemaining === 1 && shieldsPurchased === 0 ? (
-                    `Última proteção do mês 🛡️ — renova em breve`
+                    `Última proteção do mês — renova em breve`
                   ) : shieldsRemaining === 1 && shieldsPurchased > 0 ? (
                     isSolo ? `Proteção extra ativa — a tua chama está segura` : `Proteção extra ativa — a vossa chama está segura`
                   ) : shieldsRemaining === 0 && shieldsPurchased === 0 ? (
@@ -809,7 +809,7 @@ export default function Jornada() {
               /* Estado 3: perderam escudos e ainda não compraram este mês */
               <div className="flex items-center justify-between pt-2 border-t border-border/30">
                 <div className="flex items-center gap-1.5">
-                  <Coins className="w-3.5 h-3.5 text-amber-500" />
+                  <Coins className="w-3.5 h-3.5 text-rose-400" />
                   <span className="text-sm font-black tabular-nums">200 pts</span>
                   <span className="text-[10px] text-muted-foreground">
                     ({shieldsRemaining}/3 escudos)
@@ -842,9 +842,9 @@ export default function Jornada() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
-                  {missionsDone === 0 ? "Pequenos gestos fortalecem o amor ✨"
-                    : missionsDone === missionDefs.length ? "Hoje foram extraordinários 🔥"
-                    : (isSolo ? "Continua — a chama agradece 💛" : "Continuem — a chama agradece 💛")}
+                  {missionsDone === 0 ? "Pequenos gestos fortalecem o amor"
+                    : missionsDone === missionDefs.length ? "Hoje foram extraordinários"
+                    : (isSolo ? "Continua — a chama agradece" : "Continuem — a chama agradece")}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {missionsDone === 0
@@ -909,8 +909,8 @@ export default function Jornada() {
                     </p>
                     <p className="text-[11px] text-muted-foreground truncate">{m.description}</p>
                     {!m.completed && m.completedCount > 0 && (
-                      <p className="text-[11px] text-amber-500 mt-0.5">
-                        {m.completedCount} de {totalMembers} já deu este gesto ❤️
+                      <p className="text-[11px] text-rose-400 mt-0.5">
+                        {m.completedCount} de {totalMembers} já deu este gesto
                       </p>
                     )}
                   </div>
@@ -933,7 +933,7 @@ export default function Jornada() {
           <div className="glass-card p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" strokeWidth={1.5} />
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Pequenos gestos diários são o segredo de um amor que dura para sempre 💛
+              Pequenos gestos diários são o segredo de um amor que dura para sempre
             </p>
           </div>
         </div>
@@ -970,7 +970,7 @@ export default function Jornada() {
             ) : (
               <div className="w-full py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-rose-400 font-medium text-sm text-center border border-rose-100 dark:border-rose-900/40 flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4" strokeWidth={1.5} />
-                O teu gesto foi guardado · A esperar pelo teu par ❤️
+                O teu gesto foi guardado · A esperar pelo teu par
               </div>
             )}
           </div>
