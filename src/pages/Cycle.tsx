@@ -55,7 +55,7 @@ export default function Cycle() {
   }
 
   return (
-    <section className="space-y-5 pb-28">
+    <section className="space-y-5 pb-6">
 
       {/* Header */}
       <header>
