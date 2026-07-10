@@ -14,7 +14,7 @@ import { getEasterDate, dayResultLabel } from "@/features/fasting/types";
 import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart, CalendarHeart,
-  HeartHandshake, MessageCircle, Heart, Flower2,
+  HeartHandshake, MessageCircle, Heart,
   ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
@@ -39,6 +39,7 @@ import { DashCard } from "@/features/home/components/DashCard";
 import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
 import { LoveStreakCard } from "@/components/LoveStreakCard";
+import { CycleHomeCard } from "@/features/cycle/CycleHomeCard";
 import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
@@ -568,6 +569,11 @@ const Index = () => {
           </div>
         )}
 
+        {/* Cycle Preview */}
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "210ms" }}>
+          <CycleHomeCard />
+        </div>
+
         {/* Global Announcements */}
         {announcements.map((ann) => (
           <div key={ann.id} className="glass-card border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 p-4 rounded-3xl animate-in fade-in zoom-in duration-500 shadow-sm border">
@@ -641,16 +647,6 @@ const Index = () => {
               to="/jornada-espiritual"
               badge={prayerUnread}
               accent="text-purple-500"
-            />
-          )}
-
-          {!(profileReady && isSolo && profile?.gender === "male") && (
-            <DashCard
-              icon={<Flower2 className="h-5 w-5" strokeWidth={1.5} />}
-              title="Ciclo"
-              lines={["Saúde & Sintonia", "Ver o vosso ciclo"]}
-              to="/ciclo"
-              accent="text-pink-500"
             />
           )}
 
