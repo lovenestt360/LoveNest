@@ -259,6 +259,18 @@ function useCardData(threshold: number) {
     const t = setInterval(fetchData, 3 * 60_000);
     return () => clearInterval(t);
   }, [fetchData]);
+  // Realtime — reage imediatamente quando qualquer membro insere/atualiza
+  // uma atividade ou registo espiritual neste couple_space.
+  useEffect(() => {
+    if (!spaceId) return;
+    const channel = supabase
+      .channel(`card-rt-${spaceId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_activity",       filter: `couple_space_id=eq.${spaceId}` }, () => fetchData())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, () => fetchData())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [spaceId, fetchData]);
 
   return { points, lifetimePoints, missions };
 }
