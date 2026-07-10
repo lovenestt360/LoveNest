@@ -15,6 +15,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { CycleHistoryStrip } from "./CycleHistoryStrip";
+import { CyclePhaseGuide } from "./CyclePhaseGuide";
 import { differenceInDays } from "date-fns";
 import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
@@ -767,6 +768,11 @@ export function CycleToday({ data }: { data: CycleData }) {
             )}
           </div>
         </div>
+
+        {/* ── Guia da fase actual ── */}
+        {engine && (
+          <CyclePhaseGuide phase={phaseKey as any} isMale={data.isMale} />
+        )}
     </div>
   );
 }
