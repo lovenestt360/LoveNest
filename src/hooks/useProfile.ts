@@ -51,6 +51,20 @@ export function useProfile() {
 
     useEffect(() => {
         fetchProfile();
+
+        if (!user?.id) return;
+
+        const channel = supabase
+            .channel(`profile-rt-${user.id}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles',
+                filter: `user_id=eq.${user.id}`,
+            }, () => fetchProfile())
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [fetchProfile]);
 
     const update = useCallback(async (patch: Partial<Profile>) => {

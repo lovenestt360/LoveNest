@@ -18,11 +18,6 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-const MOOD_EMOJIS: Record<string, string> = {
-  feliz: "😊", tranquilo: "😌", apaixonado: "🥰",
-  ansioso: "😰", triste: "😢", cansado: "😴",
-  irritado: "😤", grato: "🙏",
-};
 
 interface WrappedData {
   id: string;
@@ -225,7 +220,7 @@ export default function LoveWrapped() {
       >
         {/* Cinematic Background Glows */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[80px] animate-glow-pulsate pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] animate-glow-pulsate delay-1000 pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-rose-500/10 rounded-full blur-[100px] animate-glow-pulsate delay-1000 pointer-events-none" />
         
         {/* Cinematic Film Overlay */}
         <div className="absolute inset-0 cinematic-overlay z-[101]" />
@@ -274,7 +269,7 @@ export default function LoveWrapped() {
                 "text-4xl font-black italic tracking-tighter text-primary transition-all duration-1000",
                 stage >= 2 ? "animate-text-reveal" : "opacity-0 invisible"
               )}>
-                no LoveNest 💛
+                no LoveNest
               </h1>
               <div className={cn(
                 "pt-10 transition-all duration-1000",
@@ -297,7 +292,7 @@ export default function LoveWrapped() {
                 <p className="text-8xl font-black tracking-tighter drop-shadow-glow">
                   <AnimatedCounter value={totalDays} delay={500} />
                 </p>
-                <p className="text-2xl font-black italic text-primary">Dias de pura história ✨</p>
+                <p className="text-2xl font-black italic text-primary">Dias de pura história</p>
               </div>
             </div>
           )}
@@ -312,7 +307,7 @@ export default function LoveWrapped() {
               </div>
               <div className={cn("space-y-6 transition-all duration-1000", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
                 <p className="text-2xl font-black italic text-primary px-4">
-                  ...mas vocês continuaram 🔥
+                  ...mas vocês continuaram
                 </p>
                 <div className="relative inline-block mt-4">
                    <Flame className="w-24 h-24 mx-auto text-orange-500 fill-orange-500 animate-pulse-glow" />
@@ -331,11 +326,9 @@ export default function LoveWrapped() {
                 <p className="text-xl font-bold italic text-white/50">Este mês vocês sentiram-se...</p>
               </div>
               <div className={cn("space-y-6", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
-                <div className="text-9xl drop-shadow-[0_0_50px_rgba(255,255,255,0.3)] animate-bounce-in">
-                  {current.top_mood ? MOOD_EMOJIS[current.top_mood] || "😊" : "🥰"}
-                </div>
+                <Heart className="w-24 h-24 mx-auto text-primary fill-primary drop-shadow-glow animate-bounce-in" />
                 <h2 className="text-5xl font-black tracking-tighter text-primary uppercase drop-shadow-glow">
-                  {current.top_mood || "Apaixonados"} 💛
+                  {current.top_mood || "Apaixonados"}
                 </h2>
               </div>
             </div>
@@ -346,7 +339,7 @@ export default function LoveWrapped() {
             <div className="space-y-8">
               <div className={cn("transition-base", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
                 <p className="text-xl font-bold italic text-white/60">Este mês...</p>
-                <p className="text-2xl font-black italic text-primary mt-2">vossas palavras aqueceram a casa 💬</p>
+                <p className="text-2xl font-black italic text-primary mt-2">vossas palavras aqueceram a casa</p>
               </div>
               <div className={cn("space-y-4", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
                 <p className="text-8xl font-black tracking-tighter">
@@ -360,11 +353,11 @@ export default function LoveWrapped() {
           {/* SLIDE 5: CHALLENGES */}
           {currentSlide === 5 && (
             <div className="space-y-10">
-              <Trophy className={cn("w-24 h-24 mx-auto transition-all duration-700", stage >= 2 ? "text-yellow-400 animate-bounce-in" : "text-white/10")} />
+              <Trophy className={cn("w-24 h-24 mx-auto transition-all duration-700", stage >= 2 ? "text-primary animate-bounce-in" : "text-white/10")} />
               <div className={cn("space-y-4", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
                 <p className="text-2xl font-black italic px-4">
                   Vocês cresceram juntos, <br/>
-                  desafio por desafio ✨
+                  desafio por desafio
                 </p>
                 {stage >= 2 && (
                   <p className="text-7xl font-black tracking-tighter delay-300 animate-fade-scale-in">
@@ -388,7 +381,7 @@ export default function LoveWrapped() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-[107]" />
                   <div className="relative z-[108] p-10 space-y-4 scale-95">
                     <p className={cn("text-3xl font-black italic leading-tight drop-shadow-2xl transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                      Momentos que ficam <br/>para sempre 📸
+                      Momentos que ficam <br/>para sempre
                     </p>
                     <p className={cn("text-lg font-medium text-primary shadow-black drop-shadow-md transition-all duration-1000", stage >= 2 ? "animate-fade-slide-up" : "opacity-0")}>
                       Vivido em equipa.
@@ -404,7 +397,7 @@ export default function LoveWrapped() {
                   </div>
                   <div className={cn("transition-all duration-1000", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
                     <p className="text-3xl font-black italic text-primary">
-                      mas foram vividos 💛
+                      mas foram vividos
                     </p>
                     <div className="mt-8 opacity-20"><Camera className="w-16 h-16 mx-auto" /></div>
                   </div>
@@ -428,7 +421,7 @@ export default function LoveWrapped() {
             <div className="space-y-6">
               <Sparkles className="w-16 h-16 text-primary mx-auto animate-pulse-soft" />
               <p className={cn("text-4xl font-black italic tracking-tighter transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                São história 💛
+                São história
               </p>
             </div>
           )}
@@ -453,14 +446,14 @@ export default function LoveWrapped() {
                   <Sparkles className="w-12 h-12 text-primary animate-pulse-soft" />
                 </div>
                 <h3 className="text-5xl font-black italic tracking-tighter gradient-text drop-shadow-glow">{houseName}</h3>
-                <p className="text-sm font-black uppercase tracking-[0.4em] text-white/30">O vosso refúgio ✨</p>
+                <p className="text-sm font-black uppercase tracking-[0.4em] text-white/30">O vosso refúgio</p>
               </div>
               
               <div className="space-y-4 pt-4 px-4 pointer-events-auto">
                 <Button 
                    onClick={() => {
                     const monthName = MONTH_NAMES[current.month];
-                    const shareText = `O nosso mês no LoveNest 💛\n\n🏠 ${houseName}\n🔥 ${current.streak_days} dias de Streak\n💬 ${current.messages_count} mensagens trocadas\n\n${partner1Name && partner1Name + ' & '}Parceiro(a) estão a construir história! ✨`;
+                    const shareText = `O nosso mês no LoveNest\n\n${houseName}\n${current.streak_days} dias de Streak\n${current.messages_count} mensagens trocadas\n\n${partner1Name && partner1Name + ' & '}Parceiro(a) estão a construir história!`;
                     
                     if (navigator.share) {
                       navigator.share({ 
@@ -470,12 +463,12 @@ export default function LoveWrapped() {
                       }).catch(() => {});
                     } else {
                       navigator.clipboard.writeText(shareText);
-                      toast({ title: "Resumo copiado!", description: "Agora podes partilhar nas redes sociais! 🚀" });
+                      toast({ title: "Resumo copiado!", description: "Agora podes partilhar nas redes sociais!" });
                     }
                   }}
                   className="w-full bg-primary text-white hover:bg-primary/90 font-black py-8 rounded-[2rem] shadow-glow text-lg active:scale-95 transition-all animate-bounce-in flex items-center justify-center group"
                 >
-                  <Share2 className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" /> Partilhar o mês 💛
+                  <Share2 className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" /> Partilhar o mês
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -544,7 +537,7 @@ export default function LoveWrapped() {
       <button
         className="w-full bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
         onClick={() => {
-          const text = `A usar o LoveNest para construir uma relação mais forte! Junta-te a nós 💛 ${window.location.origin}`;
+          const text = `A usar o LoveNest para construir uma relação mais forte! Junta-te a nós: ${window.location.origin}`;
           if (navigator.share) navigator.share({ title: "LoveNest", text, url: window.location.origin });
           else { navigator.clipboard.writeText(text); toast({ title: "Link copiado!" }); }
         }}
