@@ -19,7 +19,7 @@ interface RoutineCalendarProps {
 function dotColor(status: string | undefined) {
   switch (status) {
     case "completed": return "bg-green-500";
-    case "partial":   return "bg-amber-400";
+    case "partial":   return "bg-orange-400";
     case "failed":    return "bg-red-400";
     default:          return "";
   }
@@ -126,7 +126,7 @@ export function RoutineCalendar({
         )}
         {!hideLegendStatus?.includes("partial") && (
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber-400" /> Parcial
+            <span className="h-2 w-2 rounded-full bg-orange-400" /> Parcial
           </span>
         )}
         {!hideLegendStatus?.includes("failed") && (

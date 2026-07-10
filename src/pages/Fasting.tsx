@@ -114,23 +114,23 @@ function CreatePlanWizard({ onSubmit }: { onSubmit: (input: CreatePlanInput) => 
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-green-600">✅ O que é permitido (opcional)</label>
+                    <label className="text-xs font-medium text-green-600">O que é permitido (opcional)</label>
                     <Textarea placeholder="Ex: Água, chá, fruta…" value={allowed} onChange={e => setAllowed(e.target.value)} rows={2} />
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-red-600">🚫 O que é proibido (opcional)</label>
+                    <label className="text-xs font-medium text-red-600">O que é proibido (opcional)</label>
                     <Textarea placeholder="Ex: Doces, redes sociais…" value={forbidden} onChange={e => setForbidden(e.target.value)} rows={2} />
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-yellow-600">⚠️ Excepções (opcional)</label>
+                    <label className="text-xs font-medium text-orange-500">Excepções (opcional)</label>
                     <Textarea placeholder="Ex: Domingos, viagens, saúde…" value={exceptions} onChange={e => setExceptions(e.target.value)} rows={2} />
                 </div>
 
                 <Button className="w-full" onClick={handleSubmit} disabled={saving || !planName.trim()}>
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Começar Jejum 🕯️
+                    Começar Jejum
                 </Button>
             </CardContent>
         </Card>

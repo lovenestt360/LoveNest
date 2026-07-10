@@ -117,7 +117,7 @@ export function VerificationForm({ userId, currentStatus, onStatusChange, adminN
           <CheckCircle2 className="h-10 w-10" />
         </div>
         <div>
-          <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400">Conta Verificada ✅</h3>
+          <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400">Conta Verificada</h3>
           <p className="text-sm text-muted-foreground font-medium mt-1">Obrigado por ajudares a manter o LoveNest seguro!</p>
         </div>
       </div>
@@ -126,12 +126,12 @@ export function VerificationForm({ userId, currentStatus, onStatusChange, adminN
 
   if (currentStatus === "pending") {
     return (
-      <div className="glass-card p-8 flex flex-col items-center text-center gap-4 border-amber-500/20 bg-amber-500/[0.02]">
-        <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 animate-pulse">
+      <div className="glass-card p-8 flex flex-col items-center text-center gap-4 border-orange-400/20 bg-orange-400/[0.02]">
+        <div className="h-16 w-16 rounded-full bg-orange-400/10 flex items-center justify-center text-orange-500 animate-pulse">
           <Loader2 className="h-10 w-10 animate-spin" />
         </div>
         <div>
-          <h3 className="text-xl font-black text-amber-600 dark:text-amber-400">Em Análise ⏳</h3>
+          <h3 className="text-xl font-black text-orange-500">Em Análise</h3>
           <p className="text-sm text-muted-foreground font-medium mt-1">Estamos a validar os teus documentos. Receberás uma notificação em breve.</p>
         </div>
       </div>

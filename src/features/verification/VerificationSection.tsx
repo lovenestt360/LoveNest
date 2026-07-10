@@ -81,12 +81,12 @@ export function VerificationSection({ userId }: Props) {
       badgeColor: "bg-emerald-500/10 text-emerald-600"
     },
     rejected: {
-      title: "Recusada ⚠️",
+      title: "Recusada",
       description: "A tua verificação foi recusada.",
-      icon: <ShieldAlert className="h-8 w-8 text-amber-500" />,
-      color: "border-amber-500/10 bg-amber-500/[0.02]",
+      icon: <ShieldAlert className="h-8 w-8 text-orange-500" />,
+      color: "border-orange-400/10 bg-orange-400/[0.02]",
       badge: "Recusado",
-      badgeColor: "bg-amber-500/10 text-amber-600"
+      badgeColor: "bg-orange-400/10 text-orange-500"
     }
   };
 
