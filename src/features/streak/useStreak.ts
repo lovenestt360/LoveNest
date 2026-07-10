@@ -254,6 +254,16 @@ export function useStreak() {
     return () => clearInterval(timer);
   }, [refresh]);
 
+  // Realtime — escudos actualizam imediatamente quando são comprados ou usados
+  useEffect(() => {
+    if (!spaceId) return;
+    const channel = supabase
+      .channel(`shields-rt-${spaceId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "love_shields", filter: `couple_space_id=eq.${spaceId}` }, () => refresh(true))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [spaceId, refresh]);
+
   // ─────────────────────────────────────────────────────────────────────
   // checkIn
   //
