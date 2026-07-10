@@ -58,6 +58,8 @@ const Biblioteca = lazy(() => import("./pages/Biblioteca"));
 const BookDetail = lazy(() => import("./pages/BookDetail"));
 const BookReader = lazy(() => import("./pages/BookReader"));
 const BookReflections = lazy(() => import("./pages/BookReflections"));
+const KnowledgeCenterPage = lazy(() => import("./features/cycle/knowledge/KnowledgeCenterPage"));
+const ArticleReader = lazy(() => import("./features/cycle/knowledge/ArticleReader"));
 const GuardianPreview = lazy(() => import("./pages/GuardianPreview"));
 const FlameDemo = lazy(() => import("./pages/FlameDemo"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -93,8 +95,9 @@ const AppRoutes = () => (
 
     {/* Protected routes (login + pareamento) */}
     <Route element={<ProtectedRoute />}>
-      {/* Fullscreen reader — sem bottom nav */}
+      {/* Fullscreen readers — sem bottom nav */}
       <Route path="biblioteca/:bookId/ler" element={<BookReader />} />
+      <Route path="ciclo/conhecimento/:slug" element={<ArticleReader />} />
 
       <Route element={<AppShell />}>
         {/* Always free routes */}
@@ -127,6 +130,7 @@ const AppRoutes = () => (
         </Route>
         <Route element={<PremiumGuard requiredFeature="cycle" />}>
           <Route path="ciclo" element={<Cycle />} />
+          <Route path="ciclo/conhecimento" element={<KnowledgeCenterPage />} />
         </Route>
         <Route element={<PremiumGuard requiredFeature="agenda" />}>
           <Route path="rotina" element={<Navigate to="/plano?tab=rotina" replace />} />

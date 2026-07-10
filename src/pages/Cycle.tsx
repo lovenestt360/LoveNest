@@ -5,6 +5,7 @@ import { CycleToday } from "@/features/cycle/CycleToday";
 import { CyclePartnerView } from "@/features/cycle/CyclePartnerView";
 import { CycleCalendar } from "@/features/cycle/CycleCalendar";
 import { CycleHistory } from "@/features/cycle/CycleHistory";
+import { KnowledgeCenterCard } from "@/features/cycle/knowledge/KnowledgeCenterCard";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,6 +104,11 @@ export default function Cycle() {
         {activeTab === "historico" && (
           <CycleHistory data={data} onReset={isPartner ? undefined : handleReset} />
         )}
+      </div>
+
+      {/* Centro de Conhecimento — sempre no final da página */}
+      <div className="pt-2">
+        <KnowledgeCenterCard />
       </div>
     </section>
   );
