@@ -1070,7 +1070,7 @@ function PurchasesPanel({ adminClient, purchases, onChanged }: {
                         <div className="flex flex-wrap gap-2 text-xs">
                             <span className="font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary">{p.amount}</span>
                             {p.method && <span className="font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{p.method}</span>}
-                            <span className="px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-600 font-bold uppercase">Pendente</span>
+                            <span className="px-2 py-0.5 rounded-md bg-orange-400/10 text-orange-500 font-bold uppercase">Pendente</span>
                         </div>
 
                         {p.proof_url && (

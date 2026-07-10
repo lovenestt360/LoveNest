@@ -8,7 +8,7 @@ import {
     ShieldCheck, Check, X, FileText, Users, User, Home, Hash, FileImage, FileQuestion,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
     CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
-    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw, Smartphone, Upload, Library
+    Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw, Smartphone, Upload, Library, Edit2
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 import AdminBiblioteca from "./admin/AdminBiblioteca";
@@ -83,7 +87,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
             </div>
             {freeMode && (
                 <p className="text-xs text-primary font-medium mt-3 bg-primary/10 p-2 rounded-lg">
-                    ⚡ Todas as funcionalidades premium estão desbloqueadas para todos os utilizadores. A infraestrutura de pagamentos mantém-se intacta.
+                    Todas as funcionalidades premium estão desbloqueadas para todos os utilizadores. A infraestrutura de pagamentos mantém-se intacta.
                 </p>
             )}
         </div>
@@ -119,7 +123,7 @@ export default function Admin() {
         { level: 0, label: "Free",  color: "bg-muted text-muted-foreground" },
         { level: 1, label: "Plus",  color: "bg-blue-500/10 text-blue-600" },
         { level: 2, label: "Pro",   color: "bg-purple-500/10 text-purple-600" },
-        { level: 3, label: "Max",   color: "bg-amber-500/10 text-amber-600" },
+        { level: 3, label: "Max",   color: "bg-orange-400/10 text-orange-500" },
     ];
 
     const [newPlanName, setNewPlanName] = useState("");
@@ -170,6 +174,8 @@ export default function Admin() {
     const [searchHouse, setSearchHouse] = useState("");
     const [allFeatureFlags, setAllFeatureFlags] = useState<any[]>([]);
     const [fetchingFlags, setFetchingFlags] = useState(false);
+    const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     const [pwaSettings, setPwaSettings] = useState<any>(null);
     const [savingPwa, setSavingPwa] = useState(false);
@@ -277,31 +283,18 @@ export default function Admin() {
                 .order("created_at", { ascending: false });
             setPlans(plansData || []);
 
-            // 6. Configurações de Pagamento (app_settings ou payment_settings)
-            // Nota: O código original usava app_settings e payment_settings de forma inconsistente.
-            // Vou tentar buscar de app_settings primeiro, depois de payment_settings.
-            const { data: settingsData } = await adminClient.from("app_settings").select("*");
-            if (settingsData && settingsData.length > 0) {
-                const form: any = { ...settingsForm };
-                settingsData.forEach(s => {
-                    if (form.hasOwnProperty(s.key)) {
-                        form[s.key] = s.value;
-                    }
+            // 6. Configurações de Pagamento
+            const { data: psData } = await adminClient.from("payment_settings").select("*").limit(1).maybeSingle();
+            if (psData) {
+                setSettingsForm({
+                    mpesa_number: psData.mpesa_number || "",
+                    emola_number: psData.emola_number || "",
+                    mkesh_number: psData.mkesh_number || "",
+                    account_name: psData.account_name || "",
+                    whatsapp_number: psData.whatsapp_number || "",
+                    whatsapp_message_template: psData.whatsapp_message_template || ""
                 });
-                setSettingsForm(form);
-            } else {
-                // Fallback para payment_settings
-                const { data: psData } = await adminClient.from("payment_settings").select("*").limit(1).maybeSingle();
-                if (psData) {
-                    setSettingsForm({
-                        mpesa_number: psData.mpesa_number || "",
-                        emola_number: psData.emola_number || "",
-                        mkesh_number: psData.mkesh_number || "",
-                        account_name: psData.account_name || "",
-                        whatsapp_number: psData.whatsapp_number || "",
-                        whatsapp_message_template: psData.whatsapp_message_template || ""
-                    });
-                }
+                setPaymentSettings(psData);
             }
 
 
@@ -377,7 +370,7 @@ export default function Admin() {
             if (hErr) throw hErr;
 
             toast({
-                title: "✅ Pagamento Aprovado",
+                title: "Pagamento Aprovado",
                 description: matchedPlan
                     ? `Plano "${matchedPlan.name}" ativado para a casa.`
                     : "Subscrição ativada.",
@@ -576,12 +569,17 @@ export default function Admin() {
         }
     };
 
-    const handleDeletePlan = async (id: string) => {
-        if (!confirm("Tens a certeza que queres eliminar este plano? Esta ação não pode ser desfeita.")) return;
+    const handleDeletePlan = (id: string) => {
+        setPlanToDelete(id);
+    };
+
+    const confirmDeletePlan = async () => {
+        if (!planToDelete) return;
         try {
-            const { error } = await adminClient.from("subscription_plans").delete().eq("id", id);
+            const { error } = await adminClient.from("subscription_plans").delete().eq("id", planToDelete);
             if (error) throw error;
             toast({ title: "Eliminado", description: "Plano eliminado com sucesso." });
+            setPlanToDelete(null);
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -717,10 +715,6 @@ export default function Admin() {
     };
 
     const handleClearWrapped = async () => {
-        if (!window.confirm("⚠️ ATENÇÃO: Isto irá APAGAR TODOS os LoveWrapped gerados até agora. Tem a certeza?")) {
-            return;
-        }
-
         try {
             setClearingWrapped(true);
             const { error } = await adminClient
@@ -745,7 +739,7 @@ export default function Admin() {
             const { error: pErr } = await adminClient.from("profiles").update({ verification_status: 'verified' }).eq("user_id", userId);
             if (pErr) throw pErr;
 
-            toast({ title: "Utilizador Verificado ✅" });
+            toast({ title: "Utilizador Verificado" });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -760,7 +754,7 @@ export default function Admin() {
             const { error: pErr } = await adminClient.from("profiles").update({ verification_status: 'rejected' }).eq("user_id", userId);
             if (pErr) throw pErr;
 
-            toast({ title: "Verificação Recusada ⚠️" });
+            toast({ title: "Verificação Recusada" });
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -912,6 +906,42 @@ export default function Admin() {
                 );
             })()}
 
+            {/* Delete Plan Confirmation */}
+            <AlertDialog open={!!planToDelete} onOpenChange={open => !open && setPlanToDelete(null)}>
+                <AlertDialogContent className="rounded-[2rem]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Eliminar Plano?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. O plano será removido permanentemente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeletePlan} className="bg-destructive hover:bg-destructive/90 rounded-full">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Clear Wrapped Confirmation */}
+            <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+                <AlertDialogContent className="rounded-[2rem]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Limpar Todos os LoveWrapped?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Isto irá apagar TODOS os LoveWrapped gerados. Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setShowClearConfirm(false); handleClearWrapped(); }} className="bg-destructive hover:bg-destructive/90 rounded-full">
+                            Sim, limpar tudo
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             {/* Sidebar Navigation */}
             <aside className="w-full md:w-64 bg-card border-r flex flex-col h-auto md:h-screen shrink-0">
                 <div className="p-6 border-b flex items-center gap-3">
@@ -1004,10 +1034,10 @@ export default function Admin() {
                                 <span className="text-3xl font-black">{activeHouses.length}</span>
                                 <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Casas Ativas</span>
                             </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-yellow-500/20 bg-yellow-500/5">
-                                <FileText className="w-6 h-6 text-yellow-500 mb-4" />
+                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-orange-400/20 bg-orange-400/5">
+                                <FileText className="w-6 h-6 text-orange-500 mb-4" />
                                 <span className="text-3xl font-black">{pendingPayments.length}</span>
-                                <span className="text-sm text-yellow-600/70 font-bold uppercase tracking-wider mt-1">Pendentes</span>
+                                <span className="text-sm text-orange-500/70 font-bold uppercase tracking-wider mt-1">Pendentes</span>
                             </div>
                         </div>
 
@@ -1023,7 +1053,7 @@ export default function Admin() {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
-                                                <span className="text-[10px] font-bold uppercase bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded-md">Pendente</span>
+                                                <span className="text-[10px] font-bold uppercase bg-orange-400/10 text-orange-500 px-2 py-0.5 rounded-md">Pendente</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground">Casal: {payment.couple_spaces?.partner1_name} & {payment.couple_spaces?.partner2_name}</p>
                                             <p className="text-sm font-medium mt-1">Plano Solicitado: <span className="text-primary">{payment.plan_name}</span></p>
@@ -1129,7 +1159,7 @@ export default function Admin() {
                                                             <span className="font-medium text-xs truncate max-w-[120px]">{activePayment?.plan_name || "Trial / Sem Plano"}</span>
                                                             <span className={cn(
                                                                 "text-[10px] font-bold uppercase px-2 py-0.5 rounded-md w-fit",
-                                                                house.subscription_status === 'active' ? "bg-green-500/10 text-green-600" : "bg-yellow-500/10 text-yellow-600"
+                                                                house.subscription_status === 'active' ? "bg-green-500/10 text-green-600" : "bg-orange-400/10 text-orange-500"
                                                             )}>
                                                                 {house.subscription_status}
                                                             </span>
@@ -1438,7 +1468,7 @@ export default function Admin() {
                                     </ul>
                                     <div className="flex gap-2">
                                         <Button variant="outline" className="flex-1" onClick={() => openEditPlan(p)}>
-                                            ✏️ Editar
+                                            <Edit2 className="w-4 h-4 mr-2" /> Editar
                                         </Button>
                                         <Button variant={p.is_active ? "outline" : "default"} className="flex-1" onClick={() => handleTogglePlan(p.id, p.is_active)}>
                                             {p.is_active ? "Desativar" : "Ativar"}
@@ -1506,7 +1536,7 @@ export default function Admin() {
                     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
                         <h2 className="text-2xl font-bold flex items-center gap-2"><Megaphone className="w-6 h-6 text-primary" /> Central de Avisos</h2>
 
-                        <div className="bg-gradient-to-br from-amber-500/10 to-primary/5 border border-primary/20 rounded-3xl p-6 shadow-sm">
+                        <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6 shadow-sm">
                             <h3 className="font-bold mb-2 text-lg text-foreground flex items-center gap-2">
                                 <Send className="w-5 h-5" /> Enviar Aviso Global
                             </h3>
@@ -1686,7 +1716,7 @@ export default function Admin() {
                                         </span>
                                     ) : (
                                         <span className="flex items-center gap-2">
-                                            <Sparkles className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+                                            <Sparkles className="w-5 h-5 text-rose-400 fill-rose-400" />
                                             Disparar Geração Global
                                         </span>
                                     )}
@@ -1695,7 +1725,7 @@ export default function Admin() {
                                 <Button 
                                     variant="outline"
                                     className="w-full h-11 text-sm font-bold rounded-xl border-dashed border-red-500/50 text-red-500 hover:bg-red-500/10 transition-all mt-2"
-                                    onClick={handleClearWrapped}
+                                    onClick={() => setShowClearConfirm(true)}
                                     disabled={clearingWrapped || generatingWrapped}
                                 >
                                     {clearingWrapped ? (
@@ -1738,17 +1768,17 @@ export default function Admin() {
                                     </li>
                                 </ul>
                             </div>
-                            <div className="glass-card rounded-2xl p-6 border-amber-500/10">
+                            <div className="glass-card rounded-2xl p-6 border-orange-400/10">
                                 <h4 className="font-bold flex items-center gap-2 mb-4">
-                                    <ShieldCheck className="w-4 h-4 text-amber-500" /> Notas de Segurança
+                                    <ShieldCheck className="w-4 h-4 text-orange-500" /> Notas de Segurança
                                 </h4>
                                 <ul className="space-y-3 text-sm text-muted-foreground">
                                     <li className="flex items-start gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5 shrink-0" />
                                         A função é idempotente (não gera duplicados para o mesmo par mês/ano/casal).
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5 shrink-0" />
                                         Podes regerar um mês se os dados estiverem desatualizados.
                                     </li>
                                 </ul>
@@ -1825,7 +1855,7 @@ export default function Admin() {
                                                 <div>
                                                     <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
                                                         {group.name}
-                                                        {group.isOrphan && <span className="text-[10px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full font-bold">Avulso</span>}
+                                                        {group.isOrphan && <span className="text-[10px] bg-orange-400/10 text-orange-500 px-2 py-0.5 rounded-full font-bold">Avulso</span>}
                                                     </h3>
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-0.5">
                                                         <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
@@ -1844,8 +1874,8 @@ export default function Admin() {
                                                     <span className={cn(
                                                         "text-[10px] font-black uppercase tracking-widest",
                                                         (group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length) || group.is_verified
-                                                            ? "text-emerald-600" 
-                                                            : "text-amber-500"
+                                                            ? "text-emerald-600"
+                                                            : "text-orange-500"
                                                     )}>
                                                         {(group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length) || group.is_verified
                                                             ? "CASA VERIFICADA" : "VERIFICAÇÃO PENDENTE"}
@@ -1923,7 +1953,7 @@ export default function Admin() {
                                                                                 "text-[9px] font-black uppercase px-2 py-0.5 rounded-full",
                                                                                 submission.status === 'pending' ? "bg-blue-100 text-blue-700" :
                                                                                 submission.status === 'verified' ? "bg-emerald-100 text-emerald-700" :
-                                                                                "bg-amber-100 text-amber-700"
+                                                                                "bg-orange-100 text-orange-700"
                                                                             )}>
                                                                                 {submission.status}
                                                                             </span>
