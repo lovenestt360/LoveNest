@@ -307,6 +307,14 @@ export function useAppNotifications() {
           }
         }
       )
+      .on("broadcast", { event: "prayer-invite" }, () => {
+          if (locationRef.current !== "/jornada-espiritual") {
+            setPrayerUnread((c) => c + 1);
+          }
+          if (getNotifPrefs().oracao) {
+            toast({ title: "Convite Especial", description: "O teu par quer rezar contigo agora!" });
+          }
+        })
       .subscribe((status, err) => {
         if (status === "SUBSCRIBED") {
           console.log("✅ Realtime:", channelName);

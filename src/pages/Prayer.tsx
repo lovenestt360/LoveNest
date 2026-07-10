@@ -261,12 +261,21 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
 
   const handleJoinPrayer = async () => {
     if (!spaceId) return;
+    // Push — para quando o par tem a app fechada
     notifyPartner({
       couple_space_id: spaceId,
       title: "Convite Especial",
       body: "O teu par está à tua espera para rezarem juntos!",
       url: "/jornada-espiritual?tab=oracao",
       type: "oracao",
+    });
+    // Broadcast — para quando o par tem a app aberta (push é suprimido no foreground)
+    const bc = supabase.channel(`app-notif-${spaceId}`);
+    bc.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        bc.send({ type: "broadcast", event: "prayer-invite", payload: {} });
+        setTimeout(() => supabase.removeChannel(bc), 2000);
+      }
     });
     toast({ title: "Convite enviado!", description: "O teu par foi notificado para rezarem juntos." });
   };
