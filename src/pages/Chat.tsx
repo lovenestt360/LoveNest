@@ -450,10 +450,11 @@ export default function Chat() {
   const [myMessageToday, setMyMessageToday]         = useState(false);
   const [partnerMessageToday, setPartnerMessageToday] = useState(false);
 
-  const audio     = useAudioRecorder();
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef  = useRef<HTMLInputElement>(null);
-  const msgRefs   = useRef<Record<string, HTMLDivElement | null>>({});
+  const audio      = useAudioRecorder();
+  const bottomRef  = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLInputElement>(null);
+  const msgRefs    = useRef<Record<string, HTMLDivElement | null>>({});
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   /* ready flag */
   useEffect(() => {
@@ -523,7 +524,7 @@ export default function Chat() {
   /* realtime */
   useEffect(() => {
     if (!spaceId) return;
-    const ch = supabase.channel("chat-room")
+    const ch = supabase.channel(`chat-${spaceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
           if (payload.eventType === "INSERT") {
@@ -540,8 +541,17 @@ export default function Chat() {
             setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));
           }
         })
+      // Broadcast fallback: guarantees partner sees edits and deletes in real-time
+      // even when postgres_changes UPDATE events are delayed or not delivered
+      .on("broadcast", { event: "msg_edit" }, ({ payload }) => {
+        setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, content: payload.content, is_edited: true } : m));
+      })
+      .on("broadcast", { event: "msg_delete" }, ({ payload }) => {
+        setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, is_deleted: true, content: "" } : m));
+      })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    channelRef.current = ch;
+    return () => { supabase.removeChannel(ch); channelRef.current = null; };
   }, [spaceId, user?.id, checkMessageMissionStatus]);
 
   /* auto scroll */
@@ -674,8 +684,10 @@ export default function Chat() {
     const content = editText.trim();
     setMessages(prev => prev.map(m => m.id === id ? { ...m, content, is_edited: true } : m));
     setEditingMsg(null); setEditText("");
-    await supabase.from("messages").update({ content, is_edited: true, updated_at: new Date().toISOString() }).eq("id", id);
-  }, [editingMsg, editText]);
+    const { error } = await supabase.from("messages").update({ content, is_edited: true, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) { toast({ title: "Erro ao guardar edição", description: error.message, variant: "destructive" }); return; }
+    channelRef.current?.send({ type: "broadcast", event: "msg_edit", payload: { id, content } });
+  }, [editingMsg, editText, toast]);
 
   /* delete */
   const handleDelete = useCallback(async (msg: Message) => {
@@ -684,7 +696,8 @@ export default function Chat() {
     const { error } = await supabase.from("messages")
       .update({ is_deleted: true, content: "", image_url: null, audio_url: null, updated_at: new Date().toISOString() })
       .eq("id", msg.id);
-    if (error) toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" });
+    if (error) { toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" }); return; }
+    channelRef.current?.send({ type: "broadcast", event: "msg_delete", payload: { id: msg.id } });
   }, [toast]);
 
   /* pin */
