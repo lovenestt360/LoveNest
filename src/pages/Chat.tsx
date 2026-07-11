@@ -61,6 +61,7 @@ function useLongPress(onLongPress: () => void, delay = 450) {
 /* ── Audio Recorder (iOS-compatible) ───────────────────────────────────────── */
 
 function useAudioRecorder() {
+  const { toast } = useToast();
   const [recording, setRecording]   = useState(false);
   const [isPaused, setIsPaused]     = useState(false);
   const [audioBlob, setAudioBlob]   = useState<Blob | null>(null);
@@ -98,10 +99,15 @@ function useAudioRecorder() {
       setIsPaused(false);
       setDuration(0);
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
-    } catch {
-      alert("Permissão de microfone negada ou erro ao iniciar gravação.");
+    } catch (err: unknown) {
+      const name = err instanceof Error ? err.name : "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        toast({ title: "Microfone bloqueado", description: "Permite o acesso ao microfone nas definições do browser.", variant: "destructive" });
+      } else {
+        toast({ title: "Erro ao iniciar gravação", description: "O teu dispositivo não suporta gravação de áudio neste browser.", variant: "destructive" });
+      }
     }
-  }, []);
+  }, [toast]);
 
   const stop = useCallback((): Promise<Blob | null> => new Promise((resolve) => {
     if (!recRef.current || recRef.current.state === "inactive") { resolve(null); return; }
