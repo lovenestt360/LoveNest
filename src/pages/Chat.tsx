@@ -190,6 +190,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [dur, setDur] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const fixingDurRef = useRef(false);
 
   const toggle = useCallback(() => {
     if (!audioRef.current) return;
@@ -213,8 +214,27 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => { setPlaying(false); setCurrentTime(0); }}
-        onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
-        onLoadedMetadata={() => audioRef.current && setDur(audioRef.current.duration)}
+        onTimeUpdate={() => { if (audioRef.current && !fixingDurRef.current) setCurrentTime(audioRef.current.currentTime); }}
+        onLoadedMetadata={() => {
+          if (!audioRef.current) return;
+          if (isFinite(audioRef.current.duration)) {
+            setDur(audioRef.current.duration);
+          } else {
+            // WebM from MediaRecorder has no duration in container;
+            // seeking to a huge value forces the browser to scan the file.
+            fixingDurRef.current = true;
+            audioRef.current.currentTime = 1e101;
+          }
+        }}
+        onDurationChange={() => {
+          if (audioRef.current && isFinite(audioRef.current.duration)) setDur(audioRef.current.duration);
+        }}
+        onSeeked={() => {
+          if (fixingDurRef.current && audioRef.current) {
+            fixingDurRef.current = false;
+            audioRef.current.currentTime = 0;
+          }
+        }}
       />
 
       <button
