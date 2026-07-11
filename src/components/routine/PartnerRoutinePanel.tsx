@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { RoutineCalendar } from "./RoutineCalendar";
@@ -100,7 +101,7 @@ export function PartnerRoutinePanel() {
             });
     }, [partnerId, year, month]);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const todayLog = logs.find(l => l.day === today);
     const todayChecked = (todayLog?.checked_item_ids ?? []) as string[];
 

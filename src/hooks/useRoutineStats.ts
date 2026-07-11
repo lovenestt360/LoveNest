@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { todayLocal } from "@/lib/timezone";
 import type { RoutineDayLog } from "@/hooks/useRoutineLogs";
 
 export function useRoutineStats(logs: RoutineDayLog[]) {
@@ -7,12 +8,12 @@ export function useRoutineStats(logs: RoutineDayLog[]) {
 
         // Current streak (consecutive completed days from today backwards)
         let streak = 0;
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayLocal();
         const dateSet = new Map(sorted.map(l => [l.day, l]));
 
         const d = new Date();
         for (let i = 0; i < 365; i++) {
-            const key = d.toISOString().slice(0, 10);
+            const key = d.toLocaleDateString('sv-SE');
             const log = dateSet.get(key);
             // Skip future days or today without a log yet
             if (key > today) break;
@@ -35,7 +36,7 @@ export function useRoutineStats(logs: RoutineDayLog[]) {
             : 0;
 
         // Days logged this month
-        const thisMonth = new Date().toISOString().slice(0, 7);
+        const thisMonth = todayLocal().slice(0, 7);
         const monthLogs = sorted.filter(l => l.day.startsWith(thisMonth) && l.status !== "unlogged");
         const completedDays = monthLogs.filter(l => l.status === "completed").length;
         const totalLoggedDays = monthLogs.length;

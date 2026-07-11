@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { notifyPartner } from "@/lib/notifyPartner";
@@ -111,7 +112,7 @@ export function useRoutineLogs(userId?: string) {
         }
 
         // Gesto diário "Plano" — conta a rotina de hoje, não a Agenda.
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = todayLocal();
         if (day === todayStr && checkedItemIds.length > 0) {
             logActivity(sp, "plano");
         }

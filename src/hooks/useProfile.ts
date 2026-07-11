@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
+import { browserTimezone } from "@/lib/timezone";
 
 export interface Profile {
     user_id: string;
@@ -13,14 +14,17 @@ export interface Profile {
     usage_mode: "solo" | "couple" | null;
     primary_goal: string | null;
     onboarding_completed: boolean;
+    timezone: string | null;
 }
 
-const SELECT_FIELDS = "user_id, display_name, gender, country, country_code, language_preference, religion, usage_mode, primary_goal, onboarding_completed";
+const SELECT_FIELDS = "user_id, display_name, gender, country, country_code, language_preference, religion, usage_mode, primary_goal, onboarding_completed, timezone";
 
 export function useProfile() {
     const { user } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
+    // Garante que o auto-update de timezone corre só uma vez por sessão
+    const tzUpdatedRef = useRef(false);
 
     const fetchProfile = useCallback(async () => {
         if (!user) {
@@ -39,8 +43,23 @@ export function useProfile() {
                 .eq("user_id", user.id)
                 .maybeSingle();
             if (data) {
-                setProfile(data as Profile);
+                const p = data as Profile;
+                setProfile(p);
                 setLoading(false);
+
+                // Actualizar timezone silenciosamente se diferir do browser.
+                // Corre apenas uma vez por sessão para não criar loops.
+                if (!tzUpdatedRef.current) {
+                    tzUpdatedRef.current = true;
+                    const btz = browserTimezone();
+                    if (p.timezone !== btz) {
+                        supabase
+                            .from("profiles")
+                            .update({ timezone: btz } as any)
+                            .eq("user_id", user.id)
+                            .then(() => setProfile(prev => prev ? { ...prev, timezone: btz } : prev));
+                    }
+                }
                 return;
             }
             if (attempt < 3) await new Promise(r => setTimeout(r, 400));

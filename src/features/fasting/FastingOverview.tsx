@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { todayLocal } from "@/lib/timezone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Heart, Flame, Clock } from "lucide-react";
@@ -55,7 +56,7 @@ interface Props {
 export function FastingOverview({ data, onRegister }: Props) {
     const { profile, todayLog, stats, dayLogs } = data;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     const dayNumber = useMemo(() => {
         if (!profile) return 0;

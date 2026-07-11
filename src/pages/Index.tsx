@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
+import { todayLocal } from "@/lib/timezone";
 import { pt } from "date-fns/locale";
 import { useTimeTogether } from "@/hooks/useTimeTogether";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -76,7 +77,7 @@ const MOOD_MAP: Record<string, [string, string]> = {
 function useMoodToday() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
   const { data } = useQuery({
     queryKey: ["mood-today", spaceId, user?.id, today],
     enabled: !!spaceId && !!user,
@@ -239,13 +240,13 @@ function useFastingHome() {
       const { data: logs } = await (supabase.from("fasting_day_logs" as any)
         .select("day_key,result,finalized").eq("user_id", user!.id).eq("profile_id", profile.id) as any);
       if (!logs) return { plan, loggedDays: 0, todayResult: null, streak: 0 };
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayLocal();
       const finalized = (logs as any[]).filter(l => l.finalized);
       const todayResult = (logs as any[]).find(l => l.day_key === today)?.result ?? null;
       let s = 0;
       for (let i = 0; i < 100; i++) {
-        const dd = new Date(); dd.setDate(dd.getDate() - i);
-        const key = dd.toISOString().slice(0, 10);
+        const dd = new Date(Date.now() - i * 86_400_000);
+        const key = dd.toLocaleDateString('sv-SE');
         if (finalized.find((l: any) => l.day_key === key && l.result === "cumprido")) s++; else break;
       }
       return { plan, loggedDays: finalized.length, todayResult, streak: s };

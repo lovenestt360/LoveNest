@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { todayLocal } from "@/lib/timezone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,10 +70,10 @@ export function FastingPlan({ data }: Props) {
     const days = Array.from({ length: profile.total_days }, (_, i) => {
         const d = new Date(start);
         d.setDate(d.getDate() + i);
-        return d.toISOString().slice(0, 10);
+        return d.toLocaleDateString('sv-SE');
     });
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     return (
         <div className="space-y-4">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { todayLocal } from "@/lib/timezone";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -480,7 +481,7 @@ export default function Chat() {
   /* mission "Conversar": verifica se ambos já enviaram mensagem hoje */
   const checkMessageMissionStatus = useCallback(async () => {
     if (!spaceId || !user) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const { data } = await supabase
       .from("daily_activity" as any)
       .select("user_id")

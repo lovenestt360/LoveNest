@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { todayLocal } from "@/lib/timezone";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,7 @@ function CreatePlanWizard({ onSubmit }: { onSubmit: (input: CreatePlanInput) => 
     const year = now.getFullYear();
     const easterStr = getEasterDate();
     const startDefault = new Date(new Date(easterStr + "T12:00:00").getTime() - 40 * 86400000)
-        .toISOString().slice(0, 10);
+        .toLocaleDateString('sv-SE');
 
     const [planName, setPlanName] = useState("Quaresma " + easterStr.slice(0, 4));
     const [planType, setPlanType] = useState<PlanType>("combined");
@@ -151,7 +152,7 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
     }
 
     const openToday = () => {
-        setSheetDay(new Date().toISOString().slice(0, 10));
+        setSheetDay(todayLocal());
         setSheetOpen(true);
     };
 

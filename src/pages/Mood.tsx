@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useProfile } from "@/hooks/useProfile";
@@ -17,7 +18,7 @@ import { MOOD_OPTIONS } from "@/features/mood/constants";
 import { toast } from "sonner";
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return todayLocal();
 }
 
 export default function Mood() {

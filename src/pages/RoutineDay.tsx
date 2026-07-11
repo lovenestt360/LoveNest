@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { todayLocal } from "@/lib/timezone";
 import { useRoutineItems } from "@/hooks/useRoutineItems";
 import { useRoutineLogs } from "@/hooks/useRoutineLogs";
 import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
@@ -23,7 +24,7 @@ export default function RoutineDay() {
     const [saving, setSaving] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-    const day = date ?? new Date().toISOString().slice(0, 10);
+    const day = date ?? todayLocal();
 
     // Fetch month for this day
     useEffect(() => {

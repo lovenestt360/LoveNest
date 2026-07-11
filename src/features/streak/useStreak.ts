@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { todayLocal, yesterdayLocal } from "@/lib/timezone";
 
 // ─────────────────────────────────────────────
 // Types
@@ -51,17 +52,11 @@ export function calculateMonthlyProgress(streak: number): number {
   return Math.min(Math.round((streak / 28) * 100), 100);
 }
 
-function yesterdayServerISO(lastDate: string | null): boolean {
-  // Compare lastDate against yesterday in UTC (same timezone as server)
+function wasYesterday(lastDate: string | null): boolean {
+  // Compare lastDate against yesterday in the user's local timezone.
+  // The server now stores dates in local timezone (after timezone-aware migration).
   if (!lastDate) return false;
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
-  const yesterday = [
-    d.getUTCFullYear(),
-    String(d.getUTCMonth() + 1).padStart(2, "0"),
-    String(d.getUTCDate()).padStart(2, "0"),
-  ].join("-");
-  return lastDate === yesterday;
+  return lastDate === yesterdayLocal();
 }
 
 // ─────────────────────────────────────────────
@@ -90,11 +85,13 @@ function buildState(
   const totalMembers     = Math.max(realMembersCount, 1);
 
   const streakAtRisk =
-    !bothActive && totalMembers >= 2 && current > 0 && yesterdayServerISO(lastDate);
+    !bothActive && totalMembers >= 2 && current > 0 && wasYesterday(lastDate);
 
+  // Compare date strings (both in local timezone after server fix) as UTC midnight
+  // to get the correct integer number of days between them.
   const daysSinceLast = lastDate
-    ? Math.floor(
-        (Date.now() - new Date(lastDate + "T00:00:00Z").getTime()) / 86_400_000
+    ? Math.round(
+        (new Date(todayLocal()).getTime() - new Date(lastDate).getTime()) / 86_400_000
       )
     : null;
 
@@ -142,8 +139,8 @@ export function useStreak() {
   const [error,   setError]       = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
 
-  // UTC date string at mount — used to detect day rollover
-  const todayUTCRef = useRef(new Date().toISOString().slice(0, 10));
+  // Local date string at mount — used to detect day rollover in user's timezone
+  const todayUTCRef = useRef(todayLocal());
 
   // ─────────────────────────────────────────────────────────────────────
   // refresh
@@ -242,12 +239,12 @@ export function useStreak() {
     };
   }, [refresh]);
 
-  // Rollover de meia-noite — silencioso
+  // Rollover de meia-noite — silencioso (em hora local do utilizador)
   useEffect(() => {
     const timer = setInterval(() => {
-      const todayUTC = new Date().toISOString().slice(0, 10);
-      if (todayUTC !== todayUTCRef.current) {
-        todayUTCRef.current = todayUTC;
+      const nowLocal = todayLocal();
+      if (nowLocal !== todayUTCRef.current) {
+        todayUTCRef.current = nowLocal;
         refresh(true);
       }
     }, 60_000);

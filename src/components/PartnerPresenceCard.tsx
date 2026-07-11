@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +19,7 @@ function usePartnerPresence() {
 
   useEffect(() => {
     if (!user || !spaceId) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     (supabase.from("members" as any)
       .select("user_id, profiles(display_name)")

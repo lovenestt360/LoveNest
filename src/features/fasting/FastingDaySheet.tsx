@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { todayLocal } from "@/lib/timezone";
 import { pt } from "date-fns/locale";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ export function FastingDaySheet({ data, dayKey, open, onClose }: Props) {
     const [mood, setMood] = useState<string>("");
     const [itemStatuses, setItemStatuses] = useState<Record<string, ItemStatus>>({});
 
-    const isToday = dayKey === new Date().toISOString().slice(0, 10);
+    const isToday = dayKey === todayLocal();
     const log = dayKey ? dayLogs[dayKey] : null;
 
     useEffect(() => {

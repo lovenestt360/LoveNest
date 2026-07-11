@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 
 // Client-side dedup: fire mission-complete at most once per type per calendar day.
 // Resets automatically when the date changes.
@@ -8,7 +9,7 @@ const _missionFiredDate = new Map<string, string>(); // type → date string
 // Uses localStorage (survives app close/reopen on mobile) keyed by type+date.
 // Fires at most once per type per calendar day, even across app restarts.
 export function fireMissionIfNotFired(type: string): void {
-  const today = new Date().toDateString();
+  const today = todayLocal(); // local date, matches server after timezone fix
   const lsKey = `mission_fired_${type}_${today}`;
   if (_missionFiredDate.get(type) === today || localStorage.getItem(lsKey)) return;
   _missionFiredDate.set(type, today);

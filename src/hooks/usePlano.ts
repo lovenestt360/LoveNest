@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
@@ -118,7 +119,7 @@ export function usePlano() {
     if (date) {
       planAt = time ? `${date}T${time}:00` : `${date}T00:00:00`;
     } else {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayLocal();
       planAt = time ? `${today}T${time}:00` : `${today}T00:00:00`;
     }
 

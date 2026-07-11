@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import {
@@ -56,11 +57,9 @@ function buildStats(profile: FastingProfile, dayLogs: Record<string, DayLog>): F
 
     // Streak: consecutive finalized cumprido going backwards from today
     let streak = 0;
-    const today = new Date();
     for (let i = 0; i < 100; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().slice(0, 10);
+        const d = new Date(Date.now() - i * 86_400_000);
+        const key = d.toLocaleDateString('sv-SE');
         if (dayLogs[key]?.finalized && dayLogs[key]?.result === "cumprido") {
             streak++;
         } else break;
@@ -68,14 +67,15 @@ function buildStats(profile: FastingProfile, dayLogs: Record<string, DayLog>): F
 
     // Weekly data — last 6 weeks
     const weeklyData: WeeklyPoint[] = [];
+    const todayNow = new Date();
     for (let w = 5; w >= 0; w--) {
-        const weekStart = new Date(today);
+        const weekStart = new Date(todayNow);
         weekStart.setDate(weekStart.getDate() - weekStart.getDay() - w * 7);
         let weekDone = 0, weekTotal = 0;
         for (let d = 0; d < 7; d++) {
             const dd = new Date(weekStart);
             dd.setDate(dd.getDate() + d);
-            const key = dd.toISOString().slice(0, 10);
+            const key = dd.toLocaleDateString('sv-SE');
             if (dayLogs[key]?.finalized) {
                 weekTotal++;
                 if (dayLogs[key].result === "cumprido") weekDone++;
@@ -111,7 +111,7 @@ export function useFasting(): UseFastingReturn {
     const [reminders, setReminders] = useState<FastingReminders | null>(null);
     const [partnerShare, setPartnerShare] = useState<PartnerShare | null>(null);
 
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayKey = todayLocal();
     const todayLog = dayLogs[todayKey] ?? null;
 
     const refresh = useCallback(async () => {

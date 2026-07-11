@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { todayLocal } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 import type { RoutineDayLog } from "@/hooks/useRoutineLogs";
 
@@ -48,7 +49,7 @@ export function RoutineCalendar({
   const monthLabel = new Date(year, month - 1)
     .toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
 
   const prev = () => month === 1 ? onChangeMonth(year - 1, 12) : onChangeMonth(year, month - 1);
   const next = () => month === 12 ? onChangeMonth(year + 1, 1) : onChangeMonth(year, month + 1);

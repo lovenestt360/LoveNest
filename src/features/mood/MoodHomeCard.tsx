@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +33,7 @@ export function MoodHomeCard() {
 
   useEffect(() => {
     if (!spaceId || !user) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     supabase
       .from("mood_checkins")

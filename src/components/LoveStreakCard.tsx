@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { cn } from "@/lib/utils";
+import { todayLocal } from "@/lib/timezone";
 import { useStreak } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
 import { getJourneyLevel, getStreakLevel } from "@/features/streak/journeyLevels";
@@ -202,7 +203,7 @@ function useCardData(threshold: number) {
 
   const fetchData = useCallback(async () => {
     if (!spaceId) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     // Busca pontos, pontos lifetime e missões em paralelo.
     // Cache só é escrita uma vez, na resolução do Promise.all de missões,

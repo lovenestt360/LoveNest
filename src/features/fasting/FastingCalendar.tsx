@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { todayLocal } from "@/lib/timezone";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -28,7 +29,7 @@ export function FastingCalendar({ data, onDaySelect }: Props) {
         return eachDayOfInterval({ start, end });
     }, [currentMonth]);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
 
     const isInPlan = (dateStr: string): boolean => {
         if (!profile) return false;

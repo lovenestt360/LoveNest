@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { todayLocal } from "@/lib/timezone";
 import { usePlano } from "@/hooks/usePlano";
 import { useRoutineItems } from "@/hooks/useRoutineItems";
 import { useRoutineLogs } from "@/hooks/useRoutineLogs";
@@ -60,7 +61,7 @@ export default function Plano() {
   const isReady = isPlanoReady;
   const stats = useRoutineStats(logs);
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(todayLocal());
 
   // Modal State (Now Inline Form State)
   const [newTitle, setNewTitle] = useState("");
@@ -71,7 +72,7 @@ export default function Plano() {
 
   useEffect(() => { fetchMonth(year, month); }, [year, month, fetchMonth]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
   const todayLog = getLogForDay(today);
   const todayChecked = (todayLog?.checked_item_ids ?? []) as string[];
 

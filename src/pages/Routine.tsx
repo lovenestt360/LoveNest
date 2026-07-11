@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useRoutineItems } from "@/hooks/useRoutineItems";
 import { useRoutineLogs } from "@/hooks/useRoutineLogs";
@@ -30,7 +31,7 @@ export default function Routine() {
     // Fetch current month on mount and when month changes
     useEffect(() => { fetchMonth(year, month); }, [year, month, fetchMonth]);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const todayLog = getLogForDay(today);
     const todayChecked = (todayLog?.checked_item_ids ?? []) as string[];
 

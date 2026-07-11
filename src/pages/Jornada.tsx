@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
+import { todayLocal } from "@/lib/timezone";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { getJourneyLevel, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
@@ -368,8 +369,7 @@ export default function Jornada() {
     if (!spaceId) return;
     setLoadingMissions(true);
     try {
-      // Use UTC date to match server CURRENT_DATE (same fix already applied in useStreak)
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayLocal();
 
       const activityRes = await supabase
         .from("daily_activity" as any)
