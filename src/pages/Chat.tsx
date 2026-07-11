@@ -197,8 +197,11 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
     else audioRef.current.play().catch(() => setPlaying(false));
   }, [playing]);
 
-  const fmt = (t: number) => `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, "0")}`;
-  const progress = dur > 0 ? currentTime / dur : 0;
+  const fmt = (t: number) => {
+    if (!isFinite(t) || isNaN(t) || t < 0) return "--:--";
+    return `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, "0")}`;
+  };
+  const progress = isFinite(dur) && dur > 0 ? currentTime / dur : 0;
 
   return (
     <div className="flex items-center gap-2 min-w-[190px]">
@@ -549,6 +552,9 @@ export default function Chat() {
       .on("broadcast", { event: "msg_delete" }, ({ payload }) => {
         setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, is_deleted: true, content: "" } : m));
       })
+      .on("broadcast", { event: "msg_pin" }, ({ payload }) => {
+        setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, is_pinned: payload.is_pinned } : m));
+      })
       .subscribe();
     channelRef.current = ch;
     return () => { supabase.removeChannel(ch); channelRef.current = null; };
@@ -702,8 +708,11 @@ export default function Chat() {
 
   /* pin */
   const handlePin = useCallback(async (msg: Message) => {
-    await supabase.from("messages").update({ is_pinned: !msg.is_pinned, updated_at: new Date().toISOString() }).eq("id", msg.id);
+    const is_pinned = !msg.is_pinned;
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned } : m));
     setSheetMsg(null);
+    const { error } = await supabase.from("messages").update({ is_pinned, updated_at: new Date().toISOString() }).eq("id", msg.id);
+    if (!error) channelRef.current?.send({ type: "broadcast", event: "msg_pin", payload: { id: msg.id, is_pinned } });
   }, []);
 
   /* scroll to msg */
