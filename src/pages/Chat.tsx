@@ -340,7 +340,8 @@ function ActionSheet({
           </button>
           {isMine && (
             <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onEdit}>
-              <Pencil className="h-5 w-5 text-muted-foreground" /><span className="text-[15px]">Editar</span>
+              <Pencil className="h-5 w-5 text-muted-foreground" />
+              <span className="text-[15px]">{msg.audio_url ? "Adicionar legenda" : "Editar"}</span>
             </button>
           )}
           <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onPin}>
@@ -432,7 +433,7 @@ function MessageBubble({
           {/* Time + status */}
           <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
             isMine ? "text-white/55" : "text-muted-foreground/65")}>
-            {msg.is_edited && !isDeleted && <span className="text-[10px]">editada ·</span>}
+            {msg.is_edited && !isDeleted && <span className="text-[10px]">{msg.audio_url ? "legenda ·" : "editada ·"}</span>}
             <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
             {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
           </div>
