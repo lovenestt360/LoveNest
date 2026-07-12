@@ -31,6 +31,22 @@ const PHASE_ICONS: Record<string, LucideIcon> = {
   menstrual: Droplet, folicular: Sprout, ovulacao: Sparkles, luteal: Moon, sem_dados: Flower2,
 };
 
+const PHASE_ACCENT: Record<string, string> = {
+  menstrual: "text-rose-500",
+  folicular: "text-sky-500",
+  ovulacao:  "text-emerald-500",
+  luteal:    "text-violet-500",
+  sem_dados: "text-muted-foreground",
+};
+
+const PHASE_BAR: Record<string, string> = {
+  menstrual: "bg-rose-400",
+  folicular: "bg-sky-400",
+  ovulacao:  "bg-emerald-400",
+  luteal:    "bg-violet-400",
+  sem_dados: "bg-muted-foreground/40",
+};
+
 const ENERGY_LABELS: Record<number, string>  = { 2: "Baixa", 5: "Normal", 9: "Alta" };
 const PAIN_LABELS:   Record<number, string>  = { 0: "Sem dor", 3: "Leve", 6: "Moderada", 9: "Intensa" };
 const STRESS_LABELS: Record<number, string>  = { 0: "Calma", 4: "Normal", 8: "Muito stressada" };
@@ -130,8 +146,8 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
         <div className="flex items-start justify-between">
           <div>
             <SectionLabel>Ciclo da parceira</SectionLabel>
-            <h2 className="text-2xl font-bold text-foreground mt-1 flex items-center gap-2">
-              <PhaseIcon className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
+            <h2 className={cn("text-2xl font-bold mt-1 flex items-center gap-2", PHASE_ACCENT[phaseKey])}>
+              <PhaseIcon className="h-5 w-5" strokeWidth={1.5} />
               {engine?.phaseLabel ?? "A aguardar"}
             </h2>
             {openPeriod && (
@@ -157,7 +173,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
           <div className="space-y-1.5">
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-rose-400 transition-all duration-700"
+                className={cn("h-full rounded-full transition-all duration-700", PHASE_BAR[phaseKey])}
                 style={{ width: `${engine.cycleProgress}%` }}
               />
             </div>
