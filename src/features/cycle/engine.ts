@@ -175,18 +175,22 @@ export function getNextPeriodDate(
  * Janela fértil: 4 dias antes da ovulação + dia da ovulação → 5 dias no total.
  * O esperma sobrevive até 5 dias, mas pós-ovulação o óvulo morre em <24h —
  * por isso a janela termina NA ovulação, não depois.
+ *
+ * NOTA: getCycleDay usa daysBetween + 1, logo o ciclo-dia N corresponde
+ * a addDays(lastPeriodDate, N - 1). ovDay (ex. 14) → addDays(date, 13).
  */
 export function getFertileWindow(
   lastPeriodDate: string,
   cycleLength = DEFAULTS.cycleLength,
   lutealLength = DEFAULTS.lutealLength
 ): { start: string; end: string; ovulation: string; days: string[] } {
-  const ovDay = cycleLength - lutealLength;
-  const ovulation = addDays(lastPeriodDate, ovDay);
-  const start = addDays(lastPeriodDate, ovDay - 4);
-  const end = ovulation; // termina no dia da ovulação, não depois
+  const ovDay = cycleLength - lutealLength; // dia do ciclo da ovulação (ex. 14)
+  // addDays(date, ovDay - 1) → data de calendário do ciclo-dia ovDay
+  const ovulation = addDays(lastPeriodDate, ovDay - 1);
+  const start = addDays(lastPeriodDate, ovDay - 5); // 4 dias antes da ovulação
+  const end = ovulation;
   const days: string[] = [];
-  for (let i = ovDay - 4; i <= ovDay; i++) {
+  for (let i = ovDay - 5; i <= ovDay - 1; i++) {
     days.push(addDays(lastPeriodDate, i));
   }
   return { start, end, ovulation, days };
