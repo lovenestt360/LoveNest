@@ -36,6 +36,7 @@ export interface CycleEngineInput {
 export interface CycleEngineOutput {
   cycleDay: number;
   cycleLength: number;
+  periodLength: number;
   phase: CyclePhase;
   /** Fase em português para exibição na UI */
   phaseLabel: string;
@@ -170,7 +171,11 @@ export function getNextPeriodDate(
   return addDays(lastPeriodDate, cycleLength);
 }
 
-/** Janela fértil: ovulação ± 2 dias → 5 dias no total */
+/**
+ * Janela fértil: 4 dias antes da ovulação + dia da ovulação → 5 dias no total.
+ * O esperma sobrevive até 5 dias, mas pós-ovulação o óvulo morre em <24h —
+ * por isso a janela termina NA ovulação, não depois.
+ */
 export function getFertileWindow(
   lastPeriodDate: string,
   cycleLength = DEFAULTS.cycleLength,
@@ -178,10 +183,10 @@ export function getFertileWindow(
 ): { start: string; end: string; ovulation: string; days: string[] } {
   const ovDay = cycleLength - lutealLength;
   const ovulation = addDays(lastPeriodDate, ovDay);
-  const start = addDays(lastPeriodDate, ovDay - 2);
-  const end = addDays(lastPeriodDate, ovDay + 2);
+  const start = addDays(lastPeriodDate, ovDay - 4);
+  const end = ovulation; // termina no dia da ovulação, não depois
   const days: string[] = [];
-  for (let i = ovDay - 2; i <= ovDay + 2; i++) {
+  for (let i = ovDay - 4; i <= ovDay; i++) {
     days.push(addDays(lastPeriodDate, i));
   }
   return { start, end, ovulation, days };
@@ -229,7 +234,7 @@ const PHASE_INSIGHTS: Record<CyclePhase, string[]> = {
     "O teu corpo está a preparar-se. Respeita o descanso e a emoção.",
   ],
   sem_dados: [
-    "Regista o teu ciclo para começares a receber mensagens personalizadas. 🌸",
+    "Regista o teu ciclo para começares a receber insights personalizados.",
   ],
 };
 
@@ -326,6 +331,7 @@ export function runCycleEngine(
   return {
     cycleDay,
     cycleLength,
+    periodLength,
     phase,
     phaseLabel: PHASE_LABELS[phase],
     nextPeriod,
@@ -395,9 +401,10 @@ export function getDayType(
 ): DayType {
   if (!engineOutput) return dayStr === today ? "today" : "none";
 
-  // Período real registado — em curso (sem end_date) conta até hoje
+  // Período real registado — em curso (sem end_date) usa periodLength como estimativa,
+  // igual ao engine, para evitar inconsistência com a fase mostrada no card.
   for (const p of periods) {
-    const end = p.end_date ?? today;
+    const end = p.end_date ?? addDays(p.start_date, engineOutput.periodLength - 1);
     if (dayStr >= p.start_date && dayStr <= end) return "period";
   }
 

@@ -336,7 +336,7 @@ export function CycleToday({ data }: { data: CycleData }) {
 
   const sendPartnerNotif = () => {
     if (!spaceId || !profile || profile.share_level === "private") return;
-    notifyPartner({ couple_space_id: spaceId, title: "🌸 Ciclo", body: "Actualização no ciclo", url: "/ciclo", type: "ciclo_par" });
+    notifyPartner({ couple_space_id: spaceId, title: "Ciclo", body: "Actualização no ciclo", url: "/ciclo", type: "ciclo_par" });
   };
 
   const triggerSavedFeedback = useCallback(() => {
