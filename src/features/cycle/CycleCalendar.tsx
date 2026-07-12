@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Droplet, Sprout, Sparkles, Moon, HeartHandshake } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getDayType } from "./engine";
+import { todayLocal } from "@/lib/timezone";
 import type { DayType } from "./engine";
 import type { DailySymptom, CycleData } from "./useCycleData";
 
@@ -62,7 +63,7 @@ const LEGEND: LegendItem[] = [
 
 export function CycleCalendar({ data }: { data: CycleData }) {
   const { periods, engine, intimacyLogs, targetUserId } = data;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
   const intimacyDays = new Set(intimacyLogs.map((l) => l.day_key));
 
   const [year,  setYear]  = useState(() => new Date().getFullYear());

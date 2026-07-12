@@ -7,6 +7,8 @@
  * ============================================================
  */
 
+import { todayLocal } from "@/lib/timezone";
+
 // ─────────────────────────────────────────────
 // TIPOS PÚBLICOS
 // ─────────────────────────────────────────────
@@ -288,7 +290,7 @@ export function runCycleEngine(
     pmsDays = DEFAULTS.pmsDays,
   } = input;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
 
   // ── Dia do ciclo
   const cycleDay = getCycleDay(today, lastPeriodDate);

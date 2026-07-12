@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { runCycleEngineFromProfile, getPregnancyRisk } from "./engine";
+import { todayLocal } from "@/lib/timezone";
 import type { CycleEngineOutput, PregnancyRiskResult } from "./engine";
 
 // ─────────────────────────────────────────────
@@ -244,7 +245,7 @@ export function useCycleData() {
   const [intimacyLogs, setIntimacyLogs] = useState<IntimacyLog[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
 
   const reload = useCallback(async () => {
     if (!targetUserId || !spaceId) return;
