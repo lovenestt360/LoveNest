@@ -245,10 +245,12 @@ export default function Jornada() {
 
   // Guardião só renderiza depois do primeiro fetch real — evita flash de Faísca (nível 0)
   // antes de saber o nível correto. Uma vez true, nunca volta a false nesta sessão.
+  // Condição: spaceId não-null garante que ignoramos o setLoading(false) do early-return
+  // de refresh() quando spaceId ainda é null (antes de o fetch real terminar).
   const [guardianReady, setGuardianReady] = useState(false);
   useEffect(() => {
-    if (!loading) setGuardianReady(true);
-  }, [loading]);
+    if (!loading && spaceId) setGuardianReady(true);
+  }, [loading, spaceId]);
 
   // Show streak error non-silently
   useEffect(() => {
