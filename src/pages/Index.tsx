@@ -34,6 +34,7 @@ import { getMilestoneMicroMemory, getMilestoneCeremonyContent } from "@/componen
 import { useRelationshipEvents } from "@/features/relationship-events/useRelationshipEvents";
 import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
+import { capsuleSeenKey } from "@/features/capsule/CapsuleRealtimeWatcher";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -445,13 +446,16 @@ const Index = () => {
     });
   }, [spaceId, nextSpecialDate, isSolo]);
 
-  // Cápsula do Tempo — mostra cerimónia ao par quando a outra pessoa cria uma cápsula
+  // Cápsula do Tempo — fallback para quando o utilizador estava offline ao criar.
+  // Usa a mesma chave localStorage do CapsuleRealtimeWatcher para dedupe persistente.
   useEffect(() => {
     if (!spaceId || !user) return;
-    const SEEN_KEY = `ln_capsule_seen_${spaceId}_${user.id}`;
+    const key = capsuleSeenKey(spaceId, user.id);
 
     const check = async () => {
-      const seenIds: string[] = JSON.parse(sessionStorage.getItem(SEEN_KEY) ?? "[]");
+      let seenIds: string[];
+      try { seenIds = JSON.parse(localStorage.getItem(key) ?? "[]"); } catch { seenIds = []; }
+
       const since = new Date();
       since.setDate(since.getDate() - 7);
 
@@ -468,7 +472,8 @@ const Index = () => {
       const unseen = (data as { id: string }[]).filter(c => !seenIds.includes(c.id));
       if (!unseen.length) return;
 
-      sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seenIds, ...unseen.map(c => c.id)]));
+      const allSeen = [...seenIds, ...unseen.map(c => c.id)].slice(-100);
+      localStorage.setItem(key, JSON.stringify(allSeen));
       dispatchCeremony({
         type: "capsula",
         eyebrow: "Cápsula do Tempo",
