@@ -122,7 +122,14 @@ function readStreakCache(spaceId: string | null): StreakState | null {
   if (!spaceId) return null;
   try {
     const raw = sessionStorage.getItem(`ln_streak_${spaceId}`);
-    return raw ? (JSON.parse(raw) as StreakState) : null;
+    if (!raw) return null;
+    const cached = JSON.parse(raw) as StreakState;
+    // Se o cache é de um dia anterior, repõe os flags de "hoje" para evitar
+    // mostrar myCheckedIn:true ou bothActiveToday:true de ontem
+    if (cached.lastActiveDate !== todayLocal()) {
+      return { ...cached, myCheckedIn: false, bothActiveToday: false, activeCount: 0, streakAtRisk: cached.currentStreak > 0 };
+    }
+    return cached;
   } catch { return null; }
 }
 

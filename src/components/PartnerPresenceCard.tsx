@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -16,8 +16,9 @@ function usePartnerPresence() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const [state, setState] = useState<PresenceState | null>(null);
+  const todayRef = useRef(todayLocal());
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!user || !spaceId) return;
     const today = todayLocal();
 
@@ -48,6 +49,30 @@ function usePartnerPresence() {
           });
       });
   }, [user, spaceId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Re-query quando daily_activity muda (check-in do próprio ou do par)
+  useEffect(() => {
+    if (!spaceId) return;
+    const channel = supabase
+      .channel(`presence-rt-${spaceId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_activity", filter: `couple_space_id=eq.${spaceId}` }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [spaceId, load]);
+
+  // Rollover de meia-noite — recarrega quando o dia muda no fuso do utilizador
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = todayLocal();
+      if (now !== todayRef.current) {
+        todayRef.current = now;
+        load();
+      }
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [load]);
 
   return state;
 }
