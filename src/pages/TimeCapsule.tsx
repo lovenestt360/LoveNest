@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { awardLovePoints } from "@/lib/lovePoints";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 export default function TimeCapsule() {
     const { user } = useAuth();
@@ -30,11 +31,7 @@ export default function TimeCapsule() {
     const [uploading, setUploading] = useState(false);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadCapsules();
-    }, [user]);
-
-    const loadCapsules = async () => {
+    const loadCapsules = useCallback(async () => {
         if (!user) return;
         try {
             setLoading(true);
@@ -54,7 +51,19 @@ export default function TimeCapsule() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => { loadCapsules(); }, [loadCapsules]);
+
+    // Realtime — qualquer mudança na tabela actualiza a lista para os dois
+    useEffect(() => {
+        if (!houseId) return;
+        const channel = supabase
+            .channel(`capsule-list-${houseId}`)
+            .on("postgres_changes", { event: "*", schema: "public", table: "time_capsule_messages", filter: `couple_space_id=eq.${houseId}` }, () => loadCapsules())
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [houseId, loadCapsules]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -98,6 +107,14 @@ export default function TimeCapsule() {
               eyebrow: "Cápsula do Tempo",
               title: "Cápsula enterrada",
               subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
+            });
+
+            notifyPartner({
+              couple_space_id: houseId,
+              title: "Cápsula do Tempo",
+              body: "O teu par guardou uma memória para o futuro.",
+              url: "/capsula",
+              type: "memorias",
             });
 
             toast({ title: "Cápsula Enterrada!", description: "O segredo foi guardado até essa data especial." });
