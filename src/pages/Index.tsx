@@ -354,6 +354,7 @@ const Index = () => {
   const referralCode = useReferralCode();
   const houseInviteCode = useHouseInviteCode();
   const spaceId = useCoupleSpaceId();
+  const { user } = useAuth();
   const { nextSpecialDate, fetchEvents: refreshRelEvents } = useRelationshipEvents(spaceId);
   const { profile, loading: profileLoading } = useProfile();
   const isSolo = profile?.usage_mode === "solo";
@@ -443,6 +444,43 @@ const Index = () => {
       subtitle: isSolo ? "Mais um ano da tua história." : "Mais um ano a escolherem-se.",
     });
   }, [spaceId, nextSpecialDate, isSolo]);
+
+  // Cápsula do Tempo — mostra cerimónia ao par quando a outra pessoa cria uma cápsula
+  useEffect(() => {
+    if (!spaceId || !user) return;
+    const SEEN_KEY = `ln_capsule_seen_${spaceId}_${user.id}`;
+
+    const check = async () => {
+      const seenIds: string[] = JSON.parse(sessionStorage.getItem(SEEN_KEY) ?? "[]");
+      const since = new Date();
+      since.setDate(since.getDate() - 7);
+
+      const { data } = await (supabase as any)
+        .from("time_capsule_messages")
+        .select("id")
+        .eq("couple_space_id", spaceId)
+        .neq("creator_id", user.id)
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!data?.length) return;
+      const unseen = (data as { id: string }[]).filter(c => !seenIds.includes(c.id));
+      if (!unseen.length) return;
+
+      sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seenIds, ...unseen.map(c => c.id)]));
+      dispatchCeremony({
+        type: "capsula",
+        eyebrow: "Cápsula do Tempo",
+        title: "O teu par enterrou uma cápsula",
+        subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
+      });
+    };
+
+    check();
+    window.addEventListener("home-visible", check);
+    return () => window.removeEventListener("home-visible", check);
+  }, [spaceId, user]);
 
   const handleShareReferral = () => {
     if (!referralCode) return;

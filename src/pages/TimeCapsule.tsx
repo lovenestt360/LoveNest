@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { awardLovePoints } from "@/lib/lovePoints";
-import { triggerCeremony } from "@/lib/ceremonies";
+import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
 
 export default function TimeCapsule() {
     const { user } = useAuth();
@@ -92,7 +92,14 @@ export default function TimeCapsule() {
 
             awardLovePoints(houseId, 10, "capsula_tempo", "Cápsula do tempo criada", user.id);
 
-            toast({ title: "Cápsula Enterrada! ⏳", description: "O segredo foi guardado até essa data especial." });
+            dispatchCeremony({
+              type: "capsula",
+              eyebrow: "Cápsula do Tempo",
+              title: "Cápsula enterrada",
+              subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
+            });
+
+            toast({ title: "Cápsula Enterrada!", description: "O segredo foi guardado até essa data especial." });
             setNewMessage("");
             setUnlockDate("");
             setSelectedImage(null);

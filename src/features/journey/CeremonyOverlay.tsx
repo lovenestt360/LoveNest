@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
-import { X, Download, Share2, Loader2, Flame, Sparkles, BookHeart, HeartHandshake, Clock, Heart } from "lucide-react";
+import { X, Download, Share2, Loader2, Flame, Sparkles, BookHeart, HeartHandshake, Lock, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CeremonyContent, CeremonyType } from "@/lib/ceremonies";
 
@@ -14,7 +14,7 @@ const ICON_BY_TYPE: Record<CeremonyType, React.ElementType> = {
   level_up: Sparkles,
   livro_concluido: BookHeart,
   aniversario: HeartHandshake,
-  capsula: Clock,
+  capsula: Lock,
 };
 
 function useReducedMotion() {
@@ -126,10 +126,15 @@ export function CeremonyOverlay() {
         <div className="flex flex-col items-center gap-5 animate-in zoom-in-95 fade-in duration-500">
           <div className={cn(
             "h-24 w-24 rounded-full flex items-center justify-center",
-            "bg-gradient-to-br from-rose-400/20 to-rose-500/10 border border-rose-200/40 dark:border-rose-900/40",
-            !reduced && "animate-glow-pulse"
+            content.type === "capsula"
+              ? "bg-gradient-to-br from-indigo-400/20 to-indigo-500/10 border border-indigo-200/40 dark:border-indigo-900/40"
+              : "bg-gradient-to-br from-rose-400/20 to-rose-500/10 border border-rose-200/40 dark:border-rose-900/40",
+            !reduced && (content.type === "capsula" ? "animate-lock-snap animate-lock-glow" : "animate-glow-pulse")
           )}>
-            <Icon className="w-10 h-10 text-rose-400" strokeWidth={1.5} />
+            <Icon
+              className={cn("w-10 h-10", content.type === "capsula" ? "text-indigo-400" : "text-rose-400")}
+              strokeWidth={1.5}
+            />
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground text-center">
             {content.eyebrow}
@@ -144,9 +149,14 @@ export function CeremonyOverlay() {
           >
             <div className={cn(
               "h-16 w-16 rounded-full flex items-center justify-center mb-6",
-              "bg-gradient-to-br from-rose-400/20 to-rose-500/10 border border-rose-200/40 dark:border-rose-900/40"
+              content.type === "capsula"
+                ? "bg-gradient-to-br from-indigo-400/20 to-indigo-500/10 border border-indigo-200/40 dark:border-indigo-900/40"
+                : "bg-gradient-to-br from-rose-400/20 to-rose-500/10 border border-rose-200/40 dark:border-rose-900/40"
             )}>
-              <Icon className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
+              <Icon
+                className={cn("w-7 h-7", content.type === "capsula" ? "text-indigo-400" : "text-rose-400")}
+                strokeWidth={1.5}
+              />
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
               {content.eyebrow}
