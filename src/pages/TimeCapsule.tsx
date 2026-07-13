@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ArrowLeft, Lock, Unlock, Plus, Clock, Paperclip, Loader2 } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, Plus, Clock, Paperclip, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -28,6 +28,7 @@ export default function TimeCapsule() {
     const [unlockDate, setUnlockDate] = useState("");
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         loadCapsules();
@@ -109,6 +110,18 @@ export default function TimeCapsule() {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
             setUploading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            const { error } = await supabase.from("time_capsule_messages").delete().eq("id", id);
+            if (error) throw error;
+            setCapsules(prev => prev.filter(c => c.id !== id));
+            setConfirmDeleteId(null);
+            toast({ title: "Cápsula apagada", description: "A cápsula foi removida permanentemente." });
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
     };
 
@@ -219,7 +232,21 @@ export default function TimeCapsule() {
                                         <div className="p-5 animate-in fade-in zoom-in-95 duration-500">
                                             <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground font-bold uppercase tracking-wider">
                                                 <span>Aberto em {format(unlockDateObj, "d MMM yyyy", { locale: pt })}</span>
-                                                <Unlock className="w-4 h-4 text-indigo-500" />
+                                                <div className="flex items-center gap-2">
+                                                    <Unlock className="w-4 h-4 text-indigo-500" />
+                                                    {c.creator_id === user?.id && (
+                                                        confirmDeleteId === c.id ? (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <button onClick={() => setConfirmDeleteId(null)} className="text-[11px] text-muted-foreground font-medium px-2 py-0.5 rounded-md border border-border">Cancelar</button>
+                                                                <button onClick={() => handleDelete(c.id)} className="text-[11px] text-red-500 font-semibold px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900">Apagar</button>
+                                                            </div>
+                                                        ) : (
+                                                            <button onClick={() => setConfirmDeleteId(c.id)} className="p-1 rounded-lg text-muted-foreground/50 hover:text-red-400 transition-colors active:scale-90">
+                                                                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                                            </button>
+                                                        )
+                                                    )}
+                                                </div>
                                             </div>
                                             {c.image_url && (
                                               /\.(mp4|webm|mov)(\?|$)/i.test(c.image_url)
@@ -229,7 +256,21 @@ export default function TimeCapsule() {
                                             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{c.message}</p>
                                         </div>
                                     ) : (
-                                        <div className="p-6 text-center space-y-3">
+                                        <div className="p-6 text-center space-y-3 relative">
+                                            {c.creator_id === user?.id && (
+                                                <div className="absolute top-3 right-3">
+                                                    {confirmDeleteId === c.id ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <button onClick={() => setConfirmDeleteId(null)} className="text-[11px] text-muted-foreground font-medium px-2 py-0.5 rounded-md border border-border">Cancelar</button>
+                                                            <button onClick={() => handleDelete(c.id)} className="text-[11px] text-red-500 font-semibold px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900">Apagar</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button onClick={() => setConfirmDeleteId(c.id)} className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-red-400 transition-colors active:scale-90">
+                                                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
                                             <div className="w-16 h-16 mx-auto bg-indigo-500/10 text-indigo-500 rounded-full flex items-center justify-center mb-2">
                                                 <Lock className="w-8 h-8" />
                                             </div>
@@ -238,7 +279,7 @@ export default function TimeCapsule() {
                                             {canUnlock ? (
                                                 <div className="space-y-4">
                                                     <p className="text-sm text-green-600 dark:text-green-400 font-bold">A cápsula já pode ser revelada!</p>
-                                                    <Button onClick={() => handleUnlock(c)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-full">Abrir Cápsula Agora 🗝️</Button>
+                                                    <Button onClick={() => handleUnlock(c)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-full">Abrir Cápsula Agora</Button>
                                                 </div>
                                             ) : (
                                                 <p className="text-sm text-muted-foreground">
