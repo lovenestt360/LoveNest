@@ -61,6 +61,7 @@ export function BottomTabs() {
     scheduleUnread,
     prayerUnread,
     complaintsUnread,
+    capsuleUnread,
   } = useAppNotifContext();
   const { freeMode } = useFreeMode();
   const { profile } = useProfile();
@@ -82,7 +83,8 @@ export function BottomTabs() {
     effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + tasksUnread;
   const isMoreActive = MORE_PATHS.some((p) => location.pathname === p);
 
-  const totalUnread = effectiveChatUnread + moodUnread + tasksUnread + effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread;
+  const effectiveCapsuleUnread = isSolo ? 0 : capsuleUnread;
+  const totalUnread = effectiveChatUnread + moodUnread + tasksUnread + effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + effectiveCapsuleUnread;
 
   const getBadge = (to: string) => {
     switch (to) {
