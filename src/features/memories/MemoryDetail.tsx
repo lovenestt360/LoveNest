@@ -27,11 +27,12 @@ interface Props {
   photo: Photo;
   spaceId: string;
   userId: string;
+  originRect?: DOMRect | null;
   onClose: () => void;
   onDeleted: () => void;
 }
 
-export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDeleted }: Props) {
+export function MemoryDetail({ photo: initial, spaceId, userId, originRect, onClose, onDeleted }: Props) {
   const [photo, setPhoto] = useState<Photo>(initial);
   const [url, setUrl] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Reaction[]>([]);
@@ -41,6 +42,18 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
   const [editCaption, setEditCaption] = useState(initial.caption ?? "");
   const [editDate, setEditDate] = useState(initial.taken_on ?? "");
   const [saving, setSaving] = useState(false);
+
+  // Clip-path animation state
+  const [entered, setEntered] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    const id1 = requestAnimationFrame(() => {
+      const id2 = requestAnimationFrame(() => setEntered(true));
+      return () => cancelAnimationFrame(id2);
+    });
+    return () => cancelAnimationFrame(id1);
+  }, []);
 
   useEffect(() => { setPhoto(initial); }, [initial]);
 
@@ -72,6 +85,16 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [photo.id, loadReactions]);
+
+  const handleClose = () => {
+    if (originRect) {
+      setClosing(true);
+      setEntered(false);
+      setTimeout(() => onClose(), 360);
+    } else {
+      onClose();
+    }
+  };
 
   const toggleReaction = async (key: ReactionKey) => {
     const existing = reactions.find(r => r.user_id === userId && r.reaction === key);
@@ -129,11 +152,38 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
     return `Há ${diffDays} dias`;
   })();
 
+  const savedDays = Math.floor((Date.now() - new Date(photo.created_at).getTime()) / 86_400_000);
+  const savedStr = savedDays === 0 ? "Guardada hoje"
+    : savedDays === 1 ? "Guardada ontem"
+    : `Guardada há ${savedDays} dias`;
+
+  // Clip-path animation
+  const getClipPath = () => {
+    if (!originRect) return undefined;
+    if (entered && !closing) return "inset(0% 0% 0% 0% round 0px)";
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const top = Math.max(0, (originRect.top / vh) * 100);
+    const left = Math.max(0, (originRect.left / vw) * 100);
+    const bottom = Math.max(0, ((vh - originRect.bottom) / vh) * 100);
+    const right = Math.max(0, ((vw - originRect.right) / vw) * 100);
+    return `inset(${top.toFixed(1)}% ${right.toFixed(1)}% ${bottom.toFixed(1)}% ${left.toFixed(1)}% round 12px)`;
+  };
+
+  const overlayStyle = originRect ? {
+    clipPath: getClipPath(),
+    transition: "clip-path 0.36s cubic-bezier(0.4, 0, 0.2, 1)",
+  } : {};
+
   return (
     <>
       {/* ── Full-screen overlay ─────────────────────────────────── */}
       <div
-        className="fixed inset-0 z-50 flex flex-col bg-black animate-in fade-in duration-200"
+        className={cn(
+          "fixed inset-0 z-50 flex flex-col bg-black",
+          !originRect && "animate-in fade-in duration-200"
+        )}
+        style={overlayStyle}
         role="dialog"
         aria-modal="true"
       >
@@ -141,7 +191,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-[max(env(safe-area-inset-top,0px),1rem)]">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
             aria-label="Fechar"
           >
@@ -157,9 +207,8 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
           </button>
         </div>
 
-        {/* Image with blurred fill — no black bars on any device */}
+        {/* Image with blurred fill */}
         <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
-          {/* Blurred version fills the space where black bars would appear */}
           {url && (
             <img
               src={url}
@@ -167,12 +216,17 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
               className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 pointer-events-none"
             />
           )}
-          {/* Sharp image on top */}
           {url ? (
             <img
               src={url}
               alt={photo.caption ?? "Memória"}
-              style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto" }}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                width: "auto",
+                height: "auto",
+                filter: "drop-shadow(0 12px 40px rgba(0,0,0,0.55))",
+              }}
               className="relative z-10 block"
             />
           ) : (
@@ -181,13 +235,10 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
         </div>
 
         {/* Info panel */}
-        <div className="bg-card rounded-t-[2rem] px-5 pt-4 pb-[max(env(safe-area-inset-bottom,0px),1.25rem)] shrink-0">
-          {/* Caption */}
+        <div className="bg-card rounded-t-[2rem] px-5 pt-4 pb-[max(env(safe-area-inset-bottom,0px),1.25rem)] shrink-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
           <p className="text-base font-bold text-foreground leading-snug mb-0.5 line-clamp-2">
             {photo.caption || "Sem legenda"}
           </p>
-
-          {/* Dates */}
           <p className="text-xs text-muted-foreground capitalize mb-0.5">
             {dayOfWeek}, {dateFormatted}
           </p>
@@ -218,6 +269,11 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
               );
             })}
           </div>
+
+          {/* Emotional footnote */}
+          <p className="text-[10px] text-muted-foreground/45 mt-3 pt-3 border-t border-border/40 leading-relaxed">
+            {savedStr} · Este momento faz parte da vossa história
+          </p>
         </div>
       </div>
 

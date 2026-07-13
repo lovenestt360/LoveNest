@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -8,36 +8,62 @@ import type { Photo } from "@/pages/Memories";
 
 interface Props {
   photos: Photo[];
-  onSelect: (p: Photo) => void;
+  onSelect: (p: Photo, rect: DOMRect) => void;
   onLongPress: (p: Photo) => void;
 }
 
 export function MemoryGallery({ photos, onSelect, onLongPress }: Props) {
-  const col1 = photos.filter((_, i) => i % 2 === 0);
-  const col2 = photos.filter((_, i) => i % 2 === 1);
+  const groups = useMemo(() => {
+    const map = new Map<string, { label: string; photos: Photo[] }>();
+    for (const photo of photos) {
+      const date = photo.taken_on
+        ? new Date(photo.taken_on + "T00:00:00")
+        : new Date(photo.created_at);
+      const key = format(date, "yyyy-MM");
+      const label = format(date, "MMMM yyyy", { locale: pt });
+      if (!map.has(key)) map.set(key, { label, photos: [] });
+      map.get(key)!.photos.push(photo);
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, val]) => ({ key, ...val }));
+  }, [photos]);
 
   return (
-    <div className="flex gap-[3px] px-[3px]">
-      <div className="flex flex-col gap-[3px] flex-1">
-        {col1.map((photo) => (
-          <MemoryTile
-            key={photo.id}
-            photo={photo}
-            onClick={() => onSelect(photo)}
-            onLongPress={() => onLongPress(photo)}
-          />
-        ))}
-      </div>
-      <div className="flex flex-col gap-[3px] flex-1">
-        {col2.map((photo) => (
-          <MemoryTile
-            key={photo.id}
-            photo={photo}
-            onClick={() => onSelect(photo)}
-            onLongPress={() => onLongPress(photo)}
-          />
-        ))}
-      </div>
+    <div>
+      {groups.map((group) => (
+        <div key={group.key}>
+          <div className="px-4 pt-5 pb-2.5 flex items-center gap-3">
+            <p className="text-[11px] font-bold text-muted-foreground tracking-widest uppercase">
+              {group.label.charAt(0).toUpperCase() + group.label.slice(1)}
+            </p>
+            <div className="flex-1 h-px bg-border/40" />
+            <p className="text-[10px] text-muted-foreground/40 font-medium">{group.photos.length}</p>
+          </div>
+          <div className="flex gap-[3px] px-[3px]">
+            <div className="flex flex-col gap-[3px] flex-1">
+              {group.photos.filter((_, i) => i % 2 === 0).map((photo) => (
+                <MemoryTile
+                  key={photo.id}
+                  photo={photo}
+                  onClick={(rect) => onSelect(photo, rect)}
+                  onLongPress={() => onLongPress(photo)}
+                />
+              ))}
+            </div>
+            <div className="flex flex-col gap-[3px] flex-1">
+              {group.photos.filter((_, i) => i % 2 === 1).map((photo) => (
+                <MemoryTile
+                  key={photo.id}
+                  photo={photo}
+                  onClick={(rect) => onSelect(photo, rect)}
+                  onLongPress={() => onLongPress(photo)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -48,7 +74,7 @@ function MemoryTile({
   onLongPress,
 }: {
   photo: Photo;
-  onClick: () => void;
+  onClick: (rect: DOMRect) => void;
   onLongPress: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -87,12 +113,12 @@ function MemoryTile({
     setPressing(false);
   };
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (didLongPress.current) {
       didLongPress.current = false;
       return;
     }
-    onClick();
+    onClick(e.currentTarget.getBoundingClientRect());
   };
 
   return (
@@ -110,7 +136,6 @@ function MemoryTile({
       onMouseUp={cancelPress}
       onMouseLeave={cancelPress}
     >
-      {/* Placeholder */}
       {!loaded && <div className="w-full aspect-[3/4] bg-muted/60 animate-pulse" />}
 
       {url && (
@@ -125,7 +150,6 @@ function MemoryTile({
 
       {loaded && (
         <>
-          {/* Long-press feedback overlay */}
           {pressing && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
               <div className="w-10 h-10 rounded-full bg-rose-500/90 flex items-center justify-center">
@@ -133,7 +157,6 @@ function MemoryTile({
               </div>
             </div>
           )}
-
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
           <div className="absolute bottom-0 left-0 right-0 p-2.5 pointer-events-none">
             {photo.caption && (

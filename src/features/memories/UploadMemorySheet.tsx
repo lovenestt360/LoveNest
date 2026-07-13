@@ -63,7 +63,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
         url: "/memorias",
         type: "memorias",
       });
-      toast({ title: "Memória guardada" });
+      toast({ title: "Memória guardada", description: "Este momento faz agora parte da vossa história" });
       reset();
       onClose();
       onUploaded();

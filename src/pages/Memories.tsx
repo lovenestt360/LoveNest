@@ -31,6 +31,7 @@ export default function Memories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [transitionRect, setTransitionRect] = useState<DOMRect | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Photo | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -128,7 +129,7 @@ export default function Memories() {
         <button
           type="button"
           onClick={() => setUploadOpen(true)}
-          className="w-9 h-9 rounded-full bg-rose-500 hover:bg-rose-600 flex items-center justify-center text-white shadow-sm transition-colors"
+          className="w-9 h-9 rounded-full bg-rose-500 hover:bg-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/30 active:scale-90 transition-all duration-200"
           aria-label="Nova memória"
         >
           <Plus className="w-[18px] h-[18px]" />
@@ -157,7 +158,11 @@ export default function Memories() {
         </div>
       ) : (
         <div className="pt-1">
-          <MemoryGallery photos={photos} onSelect={setSelectedPhoto} onLongPress={setDeleteTarget} />
+          <MemoryGallery
+            photos={photos}
+            onSelect={(photo, rect) => { setTransitionRect(rect); setSelectedPhoto(photo); }}
+            onLongPress={setDeleteTarget}
+          />
           {hasMore && (
             <div className="flex justify-center py-6">
               <button
@@ -188,6 +193,7 @@ export default function Memories() {
           photo={selectedPhoto}
           spaceId={spaceId ?? ""}
           userId={user?.id ?? ""}
+          originRect={transitionRect}
           onClose={() => setSelectedPhoto(null)}
           onDeleted={() => { setSelectedPhoto(null); fetchPhotos(); }}
         />
