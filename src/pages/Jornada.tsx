@@ -243,6 +243,13 @@ export default function Jornada() {
   const prevStreakRef  = useRef(0);
   const prevBothRef   = useRef(false);
 
+  // Guardião só renderiza depois do primeiro fetch real — evita flash de Faísca (nível 0)
+  // antes de saber o nível correto. Uma vez true, nunca volta a false nesta sessão.
+  const [guardianReady, setGuardianReady] = useState(false);
+  useEffect(() => {
+    if (!loading) setGuardianReady(true);
+  }, [loading]);
+
   // Show streak error non-silently
   useEffect(() => {
     if (streakError) toast.error(`Streak: ${streakError}`);
@@ -508,6 +515,20 @@ export default function Jornada() {
         {/* NÍVEL DA JORNADA                                */}
         {/* ══════════════════════════════════════════════ */}
         {(() => {
+          // Skeleton enquanto o fetch inicial ainda não terminou — impede o Guardião
+          // de aparecer no nível 1 (Faísca) antes de saber o nível real do utilizador.
+          if (!guardianReady) {
+            return (
+              <div className="glass-card p-5 text-center space-y-3">
+                <div style={{ width: 314, height: 314 }} className="mx-auto rounded-3xl bg-muted animate-pulse" />
+                <div className="h-6 w-24 bg-muted rounded-full mx-auto animate-pulse" />
+                <div className="h-4 w-36 bg-muted rounded mx-auto animate-pulse" />
+                <div className="h-4 w-48 bg-muted rounded mx-auto animate-pulse" />
+                <div className="h-2 bg-muted rounded-full animate-pulse" />
+              </div>
+            );
+          }
+
           // Paleta cromática por nível — tudo no card segue a cor do Guardião
           const PHASE_CORE = ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"];
           const PHASE_DARK = ["#be123c","#c2410c","#0f766e","#1e40af","#5b21b6","#a16207","#831843"];
@@ -516,7 +537,7 @@ export default function Jornada() {
           const phaseGrad  = `linear-gradient(90deg, ${phaseDark} 0%, ${phaseColor} 100%)`;
 
           return (
-            <div className="glass-card p-5 text-center">
+            <div className="glass-card p-5 text-center animate-in fade-in duration-300">
               <div className="flex justify-center mb-2">
                 <div style={{ width: 314, height: 314 }} className="mx-auto bg-card">
                   <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
