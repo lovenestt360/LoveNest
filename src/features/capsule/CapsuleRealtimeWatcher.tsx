@@ -21,14 +21,14 @@ export function CapsuleRealtimeWatcher() {
         { event: "INSERT", schema: "public", table: "time_capsule_messages", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
           const row = payload.new as { id: string; creator_id: string };
-          // O criador já viu a cerimónia no momento da criação — só mostrar ao par
-          if (row.creator_id === user.id) return;
           if (seenRef.current.has(row.id)) return;
           seenRef.current.add(row.id);
+          // Texto diferente conforme criador ou par
+          const isOwn = row.creator_id === user.id;
           dispatchCeremony({
             type: "capsula",
             eyebrow: "Cápsula do Tempo",
-            title: "O teu par enterrou uma cápsula",
+            title: isOwn ? "Cápsula enterrada" : "O teu par enterrou uma cápsula",
             subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
           });
         }

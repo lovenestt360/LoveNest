@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { awardLovePoints } from "@/lib/lovePoints";
-import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
+import { triggerCeremony } from "@/lib/ceremonies";
 import { notifyPartner } from "@/lib/notifyPartner";
 
 export default function TimeCapsule() {
@@ -110,22 +110,11 @@ export default function TimeCapsule() {
               type: "memorias",
             });
 
-            // Fechar formulário primeiro; só depois mostrar a cerimónia para
-            // garantir que a overlay não fica bloqueada pela animação de fecho.
             setNewMessage("");
             setUnlockDate("");
             setSelectedImage(null);
             setIsAdding(false);
             loadCapsules();
-
-            setTimeout(() => {
-              dispatchCeremony({
-                type: "capsula",
-                eyebrow: "Cápsula do Tempo",
-                title: "Cápsula enterrada",
-                subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
-              });
-            }, 350);
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
