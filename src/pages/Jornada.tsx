@@ -210,7 +210,7 @@ export default function Jornada() {
   const spaceId    = useCoupleSpaceId();
   const { profile } = useProfile();
   const { user } = useAuth();
-  const { streak, loading, error: streakError, checkIn, checkingIn, refresh } = useStreak();
+  const { streak, loading, error: streakError, checkIn, checkingIn, refresh, initialized: streakInitialized } = useStreak();
   const hoursLeft = useHoursLeft();
 
   const isSolo = profile?.usage_mode === "solo";
@@ -243,12 +243,6 @@ export default function Jornada() {
   const prevStreakRef  = useRef(0);
   const prevBothRef   = useRef(false);
 
-  // Guardião só renderiza depois do primeiro fetchAllData real concluído.
-  // Não depende de `loading` (que tem false-positives por early-returns do useStreak
-  // quando spaceId ainda é null). A flag é activada directamente no callback
-  // fetchAllData, que só é invocado quando spaceId já é não-nulo.
-  const [guardianReady, setGuardianReady] = useState(false);
-  const guardianReadyRef = useRef(false);
 
   // Show streak error non-silently
   useEffect(() => {
@@ -412,12 +406,6 @@ export default function Jornada() {
         fetchPoints(),
         fetchMissions(),
       ]);
-      // Após o primeiro fetch real (spaceId garantidamente não-nulo aqui),
-      // liberta o Guardião para renderizar com o nível correto.
-      if (!guardianReadyRef.current) {
-        guardianReadyRef.current = true;
-        setGuardianReady(true);
-      }
     } catch (err) {
       console.error("[fetchAllData ERROR]:", err);
     }
@@ -523,7 +511,7 @@ export default function Jornada() {
         {(() => {
           // Skeleton enquanto o fetch inicial ainda não terminou — impede o Guardião
           // de aparecer no nível 1 (Faísca) antes de saber o nível real do utilizador.
-          if (!guardianReady) {
+          if (!streakInitialized) {
             return (
               <div className="glass-card p-5 text-center">
                 <div className="flex justify-center mb-2">

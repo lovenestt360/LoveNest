@@ -145,6 +145,10 @@ export function useStreak() {
   const [loading, setLoading]     = useState(() => !readStreakCache(spaceId));
   const [error,   setError]       = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
+  // initialized: true depois do primeiro refresh() bem-sucedido com spaceId não-nulo.
+  // Consumers (ex: Jornada) usam este flag para não renderizar com dados EMPTY.
+  const [initialized, setInitialized] = useState(false);
+  const initializedRef = useRef(false);
 
   // Local date string at mount — used to detect day rollover in user's timezone
   const todayUTCRef = useRef(todayLocal());
@@ -219,6 +223,10 @@ export function useStreak() {
 
       if (spaceId) writeStreakCache(spaceId, newState);
       setStreak(newState);
+      if (!initializedRef.current) {
+        initializedRef.current = true;
+        setInitialized(true);
+      }
     } catch (err: any) {
       setError(err?.message ?? "Erro inesperado em useStreak");
     } finally {
@@ -321,5 +329,5 @@ export function useStreak() {
     }
   }, [spaceId, checkingIn, refresh]);
 
-  return { streak, loading, error, refresh, checkIn, checkingIn };
+  return { streak, loading, error, refresh, checkIn, checkingIn, initialized };
 }
