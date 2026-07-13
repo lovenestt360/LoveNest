@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
 import {
   X, MoreHorizontal, MessageCircle, Send,
-  ChevronDown, ChevronUp, Edit2, Trash2,
+  Edit2, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -75,11 +75,13 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
   }, [photo.id]);
 
   const loadReactions = useCallback(async () => {
-    const { data } = await (supabase as any)
-      .from("photo_reactions")
-      .select("id, user_id, reaction")
-      .eq("photo_id", photo.id);
-    if (data) setReactions(data as Reaction[]);
+    try {
+      const { data } = await (supabase as any)
+        .from("photo_reactions")
+        .select("id, user_id, reaction")
+        .eq("photo_id", photo.id);
+      if (data) setReactions(data as Reaction[]);
+    } catch { /* table may not exist yet */ }
   }, [photo.id]);
 
   useEffect(() => {
@@ -87,14 +89,22 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
     loadReactions();
   }, [loadComments, loadReactions]);
 
+  // Realtime: separate channels to avoid one bad table breaking the other
   useEffect(() => {
     const ch = supabase
-      .channel(`memory-detail-${photo.id}`)
+      .channel(`mem-comments-${photo.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "photo_comments", filter: `photo_id=eq.${photo.id}` }, () => loadComments())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [photo.id, loadComments]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`mem-reactions-${photo.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "photo_reactions" as any, filter: `photo_id=eq.${photo.id}` }, () => loadReactions())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [photo.id, loadComments, loadReactions]);
+  }, [photo.id, loadReactions]);
 
   const sendComment = async () => {
     const text = newComment.trim();
@@ -152,7 +162,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
     setEditMode(false);
   };
 
-  // Date display
+  // Date helpers
   const photoDate = photo.taken_on
     ? new Date(photo.taken_on + "T12:00:00")
     : new Date(photo.created_at);
@@ -181,7 +191,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
         role="dialog"
         aria-modal="true"
       >
-        {/* Top controls */}
+        {/* Top controls (absolute so they don't take layout space) */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-[max(env(safe-area-inset-top,0px),1rem)]">
           <button
             type="button"
@@ -201,112 +211,156 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
           </button>
         </div>
 
-        {/* Image */}
+        {/* Image — gets ~70% of screen height */}
         <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
           {url ? (
-            <img src={url} alt={photo.caption ?? "Memória"} className="w-full h-full object-contain" />
+            <img
+              src={url}
+              alt={photo.caption ?? "Memória"}
+              style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto" }}
+              className="block"
+            />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-white/10 animate-pulse" />
+            <div className="w-14 h-14 rounded-full bg-white/10 animate-pulse" />
           )}
         </div>
 
-        {/* Info panel */}
-        <div className="bg-card rounded-t-[2rem] px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),1.25rem)] max-h-[52vh] overflow-y-auto shrink-0">
+        {/* Compact info panel — natural height, does NOT steal image space */}
+        <div className="bg-card rounded-t-[2rem] px-5 pt-4 pb-[max(env(safe-area-inset-bottom,0px),1rem)] shrink-0">
           {/* Caption */}
-          <p className="text-lg font-bold text-foreground leading-snug mb-1">
+          <p className="text-base font-bold text-foreground leading-snug mb-0.5 line-clamp-2">
             {photo.caption || "Sem legenda"}
           </p>
 
           {/* Dates */}
-          <p className="text-sm text-muted-foreground capitalize mb-0.5">
+          <p className="text-xs text-muted-foreground capitalize mb-0.5">
             {dayOfWeek}, {dateFormatted}
           </p>
-          <p className="text-xs font-semibold text-rose-400 mb-4">{relativeStr}</p>
+          <p className="text-[11px] font-semibold text-rose-400 mb-3">{relativeStr}</p>
 
-          {/* Reactions */}
-          <div className="flex gap-2 flex-wrap mb-4">
-            {REACTIONS.map(({ key, emoji }) => {
-              const count = reactions.filter(r => r.reaction === key).length;
-              const mine = reactions.some(r => r.user_id === userId && r.reaction === key);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => toggleReaction(key)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all duration-150 border",
-                    mine
-                      ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 scale-105"
-                      : "bg-muted border-border"
-                  )}
-                >
-                  <span>{emoji}</span>
-                  {count > 0 && <span className="text-xs font-semibold text-foreground">{count}</span>}
-                </button>
-              );
-            })}
+          {/* Reactions + comments in one row */}
+          <div className="flex items-center gap-2">
+            {/* Reactions */}
+            <div className="flex gap-1.5 flex-1 flex-wrap">
+              {REACTIONS.map(({ key, emoji }) => {
+                const count = reactions.filter(r => r.reaction === key).length;
+                const mine = reactions.some(r => r.user_id === userId && r.reaction === key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleReaction(key)}
+                    className={cn(
+                      "flex items-center gap-1 px-2.5 py-1 rounded-full text-sm transition-all duration-150 border",
+                      mine
+                        ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50"
+                        : "bg-muted border-border"
+                    )}
+                  >
+                    <span className="text-sm leading-none">{emoji}</span>
+                    {count > 0 && (
+                      <span className="text-[10px] font-bold text-foreground leading-none">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Comments button */}
+            <button
+              type="button"
+              onClick={() => setCommentsOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border shrink-0"
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                {comments.length > 0 ? comments.length : "+"}
+              </span>
+            </button>
           </div>
+        </div>
+      </div>
 
-          {/* Comments toggle */}
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm text-muted-foreground mb-3"
-            onClick={() => setCommentsOpen(o => !o)}
+      {/* ── Comments drawer ─────────────────────────────────────── */}
+      {commentsOpen && (
+        <div
+          className="fixed inset-0 z-[55] bg-black/50"
+          onClick={() => setCommentsOpen(false)}
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-card rounded-t-[2rem] max-h-[75vh] flex flex-col animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
           >
-            <MessageCircle className="w-4 h-4" />
-            <span>
-              {comments.length === 0
-                ? "Sem comentários"
-                : `${comments.length} comentário${comments.length !== 1 ? "s" : ""}`}
-            </span>
-            {commentsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-
-          {/* Comments list + input */}
-          {commentsOpen && (
-            <div className="space-y-3">
-              {comments.map((c) => (
-                <div key={c.id} className="flex gap-3">
-                  <div className={cn(
-                    "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 mt-0.5",
-                    c.user_id === userId
-                      ? "bg-rose-100 dark:bg-rose-950/30 text-rose-500"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {c.user_id === userId ? "EU" : "PAR"}
-                  </div>
-                  <div className="flex-1 bg-muted rounded-2xl rounded-tl-sm px-3 py-2">
-                    <p className="text-sm text-foreground leading-snug">{c.content}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {format(new Date(c.created_at), "HH:mm")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="flex gap-2 pt-1">
-                <input
-                  type="text"
-                  placeholder="Escrever um comentário..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") sendComment(); }}
-                  className="flex-1 bg-muted rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-rose-300 dark:focus:ring-rose-800 transition-all"
-                  maxLength={300}
-                />
+            {/* Handle + header */}
+            <div className="shrink-0 pt-3 px-5 pb-4 border-b border-border">
+              <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-foreground">
+                  {comments.length === 0
+                    ? "Comentários"
+                    : `${comments.length} comentário${comments.length !== 1 ? "s" : ""}`}
+                </h3>
                 <button
                   type="button"
-                  onClick={sendComment}
-                  disabled={sending || !newComment.trim()}
-                  className="w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center text-white disabled:opacity-40 flex-shrink-0 transition-opacity"
+                  onClick={() => setCommentsOpen(false)}
+                  className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"
                 >
-                  <Send className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
               </div>
             </div>
-          )}
+
+            {/* Comment list */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {comments.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Sem comentários ainda. Sê o primeiro!
+                </p>
+              ) : (
+                comments.map((c) => (
+                  <div key={c.id} className="flex gap-3">
+                    <div className={cn(
+                      "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 mt-0.5",
+                      c.user_id === userId
+                        ? "bg-rose-100 dark:bg-rose-950/30 text-rose-500"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      {c.user_id === userId ? "EU" : "PAR"}
+                    </div>
+                    <div className="flex-1 bg-muted rounded-2xl rounded-tl-sm px-3 py-2">
+                      <p className="text-sm text-foreground leading-snug">{c.content}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {format(new Date(c.created_at), "HH:mm")}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Comment input — keyboard only opens on explicit tap */}
+            <div className="shrink-0 flex gap-2 px-4 py-3 border-t border-border pb-[max(env(safe-area-inset-bottom,0px),0.75rem)]">
+              <input
+                type="text"
+                placeholder="Escrever um comentário..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") sendComment(); }}
+                className="flex-1 bg-muted rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-rose-300 dark:focus:ring-rose-800 transition-all"
+                maxLength={300}
+              />
+              <button
+                type="button"
+                onClick={sendComment}
+                disabled={sending || !newComment.trim()}
+                className="w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center text-white disabled:opacity-40 flex-shrink-0 transition-opacity"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Action menu ─────────────────────────────────────────── */}
       {menuOpen && (
@@ -358,7 +412,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
             <p className="text-center text-base font-bold text-foreground">Eliminar esta memória?</p>
             <p className="text-center text-sm text-muted-foreground">
-              Esta ação não pode ser desfeita e a foto será apagada permanentemente.
+              Esta ação não pode ser desfeita.
             </p>
             <button
               type="button"
