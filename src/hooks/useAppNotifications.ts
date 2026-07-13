@@ -204,7 +204,8 @@ export function useAppNotifications() {
           if (locationRef.current !== "/memorias") {
             setMemoriesUnread((c) => c + 1);
             if (getNotifPrefs().memorias) {
-              toast({ title: "Novo comentário numa memória", description: row.content.length > 60 ? row.content.slice(0, 60) + "…" : row.content });
+              const preview = row.content.length > 80 ? row.content.slice(0, 80) + "…" : row.content;
+              toast({ title: `"${preview}"`, description: "Novo comentário numa memória" });
             }
           }
         }

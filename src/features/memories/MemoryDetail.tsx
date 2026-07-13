@@ -120,8 +120,8 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
     setSending(false);
     notifyPartner({
       couple_space_id: spaceId,
-      title: "Comentário numa memória",
-      body: text.slice(0, 80),
+      title: `"${text.slice(0, 60)}${text.length > 60 ? "…" : ""}"`,
+      body: "Novo comentário na vossa memória",
       url: "/memorias",
       type: "memorias",
     });
