@@ -614,18 +614,6 @@ const Index = () => {
           )}
 
           <DashCard
-            icon={<CheckSquare className="h-5 w-5" strokeWidth={1.5} />}
-            title="Agenda"
-            lines={[
-              plano.pending > 0 ? `${plano.pending} a aguardar vocês` : "Em paz por hoje ✨",
-              plano.next ? `${plano.next.time} · ${plano.next.title}` : "Adicionem algo especial",
-            ]}
-            to="/plano"
-            badge={tasksUnread + scheduleUnread}
-            accent="text-blue-500"
-          />
-
-          <DashCard
             icon={<Smile className="h-5 w-5" strokeWidth={1.5} />}
             title="Humor"
             lines={[
@@ -635,6 +623,18 @@ const Index = () => {
             to="/humor"
             badge={moodUnread}
             accent="text-pink-500"
+          />
+
+          <DashCard
+            icon={<CheckSquare className="h-5 w-5" strokeWidth={1.5} />}
+            title="Agenda"
+            lines={[
+              plano.pending > 0 ? `${plano.pending} a aguardar vocês` : "Em paz por hoje ✨",
+              plano.next ? `${plano.next.time} · ${plano.next.title}` : "Adicionem algo especial",
+            ]}
+            to="/plano"
+            badge={tasksUnread + scheduleUnread}
+            accent="text-blue-500"
           />
 
           {(isEnabled("home_jejum") || isEnabled("home_oracao")) && profileReady && profile?.religion !== "none" && (
