@@ -197,21 +197,6 @@ export function useAppNotifications() {
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "photo_comments", filter: `couple_space_id=eq.${spaceId}` },
-        (payload) => {
-          const row = payload.new as { user_id: string; content: string };
-          if (row.user_id === user.id) return;
-          if (locationRef.current !== "/memorias") {
-            setMemoriesUnread((c) => c + 1);
-            if (getNotifPrefs().memorias) {
-              const preview = row.content.length > 80 ? row.content.slice(0, 80) + "…" : row.content;
-              toast({ title: `"${preview}"`, description: "Novo comentário numa memória" });
-            }
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
         { event: "INSERT", schema: "public", table: "events", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
           const row = payload.new as { created_by: string; title: string };

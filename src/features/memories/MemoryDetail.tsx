@@ -2,22 +2,11 @@ import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { notifyPartner } from "@/lib/notifyPartner";
-import {
-  X, MoreHorizontal, MessageCircle, Send,
-  Edit2, Trash2, PenLine,
-} from "lucide-react";
+import { X, MoreHorizontal, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import type { Photo } from "@/pages/Memories";
-
-interface Comment {
-  id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-}
 
 interface Reaction {
   id: string;
@@ -45,11 +34,7 @@ interface Props {
 export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDeleted }: Props) {
   const [photo, setPhoto] = useState<Photo>(initial);
   const [url, setUrl] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [newComment, setNewComment] = useState("");
-  const [sending, setSending] = useState(false);
-  const [inputOpen, setInputOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -65,15 +50,6 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
     });
   }, [photo.file_path]);
 
-  const loadComments = useCallback(async () => {
-    const { data } = await supabase
-      .from("photo_comments")
-      .select("id, user_id, content, created_at")
-      .eq("photo_id", photo.id)
-      .order("created_at", { ascending: true });
-    if (data) setComments(data as Comment[]);
-  }, [photo.id]);
-
   const loadReactions = useCallback(async () => {
     try {
       const { data } = await (supabase as any)
@@ -84,22 +60,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
     } catch { /* table may not exist yet */ }
   }, [photo.id]);
 
-  useEffect(() => {
-    loadComments();
-    loadReactions();
-  }, [loadComments, loadReactions]);
-
-  // Separate Realtime channels so a failed table doesn't break the other
-  useEffect(() => {
-    const ch = supabase
-      .channel(`mem-comments-${photo.id}`)
-      .on("postgres_changes", {
-        event: "*", schema: "public", table: "photo_comments",
-        filter: `photo_id=eq.${photo.id}`,
-      }, () => loadComments())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [photo.id, loadComments]);
+  useEffect(() => { loadReactions(); }, [loadReactions]);
 
   useEffect(() => {
     const ch = supabase
@@ -111,28 +72,6 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [photo.id, loadReactions]);
-
-  const sendComment = async () => {
-    const text = newComment.trim();
-    if (!text) return;
-    setSending(true);
-    await supabase.from("photo_comments").insert({
-      photo_id: photo.id,
-      couple_space_id: spaceId,
-      user_id: userId,
-      content: text,
-    });
-    setNewComment("");
-    setInputOpen(false);
-    setSending(false);
-    notifyPartner({
-      couple_space_id: spaceId,
-      title: `"${text.slice(0, 60)}${text.length > 60 ? "…" : ""}"`,
-      body: "Novo comentário na vossa memória",
-      url: "/memorias",
-      type: "memorias",
-    });
-  };
 
   const toggleReaction = async (key: ReactionKey) => {
     const existing = reactions.find(r => r.user_id === userId && r.reaction === key);
@@ -232,121 +171,43 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
           )}
         </div>
 
-        {/* Info + comments panel — scrollable */}
-        <div className="bg-card rounded-t-[2rem] overflow-y-auto max-h-[55vh] shrink-0">
-          <div className="px-5 pt-4 pb-2">
-            {/* Caption */}
-            <p className="text-base font-bold text-foreground leading-snug mb-0.5 line-clamp-2">
-              {photo.caption || "Sem legenda"}
-            </p>
-            {/* Dates */}
-            <p className="text-xs text-muted-foreground capitalize mb-0.5">
-              {dayOfWeek}, {dateFormatted}
-            </p>
-            <p className="text-[11px] font-semibold text-rose-400 mb-3">{relativeStr}</p>
+        {/* Info panel */}
+        <div className="bg-card rounded-t-[2rem] px-5 pt-4 pb-[max(env(safe-area-inset-bottom,0px),1.25rem)] shrink-0">
+          {/* Caption */}
+          <p className="text-base font-bold text-foreground leading-snug mb-0.5 line-clamp-2">
+            {photo.caption || "Sem legenda"}
+          </p>
 
-            {/* Reactions */}
-            <div className="flex gap-1.5 flex-wrap mb-4">
-              {REACTIONS.map(({ key, emoji }) => {
-                const count = reactions.filter(r => r.reaction === key).length;
-                const mine = reactions.some(r => r.user_id === userId && r.reaction === key);
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => toggleReaction(key)}
-                    className={cn(
-                      "flex items-center gap-1 px-2.5 py-1 rounded-full text-sm transition-all duration-150 border",
-                      mine
-                        ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50"
-                        : "bg-muted border-border"
-                    )}
-                  >
-                    <span className="text-sm leading-none">{emoji}</span>
-                    {count > 0 && (
-                      <span className="text-[10px] font-bold text-foreground leading-none">{count}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Dates */}
+          <p className="text-xs text-muted-foreground capitalize mb-0.5">
+            {dayOfWeek}, {dateFormatted}
+          </p>
+          <p className="text-[11px] font-semibold text-rose-400 mb-4">{relativeStr}</p>
 
-            {/* Comments header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5">
-                <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-semibold text-foreground">
-                  {comments.length === 0
-                    ? "Comentários"
-                    : `${comments.length} comentário${comments.length !== 1 ? "s" : ""}`}
-                </span>
-              </div>
-              {!inputOpen && (
+          {/* Reactions */}
+          <div className="flex gap-1.5 flex-wrap">
+            {REACTIONS.map(({ key, emoji }) => {
+              const count = reactions.filter(r => r.reaction === key).length;
+              const mine = reactions.some(r => r.user_id === userId && r.reaction === key);
+              return (
                 <button
+                  key={key}
                   type="button"
-                  onClick={() => setInputOpen(true)}
-                  className="flex items-center gap-1 text-xs font-semibold text-rose-500"
+                  onClick={() => toggleReaction(key)}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm transition-all duration-150 border",
+                    mine
+                      ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50"
+                      : "bg-muted border-border"
+                  )}
                 >
-                  <PenLine className="w-3 h-3" />
-                  Comentar
+                  <span className="text-sm leading-none">{emoji}</span>
+                  {count > 0 && (
+                    <span className="text-[10px] font-bold text-foreground leading-none">{count}</span>
+                  )}
                 </button>
-              )}
-            </div>
-          </div>
-
-          {/* Comment list — always visible */}
-          <div className="px-5 space-y-3 pb-3">
-            {comments.length === 0 && !inputOpen && (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                Sem comentários ainda.
-              </p>
-            )}
-            {comments.map((c) => (
-              <div key={c.id} className="flex gap-3">
-                <div className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 mt-0.5",
-                  c.user_id === userId
-                    ? "bg-rose-100 dark:bg-rose-950/30 text-rose-500"
-                    : "bg-muted text-muted-foreground"
-                )}>
-                  {c.user_id === userId ? "EU" : "PAR"}
-                </div>
-                <div className="flex-1 bg-muted rounded-2xl rounded-tl-sm px-3 py-2">
-                  <p className="text-sm text-foreground leading-snug">{c.content}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {format(new Date(c.created_at), "HH:mm")}
-                  </p>
-                </div>
-              </div>
-            ))}
-
-            {/* Input — only shown on demand, keyboard opens only here */}
-            {inputOpen && (
-              <div className="flex gap-2 pt-1 pb-[max(env(safe-area-inset-bottom,0px),0.5rem)]">
-                <input
-                  type="text"
-                  placeholder="Escrever um comentário..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") sendComment(); }}
-                  // eslint-disable-next-line jsx-a11y/no-autofocus
-                  autoFocus
-                  className="flex-1 bg-muted rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-rose-300 dark:focus:ring-rose-800 transition-all"
-                  maxLength={300}
-                />
-                <button
-                  type="button"
-                  onClick={sendComment}
-                  disabled={sending || !newComment.trim()}
-                  className="w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center text-white disabled:opacity-40 flex-shrink-0 transition-opacity"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            {/* Bottom padding for safe area */}
-            <div className="h-[max(env(safe-area-inset-bottom,0px),0.75rem)]" />
+              );
+            })}
           </div>
         </div>
       </div>
