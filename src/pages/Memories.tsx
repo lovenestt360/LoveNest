@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useProfile } from "@/hooks/useProfile";
-import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
-import { UploadMemoryDialog } from "@/features/memories/UploadMemoryDialog";
-import { PhotoGrid } from "@/features/memories/PhotoGrid";
-import { PhotoDetailDialog } from "@/features/memories/PhotoDetailDialog";
+import { Plus, ImagePlus, Loader2 } from "lucide-react";
+import { MemoryGallery } from "@/features/memories/MemoryGallery";
+import { MemoryDetail } from "@/features/memories/MemoryDetail";
+import { UploadMemorySheet } from "@/features/memories/UploadMemorySheet";
 
 export interface Photo {
   id: string;
@@ -21,7 +20,7 @@ export interface Photo {
   created_at: string;
 }
 
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 30;
 
 export default function Memories() {
   const { user } = useAuth();
@@ -34,8 +33,8 @@ export default function Memories() {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const lastCursorRef = useRef<string | null>(null);
 
-  // Auto-open upload from home CTA
   useEffect(() => {
     if (searchParams.get("new") === "1") {
       setUploadOpen(true);
@@ -43,13 +42,11 @@ export default function Memories() {
     }
   }, [searchParams, setSearchParams]);
 
-  const lastCursorRef = useRef<string | null>(null);
-
   const fetchPhotos = useCallback(async (append = false) => {
     if (!spaceId) return;
     if (!append) setLoading(true);
 
-    const query = supabase
+    let query = supabase
       .from("photos")
       .select("*")
       .eq("couple_space_id", spaceId)
@@ -57,7 +54,7 @@ export default function Memories() {
       .limit(BATCH_SIZE);
 
     if (append && lastCursorRef.current) {
-      query.lt("created_at", lastCursorRef.current);
+      query = query.lt("created_at", lastCursorRef.current);
     }
 
     const { data } = await query;
@@ -66,11 +63,7 @@ export default function Memories() {
       if (typed.length > 0) {
         lastCursorRef.current = typed[typed.length - 1].created_at;
       }
-      if (append) {
-        setPhotos((prev) => [...prev, ...typed]);
-      } else {
-        setPhotos(typed);
-      }
+      setPhotos(append ? (prev) => [...prev, ...typed] : typed);
       setHasMore(data.length === BATCH_SIZE);
     }
     setLoading(false);
@@ -79,78 +72,109 @@ export default function Memories() {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  // Realtime
+  // Realtime: refresh list on any change to photos
   useEffect(() => {
     if (!spaceId) return;
-    const channel = supabase
-      .channel("memories-room")
-      .on("postgres_changes", { event: "*", schema: "public", table: "photos", filter: `couple_space_id=eq.${spaceId}` }, () => {
-        fetchPhotos();
-      })
+    const ch = supabase
+      .channel("memories-realtime")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "photos",
+        filter: `couple_space_id=eq.${spaceId}`,
+      }, () => fetchPhotos())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [spaceId]);
+    return () => { supabase.removeChannel(ch); };
+  }, [spaceId, fetchPhotos]);
 
-  const handleLoadMore = () => {
-    setLoadingMore(true);
-    fetchPhotos(true);
-  };
+  // Keep selectedPhoto in sync when photos list refreshes (e.g. after edit)
+  const selectedId = selectedPhoto?.id;
+  useEffect(() => {
+    if (!selectedId) return;
+    const updated = photos.find(p => p.id === selectedId);
+    if (updated) setSelectedPhoto(updated);
+  }, [photos, selectedId]);
 
   if (!profileLoading && profile?.usage_mode === "solo") {
     return <Navigate to="/" replace />;
   }
 
   return (
-    <section className="space-y-5 pb-24 animate-fade-in max-w-lg mx-auto">
-      <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-40 border-b border-border">
+    <section className="pb-24 min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3.5 bg-background/90 backdrop-blur-sm border-b border-border/50">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Memórias</h1>
-          <p className="text-[12px] text-muted-foreground">{photos.length} momento{photos.length !== 1 ? "s" : ""} guardado{photos.length !== 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Memórias</h1>
+          {photos.length > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              {photos.length} momento{photos.length !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
-        <Button size="sm" onClick={() => setUploadOpen(true)} className="rounded-2xl bg-rose-500 hover:bg-rose-600 text-white border-0 shadow-sm">
-          <Plus className="mr-1 h-4 w-4" /> Novo
-        </Button>
+        <button
+          type="button"
+          onClick={() => setUploadOpen(true)}
+          className="w-9 h-9 rounded-full bg-rose-500 hover:bg-rose-600 flex items-center justify-center text-white shadow-sm transition-colors"
+          aria-label="Nova memória"
+        >
+          <Plus className="w-[18px] h-[18px]" />
+        </button>
       </header>
 
+      {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
         </div>
       ) : photos.length === 0 ? (
-        <div className="mx-4 bg-card border border-border rounded-2xl p-10 text-center shadow-sm space-y-2">
-          <p className="text-2xl">📸</p>
-          <p className="text-sm font-semibold text-foreground">Ainda sem memórias</p>
-          <p className="text-[12px] text-muted-foreground">Adiciona a primeira foto do casal</p>
+        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center mb-4">
+            <ImagePlus className="w-7 h-7 text-rose-300" />
+          </div>
+          <p className="text-base font-semibold text-foreground mb-1">Sem memórias ainda</p>
+          <p className="text-sm text-muted-foreground mb-6">Adiciona a primeira foto do casal</p>
+          <button
+            type="button"
+            onClick={() => setUploadOpen(true)}
+            className="px-6 py-2.5 rounded-full bg-rose-500 text-white text-sm font-semibold shadow-sm"
+          >
+            Adicionar foto
+          </button>
         </div>
       ) : (
-        <>
-          <PhotoGrid photos={photos} onSelect={setSelectedPhoto} />
+        <div className="pt-1">
+          <MemoryGallery photos={photos} onSelect={setSelectedPhoto} />
           {hasMore && (
-            <div className="flex justify-center pt-2">
-              <Button variant="ghost" size="sm" onClick={handleLoadMore} disabled={loadingMore}>
-                {loadingMore ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-                Carregar mais
-              </Button>
+            <div className="flex justify-center py-6">
+              <button
+                type="button"
+                onClick={() => { setLoadingMore(true); fetchPhotos(true); }}
+                disabled={loadingMore}
+                className="px-5 py-2 rounded-full text-sm font-medium text-muted-foreground bg-muted disabled:opacity-50"
+              >
+                {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : "Carregar mais"}
+              </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      <UploadMemoryDialog
+      {/* Upload sheet */}
+      <UploadMemorySheet
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
+        onClose={() => setUploadOpen(false)}
         spaceId={spaceId}
         userId={user?.id ?? ""}
-        onUploaded={() => fetchPhotos()}
+        onUploaded={() => {}}
       />
 
+      {/* Detail overlay */}
       {selectedPhoto && (
-        <PhotoDetailDialog
+        <MemoryDetail
           photo={selectedPhoto}
-          open={!!selectedPhoto}
-          onOpenChange={(o) => { if (!o) setSelectedPhoto(null); }}
           spaceId={spaceId ?? ""}
           userId={user?.id ?? ""}
+          onClose={() => setSelectedPhoto(null)}
           onDeleted={() => { setSelectedPhoto(null); fetchPhotos(); }}
         />
       )}
