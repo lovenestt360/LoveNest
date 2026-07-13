@@ -102,13 +102,6 @@ export default function TimeCapsule() {
 
             awardLovePoints(houseId, 10, "capsula_tempo", "Cápsula do tempo criada", user.id);
 
-            dispatchCeremony({
-              type: "capsula",
-              eyebrow: "Cápsula do Tempo",
-              title: "Cápsula enterrada",
-              subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
-            });
-
             notifyPartner({
               couple_space_id: houseId,
               title: "Cápsula do Tempo",
@@ -117,12 +110,22 @@ export default function TimeCapsule() {
               type: "memorias",
             });
 
-            toast({ title: "Cápsula Enterrada!", description: "O segredo foi guardado até essa data especial." });
+            // Fechar formulário primeiro; só depois mostrar a cerimónia para
+            // garantir que a overlay não fica bloqueada pela animação de fecho.
             setNewMessage("");
             setUnlockDate("");
             setSelectedImage(null);
             setIsAdding(false);
             loadCapsules();
+
+            setTimeout(() => {
+              dispatchCeremony({
+                type: "capsula",
+                eyebrow: "Cápsula do Tempo",
+                title: "Cápsula enterrada",
+                subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
+              });
+            }, 350);
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
