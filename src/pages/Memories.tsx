@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useProfile } from "@/hooks/useProfile";
-import { Plus, ImagePlus, Loader2 } from "lucide-react";
+import { Plus, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { MemoryGallery } from "@/features/memories/MemoryGallery";
 import { MemoryDetail } from "@/features/memories/MemoryDetail";
 import { UploadMemorySheet } from "@/features/memories/UploadMemorySheet";
@@ -30,6 +31,8 @@ export default function Memories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Photo | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -95,6 +98,17 @@ export default function Memories() {
     if (updated) setSelectedPhoto(updated);
   }, [photos, selectedId]);
 
+  const handleDeleteTarget = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await supabase.storage.from("memories").remove([deleteTarget.file_path]);
+    await supabase.from("photos").delete().eq("id", deleteTarget.id);
+    toast({ title: "Memória apagada" });
+    setDeleteTarget(null);
+    setDeleting(false);
+    fetchPhotos();
+  };
+
   if (!profileLoading && profile?.usage_mode === "solo") {
     return <Navigate to="/" replace />;
   }
@@ -143,7 +157,7 @@ export default function Memories() {
         </div>
       ) : (
         <div className="pt-1">
-          <MemoryGallery photos={photos} onSelect={setSelectedPhoto} />
+          <MemoryGallery photos={photos} onSelect={setSelectedPhoto} onLongPress={setDeleteTarget} />
           {hasMore && (
             <div className="flex justify-center py-6">
               <button
@@ -177,6 +191,42 @@ export default function Memories() {
           onClose={() => setSelectedPhoto(null)}
           onDeleted={() => { setSelectedPhoto(null); fetchPhotos(); }}
         />
+      )}
+
+      {/* Long-press delete confirmation */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setDeleteTarget(null)}>
+          <div
+            className="w-full bg-card rounded-t-[2rem] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
+            {deleteTarget.caption && (
+              <p className="text-center text-sm text-muted-foreground line-clamp-1 mb-1">
+                "{deleteTarget.caption}"
+              </p>
+            )}
+            <p className="text-center text-base font-bold text-foreground">Eliminar esta memória?</p>
+            <p className="text-center text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
+            <button
+              type="button"
+              onClick={handleDeleteTarget}
+              disabled={deleting}
+              className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              <Trash2 className="w-4 h-4" />
+              {deleting ? "A eliminar..." : "Eliminar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+              className="w-full h-12 rounded-2xl bg-muted text-foreground font-semibold text-sm disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
       )}
     </section>
   );
