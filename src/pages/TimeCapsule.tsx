@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ArrowLeft, Lock, Unlock, Plus, Clock, Image as ImageIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, Plus, Clock, Paperclip, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -170,9 +170,9 @@ export default function TimeCapsule() {
                                 className={`p-4 flex items-center gap-3 cursor-pointer active:bg-muted transition-colors ${selectedImage ? 'text-foreground' : 'text-muted-foreground'}`}
                                 onClick={() => document.getElementById('capsule-img')?.click()}
                             >
-                                <ImageIcon className="w-5 h-5 shrink-0" />
-                                <span className="text-[13px] font-medium">{selectedImage ? selectedImage.name : "Anexar Foto (Opcional)"}</span>
-                                <input id="capsule-img" type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) setSelectedImage(e.target.files[0]); }} />
+                                <Paperclip className="w-5 h-5 shrink-0" />
+                                <span className="text-[13px] font-medium">{selectedImage ? selectedImage.name : "Anexar Foto ou Vídeo (Opcional)"}</span>
+                                <input id="capsule-img" type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) setSelectedImage(e.target.files[0]); }} />
                             </div>
                         </div>
                         <div className="p-4 flex gap-2">
@@ -214,7 +214,11 @@ export default function TimeCapsule() {
                                                 <span>Aberto em {format(unlockDateObj, "d MMM yyyy", { locale: pt })}</span>
                                                 <Unlock className="w-4 h-4 text-indigo-500" />
                                             </div>
-                                            {c.image_url && <img src={c.image_url} alt="Cápsula" className="w-full h-48 object-cover rounded-xl mb-4 shadow-sm" />}
+                                            {c.image_url && (
+                                              /\.(mp4|webm|mov)(\?|$)/i.test(c.image_url)
+                                                ? <video src={c.image_url} controls className="w-full rounded-xl mb-4 shadow-sm max-h-72" />
+                                                : <img src={c.image_url} alt="Cápsula" className="w-full h-48 object-cover rounded-xl mb-4 shadow-sm" />
+                                            )}
                                             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{c.message}</p>
                                         </div>
                                     ) : (
