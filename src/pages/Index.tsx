@@ -599,6 +599,20 @@ const Index = () => {
           </h2>
         </div>
         <div className="grid grid-cols-2 gap-3">
+          {isEnabled("home_conversas") && profileReady && !isSolo && (
+            <DashCard
+              icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
+              title="Chat"
+              lines={[
+                chatUnread > 0 ? `${chatUnread} mensagens à espera de ti` : "Uma pequena mensagem importa",
+                chatPreview.preview ?? "Às vezes presença começa aqui",
+              ]}
+              to="/chat"
+              badge={chatUnread}
+              accent="text-sky-500"
+            />
+          )}
+
           <DashCard
             icon={<CheckSquare className="h-5 w-5" strokeWidth={1.5} />}
             title="Agenda"
@@ -622,20 +636,6 @@ const Index = () => {
             badge={moodUnread}
             accent="text-pink-500"
           />
-
-          {isEnabled("home_conversas") && profileReady && !isSolo && (
-            <DashCard
-              icon={<MessageCircle className="h-5 w-5" strokeWidth={1.5} />}
-              title="Chat"
-              lines={[
-                chatUnread > 0 ? `${chatUnread} mensagens à espera de ti` : "Uma pequena mensagem importa",
-                chatPreview.preview ?? "Às vezes presença começa aqui",
-              ]}
-              to="/chat"
-              badge={chatUnread}
-              accent="text-sky-500"
-            />
-          )}
 
           {(isEnabled("home_jejum") || isEnabled("home_oracao")) && profileReady && profile?.religion !== "none" && (
             <DashCard
