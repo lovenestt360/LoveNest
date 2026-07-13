@@ -68,6 +68,7 @@ export function useAppNotifications() {
   const [scheduleUnread, setScheduleUnread] = useState(0);
   const [prayerUnread, setPrayerUnread] = useState(0);
   const [complaintsUnread, setComplaintsUnread] = useState(0);
+  const [capsuleUnread, setCapsuleUnread] = useState(0);
   const locationRef = useRef(location.pathname);
   // Incrementar força o useEffect do canal a recriar a subscrição Realtime
   const [channelKey, setChannelKey] = useState(0);
@@ -81,6 +82,7 @@ export function useAppNotifications() {
     if (location.pathname === "/agenda") setScheduleUnread(0);
     if (location.pathname === "/oracao") setPrayerUnread(0);
     if (location.pathname === "/conflitos") setComplaintsUnread(0);
+    if (location.pathname === "/capsula") setCapsuleUnread(0);
   }, [location.pathname]);
 
   const resetChatUnread = useCallback(() => setChatUnread(0), []);
@@ -90,6 +92,7 @@ export function useAppNotifications() {
   const resetScheduleUnread = useCallback(() => setScheduleUnread(0), []);
   const resetPrayerUnread = useCallback(() => setPrayerUnread(0), []);
   const resetComplaintsUnread = useCallback(() => setComplaintsUnread(0), []);
+  const resetCapsuleUnread = useCallback(() => setCapsuleUnread(0), []);
 
   // Mission complete notifications
   useEffect(() => {
@@ -307,6 +310,17 @@ export function useAppNotifications() {
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "time_capsule_messages", filter: `couple_space_id=eq.${spaceId}` },
+        (payload) => {
+          const row = payload.new as { creator_id: string };
+          if (row.creator_id === user.id) return;
+          if (locationRef.current !== "/capsula") {
+            setCapsuleUnread((c) => c + 1);
+          }
+        }
+      )
       .on("broadcast", { event: "prayer-invite" }, () => {
           if (locationRef.current !== "/jornada-espiritual") {
             setPrayerUnread((c) => c + 1);
@@ -333,7 +347,7 @@ export function useAppNotifications() {
   }, [spaceId, user, channelKey]);
 
   useEffect(() => {
-    const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread;
+    const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread + capsuleUnread;
     if ('setAppBadge' in navigator) {
       if (totalUnread > 0) {
         // Safe casting to any because setAppBadge is still experimental/types missing in some TS configs
@@ -403,5 +417,5 @@ export function useAppNotifications() {
     return () => navigator.serviceWorker.removeEventListener("message", onSwMessage);
   }, [user, spaceId]);
 
-  return { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, resetChatUnread, resetMoodUnread, resetTasksUnread, resetMemoriesUnread, resetScheduleUnread, resetPrayerUnread, resetComplaintsUnread };
+  return { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread, resetChatUnread, resetMoodUnread, resetTasksUnread, resetMemoriesUnread, resetScheduleUnread, resetPrayerUnread, resetComplaintsUnread, resetCapsuleUnread };
 }

@@ -9,6 +9,7 @@ interface AppNotifContextType {
   scheduleUnread: number;
   prayerUnread: number;
   complaintsUnread: number;
+  capsuleUnread: number;
   resetChatUnread: () => void;
   resetMoodUnread: () => void;
   resetTasksUnread: () => void;
@@ -16,6 +17,7 @@ interface AppNotifContextType {
   resetScheduleUnread: () => void;
   resetPrayerUnread: () => void;
   resetComplaintsUnread: () => void;
+  resetCapsuleUnread: () => void;
 }
 
 const AppNotifContext = createContext<AppNotifContextType>({
@@ -26,6 +28,7 @@ const AppNotifContext = createContext<AppNotifContextType>({
   scheduleUnread: 0,
   prayerUnread: 0,
   complaintsUnread: 0,
+  capsuleUnread: 0,
   resetChatUnread: () => {},
   resetMoodUnread: () => {},
   resetTasksUnread: () => {},
@@ -33,6 +36,7 @@ const AppNotifContext = createContext<AppNotifContextType>({
   resetScheduleUnread: () => {},
   resetPrayerUnread: () => {},
   resetComplaintsUnread: () => {},
+  resetCapsuleUnread: () => {},
 });
 
 export function AppNotifProvider({ children }: { children: ReactNode }) {

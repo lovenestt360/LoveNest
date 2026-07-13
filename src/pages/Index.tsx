@@ -337,9 +337,9 @@ const Index = () => {
   
 
 
-  const { 
-    chatUnread, moodUnread, tasksUnread, memoriesUnread, 
-    scheduleUnread, prayerUnread, complaintsUnread 
+  const {
+    chatUnread, moodUnread, tasksUnread, memoriesUnread,
+    scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread
   } = useAppNotifContext();
 
   const avatars = useCoupleAvatars();
@@ -756,6 +756,7 @@ const Index = () => {
               label="Cápsula"
               to="/capsula"
               color="text-primary"
+              badge={capsuleUnread || undefined}
             />
           )}
 
