@@ -157,14 +157,23 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
           </button>
         </div>
 
-        {/* Image */}
-        <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+        {/* Image with blurred fill — no black bars on any device */}
+        <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
+          {/* Blurred version fills the space where black bars would appear */}
+          {url && (
+            <img
+              src={url}
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 pointer-events-none"
+            />
+          )}
+          {/* Sharp image on top */}
           {url ? (
             <img
               src={url}
               alt={photo.caption ?? "Memória"}
               style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto" }}
-              className="block"
+              className="relative z-10 block"
             />
           ) : (
             <div className="w-14 h-14 rounded-full bg-white/10 animate-pulse" />
