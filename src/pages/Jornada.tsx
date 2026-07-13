@@ -243,14 +243,12 @@ export default function Jornada() {
   const prevStreakRef  = useRef(0);
   const prevBothRef   = useRef(false);
 
-  // Guardião só renderiza depois do primeiro fetch real — evita flash de Faísca (nível 0)
-  // antes de saber o nível correto. Uma vez true, nunca volta a false nesta sessão.
-  // Condição: spaceId não-null garante que ignoramos o setLoading(false) do early-return
-  // de refresh() quando spaceId ainda é null (antes de o fetch real terminar).
+  // Guardião só renderiza depois do primeiro fetchAllData real concluído.
+  // Não depende de `loading` (que tem false-positives por early-returns do useStreak
+  // quando spaceId ainda é null). A flag é activada directamente no callback
+  // fetchAllData, que só é invocado quando spaceId já é não-nulo.
   const [guardianReady, setGuardianReady] = useState(false);
-  useEffect(() => {
-    if (!loading && spaceId) setGuardianReady(true);
-  }, [loading, spaceId]);
+  const guardianReadyRef = useRef(false);
 
   // Show streak error non-silently
   useEffect(() => {
@@ -414,6 +412,12 @@ export default function Jornada() {
         fetchPoints(),
         fetchMissions(),
       ]);
+      // Após o primeiro fetch real (spaceId garantidamente não-nulo aqui),
+      // liberta o Guardião para renderizar com o nível correto.
+      if (!guardianReadyRef.current) {
+        guardianReadyRef.current = true;
+        setGuardianReady(true);
+      }
     } catch (err) {
       console.error("[fetchAllData ERROR]:", err);
     }
@@ -521,12 +525,15 @@ export default function Jornada() {
           // de aparecer no nível 1 (Faísca) antes de saber o nível real do utilizador.
           if (!guardianReady) {
             return (
-              <div className="glass-card p-5 text-center space-y-3">
-                <div style={{ width: 314, height: 314 }} className="mx-auto rounded-3xl bg-muted animate-pulse" />
-                <div className="h-6 w-24 bg-muted rounded-full mx-auto animate-pulse" />
-                <div className="h-4 w-36 bg-muted rounded mx-auto animate-pulse" />
-                <div className="h-4 w-48 bg-muted rounded mx-auto animate-pulse" />
-                <div className="h-2 bg-muted rounded-full animate-pulse" />
+              <div className="glass-card p-5 text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="w-full max-w-[314px] aspect-square rounded-3xl bg-muted animate-pulse" />
+                </div>
+                <div className="h-6 w-24 bg-muted rounded-full mx-auto mt-4 animate-pulse" />
+                <div className="h-4 w-36 bg-muted rounded mx-auto mt-3 animate-pulse" />
+                <div className="h-5 w-52 bg-muted rounded mx-auto mt-2 animate-pulse" />
+                <div className="h-2 bg-muted rounded-full mt-3 animate-pulse" />
+                <div className="h-3 w-40 bg-muted rounded mx-auto mt-2 animate-pulse" />
               </div>
             );
           }
