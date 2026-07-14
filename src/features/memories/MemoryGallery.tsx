@@ -81,7 +81,8 @@ function MemoryTile({
   const [loaded, setLoaded] = useState(false);
   const [pressing, setPressing] = useState(false);
 
-  const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress  = useRef(false);
   const pointerOrigin = useRef<{ x: number; y: number } | null>(null);
 
@@ -97,23 +98,25 @@ function MemoryTile({
     : format(new Date(photo.created_at), "MMM ''yy", { locale: pt });
 
   const cancelPress = () => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    if (timerRef.current)    { clearTimeout(timerRef.current);    timerRef.current    = null; }
+    if (feedbackRef.current) { clearTimeout(feedbackRef.current); feedbackRef.current = null; }
     setPressing(false);
     pointerOrigin.current = null;
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    // Only primary pointer (first touch or left mouse button)
     if (e.button !== 0 && e.pointerType === "mouse") return;
     pointerOrigin.current = { x: e.clientX, y: e.clientY };
     didLongPress.current = false;
-    setPressing(true);
+    // Visual feedback (scale + trash icon) only after 500ms — quick taps see nothing
+    feedbackRef.current = setTimeout(() => setPressing(true), 500);
+    // Action fires at 1400ms — clearly intentional hold
     timerRef.current = setTimeout(() => {
       didLongPress.current = true;
       setPressing(false);
       pointerOrigin.current = null;
       onLongPress();
-    }, 800);
+    }, 1400);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
