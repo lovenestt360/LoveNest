@@ -27,12 +27,11 @@ interface Props {
   photo: Photo;
   spaceId: string;
   userId: string;
-  originRect?: DOMRect | null;
   onClose: () => void;
   onDeleted: () => void;
 }
 
-export function MemoryDetail({ photo: initial, spaceId, userId, originRect, onClose, onDeleted }: Props) {
+export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDeleted }: Props) {
   const [photo, setPhoto] = useState<Photo>(initial);
   const [url, setUrl] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Reaction[]>([]);
@@ -42,18 +41,6 @@ export function MemoryDetail({ photo: initial, spaceId, userId, originRect, onCl
   const [editCaption, setEditCaption] = useState(initial.caption ?? "");
   const [editDate, setEditDate] = useState(initial.taken_on ?? "");
   const [saving, setSaving] = useState(false);
-
-  // Clip-path animation state
-  const [entered, setEntered] = useState(false);
-  const [closing, setClosing] = useState(false);
-
-  useEffect(() => {
-    const id1 = requestAnimationFrame(() => {
-      const id2 = requestAnimationFrame(() => setEntered(true));
-      return () => cancelAnimationFrame(id2);
-    });
-    return () => cancelAnimationFrame(id1);
-  }, []);
 
   useEffect(() => { setPhoto(initial); }, [initial]);
 
@@ -86,15 +73,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, originRect, onCl
     return () => { supabase.removeChannel(ch); };
   }, [photo.id, loadReactions]);
 
-  const handleClose = () => {
-    if (originRect) {
-      setClosing(true);
-      setEntered(false);
-      setTimeout(() => onClose(), 360);
-    } else {
-      onClose();
-    }
-  };
+  const handleClose = onClose;
 
   const toggleReaction = async (key: ReactionKey) => {
     const existing = reactions.find(r => r.user_id === userId && r.reaction === key);
@@ -157,33 +136,11 @@ export function MemoryDetail({ photo: initial, spaceId, userId, originRect, onCl
     : savedDays === 1 ? "Guardada ontem"
     : `Guardada há ${savedDays} dias`;
 
-  // Clip-path animation
-  const getClipPath = () => {
-    if (!originRect) return undefined;
-    if (entered && !closing) return "inset(0% 0% 0% 0% round 0px)";
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const top = Math.max(0, (originRect.top / vh) * 100);
-    const left = Math.max(0, (originRect.left / vw) * 100);
-    const bottom = Math.max(0, ((vh - originRect.bottom) / vh) * 100);
-    const right = Math.max(0, ((vw - originRect.right) / vw) * 100);
-    return `inset(${top.toFixed(1)}% ${right.toFixed(1)}% ${bottom.toFixed(1)}% ${left.toFixed(1)}% round 12px)`;
-  };
-
-  const overlayStyle = originRect ? {
-    clipPath: getClipPath(),
-    transition: "clip-path 0.36s cubic-bezier(0.4, 0, 0.2, 1)",
-  } : {};
-
   return (
     <>
       {/* ── Full-screen overlay ─────────────────────────────────── */}
       <div
-        className={cn(
-          "fixed inset-0 z-50 flex flex-col bg-black",
-          !originRect && "animate-in fade-in duration-200"
-        )}
-        style={overlayStyle}
+        className="fixed inset-0 z-50 flex flex-col bg-black animate-in fade-in duration-150"
         role="dialog"
         aria-modal="true"
       >

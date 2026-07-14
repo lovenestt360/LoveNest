@@ -8,11 +8,12 @@ import type { Photo } from "@/pages/Memories";
 
 interface Props {
   photos: Photo[];
-  onSelect: (p: Photo, rect: DOMRect) => void;
+  onSelect: (p: Photo) => void;
   onLongPress: (p: Photo) => void;
 }
 
 export function MemoryGallery({ photos, onSelect, onLongPress }: Props) {
+
   const groups = useMemo(() => {
     const map = new Map<string, { label: string; photos: Photo[] }>();
     for (const photo of photos) {
@@ -46,7 +47,7 @@ export function MemoryGallery({ photos, onSelect, onLongPress }: Props) {
                 <MemoryTile
                   key={photo.id}
                   photo={photo}
-                  onClick={(rect) => onSelect(photo, rect)}
+                  onClick={() => onSelect(photo)}
                   onLongPress={() => onLongPress(photo)}
                 />
               ))}
@@ -56,7 +57,7 @@ export function MemoryGallery({ photos, onSelect, onLongPress }: Props) {
                 <MemoryTile
                   key={photo.id}
                   photo={photo}
-                  onClick={(rect) => onSelect(photo, rect)}
+                  onClick={() => onSelect(photo)}
                   onLongPress={() => onLongPress(photo)}
                 />
               ))}
@@ -74,7 +75,7 @@ function MemoryTile({
   onLongPress,
 }: {
   photo: Photo;
-  onClick: (rect: DOMRect) => void;
+  onClick: () => void;
   onLongPress: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -127,9 +128,9 @@ function MemoryTile({
     if (dx > 10 || dy > 10) cancelPress();
   };
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = () => {
     if (didLongPress.current) { didLongPress.current = false; return; }
-    onClick(e.currentTarget.getBoundingClientRect());
+    onClick();
   };
 
   return (

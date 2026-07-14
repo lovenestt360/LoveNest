@@ -31,7 +31,6 @@ export default function Memories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [transitionRect, setTransitionRect] = useState<DOMRect | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Photo | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -160,7 +159,7 @@ export default function Memories() {
         <div className="pt-1">
           <MemoryGallery
             photos={photos}
-            onSelect={(photo, rect) => { setTransitionRect(rect); setSelectedPhoto(photo); }}
+            onSelect={(photo) => setSelectedPhoto(photo)}
             onLongPress={setDeleteTarget}
           />
           {hasMore && (
@@ -193,7 +192,6 @@ export default function Memories() {
           photo={selectedPhoto}
           spaceId={spaceId ?? ""}
           userId={user?.id ?? ""}
-          originRect={transitionRect}
           onClose={() => setSelectedPhoto(null)}
           onDeleted={() => { setSelectedPhoto(null); fetchPhotos(); }}
         />
