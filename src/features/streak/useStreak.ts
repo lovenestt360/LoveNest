@@ -201,28 +201,47 @@ export function useStreak() {
 
       const newState = buildState(raw, memberListCount);
 
+      // Timezone fix: the Postgres server uses CURRENT_DATE in UTC.
+      // In timezones ahead of UTC (e.g. UTC+2), local midnight comes before
+      // the server rolls over. The server may still return my_checked_in=true
+      // and both_active=true for what was "today" in UTC (= yesterday locally).
+      // Detect this by comparing lastActiveDate with todayLocal(): if the server's
+      // last-activity date is behind today (local), the "today" flags are stale.
+      const localToday = todayLocal();
+      const staleServerDate =
+        newState.lastActiveDate !== null && newState.lastActiveDate < localToday;
+      const finalState: StreakState = staleServerDate
+        ? {
+            ...newState,
+            myCheckedIn:     false,
+            bothActiveToday: false,
+            activeCount:     0,
+            streakAtRisk:    newState.currentStreak > 0,
+          }
+        : newState;
+
       const prev        = prevStreakRef.current;
       const prevShields = prevShieldsRef.current;
 
       if (prev !== null && prevShields !== null) {
-        if (prev > 0 && newState.currentStreak === 0) {
+        if (prev > 0 && finalState.currentStreak === 0) {
           window.dispatchEvent(new CustomEvent("streak-broke", { detail: { prev } }));
         } else if (
-          newState.currentStreak > 0 &&
-          prevShields > newState.shieldsRemaining &&
-          newState.shieldsRemaining >= 0
+          finalState.currentStreak > 0 &&
+          prevShields > finalState.shieldsRemaining &&
+          finalState.shieldsRemaining >= 0
         ) {
           window.dispatchEvent(new CustomEvent("shield-protected", {
-            detail: { shieldsLeft: newState.shieldsRemaining }
+            detail: { shieldsLeft: finalState.shieldsRemaining }
           }));
         }
       }
 
-      prevStreakRef.current  = newState.currentStreak;
-      prevShieldsRef.current = newState.shieldsRemaining;
+      prevStreakRef.current  = finalState.currentStreak;
+      prevShieldsRef.current = finalState.shieldsRemaining;
 
-      if (spaceId) writeStreakCache(spaceId, newState);
-      setStreak(newState);
+      if (spaceId) writeStreakCache(spaceId, finalState);
+      setStreak(finalState);
       if (!initializedRef.current) {
         initializedRef.current = true;
         setInitialized(true);
@@ -260,6 +279,15 @@ export function useStreak() {
       const nowLocal = todayLocal();
       if (nowLocal !== todayUTCRef.current) {
         todayUTCRef.current = nowLocal;
+        // Optimistic reset: at local midnight, mark "today" as fresh even before
+        // the server responds (the server may still be on the previous UTC day).
+        setStreak(prev => ({
+          ...prev,
+          myCheckedIn:     false,
+          bothActiveToday: false,
+          activeCount:     0,
+          streakAtRisk:    prev.currentStreak > 0,
+        }));
         refresh(true);
       }
     }, 60_000);
