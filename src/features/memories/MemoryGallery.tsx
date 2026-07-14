@@ -81,8 +81,9 @@ function MemoryTile({
   const [loaded, setLoaded] = useState(false);
   const [pressing, setPressing] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const didLongPress = useRef(false);
+  const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress  = useRef(false);
+  const pointerOrigin = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     supabase.storage
@@ -95,29 +96,36 @@ function MemoryTile({
     ? format(new Date(photo.taken_on + "T00:00:00"), "MMM ''yy", { locale: pt })
     : format(new Date(photo.created_at), "MMM ''yy", { locale: pt });
 
-  const startPress = () => {
+  const cancelPress = () => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    setPressing(false);
+    pointerOrigin.current = null;
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    // Only primary pointer (first touch or left mouse button)
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
     didLongPress.current = false;
     setPressing(true);
     timerRef.current = setTimeout(() => {
       didLongPress.current = true;
       setPressing(false);
+      pointerOrigin.current = null;
       onLongPress();
-    }, 550);
+    }, 800);
   };
 
-  const cancelPress = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    setPressing(false);
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pointerOrigin.current) return;
+    const dx = Math.abs(e.clientX - pointerOrigin.current.x);
+    const dy = Math.abs(e.clientY - pointerOrigin.current.y);
+    // Cancel if finger moved more than 10px — user is scrolling, not pressing
+    if (dx > 10 || dy > 10) cancelPress();
   };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (didLongPress.current) {
-      didLongPress.current = false;
-      return;
-    }
+    if (didLongPress.current) { didLongPress.current = false; return; }
     onClick(e.currentTarget.getBoundingClientRect());
   };
 
@@ -128,13 +136,12 @@ function MemoryTile({
         "relative overflow-hidden rounded-xl bg-muted w-full block text-left select-none",
         pressing ? "scale-95 transition-transform duration-300" : "transition-transform duration-150"
       )}
+      onPointerDown={handlePointerDown}
+      onPointerUp={cancelPress}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={cancelPress}
+      onContextMenu={(e) => e.preventDefault()}
       onClick={handleClick}
-      onTouchStart={startPress}
-      onTouchEnd={cancelPress}
-      onTouchMove={cancelPress}
-      onMouseDown={startPress}
-      onMouseUp={cancelPress}
-      onMouseLeave={cancelPress}
     >
       {!loaded && <div className="w-full aspect-[3/4] bg-muted/60 animate-pulse" />}
 
