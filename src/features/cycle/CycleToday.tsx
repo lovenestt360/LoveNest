@@ -568,12 +568,38 @@ export function CycleToday({ data }: { data: CycleData }) {
                         Terminou hoje
                       </button>
                       <button
-                        onClick={() => setShowEndDate(!showEndDate)}
-                        className="h-10 px-3 rounded-2xl border border-border text-xs text-muted-foreground flex items-center gap-1 hover:bg-muted transition-all"
+                        onClick={() => { setShowEndDate(!showEndDate); setEndDate(today); }}
+                        className={cn(
+                          "h-10 px-3 rounded-2xl border text-xs flex items-center gap-1 transition-all",
+                          showEndDate
+                            ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        )}
                       >
                         <Calendar className="h-3 w-3" strokeWidth={1.5} /> Outra data
                       </button>
                     </div>
+                    {showEndDate && (
+                      <div className="space-y-2">
+                        <Input
+                          type="date"
+                          value={endDate}
+                          max={today}
+                          min={openPeriod?.start_date}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          disabled={saving}
+                          className="rounded-xl border-border bg-card h-10 text-sm"
+                        />
+                        <button
+                          onClick={handleEndPeriod}
+                          disabled={saving || !endDate}
+                          className="w-full h-10 flex items-center justify-center gap-1.5 rounded-2xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition-all"
+                        >
+                          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                          Confirmar data de fim
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
@@ -588,13 +614,46 @@ export function CycleToday({ data }: { data: CycleData }) {
                   className="rounded-xl border-border bg-card text-sm resize-none min-h-[60px]"
                 />
                 <button
-                  onClick={() => { setStartDate(today); handleStartPeriod(); }}
+                  onClick={() => { setStartDate(today); setShowBackdate(false); handleStartPeriod(); }}
                   disabled={saving}
                   className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} /> : <PlayCircle className="h-4 w-4" strokeWidth={1.5} />}
                   {saved ? "Ciclo registado" : "Começou hoje"}
                 </button>
+                <button
+                  onClick={() => { setShowBackdate(!showBackdate); setStartDate(today); }}
+                  disabled={saving}
+                  className={cn(
+                    "w-full h-10 flex items-center justify-center gap-1.5 rounded-2xl border text-sm font-medium transition-all disabled:opacity-60",
+                    showBackdate
+                      ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <Calendar className="h-4 w-4" strokeWidth={1.5} />
+                  Começou noutro dia
+                </button>
+                {showBackdate && (
+                  <div className="space-y-2">
+                    <Input
+                      type="date"
+                      value={startDate}
+                      max={today}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      disabled={saving}
+                      className="rounded-xl border-border bg-card h-10 text-sm"
+                    />
+                    <button
+                      onClick={handleStartPeriod}
+                      disabled={saving || !startDate}
+                      className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" strokeWidth={1.5} />}
+                      Confirmar início
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
