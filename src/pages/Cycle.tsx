@@ -39,6 +39,7 @@ export default function Cycle() {
       await supabase.from("daily_symptoms").delete().eq("user_id", user.id);
       await supabase.from("period_entries").delete().eq("user_id", user.id);
       await supabase.from("cycle_profiles").delete().eq("user_id", user.id);
+      await (supabase as any).from("intimacy_logs").delete().eq("user_id", user.id);
       toast({ title: "Dados apagados" });
       data.reload();
     } catch (err: any) {
