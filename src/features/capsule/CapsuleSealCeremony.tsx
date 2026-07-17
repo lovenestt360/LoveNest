@@ -136,16 +136,18 @@ export function CapsuleSealCeremony({ imageUrl, unlockDate, capsuleId, onClose }
 
           {hasPhoto ? (
             <div style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden",
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {/* Ambient blur */}
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "28px 40px 12px" }}>
+              {/* Ambient blur — preenche o fundo */}
               <img src={imageUrl!} aria-hidden
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
-                  objectFit: "cover", filter: "blur(28px) brightness(0.20)", transform: "scale(1.06)" }} />
-              {/* Foto principal — animação leve photo-appear */}
+                  objectFit: "cover", filter: "blur(28px) brightness(0.18)", transform: "scale(1.06)" }} />
+              {/* Foto principal — contida pelo padding, com cantos suaves */}
               <img src={imageUrl!} alt="Memória guardada"
                 style={{ position: "relative", zIndex: 1,
                   maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto",
-                  filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.40))",
+                  borderRadius: 14,
+                  filter: "drop-shadow(0 6px 20px rgba(0,0,0,0.50))",
                   animation: "photo-appear 1100ms ease both" }} />
             </div>
           ) : (
