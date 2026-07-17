@@ -187,7 +187,7 @@ export default function TimeCapsule() {
   const revealed = capsules.filter(c => c.is_unlocked);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-28">
 
       {/* ── Header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3.5 bg-background/90 backdrop-blur-sm border-b border-border/50">
@@ -217,7 +217,7 @@ export default function TimeCapsule() {
       </header>
 
       {/* ── Main ───────────────────────────────────────── */}
-      <main className="px-4 pt-5 space-y-6 max-w-md mx-auto">
+      <main className="px-4 pt-4 space-y-4 max-w-md mx-auto">
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -244,7 +244,7 @@ export default function TimeCapsule() {
           <>
             {/* ── Prontas a abrir ── */}
             {ready.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <SectionLabel icon={<Sparkles className="h-3.5 w-3.5 text-rose-400" strokeWidth={1.5} />}>
                   Prontas a abrir
                 </SectionLabel>
@@ -262,7 +262,7 @@ export default function TimeCapsule() {
 
             {/* ── A aguardar ── */}
             {locked.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <SectionLabel icon={<Lock className="h-3.5 w-3.5 text-violet-400" strokeWidth={1.5} />}>
                   A aguardar
                 </SectionLabel>
@@ -279,7 +279,7 @@ export default function TimeCapsule() {
 
             {/* ── Reveladas ── */}
             {revealed.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <SectionLabel icon={<Unlock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />}>
                   Reveladas
                 </SectionLabel>
@@ -494,23 +494,22 @@ function ReadyCard({ c, userId, onReveal, onDelete }: {
   const unlockDateObj = new Date(c.unlock_date);
   return (
     <div className="glass-card overflow-hidden">
-      <div className="relative bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-950/10 px-6 pt-8 pb-6 text-center border-b border-rose-100/60 dark:border-rose-900/30">
-        <div className="absolute top-3 right-3">
-          <DeleteButton capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
+      <div className="flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-rose-50 to-rose-50/30 dark:from-rose-950/30 dark:to-rose-950/10 border-b border-rose-100/60 dark:border-rose-900/30">
+        <div className="w-10 h-10 rounded-full bg-white dark:bg-card border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shadow-sm shrink-0">
+          <Sparkles className="w-5 h-5 text-rose-400" strokeWidth={1.5} />
         </div>
-        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-white dark:bg-card border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shadow-sm animate-glow-pulse">
-          <Sparkles className="w-6 h-6 text-rose-400" strokeWidth={1.5} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-rose-500 leading-tight">O momento chegou</p>
+          <p className="text-[11px] text-muted-foreground capitalize mt-0.5">
+            {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
+          </p>
         </div>
-        <p className="text-sm font-bold text-rose-500 mb-1">O momento chegou</p>
-        <p className="text-xs text-muted-foreground">Esta cápsula está pronta a ser revelada</p>
+        <DeleteButton capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
       </div>
-      <div className="px-5 py-4 space-y-3">
-        <p className="text-xs text-muted-foreground text-center capitalize">
-          {format(unlockDateObj, "EEEE, d 'de' MMMM 'de' yyyy", { locale: pt })}
-        </p>
+      <div className="px-4 py-3">
         <button
           onClick={onReveal}
-          className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md shadow-rose-500/20"
+          className="w-full h-11 rounded-xl bg-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md shadow-rose-500/20"
         >
           <Unlock className="w-4 h-4" strokeWidth={1.5} />
           Revelar cápsula
@@ -524,25 +523,22 @@ function LockedCard({ c, userId, onDelete }: {
   c: any; userId?: string; onDelete: () => void;
 }) {
   const unlockDateObj = new Date(c.unlock_date);
-  const daysDiff = Math.abs(differenceInDays(new Date(), unlockDateObj));
+  const daysDiff = Math.max(0, differenceInDays(unlockDateObj, new Date()));
+  const countdownLabel = daysDiff === 0 ? "Hoje" : daysDiff === 1 ? "1 dia" : `${daysDiff} dias`;
   return (
-    <div className="glass-card overflow-hidden">
-      <div className="relative bg-gradient-to-br from-violet-50 to-rose-50/30 dark:from-violet-950/30 dark:to-rose-950/10 px-6 pt-8 pb-6 text-center border-b border-violet-100/60 dark:border-violet-900/30">
-        <div className="absolute top-3 right-3">
-          <DeleteButton capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
-        </div>
-        <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-white dark:bg-card border border-violet-100 dark:border-violet-900/40 flex items-center justify-center shadow-sm">
-          <Lock className="w-6 h-6 text-violet-400" strokeWidth={1.5} />
-        </div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Abre em</p>
-        <p className="text-5xl font-bold text-foreground tabular-nums leading-none">{daysDiff}</p>
-        <p className="text-sm text-muted-foreground mt-1">dia{daysDiff !== 1 ? "s" : ""}</p>
+    <div className="flex items-center gap-3 px-4 py-3 bg-card border border-border/60 rounded-2xl">
+      <div className="w-9 h-9 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/40 flex items-center justify-center shrink-0">
+        <Lock className="w-4 h-4 text-violet-400" strokeWidth={1.5} />
       </div>
-      <div className="px-5 py-4">
-        <p className="text-xs text-muted-foreground text-center capitalize">
-          {format(unlockDateObj, "EEEE, d 'de' MMMM 'de' yyyy", { locale: pt })}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-muted-foreground capitalize truncate">
+          {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
         </p>
       </div>
+      <span className="shrink-0 text-[11px] font-bold text-violet-500 bg-violet-50 dark:bg-violet-950/40 px-2.5 py-1 rounded-full border border-violet-100 dark:border-violet-900/40">
+        {countdownLabel}
+      </span>
+      <DeleteButton capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
     </div>
   );
 }
