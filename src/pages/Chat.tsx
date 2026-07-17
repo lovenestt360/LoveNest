@@ -479,6 +479,7 @@ export default function Chat() {
   const inputRef   = useRef<HTMLInputElement>(null);
   const msgRefs    = useRef<Record<string, HTMLDivElement | null>>({});
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const checkMissionRef = useRef(checkMessageMissionStatus);
 
   /* ready flag */
   useEffect(() => {
@@ -523,8 +524,10 @@ export default function Chat() {
       setMyMessageToday(data.some((r: any) => r.user_id === user.id));
       setPartnerMessageToday(data.some((r: any) => r.user_id !== user.id));
     }
-  }, [spaceId, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spaceId, user?.id]);
 
+  useEffect(() => { checkMissionRef.current = checkMessageMissionStatus; }, [checkMessageMissionStatus]);
   useEffect(() => { checkMessageMissionStatus(); }, [checkMessageMissionStatus]);
 
   // Dispara missão "Conversar" apenas quando AMBOS enviaram mensagem hoje
@@ -545,9 +548,10 @@ export default function Chat() {
     setLoadingMore(false);
   }, [spaceId, loadingMore, messages]);
 
-  /* realtime */
+  /* realtime — só recria o canal quando spaceId muda */
   useEffect(() => {
     if (!spaceId) return;
+    const userId = user?.id;
     const ch = supabase.channel(`chat-${spaceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
@@ -555,18 +559,18 @@ export default function Chat() {
             const m = payload.new as Message;
             setMessages(prev => {
               if (prev.some(x => x.id === m.id)) return prev;
-              if (m.sender_user_id === user?.id) return [...prev.filter(x => !x.id.startsWith("temp-")), m];
+              if (m.sender_user_id === userId) return [...prev.filter(x => !x.id.startsWith("temp-")), m];
               return [...prev, m];
             });
-            checkMessageMissionStatus();
+            checkMissionRef.current();
           } else if (payload.eventType === "UPDATE") {
             setMessages(prev => prev.map(m => m.id === (payload.new as Message).id ? (payload.new as Message) : m));
           } else if (payload.eventType === "DELETE") {
             setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));
           }
         })
-      // Broadcast fallback: guarantees partner sees edits and deletes in real-time
-      // even when postgres_changes UPDATE events are delayed or not delivered
+      // Broadcast fallback: garantia de que o par vê edições/apagamentos em tempo real
+      // mesmo quando os eventos postgres_changes UPDATE são lentos ou não chegam
       .on("broadcast", { event: "msg_edit" }, ({ payload }) => {
         setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, content: payload.content, is_edited: true } : m));
       })
@@ -579,7 +583,8 @@ export default function Chat() {
       .subscribe();
     channelRef.current = ch;
     return () => { supabase.removeChannel(ch); channelRef.current = null; };
-  }, [spaceId, user?.id, checkMessageMissionStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spaceId]);
 
   /* auto scroll */
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
