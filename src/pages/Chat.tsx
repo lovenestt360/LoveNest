@@ -479,7 +479,7 @@ export default function Chat() {
   const inputRef   = useRef<HTMLInputElement>(null);
   const msgRefs    = useRef<Record<string, HTMLDivElement | null>>({});
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const checkMissionRef = useRef(checkMessageMissionStatus);
+  const checkMissionRef = useRef<() => Promise<void>>(async () => {});
 
   /* ready flag */
   useEffect(() => {
