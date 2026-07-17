@@ -24,7 +24,7 @@ const SYMPTOM_LABEL_MAP: Record<string, string> = {
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">{children}</p>;
+  return <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/80">{children}</p>;
 }
 
 const STAT_COLORS: Record<string, { value: string; dot: string; icon: React.ReactNode }> = {

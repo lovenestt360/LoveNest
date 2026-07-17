@@ -207,7 +207,7 @@ function ChipSelector({
   const shadow = CHIP_SHADOWS[color];
   return (
     <div className="space-y-2.5">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -251,7 +251,7 @@ function StringChipSelector({
   const shadow = CHIP_SHADOWS[color];
   return (
     <div className="space-y-2.5">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -294,7 +294,7 @@ function FlowChip({ flowLevel, onChange }: {
   ];
   return (
     <div className="space-y-2.5">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Fluxo</p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Fluxo</p>
       <div className="flex gap-2">
         {flows.map(f => {
           const active = flowLevel === f.value;
@@ -334,7 +334,7 @@ function SectionHeader({
       <div className="px-5 pt-4 pb-3 border-b border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn("w-1.5 h-4 rounded-full shrink-0", markerClass)} />
-          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{children}</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{children}</p>
         </div>
         {right}
       </div>
@@ -807,7 +807,7 @@ export function CycleToday({ data }: { data: CycleData }) {
             )}
 
             <div className="space-y-2.5">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Houve relação?</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Houve relação?</p>
               <div className="flex gap-2">
                 {[{ value: false, label: "Não" }, { value: true, label: "Sim" }].map(opt => {
                   const activeYN = hadActivityToday === opt.value;
@@ -867,7 +867,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                 <div key={section.title} className="space-y-3">
                   <div className="flex items-center gap-1.5">
                     <div className={cn("w-1 h-3 rounded-full shrink-0", style.solid)} />
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{section.title}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{section.title}</p>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {section.items.map(s => {
@@ -896,7 +896,7 @@ export function CycleToday({ data }: { data: CycleData }) {
             })}
 
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Notas</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Notas</p>
               <Textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
