@@ -158,14 +158,10 @@ export default function TimeCapsule() {
     c.is_unlocked ? "revealed" : isPast(new Date(c.unlock_date)) ? "ready" : "locked";
 
   return (
-    /* Negative margins to cancel AppShell main's pt-6 + px-4. Height 100dvh = true viewport. */
-    <div className="flex flex-col bg-background" style={{
-      marginTop: "-1.5rem", marginLeft: "-1rem", marginRight: "-1rem",
-      width: "calc(100% + 2rem)", height: "100dvh", overflow: "hidden",
-    }}>
+    <div className="flex flex-col">
 
       {/* Header */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/90 backdrop-blur-sm" style={{ zIndex: 10 }}>
+      <header className="flex items-center justify-between py-3 border-b border-border/50">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-all">
@@ -187,9 +183,9 @@ export default function TimeCapsule() {
         </button>
       </header>
 
-      {/* Compact list */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="px-4 pt-3 space-y-3 max-w-md mx-auto" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
+      {/* Compact list — scroll natural via body */}
+      <div>
+        <div className="pt-3 pb-6 space-y-3">
 
           {loading ? (
             <div className="flex justify-center py-16">
@@ -577,114 +573,95 @@ function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
 
 function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () => void }) {
   const quote = pickQuote(REVEALED_QUOTES, capsule.id);
-  const date = format(new Date(capsule.unlock_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
+  const unlockDate = new Date(capsule.unlock_date);
+  const date = format(unlockDate, "d 'de' MMMM 'de' yyyy", { locale: pt });
+  const dayOfWeek = format(unlockDate, "EEEE", { locale: pt });
+  const diffDays = Math.floor((Date.now() - unlockDate.getTime()) / 86_400_000);
+  const relativeStr = diffDays === 0 ? "Hoje" : diffDays === 1 ? "Ontem"
+    : diffDays < 30 ? `Há ${diffDays} dias`
+    : diffDays < 365 ? `Há ${Math.floor(diffDays / 30)} ${Math.floor(diffDays / 30) === 1 ? "mês" : "meses"}`
+    : `Há ${Math.floor(diffDays / 365)} ${Math.floor(diffDays / 365) === 1 ? "ano" : "anos"}`;
+
   const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(capsule.image_url || "");
   const hasMedia = !!capsule.image_url;
 
   return createPortal(
-    <div style={{ ...PORTAL_BASE, background: "#0a050f", overflowY: "auto" }}>
+    <div className="fixed inset-0 flex flex-col bg-black animate-in fade-in duration-150"
+      style={{ zIndex: 9999 }}>
 
-      {/* X — fixo em cima da foto */}
-      <button onClick={onClose} style={{
-        position: "fixed", top: 16, right: 16, zIndex: 10001,
-        width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
-        background: "rgba(0,0,0,0.55)", backdropFilter: "blur(12px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <X size={18} color="rgba(255,255,255,0.80)" strokeWidth={1.5} />
-      </button>
+      {/* Top controls — exatamente como MemoryDetail */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center p-4"
+        style={{ paddingTop: "max(env(safe-area-inset-top,0px),1rem)" }}>
+        <button onClick={onClose}
+          className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+          aria-label="Fechar">
+          <X className="w-4 h-4 text-white" />
+        </button>
+      </div>
 
-      {/* ── FOTO — protagonista, nunca cortada ── */}
-      {hasMedia && (
-        isVideo ? (
-          <video src={capsule.image_url} controls style={{
-            width: "100%", display: "block", background: "#000",
-            maxHeight: "68svh", objectFit: "contain",
-          }} />
-        ) : (
-          <div style={{ position: "relative", background: "#000", overflow: "hidden" }}>
-            {/* ambient blur de fundo */}
-            <img src={capsule.image_url} aria-hidden alt="" style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover", filter: "blur(30px) brightness(0.20)", transform: "scale(1.10)",
-            }} />
-            {/* foto real — sempre inteira */}
-            <img src={capsule.image_url} alt="Memória" style={{
-              position: "relative", zIndex: 1, display: "block", margin: "0 auto",
-              maxWidth: "100%", maxHeight: "68svh", objectFit: "contain",
-            }} />
-            {/* gradiente a desvanecer para o conteúdo */}
-            <div style={{
-              position: "absolute", bottom: 0, left: 0, right: 0, height: 72,
-              background: "linear-gradient(to bottom, transparent, #0a050f)",
-              pointerEvents: "none",
-            }} />
-          </div>
-        )
+      {/* ── FOTO — flex-1, mesmo padrão de MemoryDetail ── */}
+      {hasMedia && !isVideo && (
+        <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
+          {/* Ambient blur de fundo */}
+          <img src={capsule.image_url} aria-hidden
+            className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 pointer-events-none" />
+          {/* Foto real — nunca cortada, adaptada ao formato */}
+          <img src={capsule.image_url} alt="Memória"
+            style={{
+              maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto",
+              filter: "drop-shadow(0 12px 40px rgba(0,0,0,0.55))",
+            }}
+            className="relative z-10 block" />
+        </div>
       )}
 
-      {/* ── CONTEÚDO — identidade LoveNest ── */}
-      <div style={{ padding: hasMedia ? "8px 24px 0" : "88px 24px 0" }}>
-
-        {/* Sem media: ícone emocional com glow */}
-        {!hasMedia && (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
-            <div style={{ position: "relative" }}>
-              <div style={{
-                position: "absolute", inset: -12, borderRadius: "50%",
-                background: "rgba(244,63,94,0.12)", filter: "blur(16px)",
-              }} />
-              <div style={{
-                position: "relative", width: 72, height: 72, borderRadius: "50%",
-                background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.20)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Unlock size={30} color="rgba(251,113,133,0.85)" strokeWidth={1.5} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quote — tratamento premium: barra rose à esquerda, tipografia elegante */}
-        <div style={{
-          borderLeft: "2px solid rgba(244,63,94,0.40)",
-          paddingLeft: 16, marginBottom: 24, marginTop: hasMedia ? 16 : 0,
-        }}>
-          <p style={{
-            fontSize: 15, fontStyle: "italic", lineHeight: 1.85,
-            color: "rgba(251,113,133,0.82)", whiteSpace: "pre-line",
-            letterSpacing: "0.01em",
-          }}>
-            "{quote}"
-          </p>
+      {hasMedia && isVideo && (
+        <div className="flex-1 min-h-0 flex items-center bg-black">
+          <video src={capsule.image_url} controls className="w-full" />
         </div>
+      )}
+
+      {/* Sem media: área emocional centralizada */}
+      {!hasMedia && (
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-3">
+            <Unlock className="w-9 h-9 text-rose-400" strokeWidth={1} />
+          </div>
+          <p className="text-xs text-white/30 font-medium tracking-widest uppercase">Cápsula revelada</p>
+        </div>
+      )}
+
+      {/* ── INFO PANEL — bg-card rounded-t, exatamente como MemoryDetail ── */}
+      <div className="bg-card rounded-t-[2rem] px-5 pt-5 shrink-0 overflow-y-auto"
+        style={{
+          maxHeight: hasMedia ? "52svh" : "80svh",
+          paddingBottom: "max(env(safe-area-inset-bottom,0px),1.25rem)",
+          boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
+        }}>
+
+        {/* Quote emocional */}
+        <p className="text-sm italic text-rose-400 leading-relaxed mb-1 whitespace-pre-line">
+          {quote}
+        </p>
+
+        {/* Data + relativo (como MemoryDetail) */}
+        <p className="text-xs text-muted-foreground capitalize mb-0.5">
+          {dayOfWeek}, {date}
+        </p>
+        <p className="text-[11px] font-semibold text-rose-400 mb-4">{relativeStr}</p>
 
         {/* Separador */}
-        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", marginBottom: 22 }} />
+        <div className="h-px bg-border/50 mb-4" />
 
-        {/* Mensagem */}
-        <p style={{
-          fontSize: 16, color: "rgba(255,255,255,0.88)", lineHeight: 1.85,
-          whiteSpace: "pre-wrap",
-        }}>
+        {/* Mensagem da cápsula */}
+        <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap mb-4">
           {capsule.message}
         </p>
 
-        {/* Data + gradiente LoveNest no final */}
-        <div style={{
-          marginTop: 32, paddingTop: 16,
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          display: "flex", alignItems: "center", gap: 8,
-          paddingBottom: "max(env(safe-area-inset-bottom,0px),40px)",
-        }}>
-          <Unlock size={12} color="rgba(244,63,94,0.45)" strokeWidth={1.5} />
-          <p style={{
-            fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.20)",
-          }}>
-            Aberta a {date}
-          </p>
-        </div>
+        {/* Footnote */}
+        <p className="text-[10px] text-muted-foreground/45 pt-3 border-t border-border/40 leading-relaxed">
+          Esta memória faz parte da vossa história
+        </p>
       </div>
     </div>,
     document.body
