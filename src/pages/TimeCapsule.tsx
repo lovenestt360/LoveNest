@@ -13,9 +13,23 @@ import { useProfile } from "@/hooks/useProfile";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { awardLovePoints } from "@/lib/lovePoints";
-import { triggerCeremony } from "@/lib/ceremonies";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { cn } from "@/lib/utils";
+
+function hasSeenReveal(userId: string, capsuleId: string): boolean {
+  try { return (JSON.parse(localStorage.getItem(`ln_cap_rev_seen_${userId}`) ?? "[]") as string[]).includes(capsuleId); }
+  catch { return false; }
+}
+
+function markRevealSeen(userId: string, capsuleId: string): void {
+  try {
+    const ids: string[] = JSON.parse(localStorage.getItem(`ln_cap_rev_seen_${userId}`) ?? "[]");
+    if (!ids.includes(capsuleId)) {
+      ids.push(capsuleId);
+      localStorage.setItem(`ln_cap_rev_seen_${userId}`, JSON.stringify(ids.slice(-100)));
+    }
+  } catch {}
+}
 
 export default function TimeCapsule() {
   const { user } = useAuth();
@@ -144,20 +158,21 @@ export default function TimeCapsule() {
   const handleReveal = async () => {
     if (!selectedCapsule || !houseId || !user) return;
     setRevealing(true);
+    const alreadyUnlocked = selectedCapsule.is_unlocked;
     try {
-      const { error } = await supabase.from("time_capsule_messages")
-        .update({ is_unlocked: true }).eq("id", selectedCapsule.id);
-      if (error) throw error;
-      await loadCapsules();
-      // A experiência cinematic IS a cerimónia — não abrir CeremonyOverlay para o revelador.
-      // O par recebe notificação via CapsuleRealtimeWatcher (comportamento existente).
-      awardLovePoints(houseId, 15, "capsula_revelada", "Cápsula revelada", user.id);
-      notifyPartner({
-        couple_space_id: houseId, title: "Cápsula revelada!",
-        body: "O vosso passado chegou ao presente.", url: "/capsula", type: "memorias",
-      });
+      if (!alreadyUnlocked) {
+        const { error } = await supabase.from("time_capsule_messages")
+          .update({ is_unlocked: true }).eq("id", selectedCapsule.id);
+        if (error) throw error;
+        await loadCapsules();
+        awardLovePoints(houseId, 15, "capsula_revelada", "Cápsula revelada", user.id);
+        notifyPartner({
+          couple_space_id: houseId, title: "Cápsula revelada!",
+          body: "O vosso passado chegou ao presente.", url: "/capsula", type: "memorias",
+        });
+      }
+      markRevealSeen(user.id, selectedCapsule.id);
       setRevealPhase("unlocking");
-      // Após 2.6s de animação → mostrar a memória
       setTimeout(() => { setRevealPhase("revealed"); setRevealing(false); }, 2600);
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -173,12 +188,18 @@ export default function TimeCapsule() {
   if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const ready    = capsules.filter(c => !c.is_unlocked && isPast(new Date(c.unlock_date)));
-  const locked   = capsules.filter(c => !c.is_unlocked && !isPast(new Date(c.unlock_date)));
-  const revealed = capsules.filter(c => c.is_unlocked);
+  const userId = user?.id;
 
-  const capsuleType = (c: any): "ready" | "locked" | "revealed" =>
-    c.is_unlocked ? "revealed" : isPast(new Date(c.unlock_date)) ? "ready" : "locked";
+  // Tipo por utilizador: data passada + utilizador ainda não viu a revelação → "ready"
+  const capsuleType = (c: any): "ready" | "locked" | "revealed" => {
+    if (!isPast(new Date(c.unlock_date))) return "locked";
+    if (userId && hasSeenReveal(userId, c.id)) return "revealed";
+    return "ready";
+  };
+
+  const ready    = capsules.filter(c => capsuleType(c) === "ready");
+  const locked   = capsules.filter(c => capsuleType(c) === "locked");
+  const revealed = capsules.filter(c => capsuleType(c) === "revealed");
 
   return (
     <div className="flex flex-col">

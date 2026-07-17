@@ -2,15 +2,11 @@ import { useEffect } from "react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { supabase } from "@/integrations/supabase/client";
-import { dispatchCeremony } from "@/lib/ceremonies";
 
 // Partilhada com Index.tsx para dedupe persistente entre sessões
 export function capsuleSeenKey(spaceId: string, userId: string) {
   return `ln_capsule_ceremony_${spaceId}_${userId}`;
 }
-
-const revealSeenKey = (spaceId: string, userId: string) =>
-  `ln_capsule_reveal_${spaceId}_${userId}`;
 
 function getSeenIds(key: string): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem(key) ?? "[]")); }
@@ -25,7 +21,7 @@ function markSeen(key: string, id: string) {
   } catch {}
 }
 
-// Fallback: busca cápsulas do par dos últimos 7 dias e dispara cerimónia se não vistas.
+// Fallback: busca cápsulas do par dos últimos 7 dias e dispara cerimónia de selagem se não vistas.
 // Cobre o caso de o utilizador estar offline/em background quando o par criou a cápsula.
 async function checkUnseenPartnerCapsules(spaceId: string, userId: string) {
   const key = capsuleSeenKey(spaceId, userId);
@@ -36,7 +32,7 @@ async function checkUnseenPartnerCapsules(spaceId: string, userId: string) {
 
   const { data } = await (supabase as any)
     .from("time_capsule_messages")
-    .select("id")
+    .select("id, image_url, unlock_date")
     .eq("couple_space_id", spaceId)
     .neq("creator_id", userId)
     .gte("created_at", since.toISOString())
@@ -44,21 +40,25 @@ async function checkUnseenPartnerCapsules(spaceId: string, userId: string) {
     .limit(5);
 
   if (!data?.length) return;
-  const unseen = (data as { id: string }[]).filter(c => !seenIds.has(c.id));
+  const unseen = (data as { id: string; image_url?: string | null; unlock_date?: string }[])
+    .filter(c => !seenIds.has(c.id));
   if (!unseen.length) return;
 
   unseen.forEach(c => markSeen(key, c.id));
-  dispatchCeremony({
-    type: "capsula",
-    eyebrow: "Cápsula do Tempo",
-    title: "O teu par enterrou uma cápsula",
-    subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
-  });
+  const recent = unseen[0];
+  window.dispatchEvent(new CustomEvent("lovenest-capsule-sealed", {
+    detail: {
+      imageUrl: recent.image_url ?? null,
+      unlockDate: recent.unlock_date ?? new Date().toISOString(),
+      capsuleId: recent.id,
+    },
+  }));
 }
 
 // Montado globalmente em App.tsx.
-// Deteta novas cápsulas (INSERT) e revelações do par (UPDATE) em tempo real,
-// e faz fallback via visibilitychange para eventos perdidos em background.
+// Deteta novas cápsulas (INSERT) em tempo real e faz fallback via visibilitychange.
+// Revelações (UPDATE) não disparam cerimónia aqui — cada utilizador vive o momento
+// individualmente quando abre a cápsula pela primeira vez.
 export function CapsuleRealtimeWatcher() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
@@ -68,7 +68,6 @@ export function CapsuleRealtimeWatcher() {
     if (!spaceId || !user) return;
     const userId = user.id;
     const insertKey = capsuleSeenKey(spaceId, userId);
-    const rvlKey = revealSeenKey(spaceId, userId);
 
     const channel = supabase
       .channel(`capsule-watcher-${spaceId}-v2`)
@@ -85,13 +84,12 @@ export function CapsuleRealtimeWatcher() {
           } | undefined;
           if (!row) return;
 
-          // Nova cápsula criada — cerimónia cinematic para ambos os utilizadores
+          // Nova cápsula criada — cerimónia de selagem apenas para o par
           if (payload.eventType === "INSERT") {
             if (getSeenIds(insertKey).has(row.id)) return;
             markSeen(insertKey, row.id);
-            // O criador já despachei o evento em handleCreate com os dados locais
+            // O criador dispara o evento directamente em handleCreate com dados locais
             if (row.creator_id === userId) return;
-            // Para o par: dispatch com dados da linha realtime → CapsuleSealListener mostra cerimónia
             window.dispatchEvent(new CustomEvent("lovenest-capsule-sealed", {
               detail: {
                 imageUrl: row.image_url ?? null,
@@ -101,19 +99,9 @@ export function CapsuleRealtimeWatcher() {
             }));
           }
 
-          // Par revelou uma cápsula (UPDATE is_unlocked false→true)
-          if (payload.eventType === "UPDATE" && row.is_unlocked && row.creator_id !== userId) {
-            const old = payload.old as { is_unlocked?: boolean } | undefined;
-            if (old?.is_unlocked) return; // já estava revelada
-            if (getSeenIds(rvlKey).has(row.id)) return;
-            markSeen(rvlKey, row.id);
-            dispatchCeremony({
-              type: "capsula",
-              eyebrow: "Cápsula do Tempo",
-              title: "O teu par abriu uma cápsula!",
-              subtitle: "Uma memória do passado chegou ao presente.",
-            });
-          }
+          // UPDATE (revelação): não disparar cerimónia global.
+          // Cada utilizador vive a animação individualmente ao abrir a cápsula
+          // — controlado por hasSeenReveal/markRevealSeen em TimeCapsule.tsx.
         }
       )
       .subscribe();
