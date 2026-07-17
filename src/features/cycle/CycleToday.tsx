@@ -733,36 +733,45 @@ export function CycleToday({ data }: { data: CycleData }) {
             <ChipSelector label="Stress" options={STRESS_OPTIONS} value={stress} onChange={setStress} disabled={data.isMale || saving} color="fuchsia" />
             <ChipSelector label="Libido" options={LIBIDO_OPTIONS} value={libido} onChange={setLibido} disabled={data.isMale || saving} color="red" />
             <StringChipSelector label="Secreção" options={DISCHARGE_OPTIONS} value={dischargeType} onChange={setDischargeType} disabled={data.isMale || saving} color="teal" />
-            <div className="grid grid-cols-2 gap-3 items-end">
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Sono (h)</p>
-                <Input type="number" value={sleepHours} onChange={e => setSleepHours(e.target.value)} placeholder="ex: 7.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Qualidade do sono</p>
-                <div className="flex gap-1.5">
-                  {SLEEP_QUALITY_OPTIONS.map(opt => {
-                    const activeQ = sleepQuality === opt.value;
-                    return (
-                      <button key={opt.value} type="button" disabled={data.isMale || saving} onClick={() => setSleepQuality(opt.value)}
-                        className={cn("flex-1 h-10 flex items-center justify-center rounded-xl border transition-all duration-200 ease-out",
-                          activeQ
-                            ? cn(FEELING_STYLES.indigo.border, FEELING_STYLES.indigo.bg, FEELING_STYLES.indigo.text, CHIP_SHADOWS.indigo, "scale-[1.04]")
-                            : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
-                          (data.isMale || saving) && "opacity-50 cursor-not-allowed"
-                        )}>
-                        <opt.icon className={cn("h-4 w-4 transition-all", activeQ ? "" : "opacity-60")} strokeWidth={activeQ ? 2 : 1.5} />
-                      </button>
-                    );
-                  })}
+            {/* Sono */}
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">Sono</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-muted-foreground/70">Quantas horas dormiste?</p>
+                  <Input type="number" value={sleepHours} onChange={e => setSleepHours(e.target.value)} placeholder="ex: 7 ou 7.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-muted-foreground/70">Como foi o teu sono?</p>
+                  <div className="flex gap-1.5">
+                    {SLEEP_QUALITY_OPTIONS.map(opt => {
+                      const activeQ = sleepQuality === opt.value;
+                      return (
+                        <button key={opt.value} type="button" disabled={data.isMale || saving} onClick={() => setSleepQuality(opt.value)}
+                          className={cn(
+                            "flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border text-[10px] font-semibold transition-all duration-200 ease-out",
+                            activeQ
+                              ? cn(FEELING_STYLES.indigo.border, FEELING_STYLES.indigo.bg, FEELING_STYLES.indigo.text, CHIP_SHADOWS.indigo, "scale-[1.05]")
+                              : "border-border/60 text-muted-foreground/60 hover:bg-muted/60 active:scale-95",
+                            (data.isMale || saving) && "opacity-50 cursor-not-allowed"
+                          )}>
+                          <opt.icon className={cn("h-3.5 w-3.5 transition-all", activeQ ? "" : "opacity-50")} strokeWidth={activeQ ? 2 : 1.5} />
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                  <Thermometer className="h-3 w-3" strokeWidth={1.5} /> Temp. basal (°C)
-                </p>
-                <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
-              </div>
+            </div>
+
+            {/* Temperatura basal */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-teal-500 dark:text-teal-400 flex items-center gap-1.5">
+                <Thermometer className="h-3 w-3" strokeWidth={1.5} /> Temperatura basal (°C)
+              </p>
+              <p className="text-[10px] text-muted-foreground/70">Medida logo ao acordar, antes de te levantares</p>
+              <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
             </div>
           </div>
         </div>
