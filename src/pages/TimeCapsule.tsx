@@ -83,16 +83,14 @@ export default function TimeCapsule() {
 
       setCapsules(capsData || []);
 
-      // Deteção inline: spaceId e capsData são variáveis locais imediatas,
-      // sem depender de state que pode ainda não ter re-renderizado.
+      // Mostra cerimónia de testemunha para cápsulas do par ainda não vistas.
+      // O localStorage (ln_capsule_seen_*) garante que só dispara uma vez por cápsula.
       if (capsData?.length && !ceremonyRef.current) {
-        const MS_48H = 48 * 60 * 60 * 1000;
         const seen = getSeenCapsules(spaceId);
-        const hit = capsData.find((c: any) =>
+        const hit = (capsData as any[]).find(c =>
           c.creator_id !== user.id &&
           !c.is_unlocked &&
-          !seen.has(c.id) &&
-          Date.now() - new Date(c.created_at).getTime() < MS_48H
+          !seen.has(c.id)
         );
         if (hit) {
           markCapsuleSeen(spaceId, hit.id);
@@ -111,17 +109,40 @@ export default function TimeCapsule() {
   useEffect(() => { loadCapsules(); }, [loadCapsules]);
 
   useEffect(() => {
-    if (!houseId) return;
+    if (!houseId || !user) return;
     const channel = supabase
       .channel(`capsule-list-${houseId}`)
       .on("postgres_changes", {
-        event: "*", schema: "public",
+        event: "INSERT", schema: "public",
+        table: "time_capsule_messages",
+        filter: `couple_space_id=eq.${houseId}`,
+      }, (payload) => {
+        loadCapsules();
+        // Se o INSERT é do par (não nosso) e ainda não visto, mostra cerimónia imediatamente
+        const row = payload.new as any;
+        if (row.creator_id !== user.id && !row.is_unlocked && !ceremonyRef.current) {
+          const seen = getSeenCapsules(houseId);
+          if (!seen.has(row.id)) {
+            markCapsuleSeen(houseId, row.id);
+            const data: CeremonyData = { message: "", imageUrl: null, witnessMode: true };
+            ceremonyRef.current = data;
+            setCeremony(data);
+          }
+        }
+      })
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public",
+        table: "time_capsule_messages",
+        filter: `couple_space_id=eq.${houseId}`,
+      }, () => loadCapsules())
+      .on("postgres_changes", {
+        event: "DELETE", schema: "public",
         table: "time_capsule_messages",
         filter: `couple_space_id=eq.${houseId}`,
       }, () => loadCapsules())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [houseId, loadCapsules]);
+  }, [houseId, user, loadCapsules]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
