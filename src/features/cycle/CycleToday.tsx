@@ -548,6 +548,8 @@ export function CycleToday({ data }: { data: CycleData }) {
               </div>
             </div>
 
+            <p className={cn("text-sm font-medium leading-relaxed italic", accentColor)}>"{engine.insights[0]}"</p>
+
             {engine.insights.slice(1).map((insight, i) => (
               <div key={i} className="rounded-xl border border-rose-200/50 dark:border-rose-800/50 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-2 flex items-start gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
@@ -577,24 +579,6 @@ export function CycleToday({ data }: { data: CycleData }) {
             <p className="text-sm text-muted-foreground">Regista a tua menstruação para receber insights personalizados</p>
           </div>
         )}
-
-        {/* ── Quote emocional da fase ── */}
-        {engine?.insights[0] && (() => {
-          const q = PHASE_QUOTE[phaseKey] ?? PHASE_QUOTE.sem_dados;
-          return (
-            <div className={cn("rounded-3xl border px-5 py-5", q.bg, q.border)}>
-              <p className={cn("text-[15px] font-medium leading-relaxed", q.text)}>
-                {engine.insights[0]}
-              </p>
-              <div className="flex items-center gap-2 mt-3.5">
-                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", q.dot)} />
-                <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em] opacity-60", q.text)}>
-                  {engine.phaseLabel}
-                </p>
-              </div>
-            </div>
-          );
-        })()}
 
         {engine && <CycleHistoryStrip data={data} />}
 
