@@ -33,16 +33,19 @@ function mkParticles(n: number): Particle[] {
 export function CapsuleSealCeremony({
   message,
   imageUrl,
+  witnessMode = false,
   onDone,
 }: {
   message: string;
   imageUrl: string | null;
+  witnessMode?: boolean;
   onDone: () => void;
 }) {
   const [phase, setPhase] = useState(0);
   const particles = useRef(mkParticles(34)).current;
 
-  const hasImg = !!imageUrl;
+  // Em modo testemunha (parceiro) nunca mostramos conteúdo da cápsula
+  const hasImg = !witnessMode && !!imageUrl;
 
   useEffect(() => {
     // Com foto: +700ms nos passos a partir de phase 5
@@ -412,7 +415,7 @@ export function CapsuleSealCeremony({
             color: "rgba(167,139,250,0.90)",
             margin: 0,
           }}>
-            Cápsula selada
+            {witnessMode ? "Cápsula recebida" : "Cápsula selada"}
           </p>
           <h2 style={{
             fontSize: 22, fontWeight: 800,
@@ -421,7 +424,10 @@ export function CapsuleSealCeremony({
             lineHeight: 1.2,
             margin: 0,
           }}>
-            Este momento está protegido
+            {witnessMode
+              ? "O teu par guardou um momento para vós"
+              : "Este momento está protegido"
+            }
           </h2>
           <p style={{
             fontSize: 13,
@@ -430,7 +436,10 @@ export function CapsuleSealCeremony({
             lineHeight: 1.65,
             margin: 0,
           }}>
-            Guardaste um pedaço da vossa história para ser reencontrado juntos.
+            {witnessMode
+              ? "Será revelado no tempo certo. Até lá, está selado e protegido."
+              : "Guardaste um pedaço da vossa história para ser reencontrado juntos."
+            }
           </p>
           <button
             onClick={onDone}
@@ -451,7 +460,7 @@ export function CapsuleSealCeremony({
               letterSpacing: "-0.01em",
             }}
           >
-            Ver a vossa cápsula
+            Ver as cápsulas
           </button>
         </div>
       )}

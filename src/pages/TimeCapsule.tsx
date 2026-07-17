@@ -20,6 +20,22 @@ import { CapsuleSealCeremony } from "@/features/capsule/CapsuleSealCeremony";
 interface CeremonyData {
   message: string;
   imageUrl: string | null;
+  witnessMode?: boolean;
+}
+
+function getSeenCapsules(houseId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(`ln_capsule_seen_${houseId}`);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch { return new Set(); }
+}
+
+function markCapsuleSeen(houseId: string, capsuleId: string) {
+  try {
+    const seen = getSeenCapsules(houseId);
+    seen.add(capsuleId);
+    localStorage.setItem(`ln_capsule_seen_${houseId}`, JSON.stringify([...seen]));
+  } catch {}
 }
 
 export default function TimeCapsule() {
@@ -45,6 +61,23 @@ export default function TimeCapsule() {
   const [revealing, setRevealing] = useState(false);
 
   const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
+
+  // Deteção de cápsulas novas do par — mostra cerimónia em modo testemunha
+  useEffect(() => {
+    if (!user || !houseId || loading || capsules.length === 0 || ceremony) return;
+    const MS_48H = 48 * 60 * 60 * 1000;
+    const seen = getSeenCapsules(houseId);
+    const newPartnerCapsule = capsules.find(c =>
+      c.creator_id !== user.id &&
+      !c.is_unlocked &&
+      !seen.has(c.id) &&
+      Date.now() - new Date(c.created_at).getTime() < MS_48H
+    );
+    if (newPartnerCapsule) {
+      markCapsuleSeen(houseId, newPartnerCapsule.id);
+      setCeremony({ message: "", imageUrl: null, witnessMode: true });
+    }
+  }, [capsules, houseId, user, loading, ceremony]);
 
   const loadCapsules = useCallback(async () => {
     if (!user) return;
@@ -213,6 +246,7 @@ export default function TimeCapsule() {
         <CapsuleSealCeremony
           message={ceremony.message}
           imageUrl={ceremony.imageUrl}
+          witnessMode={ceremony.witnessMode}
           onDone={handleCeremonyDone}
         />
       )}
