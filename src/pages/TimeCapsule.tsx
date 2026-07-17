@@ -15,6 +15,12 @@ import { awardLovePoints } from "@/lib/lovePoints";
 import { triggerCeremony } from "@/lib/ceremonies";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { cn } from "@/lib/utils";
+import { CapsuleSealCeremony } from "@/features/capsule/CapsuleSealCeremony";
+
+interface CeremonyData {
+  message: string;
+  imageUrl: string | null;
+}
 
 export default function TimeCapsule() {
   const { user } = useAuth();
@@ -37,6 +43,8 @@ export default function TimeCapsule() {
 
   const [revealTarget, setRevealTarget] = useState<any | null>(null);
   const [revealing, setRevealing] = useState(false);
+
+  const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
 
   const loadCapsules = useCallback(async () => {
     if (!user) return;
@@ -85,7 +93,7 @@ export default function TimeCapsule() {
 
     try {
       setUploading(true);
-      let publicUrl = null;
+      let publicUrl: string | null = null;
 
       if (selectedImage) {
         const fileExt = selectedImage.name.split(".").pop();
@@ -120,17 +128,28 @@ export default function TimeCapsule() {
         type: "memorias",
       });
 
+      // Guarda o contexto da cerimónia antes de limpar o formulário
+      const msgSnapshot = newMessage;
+      const imgSnapshot = publicUrl;
+
       setNewMessage("");
       setUnlockDate("");
       setSelectedImage(null);
       setIsAdding(false);
-      toast({ title: "Cápsula selada", description: "Guardada até ao momento certo." });
-      loadCapsules();
+
+      // Abre a cerimónia de selagem
+      setCeremony({ message: msgSnapshot, imageUrl: imgSnapshot });
+
     } catch (error: any) {
       toast({ title: "Erro ao guardar", description: error.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleCeremonyDone = () => {
+    setCeremony(null);
+    loadCapsules();
   };
 
   const handleDelete = async () => {
@@ -188,6 +207,15 @@ export default function TimeCapsule() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+
+      {/* ── Cerimónia de selagem — overlay full-screen ── */}
+      {ceremony && (
+        <CapsuleSealCeremony
+          message={ceremony.message}
+          imageUrl={ceremony.imageUrl}
+          onDone={handleCeremonyDone}
+        />
+      )}
 
       {/* ── Header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3.5 bg-background/90 backdrop-blur-sm border-b border-border/50">
@@ -353,7 +381,7 @@ export default function TimeCapsule() {
                     "text-sm flex-1 truncate",
                     selectedImage ? "text-foreground font-medium" : "text-muted-foreground"
                   )}>
-                    {selectedImage ? selectedImage.name : "Foto ou vídeo (opcional)"}
+                    {selectedImage ? selectedImage.name : "Foto (opcional)"}
                   </span>
                   {selectedImage && (
                     <button
@@ -367,7 +395,7 @@ export default function TimeCapsule() {
                   <input
                     id="capsule-img"
                     type="file"
-                    accept="image/*,video/*"
+                    accept="image/*"
                     className="hidden"
                     onChange={e => { if (e.target.files?.[0]) setSelectedImage(e.target.files[0]); }}
                   />
@@ -493,13 +521,15 @@ function ReadyCard({ c, userId, onReveal, onDelete }: {
 }) {
   const unlockDateObj = new Date(c.unlock_date);
   return (
-    <div className="glass-card overflow-hidden">
-      <div className="relative bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-950/10 px-6 pt-8 pb-6 text-center border-b border-rose-100/60 dark:border-rose-900/30">
+    <div className="glass-card overflow-hidden animate-capsule-breathe-urgent">
+      <div className="relative bg-gradient-to-br from-rose-50 to-rose-100/40 dark:from-rose-950/35 dark:to-rose-950/10 px-6 pt-8 pb-6 text-center border-b border-rose-100/60 dark:border-rose-900/30">
         <div className="absolute top-3 right-3">
           <DeleteButton capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
         </div>
-        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-white dark:bg-card border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shadow-sm animate-glow-pulse">
-          <Sparkles className="w-6 h-6 text-rose-400" strokeWidth={1.5} />
+        {/* Glow halo */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-20 rounded-full bg-rose-400/15 dark:bg-rose-400/10 blur-2xl pointer-events-none" />
+        <div className="relative w-14 h-14 mx-auto mb-4 rounded-full bg-white dark:bg-card border border-rose-200 dark:border-rose-900/50 flex items-center justify-center shadow-md shadow-rose-200/50 dark:shadow-rose-900/20 animate-glow-pulse">
+          <Sparkles className="w-6 h-6 text-rose-500" strokeWidth={1.5} />
         </div>
         <p className="text-sm font-bold text-rose-500 mb-1">O momento chegou</p>
         <p className="text-xs text-muted-foreground">Esta cápsula está pronta a ser revelada</p>
@@ -524,19 +554,85 @@ function LockedCard({ c, userId, onDelete }: {
   c: any; userId?: string; onDelete: () => void;
 }) {
   const unlockDateObj = new Date(c.unlock_date);
-  const daysDiff = Math.abs(differenceInDays(new Date(), unlockDateObj));
+  const daysDiff = differenceInDays(unlockDateObj, new Date());
+
+  // Urgency tiers: hoje/amanhã | 2-3 | 4-7 | 7+
+  const isUrgent   = daysDiff <= 1;
+  const isNearing  = daysDiff >= 2 && daysDiff <= 3;
+  const isWeekAway = daysDiff >= 4 && daysDiff <= 7;
+
   return (
-    <div className="glass-card overflow-hidden">
-      <div className="relative bg-gradient-to-br from-violet-50 to-rose-50/30 dark:from-violet-950/30 dark:to-rose-950/10 px-6 pt-8 pb-6 text-center border-b border-violet-100/60 dark:border-violet-900/30">
+    <div className={cn(
+      "glass-card overflow-hidden",
+      isUrgent  && "animate-capsule-breathe-urgent",
+      isNearing && "animate-capsule-breathe",
+    )}>
+      <div className={cn(
+        "relative px-6 pt-8 pb-6 text-center border-b",
+        isUrgent
+          ? "bg-gradient-to-br from-rose-50/80 to-violet-50/50 dark:from-rose-950/25 dark:to-violet-950/20 border-rose-100/60 dark:border-rose-900/30"
+          : isNearing
+          ? "bg-gradient-to-br from-violet-50/90 to-rose-50/40 dark:from-violet-950/30 dark:to-rose-950/10 border-violet-100/70 dark:border-violet-900/35"
+          : "bg-gradient-to-br from-violet-50 to-rose-50/30 dark:from-violet-950/30 dark:to-rose-950/10 border-violet-100/60 dark:border-violet-900/30"
+      )}>
         <div className="absolute top-3 right-3">
           <DeleteButton capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
         </div>
-        <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-white dark:bg-card border border-violet-100 dark:border-violet-900/40 flex items-center justify-center shadow-sm">
-          <Lock className="w-6 h-6 text-violet-400" strokeWidth={1.5} />
+
+        {/* Ambient halo for near-unlock */}
+        {(isUrgent || isNearing) && (
+          <div className={cn(
+            "absolute top-0 left-1/2 -translate-x-1/2 w-28 h-16 rounded-full blur-2xl pointer-events-none",
+            isUrgent ? "bg-rose-400/15 dark:bg-rose-400/12" : "bg-violet-400/15 dark:bg-violet-400/10"
+          )} />
+        )}
+
+        {/* Lock icon */}
+        <div className={cn(
+          "relative w-14 h-14 mx-auto mb-5 rounded-full flex items-center justify-center shadow-sm",
+          isUrgent
+            ? "bg-white dark:bg-card border border-rose-200 dark:border-rose-900/50 shadow-rose-100 dark:shadow-rose-900/20"
+            : "bg-white dark:bg-card border border-violet-100 dark:border-violet-900/40"
+        )}>
+          <Lock
+            className={cn(
+              "w-6 h-6",
+              isUrgent   && "text-rose-500 animate-capsule-lock-pulse",
+              isNearing  && "text-violet-500 animate-capsule-lock-pulse",
+              isWeekAway && "text-violet-400",
+              !isUrgent && !isNearing && !isWeekAway && "text-violet-400"
+            )}
+            strokeWidth={1.5}
+          />
         </div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Abre em</p>
-        <p className="text-5xl font-bold text-foreground tabular-nums leading-none">{daysDiff}</p>
-        <p className="text-sm text-muted-foreground mt-1">dia{daysDiff !== 1 ? "s" : ""}</p>
+
+        {/* Countdown */}
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+          {isUrgent && daysDiff === 0 ? "Abre hoje" : "Abre em"}
+        </p>
+        {daysDiff > 0 && (
+          <>
+            <p className={cn(
+              "text-5xl font-bold tabular-nums leading-none",
+              isUrgent  ? "text-rose-500"    : "text-foreground"
+            )}>
+              {daysDiff}
+            </p>
+            <p className={cn(
+              "text-sm mt-1",
+              isUrgent  ? "text-rose-400 font-medium" : "text-muted-foreground"
+            )}>
+              dia{daysDiff !== 1 ? "s" : ""}
+            </p>
+          </>
+        )}
+
+        {/* Proximity label */}
+        {isWeekAway && (
+          <p className="text-[10px] text-violet-400/70 font-medium mt-2">
+            Mais {daysDiff} dias de espera
+          </p>
+        )}
       </div>
       <div className="px-5 py-4">
         <p className="text-xs text-muted-foreground text-center capitalize">
@@ -564,9 +660,7 @@ function RevealedCard({ c, userId, onDelete }: {
       </div>
 
       {c.image_url && (
-        /\.(mp4|webm|mov)(\?|$)/i.test(c.image_url)
-          ? <video src={c.image_url} controls className="w-full max-h-72 object-cover" />
-          : <img src={c.image_url} alt="Cápsula" className="w-full max-h-72 object-cover" />
+        <img src={c.image_url} alt="Cápsula" className="w-full max-h-72 object-cover" />
       )}
 
       <div className="px-5 py-4">
