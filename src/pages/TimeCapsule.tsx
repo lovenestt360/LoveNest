@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -464,7 +465,19 @@ function pickQuote(quotes: string[], id: string) {
   return quotes[n % quotes.length];
 }
 
-/* ── Detail overlays (full-screen, covers nav bar) ─────────── */
+/* ── Portal overlay base — escapa qualquer stacking context do AppShell ── */
+
+const PORTAL_BASE: React.CSSProperties = {
+  position: "fixed",
+  top: 0, left: 0,
+  width: "100%", height: "100%",
+  zIndex: 9999,
+  display: "flex",
+  flexDirection: "column",
+  overscrollBehavior: "none",
+};
+
+/* ── Detail overlays ──────────────────────────────────────── */
 
 function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
   capsule: any; revealing: boolean; onClose: () => void; onReveal: () => void;
@@ -472,79 +485,97 @@ function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
   const quote = pickQuote(REVEAL_QUOTES, capsule.id);
   const date = format(new Date(capsule.unlock_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
 
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col" style={{
-      background: "radial-gradient(ellipse at 50% 42%, rgba(244,63,94,0.18) 0%, #000 68%)",
-    }}>
+  /* lock body scroll */
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return createPortal(
+    <div style={{ ...PORTAL_BASE, background: "#08020e" }}>
+
+      {/* Subtle ambient glow — behind content, não tapa nada */}
+      <div style={{
+        position: "absolute", top: "28%", left: "50%",
+        transform: "translateX(-50%)",
+        width: 260, height: 260, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(244,63,94,0.18) 0%, transparent 70%)",
+        filter: "blur(48px)", pointerEvents: "none",
+      }} />
+
       {/* X */}
       <button onClick={onClose}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center z-10"
-        style={{ background: "rgba(255,255,255,0.08)" }}>
-        <X className="w-5 h-5 text-white" strokeWidth={1.5} />
+        style={{
+          position: "absolute", top: 16, right: 16, zIndex: 2,
+          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+          background: "rgba(255,255,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+        <X size={18} color="rgba(255,255,255,0.70)" strokeWidth={1.5} />
       </button>
 
-      {/* Scene center */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+      {/* Centro */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
 
-        {/* Animated concentric rings + floating icon */}
-        <div className="relative flex items-center justify-center mb-9" style={{ width: 140, height: 140 }}>
-          {/* Ring 3 (outermost) */}
-          <div className="absolute inset-0 rounded-full" style={{
-            border: "1px solid rgba(244,63,94,0.12)",
-            animation: "capsule-ring 3.4s ease-in-out infinite",
-          }} />
-          {/* Ring 2 */}
-          <div className="absolute rounded-full" style={{
-            inset: 14, border: "1px solid rgba(244,63,94,0.22)",
-            animation: "capsule-ring 3.4s ease-in-out infinite 0.6s",
-          }} />
-          {/* Icon circle */}
-          <div className="relative z-10 w-20 h-20 rounded-full flex items-center justify-center" style={{
-            background: "rgba(244,63,94,0.14)",
-            border: "1px solid rgba(244,63,94,0.28)",
-            boxShadow: "0 0 80px rgba(244,63,94,0.28), inset 0 1px 0 rgba(255,255,255,0.06)",
+        {/* Aneis + ícone */}
+        <div style={{ position: "relative", width: 148, height: 148,
+          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
+            border: "1px solid rgba(244,63,94,0.14)",
+            animation: "capsule-ring 3.6s ease-in-out infinite" }} />
+          <div style={{ position: "absolute", inset: 16, borderRadius: "50%",
+            border: "1px solid rgba(244,63,94,0.24)",
+            animation: "capsule-ring 3.6s ease-in-out infinite 0.7s" }} />
+          <div style={{
+            position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
+            background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.26)",
+            display: "flex", alignItems: "center", justifyContent: "center",
             animation: "capsule-float 4s ease-in-out infinite",
           }}>
-            <Sparkles className="w-9 h-9 text-rose-400" strokeWidth={1} />
+            <Sparkles size={34} color="rgba(251,113,133,0.95)" strokeWidth={1} />
           </div>
         </div>
 
-        {/* Emotional quote */}
-        <p className="text-[19px] font-bold text-white leading-[1.4] mb-4 whitespace-pre-line"
-          style={{ animation: "capsule-fade-up 600ms 200ms both ease" }}>
+        <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.45,
+          marginBottom: 16, whiteSpace: "pre-line",
+          animation: "capsule-fade-up 600ms 200ms both ease" }}>
           {quote}
         </p>
-
-        {/* Date */}
-        <p className="text-[11px] capitalize tracking-widest"
-          style={{ color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 380ms both ease" }}>
+        <p style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "capitalize",
+          color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>
           {date}
         </p>
       </div>
 
-      {/* Bottom — reveal button always visible */}
-      <div className="shrink-0 px-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom,0px),40px)" }}>
-        <p className="text-[11px] text-center mb-5 leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.20)", animation: "capsule-fade-up 600ms 460ms both ease" }}>
+      {/* Bottom */}
+      <div style={{ padding: "0 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),44px)" }}>
+        <p style={{ fontSize: 11, textAlign: "center", marginBottom: 18, lineHeight: 1.6,
+          color: "rgba(255,255,255,0.20)", animation: "capsule-fade-up 600ms 420ms both ease" }}>
           Uma vez aberta, a mensagem fica visível para os dois permanentemente.
         </p>
         <button onClick={onReveal} disabled={revealing}
-          className="w-full h-14 rounded-[1.6rem] text-white font-bold text-base flex items-center justify-center gap-2.5 disabled:opacity-60 active:scale-[0.98] transition-transform"
           style={{
+            width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
             background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
-            boxShadow: "0 18px 50px rgba(244,63,94,0.38)",
-            animation: "capsule-fade-up 600ms 520ms both ease",
+            boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
+            color: "#fff", fontWeight: 700, fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            opacity: revealing ? 0.6 : 1,
+            animation: "capsule-fade-up 600ms 480ms both ease",
           }}>
-          {revealing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" strokeWidth={1.5} />}
+          {revealing
+            ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
+            : <Unlock size={20} strokeWidth={1.5} />}
           {revealing ? "A revelar..." : "Revelar cápsula"}
         </button>
         <button onClick={onClose} disabled={revealing}
-          className="w-full h-11 font-semibold text-sm mt-1"
-          style={{ color: "rgba(255,255,255,0.28)", background: "transparent", border: "none" }}>
+          style={{ width: "100%", height: 44, background: "none", border: "none", cursor: "pointer",
+            color: "rgba(255,255,255,0.28)", fontWeight: 600, fontSize: 14, marginTop: 4 }}>
           Cancelar
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -554,67 +585,75 @@ function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () =>
   const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(capsule.image_url || "");
   const hasMedia = !!capsule.image_url;
 
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col overflow-y-auto" style={{ background: "#080808" }}>
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
 
-      {/* X — floating */}
+  return createPortal(
+    <div style={{ ...PORTAL_BASE, background: "#060606", overflowY: "auto" }}>
+
+      {/* X floating */}
       <button onClick={onClose}
-        className="fixed top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center"
-        style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)" }}>
-        <X className="w-5 h-5 text-white" strokeWidth={1.5} />
+        style={{
+          position: "fixed", top: 16, right: 16, zIndex: 10001,
+          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+          background: "rgba(0,0,0,0.60)", backdropFilter: "blur(12px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+        <X size={18} color="rgba(255,255,255,0.80)" strokeWidth={1.5} />
       </button>
 
-      {/* ── MEDIA ── never cropped, ambient blur behind */}
+      {/* ── MEDIA — protagonista, nunca cortada ── */}
       {hasMedia && (
         isVideo ? (
           <video src={capsule.image_url} controls
-            style={{ width: "100%", maxHeight: "65svh", display: "block", objectFit: "contain", background: "#000" }} />
+            style={{ width: "100%", display: "block", background: "#000",
+              maxHeight: "72svh", objectFit: "contain" }} />
         ) : (
           <div style={{ position: "relative", background: "#000", overflow: "hidden" }}>
-            {/* Blurred ambient background — fills dead space around portrait images */}
+            {/* ambient blur atrás */}
             <img src={capsule.image_url} aria-hidden alt=""
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
-                objectFit: "cover", filter: "blur(28px) brightness(0.25)", transform: "scale(1.08)" }} />
-            {/* Actual image — always 100% visible, never cropped */}
+                objectFit: "cover", filter: "blur(32px) brightness(0.22)", transform: "scale(1.10)" }} />
+            {/* imagem real — 100% visível, sem corte */}
             <img src={capsule.image_url} alt="Memória"
               style={{ position: "relative", zIndex: 1, display: "block", margin: "0 auto",
-                maxWidth: "100%", maxHeight: "65svh", objectFit: "contain" }} />
+                maxWidth: "100%", maxHeight: "72svh", objectFit: "contain" }} />
           </div>
         )
       )}
 
-      {/* ── CONTENT ── dark, immersive */}
-      <div style={{ background: "#0a0a0a", padding: "28px 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),36px)" }}>
+      {/* ── TEXTO — imersivo, dark ── */}
+      <div style={{ background: "#0c0c0c", padding: "28px 24px",
+        paddingBottom: "max(env(safe-area-inset-bottom,0px),40px)" }}>
 
-        {/* No media: emotional icon */}
+        {/* Sem media: ícone emocional */}
         {!hasMedia && (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 28, paddingTop: 48 }}>
+          <div style={{ display: "flex", justifyContent: "center", paddingTop: 80, marginBottom: 32 }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%",
-              background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.20)",
+              background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.18)",
               display: "flex", alignItems: "center", justifyContent: "center" }}>
               <CheckCircle2 size={30} color="rgba(251,113,133,0.80)" strokeWidth={1.5} />
             </div>
           </div>
         )}
 
-        {/* LoveNest quote — rose italic, emotional */}
-        <p style={{
-          fontSize: 14, fontStyle: "italic", lineHeight: 1.7,
-          color: "rgba(251,113,133,0.78)", marginBottom: 18, whiteSpace: "pre-line",
-        }}>
+        {/* Quote emocional rose */}
+        <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.75,
+          color: "rgba(251,113,133,0.75)", marginBottom: 20, whiteSpace: "pre-line" }}>
           "{quote}"
         </p>
 
-        {/* Separator */}
-        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 20 }} />
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 22 }} />
 
-        {/* Capsule message */}
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.88)", lineHeight: 1.75,
-          whiteSpace: "pre-wrap", marginBottom: 24 }}>
+        {/* Mensagem da cápsula */}
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.90)", lineHeight: 1.80,
+          whiteSpace: "pre-wrap", marginBottom: 28 }}>
           {capsule.message}
         </p>
 
-        {/* Date */}
+        {/* Data */}
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 14 }}>
           <p style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
             color: "rgba(255,255,255,0.18)" }}>
@@ -622,7 +661,8 @@ function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () =>
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -631,62 +671,84 @@ function LockedDetailView({ capsule, onClose }: { capsule: any; onClose: () => v
   const daysDiff = Math.max(0, differenceInDays(unlockDateObj, new Date()));
   const date = format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt });
 
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col"
-      style={{ background: "radial-gradient(ellipse at 50% 42%, rgba(139,92,246,0.16) 0%, #000 68%)" }}>
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return createPortal(
+    <div style={{ ...PORTAL_BASE, background: "#04020e" }}>
+
+      {/* Glow suave — não tapa conteúdo */}
+      <div style={{
+        position: "absolute", top: "26%", left: "50%",
+        transform: "translateX(-50%)",
+        width: 240, height: 240, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(139,92,246,0.20) 0%, transparent 70%)",
+        filter: "blur(52px)", pointerEvents: "none",
+      }} />
+
       <button onClick={onClose}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
-        style={{ background: "rgba(255,255,255,0.08)" }}>
-        <X className="w-5 h-5 text-white" strokeWidth={1.5} />
+        style={{
+          position: "absolute", top: 16, right: 16, zIndex: 2,
+          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+          background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+        <X size={18} color="rgba(255,255,255,0.65)" strokeWidth={1.5} />
       </button>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-        {/* Animated rings + icon */}
-        <div className="relative flex items-center justify-center mb-9" style={{ width: 140, height: 140 }}>
-          <div className="absolute inset-0 rounded-full" style={{
-            border: "1px solid rgba(139,92,246,0.12)",
-            animation: "capsule-ring 3.4s ease-in-out infinite",
-          }} />
-          <div className="absolute rounded-full" style={{
-            inset: 14, border: "1px solid rgba(139,92,246,0.20)",
-            animation: "capsule-ring 3.4s ease-in-out infinite 0.6s",
-          }} />
-          <div className="relative z-10 w-20 h-20 rounded-full flex items-center justify-center" style={{
-            background: "rgba(139,92,246,0.12)",
-            border: "1px solid rgba(139,92,246,0.26)",
-            boxShadow: "0 0 80px rgba(139,92,246,0.22)",
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
+
+        {/* Aneis + ícone */}
+        <div style={{ position: "relative", width: 148, height: 148,
+          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
+            border: "1px solid rgba(139,92,246,0.16)",
+            animation: "capsule-ring 3.6s ease-in-out infinite" }} />
+          <div style={{ position: "absolute", inset: 16, borderRadius: "50%",
+            border: "1px solid rgba(139,92,246,0.24)",
+            animation: "capsule-ring 3.6s ease-in-out infinite 0.7s" }} />
+          <div style={{
+            position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
+            background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.28)",
+            display: "flex", alignItems: "center", justifyContent: "center",
             animation: "capsule-float 4s ease-in-out infinite",
           }}>
-            <Lock className="w-9 h-9 text-violet-300" strokeWidth={1} />
+            <Lock size={34} color="rgba(196,181,253,0.90)" strokeWidth={1} />
           </div>
         </div>
 
-        <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-          style={{ color: "rgba(167,139,250,0.45)", animation: "capsule-fade-up 600ms 100ms both ease" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+          color: "rgba(167,139,250,0.45)", marginBottom: 14,
+          animation: "capsule-fade-up 600ms 80ms both ease" }}>
           Esta memória ainda não está pronta
         </p>
-        <p className="font-bold text-white tabular-nums leading-none mb-1"
-          style={{ fontSize: 80, animation: "capsule-fade-up 600ms 200ms both ease" }}>
+        <p style={{ fontSize: 88, fontWeight: 800, color: "#fff", lineHeight: 1,
+          marginBottom: 4, animation: "capsule-fade-up 600ms 180ms both ease" }}>
           {daysDiff}
         </p>
-        <p className="text-sm mb-3" style={{
-          color: "rgba(255,255,255,0.32)", animation: "capsule-fade-up 600ms 280ms both ease",
-        }}>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.30)", marginBottom: 12,
+          animation: "capsule-fade-up 600ms 260ms both ease" }}>
           dia{daysDiff !== 1 ? "s" : ""} até poder ser aberta
         </p>
-        <p className="text-xs capitalize" style={{
-          color: "rgba(255,255,255,0.16)", animation: "capsule-fade-up 600ms 360ms both ease",
-        }}>
+        <p style={{ fontSize: 12, textTransform: "capitalize", color: "rgba(255,255,255,0.16)",
+          animation: "capsule-fade-up 600ms 340ms both ease" }}>
           {date}
         </p>
       </div>
 
-      <div className="shrink-0 px-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom,0px),40px)" }}>
-        <button onClick={onClose} className="w-full h-12 rounded-2xl font-semibold text-sm"
-          style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.40)", border: "none" }}>
+      <div style={{ padding: "0 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),44px)" }}>
+        <button onClick={onClose}
+          style={{
+            width: "100%", height: 48, borderRadius: 24, border: "none", cursor: "pointer",
+            background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.40)",
+            fontWeight: 600, fontSize: 14,
+          }}>
           Fechar
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
