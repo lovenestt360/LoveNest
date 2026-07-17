@@ -86,11 +86,12 @@ export function CapsuleRealtimeWatcher() {
           if (payload.eventType === "INSERT") {
             if (getSeenIds(insertKey).has(row.id)) return;
             markSeen(insertKey, row.id);
-            const isOwn = row.creator_id === userId;
+            // O criador vê a CapsuleSealCeremony in-app — só disparar modal para o par
+            if (row.creator_id === userId) return;
             dispatchCeremony({
               type: "capsula",
               eyebrow: "Cápsula do Tempo",
-              title: isOwn ? "Cápsula enterrada" : "O teu par enterrou uma cápsula",
+              title: "O teu par enterrou uma cápsula",
               subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
             });
           }
