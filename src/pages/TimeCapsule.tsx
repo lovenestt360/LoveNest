@@ -76,6 +76,12 @@ export default function TimeCapsule() {
     return () => { supabase.removeChannel(ch); };
   }, [houseId, loadCapsules]);
 
+  // Fallback: actualiza a lista via evento de window disparado pelo CapsuleRealtimeWatcher
+  useEffect(() => {
+    window.addEventListener("lovenest-capsule-changed", loadCapsules);
+    return () => window.removeEventListener("lovenest-capsule-changed", loadCapsules);
+  }, [loadCapsules]);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !unlockDate || !houseId || !user) return;
