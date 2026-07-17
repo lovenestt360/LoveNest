@@ -27,6 +27,14 @@ const PHASE_ACCENT: Record<string, string> = {
   sem_dados: "text-muted-foreground",
 };
 
+const PHASE_QUOTE: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  menstrual: { bg: "bg-gradient-to-br from-rose-50 to-rose-100/40 dark:from-rose-950/50 dark:to-rose-900/20",   border: "border-rose-200/60 dark:border-rose-800/30",    text: "text-rose-600 dark:text-rose-300",    dot: "bg-rose-400" },
+  folicular:  { bg: "bg-gradient-to-br from-sky-50 to-sky-100/40 dark:from-sky-950/50 dark:to-sky-900/20",     border: "border-sky-200/60 dark:border-sky-800/30",      text: "text-sky-600 dark:text-sky-300",      dot: "bg-sky-400" },
+  ovulacao:   { bg: "bg-gradient-to-br from-emerald-50 to-emerald-100/40 dark:from-emerald-950/50 dark:to-emerald-900/20", border: "border-emerald-200/60 dark:border-emerald-800/30", text: "text-emerald-600 dark:text-emerald-300", dot: "bg-emerald-400" },
+  luteal:     { bg: "bg-gradient-to-br from-violet-50 to-violet-100/40 dark:from-violet-950/50 dark:to-violet-900/20", border: "border-violet-200/60 dark:border-violet-800/30", text: "text-violet-600 dark:text-violet-300", dot: "bg-violet-400" },
+  sem_dados:  { bg: "bg-gradient-to-br from-rose-50/60 to-transparent dark:from-rose-950/30 dark:to-transparent", border: "border-rose-200/40 dark:border-rose-800/20",   text: "text-rose-500 dark:text-rose-300",    dot: "bg-rose-300" },
+};
+
 const CYCLE_RING_CIRCUMFERENCE = 2 * Math.PI * 44;
 
 const PHASE_ICONS: Record<string, LucideIcon> = {
@@ -540,8 +548,6 @@ export function CycleToday({ data }: { data: CycleData }) {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground leading-relaxed italic">"{engine.insights[0]}"</p>
-
             {engine.insights.slice(1).map((insight, i) => (
               <div key={i} className="rounded-xl border border-rose-200/50 dark:border-rose-800/50 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-2 flex items-start gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
@@ -571,6 +577,24 @@ export function CycleToday({ data }: { data: CycleData }) {
             <p className="text-sm text-muted-foreground">Regista a tua menstruação para receber insights personalizados</p>
           </div>
         )}
+
+        {/* ── Quote emocional da fase ── */}
+        {engine?.insights[0] && (() => {
+          const q = PHASE_QUOTE[phaseKey] ?? PHASE_QUOTE.sem_dados;
+          return (
+            <div className={cn("rounded-3xl border px-5 py-5", q.bg, q.border)}>
+              <p className={cn("text-[15px] font-medium leading-relaxed", q.text)}>
+                {engine.insights[0]}
+              </p>
+              <div className="flex items-center gap-2 mt-3.5">
+                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", q.dot)} />
+                <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em] opacity-60", q.text)}>
+                  {engine.phaseLabel}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         {engine && <CycleHistoryStrip data={data} />}
 
