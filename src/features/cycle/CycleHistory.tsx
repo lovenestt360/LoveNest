@@ -1,4 +1,4 @@
-import { Loader2, Lightbulb, CheckCircle2, Circle, Minus, Plus, Lock } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Minus, Plus, Lock, Flower2, Heart, Droplet, Moon, Zap, Thermometer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -24,14 +24,27 @@ const SYMPTOM_LABEL_MAP: Record<string, string> = {
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{children}</p>;
+  return <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">{children}</p>;
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+const STAT_COLORS: Record<string, { value: string; dot: string; icon: React.ReactNode }> = {
+  rose:    { value: "text-rose-500",    dot: "bg-rose-400",    icon: <Droplet className="h-3.5 w-3.5" strokeWidth={1.5} /> },
+  violet:  { value: "text-violet-500",  dot: "bg-violet-400",  icon: <Moon className="h-3.5 w-3.5" strokeWidth={1.5} /> },
+  pink:    { value: "text-pink-500",    dot: "bg-pink-400",    icon: <Heart className="h-3.5 w-3.5" strokeWidth={1.5} /> },
+  sky:     { value: "text-sky-500",     dot: "bg-sky-400",     icon: <Flower2 className="h-3.5 w-3.5" strokeWidth={1.5} /> },
+  teal:    { value: "text-teal-500",    dot: "bg-teal-400",    icon: <Thermometer className="h-3.5 w-3.5" strokeWidth={1.5} /> },
+  fuchsia: { value: "text-fuchsia-500", dot: "bg-fuchsia-400", icon: <Zap className="h-3.5 w-3.5" strokeWidth={1.5} /> },
+};
+
+function Stat({ label, value, color = "rose" }: { label: string; value: string | number; color?: keyof typeof STAT_COLORS }) {
+  const s = STAT_COLORS[color];
   return (
-    <div>
-      <SectionLabel>{label}</SectionLabel>
-      <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">{value}</p>
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5">
+        <span className={cn("opacity-60", s.value)}>{s.icon}</span>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{label}</p>
+      </div>
+      <p className={cn("text-2xl font-bold tabular-nums leading-none", s.value)}>{value}</p>
     </div>
   );
 }
@@ -176,16 +189,16 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
 
       {/* Insights */}
       {insights.length > 0 && (
-        <div className="glass-card p-5 space-y-3">
+        <div className="rounded-3xl border border-rose-200/60 dark:border-rose-800/30 bg-gradient-to-br from-rose-50 to-rose-100/40 dark:from-rose-950/50 dark:to-rose-900/20 p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <Lightbulb className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <SectionLabel>Insights do ciclo</SectionLabel>
+            <Flower2 className="h-4 w-4 text-rose-400" strokeWidth={1.5} />
+            <p className="text-[11px] font-bold uppercase tracking-widest text-rose-500/70 dark:text-rose-400/70">O teu ciclo</p>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {insights.map((text, i) => (
-              <li key={i} className="flex gap-2 items-start">
-                <span className="shrink-0 mt-2 h-1.5 w-1.5 rounded-full bg-rose-400" />
-                <p className="text-sm text-foreground leading-relaxed">{text}</p>
+              <li key={i} className="flex gap-2.5 items-start">
+                <span className="shrink-0 mt-[7px] h-1.5 w-1.5 rounded-full bg-rose-400" />
+                <p className="text-sm text-rose-700 dark:text-rose-300 leading-relaxed">{text}</p>
               </li>
             ))}
           </ul>
@@ -198,24 +211,24 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
           <SectionLabel>Estatísticas</SectionLabel>
         </div>
         <div className="p-5">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <Stat label="Ciclos registados"  value={periods.length} />
-            <Stat label="Ciclo médio (3)"    value={avg3 ? `${avg3} dias` : "—"} />
-            <Stat label="Ciclo médio (6)"    value={avg6 ? `${avg6} dias` : "—"} />
-            <Stat label="Período médio"      value={avgPeriodCalc ? `${avgPeriodCalc} dias` : "—"} />
-            <Stat label="Variação ciclo"     value={irregularity !== null ? `${irregularity}d` : "—"} />
-            <Stat label="Dias com TPM"       value={tpmDays} />
-            {avgTemp && <Stat label="Temp. basal média" value={`${avgTemp}°C`} />}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+            <Stat label="Ciclos"        value={periods.length}                                    color="rose" />
+            <Stat label="Ciclo médio"   value={avg3 ? `${avg3}d` : "—"}                          color="violet" />
+            <Stat label="Média (6)"     value={avg6 ? `${avg6}d` : "—"}                          color="sky" />
+            <Stat label="Período médio" value={avgPeriodCalc ? `${avgPeriodCalc}d` : "—"}        color="pink" />
+            <Stat label="Variação"      value={irregularity !== null ? `${irregularity}d` : "—"} color="fuchsia" />
+            <Stat label="Dias TPM"      value={tpmDays}                                           color="violet" />
+            {avgTemp && <Stat label="Temp. basal" value={`${avgTemp}°C`} color="teal" />}
           </div>
 
           {topSymptoms.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-border">
-              <SectionLabel>Sintomas recorrentes</SectionLabel>
-              <div className="flex flex-wrap gap-1.5 mt-3">
+            <div className="mt-5 pt-4 border-t border-border/50">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-rose-500/70 dark:text-rose-400/70 mb-3">Sintomas recorrentes</p>
+              <div className="flex flex-wrap gap-1.5">
                 {topSymptoms.map(([k, count]) => (
-                  <span key={k} className="px-3 py-1 rounded-full border border-border text-[11px] font-medium text-foreground">
+                  <span key={k} className="px-3 py-1 rounded-full border border-rose-200/60 dark:border-rose-800/40 bg-rose-50/60 dark:bg-rose-950/20 text-[11px] font-medium text-rose-500 dark:text-rose-400">
                     {SYMPTOM_LABEL_MAP[k] ?? k}
-                    <span className="ml-1 text-muted-foreground">·{count}</span>
+                    <span className="ml-1 opacity-60">·{count}</span>
                   </span>
                 ))}
               </div>
@@ -235,22 +248,27 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
               <p className="text-sm text-muted-foreground">Sem registos ainda.</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/50">
               {cycles.slice(0, 12).map((c, i) => (
-                <div key={i} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {formatDate(c.start)}
-                      <span className="mx-1.5 text-muted-foreground/50 text-xs">→</span>
-                      {c.end ? formatDate(c.end) : <span className="text-rose-400">em curso</span>}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {c.periodLength ? `${c.periodLength} dias de período` : "Aberto"}
-                      {c.cycleLength  ? ` · ciclo de ${c.cycleLength}d` : ""}
-                    </p>
+                <div key={i} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center shrink-0 mt-0.5">
+                      <Droplet className="h-3.5 w-3.5 text-rose-400" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-rose-500 dark:text-rose-400">
+                        {formatDate(c.start)}
+                        <span className="mx-1.5 text-rose-300/70 dark:text-rose-700 text-xs">→</span>
+                        {c.end ? <span className="text-foreground font-medium">{formatDate(c.end)}</span> : <span className="text-rose-400 animate-pulse">em curso</span>}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {c.periodLength ? <span className="text-rose-400/80">{c.periodLength} dias</span> : "Em aberto"}
+                        {c.cycleLength  ? <span className="text-muted-foreground"> · ciclo {c.cycleLength}d</span> : ""}
+                      </p>
+                    </div>
                   </div>
                   {!c.end && (
-                    <span className="px-2.5 py-0.5 rounded-full border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-500 text-[11px] font-medium">ativo</span>
+                    <span className="px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-bold shrink-0">ativo</span>
                   )}
                 </div>
               ))}
