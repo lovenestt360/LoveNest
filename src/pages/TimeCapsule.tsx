@@ -29,6 +29,7 @@ export default function TimeCapsule() {
 
   const [selectedCapsule, setSelectedCapsule] = useState<any | null>(null);
   const [revealing, setRevealing] = useState(false);
+  const [revealPhase, setRevealPhase] = useState<"idle" | "unlocking" | "revealed">("idle");
 
   const [isAdding, setIsAdding] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -128,23 +129,32 @@ export default function TimeCapsule() {
   };
 
   const handleReveal = async () => {
-    if (!selectedCapsule || !houseId) return;
+    if (!selectedCapsule || !houseId || !user) return;
     setRevealing(true);
     try {
       const { error } = await supabase.from("time_capsule_messages")
         .update({ is_unlocked: true }).eq("id", selectedCapsule.id);
       if (error) throw error;
       await loadCapsules();
-      setSelectedCapsule(null);
-      triggerCeremony(houseId, "capsula", selectedCapsule.id, {
-        type: "capsula", eyebrow: "Cápsula do tempo",
-        title: "Uma cápsula foi aberta", subtitle: "O passado encontrou o presente.",
+      // A experiência cinematic IS a cerimónia — não abrir CeremonyOverlay para o revelador.
+      // O par recebe notificação via CapsuleRealtimeWatcher (comportamento existente).
+      awardLovePoints(houseId, 15, "capsula_revelada", "Cápsula revelada", user.id);
+      notifyPartner({
+        couple_space_id: houseId, title: "Cápsula revelada!",
+        body: "O vosso passado chegou ao presente.", url: "/capsula", type: "memorias",
       });
+      setRevealPhase("unlocking");
+      // Após 2.6s de animação → mostrar a memória
+      setTimeout(() => { setRevealPhase("revealed"); setRevealing(false); }, 2600);
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
       setRevealing(false);
     }
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedCapsule(null);
+    setRevealPhase("idle");
   };
 
   if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
@@ -249,16 +259,17 @@ export default function TimeCapsule() {
       </div>
 
       {/* ── DETAIL OVERLAYS ────────────────────────────── */}
-      {selectedCapsule && capsuleType(selectedCapsule) === "ready" && (
-        <ReadyDetailView
-          capsule={selectedCapsule} revealing={revealing}
-          onClose={() => setSelectedCapsule(null)} onReveal={handleReveal} />
+      {/* Fluxo completo: ready → unlock animation → revealed */}
+      {selectedCapsule && (revealPhase !== "idle" || capsuleType(selectedCapsule) === "ready") && (
+        <CapsuleRevealFlow
+          capsule={selectedCapsule} phase={revealPhase} revealing={revealing}
+          onClose={handleCloseDetail} onReveal={handleReveal} />
       )}
-      {selectedCapsule && capsuleType(selectedCapsule) === "revealed" && (
-        <RevealedDetailView capsule={selectedCapsule} onClose={() => setSelectedCapsule(null)} />
+      {selectedCapsule && revealPhase === "idle" && capsuleType(selectedCapsule) === "revealed" && (
+        <RevealedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} />
       )}
-      {selectedCapsule && capsuleType(selectedCapsule) === "locked" && (
-        <LockedDetailView capsule={selectedCapsule} onClose={() => setSelectedCapsule(null)} />
+      {selectedCapsule && revealPhase === "idle" && capsuleType(selectedCapsule) === "locked" && (
+        <LockedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} />
       )}
 
       {/* ── CREATE SHEET ───────────────────────────────── */}
@@ -477,95 +488,253 @@ const PORTAL_BASE: React.CSSProperties = {
   overscrollBehavior: "none",
 };
 
-/* ── Detail overlays ──────────────────────────────────────── */
+/* ── Fluxo completo de revelação (idle → unlocking → revealed) ── */
 
-function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
-  capsule: any; revealing: boolean; onClose: () => void; onReveal: () => void;
+const PARTICLES = [
+  { dx:  0,   dy: -88 }, { dx:  62,  dy: -62 }, { dx:  88,  dy:  0  },
+  { dx:  62,  dy:  62 }, { dx:  0,   dy:  88 }, { dx: -62,  dy:  62 },
+  { dx: -88,  dy:  0  }, { dx: -62,  dy: -62 },
+];
+
+function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
+  capsule: any;
+  phase: "idle" | "unlocking" | "revealed";
+  revealing: boolean;
+  onClose: () => void;
+  onReveal: () => void;
 }) {
-  const quote = pickQuote(REVEAL_QUOTES, capsule.id);
-  const date = format(new Date(capsule.unlock_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
+  const quote        = pickQuote(REVEAL_QUOTES,    capsule.id);
+  const revealedQuote = pickQuote(REVEALED_QUOTES, capsule.id);
+  const unlockDate   = new Date(capsule.unlock_date);
+  const date         = format(unlockDate, "d 'de' MMMM 'de' yyyy", { locale: pt });
+  const dayOfWeek    = format(unlockDate, "EEEE", { locale: pt });
+
+  const diffDays  = Math.floor((Date.now() - unlockDate.getTime()) / 86_400_000);
+  const relStr    = diffDays === 0 ? "Hoje"
+    : diffDays === 1 ? "Ontem"
+    : diffDays < 30  ? `Há ${diffDays} dias`
+    : diffDays < 365 ? `Há ${Math.floor(diffDays / 30)} ${Math.floor(diffDays / 30) === 1 ? "mês" : "meses"}`
+    : `Há ${Math.floor(diffDays / 365)} ${Math.floor(diffDays / 365) === 1 ? "ano" : "anos"}`;
+
+  const isVideo  = /\.(mp4|webm|mov)(\?|$)/i.test(capsule.image_url || "");
+  const hasPhoto = !!capsule.image_url && !isVideo;
+  const hasMedia = !!capsule.image_url;
 
   return createPortal(
-    <div style={{ ...PORTAL_BASE, background: "#08020e" }}>
+    <div style={{ ...PORTAL_BASE, background: "#08020e", overflow: "hidden" }}>
 
-      {/* Glow suave — não tapa nada */}
+      {/* ═══════════════════ IDLE — pronto para revelar ═══════════════════ */}
       <div style={{
-        position: "absolute", top: "26%", left: "50%", transform: "translateX(-50%)",
-        width: 220, height: 220, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(244,63,94,0.16) 0%, transparent 70%)",
-        filter: "blur(52px)", pointerEvents: "none",
-      }} />
-
-      {/* X */}
-      <button onClick={onClose} style={{
-        position: "absolute", top: 16, right: 16, zIndex: 2,
-        width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
-        background: "rgba(255,255,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center",
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column",
+        opacity: phase === "idle" ? 1 : 0,
+        transition: "opacity 400ms ease",
+        pointerEvents: phase === "idle" ? "auto" : "none",
       }}>
-        <X size={18} color="rgba(255,255,255,0.70)" strokeWidth={1.5} />
-      </button>
+        {/* Glow ambient */}
+        <div style={{ position: "absolute", top: "28%", left: "50%", transform: "translateX(-50%)",
+          width: 220, height: 220, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(244,63,94,0.15) 0%, transparent 70%)",
+          filter: "blur(52px)", pointerEvents: "none" }} />
 
-      {/* Centro */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
+        {/* X */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: 16, right: 16, zIndex: 2,
+          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+          background: "rgba(255,255,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <X size={18} color="rgba(255,255,255,0.70)" strokeWidth={1.5} />
+        </button>
 
-        {/* Aneis + ícone cadeado aberto */}
-        <div style={{ position: "relative", width: 148, height: 148,
-          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
-            border: "1px solid rgba(244,63,94,0.14)",
-            animation: "capsule-ring 3.6s ease-in-out infinite" }} />
-          <div style={{ position: "absolute", inset: 16, borderRadius: "50%",
-            border: "1px solid rgba(244,63,94,0.24)",
-            animation: "capsule-ring 3.6s ease-in-out infinite 0.7s" }} />
-          <div style={{
-            position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
-            background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.26)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "capsule-float 4s ease-in-out infinite",
-          }}>
-            <Unlock size={34} color="rgba(251,113,133,0.95)" strokeWidth={1} />
+        {/* Centro */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
+          <div style={{ position: "relative", width: 148, height: 148,
+            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
+              border: "1px solid rgba(244,63,94,0.14)",
+              animation: "capsule-ring 3.6s ease-in-out infinite" }} />
+            <div style={{ position: "absolute", inset: 16, borderRadius: "50%",
+              border: "1px solid rgba(244,63,94,0.24)",
+              animation: "capsule-ring 3.6s ease-in-out infinite 0.7s" }} />
+            <div style={{ position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
+              background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.26)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              animation: "capsule-float 4s ease-in-out infinite" }}>
+              <Unlock size={34} color="rgba(251,113,133,0.95)" strokeWidth={1} />
+            </div>
           </div>
+          <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.5,
+            marginBottom: 16, whiteSpace: "pre-line",
+            animation: "capsule-fade-up 600ms 200ms both ease" }}>{quote}</p>
+          <p style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "capitalize",
+            color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>{date}</p>
         </div>
 
-        <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.5,
-          marginBottom: 16, whiteSpace: "pre-line",
-          animation: "capsule-fade-up 600ms 200ms both ease" }}>
-          {quote}
-        </p>
-        <p style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "capitalize",
-          color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>
-          {date}
-        </p>
+        {/* Botões */}
+        <div style={{ padding: "0 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),44px)" }}>
+          <p style={{ fontSize: 11, textAlign: "center", marginBottom: 18, lineHeight: 1.6,
+            color: "rgba(255,255,255,0.20)" }}>
+            Uma vez aberta, a mensagem fica visível para os dois permanentemente.
+          </p>
+          <button onClick={onReveal} disabled={revealing} style={{
+            width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
+            background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
+            boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
+            color: "#fff", fontWeight: 700, fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            opacity: revealing ? 0.6 : 1,
+          }}>
+            {revealing
+              ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
+              : <Unlock size={20} strokeWidth={1.5} />}
+            {revealing ? "A revelar..." : "Revelar cápsula"}
+          </button>
+          <button onClick={onClose} disabled={revealing} style={{
+            width: "100%", height: 44, background: "none", border: "none", cursor: "pointer",
+            color: "rgba(255,255,255,0.28)", fontWeight: 600, fontSize: 14, marginTop: 4,
+          }}>Cancelar</button>
+        </div>
       </div>
 
-      {/* Bottom */}
-      <div style={{ padding: "0 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),44px)" }}>
-        <p style={{ fontSize: 11, textAlign: "center", marginBottom: 18, lineHeight: 1.6,
-          color: "rgba(255,255,255,0.20)", animation: "capsule-fade-up 600ms 420ms both ease" }}>
-          Uma vez aberta, a mensagem fica visível para os dois permanentemente.
-        </p>
-        <button onClick={onReveal} disabled={revealing} style={{
-          width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
-          boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
-          color: "#fff", fontWeight: 700, fontSize: 16,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          opacity: revealing ? 0.6 : 1,
-          animation: "capsule-fade-up 600ms 480ms both ease",
-        }}>
-          {revealing
-            ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
-            : <Unlock size={20} strokeWidth={1.5} />}
-          {revealing ? "A revelar..." : "Revelar cápsula"}
-        </button>
-        <button onClick={onClose} disabled={revealing} style={{
-          width: "100%", height: 44, background: "none", border: "none", cursor: "pointer",
-          color: "rgba(255,255,255,0.28)", fontWeight: 600, fontSize: 14, marginTop: 4,
-        }}>
-          Cancelar
-        </button>
-      </div>
+      {/* ═══════════════════ UNLOCKING — sequência cinematic ═════════════ */}
+      {phase === "unlocking" && (
+        <div style={{ position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+
+          {/* Foto a materializar-se em desfoque */}
+          {hasPhoto && (
+            <img src={capsule.image_url} aria-hidden alt="" style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", opacity: 0.35,
+              filter: "blur(28px) brightness(0.35)",
+              transition: "opacity 1.6s ease",
+            }} />
+          )}
+
+          {/* Burst rings */}
+          <div style={{ position: "absolute", width: 88, height: 88, borderRadius: "50%",
+            border: "2px solid rgba(244,63,94,0.70)",
+            animation: "burst-ring 1100ms ease-out both" }} />
+          <div style={{ position: "absolute", width: 88, height: 88, borderRadius: "50%",
+            border: "1px solid rgba(244,63,94,0.45)",
+            animation: "burst-ring 1100ms ease-out 220ms both" }} />
+
+          {/* Partículas */}
+          {PARTICLES.map((p, i) => (
+            <div key={i} style={{
+              position: "absolute", width: 5, height: 5, borderRadius: "50%",
+              background: i % 2 === 0 ? "rgba(251,113,133,0.85)" : "rgba(244,63,94,0.65)",
+              ["--dx" as any]: `${p.dx}px`, ["--dy" as any]: `${p.dy}px`,
+              animation: `particle-out 900ms ${i * 60}ms ease-out both`,
+            }} />
+          ))}
+
+          {/* Ícone cadeado aberto com escala */}
+          <div style={{ position: "relative", zIndex: 2,
+            width: 88, height: 88, borderRadius: "50%",
+            background: "rgba(244,63,94,0.18)", border: "1px solid rgba(244,63,94,0.32)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "burst-icon 800ms ease both",
+            boxShadow: "0 0 80px rgba(244,63,94,0.45)" }}>
+            <Unlock size={38} color="rgba(251,113,133,1)" strokeWidth={1} />
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════ REVEALED — a memória ════════════════════════ */}
+      {phase === "revealed" && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", background: "#000",
+          animation: "capsule-fade-up 300ms ease both" }}>
+
+          {/* X */}
+          <div style={{ position: "absolute", top: 16, right: 16, zIndex: 10,
+            paddingTop: "env(safe-area-inset-top, 0px)" }}>
+            <button onClick={onClose} style={{
+              width: 36, height: 36, borderRadius: "50%", border: "none", cursor: "pointer",
+              background: "rgba(0,0,0,0.60)", backdropFilter: "blur(10px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <X size={16} color="rgba(255,255,255,0.80)" strokeWidth={1.5} />
+            </button>
+          </div>
+
+          {/* Foto — com photo-focus animation */}
+          {hasPhoto && (
+            <div style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden",
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={capsule.image_url} aria-hidden
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
+                  objectFit: "cover", filter: "blur(28px) brightness(0.22)", transform: "scale(1.10)" }} />
+              <img src={capsule.image_url} alt="Memória"
+                style={{ position: "relative", zIndex: 1,
+                  maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto",
+                  filter: "drop-shadow(0 12px 40px rgba(0,0,0,0.55))",
+                  animation: "photo-focus 1400ms ease both" }} />
+            </div>
+          )}
+
+          {isVideo && (
+            <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", background: "#000" }}>
+              <video src={capsule.image_url} controls autoPlay
+                style={{ width: "100%" }} />
+            </div>
+          )}
+
+          {!hasMedia && (
+            <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center",
+              animation: "capsule-fade-up 500ms ease both" }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%",
+                background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.22)",
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Unlock size={36} color="rgba(251,113,133,0.80)" strokeWidth={1} />
+              </div>
+            </div>
+          )}
+
+          {/* Painel de informação — sobe com animação */}
+          <div className="bg-card rounded-t-[2rem] px-5 pt-5 shrink-0 overflow-y-auto"
+            style={{
+              maxHeight: hasMedia ? "52svh" : "82svh",
+              paddingBottom: "max(env(safe-area-inset-bottom,0px),1.5rem)",
+              boxShadow: "0 -16px 48px rgba(0,0,0,0.28)",
+              animation: "panel-slide-up 500ms 300ms ease both",
+            }}>
+
+            {/* Quote emocional */}
+            <p className="text-sm italic text-rose-400 leading-relaxed mb-1 whitespace-pre-line"
+              style={{ animation: "capsule-fade-up 400ms 600ms both ease" }}>
+              {revealedQuote}
+            </p>
+
+            {/* Data + relativo */}
+            <p className="text-xs text-muted-foreground capitalize mb-0.5"
+              style={{ animation: "capsule-fade-up 400ms 720ms both ease" }}>
+              {dayOfWeek}, {date}
+            </p>
+            <p className="text-[11px] font-semibold text-rose-400 mb-4"
+              style={{ animation: "capsule-fade-up 400ms 780ms both ease" }}>
+              {relStr}
+            </p>
+
+            {/* Separador */}
+            <div className="h-px bg-border/50 mb-4"
+              style={{ animation: "capsule-fade-up 400ms 820ms both ease" }} />
+
+            {/* Mensagem */}
+            <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap mb-4"
+              style={{ animation: "capsule-fade-up 400ms 900ms both ease" }}>
+              {capsule.message}
+            </p>
+
+            {/* Rodapé */}
+            <p className="text-[10px] text-muted-foreground/45 pt-3 border-t border-border/40 leading-relaxed"
+              style={{ animation: "capsule-fade-up 400ms 1020ms both ease" }}>
+              Esta memória faz parte da vossa história
+            </p>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
