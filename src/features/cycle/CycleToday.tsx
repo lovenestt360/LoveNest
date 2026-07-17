@@ -610,15 +610,16 @@ export function CycleToday({ data }: { data: CycleData }) {
           <div className="p-5 space-y-4">
             {openPeriod ? (
               <>
-                <div className="rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-800/50 flex items-center justify-center shrink-0">
-                    <Droplet className="w-5 h-5 text-rose-400" strokeWidth={1.5} />
+                <div className="rounded-2xl bg-gradient-to-br from-rose-100/80 to-rose-50/50 dark:from-rose-950/60 dark:to-rose-900/20 border border-rose-200/80 dark:border-rose-800/50 p-4 flex items-center gap-3">
+                  <div className="relative w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center shrink-0">
+                    <Droplet className="w-5 h-5 text-rose-500" strokeWidth={1.5} />
+                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-white dark:border-background animate-pulse" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-rose-500">Em curso</p>
+                    <p className="text-sm font-bold text-rose-500">Em curso</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">Desde {formatLongDate(openPeriod.start_date)}</p>
                   </div>
-                  <span className="text-xs font-semibold bg-white/80 dark:bg-rose-950/40 text-rose-500 border border-rose-200 dark:border-rose-800 px-3 py-1 rounded-full tabular-nums shrink-0">{periodDays}d</span>
+                  <span className="text-sm font-bold bg-rose-500 text-white px-3 py-1.5 rounded-full tabular-nums shrink-0">{periodDays}d</span>
                 </div>
                 {!data.isMale && (
                   <div className="space-y-3">
