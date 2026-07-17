@@ -610,9 +610,9 @@ export function CycleToday({ data }: { data: CycleData }) {
           <div className="p-5 space-y-4">
             {openPeriod ? (
               <>
-                <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-950/10 border border-rose-100 dark:border-rose-900/40 p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center shrink-0 animate-glow-pulse">
-                    <Droplet className="w-4.5 h-4.5 text-white" fill="currentColor" strokeWidth={0} />
+                <div className="rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-800/50 flex items-center justify-center shrink-0">
+                    <Droplet className="w-5 h-5 text-rose-400" strokeWidth={1.5} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-rose-500">Em curso</p>
