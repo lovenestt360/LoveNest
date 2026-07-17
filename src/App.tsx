@@ -20,6 +20,7 @@ import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CeremonyOverlay } from "@/features/journey/CeremonyOverlay";
 import { CapsuleRealtimeWatcher } from "@/features/capsule/CapsuleRealtimeWatcher";
+import { CapsuleSealListener } from "@/features/capsule/CapsuleSealCeremony";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -206,6 +207,7 @@ const App = () => (
                 <PWATutorialModal />
                 <CeremonyOverlay />
                 <CapsuleRealtimeWatcher />
+                <CapsuleSealListener />
               </PWATutorialProvider>
             </FeatureAccessProvider>
           </AuthProvider>

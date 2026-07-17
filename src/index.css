@@ -559,6 +559,11 @@ input, textarea, [contenteditable="true"] {
     60%  { filter: blur(6px)  brightness(0.75); transform: scale(1.04); opacity: 0.8; }
     100% { filter: blur(0px)  brightness(1);   transform: scale(1);    opacity: 1; }
   }
+  /* Foto aparece suavemente na cerimónia de selagem — sem scale, mais leve que photo-focus */
+  @keyframes photo-appear {
+    0%   { filter: blur(8px) brightness(0.6); opacity: 0.5; }
+    100% { filter: blur(0px) brightness(1);   opacity: 1; }
+  }
   /* Painel de info sobe do fundo */
   @keyframes panel-slide-up {
     0%   { transform: translateY(60px); opacity: 0; }

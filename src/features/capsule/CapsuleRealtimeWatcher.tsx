@@ -79,21 +79,26 @@ export function CapsuleRealtimeWatcher() {
           // Notifica a lista da página /capsula para atualizar
           window.dispatchEvent(new CustomEvent("lovenest-capsule-changed"));
 
-          const row = payload.new as { id: string; creator_id: string; is_unlocked: boolean } | undefined;
+          const row = payload.new as {
+            id: string; creator_id: string; is_unlocked: boolean;
+            image_url?: string | null; unlock_date?: string;
+          } | undefined;
           if (!row) return;
 
-          // Nova cápsula criada
+          // Nova cápsula criada — cerimónia cinematic para ambos os utilizadores
           if (payload.eventType === "INSERT") {
             if (getSeenIds(insertKey).has(row.id)) return;
             markSeen(insertKey, row.id);
-            // O criador vê a CapsuleSealCeremony in-app — só disparar modal para o par
+            // O criador já despachei o evento em handleCreate com os dados locais
             if (row.creator_id === userId) return;
-            dispatchCeremony({
-              type: "capsula",
-              eyebrow: "Cápsula do Tempo",
-              title: "O teu par enterrou uma cápsula",
-              subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
-            });
+            // Para o par: dispatch com dados da linha realtime → CapsuleSealListener mostra cerimónia
+            window.dispatchEvent(new CustomEvent("lovenest-capsule-sealed", {
+              detail: {
+                imageUrl: row.image_url ?? null,
+                unlockDate: row.unlock_date ?? new Date().toISOString(),
+                capsuleId: row.id,
+              },
+            }));
           }
 
           // Par revelou uma cápsula (UPDATE is_unlocked false→true)
