@@ -522,6 +522,21 @@ input, textarea, [contenteditable="true"] {
     100% { transform: scale(1)    rotate(0deg);  }
   }
 
+  /* Capsule reveal — concentric rings */
+  @keyframes capsule-ring {
+    0%   { transform: scale(1);    opacity: 0.35; }
+    50%  { transform: scale(1.18); opacity: 0.12; }
+    100% { transform: scale(1);    opacity: 0.35; }
+  }
+  @keyframes capsule-float {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-8px); }
+  }
+  @keyframes capsule-fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   /* Partner presence — gentle living pulse */
   @keyframes presence-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
