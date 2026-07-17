@@ -158,10 +158,14 @@ export default function TimeCapsule() {
     c.is_unlocked ? "revealed" : isPast(new Date(c.unlock_date)) ? "ready" : "locked";
 
   return (
-    <div className="flex flex-col bg-background" style={{ height: "calc(100svh - 64px)" }}>
+    /* Negative margins to cancel AppShell main's pt-6 + px-4. Height 100dvh = true viewport. */
+    <div className="flex flex-col bg-background" style={{
+      marginTop: "-1.5rem", marginLeft: "-1rem", marginRight: "-1rem",
+      width: "calc(100% + 2rem)", height: "100dvh", overflow: "hidden",
+    }}>
 
       {/* Header */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/90 backdrop-blur-sm">
+      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/90 backdrop-blur-sm" style={{ zIndex: 10 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-all">
@@ -185,7 +189,7 @@ export default function TimeCapsule() {
 
       {/* Compact list */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="px-4 pt-3 pb-4 space-y-3 max-w-md mx-auto">
+        <div className="px-4 pt-3 space-y-3 max-w-md mx-auto" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
 
           {loading ? (
             <div className="flex justify-center py-16">
@@ -384,7 +388,7 @@ function CapsuleRow({ c, type, userId, onTap, onDelete }: {
     <div onClick={onTap}
       className="flex items-center gap-3 px-4 py-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 rounded-2xl active:opacity-75 transition-opacity cursor-pointer">
       <div className="w-9 h-9 rounded-full bg-white dark:bg-card border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shrink-0 shadow-sm">
-        <Sparkles className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+        <Unlock className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-rose-500 leading-tight">O momento chegou</p>
@@ -485,31 +489,23 @@ function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
   const quote = pickQuote(REVEAL_QUOTES, capsule.id);
   const date = format(new Date(capsule.unlock_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
 
-  /* lock body scroll */
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
   return createPortal(
     <div style={{ ...PORTAL_BASE, background: "#08020e" }}>
 
-      {/* Subtle ambient glow — behind content, não tapa nada */}
+      {/* Glow suave — não tapa nada */}
       <div style={{
-        position: "absolute", top: "28%", left: "50%",
-        transform: "translateX(-50%)",
-        width: 260, height: 260, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(244,63,94,0.18) 0%, transparent 70%)",
-        filter: "blur(48px)", pointerEvents: "none",
+        position: "absolute", top: "26%", left: "50%", transform: "translateX(-50%)",
+        width: 220, height: 220, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(244,63,94,0.16) 0%, transparent 70%)",
+        filter: "blur(52px)", pointerEvents: "none",
       }} />
 
       {/* X */}
-      <button onClick={onClose}
-        style={{
-          position: "absolute", top: 16, right: 16, zIndex: 2,
-          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
-          background: "rgba(255,255,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+      <button onClick={onClose} style={{
+        position: "absolute", top: 16, right: 16, zIndex: 2,
+        width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+        background: "rgba(255,255,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
         <X size={18} color="rgba(255,255,255,0.70)" strokeWidth={1.5} />
       </button>
 
@@ -517,7 +513,7 @@ function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
 
-        {/* Aneis + ícone */}
+        {/* Aneis + ícone cadeado aberto */}
         <div style={{ position: "relative", width: 148, height: 148,
           display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
@@ -532,11 +528,11 @@ function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
             display: "flex", alignItems: "center", justifyContent: "center",
             animation: "capsule-float 4s ease-in-out infinite",
           }}>
-            <Sparkles size={34} color="rgba(251,113,133,0.95)" strokeWidth={1} />
+            <Unlock size={34} color="rgba(251,113,133,0.95)" strokeWidth={1} />
           </div>
         </div>
 
-        <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.45,
+        <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.5,
           marginBottom: 16, whiteSpace: "pre-line",
           animation: "capsule-fade-up 600ms 200ms both ease" }}>
           {quote}
@@ -553,24 +549,24 @@ function ReadyDetailView({ capsule, revealing, onClose, onReveal }: {
           color: "rgba(255,255,255,0.20)", animation: "capsule-fade-up 600ms 420ms both ease" }}>
           Uma vez aberta, a mensagem fica visível para os dois permanentemente.
         </p>
-        <button onClick={onReveal} disabled={revealing}
-          style={{
-            width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
-            background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
-            boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
-            color: "#fff", fontWeight: 700, fontSize: 16,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            opacity: revealing ? 0.6 : 1,
-            animation: "capsule-fade-up 600ms 480ms both ease",
-          }}>
+        <button onClick={onReveal} disabled={revealing} style={{
+          width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
+          background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
+          boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
+          color: "#fff", fontWeight: 700, fontSize: 16,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          opacity: revealing ? 0.6 : 1,
+          animation: "capsule-fade-up 600ms 480ms both ease",
+        }}>
           {revealing
             ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
             : <Unlock size={20} strokeWidth={1.5} />}
           {revealing ? "A revelar..." : "Revelar cápsula"}
         </button>
-        <button onClick={onClose} disabled={revealing}
-          style={{ width: "100%", height: 44, background: "none", border: "none", cursor: "pointer",
-            color: "rgba(255,255,255,0.28)", fontWeight: 600, fontSize: 14, marginTop: 4 }}>
+        <button onClick={onClose} disabled={revealing} style={{
+          width: "100%", height: 44, background: "none", border: "none", cursor: "pointer",
+          color: "rgba(255,255,255,0.28)", fontWeight: 600, fontSize: 14, marginTop: 4,
+        }}>
           Cancelar
         </button>
       </div>
@@ -585,78 +581,107 @@ function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () =>
   const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(capsule.image_url || "");
   const hasMedia = !!capsule.image_url;
 
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
   return createPortal(
-    <div style={{ ...PORTAL_BASE, background: "#060606", overflowY: "auto" }}>
+    <div style={{ ...PORTAL_BASE, background: "#0a050f", overflowY: "auto" }}>
 
-      {/* X floating */}
-      <button onClick={onClose}
-        style={{
-          position: "fixed", top: 16, right: 16, zIndex: 10001,
-          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
-          background: "rgba(0,0,0,0.60)", backdropFilter: "blur(12px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+      {/* X — fixo em cima da foto */}
+      <button onClick={onClose} style={{
+        position: "fixed", top: 16, right: 16, zIndex: 10001,
+        width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+        background: "rgba(0,0,0,0.55)", backdropFilter: "blur(12px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
         <X size={18} color="rgba(255,255,255,0.80)" strokeWidth={1.5} />
       </button>
 
-      {/* ── MEDIA — protagonista, nunca cortada ── */}
+      {/* ── FOTO — protagonista, nunca cortada ── */}
       {hasMedia && (
         isVideo ? (
-          <video src={capsule.image_url} controls
-            style={{ width: "100%", display: "block", background: "#000",
-              maxHeight: "72svh", objectFit: "contain" }} />
+          <video src={capsule.image_url} controls style={{
+            width: "100%", display: "block", background: "#000",
+            maxHeight: "68svh", objectFit: "contain",
+          }} />
         ) : (
           <div style={{ position: "relative", background: "#000", overflow: "hidden" }}>
-            {/* ambient blur atrás */}
-            <img src={capsule.image_url} aria-hidden alt=""
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
-                objectFit: "cover", filter: "blur(32px) brightness(0.22)", transform: "scale(1.10)" }} />
-            {/* imagem real — 100% visível, sem corte */}
-            <img src={capsule.image_url} alt="Memória"
-              style={{ position: "relative", zIndex: 1, display: "block", margin: "0 auto",
-                maxWidth: "100%", maxHeight: "72svh", objectFit: "contain" }} />
+            {/* ambient blur de fundo */}
+            <img src={capsule.image_url} aria-hidden alt="" style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", filter: "blur(30px) brightness(0.20)", transform: "scale(1.10)",
+            }} />
+            {/* foto real — sempre inteira */}
+            <img src={capsule.image_url} alt="Memória" style={{
+              position: "relative", zIndex: 1, display: "block", margin: "0 auto",
+              maxWidth: "100%", maxHeight: "68svh", objectFit: "contain",
+            }} />
+            {/* gradiente a desvanecer para o conteúdo */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0, height: 72,
+              background: "linear-gradient(to bottom, transparent, #0a050f)",
+              pointerEvents: "none",
+            }} />
           </div>
         )
       )}
 
-      {/* ── TEXTO — imersivo, dark ── */}
-      <div style={{ background: "#0c0c0c", padding: "28px 24px",
-        paddingBottom: "max(env(safe-area-inset-bottom,0px),40px)" }}>
+      {/* ── CONTEÚDO — identidade LoveNest ── */}
+      <div style={{ padding: hasMedia ? "8px 24px 0" : "88px 24px 0" }}>
 
-        {/* Sem media: ícone emocional */}
+        {/* Sem media: ícone emocional com glow */}
         {!hasMedia && (
-          <div style={{ display: "flex", justifyContent: "center", paddingTop: 80, marginBottom: 32 }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%",
-              background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.18)",
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <CheckCircle2 size={30} color="rgba(251,113,133,0.80)" strokeWidth={1.5} />
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
+            <div style={{ position: "relative" }}>
+              <div style={{
+                position: "absolute", inset: -12, borderRadius: "50%",
+                background: "rgba(244,63,94,0.12)", filter: "blur(16px)",
+              }} />
+              <div style={{
+                position: "relative", width: 72, height: 72, borderRadius: "50%",
+                background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.20)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Unlock size={30} color="rgba(251,113,133,0.85)" strokeWidth={1.5} />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Quote emocional rose */}
-        <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.75,
-          color: "rgba(251,113,133,0.75)", marginBottom: 20, whiteSpace: "pre-line" }}>
-          "{quote}"
-        </p>
+        {/* Quote — tratamento premium: barra rose à esquerda, tipografia elegante */}
+        <div style={{
+          borderLeft: "2px solid rgba(244,63,94,0.40)",
+          paddingLeft: 16, marginBottom: 24, marginTop: hasMedia ? 16 : 0,
+        }}>
+          <p style={{
+            fontSize: 15, fontStyle: "italic", lineHeight: 1.85,
+            color: "rgba(251,113,133,0.82)", whiteSpace: "pre-line",
+            letterSpacing: "0.01em",
+          }}>
+            "{quote}"
+          </p>
+        </div>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 22 }} />
+        {/* Separador */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", marginBottom: 22 }} />
 
-        {/* Mensagem da cápsula */}
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.90)", lineHeight: 1.80,
-          whiteSpace: "pre-wrap", marginBottom: 28 }}>
+        {/* Mensagem */}
+        <p style={{
+          fontSize: 16, color: "rgba(255,255,255,0.88)", lineHeight: 1.85,
+          whiteSpace: "pre-wrap",
+        }}>
           {capsule.message}
         </p>
 
-        {/* Data */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 14 }}>
-          <p style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.18)" }}>
+        {/* Data + gradiente LoveNest no final */}
+        <div style={{
+          marginTop: 32, paddingTop: 16,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          display: "flex", alignItems: "center", gap: 8,
+          paddingBottom: "max(env(safe-area-inset-bottom,0px),40px)",
+        }}>
+          <Unlock size={12} color="rgba(244,63,94,0.45)" strokeWidth={1.5} />
+          <p style={{
+            fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.20)",
+          }}>
             Aberta a {date}
           </p>
         </div>
@@ -670,11 +695,6 @@ function LockedDetailView({ capsule, onClose }: { capsule: any; onClose: () => v
   const unlockDateObj = new Date(capsule.unlock_date);
   const daysDiff = Math.max(0, differenceInDays(unlockDateObj, new Date()));
   const date = format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt });
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
 
   return createPortal(
     <div style={{ ...PORTAL_BASE, background: "#04020e" }}>
