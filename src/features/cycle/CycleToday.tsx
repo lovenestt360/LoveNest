@@ -323,7 +323,6 @@ function SectionHeader({
 }) {
   return (
     <>
-      <div className={cn("h-[2px] bg-gradient-to-r to-transparent", accentClass)} />
       <div className="px-5 pt-4 pb-3 border-b border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn("w-1.5 h-4 rounded-full shrink-0", markerClass)} />
