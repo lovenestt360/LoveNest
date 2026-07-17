@@ -207,7 +207,7 @@ function ChipSelector({
   const shadow = CHIP_SHADOWS[color];
   return (
     <div className="space-y-2.5">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{label}</p>
+      <p className={cn("text-[11px] font-bold uppercase tracking-widest", style.text)}>{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -220,13 +220,13 @@ function ChipSelector({
                 "flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-200 ease-out",
                 active
                   ? cn(style.border, style.bg, style.text, shadow, "scale-[1.04]")
-                  : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
+                  : "border-border/60 text-foreground/75 hover:bg-muted/60 hover:border-border active:scale-95",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
               {Icon && (
                 <Icon
-                  className={cn("h-3.5 w-3.5 transition-all duration-200", active ? "" : "opacity-60")}
+                  className={cn("h-3.5 w-3.5 transition-all duration-200", active ? "" : "opacity-50")}
                   strokeWidth={active ? 2 : 1.5}
                 />
               )}
@@ -251,7 +251,7 @@ function StringChipSelector({
   const shadow = CHIP_SHADOWS[color];
   return (
     <div className="space-y-2.5">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{label}</p>
+      <p className={cn("text-[11px] font-bold uppercase tracking-widest", style.text)}>{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -264,7 +264,7 @@ function StringChipSelector({
                 "flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-200 ease-out",
                 active
                   ? cn(style.border, style.bg, style.text, shadow, "scale-[1.04]")
-                  : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
+                  : "border-border/60 text-foreground/75 hover:bg-muted/60 hover:border-border active:scale-95",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -294,7 +294,7 @@ function FlowChip({ flowLevel, onChange }: {
   ];
   return (
     <div className="space-y-2.5">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Fluxo</p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-rose-500">Fluxo</p>
       <div className="flex gap-2">
         {flows.map(f => {
           const active = flowLevel === f.value;
@@ -752,7 +752,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                             "flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border text-[10px] font-semibold transition-all duration-200 ease-out",
                             activeQ
                               ? cn(FEELING_STYLES.indigo.border, FEELING_STYLES.indigo.bg, FEELING_STYLES.indigo.text, CHIP_SHADOWS.indigo, "scale-[1.05]")
-                              : "border-border/60 text-muted-foreground/60 hover:bg-muted/60 active:scale-95",
+                              : "border-border/60 text-foreground/75 hover:bg-muted/60 active:scale-95",
                             (data.isMale || saving) && "opacity-50 cursor-not-allowed"
                           )}>
                           <opt.icon className={cn("h-3.5 w-3.5 transition-all", activeQ ? "" : "opacity-50")} strokeWidth={activeQ ? 2 : 1.5} />
@@ -807,7 +807,7 @@ export function CycleToday({ data }: { data: CycleData }) {
             )}
 
             <div className="space-y-2.5">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Houve relação?</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-pink-500">Houve relação?</p>
               <div className="flex gap-2">
                 {[{ value: false, label: "Não" }, { value: true, label: "Sim" }].map(opt => {
                   const activeYN = hadActivityToday === opt.value;
@@ -867,7 +867,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                 <div key={section.title} className="space-y-3">
                   <div className="flex items-center gap-1.5">
                     <div className={cn("w-1 h-3 rounded-full shrink-0", style.solid)} />
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{section.title}</p>
+                    <p className={cn("text-[11px] font-bold uppercase tracking-widest", style.text)}>{section.title}</p>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {section.items.map(s => {
