@@ -19,7 +19,6 @@ import { differenceInDays } from "date-fns";
 import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
 
-// Phase accent colors — one distinct hue per phase, consistent with HomeCard
 const PHASE_ACCENT: Record<string, string> = {
   menstrual: "text-rose-500",
   folicular: "text-sky-500",
@@ -85,27 +84,49 @@ const SYMPTOM_SECTIONS = [
 
 const ALL_SYMPTOM_KEYS = SYMPTOM_SECTIONS.flatMap((s) => s.items.map((i) => i.key));
 
-// Cada secção tem a sua própria identidade de cor — em vez de tudo ficar
-// rosa genérico ao selecionar, dá vida e ajuda a distinguir categorias
-// num ecrã com 25 sintomas.
 const SECTION_STYLES: Record<string, { soft: string; solid: string; text: string; border: string }> = {
-  "Físicos":    { soft: "bg-rose-50 dark:bg-rose-950/30",      solid: "bg-rose-500",    text: "text-rose-500",    border: "border-rose-300 dark:border-rose-700" },
-  "Emocionais": { soft: "bg-violet-50 dark:bg-violet-950/30",  solid: "bg-violet-500",  text: "text-violet-500",  border: "border-violet-300 dark:border-violet-700" },
-  "Digestivo":  { soft: "bg-sky-50 dark:bg-sky-950/30",        solid: "bg-sky-500",     text: "text-sky-500",     border: "border-sky-300 dark:border-sky-700" },
+  "Físicos":    { soft: "bg-rose-50 dark:bg-rose-950/30",       solid: "bg-rose-500",    text: "text-rose-500",    border: "border-rose-300 dark:border-rose-700" },
+  "Emocionais": { soft: "bg-violet-50 dark:bg-violet-950/30",   solid: "bg-violet-500",  text: "text-violet-500",  border: "border-violet-300 dark:border-violet-700" },
+  "Digestivo":  { soft: "bg-sky-50 dark:bg-sky-950/30",         solid: "bg-sky-500",     text: "text-sky-500",     border: "border-sky-300 dark:border-sky-700" },
   "Outros":     { soft: "bg-emerald-50 dark:bg-emerald-950/30", solid: "bg-emerald-500", text: "text-emerald-500", border: "border-emerald-300 dark:border-emerald-700" },
 };
 
-// Cores por métrica em "Como me sinto hoje" — mesmo espírito do
-// SECTION_STYLES dos sintomas, para os chips deixarem de ser todos rosa.
 const FEELING_STYLES: Record<string, { text: string; bg: string; border: string }> = {
-  rose:    { text: "text-rose-500",    bg: "bg-rose-50 dark:bg-rose-950/30",    border: "border-rose-300 dark:border-rose-700" },
-  orange:  { text: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-300 dark:border-orange-700" },
+  rose:    { text: "text-rose-500",    bg: "bg-rose-50 dark:bg-rose-950/30",      border: "border-rose-300 dark:border-rose-700" },
+  orange:  { text: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/30",  border: "border-orange-300 dark:border-orange-700" },
   fuchsia: { text: "text-fuchsia-500", bg: "bg-fuchsia-50 dark:bg-fuchsia-950/30", border: "border-fuchsia-300 dark:border-fuchsia-700" },
-  red:     { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-300 dark:border-red-700" },
-  teal:    { text: "text-teal-500",    bg: "bg-teal-50 dark:bg-teal-950/30",    border: "border-teal-300 dark:border-teal-700" },
-  indigo:  { text: "text-indigo-500",  bg: "bg-indigo-50 dark:bg-indigo-950/30", border: "border-indigo-300 dark:border-indigo-700" },
-  pink:    { text: "text-pink-500",    bg: "bg-pink-50 dark:bg-pink-950/30",    border: "border-pink-300 dark:border-pink-700" },
+  red:     { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",        border: "border-red-300 dark:border-red-700" },
+  teal:    { text: "text-teal-500",    bg: "bg-teal-50 dark:bg-teal-950/30",      border: "border-teal-300 dark:border-teal-700" },
+  indigo:  { text: "text-indigo-500",  bg: "bg-indigo-50 dark:bg-indigo-950/30",  border: "border-indigo-300 dark:border-indigo-700" },
+  pink:    { text: "text-pink-500",    bg: "bg-pink-50 dark:bg-pink-950/30",      border: "border-pink-300 dark:border-pink-700" },
 };
+
+// Sombra colorida por tema — dá "glow" ao chip selecionado sem ser excessivo
+const CHIP_SHADOWS: Record<keyof typeof FEELING_STYLES, string> = {
+  rose:    "shadow-[0_4px_14px_rgba(244,63,94,0.22)]",
+  orange:  "shadow-[0_4px_14px_rgba(249,115,22,0.22)]",
+  fuchsia: "shadow-[0_4px_14px_rgba(217,70,239,0.22)]",
+  red:     "shadow-[0_4px_14px_rgba(239,68,68,0.22)]",
+  teal:    "shadow-[0_4px_14px_rgba(20,184,166,0.22)]",
+  indigo:  "shadow-[0_4px_14px_rgba(99,102,241,0.22)]",
+  pink:    "shadow-[0_4px_14px_rgba(236,72,153,0.22)]",
+};
+
+const SECTION_CHIP_SHADOWS: Record<string, string> = {
+  "Físicos":    "shadow-[0_4px_14px_rgba(244,63,94,0.22)]",
+  "Emocionais": "shadow-[0_4px_14px_rgba(139,92,246,0.22)]",
+  "Digestivo":  "shadow-[0_4px_14px_rgba(14,165,233,0.22)]",
+  "Outros":     "shadow-[0_4px_14px_rgba(16,185,129,0.22)]",
+};
+
+// Mensagens de carinho que aparecem após guardar — rotação aleatória
+const CARE_MESSAGES = [
+  "Registado. Cuida bem de ti.",
+  "O teu bem-estar faz parte da vossa história.",
+  "Cada detalhe que registas é um gesto de amor próprio.",
+  "Guardado com carinho.",
+  "Obrigada por cuidares de ti.",
+];
 
 const PROTECTION_OPTIONS = [
   { value: "nenhum", label: "Nenhum", icon: ShieldOff },
@@ -116,10 +137,10 @@ const PROTECTION_OPTIONS = [
 ];
 
 const RISK_STYLES: Record<string, { text: string; bg: string; border: string; icon: LucideIcon }> = {
-  alto:        { text: "text-red-500",     bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-200 dark:border-red-800",     icon: ShieldAlert },
-  moderado:    { text: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800", icon: Shield },
-  baixo:       { text: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", icon: ShieldCheck },
-  sem_registo: { text: "text-muted-foreground", bg: "bg-muted", border: "border-border", icon: ShieldOff },
+  alto:        { text: "text-red-500",            bg: "bg-red-50 dark:bg-red-950/30",         border: "border-red-200 dark:border-red-800",     icon: ShieldAlert },
+  moderado:    { text: "text-orange-500",          bg: "bg-orange-50 dark:bg-orange-950/30",   border: "border-orange-200 dark:border-orange-800", icon: Shield },
+  baixo:       { text: "text-emerald-500",         bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", icon: ShieldCheck },
+  sem_registo: { text: "text-muted-foreground",    bg: "bg-muted",                             border: "border-border",                           icon: ShieldOff },
 };
 
 type ChipOption = { value: number; label: string; icon?: LucideIcon };
@@ -167,7 +188,7 @@ function valueToChip(value: number, options: ChipOption[]): number {
   return closest;
 }
 
-
+// ── Chip numérico — estado selecionado com escala + sombra + ícone expressivo
 function ChipSelector({
   label, options, value, onChange, disabled = false, color = "rose",
 }: {
@@ -175,9 +196,10 @@ function ChipSelector({
   value: number; onChange: (v: number) => void; disabled?: boolean; color?: keyof typeof FEELING_STYLES;
 }) {
   const style = FEELING_STYLES[color];
+  const shadow = CHIP_SHADOWS[color];
   return (
-    <div className="space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
+    <div className="space-y-2.5">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -187,12 +209,19 @@ function ChipSelector({
               key={opt.value} type="button" disabled={disabled}
               onClick={() => onChange(opt.value)}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-medium border transition-all duration-150 active:scale-95",
-                active ? cn(style.border, style.bg, style.text) : "border-border text-muted-foreground hover:bg-muted",
+                "flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-200 ease-out",
+                active
+                  ? cn(style.border, style.bg, style.text, shadow, "scale-[1.04]")
+                  : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
-              {Icon && <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />}
+              {Icon && (
+                <Icon
+                  className={cn("h-3.5 w-3.5 transition-all duration-200", active ? "" : "opacity-60")}
+                  strokeWidth={active ? 2 : 1.5}
+                />
+              )}
               {opt.label}
             </button>
           );
@@ -202,6 +231,7 @@ function ChipSelector({
   );
 }
 
+// ── Chip textual — mesmo tratamento visual
 function StringChipSelector({
   label, options, value, onChange, disabled = false, color = "rose",
 }: {
@@ -210,9 +240,10 @@ function StringChipSelector({
   value: string; onChange: (v: string) => void; disabled?: boolean; color?: keyof typeof FEELING_STYLES;
 }) {
   const style = FEELING_STYLES[color];
+  const shadow = CHIP_SHADOWS[color];
   return (
-    <div className="space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
+    <div className="space-y-2.5">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -222,12 +253,19 @@ function StringChipSelector({
               key={opt.value} type="button" disabled={disabled}
               onClick={() => onChange(opt.value)}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-medium border transition-all duration-150 active:scale-95",
-                active ? cn(style.border, style.bg, style.text) : "border-border text-muted-foreground hover:bg-muted",
+                "flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-200 ease-out",
+                active
+                  ? cn(style.border, style.bg, style.text, shadow, "scale-[1.04]")
+                  : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
-              {Icon && <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />}
+              {Icon && (
+                <Icon
+                  className={cn("h-3.5 w-3.5 transition-all duration-200", active ? "" : "opacity-60")}
+                  strokeWidth={active ? 2 : 1.5}
+                />
+              )}
               {opt.label}
             </button>
           );
@@ -237,8 +275,9 @@ function StringChipSelector({
   );
 }
 
-function FlowChip({ value, flowLevel, onChange }: {
-  value: string; flowLevel: string; onChange: (v: string) => void;
+// ── Fluxo — dots como elementos HTML, escala quando selecionado
+function FlowChip({ flowLevel, onChange }: {
+  flowLevel: string; onChange: (v: string) => void;
 }) {
   const flows = [
     { value: "light",  label: "Leve",     dots: 1 },
@@ -246,28 +285,53 @@ function FlowChip({ value, flowLevel, onChange }: {
     { value: "heavy",  label: "Intenso",  dots: 3 },
   ];
   return (
-    <div className="space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Fluxo</p>
+    <div className="space-y-2.5">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Fluxo</p>
       <div className="flex gap-2">
-        {flows.map(f => (
-          <button
-            key={f.value} type="button"
-            onClick={() => onChange(f.value)}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl border text-xs font-medium transition-all duration-150 active:scale-95",
-              flowLevel === f.value
-                ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                : "border-border text-muted-foreground hover:bg-muted"
-            )}
-          >
-            <span className="flex gap-0.5 text-rose-400">
-              {"●".repeat(f.dots)}
-            </span>
-            {f.label}
-          </button>
-        ))}
+        {flows.map(f => {
+          const active = flowLevel === f.value;
+          return (
+            <button
+              key={f.value} type="button"
+              onClick={() => onChange(f.value)}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl border text-xs font-semibold transition-all duration-200 ease-out",
+                active
+                  ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500 shadow-[0_4px_14px_rgba(244,63,94,0.22)] scale-[1.04]"
+                  : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95"
+              )}
+            >
+              <span className="flex gap-1">
+                {Array.from({ length: f.dots }).map((_, i) => (
+                  <span key={i} className={cn("w-2 h-2 rounded-full transition-all duration-200", active ? "bg-rose-400" : "bg-muted-foreground/25")} />
+                ))}
+              </span>
+              {f.label}
+            </button>
+          );
+        })}
       </div>
     </div>
+  );
+}
+
+// ── Cabeçalho de secção com identidade própria
+function SectionHeader({
+  accentClass, markerClass, children, right,
+}: {
+  accentClass: string; markerClass: string; children: React.ReactNode; right?: React.ReactNode;
+}) {
+  return (
+    <>
+      <div className={cn("h-[2px] bg-gradient-to-r to-transparent", accentClass)} />
+      <div className="px-5 pt-4 pb-3 border-b border-border/50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={cn("w-1.5 h-4 rounded-full shrink-0", markerClass)} />
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{children}</p>
+        </div>
+        {right}
+      </div>
+    </>
   );
 }
 
@@ -281,6 +345,7 @@ export function CycleToday({ data }: { data: CycleData }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showPetals, setShowPetals] = useState(false);
+  const [careMessage, setCareMessage] = useState("");
   const [flowLevel, setFlowLevel] = useState<string>("medium");
   const [startDate, setStartDate] = useState(today);
   const [showBackdate, setShowBackdate] = useState(false);
@@ -340,9 +405,10 @@ export function CycleToday({ data }: { data: CycleData }) {
   };
 
   const triggerSavedFeedback = useCallback(() => {
+    setCareMessage(CARE_MESSAGES[Math.floor(Math.random() * CARE_MESSAGES.length)]);
     setSaved(true);
     setShowPetals(true);
-    setTimeout(() => { setSaved(false); setShowPetals(false); }, 2200);
+    setTimeout(() => { setSaved(false); setShowPetals(false); }, 2600);
   }, []);
 
   const handleStartPeriod = async () => {
@@ -432,14 +498,15 @@ export function CycleToday({ data }: { data: CycleData }) {
   const accentColor = PHASE_ACCENT[phaseKey] ?? "text-muted-foreground";
   const PhaseIcon = PHASE_ICONS[phaseKey] ?? Flower2;
 
-  // Posição do ponto "vivo" na ponta do anel de progresso — ângulo medido
-  // a partir do topo, no sentido horário (mesmo referencial visual do anel).
   const ringAngle = ((engine?.cycleProgress ?? 0) / 100) * 2 * Math.PI;
   const ringDotX = 50 + 44 * Math.sin(ringAngle);
   const ringDotY = 50 - 44 * Math.cos(ringAngle);
 
   return (
-    <div className="space-y-5">
+    <>
+      <div className="space-y-6">
+
+        {/* ── Hero de fase ── */}
         {engine ? (
           <div className="glass-card p-6 space-y-4">
             <div className="flex items-center gap-5">
@@ -464,7 +531,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Fase actual</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-1">Fase actual</p>
                 <h2 className={cn("text-xl font-bold", accentColor)}>{engine.phaseLabel}</h2>
                 <p className="text-xs text-muted-foreground mt-1">
                   {engine.daysUntilNextPeriod > 0
@@ -477,10 +544,7 @@ export function CycleToday({ data }: { data: CycleData }) {
             <p className="text-sm text-muted-foreground leading-relaxed italic">"{engine.insights[0]}"</p>
 
             {engine.insights.slice(1).map((insight, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-rose-200/50 dark:border-rose-800/50 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-2 flex items-start gap-2"
-              >
+              <div key={i} className="rounded-xl border border-rose-200/50 dark:border-rose-800/50 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-2 flex items-start gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
                 <p className="text-xs text-muted-foreground leading-relaxed">{insight}</p>
               </div>
@@ -533,9 +597,9 @@ export function CycleToday({ data }: { data: CycleData }) {
 
         {/* ── Menstruação ── */}
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-border">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Menstruação</p>
-          </div>
+          <SectionHeader accentClass="from-rose-300/60 via-rose-200/30 dark:from-rose-700/40" markerClass="bg-rose-400/70">
+            Menstruação
+          </SectionHeader>
           <div className="p-5 space-y-4">
             {openPeriod ? (
               <>
@@ -570,10 +634,10 @@ export function CycleToday({ data }: { data: CycleData }) {
                       <button
                         onClick={() => { setShowEndDate(!showEndDate); setEndDate(today); }}
                         className={cn(
-                          "h-10 px-3 rounded-2xl border text-xs flex items-center gap-1 transition-all",
+                          "h-10 px-3 rounded-2xl border text-xs flex items-center gap-1 transition-all duration-200",
                           showEndDate
                             ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                            : "border-border text-muted-foreground hover:bg-muted"
+                            : "border-border/60 text-muted-foreground hover:bg-muted"
                         )}
                       >
                         <Calendar className="h-3 w-3" strokeWidth={1.5} /> Outra data
@@ -582,17 +646,12 @@ export function CycleToday({ data }: { data: CycleData }) {
                     {showEndDate && (
                       <div className="space-y-2">
                         <Input
-                          type="date"
-                          value={endDate}
-                          max={today}
-                          min={openPeriod?.start_date}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          disabled={saving}
+                          type="date" value={endDate} max={today} min={openPeriod?.start_date}
+                          onChange={(e) => setEndDate(e.target.value)} disabled={saving}
                           className="rounded-xl border-border bg-card h-10 text-sm"
                         />
                         <button
-                          onClick={handleEndPeriod}
-                          disabled={saving || !endDate}
+                          onClick={handleEndPeriod} disabled={saving || !endDate}
                           className="w-full h-10 flex items-center justify-center gap-1.5 rounded-2xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition-all"
                         >
                           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" strokeWidth={1.5} />}
@@ -605,7 +664,7 @@ export function CycleToday({ data }: { data: CycleData }) {
               </>
             ) : (
               <div className="space-y-4">
-                <FlowChip value={flowLevel} flowLevel={flowLevel} onChange={setFlowLevel} />
+                <FlowChip flowLevel={flowLevel} onChange={setFlowLevel} />
                 <Textarea
                   value={periodNotes}
                   onChange={e => setPeriodNotes(e.target.value)}
@@ -625,10 +684,10 @@ export function CycleToday({ data }: { data: CycleData }) {
                   onClick={() => { setShowBackdate(!showBackdate); setStartDate(today); }}
                   disabled={saving}
                   className={cn(
-                    "w-full h-10 flex items-center justify-center gap-1.5 rounded-2xl border text-sm font-medium transition-all disabled:opacity-60",
+                    "w-full h-10 flex items-center justify-center gap-1.5 rounded-2xl border text-sm font-medium transition-all duration-200 disabled:opacity-60",
                     showBackdate
                       ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                      : "border-border text-muted-foreground hover:bg-muted"
+                      : "border-border/60 text-muted-foreground hover:bg-muted"
                   )}
                 >
                   <Calendar className="h-4 w-4" strokeWidth={1.5} />
@@ -637,16 +696,12 @@ export function CycleToday({ data }: { data: CycleData }) {
                 {showBackdate && (
                   <div className="space-y-2">
                     <Input
-                      type="date"
-                      value={startDate}
-                      max={today}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      disabled={saving}
+                      type="date" value={startDate} max={today}
+                      onChange={(e) => setStartDate(e.target.value)} disabled={saving}
                       className="rounded-xl border-border bg-card h-10 text-sm"
                     />
                     <button
-                      onClick={handleStartPeriod}
-                      disabled={saving || !startDate}
+                      onClick={handleStartPeriod} disabled={saving || !startDate}
                       className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" strokeWidth={1.5} />}
@@ -661,38 +716,41 @@ export function CycleToday({ data }: { data: CycleData }) {
 
         {/* ── Como me sinto hoje ── */}
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-border">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Como me sinto hoje</p>
-          </div>
-          <div className="p-5 space-y-5">
+          <SectionHeader accentClass="from-violet-300/60 via-violet-200/20 dark:from-violet-700/40" markerClass="bg-violet-400/70">
+            Como me sinto hoje
+          </SectionHeader>
+          <div className="p-5 space-y-6">
             <ChipSelector label="Dor" options={PAIN_OPTIONS} value={painLevel} onChange={setPainLevel} disabled={data.isMale || saving} color="rose" />
             <ChipSelector label="Energia" options={ENERGY_OPTIONS} value={energyLevel} onChange={setEnergyLevel} disabled={data.isMale || saving} color="orange" />
             <ChipSelector label="Stress" options={STRESS_OPTIONS} value={stress} onChange={setStress} disabled={data.isMale || saving} color="fuchsia" />
             <ChipSelector label="Libido" options={LIBIDO_OPTIONS} value={libido} onChange={setLibido} disabled={data.isMale || saving} color="red" />
             <StringChipSelector label="Secreção" options={DISCHARGE_OPTIONS} value={dischargeType} onChange={setDischargeType} disabled={data.isMale || saving} color="teal" />
             <div className="grid grid-cols-2 gap-3 items-end">
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Sono (h)</p>
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Sono (h)</p>
                 <Input type="number" value={sleepHours} onChange={e => setSleepHours(e.target.value)} placeholder="ex: 7.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
               </div>
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Qualidade do sono</p>
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Qualidade do sono</p>
                 <div className="flex gap-1.5">
-                  {SLEEP_QUALITY_OPTIONS.map(opt => (
-                    <button key={opt.value} type="button" disabled={data.isMale || saving} onClick={() => setSleepQuality(opt.value)}
-                      className={cn("flex-1 h-10 flex items-center justify-center rounded-xl border transition-all",
-                        sleepQuality === opt.value
-                          ? cn(FEELING_STYLES.indigo.border, FEELING_STYLES.indigo.bg, FEELING_STYLES.indigo.text)
-                          : "border-border text-muted-foreground hover:bg-muted",
-                        (data.isMale || saving) && "opacity-50 cursor-not-allowed"
-                      )}>
-                      <opt.icon className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
-                  ))}
+                  {SLEEP_QUALITY_OPTIONS.map(opt => {
+                    const activeQ = sleepQuality === opt.value;
+                    return (
+                      <button key={opt.value} type="button" disabled={data.isMale || saving} onClick={() => setSleepQuality(opt.value)}
+                        className={cn("flex-1 h-10 flex items-center justify-center rounded-xl border transition-all duration-200 ease-out",
+                          activeQ
+                            ? cn(FEELING_STYLES.indigo.border, FEELING_STYLES.indigo.bg, FEELING_STYLES.indigo.text, CHIP_SHADOWS.indigo, "scale-[1.04]")
+                            : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
+                          (data.isMale || saving) && "opacity-50 cursor-not-allowed"
+                        )}>
+                        <opt.icon className={cn("h-4 w-4 transition-all", activeQ ? "" : "opacity-60")} strokeWidth={activeQ ? 2 : 1.5} />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                   <Thermometer className="h-3 w-3" strokeWidth={1.5} /> Temp. basal (°C)
                 </p>
                 <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
@@ -703,22 +761,24 @@ export function CycleToday({ data }: { data: CycleData }) {
 
         {/* ── Intimidade ── */}
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <HeartHandshake className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Intimidade</p>
-            </div>
-            <button type="button" disabled={data.isMale}
-              onClick={() => {
-                if (showIntimacyDate) { setShowIntimacyDate(false); setIntimacyDate(today); }
-                else setShowIntimacyDate(true);
-              }}
-              className="h-7 px-3 rounded-full bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800 text-pink-500 text-[11px] font-semibold flex items-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
-            >
-              <Calendar className="h-3 w-3" strokeWidth={2} />
-              {intimacyDate === today ? "Hoje" : formatShortDate(intimacyDate)}
-            </button>
-          </div>
+          <SectionHeader
+            accentClass="from-pink-300/60 via-pink-200/20 dark:from-pink-700/40"
+            markerClass="bg-pink-400/70"
+            right={
+              <button type="button" disabled={data.isMale}
+                onClick={() => {
+                  if (showIntimacyDate) { setShowIntimacyDate(false); setIntimacyDate(today); }
+                  else setShowIntimacyDate(true);
+                }}
+                className="h-7 px-3 rounded-full bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800 text-pink-500 text-[11px] font-semibold flex items-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Calendar className="h-3 w-3" strokeWidth={2} />
+                {intimacyDate === today ? "Hoje" : formatShortDate(intimacyDate)}
+              </button>
+            }
+          >
+            Intimidade
+          </SectionHeader>
           <div className="p-5 space-y-4">
             {showIntimacyDate && (
               <Input
@@ -729,21 +789,24 @@ export function CycleToday({ data }: { data: CycleData }) {
               />
             )}
 
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Houve relação?</p>
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Houve relação?</p>
               <div className="flex gap-2">
-                {[{ value: false, label: "Não" }, { value: true, label: "Sim" }].map(opt => (
-                  <button key={String(opt.value)} type="button" disabled={data.isMale || savingIntimacy}
-                    onClick={() => setHadActivityToday(opt.value)}
-                    className={cn("flex-1 py-2.5 rounded-2xl border text-xs font-medium transition-all active:scale-95",
-                      hadActivityToday === opt.value
-                        ? cn(FEELING_STYLES.pink.border, FEELING_STYLES.pink.bg, FEELING_STYLES.pink.text)
-                        : "border-border text-muted-foreground hover:bg-muted",
-                      (data.isMale || savingIntimacy) && "opacity-50 cursor-not-allowed"
-                    )}>
-                    {opt.label}
-                  </button>
-                ))}
+                {[{ value: false, label: "Não" }, { value: true, label: "Sim" }].map(opt => {
+                  const activeYN = hadActivityToday === opt.value;
+                  return (
+                    <button key={String(opt.value)} type="button" disabled={data.isMale || savingIntimacy}
+                      onClick={() => setHadActivityToday(opt.value)}
+                      className={cn("flex-1 py-3 rounded-2xl border text-xs font-semibold transition-all duration-200 ease-out",
+                        activeYN
+                          ? cn(FEELING_STYLES.pink.border, FEELING_STYLES.pink.bg, FEELING_STYLES.pink.text, CHIP_SHADOWS.pink, "scale-[1.04]")
+                          : "border-border/60 text-muted-foreground/70 hover:bg-muted/60 hover:border-border active:scale-95",
+                        (data.isMale || savingIntimacy) && "opacity-50 cursor-not-allowed"
+                      )}>
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -770,18 +833,25 @@ export function CycleToday({ data }: { data: CycleData }) {
 
         {/* ── Sintomas ── */}
         <div className="glass-card overflow-hidden">
-          <div className="px-5 pt-5 pb-3 border-b border-border flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Sintomas</p>
-            {activeSymptoms > 0 && (
+          <SectionHeader
+            accentClass="from-rose-300/50 via-violet-200/20 dark:from-rose-700/40"
+            markerClass="bg-gradient-to-b from-rose-400/80 to-violet-400/60"
+            right={activeSymptoms > 0 ? (
               <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200 dark:border-rose-800 text-[10px] font-semibold">{activeSymptoms} ativos</span>
-            )}
-          </div>
-          <div className="p-5 space-y-5">
+            ) : undefined}
+          >
+            Sintomas
+          </SectionHeader>
+          <div className="p-5 space-y-6">
             {SYMPTOM_SECTIONS.map(section => {
               const style = SECTION_STYLES[section.title];
+              const chipShadow = SECTION_CHIP_SHADOWS[section.title];
               return (
-                <div key={section.title} className="space-y-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{section.title}</p>
+                <div key={section.title} className="space-y-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className={cn("w-1 h-3 rounded-full shrink-0", style.solid)} />
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{section.title}</p>
+                  </div>
                   <div className="grid grid-cols-4 gap-2">
                     {section.items.map(s => {
                       const Icon = s.icon;
@@ -789,15 +859,17 @@ export function CycleToday({ data }: { data: CycleData }) {
                       return (
                         <button key={s.key} type="button" disabled={data.isMale}
                           onClick={() => setSymptoms(prev => ({ ...prev, [s.key]: !prev[s.key] }))}
-                          className={cn("flex flex-col items-center gap-1.5 rounded-2xl border p-2.5 text-[10px] font-medium transition-all active:scale-95",
-                            active ? cn(style.border, style.soft) : "border-border hover:bg-muted",
+                          className={cn("flex flex-col items-center gap-1.5 rounded-2xl border p-2.5 text-[10px] font-semibold transition-all duration-200 ease-out",
+                            active
+                              ? cn(style.border, style.soft, chipShadow, "scale-[1.05]")
+                              : "border-border/60 hover:bg-muted/60 hover:border-border active:scale-95",
                             data.isMale && "opacity-50 cursor-not-allowed"
                           )}>
-                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-colors",
-                            active ? style.solid : style.soft)}>
-                            <Icon className={cn("h-[16px] w-[16px]", active ? "text-white" : style.text)} strokeWidth={1.75} />
+                          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200",
+                            active ? cn(style.solid, "shadow-sm") : style.soft)}>
+                            <Icon className={cn("h-[17px] w-[17px] transition-all duration-200", active ? "text-white" : cn(style.text, "opacity-70"))} strokeWidth={active ? 2 : 1.75} />
                           </div>
-                          <span className={cn("leading-tight text-center", active ? style.text : "text-muted-foreground")}>{s.label}</span>
+                          <span className={cn("leading-tight text-center transition-colors duration-200", active ? style.text : "text-muted-foreground")}>{s.label}</span>
                         </button>
                       );
                     })}
@@ -806,8 +878,8 @@ export function CycleToday({ data }: { data: CycleData }) {
               );
             })}
 
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Notas</p>
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Notas</p>
               <Textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
@@ -826,6 +898,22 @@ export function CycleToday({ data }: { data: CycleData }) {
             )}
           </div>
         </div>
-    </div>
+      </div>
+
+      {/* Toast de carinho — aparece suavemente e desaparece após guardar */}
+      <div
+        className={cn(
+          "fixed left-4 right-4 bottom-24 z-50 flex justify-center transition-all duration-500 ease-out pointer-events-none",
+          saved ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+        )}
+      >
+        <div className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-xl rounded-2xl px-5 py-3.5 flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" strokeWidth={2} />
+          </div>
+          <p className="text-[13px] text-foreground font-medium leading-snug">{careMessage}</p>
+        </div>
+      </div>
+    </>
   );
 }
