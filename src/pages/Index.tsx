@@ -34,7 +34,6 @@ import { getMilestoneMicroMemory, getMilestoneCeremonyContent } from "@/componen
 import { useRelationshipEvents } from "@/features/relationship-events/useRelationshipEvents";
 import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
-import { capsuleSeenKey } from "@/features/capsule/CapsuleRealtimeWatcher";
 
 /* ── Components ── */
 import { DashCard } from "@/features/home/components/DashCard";
@@ -445,47 +444,6 @@ const Index = () => {
       subtitle: isSolo ? "Mais um ano da tua história." : "Mais um ano a escolherem-se.",
     });
   }, [spaceId, nextSpecialDate, isSolo]);
-
-  // Cápsula do Tempo — fallback para quando o utilizador estava offline ao criar.
-  // Usa a mesma chave localStorage do CapsuleRealtimeWatcher para dedupe persistente.
-  useEffect(() => {
-    if (!spaceId || !user) return;
-    const key = capsuleSeenKey(spaceId, user.id);
-
-    const check = async () => {
-      let seenIds: string[];
-      try { seenIds = JSON.parse(localStorage.getItem(key) ?? "[]"); } catch { seenIds = []; }
-
-      const since = new Date();
-      since.setDate(since.getDate() - 7);
-
-      const { data } = await (supabase as any)
-        .from("time_capsule_messages")
-        .select("id")
-        .eq("couple_space_id", spaceId)
-        .neq("creator_id", user.id)
-        .gte("created_at", since.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (!data?.length) return;
-      const unseen = (data as { id: string }[]).filter(c => !seenIds.includes(c.id));
-      if (!unseen.length) return;
-
-      const allSeen = [...seenIds, ...unseen.map(c => c.id)].slice(-100);
-      localStorage.setItem(key, JSON.stringify(allSeen));
-      dispatchCeremony({
-        type: "capsula",
-        eyebrow: "Cápsula do Tempo",
-        title: "O teu par enterrou uma cápsula",
-        subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
-      });
-    };
-
-    check();
-    window.addEventListener("home-visible", check);
-    return () => window.removeEventListener("home-visible", check);
-  }, [spaceId, user]);
 
   const handleShareReferral = () => {
     if (!referralCode) return;
