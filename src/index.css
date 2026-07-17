@@ -715,37 +715,6 @@ input, textarea, [contenteditable="true"] {
 .card-glow-violet:active  { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(139,92,246,0.10),  0 0 0 2px rgba(139,92,246,0.15),  inset 0 1px 0 rgba(255,255,255,0.9); }
 .card-glow-emerald:active { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(16,185,129,0.08),  0 0 0 2px rgba(16,185,129,0.12),  inset 0 1px 0 rgba(255,255,255,0.9); }
 
-/* ════════════════════════════════════════════════════════
-   CÁPSULA DO TEMPO — ANIMAÇÕES
-   ════════════════════════════════════════════════════════ */
-
-/* Cadeado fecha com snap spring */
-@keyframes capsule-lock-snap {
-  0%   { transform: scale(0.88); }
-  42%  { transform: scale(1.24); }
-  62%  { transform: scale(0.93); }
-  80%  { transform: scale(1.07); }
-  100% { transform: scale(1.00); }
-}
-
-/* Cards da lista: cápsula a poucos dias — respira com expectativa */
-@keyframes capsule-card-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
-  50%       { box-shadow: 0 0 28px 6px rgba(124,58,237,0.18); }
-}
-@keyframes capsule-card-breathe-urgent {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0); }
-  50%       { box-shadow: 0 0 30px 8px rgba(244,63,94,0.22); }
-}
-@keyframes capsule-lock-badge-pulse {
-  0%, 100% { opacity: 1; transform: scale(1.00); }
-  50%       { opacity: 0.7; transform: scale(1.18); }
-}
-
-.animate-capsule-breathe        { animation: capsule-card-breathe 3.5s ease-in-out infinite; border-radius: 1.5rem; }
-.animate-capsule-breathe-urgent { animation: capsule-card-breathe-urgent 2.2s ease-in-out infinite; border-radius: 1.5rem; }
-.animate-capsule-lock-pulse     { animation: capsule-lock-badge-pulse 1.6s ease-in-out infinite; }
-
 /* ── Voice Message Sliders (WhatsApp Style) ── */
 .voice-slider-mine [role="slider"] {
   @apply bg-white border-white h-3 w-3;
