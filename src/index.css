@@ -716,53 +716,8 @@ input, textarea, [contenteditable="true"] {
 .card-glow-emerald:active { transform: scale(0.958); transition: transform 0.06s ease-out, box-shadow 0.06s ease-out; box-shadow: 0 1px 4px rgba(16,185,129,0.08),  0 0 0 2px rgba(16,185,129,0.12),  inset 0 1px 0 rgba(255,255,255,0.9); }
 
 /* ════════════════════════════════════════════════════════
-   CÁPSULA DO TEMPO — CERIMÓNIA DE SELAGEM
-   Sequência emocional completa: partícula → coração → caixa → cadeado → onda
+   CÁPSULA DO TEMPO — ANIMAÇÕES
    ════════════════════════════════════════════════════════ */
-
-/* Partículas que sobem lentamente pelo fundo */
-@keyframes capsule-particle-rise {
-  0%   { opacity: 0;   transform: translateY(0)     scale(1)    rotate(0deg); }
-  8%   { opacity: 0.85; }
-  88%  { opacity: 0.25; }
-  100% { opacity: 0;   transform: translateY(-130px) scale(0.25) rotate(var(--rotate-dir, 16deg)); }
-}
-
-/* Batimento cardíaco duplo — como um coração real */
-@keyframes capsule-heart-pulse {
-  0%  { transform: scale(1.00); filter: drop-shadow(0 0 8px rgba(244,63,94,0.55)); }
-  14% { transform: scale(1.28); filter: drop-shadow(0 0 20px rgba(244,63,94,0.95)); }
-  28% { transform: scale(1.06); filter: drop-shadow(0 0 10px rgba(244,63,94,0.65)); }
-  42% { transform: scale(1.18); filter: drop-shadow(0 0 16px rgba(244,63,94,0.80)); }
-  58% { transform: scale(1.00); filter: drop-shadow(0 0 6px rgba(244,63,94,0.45)); }
-  100%{ transform: scale(1.00); filter: drop-shadow(0 0 6px rgba(244,63,94,0.45)); }
-}
-
-/* Foto flutua suavemente acima da caixa */
-@keyframes capsule-photo-float {
-  0%, 100% { transform: translateY(0)   rotate(-2.5deg); }
-  50%       { transform: translateY(-9px) rotate(2.5deg); }
-}
-
-/* Brilho percorre a superfície da tampa ao fechar */
-@keyframes capsule-shine-sweep {
-  0%   { transform: translateX(-160%) skewX(-20deg); opacity: 0; }
-  12%  { opacity: 1; }
-  88%  { opacity: 1; }
-  100% { transform: translateX(260%)  skewX(-20deg); opacity: 0; }
-}
-
-/* Onda de selagem expande a partir do cadeado */
-@keyframes capsule-seal-wave {
-  0%   { transform: translate(-50%, -50%) scale(0.35); opacity: 0.9; }
-  100% { transform: translate(-50%, -50%) scale(2.8);  opacity: 0; }
-}
-
-/* Glow ambiente — respira devagar */
-@keyframes capsule-ambient-glow {
-  0%, 100% { opacity: 0.35; transform: scale(1.00); }
-  50%       { opacity: 0.75; transform: scale(1.10); }
-}
 
 /* Cadeado fecha com snap spring */
 @keyframes capsule-lock-snap {
@@ -771,18 +726,6 @@ input, textarea, [contenteditable="true"] {
   62%  { transform: scale(0.93); }
   80%  { transform: scale(1.07); }
   100% { transform: scale(1.00); }
-}
-
-/* Glow pulsante do cadeado após fechar */
-@keyframes capsule-lock-glow {
-  0%, 100% { box-shadow: 0 0 28px rgba(124,58,237,0.40), 0 8px 24px rgba(0,0,0,0.55); }
-  50%       { box-shadow: 0 0 55px rgba(124,58,237,0.70), 0 0 90px rgba(244,63,94,0.12), 0 8px 24px rgba(0,0,0,0.55); }
-}
-
-/* Texto final sobe suavemente do fundo */
-@keyframes capsule-text-reveal {
-  0%   { opacity: 0; transform: translateY(28px); }
-  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* Cards da lista: cápsula a poucos dias — respira com expectativa */
