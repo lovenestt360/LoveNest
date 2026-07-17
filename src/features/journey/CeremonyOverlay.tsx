@@ -1,58 +1,104 @@
 import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
-import { X, Download, Share2, Loader2, Flame, Sparkles, BookHeart, HeartHandshake, Lock, Heart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, Share2, Loader2, Flame, Sparkles, BookHeart, HeartHandshake, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { CeremonyContent, CeremonyType } from "@/lib/ceremonies";
-
-// Cerimónias — momento full-screen ao atingir um marco da Jornada.
-// Mantida globalmente (montada uma vez em App.tsx) e acionada por
-// eventos "lovenest-ceremony" despachados de qualquer página — ver
-// docs/LOVENEST_PROGRESS_SYSTEM.md, secção 8.
 
 const ICON_BY_TYPE: Record<CeremonyType, React.ElementType> = {
   streak_milestone: Flame,
-  level_up: Sparkles,
-  livro_concluido: BookHeart,
-  aniversario: HeartHandshake,
-  capsula: Lock,
+  level_up:         Sparkles,
+  livro_concluido:  BookHeart,
+  aniversario:      HeartHandshake,
+  capsula:          Lock,
+};
+
+const THEME: Record<CeremonyType, {
+  glow: string; accent: string; border: string;
+  iconBg: string; ctaBg: string; cardBg: string;
+}> = {
+  capsula: {
+    glow: "rgba(124,58,237,0.40)", accent: "rgba(167,139,250,0.92)",
+    border: "rgba(167,139,250,0.18)", iconBg: "rgba(124,58,237,0.22)",
+    ctaBg: "linear-gradient(135deg,#7c3aed 0%,#4c1d95 100%)",
+    cardBg: "linear-gradient(160deg,#1a0830 0%,#0d0518 100%)",
+  },
+  level_up: {
+    glow: "rgba(244,63,94,0.40)", accent: "rgba(251,113,133,0.92)",
+    border: "rgba(251,113,133,0.18)", iconBg: "rgba(244,63,94,0.22)",
+    ctaBg: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
+    cardBg: "linear-gradient(160deg,#1e0510 0%,#0f0208 100%)",
+  },
+  streak_milestone: {
+    glow: "rgba(244,63,94,0.40)", accent: "rgba(251,113,133,0.92)",
+    border: "rgba(251,113,133,0.18)", iconBg: "rgba(244,63,94,0.22)",
+    ctaBg: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
+    cardBg: "linear-gradient(160deg,#1e0510 0%,#0f0208 100%)",
+  },
+  livro_concluido: {
+    glow: "rgba(139,92,246,0.40)", accent: "rgba(196,181,253,0.92)",
+    border: "rgba(167,139,250,0.18)", iconBg: "rgba(139,92,246,0.22)",
+    ctaBg: "linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%)",
+    cardBg: "linear-gradient(160deg,#150a28 0%,#0a0516 100%)",
+  },
+  aniversario: {
+    glow: "rgba(244,63,94,0.40)", accent: "rgba(251,113,133,0.92)",
+    border: "rgba(251,113,133,0.18)", iconBg: "rgba(244,63,94,0.22)",
+    ctaBg: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
+    cardBg: "linear-gradient(160deg,#1e0510 0%,#0f0208 100%)",
+  },
+};
+
+const CTA_LABEL: Record<CeremonyType, string> = {
+  capsula:          "Ver as cápsulas",
+  level_up:         "Continuar",
+  streak_milestone: "Continuar",
+  livro_concluido:  "Continuar",
+  aniversario:      "Continuar",
+};
+
+const CTA_PATH: Partial<Record<CeremonyType, string>> = {
+  capsula: "/capsula",
 };
 
 function useReducedMotion() {
-  const [reduced, setReduced] = useState(
+  const [v, setV] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const h = (e: MediaQueryListEvent) => setReduced(e.matches);
+    const h = (e: MediaQueryListEvent) => setV(e.matches);
     mq.addEventListener("change", h);
     return () => mq.removeEventListener("change", h);
   }, []);
-  return reduced;
+  return v;
 }
 
 export function CeremonyOverlay() {
-  const [content, setContent] = useState<CeremonyContent | null>(null);
-  const [phase, setPhase] = useState<"intro" | "card">("intro");
-  const [exporting, setExporting] = useState<"save" | "share" | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
+  const [content,   setContent]   = useState<CeremonyContent | null>(null);
+  const [bgIn,      setBgIn]      = useState(false);
+  const [cardIn,    setCardIn]    = useState(false);
+  const [contentIn, setContentIn] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const cardRef  = useRef<HTMLDivElement>(null);
+  const reduced  = useReducedMotion();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<CeremonyContent>).detail;
       if (!detail) return;
+      // Reset
+      setBgIn(false); setCardIn(false); setContentIn(false);
       setContent(detail);
-      setPhase(reduced ? "card" : "intro");
+      // Stagger entrance
+      const d = reduced ? 0 : 1;
+      setTimeout(() => setBgIn(true),      20  * d);
+      setTimeout(() => setCardIn(true),    80  * d);
+      setTimeout(() => setContentIn(true), 520 * d);
     };
     window.addEventListener("lovenest-ceremony", handler);
     return () => window.removeEventListener("lovenest-ceremony", handler);
   }, [reduced]);
-
-  useEffect(() => {
-    if (!content || phase !== "intro") return;
-    const t = setTimeout(() => setPhase("card"), 1400);
-    return () => clearTimeout(t);
-  }, [content, phase]);
 
   useEffect(() => {
     if (!content) return;
@@ -60,140 +106,208 @@ export function CeremonyOverlay() {
     return () => { document.body.style.overflow = ""; };
   }, [content]);
 
-  const handleClose = () => {
-    setContent(null);
-    setPhase("intro");
+  const dismiss = () => {
+    setBgIn(false); setCardIn(false);
+    setTimeout(() => { setContent(null); setContentIn(false); }, 350);
   };
 
-  const generateImage = async (): Promise<File | null> => {
-    if (!cardRef.current) return null;
-    const dataUrl = await toPng(cardRef.current, { pixelRatio: 3 });
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    return new File([blob], "lovenest-cerimonia.png", { type: "image/png" });
-  };
-
-  const handleSave = async () => {
-    setExporting("save");
-    try {
-      const file = await generateImage();
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err: any) {
-      console.error("[CeremonyOverlay] save error:", err?.message);
-    } finally {
-      setExporting(null);
-    }
+  const handleCta = () => {
+    const path = content ? CTA_PATH[content.type] : undefined;
+    dismiss();
+    if (path) setTimeout(() => navigate(path), 360);
   };
 
   const handleShare = async () => {
-    setExporting("share");
+    if (!cardRef.current) return;
+    setExporting(true);
     try {
-      const file = await generateImage();
-      if (!file) return;
-      const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean };
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3 });
+      const res  = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "lovenest-momento.png", { type: "image/png" });
+      const nav  = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
       if (nav.canShare?.({ files: [file] }) && navigator.share) {
         await navigator.share({ files: [file], title: content?.title });
       } else {
-        await handleSave();
+        const url = URL.createObjectURL(file);
+        const a   = document.createElement("a");
+        a.href = url; a.download = file.name; a.click();
+        URL.revokeObjectURL(url);
       }
     } catch (err: any) {
-      if (err?.name !== "AbortError") console.error("[CeremonyOverlay] share error:", err?.message);
+      if (err?.name !== "AbortError") console.error("[CeremonyOverlay] share:", err?.message);
     } finally {
-      setExporting(null);
+      setExporting(false);
     }
   };
 
   if (!content) return null;
-  const Icon = ICON_BY_TYPE[content.type];
+
+  const Icon   = ICON_BY_TYPE[content.type];
+  const th     = THEME[content.type];
+  const isCapsula = content.type === "capsula";
+
+  const transition = (delay = 0) =>
+    `opacity 480ms ${delay}ms ease, transform 480ms ${delay}ms cubic-bezier(0.16,1,0.3,1)`;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-300 p-6">
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px",
+      background: bgIn ? "rgba(0,0,0,0.80)" : "rgba(0,0,0,0)",
+      backdropFilter: bgIn ? "blur(22px)" : "blur(0px)",
+      WebkitBackdropFilter: bgIn ? "blur(22px)" : "blur(0px)",
+      transition: "background 500ms ease, backdrop-filter 500ms ease, -webkit-backdrop-filter 500ms ease",
+    }}>
+
+      {/* X */}
       <button
-        onClick={handleClose}
+        onClick={dismiss}
         aria-label="Fechar"
-        className="absolute top-5 right-5 h-9 w-9 rounded-full bg-muted/80 flex items-center justify-center active:scale-90 transition-transform"
+        style={{
+          position: "absolute", top: 18, right: 18, zIndex: 3,
+          width: 36, height: 36, borderRadius: "50%",
+          background: "rgba(255,255,255,0.09)",
+          border: "1px solid rgba(255,255,255,0.13)",
+          cursor: "pointer", display: "flex",
+          alignItems: "center", justifyContent: "center",
+          opacity: bgIn ? 1 : 0,
+          transition: "opacity 400ms 200ms ease",
+        }}
       >
-        <X className="w-4 h-4 text-foreground" strokeWidth={1.5} />
+        <X size={16} color="rgba(255,255,255,0.60)" strokeWidth={2} />
       </button>
 
-      {phase === "intro" ? (
-        <div className="flex flex-col items-center gap-5 animate-in zoom-in-95 fade-in duration-500">
-          <div className={cn(
-            "h-24 w-24 rounded-full flex items-center justify-center",
-            content.type === "capsula"
-              ? "bg-gradient-to-br from-indigo-400/20 to-indigo-500/10 border border-indigo-200/40 dark:border-indigo-900/40"
-              : "bg-gradient-to-br from-rose-400/20 to-rose-500/10 border border-rose-200/40 dark:border-rose-900/40",
-            !reduced && (content.type === "capsula" ? "animate-lock-snap animate-lock-glow" : "animate-glow-pulse")
-          )}>
-            <Icon
-              className={cn("w-10 h-10", content.type === "capsula" ? "text-indigo-400" : "text-rose-400")}
-              strokeWidth={1.5}
-            />
+      {/* Card */}
+      <div
+        ref={cardRef}
+        style={{
+          width: "100%", maxWidth: 330,
+          borderRadius: 28,
+          background: th.cardBg,
+          border: `1px solid ${th.border}`,
+          boxShadow: `0 48px 96px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.03), 0 0 80px ${th.glow}`,
+          overflow: "hidden",
+          position: "relative",
+          transform: cardIn ? "scale(1) translateY(0)" : "scale(0.84) translateY(56px)",
+          opacity: cardIn ? 1 : 0,
+          transition: "transform 700ms cubic-bezier(0.16,1,0.3,1), opacity 600ms ease",
+        }}
+      >
+        {/* Ambient radial glow at top */}
+        <div style={{
+          position: "absolute", top: -60, left: "50%",
+          transform: "translateX(-50%)",
+          width: 280, height: 220, borderRadius: "50%",
+          background: `radial-gradient(ellipse, ${th.glow} 0%, transparent 72%)`,
+          pointerEvents: "none",
+        }} />
+
+        <div style={{
+          padding: "56px 28px 40px",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", textAlign: "center",
+        }}>
+
+          {/* Icon */}
+          <div style={{
+            width: 84, height: 84, borderRadius: "50%",
+            background: th.iconBg,
+            border: `1px solid ${th.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: 28,
+            boxShadow: `0 0 48px ${th.glow}, inset 0 1px 0 rgba(255,255,255,0.07)`,
+            animation: !reduced
+              ? "ceremony-icon-pop 900ms cubic-bezier(0.16,1,0.3,1) 180ms both"
+              : undefined,
+          }}>
+            <Icon size={36} style={{ color: th.accent }} strokeWidth={1.5} />
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground text-center">
+
+          {/* Eyebrow */}
+          <p style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.20em",
+            textTransform: "uppercase", color: th.accent,
+            margin: "0 0 10px",
+            opacity: contentIn ? 1 : 0,
+            transform: contentIn ? "translateY(0)" : "translateY(12px)",
+            transition: transition(0),
+          }}>
             {content.eyebrow}
           </p>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-6 w-full max-w-[320px] animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div
-            ref={cardRef}
-            className="relative w-full aspect-[9/16] rounded-[2rem] overflow-hidden flex flex-col items-center justify-center px-6 text-center"
-            style={{ background: "radial-gradient(ellipse at 50% 30%, rgba(255,107,143,0.16) 0%, transparent 60%), hsl(var(--card))" }}
+
+          {/* Title */}
+          <h2 style={{
+            fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em",
+            color: "rgba(255,255,255,0.95)", lineHeight: 1.25,
+            margin: "0 0 12px",
+            opacity: contentIn ? 1 : 0,
+            transform: contentIn ? "translateY(0)" : "translateY(14px)",
+            transition: transition(70),
+          }}>
+            {content.title}
+          </h2>
+
+          {/* Subtitle */}
+          <p style={{
+            fontSize: 13.5, color: "rgba(255,255,255,0.38)",
+            lineHeight: 1.70, margin: "0 0 30px", maxWidth: 228,
+            opacity: contentIn ? 1 : 0,
+            transform: contentIn ? "translateY(0)" : "translateY(15px)",
+            transition: transition(140),
+          }}>
+            {content.subtitle}
+          </p>
+
+          {/* CTA */}
+          <button
+            onClick={handleCta}
+            style={{
+              width: "100%", height: 52, borderRadius: 26,
+              background: th.ctaBg,
+              color: "white", fontWeight: 700, fontSize: 15,
+              border: `1px solid ${th.border}`,
+              boxShadow: `0 10px 32px ${th.glow}`,
+              cursor: "pointer", outline: "none",
+              letterSpacing: "-0.01em",
+              marginBottom: isCapsula ? 0 : 10,
+              opacity: contentIn ? 1 : 0,
+              transform: contentIn ? "scale(1) translateY(0)" : "scale(0.96) translateY(15px)",
+              transition: transition(210),
+            }}
           >
-            <div className={cn(
-              "h-16 w-16 rounded-full flex items-center justify-center mb-6",
-              content.type === "capsula"
-                ? "bg-gradient-to-br from-indigo-400/20 to-indigo-500/10 border border-indigo-200/40 dark:border-indigo-900/40"
-                : "bg-gradient-to-br from-rose-400/20 to-rose-500/10 border border-rose-200/40 dark:border-rose-900/40"
-            )}>
-              <Icon
-                className={cn("w-7 h-7", content.type === "capsula" ? "text-indigo-400" : "text-rose-400")}
-                strokeWidth={1.5}
-              />
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {content.eyebrow}
-            </p>
-            <h2 className="text-2xl font-bold text-foreground leading-snug mb-3">
-              {content.title}
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {content.subtitle}
-            </p>
+            {CTA_LABEL[content.type]}
+          </button>
 
-            <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-1.5">
-              <Heart className="w-3 h-3 fill-rose-400 text-rose-400" strokeWidth={0} />
-              <span className="text-[11px] font-semibold text-muted-foreground/70 tracking-wide">LoveNest</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 w-full">
-            <button
-              onClick={handleSave}
-              disabled={exporting !== null}
-              className="flex-1 h-12 rounded-2xl border border-border bg-card text-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-60"
-            >
-              {exporting === "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" strokeWidth={1.5} />}
-              Guardar
-            </button>
+          {/* Partilhar — só em cerimónias que não são cápsula */}
+          {!isCapsula && (
             <button
               onClick={handleShare}
-              disabled={exporting !== null}
-              className="flex-1 h-12 rounded-2xl bg-rose-500 text-white text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-60"
+              disabled={exporting}
+              style={{
+                width: "100%", height: 46, borderRadius: 26,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                color: "rgba(255,255,255,0.60)",
+                fontWeight: 600, fontSize: 14,
+                cursor: "pointer", outline: "none",
+                display: "flex", alignItems: "center",
+                justifyContent: "center", gap: 8,
+                opacity: contentIn ? (exporting ? 0.45 : 1) : 0,
+                transform: contentIn ? "translateY(0)" : "translateY(15px)",
+                transition: transition(270),
+              }}
             >
-              {exporting === "share" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" strokeWidth={1.5} />}
-              Partilhar
+              {exporting
+                ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                : <Share2 size={16} strokeWidth={1.5} />
+              }
+              Partilhar momento
             </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
