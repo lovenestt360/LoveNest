@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -60,23 +60,7 @@ export default function TimeCapsule() {
   const [revealing, setRevealing] = useState(false);
 
   const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
-
-  // Deteção de cápsulas novas do par — mostra cerimónia em modo testemunha
-  useEffect(() => {
-    if (!user || !houseId || loading || capsules.length === 0 || ceremony) return;
-    const MS_48H = 48 * 60 * 60 * 1000;
-    const seen = getSeenCapsules(houseId);
-    const newPartnerCapsule = capsules.find(c =>
-      c.creator_id !== user.id &&
-      !c.is_unlocked &&
-      !seen.has(c.id) &&
-      Date.now() - new Date(c.created_at).getTime() < MS_48H
-    );
-    if (newPartnerCapsule) {
-      markCapsuleSeen(houseId, newPartnerCapsule.id);
-      setCeremony({ message: "", imageUrl: null, witnessMode: true });
-    }
-  }, [capsules, houseId, user, loading, ceremony]);
+  const ceremonyRef = useRef<CeremonyData | null>(null);
 
   const loadCapsules = useCallback(async () => {
     if (!user) return;
@@ -88,15 +72,35 @@ export default function TimeCapsule() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (!member) return;
-      setHouseId(member.couple_space_id);
+      const spaceId = member.couple_space_id;
+      setHouseId(spaceId);
 
       const { data: capsData } = await supabase
         .from("time_capsule_messages")
         .select("*")
-        .eq("couple_space_id", member.couple_space_id)
+        .eq("couple_space_id", spaceId)
         .order("unlock_date", { ascending: true });
 
       setCapsules(capsData || []);
+
+      // Deteção inline: spaceId e capsData são variáveis locais imediatas,
+      // sem depender de state que pode ainda não ter re-renderizado.
+      if (capsData?.length && !ceremonyRef.current) {
+        const MS_48H = 48 * 60 * 60 * 1000;
+        const seen = getSeenCapsules(spaceId);
+        const hit = capsData.find((c: any) =>
+          c.creator_id !== user.id &&
+          !c.is_unlocked &&
+          !seen.has(c.id) &&
+          Date.now() - new Date(c.created_at).getTime() < MS_48H
+        );
+        if (hit) {
+          markCapsuleSeen(spaceId, hit.id);
+          const data: CeremonyData = { message: "", imageUrl: null, witnessMode: true };
+          ceremonyRef.current = data;
+          setCeremony(data);
+        }
+      }
     } catch (error) {
       console.error("Erro a carregar cápsulas", error);
     } finally {
@@ -180,6 +184,7 @@ export default function TimeCapsule() {
   };
 
   const handleCeremonyDone = () => {
+    ceremonyRef.current = null;
     setCeremony(null);
     loadCapsules();
   };
