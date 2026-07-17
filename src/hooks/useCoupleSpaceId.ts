@@ -2,13 +2,26 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 
+function readSpaceIdCache(userId: string | undefined): string | null {
+  if (!userId) return null;
+  try { return sessionStorage.getItem(`ln_space_id_${userId}`) ?? null; } catch { return null; }
+}
+
+function writeSpaceIdCache(userId: string, id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(`ln_space_id_${userId}`, id);
+    else sessionStorage.removeItem(`ln_space_id_${userId}`);
+  } catch {}
+}
+
 /**
  * Returns the current user's couple_space_id (or null if not paired).
- * Reacts to authentication changes.
+ * Initializes synchronously from sessionStorage so downstream hooks can
+ * read their own caches on first render (avoids skeleton flash on navigation).
  */
 export function useCoupleSpaceId() {
   const { user } = useAuth();
-  const [spaceId, setSpaceId] = useState<string | null>(null);
+  const [spaceId, setSpaceId] = useState<string | null>(() => readSpaceIdCache(user?.id));
 
   useEffect(() => {
     if (!user) {
@@ -22,8 +35,9 @@ export function useCoupleSpaceId() {
         if (error) {
           console.error("Error fetching couple_space_id:", error.message);
         } else {
-          console.log("Fetched couple_space_id:", data);
-          setSpaceId(data ?? null);
+          const id = data ?? null;
+          setSpaceId(id);
+          writeSpaceIdCache(user.id, id);
         }
       } catch (err) {
         console.error("Unexpected error fetching couple_space_id:", err);

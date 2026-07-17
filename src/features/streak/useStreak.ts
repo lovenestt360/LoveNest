@@ -253,8 +253,9 @@ export function useStreak() {
     }
   }, [spaceId]);
 
-  // Primeiro carregamento — mostra skeleton se não houver cache
-  useEffect(() => { refresh(); }, [refresh]);
+  // Primeiro carregamento — silencioso se já há dados cacheados para este spaceId
+  // (evita skeleton flash ao navegar entre páginas)
+  useEffect(() => { refresh(readStreakCache(spaceId) !== null); }, [refresh, spaceId]);
 
   // Polling silencioso — dados ficam visíveis, atualizam em background
   useEffect(() => {
