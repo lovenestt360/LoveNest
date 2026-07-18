@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
-import { awardLovePoints } from "@/lib/lovePoints";
 
 // ─── Category definitions ─────────────────────────────────────────────────
 const CATEGORY_DEFS = [
@@ -161,7 +160,6 @@ export default function Challenges() {
       if (error) throw error;
       loadChallenges();
       if (becomeCompleted) {
-        awardLovePoints(houseId, 20, "desafio", "Desafio concluído", user?.id);
         setCompletionPhrase(MEMORY_PHRASES[Math.floor(Math.random() * MEMORY_PHRASES.length)]);
         setShowSuccessOverlay(true);
         setTimeout(() => setShowSuccessOverlay(false), 3000);
