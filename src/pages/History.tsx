@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Plus, Camera, BookOpen, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus, Camera, BookOpen, Sparkles, Heart, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ function buildTimeLabel(totalDays: number): string {
   return parts.slice(0, -1).join(", ") + " e " + parts[parts.length - 1];
 }
 
-// ── Momento em destaque (capítulo mais recente) ──────────────────────────────
+// ── Capítulo em destaque ──────────────────────────────────────────────────────
 function FeaturedMoment({ event }: { event: RelationshipEvent }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
 
@@ -44,52 +44,55 @@ function FeaturedMoment({ event }: { event: RelationshipEvent }) {
       .then(({ data }) => { if (data) setImgUrl(data.signedUrl); });
   }, [event.image_path]);
 
-  const config = EVENT_TYPE_CONFIG[event.event_type];
-  const colors = EVENT_COLORS[event.event_type] ?? EVENT_COLORS.custom;
-  const Icon   = config?.icon ?? Sparkles;
+  const config  = EVENT_TYPE_CONFIG[event.event_type];
+  const colors  = EVENT_COLORS[event.event_type] ?? EVENT_COLORS.custom;
+  const Icon    = config?.icon ?? Sparkles;
   const dateStr = format(parseDateOnly(event.event_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.22em] px-1">
+      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.22em] px-1">
         Capítulo mais recente
       </p>
-      <div className="rounded-2xl overflow-hidden border border-border/40 shadow-sm">
+      <div className="rounded-2xl overflow-hidden shadow-[0_2px_18px_rgba(0,0,0,0.07)]">
         {imgUrl ? (
           <div className="relative">
             <img src={imgUrl} alt="" className="w-full h-56 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/10 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-5">
-              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white/60 uppercase tracking-wider mb-2.5">
-                <Icon className="w-2.5 h-2.5" strokeWidth={1.5} />
+              <p className="text-[9px] font-bold text-white/50 uppercase tracking-wider mb-2">
                 {config?.label}
-              </span>
+              </p>
               <p className="font-serif text-[22px] font-bold text-white leading-tight">{event.title}</p>
-              <p className="text-[11px] text-white/50 mt-1">{dateStr}</p>
+              <p className="text-[11px] text-white/50 mt-0.5">{dateStr}</p>
             </div>
           </div>
         ) : (
-          <div className="p-5 bg-background">
-            <div className={cn("h-0.5 rounded-full mb-4", colors.topBar)} />
-            <div className="flex items-start gap-3">
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", colors.iconBg)}>
-                <Icon className={cn("w-4.5 h-4.5", colors.iconText)} strokeWidth={1.5} />
+          <div className="bg-background p-5 border border-border/40">
+            <div className="flex items-center gap-2 mb-3">
+              <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", colors.iconBg)}>
+                <Icon className={cn("w-3.5 h-3.5", colors.iconText)} strokeWidth={1.5} />
               </div>
-              <div>
-                <p className="font-serif text-[18px] font-bold text-foreground leading-tight">{event.title}</p>
-                <p className={cn("text-[11px] font-semibold mt-0.5", colors.dateText)}>{dateStr}</p>
-                {event.description && (
-                  <p className="text-[12px] text-muted-foreground/70 mt-2 leading-relaxed line-clamp-2">
-                    {event.description}
-                  </p>
-                )}
-              </div>
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", colors.dateText)}>
+                {config?.label}
+              </span>
             </div>
+            <p className="font-serif text-[19px] font-bold text-[#1A1A1A] dark:text-zinc-100 leading-tight">
+              {event.title}
+            </p>
+            <p className={cn("text-[11px] font-medium mt-1", colors.dateText)}>{dateStr}</p>
+            {event.description && (
+              <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-2 leading-relaxed line-clamp-2">
+                {event.description}
+              </p>
+            )}
           </div>
         )}
         {imgUrl && event.description && (
-          <div className="px-5 py-3 border-t border-border/30 bg-background">
-            <p className="text-[12px] text-muted-foreground/70 leading-relaxed line-clamp-2">{event.description}</p>
+          <div className="px-5 py-3 bg-background border-t border-border/30">
+            <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
+              {event.description}
+            </p>
           </div>
         )}
       </div>
@@ -97,7 +100,7 @@ function FeaturedMoment({ event }: { event: RelationshipEvent }) {
   );
 }
 
-// ── Overlay de sucesso ───────────────────────────────────────────────────────
+// ── Overlay de sucesso ────────────────────────────────────────────────────────
 function SuccessOverlay({ title, onDismiss }: { title: string; onDismiss: () => void }) {
   return (
     <div
@@ -108,29 +111,27 @@ function SuccessOverlay({ title, onDismiss }: { title: string; onDismiss: () => 
         className="mx-6 max-w-xs w-full bg-background rounded-3xl p-7 text-center shadow-2xl animate-in slide-in-from-bottom-8 duration-400"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Icon com ping */}
-        <div className="relative w-[72px] h-[72px] mx-auto mb-5">
+        <div className="relative w-[68px] h-[68px] mx-auto mb-5">
           <div className="absolute inset-0 rounded-full bg-rose-100 dark:bg-rose-900/20 animate-ping opacity-25" />
-          <div className="relative w-full h-full rounded-full bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center">
-            <BookOpen className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
+          <div className="relative w-full h-full rounded-full bg-rose-50 dark:bg-rose-950/25 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center">
+            <BookOpen className="w-6 h-6 text-rose-400" strokeWidth={1.5} />
           </div>
         </div>
-
-        <p className="text-[9px] font-bold text-rose-400/80 uppercase tracking-[0.22em] mb-2">
+        <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.22em] mb-2">
           Novo capítulo
         </p>
-        <p className="font-serif text-[20px] font-bold text-foreground leading-tight">
+        <p className="font-serif text-[19px] font-bold text-[#1A1A1A] dark:text-zinc-100 leading-tight">
           Mais um momento guardado
         </p>
-        <p className="text-[12px] text-muted-foreground/60 mt-1.5 leading-relaxed">
+        <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
           A vossa história acabou de crescer.
         </p>
-
-        <div className="mt-4 border border-rose-100 dark:border-rose-900/30 bg-rose-50/50 dark:bg-rose-950/15 rounded-xl px-4 py-3">
-          <p className="font-serif text-[14px] font-semibold text-foreground leading-snug">"{title}"</p>
+        <div className="mt-4 bg-rose-50/70 dark:bg-rose-950/15 border border-rose-100 dark:border-rose-900/30 rounded-xl px-4 py-3">
+          <p className="font-serif text-[14px] font-semibold text-[#1A1A1A] dark:text-zinc-100 leading-snug">
+            "{title}"
+          </p>
         </div>
-
-        <p className="text-[10px] text-muted-foreground/35 mt-4">
+        <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-4">
           {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: pt })}
         </p>
       </div>
@@ -138,7 +139,7 @@ function SuccessOverlay({ title, onDismiss }: { title: string; onDismiss: () => 
   );
 }
 
-// ── Página ───────────────────────────────────────────────────────────────────
+// ── Página ────────────────────────────────────────────────────────────────────
 export default function History() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -167,8 +168,8 @@ export default function History() {
 
   if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
 
-  const entries    = buildTimelineEntries(events, time.startDate);
-  const timeLabel  = buildTimeLabel(time.days);
+  const entries   = buildTimelineEntries(events, time.startDate);
+  const timeLabel = buildTimeLabel(time.days);
 
   const featuredEvent = useMemo<RelationshipEvent | null>(() => {
     if (!events.length) return null;
@@ -180,69 +181,84 @@ export default function History() {
   return (
     <div className="min-h-screen bg-background pb-28">
 
-      <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b border-border/50 flex items-center gap-3">
+      {/* Tinta quente no topo — cria atmosfera sem ser um cartão */}
+      <div className="absolute inset-x-0 top-0 h-[260px] bg-gradient-to-b from-rose-50/40 to-transparent dark:from-rose-950/8 dark:to-transparent pointer-events-none" />
+
+      <header className="relative px-4 py-4 sticky top-0 bg-background/85 backdrop-blur-sm z-10 border-b border-border/40 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-muted-foreground"
+          className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-gray-500"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-xl font-semibold tracking-tight">Nossa História</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-[#1A1A1A] dark:text-zinc-100">
+          Nossa História
+        </h1>
       </header>
 
-      <main className="p-4 space-y-6 max-w-md mx-auto">
+      <main className="relative max-w-md mx-auto">
 
-        {/* ── Abertura: hero como página de livro ── */}
-        <div className="relative rounded-2xl border border-border/40 p-6 pl-8 overflow-hidden bg-gradient-to-br from-background via-background to-rose-50/15 dark:to-rose-950/5">
-          {/* Marcador rose vertical */}
-          <div className="absolute left-5 top-5 bottom-5 w-0.5 rounded-full bg-gradient-to-b from-rose-400 via-rose-300 to-rose-100/0 dark:from-rose-600 dark:via-rose-700 dark:to-transparent" />
-          <p className="text-[9px] font-bold text-rose-400/70 uppercase tracking-[0.25em] mb-3">
-            A vossa história
-          </p>
-          <p className="font-serif text-[30px] font-bold text-foreground leading-none">
+        {/* ── Abertura: página de álbum sem caixa ── */}
+        <div className="px-6 pt-8 pb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-300" strokeWidth={0} />
+            <span className="text-[9px] font-bold text-rose-400/80 uppercase tracking-[0.28em]">
+              A vossa história
+            </span>
+          </div>
+
+          <p className="font-serif text-[32px] font-bold text-[#1A1A1A] dark:text-zinc-100 leading-none">
             {timeLabel}
           </p>
-          <p className="text-[12px] text-muted-foreground/60 mt-1.5">de vida partilhada juntos</p>
+          <p className="text-[14px] text-gray-500 dark:text-gray-400 mt-2">
+            de vida partilhada juntos
+          </p>
+
           {time.startDate && (
-            <p className="text-[11px] text-muted-foreground/35 mt-4">
-              Primeiro capítulo · {format(parseDateOnly(time.startDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}
-            </p>
+            <>
+              <div className="mt-4 mb-3 h-px bg-rose-100/60 dark:bg-rose-900/20" />
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                Desde {format(parseDateOnly(time.startDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}
+              </p>
+            </>
           )}
         </div>
 
-        {/* ── Link memórias (integrado, discreto) ── */}
-        <button
-          onClick={() => navigate("/memorias")}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/40 text-left active:bg-muted/50 transition-colors group"
-        >
-          <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center shrink-0">
-            <Camera className="w-3.5 h-3.5 text-violet-400" strokeWidth={1.5} />
-          </div>
-          <span className="flex-1 text-[12px] font-medium text-muted-foreground group-active:text-foreground transition-colors">
-            Ver as vossas memórias e fotos
-          </span>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0" strokeWidth={1.5} />
-        </button>
+        <div className="px-4 space-y-6 pb-4">
 
-        {/* ── Capítulo mais recente ── */}
-        {featuredEvent && <FeaturedMoment event={featuredEvent} />}
+          {/* ── Link memórias — discreto mas presente ── */}
+          <button
+            onClick={() => navigate("/memorias")}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/40 bg-background text-left active:bg-muted/40 transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/25 flex items-center justify-center shrink-0">
+              <Camera className="w-3.5 h-3.5 text-violet-400" strokeWidth={1.5} />
+            </div>
+            <span className="flex-1 text-[12px] font-medium text-gray-500 dark:text-gray-400">
+              Ver as vossas memórias e fotos
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 shrink-0" strokeWidth={1.5} />
+          </button>
 
-        {/* ── Timeline ── */}
-        <Timeline entries={entries} onEdit={handleEdit} onDelete={handleDelete} />
+          {/* ── Capítulo mais recente ── */}
+          {featuredEvent && <FeaturedMoment event={featuredEvent} />}
 
+          {/* ── Timeline ── */}
+          <Timeline entries={entries} onEdit={handleEdit} onDelete={handleDelete} />
+
+        </div>
       </main>
 
-      {/* ── FAB com glow pulsante ── */}
+      {/* ── FAB: rose-400 (mais suave, mais LoveNest) ── */}
       <button
         onClick={() => { setEditingEvent(null); setSheetOpen(true); }}
-        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full bg-rose-500 text-white flex items-center justify-center active:scale-90 transition-transform shadow-[0_8px_28px_rgba(244,63,94,0.35),0_2px_8px_rgba(0,0,0,0.10)]"
+        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full bg-rose-400 text-white flex items-center justify-center active:scale-90 transition-all shadow-[0_6px_24px_rgba(251,113,133,0.40),0_2px_8px_rgba(0,0,0,0.08)]"
         aria-label="Adicionar momento"
       >
-        <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-20 pointer-events-none" />
-        <Plus className="w-6 h-6 relative z-10" strokeWidth={2} />
+        <span className="absolute inset-0 rounded-full bg-rose-300 animate-ping opacity-15 pointer-events-none" />
+        <Plus className="w-6 h-6 relative z-10" strokeWidth={2.5} />
       </button>
 
-      {/* ── Sheet de criação/edição ── */}
       {spaceId && user && (
         <AddRelationshipEventSheet
           open={sheetOpen}
@@ -256,7 +272,6 @@ export default function History() {
         />
       )}
 
-      {/* ── Overlay de sucesso ── */}
       {successTitle && (
         <SuccessOverlay title={successTitle} onDismiss={() => setSuccessTitle(null)} />
       )}
