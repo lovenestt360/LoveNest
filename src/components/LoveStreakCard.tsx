@@ -251,9 +251,14 @@ function useCardData(threshold: number) {
     const h = () => fetchData();
     window.addEventListener("streak-updated", h);
     window.addEventListener("home-visible", h);
+    // Quando uma notificação de missão dispara, garantir que o ícone do card
+    // também atualiza — cobre o caso em que o evento de streak-updated chegou
+    // antes de ambas as entradas em daily_activity estarem confirmadas.
+    window.addEventListener("mission-complete", h);
     return () => {
       window.removeEventListener("streak-updated", h);
       window.removeEventListener("home-visible", h);
+      window.removeEventListener("mission-complete", h);
     };
   }, [fetchData]);
   useEffect(() => {

@@ -123,18 +123,20 @@ function readStreakCache(spaceId: string | null): StreakState | null {
   try {
     const raw = sessionStorage.getItem(`ln_streak_${spaceId}`);
     if (!raw) return null;
-    const cached = JSON.parse(raw) as StreakState;
-    // Se o cache é de um dia anterior, repõe os flags de "hoje" para evitar
-    // mostrar myCheckedIn:true ou bothActiveToday:true de ontem
-    if (cached.lastActiveDate !== todayLocal()) {
+    const cached = JSON.parse(raw) as StreakState & { cacheDate?: string };
+    // Se o cache foi escrito noutro dia, os flags de "hoje" ficaram inválidos.
+    // Usa cacheDate (data em que o cache foi escrito) em vez de lastActiveDate,
+    // porque lastActiveDate é a última data de extensão do streak (ambos ativos)
+    // — não a data em que o utilizador fez check-in individualmente.
+    if (cached.cacheDate !== todayLocal()) {
       return { ...cached, myCheckedIn: false, bothActiveToday: false, activeCount: 0, streakAtRisk: cached.currentStreak > 0 };
     }
-    return cached;
+    return cached as StreakState;
   } catch { return null; }
 }
 
 function writeStreakCache(spaceId: string, state: StreakState) {
-  try { sessionStorage.setItem(`ln_streak_${spaceId}`, JSON.stringify(state)); } catch {}
+  try { sessionStorage.setItem(`ln_streak_${spaceId}`, JSON.stringify({ ...state, cacheDate: todayLocal() })); } catch {}
 }
 
 export function useStreak() {
@@ -201,19 +203,23 @@ export function useStreak() {
 
       const newState = buildState(raw, memberListCount);
 
-      // Timezone fix: the Postgres server uses CURRENT_DATE in UTC.
-      // In timezones ahead of UTC (e.g. UTC+2), local midnight comes before
-      // the server rolls over. The server may still return my_checked_in=true
-      // and both_active=true for what was "today" in UTC (= yesterday locally).
-      // Detect this by comparing lastActiveDate with todayLocal(): if the server's
-      // last-activity date is behind today (local), the "today" flags are stale.
+      // Timezone guard: o servidor usa o timezone do perfil para v_today.
+      // Se lastActiveDate (= last_streak_date, data em que ambos estiveram ativos)
+      // for anterior ao dia local, pode significar duas coisas:
+      //   A) Edge-case de timezone: servidor atrás do cliente (1h para UTC+1)
+      //   B) Normal: só um parceiro fez check-in hoje → streak ainda não avançou
+      //
+      // Em ambos os casos reseta bothActiveToday/activeCount (derivados do streak).
+      // NÃO reseta myCheckedIn: o servidor responde diretamente se ESTE utilizador
+      // fez check-in hoje — não depende de o parceiro também ter feito.
       const localToday = todayLocal();
       const staleServerDate =
         newState.lastActiveDate !== null && newState.lastActiveDate < localToday;
       const finalState: StreakState = staleServerDate
         ? {
             ...newState,
-            myCheckedIn:     false,
+            // myCheckedIn mantido: é um dado per-user que o servidor calcula
+            // com base em daily_activity do utilizador, independente do streak.
             bothActiveToday: false,
             activeCount:     0,
             streakAtRisk:    newState.currentStreak > 0,
