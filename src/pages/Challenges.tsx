@@ -4,7 +4,7 @@ import { pt } from "date-fns/locale";
 import {
   ArrowLeft, CheckCircle2, Plus, Trophy, Sparkles, Loader2, Trash2,
   Heart, Compass, MessageCircle, Gamepad2, Sprout, BookOpen,
-  Star, X, ChevronRight, Flame, Target,
+  Star, X, Flame, Target,
 } from "lucide-react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -263,6 +263,173 @@ export default function Challenges() {
           </div>
         ) : (
           <>
+            {/* ── Ações — sempre no topo ───────────────────────── */}
+            {!showGenerator && !showManual && (
+              <div className="flex gap-2 animate-in fade-in duration-200">
+                <button
+                  onClick={() => setShowGenerator(true)}
+                  className="flex-1 h-11 rounded-2xl bg-rose-500 text-white text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-all shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4" /> Gerar com IA
+                </button>
+                <button
+                  onClick={() => setShowManual(true)}
+                  className="flex-1 h-11 rounded-2xl bg-card border border-border text-foreground text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-all shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Criar manual
+                </button>
+              </div>
+            )}
+
+            {/* ── AI Generator (expanded) ───────────────────────── */}
+            {showGenerator && (
+              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-rose-500" />
+                    <span className="font-semibold text-[15px]">Gerador de Desafios</span>
+                  </div>
+                  <button
+                    onClick={() => { setShowGenerator(false); setAiSuggestions([]); }}
+                    className="p-1.5 rounded-lg text-muted-foreground/40 active:bg-muted transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground mb-3">
+                      O que gostariam de explorar juntos?
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CATEGORY_DEFS.map(({ id, label, Icon, color, bg }) => (
+                        <button
+                          key={id}
+                          onClick={() => setSelectedCategory(id)}
+                          className={cn(
+                            "flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all active:scale-[0.97]",
+                            selectedCategory === id
+                              ? "border-rose-400 bg-rose-50 dark:bg-rose-950/30"
+                              : "border-border bg-muted/40 hover:bg-muted/70"
+                          )}
+                        >
+                          <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", bg)}>
+                            <Icon className={cn("w-4 h-4", color)} />
+                          </div>
+                          <span className={cn(
+                            "text-[13px] font-semibold leading-tight",
+                            selectedCategory === id ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                          )}>
+                            {label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleGenerateChallenges}
+                    disabled={generating}
+                    className="w-full h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-all"
+                  >
+                    {generating ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> A gerar sugestões...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" /> Gerar 5 Desafios</>
+                    )}
+                  </button>
+                  {aiSuggestions.length > 0 && (
+                    <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[12px] font-semibold text-muted-foreground">Sugestões para vocês:</p>
+                        <button className="text-[12px] font-semibold text-rose-500 active:opacity-70" onClick={handleAddAllAiChallenges}>
+                          Adicionar todos
+                        </button>
+                      </div>
+                      {aiSuggestions.map((s, i) => (
+                        <div key={i} className="bg-muted/60 border border-border rounded-xl p-3.5 animate-in fade-in slide-in-from-bottom-1 duration-200">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-[13px] text-foreground leading-snug">{s.title}</p>
+                              {s.description && (
+                                <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{s.description}</p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleAddAiChallenge(s)}
+                              className="shrink-0 w-8 h-8 rounded-xl bg-rose-500 text-white flex items-center justify-center active:scale-95 transition-all"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Manual creation (expanded) ────────────────────── */}
+            {showManual && (
+              <form
+                onSubmit={handleAddChallenge}
+                className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                  <span className="font-semibold text-[15px]">Criar desafio</span>
+                  <button
+                    type="button"
+                    onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }}
+                    className="p-1.5 rounded-lg text-muted-foreground/40 active:bg-muted transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-semibold text-muted-foreground">
+                      O que gostariam de fazer?
+                    </label>
+                    <Input
+                      placeholder="Ex: Cozinhar uma receita nova juntos"
+                      value={newTitle}
+                      onChange={e => setNewTitle(e.target.value)}
+                      autoFocus
+                      className="h-12 rounded-xl bg-muted border-border text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-semibold text-muted-foreground">
+                      Mais detalhes (opcional)
+                    </label>
+                    <Textarea
+                      placeholder="Descrevam como gostariam de viver este desafio..."
+                      value={newDesc}
+                      onChange={e => setNewDesc(e.target.value)}
+                      className="rounded-xl bg-muted border-border resize-none text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 min-h-[80px]"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }}
+                      className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground active:scale-[0.98] transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!newTitle.trim()}
+                      className="flex-1 h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all"
+                    >
+                      Criar desafio
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+
             {/* ── O desafio de hoje — Hero ──────────────────────── */}
             {heroChallenge && (
               <section className="animate-in fade-in slide-in-from-bottom-3 duration-300">
@@ -432,200 +599,6 @@ export default function Challenges() {
               </section>
             )}
 
-            {/* ── Descobrir novos desafios ──────────────────────── */}
-            <section className="space-y-3 animate-in fade-in duration-300">
-              <h3 className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest px-0.5">
-                Descobrir novos desafios
-              </h3>
-
-              {/* ── AI Generator ─────────────────────────────────── */}
-              {!showGenerator ? (
-                <button
-                  onClick={() => setShowGenerator(true)}
-                  className="w-full bg-card border border-border rounded-2xl p-4 flex items-center gap-3 text-left active:scale-[0.99] transition-all shadow-sm"
-                >
-                  <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-5 h-5 text-rose-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[14px] text-foreground">Gerar com Inteligência Artificial</p>
-                    <p className="text-[12px] text-muted-foreground mt-0.5">Sugestões personalizadas para vocês</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/30 shrink-0" />
-                </button>
-              ) : (
-                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
-                  <div className="p-4 border-b border-border flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-rose-500" />
-                      <span className="font-semibold text-[15px]">Gerador de Desafios</span>
-                    </div>
-                    <button
-                      onClick={() => { setShowGenerator(false); setAiSuggestions([]); }}
-                      className="p-1.5 rounded-lg text-muted-foreground/40 active:bg-muted transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="p-4 space-y-4">
-                    {/* Conversational question */}
-                    <div>
-                      <p className="text-[13px] font-semibold text-foreground mb-3">
-                        O que gostariam de explorar juntos?
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {CATEGORY_DEFS.map(({ id, label, Icon, color, bg }) => (
-                          <button
-                            key={id}
-                            onClick={() => setSelectedCategory(id)}
-                            className={cn(
-                              "flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all active:scale-[0.97]",
-                              selectedCategory === id
-                                ? "border-rose-400 bg-rose-50 dark:bg-rose-950/30"
-                                : "border-border bg-muted/40 hover:bg-muted/70"
-                            )}
-                          >
-                            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", bg)}>
-                              <Icon className={cn("w-4 h-4", color)} />
-                            </div>
-                            <span className={cn(
-                              "text-[13px] font-semibold leading-tight",
-                              selectedCategory === id ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
-                            )}>
-                              {label}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handleGenerateChallenges}
-                      disabled={generating}
-                      className="w-full h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-all"
-                    >
-                      {generating ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> A gerar sugestões...</>
-                      ) : (
-                        <><Sparkles className="w-4 h-4" /> Gerar 5 Desafios</>
-                      )}
-                    </button>
-
-                    {/* AI Suggestions */}
-                    {aiSuggestions.length > 0 && (
-                      <div className="space-y-2 pt-1 animate-in fade-in duration-200">
-                        <div className="flex items-center justify-between">
-                          <p className="text-[12px] font-semibold text-muted-foreground">Sugestões para vocês:</p>
-                          <button
-                            className="text-[12px] font-semibold text-rose-500 active:opacity-70"
-                            onClick={handleAddAllAiChallenges}
-                          >
-                            Adicionar todos
-                          </button>
-                        </div>
-                        {aiSuggestions.map((s, i) => (
-                          <div
-                            key={i}
-                            className="bg-muted/60 border border-border rounded-xl p-3.5 animate-in fade-in slide-in-from-bottom-1 duration-200"
-                          >
-                            <div className="flex justify-between items-start gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-[13px] text-foreground leading-snug">{s.title}</p>
-                                {s.description && (
-                                  <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{s.description}</p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => handleAddAiChallenge(s)}
-                                className="shrink-0 w-8 h-8 rounded-xl bg-rose-500 text-white flex items-center justify-center active:scale-95 transition-all"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Manual creation ──────────────────────────────── */}
-              {!showManual ? (
-                <button
-                  onClick={() => setShowManual(true)}
-                  className="w-full bg-card border border-border rounded-2xl p-4 flex items-center gap-3 text-left active:scale-[0.99] transition-all shadow-sm"
-                >
-                  <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center shrink-0">
-                    <Plus className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[14px] text-foreground">Criar desafio manual</p>
-                    <p className="text-[12px] text-muted-foreground mt-0.5">Escrevam a vossa própria aventura</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/30 shrink-0" />
-                </button>
-              ) : (
-                <form
-                  onSubmit={handleAddChallenge}
-                  className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
-                >
-                  <div className="p-4 border-b border-border flex items-center justify-between">
-                    <span className="font-semibold text-[15px]">Criar desafio</span>
-                    <button
-                      type="button"
-                      onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }}
-                      className="p-1.5 rounded-lg text-muted-foreground/40 active:bg-muted transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="p-4 space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[12px] font-semibold text-muted-foreground">
-                        O que gostariam de fazer?
-                      </label>
-                      <Input
-                        placeholder="Ex: Cozinhar uma receita nova juntos"
-                        value={newTitle}
-                        onChange={e => setNewTitle(e.target.value)}
-                        autoFocus
-                        className="h-12 rounded-xl bg-muted border-border text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[12px] font-semibold text-muted-foreground">
-                        Mais detalhes (opcional)
-                      </label>
-                      <Textarea
-                        placeholder="Descrevam como gostariam de viver este desafio..."
-                        value={newDesc}
-                        onChange={e => setNewDesc(e.target.value)}
-                        className="rounded-xl bg-muted border-border resize-none text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 min-h-[80px]"
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }}
-                        className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground active:scale-[0.98] transition-all"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={!newTitle.trim()}
-                        className="flex-1 h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all"
-                      >
-                        Criar desafio
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              )}
-            </section>
           </>
         )}
       </main>
