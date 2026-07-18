@@ -12,7 +12,6 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { awardLovePoints } from "@/lib/lovePoints";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +121,6 @@ export default function TimeCapsule() {
         .select("id")
         .single();
       if (error) throw error;
-      awardLovePoints(houseId, 10, "capsula_tempo", "Cápsula do tempo criada", user.id);
       notifyPartner({ couple_space_id: houseId, title: "Cápsula do Tempo",
         body: "O teu par guardou uma memória para o futuro.", url: "/capsula", type: "memorias" });
       setNewMessage(""); setUnlockDate(""); setSelectedImage(null); setIsAdding(false);
@@ -165,7 +163,6 @@ export default function TimeCapsule() {
           .update({ is_unlocked: true }).eq("id", selectedCapsule.id);
         if (error) throw error;
         await loadCapsules();
-        awardLovePoints(houseId, 15, "capsula_revelada", "Cápsula revelada", user.id);
         notifyPartner({
           couple_space_id: houseId, title: "Cápsula revelada!",
           body: "O vosso passado chegou ao presente.", url: "/capsula", type: "memorias",
