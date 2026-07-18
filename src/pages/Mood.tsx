@@ -192,8 +192,10 @@ export default function Mood() {
     setSaving(false);
     loadData();
 
-    // LoveStreak: registar atividade apenas na primeira gravação do dia (INSERT)
-    if (sp && !existingId) logActivity(sp, "mood", { skipMission: true });
+    // LoveStreak: log_daily_activity usa ON CONFLICT DO NOTHING — chamar em
+    // INSERT e UPDATE é seguro e garante entrada em daily_activity mesmo que
+    // a primeira gravação tenha acontecido antes de este código existir.
+    if (sp) logActivity(sp, "mood", { skipMission: true });
 
     // Notificação ao parceiro
     if (sp && !isSolo) {
