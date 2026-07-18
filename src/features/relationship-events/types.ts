@@ -81,27 +81,31 @@ export const EVENT_COLORS: Record<RelationshipEventType, {
   },
 };
 
+export type MilestoneWeight = "xs" | "sm" | "md" | "xl";
+
 export interface TogetherMilestone {
   label: string;
+  weight: MilestoneWeight;
   add: (start: Date) => Date;
 }
 
 export const TOGETHER_MILESTONES: TogetherMilestone[] = [
-  { label: "1 semana juntos", add: (d) => addDays(d, 7) },
-  { label: "1 mês juntos", add: (d) => addMonths(d, 1) },
-  { label: "3 meses juntos", add: (d) => addMonths(d, 3) },
-  { label: "6 meses juntos", add: (d) => addMonths(d, 6) },
-  { label: "1 ano juntos", add: (d) => addYears(d, 1) },
-  { label: "2 anos juntos", add: (d) => addYears(d, 2) },
-  { label: "3 anos juntos", add: (d) => addYears(d, 3) },
-  { label: "5 anos juntos", add: (d) => addYears(d, 5) },
-  { label: "10 anos juntos", add: (d) => addYears(d, 10) },
+  { label: "1 semana juntos",  weight: "xs", add: (d) => addDays(d, 7) },
+  { label: "1 mês juntos",     weight: "sm", add: (d) => addMonths(d, 1) },
+  { label: "3 meses juntos",   weight: "md", add: (d) => addMonths(d, 3) },
+  { label: "6 meses juntos",   weight: "md", add: (d) => addMonths(d, 6) },
+  { label: "1 ano juntos",     weight: "xl", add: (d) => addYears(d, 1) },
+  { label: "2 anos juntos",    weight: "xl", add: (d) => addYears(d, 2) },
+  { label: "3 anos juntos",    weight: "xl", add: (d) => addYears(d, 3) },
+  { label: "5 anos juntos",    weight: "xl", add: (d) => addYears(d, 5) },
+  { label: "10 anos juntos",   weight: "xl", add: (d) => addYears(d, 10) },
 ];
 
 /** Marcador computado (não persistido) misturado na timeline. */
 export interface ComputedMilestoneEntry {
   kind: "milestone";
   label: string;
+  weight: MilestoneWeight;
   date: Date;
 }
 

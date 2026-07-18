@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Plus, Camera, Heart, BookOpen, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Camera, BookOpen, Sparkles, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ function buildTimeLabel(totalDays: number): string {
   return parts.slice(0, -1).join(", ") + " e " + parts[parts.length - 1];
 }
 
-// ── Etapa 2: Momento em destaque ──────────────────────────────────────────────
+// ── Momento em destaque (capítulo mais recente) ──────────────────────────────
 function FeaturedMoment({ event }: { event: RelationshipEvent }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
 
@@ -50,62 +50,46 @@ function FeaturedMoment({ event }: { event: RelationshipEvent }) {
   const dateStr = format(parseDateOnly(event.event_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <BookOpen className="w-3.5 h-3.5 text-muted-foreground/50" strokeWidth={1.5} />
-        <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">
-          Capítulo mais recente
-        </span>
-      </div>
-
-      <div className="rounded-2xl overflow-hidden shadow-md">
+    <div className="space-y-2">
+      <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.22em] px-1">
+        Capítulo mais recente
+      </p>
+      <div className="rounded-2xl overflow-hidden border border-border/40 shadow-sm">
         {imgUrl ? (
-          /* With photo — full bleed image + gradient overlay */
           <div className="relative">
             <img src={imgUrl} alt="" className="w-full h-56 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span
-                  className={cn(
-                    "flex items-center gap-1 rounded-full px-2 py-0.5 bg-white/20 backdrop-blur-sm"
-                  )}
-                >
-                  <Icon className="w-3 h-3 text-white" strokeWidth={1.5} />
-                  <span className="text-[10px] font-semibold text-white/90">{config?.label}</span>
-                </span>
-              </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-5">
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white/60 uppercase tracking-wider mb-2.5">
+                <Icon className="w-2.5 h-2.5" strokeWidth={1.5} />
+                {config?.label}
+              </span>
               <p className="font-serif text-[22px] font-bold text-white leading-tight">{event.title}</p>
-              <p className="text-[11px] text-white/60 mt-1">{dateStr}</p>
-              {event.description && (
-                <p className="text-[12px] text-white/70 mt-1.5 leading-relaxed line-clamp-2">
-                  {event.description}
-                </p>
-              )}
+              <p className="text-[11px] text-white/50 mt-1">{dateStr}</p>
             </div>
           </div>
         ) : (
-          /* Without photo — gradient card with event type color */
-          <div className={cn("relative p-5 bg-gradient-to-br", colors.gradient)}>
-            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/5" />
-            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-white/5" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-white" strokeWidth={1.5} />
-                </div>
-                <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">
-                  {config?.label}
-                </span>
+          <div className="p-5 bg-background">
+            <div className={cn("h-0.5 rounded-full mb-4", colors.topBar)} />
+            <div className="flex items-start gap-3">
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", colors.iconBg)}>
+                <Icon className={cn("w-4.5 h-4.5", colors.iconText)} strokeWidth={1.5} />
               </div>
-              <p className="font-serif text-[22px] font-bold text-white leading-tight">{event.title}</p>
-              <p className="text-[11px] text-white/60 mt-1.5">{dateStr}</p>
-              {event.description && (
-                <p className="text-[12px] text-white/70 mt-2 leading-relaxed line-clamp-3">
-                  {event.description}
-                </p>
-              )}
+              <div>
+                <p className="font-serif text-[18px] font-bold text-foreground leading-tight">{event.title}</p>
+                <p className={cn("text-[11px] font-semibold mt-0.5", colors.dateText)}>{dateStr}</p>
+                {event.description && (
+                  <p className="text-[12px] text-muted-foreground/70 mt-2 leading-relaxed line-clamp-2">
+                    {event.description}
+                  </p>
+                )}
+              </div>
             </div>
+          </div>
+        )}
+        {imgUrl && event.description && (
+          <div className="px-5 py-3 border-t border-border/30 bg-background">
+            <p className="text-[12px] text-muted-foreground/70 leading-relaxed line-clamp-2">{event.description}</p>
           </div>
         )}
       </div>
@@ -113,49 +97,40 @@ function FeaturedMoment({ event }: { event: RelationshipEvent }) {
   );
 }
 
-// ── Etapa 11: Overlay de sucesso após criar um momento ───────────────────────
-function SuccessOverlay({
-  title,
-  onDismiss,
-}: {
-  title: string;
-  onDismiss: () => void;
-}) {
+// ── Overlay de sucesso ───────────────────────────────────────────────────────
+function SuccessOverlay({ title, onDismiss }: { title: string; onDismiss: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onDismiss}
     >
       <div
-        className="mx-6 max-w-xs w-full bg-background rounded-3xl p-7 text-center shadow-2xl animate-in slide-in-from-bottom-6 duration-400"
+        className="mx-6 max-w-xs w-full bg-background rounded-3xl p-7 text-center shadow-2xl animate-in slide-in-from-bottom-8 duration-400"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Rings + icon */}
-        <div className="relative w-18 h-18 mx-auto mb-5">
-          <div className="absolute inset-0 w-[72px] h-[72px] rounded-full bg-rose-100 dark:bg-rose-900/20 animate-ping opacity-30" />
-          <div className="relative w-[72px] h-[72px] rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center">
+        {/* Icon com ping */}
+        <div className="relative w-[72px] h-[72px] mx-auto mb-5">
+          <div className="absolute inset-0 rounded-full bg-rose-100 dark:bg-rose-900/20 animate-ping opacity-25" />
+          <div className="relative w-full h-full rounded-full bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center">
             <BookOpen className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
           </div>
         </div>
 
-        <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-2">
+        <p className="text-[9px] font-bold text-rose-400/80 uppercase tracking-[0.22em] mb-2">
           Novo capítulo
         </p>
         <p className="font-serif text-[20px] font-bold text-foreground leading-tight">
           Mais um momento guardado
         </p>
-        <p className="text-[12px] text-muted-foreground mt-1.5 leading-relaxed">
+        <p className="text-[12px] text-muted-foreground/60 mt-1.5 leading-relaxed">
           A vossa história acabou de crescer.
         </p>
 
-        {/* Event title */}
-        <div className="mt-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl px-4 py-3">
-          <p className="font-serif text-[14px] font-semibold text-foreground leading-snug">
-            "{title}"
-          </p>
+        <div className="mt-4 border border-rose-100 dark:border-rose-900/30 bg-rose-50/50 dark:bg-rose-950/15 rounded-xl px-4 py-3">
+          <p className="font-serif text-[14px] font-semibold text-foreground leading-snug">"{title}"</p>
         </div>
 
-        <p className="text-[10px] text-muted-foreground/40 mt-4">
+        <p className="text-[10px] text-muted-foreground/35 mt-4">
           {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: pt })}
         </p>
       </div>
@@ -163,7 +138,7 @@ function SuccessOverlay({
   );
 }
 
-// ── Página principal ──────────────────────────────────────────────────────────
+// ── Página ───────────────────────────────────────────────────────────────────
 export default function History() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -177,17 +152,12 @@ export default function History() {
   const [editingEvent, setEditingEvent] = useState<RelationshipEvent | null>(null);
   const [successTitle, setSuccessTitle] = useState<string | null>(null);
 
-  const handleEdit = (event: RelationshipEvent) => {
-    setEditingEvent(event);
-    setSheetOpen(true);
-  };
+  const handleEdit = (event: RelationshipEvent) => { setEditingEvent(event); setSheetOpen(true); };
 
   const handleDelete = async (event: RelationshipEvent) => {
     if (!window.confirm(`Remover "${event.title}" da vossa história?`)) return;
     const { error } = await deleteEvent(event.id);
-    if (error) {
-      toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
-    }
+    if (error) toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
   };
 
   const handleCreated = (title: string) => {
@@ -195,14 +165,11 @@ export default function History() {
     setTimeout(() => setSuccessTitle(null), 4000);
   };
 
-  if (!profileLoading && profile?.usage_mode === "solo") {
-    return <Navigate to="/" replace />;
-  }
+  if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
 
-  const entries = buildTimelineEntries(events, time.startDate);
-  const timeLabel = buildTimeLabel(time.days);
+  const entries    = buildTimelineEntries(events, time.startDate);
+  const timeLabel  = buildTimeLabel(time.days);
 
-  // Most recent user-created event (for featured spot)
   const featuredEvent = useMemo<RelationshipEvent | null>(() => {
     if (!events.length) return null;
     return [...events].sort(
@@ -212,7 +179,8 @@ export default function History() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b border-border flex items-center gap-3">
+
+      <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b border-border/50 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
           className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-muted-foreground"
@@ -222,69 +190,59 @@ export default function History() {
         <h1 className="text-xl font-semibold tracking-tight">Nossa História</h1>
       </header>
 
-      <main className="p-4 space-y-5 max-w-md mx-auto">
+      <main className="p-4 space-y-6 max-w-md mx-auto">
 
-        {/* Etapa 2 — Hero: contador de tempo juntos */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 via-rose-500 to-rose-600 p-5 text-white shadow-[0_8px_32px_rgba(244,63,94,0.22)]">
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
-          <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                <Heart className="w-3.5 h-3.5 fill-white text-white" strokeWidth={0} />
-              </div>
-              <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">
-                A vossa jornada
-              </span>
-            </div>
-            <p className="font-serif text-[28px] font-bold leading-tight">{timeLabel}</p>
-            <p className="text-[13px] text-white/60 font-medium mt-0.5">juntos</p>
-            {time.startDate && (
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
-                <p className="text-[11px] text-white/50">
-                  Desde {format(parseDateOnly(time.startDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}
-                </p>
-                <p className="text-[11px] text-white/30 font-mono tabular-nums">
-                  {time.days.toLocaleString("pt")} dias
-                </p>
-              </div>
-            )}
-          </div>
+        {/* ── Abertura: hero como página de livro ── */}
+        <div className="relative rounded-2xl border border-border/40 p-6 pl-8 overflow-hidden bg-gradient-to-br from-background via-background to-rose-50/15 dark:to-rose-950/5">
+          {/* Marcador rose vertical */}
+          <div className="absolute left-5 top-5 bottom-5 w-0.5 rounded-full bg-gradient-to-b from-rose-400 via-rose-300 to-rose-100/0 dark:from-rose-600 dark:via-rose-700 dark:to-transparent" />
+          <p className="text-[9px] font-bold text-rose-400/70 uppercase tracking-[0.25em] mb-3">
+            A vossa história
+          </p>
+          <p className="font-serif text-[30px] font-bold text-foreground leading-none">
+            {timeLabel}
+          </p>
+          <p className="text-[12px] text-muted-foreground/60 mt-1.5">de vida partilhada juntos</p>
+          {time.startDate && (
+            <p className="text-[11px] text-muted-foreground/35 mt-4">
+              Primeiro capítulo · {format(parseDateOnly(time.startDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}
+            </p>
+          )}
         </div>
 
-        {/* Acesso às memórias */}
+        {/* ── Link memórias (integrado, discreto) ── */}
         <button
           onClick={() => navigate("/memorias")}
-          className="w-full glass-card glass-card-hover p-4 flex items-center gap-3 text-left"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/40 text-left active:bg-muted/50 transition-colors group"
         >
-          <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center shrink-0">
-            <Camera className="w-4 h-4 text-violet-400" strokeWidth={1.5} />
+          <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center shrink-0">
+            <Camera className="w-3.5 h-3.5 text-violet-400" strokeWidth={1.5} />
           </div>
-          <div className="flex-1">
-            <p className="text-[13px] font-semibold text-foreground">Ver as vossas memórias</p>
-            <p className="text-[11px] text-muted-foreground">Fotos e momentos guardados</p>
-          </div>
+          <span className="flex-1 text-[12px] font-medium text-muted-foreground group-active:text-foreground transition-colors">
+            Ver as vossas memórias e fotos
+          </span>
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0" strokeWidth={1.5} />
         </button>
 
-        {/* Etapa 2 — Momento em destaque */}
+        {/* ── Capítulo mais recente ── */}
         {featuredEvent && <FeaturedMoment event={featuredEvent} />}
 
-        {/* Timeline */}
+        {/* ── Timeline ── */}
         <Timeline entries={entries} onEdit={handleEdit} onDelete={handleDelete} />
 
       </main>
 
-      {/* Etapa 5 — FAB com glow + anel pulsante */}
+      {/* ── FAB com glow pulsante ── */}
       <button
         onClick={() => { setEditingEvent(null); setSheetOpen(true); }}
-        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full bg-rose-500 text-white flex items-center justify-center active:scale-90 transition-transform shadow-[0_8px_32px_rgba(244,63,94,0.35),0_2px_8px_rgba(0,0,0,0.12)]"
+        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full bg-rose-500 text-white flex items-center justify-center active:scale-90 transition-transform shadow-[0_8px_28px_rgba(244,63,94,0.35),0_2px_8px_rgba(0,0,0,0.10)]"
         aria-label="Adicionar momento"
       >
         <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-20 pointer-events-none" />
         <Plus className="w-6 h-6 relative z-10" strokeWidth={2} />
       </button>
 
-      {/* Sheet de criação/edição */}
+      {/* ── Sheet de criação/edição ── */}
       {spaceId && user && (
         <AddRelationshipEventSheet
           open={sheetOpen}
@@ -298,10 +256,11 @@ export default function History() {
         />
       )}
 
-      {/* Etapa 11 — Overlay de sucesso */}
+      {/* ── Overlay de sucesso ── */}
       {successTitle && (
         <SuccessOverlay title={successTitle} onDismiss={() => setSuccessTitle(null)} />
       )}
+
     </div>
   );
 }
