@@ -94,6 +94,7 @@ export default function Challenges() {
   const [selectedCategory, setSelectedCategory] = useState("romantico");
 
   // UI flows
+  const [activeTab, setActiveTab] = useState<"desafios" | "historico">("desafios");
   const [pendingComplete, setPendingComplete] = useState<any | null>(null);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [completionPhrase, setCompletionPhrase] = useState(MEMORY_PHRASES[0]);
@@ -246,23 +247,46 @@ export default function Challenges() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Desafios</h1>
-        </div>
-        {inProgress.length > 0 && (
-          <span className="text-[11px] font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-            {inProgress.length} em progresso
-          </span>
-        )}
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Desafios</h1>
       </header>
 
-      <main className="p-4 space-y-6 max-w-md mx-auto">
+      <main className="p-4 space-y-5 max-w-md mx-auto">
+        {/* ── Tab switcher ─────────────────────────────────────── */}
+        <div className="flex bg-muted rounded-2xl p-1 gap-1">
+          <button
+            onClick={() => setActiveTab("desafios")}
+            className={cn(
+              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
+              activeTab === "desafios" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            )}
+          >
+            Desafios
+          </button>
+          <button
+            onClick={() => setActiveTab("historico")}
+            className={cn(
+              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 flex items-center justify-center gap-1.5",
+              activeTab === "historico" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            )}
+          >
+            Histórico
+            {completed.length > 0 && (
+              <span className={cn(
+                "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                activeTab === "historico" ? "bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400" : "bg-muted-foreground/15 text-muted-foreground"
+              )}>
+                {completed.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40" />
           </div>
-        ) : (
-          <>
+        ) : activeTab === "desafios" ? (
+          <div className="space-y-5">
             {/* ── Ações — sempre no topo ───────────────────────── */}
             {!showGenerator && !showManual && (
               <div className="flex gap-2 animate-in fade-in duration-200">
@@ -537,7 +561,7 @@ export default function Challenges() {
             )}
 
             {/* ── Empty state ───────────────────────────────────── */}
-            {isEmpty && (
+            {inProgress.length === 0 && (
               <div className="text-center py-14 space-y-4 animate-in fade-in duration-300">
                 <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mx-auto">
                   <Star className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
@@ -550,56 +574,79 @@ export default function Challenges() {
                 </div>
               </div>
             )}
+          </div>
+        ) : (
+          /* ── Tab: Histórico ──────────────────────────────────── */
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {completed.length === 0 ? (
+              <div className="text-center py-16 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                  <Trophy className="w-7 h-7 text-muted-foreground/40" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground text-[16px]">Ainda sem memórias</p>
+                  <p className="text-[13px] text-muted-foreground mt-1.5">
+                    Os desafios concluídos aparecem aqui
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
+                    <Trophy className="w-6 h-6 text-rose-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{completed.length}</p>
+                    <p className="text-[12px] text-muted-foreground">
+                      {completed.length === 1 ? "memória construída" : "memórias construídas"}
+                    </p>
+                  </div>
+                </div>
 
-            {/* ── Concluídos ────────────────────────────────────── */}
-            {completed.length > 0 && (
-              <section className="space-y-2.5 animate-in fade-in duration-300">
-                <h3 className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest px-0.5">
-                  Concluídos
-                </h3>
-                {completed.map((c, i) => (
-                  <div
-                    key={c.id}
-                    className="bg-card border border-border rounded-2xl p-4 shadow-sm relative overflow-hidden"
-                  >
-                    {/* green accent strip */}
-                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-green-400 to-green-500 rounded-l-2xl" />
-                    <div className="pl-3.5">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="font-semibold text-[14px] text-foreground leading-snug">
-                          {c.title}
-                        </h4>
-                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground/50">
-                        {c.completed_at
-                          ? format(new Date(c.completed_at), "d 'de' MMMM yyyy", { locale: pt })
-                          : "Concluído"}
-                      </p>
-                      <p className="text-[12px] text-muted-foreground/65 mt-2 italic leading-relaxed">
-                        {MEMORY_PHRASES[i % MEMORY_PHRASES.length]}
-                      </p>
-                      <div className="flex items-center justify-end gap-3 mt-2.5">
-                        <button
-                          onClick={() => handleDelete(c.id)}
-                          className="w-6 h-6 flex items-center justify-center text-muted-foreground/25 active:text-red-400 transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => handleComplete(c)}
-                          className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                        >
-                          Desfazer
-                        </button>
+                <section className="space-y-2.5">
+                  {completed.map((c, i) => (
+                    <div
+                      key={c.id}
+                      className="bg-card border border-border rounded-2xl p-4 shadow-sm relative overflow-hidden animate-in fade-in duration-200"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-green-400 to-green-500 rounded-l-2xl" />
+                      <div className="pl-3.5">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h4 className="font-semibold text-[14px] text-foreground leading-snug">
+                            {c.title}
+                          </h4>
+                          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/50">
+                          {c.completed_at
+                            ? format(new Date(c.completed_at), "d 'de' MMMM yyyy", { locale: pt })
+                            : "Concluído"}
+                        </p>
+                        <p className="text-[12px] text-muted-foreground/65 mt-2 italic leading-relaxed">
+                          {MEMORY_PHRASES[i % MEMORY_PHRASES.length]}
+                        </p>
+                        <div className="flex items-center justify-end gap-3 mt-2.5">
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="w-6 h-6 flex items-center justify-center text-muted-foreground/25 active:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleComplete(c)}
+                            className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                          >
+                            Desfazer
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </section>
+                  ))}
+                </section>
+              </>
             )}
-
-          </>
+          </div>
         )}
       </main>
 
