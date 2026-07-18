@@ -111,6 +111,17 @@ function getJourneyDaysLeft(streak: number): number {
   return JOURNEY_LEVELS[idx + 1].min - streak;
 }
 
+// ── Guardian stage colors — espelham STAGE_COLORS do FlamePet ────────────────
+const GUARDIAN_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  faisca:    { bg: "rgba(255,107,157,0.13)", border: "rgba(255,107,157,0.35)", text: "#FF6B9D" },
+  brasa:     { bg: "rgba(255,139,61,0.13)",  border: "rgba(255,139,61,0.35)",  text: "#FF8B3D" },
+  chama:     { bg: "rgba(45,217,196,0.13)",  border: "rgba(45,217,196,0.35)",  text: "#1BBFAD" },
+  guardiao:  { bg: "rgba(59,130,229,0.13)",  border: "rgba(59,130,229,0.35)",  text: "#3B82E5" },
+  sentinela: { bg: "rgba(155,93,229,0.13)",  border: "rgba(155,93,229,0.35)",  text: "#9B5DE5" },
+  eterno:    { bg: "rgba(255,200,61,0.13)",  border: "rgba(255,200,61,0.35)",  text: "#D4A017" },
+  soberano:  { bg: "rgba(155,93,229,0.13)",  border: "rgba(155,93,229,0.35)",  text: "#9B5DE5" },
+};
+
 // ── Card temperature — subtle warmth, never saturated ────────────────────────
 
 function getCardTemperature(streak: number, bothActive: boolean, perfectDay: boolean): string {
@@ -421,12 +432,18 @@ export function LoveStreakCard() {
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            {perfectDay && (
-              <span className="flex items-center gap-1 bg-muted border border-border text-muted-foreground text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300">
-                <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
-                Dia Completo
-              </span>
-            )}
+            {perfectDay && (() => {
+              const gc = GUARDIAN_COLORS[streakPhase.stage] ?? GUARDIAN_COLORS.faisca;
+              return (
+                <span
+                  className="flex items-center gap-1 text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300"
+                  style={{ background: gc.bg, border: `1px solid ${gc.border}`, color: gc.text }}
+                >
+                  <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
+                  Dia Completo
+                </span>
+              );
+            })()}
             <div style={{ width: 48, height: 48 }} className="shrink-0 bg-card">
               <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
             </div>
