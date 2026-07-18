@@ -714,10 +714,18 @@ export default function Chat() {
     if (!editingMsg || !editText.trim()) return;
     const id = editingMsg.id;
     const content = editText.trim();
+    const prevMsg = { ...editingMsg };
     setMessages(prev => prev.map(m => m.id === id ? { ...m, content, is_edited: true } : m));
     setEditingMsg(null); setEditText("");
-    const { error } = await supabase.from("messages").update({ content, is_edited: true, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) { toast({ title: "Erro ao guardar edição", description: error.message, variant: "destructive" }); return; }
+    const { data, error } = await supabase.from("messages")
+      .update({ content, is_edited: true, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("id");
+    if (error || !data?.length) {
+      setMessages(prev => prev.map(m => m.id === id ? prevMsg : m));
+      if (error) toast({ title: "Erro ao guardar edição", description: error.message, variant: "destructive" });
+      return;
+    }
     channelRef.current?.send({ type: "broadcast", event: "msg_edit", payload: { id, content } });
   }, [editingMsg, editText, toast]);
 
@@ -725,10 +733,15 @@ export default function Chat() {
   const handleDelete = useCallback(async (msg: Message) => {
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_deleted: true, content: "" } : m));
     setSheetMsg(null);
-    const { error } = await supabase.from("messages")
+    const { data, error } = await supabase.from("messages")
       .update({ is_deleted: true, content: "", image_url: null, audio_url: null, updated_at: new Date().toISOString() })
-      .eq("id", msg.id);
-    if (error) { toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" }); return; }
+      .eq("id", msg.id)
+      .select("id");
+    if (error || !data?.length) {
+      setMessages(prev => prev.map(m => m.id === msg.id ? msg : m));
+      if (error) toast({ title: "Erro ao apagar", description: error.message, variant: "destructive" });
+      return;
+    }
     channelRef.current?.send({ type: "broadcast", event: "msg_delete", payload: { id: msg.id } });
   }, [toast]);
 
@@ -737,8 +750,15 @@ export default function Chat() {
     const is_pinned = !msg.is_pinned;
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned } : m));
     setSheetMsg(null);
-    const { error } = await supabase.from("messages").update({ is_pinned, updated_at: new Date().toISOString() }).eq("id", msg.id);
-    if (!error) channelRef.current?.send({ type: "broadcast", event: "msg_pin", payload: { id: msg.id, is_pinned } });
+    const { data, error } = await supabase.from("messages")
+      .update({ is_pinned, updated_at: new Date().toISOString() })
+      .eq("id", msg.id)
+      .select("id");
+    if (!error && data?.length) {
+      channelRef.current?.send({ type: "broadcast", event: "msg_pin", payload: { id: msg.id, is_pinned } });
+    } else {
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: !is_pinned } : m));
+    }
   }, []);
 
   /* scroll to msg */
