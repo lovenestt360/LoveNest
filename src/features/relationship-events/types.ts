@@ -101,6 +101,18 @@ export const TOGETHER_MILESTONES: TogetherMilestone[] = [
   { label: "10 anos juntos",   weight: "xl", add: (d) => addYears(d, 10) },
 ];
 
+export const MILESTONE_PHRASES: Record<string, string> = {
+  "1 semana juntos":  "Os primeiros sete dias de uma história que acabou de começar.",
+  "1 mês juntos":     "Trinta dias onde tudo se transformou.",
+  "3 meses juntos":   "Três meses a descobrir um ao outro.",
+  "6 meses juntos":   "Metade de um ano de cumplicidade e carinho.",
+  "1 ano juntos":     "Um ano inteiro de momentos que nunca vão ser esquecidos.",
+  "2 anos juntos":    "Dois anos a escrever uma história linda juntos.",
+  "3 anos juntos":    "Três anos de amor que continua a crescer.",
+  "5 anos juntos":    "Cinco anos de uma vida partilhada com todo o coração.",
+  "10 anos juntos":   "Uma década juntos. Uma vida construída, capítulo a capítulo.",
+};
+
 /** Marcador computado (não persistido) misturado na timeline. */
 export interface ComputedMilestoneEntry {
   kind: "milestone";
