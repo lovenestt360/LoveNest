@@ -26,13 +26,13 @@ interface Props {
 
 const EVENT_TYPES = Object.keys(EVENT_TYPE_CONFIG) as RelationshipEventType[];
 
-const SHORT_LABELS: Record<RelationshipEventType, string> = {
-  first_meeting: "Enc.",
-  dating:        "Nam.",
-  engagement:    "Noiv",
-  marriage:      "Cas.",
-  trip:          "Viag",
-  custom:        "Outr",
+const CATEGORY_LABELS: Record<RelationshipEventType, string> = {
+  first_meeting: "Encontro",
+  dating:        "Namoro",
+  engagement:    "Noivado",
+  marriage:      "Casamento",
+  trip:          "Viagem",
+  custom:        "Outro",
 };
 
 // ── Celebração após guardar ────────────────────────────────────────────────────
@@ -274,7 +274,7 @@ export function AddRelationshipEventSheet({
                 <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                   Tipo de momento
                 </p>
-                <div className="grid grid-cols-6 gap-1">
+                <div className="grid grid-cols-3 gap-2">
                   {EVENT_TYPES.map((type) => {
                     const config = EVENT_TYPE_CONFIG[type];
                     const colors = EVENT_COLORS[type];
@@ -285,23 +285,23 @@ export function AddRelationshipEventSheet({
                         key={type}
                         type="button"
                         onClick={() => setEventType(type)}
-                        title={config.label}
                         className={cn(
-                          "flex flex-col items-center gap-0.5 py-2 rounded-xl border transition-all",
+                          "flex flex-col items-center gap-1.5 py-2.5 rounded-xl border transition-all",
                           sel
                             ? cn("border-transparent", colors.iconBg)
                             : "border-border/30 bg-muted/15 active:bg-muted/40"
                         )}
                       >
                         <Icon
-                          className={cn("w-3.5 h-3.5", sel ? colors.iconText : "text-muted-foreground/60")}
+                          className={cn("w-4 h-4", sel ? colors.iconText : "text-muted-foreground/60")}
                           strokeWidth={1.5}
                         />
-                        {sel && (
-                          <span className={cn("text-[7px] font-bold leading-none", colors.iconText)}>
-                            {SHORT_LABELS[type]}
-                          </span>
-                        )}
+                        <span className={cn(
+                          "text-[9px] font-semibold leading-none",
+                          sel ? colors.iconText : "text-muted-foreground/70"
+                        )}>
+                          {CATEGORY_LABELS[type]}
+                        </span>
                       </button>
                     );
                   })}
