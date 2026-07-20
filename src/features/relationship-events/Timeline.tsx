@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Sparkles, Pencil, Trash2 } from "lucide-react";
@@ -407,9 +408,9 @@ export function BookChapters({
         })}
       </div>
 
-      {/* ── Menu de contexto (long press) ── */}
-      {menuEvent && (
-        <div className="fixed inset-0 z-50 flex items-end">
+      {/* ── Menu de contexto via Portal (evita transform ancestor) ── */}
+      {menuEvent && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end">
           <div
             className="absolute inset-0 bg-black/35 backdrop-blur-[2px] animate-in fade-in duration-150"
             onClick={() => setMenuEvent(null)}
@@ -450,7 +451,8 @@ export function BookChapters({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

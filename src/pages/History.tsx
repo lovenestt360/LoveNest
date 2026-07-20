@@ -67,7 +67,7 @@ function BookCover({
   // 3. Após 2.6s inicia o crossfade rosa → foto (só se a foto já carregou)
   useEffect(() => {
     if (!imgUrl) return;
-    const timer = setTimeout(() => setShowPhoto(true), 2600);
+    const timer = setTimeout(() => setShowPhoto(true), 1200);
     return () => clearTimeout(timer);
   }, [imgUrl]);
 
