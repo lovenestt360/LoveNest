@@ -156,7 +156,6 @@ function EventPhotoWithOverlay({
   imagePath,
   title,
   description,
-  date,
   chapterNumber,
   isFirst,
   eventLabel,
@@ -164,7 +163,6 @@ function EventPhotoWithOverlay({
   imagePath: string;
   title: string;
   description: string | null;
-  date: Date;
   chapterNumber: number;
   isFirst: boolean;
   eventLabel?: string;
@@ -193,35 +191,35 @@ function EventPhotoWithOverlay({
     >
       <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
 
-      {/* Gradiente inferior */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      {/* Gradiente inferior mais pronunciado para o texto respirar */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-      {/* Capítulo — canto superior esquerdo */}
-      <div className="absolute top-4 left-4">
-        <p className="text-[8px] font-bold text-white/50 uppercase tracking-[0.32em]">
-          {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
-        </p>
-      </div>
-
-      {/* Título + descrição — canto inferior esquerdo */}
-      <div className="absolute bottom-0 left-0 right-0 p-5">
+      {/* Capítulo + Título + Descrição — zona inferior */}
+      <div className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-12">
         {isFirst && (
-          <p className="text-[9px] font-bold text-rose-300/70 uppercase tracking-[0.35em] mb-1">
+          <p className="text-[8px] font-bold text-rose-300/80 uppercase tracking-[0.40em] mb-2">
             Onde tudo começou
           </p>
         )}
-        <p className="font-serif font-bold text-white leading-tight drop-shadow-sm"
-          style={{ fontSize: isFirst ? "22px" : "19px" }}>
+        {/* Capítulo acima do título */}
+        <p className="text-[8px] font-bold text-white/45 uppercase tracking-[0.38em] mb-2">
+          {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
+        </p>
+        {/* Título destacado */}
+        <p
+          className="font-serif font-bold text-white leading-tight"
+          style={{
+            fontSize: isFirst ? "28px" : "24px",
+            textShadow: "0 2px 16px rgba(0,0,0,0.5)",
+          }}
+        >
           {title}
         </p>
         {description && (
-          <p className="text-[11px] text-white/65 italic mt-1.5 leading-relaxed line-clamp-2">
+          <p className="text-[12px] text-white/65 italic mt-2 leading-relaxed line-clamp-2">
             {description}
           </p>
         )}
-        <p className="text-[10px] text-white/35 mt-1.5">
-          {format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}
-        </p>
       </div>
     </div>
   );
@@ -304,7 +302,6 @@ function EventChapter({
             imagePath={event.image_path!}
             title={event.title}
             description={event.description}
-            date={parseDateOnly(event.event_date)}
             chapterNumber={chapterNumber}
             isFirst={isFirst}
             eventLabel={config?.label}
