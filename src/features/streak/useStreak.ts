@@ -215,13 +215,14 @@ export function useStreak() {
       const localToday = todayLocal();
       const staleServerDate =
         newState.lastActiveDate !== null && newState.lastActiveDate < localToday;
+      // staleServerDate apenas afecta bothActiveToday (o streak ainda não avançou
+      // porque o parceiro ainda não fez check-in) — NÃO zeramos activeCount:
+      // o servidor responde com active_today=1 quando o utilizador já fez check-in,
+      // e esse valor é correcto mesmo que last_streak_date seja ontem.
       const finalState: StreakState = staleServerDate
         ? {
             ...newState,
-            // myCheckedIn mantido: é um dado per-user que o servidor calcula
-            // com base em daily_activity do utilizador, independente do streak.
             bothActiveToday: false,
-            activeCount:     0,
             streakAtRisk:    newState.currentStreak > 0,
           }
         : newState;
@@ -301,12 +302,15 @@ export function useStreak() {
     return () => clearInterval(timer);
   }, [refresh]);
 
-  // Realtime — escudos actualizam imediatamente quando são comprados ou usados
+  // Realtime — check-in e actividades disparam refresh imediato sem depender de
+  // eventos intermediários (streak-updated despachado por useCardData).
+  // Cadeia directa: daily_activity INSERT → refresh(true) nesta instância.
   useEffect(() => {
     if (!spaceId) return;
     const channel = supabase
-      .channel(`shields-rt-${spaceId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "love_shields", filter: `couple_space_id=eq.${spaceId}` }, () => refresh(true))
+      .channel(`streak-rt-${spaceId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "daily_activity",  filter: `couple_space_id=eq.${spaceId}` }, () => refresh(true))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "love_shields",    filter: `couple_space_id=eq.${spaceId}` }, () => refresh(true))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [spaceId, refresh]);
@@ -355,7 +359,10 @@ export function useStreak() {
       // Refresh silencioso — card actualiza no lugar sem skeleton
       await refresh(true);
 
+      // Notifica todas as outras instâncias (card na Home, Index)
+      // Pequeno delay garante que o DB já tem o registo antes do refresh remoto
       window.dispatchEvent(new CustomEvent("streak-updated", { detail: { spaceId } }));
+      setTimeout(() => window.dispatchEvent(new CustomEvent("streak-updated", { detail: { spaceId } })), 800);
       return { ok: true };
     } catch (err: any) {
       return { ok: false, message: err?.message ?? "Erro inesperado" };
