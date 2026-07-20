@@ -277,31 +277,33 @@ export default function History() {
         photoPath={coverPhotoPath}
       />
 
-      {/* Capítulos */}
-      <div className="max-w-md mx-auto">
+      {/* Capítulos + FAB inline (não fixo) */}
+      <div className="max-w-md mx-auto relative">
         <BookChapters
           entries={entries}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
-      </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => { setEditingEvent(null); setSheetOpen(true); }}
-        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all"
-        style={{
-          background: "#C4788C",
-          boxShadow: "0 6px 24px rgba(196,120,140,0.38), 0 2px 8px rgba(0,0,0,0.08)",
-        }}
-        aria-label="Escrever mais um capítulo"
-      >
-        <span
-          className="absolute inset-0 rounded-full animate-ping opacity-10 pointer-events-none"
-          style={{ background: "#C4788C" }}
-        />
-        <Plus className="w-6 h-6 relative z-10" strokeWidth={2.5} />
-      </button>
+        {/* FAB sticky dentro do fluxo — só aparece ao fazer scroll para os capítulos */}
+        <div className="sticky bottom-24 flex justify-end px-5 pb-6 pointer-events-none">
+          <button
+            onClick={() => { setEditingEvent(null); setSheetOpen(true); }}
+            className="pointer-events-auto relative h-14 w-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all"
+            style={{
+              background: "#C4788C",
+              boxShadow: "0 6px 24px rgba(196,120,140,0.38), 0 2px 8px rgba(0,0,0,0.08)",
+            }}
+            aria-label="Escrever mais um capítulo"
+          >
+            <span
+              className="absolute inset-0 rounded-full animate-ping opacity-10 pointer-events-none"
+              style={{ background: "#C4788C" }}
+            />
+            <Plus className="w-6 h-6 relative z-10" strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
 
       {spaceId && user && (
         <AddRelationshipEventSheet
