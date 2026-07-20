@@ -217,104 +217,129 @@ export function AddRelationshipEventSheet({
               </button>
             </div>
 
-            {/* Formulário ultra-compacto — sem labels, sem scroll */}
-            <div className="px-4 pt-3 pb-4 space-y-2">
+            {/* Formulário com labels e espaçamento confortável */}
+            <div className="px-4 pt-3 pb-5 space-y-3">
 
               {/* Fotografia */}
-              {displayImg ? (
-                <div className="relative rounded-xl overflow-hidden">
-                  <img src={displayImg} alt="" className="w-full h-24 object-cover" />
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Fotografia
+                </p>
+                {displayImg ? (
+                  <div className="relative rounded-xl overflow-hidden">
+                    <img src={displayImg} alt="" className="w-full h-24 object-cover" />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 flex items-center justify-center active:scale-90"
+                    >
+                      <X className="w-3 h-3 text-white" strokeWidth={2} />
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={removeImage}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 flex items-center justify-center active:scale-90"
+                    onClick={() => document.getElementById("rel-event-img")?.click()}
+                    className="w-full rounded-xl border border-dashed border-border/40 py-2.5 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors"
                   >
-                    <X className="w-3 h-3 text-white" strokeWidth={2} />
+                    <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
+                    <span className="text-[12px] text-muted-foreground">Adicionar fotografia (opcional)</span>
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("rel-event-img")?.click()}
-                  className="w-full rounded-xl border border-dashed border-border/40 py-2 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors"
-                >
-                  <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
-                  <span className="text-[11px] text-muted-foreground">Adicionar fotografia (opcional)</span>
-                </button>
-              )}
-              <input
-                id="rel-event-img"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              />
+                )}
+                <input
+                  id="rel-event-img"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+                />
+              </div>
 
               {/* Título */}
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Nome do momento…"
-                className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
-              />
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Nome do momento
+                </p>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: Primeira viagem juntos"
+                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
+                />
+              </div>
 
-              {/* Categoria — linha única de ícones */}
-              <div className="grid grid-cols-6 gap-1">
-                {EVENT_TYPES.map((type) => {
-                  const config = EVENT_TYPE_CONFIG[type];
-                  const colors = EVENT_COLORS[type];
-                  const Icon   = config.icon;
-                  const sel    = eventType === type;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setEventType(type)}
-                      title={config.label}
-                      className={cn(
-                        "flex flex-col items-center gap-0.5 py-1.5 rounded-xl border transition-all",
-                        sel
-                          ? cn("border-transparent", colors.iconBg)
-                          : "border-border/30 bg-muted/15 active:bg-muted/40"
-                      )}
-                    >
-                      <Icon
-                        className={cn("w-3.5 h-3.5", sel ? colors.iconText : "text-muted-foreground/60")}
-                        strokeWidth={1.5}
-                      />
-                      {sel && (
-                        <span className={cn("text-[7px] font-bold leading-none", colors.iconText)}>
-                          {SHORT_LABELS[type]}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              {/* Categoria */}
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Tipo de momento
+                </p>
+                <div className="grid grid-cols-6 gap-1">
+                  {EVENT_TYPES.map((type) => {
+                    const config = EVENT_TYPE_CONFIG[type];
+                    const colors = EVENT_COLORS[type];
+                    const Icon   = config.icon;
+                    const sel    = eventType === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setEventType(type)}
+                        title={config.label}
+                        className={cn(
+                          "flex flex-col items-center gap-0.5 py-2 rounded-xl border transition-all",
+                          sel
+                            ? cn("border-transparent", colors.iconBg)
+                            : "border-border/30 bg-muted/15 active:bg-muted/40"
+                        )}
+                      >
+                        <Icon
+                          className={cn("w-3.5 h-3.5", sel ? colors.iconText : "text-muted-foreground/60")}
+                          strokeWidth={1.5}
+                        />
+                        {sel && (
+                          <span className={cn("text-[7px] font-bold leading-none", colors.iconText)}>
+                            {SHORT_LABELS[type]}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Data */}
-              <input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
-              />
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Data em que aconteceu
+                </p>
+                <input
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
+                />
+              </div>
 
               {/* Descrição */}
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Uma frase para nunca esquecer… (opcional)"
-                rows={2}
-                className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all resize-none leading-relaxed"
-              />
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Mensagem (opcional)
+                </p>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Uma frase para nunca esquecer…"
+                  rows={2}
+                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all resize-none leading-relaxed"
+                />
+              </div>
 
               {/* CTA */}
               <Button
                 onClick={handleSave}
                 disabled={saving || !title.trim() || !eventDate}
-                className="w-full h-10 rounded-2xl bg-[#C4788C] hover:bg-[#B56A7E] active:bg-[#A65C70] text-white font-semibold text-[12px] shadow-[0_4px_16px_rgba(196,120,140,0.25)] transition-all border-0"
+                className="w-full h-11 rounded-2xl bg-[#C4788C] hover:bg-[#B56A7E] active:bg-[#A65C70] text-white font-semibold text-[13px] shadow-[0_4px_16px_rgba(196,120,140,0.25)] transition-all border-0"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
