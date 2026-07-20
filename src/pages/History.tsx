@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Plus, BookOpen, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,8 +51,10 @@ function BookCover({
   }, [coverPhotoPath]);
 
   return (
-    <div className="relative h-[88vh] min-h-[540px] flex flex-col items-center justify-center overflow-hidden">
-
+    <div
+      className="relative flex flex-col items-center justify-center overflow-hidden"
+      style={{ height: "76vh", minHeight: "460px" }}
+    >
       {/* Fundo: foto desfocada OU gradiente escuro */}
       {imgUrl ? (
         <>
@@ -60,23 +62,23 @@ function BookCover({
             src={imgUrl}
             alt=""
             className="absolute inset-0 w-full h-full object-cover scale-110"
-            style={{ filter: "blur(18px) brightness(0.45) saturate(0.7)" }}
+            style={{ filter: "blur(20px) brightness(0.40) saturate(0.65)" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/65" />
         </>
       ) : (
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(160deg, #1A0A12 0%, #4A1530 45%, #8B3058 72%, #E0607A 100%)",
+              "linear-gradient(160deg, #1A0A12 0%, #3D1228 40%, #7A2A4A 68%, #C85070 88%, #E06880 100%)",
           }}
         />
       )}
 
-      {/* Textura sutil */}
+      {/* Textura de papel */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
             "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,1) 2px,rgba(255,255,255,1) 3px)",
@@ -84,88 +86,56 @@ function BookCover({
       />
 
       {/* Conteúdo */}
-      <div className="relative z-10 text-center px-8">
-        <p className="text-[9px] font-bold text-rose-300/70 uppercase tracking-[0.42em] mb-6">
+      <div className="relative z-10 text-center px-6 w-full max-w-xs mx-auto">
+        <p className="text-[8px] font-bold text-rose-300/60 uppercase tracking-[0.45em] mb-5">
           O Livro da
         </p>
 
         <h1
           className="font-serif font-bold text-white leading-none"
-          style={{ fontSize: "clamp(38px, 10vw, 52px)", textShadow: "0 2px 32px rgba(0,0,0,0.5)" }}
+          style={{ fontSize: "clamp(40px, 11vw, 56px)", textShadow: "0 2px 40px rgba(0,0,0,0.55)" }}
         >
           Nossa História
         </h1>
 
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <div className="h-px w-12 bg-white/20" />
+        {/* Ornamento */}
+        <div className="flex items-center justify-center gap-2.5 mt-6 mb-6">
+          <div className="h-px w-10 bg-white/15" />
           <div className="flex gap-1">
-            <div className="w-1 h-1 rounded-full bg-rose-300/60" />
-            <div className="w-1 h-1 rounded-full bg-rose-200/40" />
-            <div className="w-1 h-1 rounded-full bg-rose-100/25" />
+            <div className="w-1 h-1 rounded-full bg-rose-300/55" />
+            <div className="w-1 h-1 rounded-full bg-rose-200/35" />
+            <div className="w-1 h-1 rounded-full bg-rose-100/20" />
           </div>
-          <div className="h-px w-12 bg-white/20" />
+          <div className="h-px w-10 bg-white/15" />
         </div>
 
+        {/* Contador de tempo */}
         <p
-          className="mt-8 font-serif font-bold text-white/90 leading-none"
-          style={{ fontSize: "clamp(28px, 7vw, 38px)", textShadow: "0 1px 16px rgba(0,0,0,0.4)" }}
+          className="font-serif font-bold text-white/95 leading-tight"
+          style={{ fontSize: "clamp(26px, 7vw, 36px)", textShadow: "0 1px 20px rgba(0,0,0,0.4)" }}
         >
           {timeLabel}
         </p>
-        <p className="text-[13px] text-white/50 mt-2 tracking-wide">
+        <p className="text-[12px] text-white/45 mt-1.5 tracking-wide">
           de vida partilhada juntos
         </p>
 
         {startDate && (
-          <p className="text-[11px] text-white/30 mt-4">
+          <p className="text-[10px] text-white/25 mt-3">
             Desde {format(parseDateOnly(startDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}
           </p>
         )}
+
+        {/* Frase emocional */}
+        <p className="text-[11px] text-white/30 italic mt-5 leading-relaxed">
+          O amor também se mede pelos momentos que decidiram guardar.
+        </p>
       </div>
 
-      {/* Indicador de scroll */}
-      <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-1.5 animate-bounce">
-        <p className="text-[9px] text-white/25 uppercase tracking-[0.3em]">Virar a página</p>
-        <ChevronDown className="w-4 h-4 text-white/25" strokeWidth={1.5} />
-      </div>
-    </div>
-  );
-}
-
-// ── Overlay de sucesso ────────────────────────────────────────────────────────
-function SuccessOverlay({ title, onDismiss }: { title: string; onDismiss: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
-      onClick={onDismiss}
-    >
-      <div
-        className="mx-6 max-w-xs w-full bg-background rounded-3xl p-7 text-center shadow-2xl animate-in slide-in-from-bottom-8 duration-400"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative w-[68px] h-[68px] mx-auto mb-5">
-          <div className="absolute inset-0 rounded-full bg-rose-100 dark:bg-rose-900/20 animate-ping opacity-25" />
-          <div className="relative w-full h-full rounded-full bg-rose-50 dark:bg-rose-950/25 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-rose-400" strokeWidth={1.5} />
-          </div>
-        </div>
-        <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.22em] mb-2">
-          Novo capítulo
-        </p>
-        <p className="font-serif text-[19px] font-bold text-[#1A1A1A] dark:text-zinc-100 leading-tight">
-          Mais um momento guardado
-        </p>
-        <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
-          A vossa história acabou de crescer.
-        </p>
-        <div className="mt-4 bg-rose-50/70 dark:bg-rose-950/15 border border-rose-100 dark:border-rose-900/30 rounded-xl px-4 py-3">
-          <p className="font-serif text-[14px] font-semibold text-[#1A1A1A] dark:text-zinc-100 leading-snug">
-            "{title}"
-          </p>
-        </div>
-        <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-4">
-          {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: pt })}
-        </p>
+      {/* Scroll hint */}
+      <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1 animate-bounce">
+        <p className="text-[8px] text-white/20 uppercase tracking-[0.35em]">Virar a página</p>
+        <ChevronDown className="w-3.5 h-3.5 text-white/20" strokeWidth={1.5} />
       </div>
     </div>
   );
@@ -183,7 +153,6 @@ export default function History() {
 
   const [sheetOpen, setSheetOpen]       = useState(false);
   const [editingEvent, setEditingEvent] = useState<RelationshipEvent | null>(null);
-  const [successTitle, setSuccessTitle] = useState<string | null>(null);
 
   const handleEdit = (event: RelationshipEvent) => { setEditingEvent(event); setSheetOpen(true); };
 
@@ -193,18 +162,12 @@ export default function History() {
     if (error) toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
   };
 
-  const handleCreated = (title: string) => {
-    setSuccessTitle(title);
-    setTimeout(() => setSuccessTitle(null), 4000);
-  };
-
   if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
 
-  // Ordem cronológica ascendente para o livro
-  const entries = buildTimelineEntries(events, time.startDate);
+  const entries   = buildTimelineEntries(events, time.startDate);
   const timeLabel = buildTimeLabel(time.days);
 
-  // Foto da capa: o evento mais antigo com imagem (começo da história)
+  // Foto de capa: o evento mais antigo com imagem
   const coverPhotoPath = useMemo<string | null>(() => {
     const withPhoto = [...events]
       .filter((e) => !!e.image_path)
@@ -223,14 +186,14 @@ export default function History() {
         <ArrowLeft className="h-5 w-5" />
       </button>
 
-      {/* ── Capa ── */}
+      {/* Capa */}
       <BookCover
         timeLabel={timeLabel}
         startDate={time.startDate}
         coverPhotoPath={coverPhotoPath}
       />
 
-      {/* ── Capítulos ── */}
+      {/* Capítulos */}
       <div className="max-w-md mx-auto">
         <BookChapters
           entries={entries}
@@ -239,13 +202,20 @@ export default function History() {
         />
       </div>
 
-      {/* ── FAB: rose suave ── */}
+      {/* FAB — blush/coral suave */}
       <button
         onClick={() => { setEditingEvent(null); setSheetOpen(true); }}
-        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full bg-rose-400 text-white flex items-center justify-center active:scale-90 transition-all shadow-[0_6px_24px_rgba(251,113,133,0.40),0_2px_8px_rgba(0,0,0,0.08)]"
+        className="fixed bottom-[100px] right-5 z-40 h-14 w-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all"
+        style={{
+          background: "#C4788C",
+          boxShadow: "0 6px 24px rgba(196,120,140,0.38), 0 2px 8px rgba(0,0,0,0.08)",
+        }}
         aria-label="Escrever mais um capítulo"
       >
-        <span className="absolute inset-0 rounded-full bg-rose-300 animate-ping opacity-15 pointer-events-none" />
+        <span
+          className="absolute inset-0 rounded-full animate-ping opacity-10 pointer-events-none"
+          style={{ background: "#C4788C" }}
+        />
         <Plus className="w-6 h-6 relative z-10" strokeWidth={2.5} />
       </button>
 
@@ -258,12 +228,7 @@ export default function History() {
           editingEvent={editingEvent}
           onCreate={createEvent}
           onUpdate={updateEvent}
-          onCreated={handleCreated}
         />
-      )}
-
-      {successTitle && (
-        <SuccessOverlay title={successTitle} onDismiss={() => setSuccessTitle(null)} />
       )}
 
     </div>

@@ -18,7 +18,7 @@ function parseDateOnly(iso: string): Date {
   return new Date(iso + "T00:00:00");
 }
 
-/** Constrói as entradas ordenadas cronologicamente (mais antiga primeiro = Capítulo 1). */
+/** Constrói as entradas ordenadas cronologicamente (mais antiga = Capítulo 1). */
 export function buildTimelineEntries(
   events: RelationshipEvent[],
   relationshipStartDate: string | null,
@@ -40,7 +40,6 @@ export function buildTimelineEntries(
     }
   }
 
-  // Ordem ascendente — para o livro se lê do início para o fim
   return entries.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
@@ -54,63 +53,76 @@ function EventImage({ imagePath }: { imagePath: string }) {
       .then(({ data }) => { if (data) setUrl(data.signedUrl); });
   }, [imagePath]);
   if (!url) return null;
-  return <img src={url} alt="" className="w-full h-72 object-cover" />;
+  return (
+    <div className="relative w-full overflow-hidden rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.13)]">
+      <img src={url} alt="" className="w-full h-80 object-cover" />
+      {/* Véu inferior para fundir com o fundo */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent pointer-events-none" />
+    </div>
+  );
 }
 
 // ── Divisor entre capítulos ───────────────────────────────────────────────────
 function ChapterDivider() {
   return (
-    <div className="flex items-center gap-3 my-2 px-5">
-      <div className="h-px flex-1 bg-rose-100/60 dark:bg-rose-900/15" />
+    <div className="flex items-center gap-3 my-1 px-5">
+      <div className="h-px flex-1 bg-rose-100/50 dark:bg-rose-900/12" />
       <div className="flex gap-1.5">
-        <div className="w-1 h-1 rounded-full bg-rose-300 dark:bg-rose-700" />
-        <div className="w-1 h-1 rounded-full bg-rose-200 dark:bg-rose-800" />
-        <div className="w-1 h-1 rounded-full bg-rose-100 dark:bg-rose-900" />
+        <div className="w-1 h-1 rounded-full bg-rose-300/70 dark:bg-rose-700/60" />
+        <div className="w-1 h-1 rounded-full bg-rose-200/50 dark:bg-rose-800/50" />
+        <div className="w-1 h-1 rounded-full bg-rose-100/30 dark:bg-rose-900/40" />
       </div>
-      <div className="h-px flex-1 bg-rose-100/60 dark:bg-rose-900/15" />
+      <div className="h-px flex-1 bg-rose-100/50 dark:bg-rose-900/12" />
     </div>
   );
 }
 
-// ── XS milestone: separador invisível, só para registar o momento ─────────────
+// ── XS milestone — marcador quase invisível ────────────────────────────────────
 function XSSeparator({ label, date }: { label: string; date: Date }) {
   return (
-    <div className="flex items-center justify-center gap-2.5 py-5">
-      <div className="h-px w-6 bg-rose-100/50 dark:bg-rose-900/20" />
-      <span className="text-[10px] text-gray-300 dark:text-gray-600 italic">
+    <div className="flex items-center justify-center gap-2.5 py-4">
+      <div className="h-px w-5 bg-rose-100/40 dark:bg-rose-900/15" />
+      <span className="text-[10px] text-gray-300/70 dark:text-gray-600/60 italic">
         {label} · {format(date, "d 'de' MMM 'de' yyyy", { locale: pt })}
       </span>
-      <div className="h-px w-6 bg-rose-100/50 dark:bg-rose-900/20" />
+      <div className="h-px w-5 bg-rose-100/40 dark:bg-rose-900/15" />
     </div>
   );
 }
 
-// ── Cabeçalho partilhado de cada capítulo ─────────────────────────────────────
+// ── Cabeçalho de capítulo ─────────────────────────────────────────────────────
 function ChapterHeader({
   chapterNumber,
   title,
   date,
   titleSize = "md",
+  isFirst = false,
+  eyebrow,
 }: {
   chapterNumber: number;
   title: string;
   date: Date;
   titleSize?: "sm" | "md" | "xl";
+  isFirst?: boolean;
+  eyebrow?: string;
 }) {
-  const sizeClass = {
-    sm: "text-[20px]",
-    md: "text-[24px]",
-    xl: "text-[30px]",
-  }[titleSize];
+  const sizeClass = isFirst
+    ? "text-[32px]"
+    : { sm: "text-[20px]", md: "text-[24px]", xl: "text-[28px]" }[titleSize];
 
   return (
-    <div className="text-center px-6 mb-6">
-      <div className="flex items-center justify-center gap-3 mb-4">
-        <div className="h-px w-10 bg-rose-200/60 dark:bg-rose-800/30" />
-        <p className="text-[8px] font-bold text-rose-400 uppercase tracking-[0.35em]">
-          Capítulo {chapterNumber}
+    <div className="text-center px-6 mb-5">
+      {isFirst && (
+        <p className="text-[9px] font-bold text-rose-400/60 uppercase tracking-[0.4em] mb-3">
+          Onde tudo começou
         </p>
-        <div className="h-px w-10 bg-rose-200/60 dark:bg-rose-800/30" />
+      )}
+      <div className="flex items-center justify-center gap-3 mb-3">
+        <div className={cn("h-px bg-rose-200/50 dark:bg-rose-800/25", isFirst ? "w-14" : "w-10")} />
+        <p className={cn("font-bold text-rose-400 uppercase tracking-[0.35em]", isFirst ? "text-[9px]" : "text-[8px]")}>
+          {eyebrow ? eyebrow + " · " : ""}Capítulo {chapterNumber}
+        </p>
+        <div className={cn("h-px bg-rose-200/50 dark:bg-rose-800/25", isFirst ? "w-14" : "w-10")} />
       </div>
       <p className={cn("font-serif font-bold text-[#1A1A1A] dark:text-zinc-100 leading-tight", sizeClass)}>
         {title}
@@ -122,22 +134,24 @@ function ChapterHeader({
   );
 }
 
-// ── Capítulo de milestone — pesos sm/md/xl ─────────────────────────────────────
+// ── Capítulo de milestone ─────────────────────────────────────────────────────
 function MilestoneChapter({
   label,
   date,
   weight,
   phrase,
   chapterNumber,
+  isFirst,
 }: {
   label: string;
   date: Date;
   weight: MilestoneWeight;
   phrase?: string;
   chapterNumber: number;
+  isFirst: boolean;
 }) {
   const titleSize = weight === "xl" ? "xl" : weight === "md" ? "md" : "sm";
-  const vPadding  = weight === "xl" ? "py-14" : weight === "md" ? "py-10" : "py-8";
+  const vPadding  = isFirst ? "py-12" : weight === "xl" ? "py-10" : weight === "md" ? "py-8" : "py-6";
 
   return (
     <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500", vPadding)}>
@@ -146,60 +160,60 @@ function MilestoneChapter({
         title={label}
         date={date}
         titleSize={titleSize}
+        isFirst={isFirst}
       />
 
       {phrase && (
         <p
           className={cn(
-            "text-center italic text-gray-500 dark:text-gray-400 leading-relaxed px-8 max-w-[300px] mx-auto",
-            weight === "xl" ? "text-[14px]" : "text-[12px]",
+            "text-center italic text-gray-400 dark:text-gray-500 leading-relaxed px-8 max-w-[300px] mx-auto",
+            weight === "xl" || isFirst ? "text-[13px]" : "text-[11px]",
           )}
         >
           "{phrase}"
         </p>
       )}
 
-      <div
-        className={cn(
-          "flex items-center justify-center gap-2 mt-6",
-          weight === "xl" && "mt-8",
-        )}
-      >
-        {weight === "xl" && (
+      {(weight === "xl" || isFirst) && (
+        <div className="flex justify-center mt-5">
           <div className="flex gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-300" />
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-200" />
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-300/70" />
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-200/50" />
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-100/30" />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <ChapterDivider />
     </div>
   );
 }
 
-// ── Capítulo de evento criado pelo casal ──────────────────────────────────────
+// ── Capítulo de evento ────────────────────────────────────────────────────────
 function EventChapter({
   event,
   chapterNumber,
+  isFirst,
   onEdit,
   onDelete,
 }: {
   event: RelationshipEvent;
   chapterNumber: number;
+  isFirst: boolean;
   onEdit: (event: RelationshipEvent) => void;
   onDelete: (event: RelationshipEvent) => void;
 }) {
   const config = EVENT_TYPE_CONFIG[event.event_type];
   const Icon   = config?.icon ?? DEFAULT_EVENT_ICON;
+  const vPad   = isFirst ? "py-12" : "py-8";
 
   return (
-    <div className="py-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      {/* Ícone do tipo de evento */}
-      <div className="flex justify-center mb-5">
-        <div className="w-9 h-9 rounded-full bg-rose-50 dark:bg-rose-950/25 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center">
-          <Icon className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+    <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500", vPad)}>
+
+      {/* Ícone do tipo */}
+      <div className="flex justify-center mb-4">
+        <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/20 border border-rose-100/60 dark:border-rose-900/25 flex items-center justify-center">
+          <Icon className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
         </div>
       </div>
 
@@ -208,37 +222,39 @@ function EventChapter({
         title={event.title}
         date={parseDateOnly(event.event_date)}
         titleSize="md"
+        isFirst={isFirst}
+        eyebrow={config?.label}
       />
 
-      {/* Fotografia — protagonista da página */}
+      {/* Fotografia — protagonista */}
       {event.image_path && (
-        <div className="mb-8 shadow-[0_4px_32px_rgba(0,0,0,0.10)]">
+        <div className="mb-7 px-4">
           <EventImage imagePath={event.image_path} />
         </div>
       )}
 
-      {/* Descrição em destaque */}
+      {/* Descrição em itálico */}
       {event.description && (
-        <div className="text-center px-8 mb-6">
+        <div className="text-center px-7 mb-5">
           <p className="text-[13px] text-gray-500 dark:text-gray-400 italic leading-relaxed">
             "{event.description}"
           </p>
         </div>
       )}
 
-      {/* Editar / Remover — subtis */}
-      <div className="flex items-center justify-center gap-6">
+      {/* Editar / Remover */}
+      <div className="flex items-center justify-center gap-6 mb-2">
         <button
           onClick={() => onEdit(event)}
-          className="flex items-center gap-1.5 text-[11px] text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-gray-300/80 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
         >
           <Pencil className="w-3 h-3" strokeWidth={1.5} />
           Editar
         </button>
-        <div className="w-px h-3.5 bg-border/50" />
+        <div className="w-px h-3 bg-border/40" />
         <button
           onClick={() => onDelete(event)}
-          className="flex items-center gap-1.5 text-[11px] text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-gray-300/80 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
         >
           <Trash2 className="w-3 h-3" strokeWidth={1.5} />
           Remover
@@ -250,7 +266,7 @@ function EventChapter({
   );
 }
 
-// ── Livro — componente principal exportado ────────────────────────────────────
+// ── BookChapters — componente principal ───────────────────────────────────────
 export function BookChapters({
   entries,
   onEdit,
@@ -276,25 +292,19 @@ export function BookChapters({
     );
   }
 
-  // Pré-processa: atribuir número de capítulo a todos excepto xs
   let chapterCount = 0;
   const processedEntries = entries.map((entry) => {
     const isXS = entry.kind === "milestone" && entry.weight === "xs";
-    return { entry, chapterNumber: isXS ? null : ++chapterCount };
+    const num  = isXS ? null : ++chapterCount;
+    return { entry, chapterNumber: num, isFirst: num === 1 };
   });
 
   return (
     <div>
-      {processedEntries.map(({ entry, chapterNumber }, i) => {
+      {processedEntries.map(({ entry, chapterNumber, isFirst }, i) => {
         if (entry.kind === "milestone") {
           if (entry.weight === "xs") {
-            return (
-              <XSSeparator
-                key={`xs-${i}`}
-                label={entry.label}
-                date={entry.date}
-              />
-            );
+            return <XSSeparator key={`xs-${i}`} label={entry.label} date={entry.date} />;
           }
           return (
             <MilestoneChapter
@@ -304,6 +314,7 @@ export function BookChapters({
               weight={entry.weight}
               phrase={MILESTONE_PHRASES[entry.label]}
               chapterNumber={chapterNumber!}
+              isFirst={isFirst}
             />
           );
         }
@@ -312,6 +323,7 @@ export function BookChapters({
             key={entry.event.id}
             event={entry.event}
             chapterNumber={chapterNumber!}
+            isFirst={isFirst}
             onEdit={onEdit}
             onDelete={onDelete}
           />
