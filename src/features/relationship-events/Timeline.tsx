@@ -195,20 +195,31 @@ function EventPhotoWithOverlay({
   return (
     <div className="mx-4">
       {/* ── Cabeçalho editorial ACIMA da foto ── */}
-      <div className="px-1 mb-3">
+      <div className="mb-4">
         {isFirst && (
-          <p className="text-[8px] font-bold text-rose-400/70 uppercase tracking-[0.40em] mb-1.5">
+          <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.42em] mb-2 text-center">
             Onde tudo começou
           </p>
         )}
-        <div className="flex items-center gap-2 mb-1">
-          <div className="h-px w-6 bg-rose-300/40" />
-          <p className="text-[8px] font-bold text-rose-400/80 uppercase tracking-[0.38em]">
-            {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
+
+        {/* Linha com número do capítulo */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-px flex-1 bg-rose-200/60 dark:bg-rose-800/25" />
+          <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.42em]">
+            Capítulo {chapterNumber}
           </p>
-          <div className="h-px flex-1 bg-rose-100/40 dark:bg-rose-900/20" />
+          <div className="h-px flex-1 bg-rose-200/60 dark:bg-rose-800/25" />
         </div>
-        <p className="text-[13px] text-muted-foreground/70 font-medium">
+
+        {/* Tipo de acontecimento */}
+        {eventLabel && (
+          <p className="text-[11px] font-bold text-rose-500/80 uppercase tracking-[0.28em] text-center mb-1.5">
+            {eventLabel}
+          </p>
+        )}
+
+        {/* Data destacada */}
+        <p className="font-serif text-[20px] font-bold text-foreground text-center leading-tight">
           {format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}
         </p>
       </div>
