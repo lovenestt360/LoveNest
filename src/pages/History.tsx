@@ -53,7 +53,7 @@ function BookCover({
   return (
     <div
       className="relative flex flex-col items-center justify-center overflow-hidden"
-      style={{ height: "76vh", minHeight: "460px" }}
+      style={{ height: "76vh", minHeight: "460px", width: "100vw", marginLeft: "calc(50% - 50vw)" }}
     >
       {/* Fundo: foto desfocada OU gradiente escuro */}
       {imgUrl ? (
