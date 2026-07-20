@@ -179,54 +179,65 @@ function EventPhotoWithOverlay({
 
   if (!url) {
     return (
-      <div
-        className="w-full rounded-2xl bg-muted/20 animate-pulse mx-4"
-        style={{ height: isFirst ? "360px" : "300px", maxWidth: "calc(100% - 2rem)" }}
-      />
+      <div className="mx-4">
+        <div className="px-1 mb-3 animate-pulse">
+          <div className="h-2.5 w-28 bg-muted/40 rounded mb-2" />
+          <div className="h-5 w-40 bg-muted/30 rounded" />
+        </div>
+        <div
+          className="w-full rounded-2xl bg-muted/20 animate-pulse"
+          style={{ height: isFirst ? "360px" : "300px" }}
+        />
+      </div>
     );
   }
 
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl shadow-[0_8px_36px_rgba(0,0,0,0.16)] mx-4"
-      style={{ height: isFirst ? "360px" : "300px" }}
-    >
-      <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-
-      {/* Gradiente duplo — escuro em cima e em baixo, transparente ao centro */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/85" />
-
-      {/* Capítulo + Data — zona superior da foto */}
-      <div className="absolute top-4 left-5 right-5">
-        <p className="text-[8px] font-bold text-white/55 uppercase tracking-[0.35em]">
-          {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
-        </p>
-        <p className="text-[11px] text-white/80 mt-1 font-medium">
+    <div className="mx-4">
+      {/* ── Cabeçalho editorial ACIMA da foto ── */}
+      <div className="px-1 mb-3">
+        {isFirst && (
+          <p className="text-[8px] font-bold text-rose-400/70 uppercase tracking-[0.40em] mb-1.5">
+            Onde tudo começou
+          </p>
+        )}
+        <div className="flex items-center gap-2 mb-1">
+          <div className="h-px w-6 bg-rose-300/40" />
+          <p className="text-[8px] font-bold text-rose-400/80 uppercase tracking-[0.38em]">
+            {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
+          </p>
+          <div className="h-px flex-1 bg-rose-100/40 dark:bg-rose-900/20" />
+        </div>
+        <p className="text-[13px] text-muted-foreground/70 font-medium">
           {format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}
         </p>
       </div>
 
-      {/* Título + Descrição — zona inferior da foto */}
-      <div className="absolute bottom-0 left-0 right-0 px-5 pb-6">
-        {isFirst && (
-          <p className="text-[8px] font-bold text-rose-300/80 uppercase tracking-[0.40em] mb-2">
-            Onde tudo começou
+      {/* ── Foto ── */}
+      <div
+        className="relative overflow-hidden rounded-2xl shadow-[0_8px_36px_rgba(0,0,0,0.16)]"
+        style={{ height: isFirst ? "360px" : "300px" }}
+      >
+        <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+
+        {/* Título + descrição sobrepostos na zona inferior */}
+        <div className="absolute bottom-0 left-0 right-0 px-5 pb-6">
+          <p
+            className="font-serif font-bold text-white leading-tight"
+            style={{
+              fontSize: isFirst ? "28px" : "24px",
+              textShadow: "0 2px 16px rgba(0,0,0,0.5)",
+            }}
+          >
+            {title}
           </p>
-        )}
-        <p
-          className="font-serif font-bold text-white leading-tight"
-          style={{
-            fontSize: isFirst ? "28px" : "24px",
-            textShadow: "0 2px 16px rgba(0,0,0,0.5)",
-          }}
-        >
-          {title}
-        </p>
-        {description && (
-          <p className="text-[12px] text-white/65 italic mt-2 leading-relaxed line-clamp-2">
-            {description}
-          </p>
-        )}
+          {description && (
+            <p className="text-[12px] text-white/65 italic mt-2 leading-relaxed line-clamp-2">
+              {description}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
