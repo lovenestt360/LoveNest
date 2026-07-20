@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Camera, X, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +67,7 @@ function SavedScreen({ title, photoUrl }: { title: string; photoUrl: string | nu
   );
 }
 
-// ── Bottom Sheet compacto ──────────────────────────────────────────────────────
+// ── Modal centrado via Portal — bypassa qualquer transform ancestor ────────────
 export function AddRelationshipEventSheet({
   open,
   onOpenChange,
@@ -178,157 +179,157 @@ export function AddRelationshipEventSheet({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+  // createPortal garante que o modal é filho directo de document.body —
+  // nunca afectado por transform/filter de qualquer ancestor do React tree.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ padding: "16px" }}
+    >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={() => !saved && onOpenChange(false)}
       />
 
-      {/* Sheet — altura máxima 62vh, sem scroll */}
-      <div className="relative bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden">
-        <div className="max-h-[62vh] overflow-y-auto">
-
-          {/* Drag handle */}
-          <div className="flex justify-center pt-2.5 pb-0">
-            <div className="w-8 h-1 rounded-full bg-border/60" />
-          </div>
-
-          {saved ? (
-            <SavedScreen title={savedTitle} photoUrl={savedPhotoUrl} />
-          ) : (
-            <>
-              {/* Cabeçalho compacto */}
-              <div className="flex items-center justify-between px-4 pt-2.5 pb-2.5 border-b border-border/20">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
-                  <p className="font-serif text-[14px] font-bold text-foreground">
-                    {isEditing ? "Editar capítulo" : "Novo capítulo"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => onOpenChange(false)}
-                  className="w-6 h-6 rounded-full bg-muted/60 flex items-center justify-center active:scale-90 transition-transform"
-                >
-                  <X className="w-3 h-3 text-muted-foreground" strokeWidth={2} />
-                </button>
+      {/* Card centrado — largura máxima 360px */}
+      <div
+        className="relative w-full bg-background rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        style={{ maxWidth: "360px" }}
+      >
+        {saved ? (
+          <SavedScreen title={savedTitle} photoUrl={savedPhotoUrl} />
+        ) : (
+          <>
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-border/20">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+                <p className="font-serif text-[14px] font-bold text-foreground">
+                  {isEditing ? "Editar capítulo" : "Novo capítulo"}
+                </p>
               </div>
+              <button
+                onClick={() => onOpenChange(false)}
+                className="w-6 h-6 rounded-full bg-muted/60 flex items-center justify-center active:scale-90 transition-transform"
+              >
+                <X className="w-3 h-3 text-muted-foreground" strokeWidth={2} />
+              </button>
+            </div>
 
-              {/* Formulário ultra-compacto — sem labels visuais */}
-              <div className="px-4 pt-2.5 pb-4 space-y-2">
+            {/* Formulário ultra-compacto — sem labels, sem scroll */}
+            <div className="px-4 pt-3 pb-4 space-y-2">
 
-                {/* 1 — Fotografia */}
-                {displayImg ? (
-                  <div className="relative rounded-xl overflow-hidden">
-                    <img src={displayImg} alt="" className="w-full h-24 object-cover" />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center active:scale-90"
-                    >
-                      <X className="w-3 h-3 text-white" strokeWidth={2} />
-                    </button>
-                  </div>
-                ) : (
+              {/* Fotografia */}
+              {displayImg ? (
+                <div className="relative rounded-xl overflow-hidden">
+                  <img src={displayImg} alt="" className="w-full h-24 object-cover" />
                   <button
                     type="button"
-                    onClick={() => document.getElementById("rel-event-img")?.click()}
-                    className="w-full rounded-xl border border-dashed border-border/40 py-2 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors"
+                    onClick={removeImage}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 flex items-center justify-center active:scale-90"
                   >
-                    <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
-                    <span className="text-[11px] text-muted-foreground">Adicionar fotografia (opcional)</span>
+                    <X className="w-3 h-3 text-white" strokeWidth={2} />
                   </button>
-                )}
-                <input
-                  id="rel-event-img"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-                />
-
-                {/* 2 — Título */}
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Nome do momento…"
-                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
-                />
-
-                {/* 3 — Categoria (linha única, ícones) */}
-                <div className="grid grid-cols-6 gap-1">
-                  {EVENT_TYPES.map((type) => {
-                    const config = EVENT_TYPE_CONFIG[type];
-                    const colors = EVENT_COLORS[type];
-                    const Icon   = config.icon;
-                    const sel    = eventType === type;
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setEventType(type)}
-                        title={config.label}
-                        className={cn(
-                          "flex flex-col items-center gap-0.5 py-1.5 rounded-xl border transition-all",
-                          sel
-                            ? cn("border-transparent", colors.iconBg)
-                            : "border-border/30 bg-muted/15 active:bg-muted/40"
-                        )}
-                      >
-                        <Icon
-                          className={cn("w-3.5 h-3.5", sel ? colors.iconText : "text-muted-foreground/60")}
-                          strokeWidth={1.5}
-                        />
-                        {sel && (
-                          <span className={cn("text-[7px] font-bold leading-none", colors.iconText)}>
-                            {SHORT_LABELS[type]}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
                 </div>
-
-                {/* 4 — Data */}
-                <input
-                  type="date"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
-                />
-
-                {/* 5 — Descrição */}
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Uma frase para nunca esquecer… (opcional)"
-                  rows={2}
-                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all resize-none leading-relaxed"
-                />
-
-                {/* CTA */}
-                <Button
-                  onClick={handleSave}
-                  disabled={saving || !title.trim() || !eventDate}
-                  className="w-full h-10 rounded-2xl bg-[#C4788C] hover:bg-[#B56A7E] active:bg-[#A65C70] text-white font-semibold text-[12px] shadow-[0_4px_16px_rgba(196,120,140,0.25)] transition-all border-0"
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("rel-event-img")?.click()}
+                  className="w-full rounded-xl border border-dashed border-border/40 py-2 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors"
                 >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : isEditing ? (
-                    "Guardar alterações"
-                  ) : (
-                    "Guardar este momento"
-                  )}
-                </Button>
+                  <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
+                  <span className="text-[11px] text-muted-foreground">Adicionar fotografia (opcional)</span>
+                </button>
+              )}
+              <input
+                id="rel-event-img"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              />
 
+              {/* Título */}
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Nome do momento…"
+                className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
+              />
+
+              {/* Categoria — linha única de ícones */}
+              <div className="grid grid-cols-6 gap-1">
+                {EVENT_TYPES.map((type) => {
+                  const config = EVENT_TYPE_CONFIG[type];
+                  const colors = EVENT_COLORS[type];
+                  const Icon   = config.icon;
+                  const sel    = eventType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setEventType(type)}
+                      title={config.label}
+                      className={cn(
+                        "flex flex-col items-center gap-0.5 py-1.5 rounded-xl border transition-all",
+                        sel
+                          ? cn("border-transparent", colors.iconBg)
+                          : "border-border/30 bg-muted/15 active:bg-muted/40"
+                      )}
+                    >
+                      <Icon
+                        className={cn("w-3.5 h-3.5", sel ? colors.iconText : "text-muted-foreground/60")}
+                        strokeWidth={1.5}
+                      />
+                      {sel && (
+                        <span className={cn("text-[7px] font-bold leading-none", colors.iconText)}>
+                          {SHORT_LABELS[type]}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            </>
-          )}
 
-        </div>
+              {/* Data */}
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
+              />
+
+              {/* Descrição */}
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Uma frase para nunca esquecer… (opcional)"
+                rows={2}
+                className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all resize-none leading-relaxed"
+              />
+
+              {/* CTA */}
+              <Button
+                onClick={handleSave}
+                disabled={saving || !title.trim() || !eventDate}
+                className="w-full h-10 rounded-2xl bg-[#C4788C] hover:bg-[#B56A7E] active:bg-[#A65C70] text-white font-semibold text-[12px] shadow-[0_4px_16px_rgba(196,120,140,0.25)] transition-all border-0"
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isEditing ? (
+                  "Guardar alterações"
+                ) : (
+                  "Guardar este momento"
+                )}
+              </Button>
+
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
