@@ -53,7 +53,13 @@ function BookCover({
   return (
     <div
       className="relative flex flex-col items-center justify-center overflow-hidden"
-      style={{ height: "76vh", minHeight: "460px", width: "100vw", marginLeft: "calc(50% - 50vw)" }}
+      style={{
+        height: "76vh",
+        minHeight: "460px",
+        width: "100vw",
+        marginLeft: "calc(50% - 50vw)",
+        marginTop: "-1.5rem",   /* cancela o pt-6 do AppShell */
+      }}
     >
       {/* Fundo: foto desfocada OU gradiente escuro */}
       {imgUrl ? (
@@ -62,9 +68,9 @@ function BookCover({
             src={imgUrl}
             alt=""
             className="absolute inset-0 w-full h-full object-cover scale-110"
-            style={{ filter: "blur(20px) brightness(0.40) saturate(0.65)" }}
+            style={{ filter: "blur(6px) brightness(0.60) saturate(0.85)" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/65" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/55" />
         </>
       ) : (
         <div
