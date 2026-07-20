@@ -115,8 +115,8 @@ function BookCover({
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* Gradiente para manter o texto legível sobre a foto */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/50" />
+          {/* Gradiente — mais escuro no centro para o texto ser sempre legível */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/65 to-black/55" />
         </div>
       )}
 
@@ -189,16 +189,26 @@ function BookCover({
 
         {startDate && (
           <p
-            className="text-[10px] text-white/25 mt-3"
-            style={ta(960, 8)}
+            className="text-[10px] mt-3"
+            style={{
+              ...ta(960, 8),
+              color: `rgba(255,255,255,${showPhoto ? 0.55 : 0.25})`,
+              transition: `opacity 800ms ease, transform 900ms ${spring}, color 1200ms ease-in-out`,
+              transitionDelay: "960ms",
+            }}
           >
             Desde {format(parseDateOnly(startDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}
           </p>
         )}
 
         <p
-          className="text-[11px] text-white/30 italic mt-5 leading-relaxed"
-          style={ta(1100, 8)}
+          className="text-[11px] italic mt-5 leading-relaxed"
+          style={{
+            ...ta(1100, 8),
+            color: `rgba(255,255,255,${showPhoto ? 0.60 : 0.30})`,
+            transition: `opacity 800ms ease, transform 900ms ${spring}, color 1200ms ease-in-out`,
+            transitionDelay: "1100ms",
+          }}
         >
           O amor também se mede pelos momentos que decidiram guardar.
         </p>
