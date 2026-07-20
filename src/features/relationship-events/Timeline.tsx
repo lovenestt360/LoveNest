@@ -156,6 +156,7 @@ function EventPhotoWithOverlay({
   imagePath,
   title,
   description,
+  date,
   chapterNumber,
   isFirst,
   eventLabel,
@@ -163,6 +164,7 @@ function EventPhotoWithOverlay({
   imagePath: string;
   title: string;
   description: string | null;
+  date: Date;
   chapterNumber: number;
   isFirst: boolean;
   eventLabel?: string;
@@ -191,21 +193,26 @@ function EventPhotoWithOverlay({
     >
       <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
 
-      {/* Gradiente inferior mais pronunciado para o texto respirar */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+      {/* Gradiente duplo — escuro em cima e em baixo, transparente ao centro */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/85" />
 
-      {/* Capítulo + Título + Descrição — zona inferior */}
-      <div className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-12">
+      {/* Capítulo + Data — zona superior da foto */}
+      <div className="absolute top-4 left-5 right-5">
+        <p className="text-[8px] font-bold text-white/55 uppercase tracking-[0.35em]">
+          {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
+        </p>
+        <p className="text-[11px] text-white/80 mt-1 font-medium">
+          {format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}
+        </p>
+      </div>
+
+      {/* Título + Descrição — zona inferior da foto */}
+      <div className="absolute bottom-0 left-0 right-0 px-5 pb-6">
         {isFirst && (
           <p className="text-[8px] font-bold text-rose-300/80 uppercase tracking-[0.40em] mb-2">
             Onde tudo começou
           </p>
         )}
-        {/* Capítulo acima do título */}
-        <p className="text-[8px] font-bold text-white/45 uppercase tracking-[0.38em] mb-2">
-          {eventLabel ? `${eventLabel} · ` : ""}Capítulo {chapterNumber}
-        </p>
-        {/* Título destacado */}
         <p
           className="font-serif font-bold text-white leading-tight"
           style={{
@@ -302,6 +309,7 @@ function EventChapter({
             imagePath={event.image_path!}
             title={event.title}
             description={event.description}
+            date={parseDateOnly(event.event_date)}
             chapterNumber={chapterNumber}
             isFirst={isFirst}
             eventLabel={config?.label}
