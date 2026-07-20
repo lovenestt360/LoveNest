@@ -11,6 +11,7 @@ import { useTimeTogether } from "@/hooks/useTimeTogether";
 import { useRelationshipEvents } from "@/features/relationship-events/useRelationshipEvents";
 import { BookChapters, buildTimelineEntries } from "@/features/relationship-events/Timeline";
 import { AddRelationshipEventSheet } from "@/features/relationship-events/AddRelationshipEventSheet";
+import { EVENT_TYPE_CONFIG } from "@/features/relationship-events/types";
 import type { RelationshipEvent } from "@/features/relationship-events/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,58 +31,31 @@ function buildTimeLabel(totalDays: number): string {
   return parts.slice(0, -1).join(", ") + " e " + parts[parts.length - 1];
 }
 
-// ── Capa do livro ─────────────────────────────────────────────────────────────
+// Estilo de breakout — sai de px-4 e max-w-md do AppShell
+const breakout: React.CSSProperties = {
+  width: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+};
+
+// ── Capa do livro — sempre gradiente rosa ─────────────────────────────────────
 function BookCover({
   timeLabel,
   startDate,
-  coverPhotoPath,
 }: {
   timeLabel: string;
   startDate: string | null;
-  coverPhotoPath: string | null;
 }) {
-  const [imgUrl, setImgUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!coverPhotoPath) return;
-    supabase.storage
-      .from("memories")
-      .createSignedUrl(coverPhotoPath, 3600)
-      .then(({ data }) => { if (data) setImgUrl(data.signedUrl); });
-  }, [coverPhotoPath]);
-
   return (
     <div
       className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
+        ...breakout,
         height: "76vh",
         minHeight: "460px",
-        width: "100vw",
-        marginLeft: "calc(50% - 50vw)",
-        marginTop: "-1.5rem",   /* cancela o pt-6 do AppShell */
+        marginTop: "-1.5rem",
+        background: "linear-gradient(160deg, #1A0A12 0%, #3D1228 40%, #7A2A4A 68%, #C85070 88%, #E06880 100%)",
       }}
     >
-      {/* Fundo: foto desfocada OU gradiente escuro */}
-      {imgUrl ? (
-        <>
-          <img
-            src={imgUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover scale-110"
-            style={{ filter: "blur(6px) brightness(0.60) saturate(0.85)" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/55" />
-        </>
-      ) : (
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(160deg, #1A0A12 0%, #3D1228 40%, #7A2A4A 68%, #C85070 88%, #E06880 100%)",
-          }}
-        />
-      )}
-
       {/* Textura de papel */}
       <div
         className="absolute inset-0 opacity-[0.03]"
@@ -91,7 +65,6 @@ function BookCover({
         }}
       />
 
-      {/* Conteúdo */}
       <div className="relative z-10 text-center px-6 w-full max-w-xs mx-auto">
         <p className="text-[8px] font-bold text-rose-300/60 uppercase tracking-[0.45em] mb-5">
           O Livro da
@@ -104,7 +77,6 @@ function BookCover({
           Nossa História
         </h1>
 
-        {/* Ornamento */}
         <div className="flex items-center justify-center gap-2.5 mt-6 mb-6">
           <div className="h-px w-10 bg-white/15" />
           <div className="flex gap-1">
@@ -115,7 +87,6 @@ function BookCover({
           <div className="h-px w-10 bg-white/15" />
         </div>
 
-        {/* Contador de tempo */}
         <p
           className="font-serif font-bold text-white/95 leading-tight"
           style={{ fontSize: "clamp(26px, 7vw, 36px)", textShadow: "0 1px 20px rgba(0,0,0,0.4)" }}
@@ -132,16 +103,66 @@ function BookCover({
           </p>
         )}
 
-        {/* Frase emocional */}
         <p className="text-[11px] text-white/30 italic mt-5 leading-relaxed">
           O amor também se mede pelos momentos que decidiram guardar.
         </p>
       </div>
 
-      {/* Scroll hint */}
       <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1 animate-bounce">
         <p className="text-[8px] text-white/20 uppercase tracking-[0.35em]">Virar a página</p>
         <ChevronDown className="w-3.5 h-3.5 text-white/20" strokeWidth={1.5} />
+      </div>
+    </div>
+  );
+}
+
+// ── Última foto — aparece depois da capa ──────────────────────────────────────
+function FeaturedPhoto({ event }: { event: RelationshipEvent }) {
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!event.image_path) return;
+    supabase.storage
+      .from("memories")
+      .createSignedUrl(event.image_path, 3600)
+      .then(({ data }) => { if (data) setImgUrl(data.signedUrl); });
+  }, [event.image_path]);
+
+  if (!imgUrl) return null;
+
+  const config  = EVENT_TYPE_CONFIG[event.event_type];
+  const dateStr = format(parseDateOnly(event.event_date), "d 'de' MMMM 'de' yyyy", { locale: pt });
+
+  return (
+    <div className="relative overflow-hidden" style={{ ...breakout, height: "58vh", minHeight: "320px" }}>
+      <img src={imgUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      {/* Gradiente — mantém legibilidade do texto */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
+
+      {/* Canto superior — label discreta */}
+      <div className="absolute top-5 left-5">
+        <p className="text-[8px] font-bold text-white/40 uppercase tracking-[0.3em]">
+          Capítulo mais recente
+        </p>
+      </div>
+
+      {/* Conteúdo inferior */}
+      <div className="absolute bottom-0 left-0 right-0 p-6">
+        {config && (
+          <p className="text-[9px] font-bold text-rose-300/70 uppercase tracking-[0.28em] mb-1.5">
+            {config.label}
+          </p>
+        )}
+        <p className="font-serif font-bold text-white leading-tight"
+          style={{ fontSize: "clamp(22px, 6vw, 28px)", textShadow: "0 1px 16px rgba(0,0,0,0.5)" }}>
+          {event.title}
+        </p>
+        {event.description && (
+          <p className="text-[12px] text-white/60 italic mt-1.5 leading-relaxed line-clamp-2">
+            {event.description}
+          </p>
+        )}
+        <p className="text-[10px] text-white/35 mt-2">{dateStr}</p>
       </div>
     </div>
   );
@@ -173,18 +194,17 @@ export default function History() {
   const entries   = buildTimelineEntries(events, time.startDate);
   const timeLabel = buildTimeLabel(time.days);
 
-  // Foto de capa: o evento mais antigo com imagem
-  const coverPhotoPath = useMemo<string | null>(() => {
-    const withPhoto = [...events]
+  // Evento mais recente COM fotografia
+  const featuredEvent = useMemo<RelationshipEvent | null>(() => {
+    return [...events]
       .filter((e) => !!e.image_path)
-      .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-    return withPhoto[0]?.image_path ?? null;
+      .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime())[0] ?? null;
   }, [events]);
 
   return (
     <div className="min-h-screen bg-background pb-28">
 
-      {/* Botão de voltar flutuante sobre a capa */}
+      {/* Botão de voltar sobre a capa */}
       <button
         onClick={() => navigate(-1)}
         className="fixed top-4 left-4 z-20 p-2.5 rounded-full bg-black/25 backdrop-blur-sm active:scale-95 transition-all text-white"
@@ -192,14 +212,13 @@ export default function History() {
         <ArrowLeft className="h-5 w-5" />
       </button>
 
-      {/* Capa */}
-      <BookCover
-        timeLabel={timeLabel}
-        startDate={time.startDate}
-        coverPhotoPath={coverPhotoPath}
-      />
+      {/* 1 — Capa rosa */}
+      <BookCover timeLabel={timeLabel} startDate={time.startDate} />
 
-      {/* Capítulos */}
+      {/* 2 — Última foto (se existir) */}
+      {featuredEvent && <FeaturedPhoto event={featuredEvent} />}
+
+      {/* 3 — Capítulos */}
       <div className="max-w-md mx-auto">
         <BookChapters
           entries={entries}
