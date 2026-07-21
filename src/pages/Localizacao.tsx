@@ -1,66 +1,139 @@
-import "leaflet/dist/leaflet.css";
-import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import L from "leaflet";
-import { ArrowLeft, MapPin, MapPinOff, Navigation } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { pt } from "date-fns/locale";
-import { useLocationSharing } from "@/hooks/useLocationSharing";
-import { usePartnerProfile } from "@/hooks/usePartnerProfile";
-import { useProfile } from "@/hooks/useProfile";
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl';
+import {
+  ArrowLeft, Heart, Navigation, Pause,
+  Clock, MapPin, MapPinOff, GraduationCap,
+  Plane, Coffee, type LucideIcon,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { pt } from 'date-fns/locale';
+import { Switch } from '@/components/ui/switch';
+import { useLocationSharing } from '@/hooks/useLocationSharing';
+import { usePartnerProfile } from '@/hooks/usePartnerProfile';
+import { useProfile } from '@/hooks/useProfile';
 
-// ── Cria um marcador circular via DivIcon (evita bug de imagens do Leaflet no Vite)
-function createDivIcon(color: string, initial: string) {
-  return L.divIcon({
-    className: "",
-    html: `<div style="
-      width:40px;height:40px;border-radius:50%;
-      background:${color};border:3px solid white;
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 3px 12px rgba(0,0,0,0.25);
-      color:white;font-weight:700;font-size:15px;
-      font-family:system-ui,sans-serif;
-    ">${initial}</div>`,
-    iconSize:   [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -24],
-  });
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function haversineMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const R = 6_371_000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
-// ── Ajusta a vista do mapa quando as posições mudam ────────────────────────
-function ChangeView({
-  positions,
-}: {
-  positions: [number, number][];
-}) {
-  const map = useMap();
-  const once = useRef(false);
-
-  useEffect(() => {
-    if (positions.length === 0) return;
-    if (positions.length === 1) {
-      if (!once.current) { map.setView(positions[0], 15); once.current = true; }
-      return;
-    }
-    const bounds = L.latLngBounds(positions);
-    map.fitBounds(bounds, { padding: [60, 60] });
-    once.current = true;
-  }, [positions.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return null;
+function formatDistance(m: number): string {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
-// ── Formata "há X min/h" ─────────────────────────────────────────────────
 function timeAgo(iso: string): string {
   try {
     return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: pt });
   } catch {
-    return "";
+    return '';
   }
 }
 
-// ── Página principal ──────────────────────────────────────────────────────
+function detectContext(address: string | null): { Icon: LucideIcon; label: string } {
+  if (!address) return { Icon: MapPin, label: '' };
+  const a = address.toLowerCase();
+  if (a.includes('aeroporto') || a.includes('airport')) return { Icon: Plane, label: 'No aeroporto' };
+  if (a.includes('universidade') || a.includes('faculdade') || a.includes('escola'))
+    return { Icon: GraduationCap, label: 'Na universidade' };
+  if (a.includes('café') || a.includes('restaurante') || a.includes('coffee'))
+    return { Icon: Coffee, label: 'Num café' };
+  return { Icon: Navigation, label: address.split(',')[0].trim() };
+}
+
+// ── Avatar marker (used inside Mapbox Marker) ─────────────────────────────────
+
+function AvatarMarker({
+  avatarUrl,
+  initial,
+  ring,
+  size = 44,
+}: {
+  avatarUrl?: string | null;
+  initial: string;
+  ring: string;
+  size?: number;
+}) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        border: '3px solid white',
+        boxShadow: `0 0 0 2.5px ${ring}, 0 6px 24px rgba(0,0,0,0.22)`,
+        overflow: 'hidden',
+        background: avatarUrl ? 'transparent' : ring,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        cursor: 'default',
+      }}
+    >
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          alt=""
+        />
+      ) : (
+        <span
+          style={{
+            color: 'white',
+            fontWeight: 700,
+            fontSize: Math.round(size * 0.36),
+            fontFamily: 'system-ui, sans-serif',
+          }}
+        >
+          {initial}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Pause options ─────────────────────────────────────────────────────────────
+
+const PAUSE_OPTIONS = [
+  { label: '1 hora', getUntil: () => new Date(Date.now() + 60 * 60 * 1000) },
+  {
+    label: 'Hoje',
+    getUntil: () => {
+      const d = new Date();
+      d.setHours(23, 59, 59, 999);
+      return d;
+    },
+  },
+  {
+    label: 'Até amanhã',
+    getUntil: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(23, 59, 59, 999);
+      return d;
+    },
+  },
+  { label: 'Indefinidamente', getUntil: () => new Date(9_999, 0, 1) },
+];
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
 export default function Localizacao() {
   const navigate = useNavigate();
   const {
@@ -77,27 +150,136 @@ export default function Localizacao() {
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
 
-  const myInitial      = (profile?.display_name ?? "Eu").charAt(0).toUpperCase();
-  const partnerInitial = (partner?.display_name ?? "Par").charAt(0).toUpperCase();
+  const mapRef = useRef<MapRef>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [showPauseMenu, setShowPauseMenu] = useState(false);
+  const [pauseUntil, setPauseUntil] = useState<Date | null>(null);
+  const [isDark, setIsDark] = useState(
+    () => document.documentElement.classList.contains('dark'),
+  );
 
-  const myIcon      = createDivIcon("#C4788C", myInitial);
-  const partnerIcon = createDivIcon("#6B7280", partnerInitial);
+  // Stale-safe refs for callbacks
+  const toggleRef = useRef(toggleSharing);
+  toggleRef.current = toggleSharing;
+  const mySharingRef = useRef(mySharing);
+  mySharingRef.current = mySharing;
 
-  // Filtra coordenadas 0,0 — são placeholder de quando a posição ainda não chegou
+  // ── Dark mode observer ──
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains('dark')),
+    );
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
+    return () => obs.disconnect();
+  }, []);
+
+  // ── Derived state ──
   const hasRealPos = (loc: { lat: number; lng: number } | null) =>
     !!loc && (loc.lat !== 0 || loc.lng !== 0);
 
-  const positions: [number, number][] = [];
-  if (mySharing      && hasRealPos(myLocation))      positions.push([myLocation!.lat, myLocation!.lng]);
-  if (partnerSharing && hasRealPos(partnerLocation)) positions.push([partnerLocation!.lat, partnerLocation!.lng]);
+  const isPaused = pauseUntil !== null;
+  const myReal = mySharing && !isPaused && hasRealPos(myLocation);
+  const partnerReal = partnerSharing && hasRealPos(partnerLocation);
 
-  const defaultCenter: [number, number] = [38.7169, -9.1399]; // Lisboa como fallback
+  const distance =
+    myReal && partnerReal && myLocation && partnerLocation
+      ? haversineMeters(myLocation, partnerLocation)
+      : null;
+
+  const myInitial = (profile?.display_name ?? 'Eu').charAt(0).toUpperCase();
+  const partnerInitial = (partner?.display_name ?? 'P').charAt(0).toUpperCase();
+  const partnerCtx = detectContext(partnerLocation?.address ?? null);
+
+  // ── Smart camera — only re-fits when visible marker count changes ──
+  const prevCountRef = useRef(0);
+  useEffect(() => {
+    const count = (myReal ? 1 : 0) + (partnerReal ? 1 : 0);
+    if (!mapLoaded || !mapRef.current || count === 0) return;
+    if (count === prevCountRef.current) return;
+    prevCountRef.current = count;
+
+    if (myReal && partnerReal && myLocation && partnerLocation) {
+      mapRef.current.fitBounds(
+        [
+          [
+            Math.min(myLocation.lng, partnerLocation.lng),
+            Math.min(myLocation.lat, partnerLocation.lat),
+          ],
+          [
+            Math.max(myLocation.lng, partnerLocation.lng),
+            Math.max(myLocation.lat, partnerLocation.lat),
+          ],
+        ],
+        { padding: 80, duration: 1500, maxZoom: 16 },
+      );
+    } else if (myReal && myLocation) {
+      mapRef.current.flyTo({ center: [myLocation.lng, myLocation.lat], zoom: 14, duration: 1200 });
+    } else if (partnerReal && partnerLocation) {
+      mapRef.current.flyTo({
+        center: [partnerLocation.lng, partnerLocation.lat],
+        zoom: 14,
+        duration: 1200,
+      });
+    }
+  }, [mapLoaded, myReal, partnerReal, myLocation, partnerLocation]);
+
+  // ── Pause auto-resume ──
+  useEffect(() => {
+    if (!pauseUntil) return;
+    const ms = pauseUntil.getTime() - Date.now();
+    if (ms <= 0) { setPauseUntil(null); return; }
+    const t = setTimeout(() => {
+      setPauseUntil(null);
+      if (!mySharingRef.current) toggleRef.current();
+    }, ms);
+    return () => clearTimeout(t);
+  }, [pauseUntil]);
+
+  // ── Handlers ──
+  const handlePause = (opt: (typeof PAUSE_OPTIONS)[number]) => {
+    if (mySharingRef.current) toggleRef.current();
+    setPauseUntil(opt.getUntil());
+    setShowPauseMenu(false);
+  };
+
+  const handleResume = () => {
+    setPauseUntil(null);
+    if (!mySharingRef.current) toggleRef.current();
+  };
+
+  // ── Connecting line GeoJSON ──
+  const lineData =
+    myReal && partnerReal && myLocation && partnerLocation
+      ? {
+          type: 'FeatureCollection' as const,
+          features: [
+            {
+              type: 'Feature' as const,
+              properties: {},
+              geometry: {
+                type: 'LineString' as const,
+                coordinates: [
+                  [myLocation.lng, myLocation.lat],
+                  [partnerLocation.lng, partnerLocation.lat],
+                ],
+              },
+            },
+          ],
+        }
+      : null;
+
+  const mapStyle = isDark
+    ? 'mapbox://styles/mapbox/dark-v11'
+    : 'mapbox://styles/mapbox/light-v11';
 
   return (
-    <div className="flex flex-col" style={{ height: "100dvh" }}>
+    <div className="flex flex-col bg-background" style={{ height: '100dvh' }}>
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 bg-background border-b border-border z-10 shrink-0">
+      <div className="shrink-0 flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/30 bg-background/80 backdrop-blur-sm">
         <button
           onClick={() => navigate(-1)}
           className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted active:scale-95 transition-all"
@@ -110,126 +292,332 @@ export default function Localizacao() {
         <button
           onClick={toggleSharing}
           className={`h-9 w-9 flex items-center justify-center rounded-full transition-all active:scale-95 ${
-            mySharing
-              ? "bg-rose-100 dark:bg-rose-950/30 text-rose-500"
-              : "bg-muted text-muted-foreground"
+            mySharing && !isPaused
+              ? 'bg-rose-100 dark:bg-rose-950/30 text-rose-500'
+              : 'bg-muted text-muted-foreground'
           }`}
-          title={mySharing ? "Parar de partilhar localização" : "Partilhar a minha localização"}
         >
-          {mySharing
-            ? <MapPin className="w-4.5 h-4.5" strokeWidth={2} />
-            : <MapPinOff className="w-4.5 h-4.5" strokeWidth={2} />
-          }
+          {mySharing && !isPaused ? (
+            <MapPin className="w-4 h-4" strokeWidth={2} />
+          ) : (
+            <MapPinOff className="w-4 h-4" strokeWidth={2} />
+          )}
         </button>
       </div>
 
-      {/* ── Aviso permissão negada ── */}
-      {permissionDenied && (
-        <div className="mx-4 mt-3 shrink-0 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 space-y-2">
-          <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">Acesso à localização bloqueado pelo Chrome</p>
-          <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 leading-relaxed">
-            Abre o Chrome → copia e cola na barra de endereço: <span className="font-mono font-semibold select-all">chrome://settings/content/location</span> → em "Não é permitido" remove este site, depois volta aqui e toca em "Tentar novamente".
-          </p>
-          {geoErrorMsg && (
-            <p className="text-[10px] font-mono text-rose-400/50 break-all">{geoErrorMsg}</p>
-          )}
-          <button
-            onClick={retryWatch}
-            className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 underline underline-offset-2 active:opacity-60"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      )}
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 overflow-y-auto">
 
-      {/* ── Mapa ── */}
-      <div className="flex-1 relative">
-        {!loading && (
-          <MapContainer
-            center={positions[0] ?? defaultCenter}
-            zoom={14}
-            style={{ height: "100%", width: "100%" }}
-            zoomControl={false}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            />
-
-            <ChangeView positions={positions} />
-
-            {mySharing && hasRealPos(myLocation) && (
-              <Marker position={[myLocation!.lat, myLocation!.lng]} icon={myIcon} />
-            )}
-            {partnerSharing && hasRealPos(partnerLocation) && (
-              <Marker position={[partnerLocation!.lat, partnerLocation!.lng]} icon={partnerIcon} />
-            )}
-          </MapContainer>
-        )}
-
-        {/* Skeleton enquanto carrega */}
-        {loading && (
-          <div className="absolute inset-0 bg-muted/30 animate-pulse" />
-        )}
-
-        {/* Badge "A minha localização" — só com posição real */}
-        {mySharing && hasRealPos(myLocation) && (
-          <div className="absolute top-3 left-3 z-[500] bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/50">
-            <div className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-            <span className="text-[11px] font-semibold text-foreground">A partilhar</span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Card inferior — info do par ── */}
-      <div className="shrink-0 bg-background border-t border-border px-4 pt-4 pb-6 space-y-3">
-
-        {/* Estado do par */}
-        <div className="flex items-center gap-3">
-          {/* Avatar do par */}
-          <div
-            className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-base shrink-0"
-            style={{ background: partner ? "#6B7280" : "#D1D5DB" }}
-          >
-            {partnerInitial}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-foreground truncate">
-              {partner?.display_name ?? "O teu par"}
+        {/* Permission denied */}
+        {permissionDenied && (
+          <div className="mx-4 mt-3 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 space-y-2">
+            <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">
+              Acesso à localização bloqueado
             </p>
-            {partnerSharing && partnerLocation ? (
-              <div className="flex items-center gap-1 mt-0.5">
-                <Navigation className="w-3 h-3 text-rose-400 shrink-0" strokeWidth={2} />
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {partnerLocation.address
-                    ? `${partnerLocation.address} · ${timeAgo(partnerLocation.updated_at)}`
-                    : timeAgo(partnerLocation.updated_at)
-                  }
+            <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 leading-relaxed">
+              Em{' '}
+              <span className="font-mono font-medium">chrome://settings/content/location</span>{' '}
+              remove este site dos bloqueados.
+            </p>
+            {geoErrorMsg && (
+              <p className="text-[10px] font-mono text-rose-400/50 break-all">{geoErrorMsg}</p>
+            )}
+            <button
+              onClick={retryWatch}
+              className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 underline underline-offset-2 active:opacity-60"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {/* ── Hero — partner card ── */}
+        <div className="px-4 pt-4 pb-2">
+          {loading ? (
+            <div className="glass-card p-4 animate-pulse flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-muted shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted rounded-full w-28" />
+                <div className="h-3 bg-muted rounded-full w-20" />
+                <div className="h-3 bg-muted rounded-full w-16" />
+              </div>
+            </div>
+          ) : partnerSharing && partnerLocation ? (
+            <div className="glass-card p-4 flex items-center gap-4">
+              {/* Partner avatar */}
+              <div
+                className="w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-offset-2 ring-offset-background ring-border/40"
+              >
+                {partner?.avatar_url ? (
+                  <img
+                    src={partner.avatar_url}
+                    className="w-full h-full object-cover"
+                    alt=""
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center"
+                    style={{ background: '#6B7280' }}
+                  >
+                    <span className="text-white font-bold text-2xl">{partnerInitial}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[16px] font-semibold text-foreground leading-tight">
+                  {partner?.display_name ?? 'O teu par'}
+                </p>
+
+                {partnerCtx.label && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <partnerCtx.Icon
+                      className="w-3 h-3 text-rose-400 shrink-0"
+                      strokeWidth={2}
+                    />
+                    <p className="text-[12px] text-muted-foreground truncate">
+                      {partnerCtx.label}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <Clock
+                      className="w-3 h-3 text-muted-foreground/40 shrink-0"
+                      strokeWidth={1.5}
+                    />
+                    <p className="text-[11px] text-muted-foreground/60">
+                      {timeAgo(partnerLocation.updated_at)}
+                    </p>
+                  </div>
+                  {distance !== null && (
+                    <div className="flex items-center gap-1">
+                      <Heart
+                        className="w-3 h-3 text-rose-300 shrink-0"
+                        strokeWidth={2}
+                        fill="currentColor"
+                      />
+                      <p className="text-[11px] font-medium text-rose-400">
+                        {formatDistance(distance)} de ti
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Live badge */}
+              <div className="shrink-0 flex flex-col items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">
+                  AO VIVO
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="glass-card p-4 flex items-center gap-4 opacity-70">
+              <div
+                className="w-16 h-16 rounded-full bg-muted shrink-0 flex items-center justify-center"
+              >
+                <span className="text-muted-foreground font-bold text-2xl">
+                  {partnerInitial}
+                </span>
+              </div>
+              <div>
+                <p className="text-[15px] font-semibold text-foreground">
+                  {partner?.display_name ?? 'O teu par'}
+                </p>
+                <p className="text-[12px] text-muted-foreground/70 mt-0.5">
+                  Não está a partilhar a presença
                 </p>
               </div>
-            ) : (
-              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                Não está a partilhar a localização
-              </p>
-            )}
-          </div>
-
-          {/* Indicador ao vivo */}
-          {partnerSharing && (
-            <div className="shrink-0 flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-semibold text-emerald-500">Ao vivo</span>
             </div>
           )}
         </div>
 
-        {/* Instrução quando nenhum dos dois está a partilhar */}
-        {!mySharing && !partnerSharing && !loading && (
-          <p className="text-[11px] text-muted-foreground/60 text-center pb-1">
-            Toca no ícone de localização no topo para partilhares onde estás.
-          </p>
+        {/* ── Distance banner ── */}
+        {distance !== null && (
+          <div className="mx-4 mb-2">
+            <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+              <Heart className="w-3 h-3 text-rose-400" strokeWidth={2} fill="currentColor" />
+              <span className="text-[11px] font-medium text-rose-500 dark:text-rose-400">
+                Estão a {formatDistance(distance)} um do outro
+              </span>
+              <Heart className="w-3 h-3 text-rose-400" strokeWidth={2} fill="currentColor" />
+            </div>
+          </div>
         )}
+
+        {/* ── Map ── */}
+        <div
+          className="mx-4 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
+          style={{ height: 'clamp(200px, 42vh, 340px)' }}
+        >
+          {!loading && (
+            <Map
+              ref={mapRef}
+              mapboxAccessToken={MAPBOX_TOKEN}
+              mapStyle={mapStyle}
+              initialViewState={{ longitude: -9.1399, latitude: 38.7169, zoom: 12 }}
+              style={{ width: '100%', height: '100%' }}
+              onLoad={() => setMapLoaded(true)}
+              attributionControl={false}
+              reuseMaps
+            >
+              {/* Connecting line */}
+              {lineData && (
+                <Source id="couple-line-src" type="geojson" data={lineData}>
+                  <Layer
+                    id="couple-line"
+                    type="line"
+                    paint={{
+                      'line-color': '#C4788C',
+                      'line-opacity': 0.28,
+                      'line-width': 2.5,
+                      'line-dasharray': [4, 3],
+                    }}
+                  />
+                </Source>
+              )}
+
+              {/* My marker */}
+              {myReal && myLocation && (
+                <Marker longitude={myLocation.lng} latitude={myLocation.lat} anchor="center">
+                  <AvatarMarker initial={myInitial} ring="#C4788C" size={44} />
+                </Marker>
+              )}
+
+              {/* Partner marker */}
+              {partnerReal && partnerLocation && (
+                <Marker
+                  longitude={partnerLocation.lng}
+                  latitude={partnerLocation.lat}
+                  anchor="center"
+                >
+                  <AvatarMarker
+                    avatarUrl={partner?.avatar_url}
+                    initial={partnerInitial}
+                    ring="#6B7280"
+                    size={52}
+                  />
+                </Marker>
+              )}
+            </Map>
+          )}
+
+          {loading && (
+            <div className="absolute inset-0 bg-muted/30 animate-pulse" />
+          )}
+
+          {/* Status chips */}
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+            {myReal && !isPaused && (
+              <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
+                <div className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+                <span className="text-[10px] font-semibold text-foreground">A partilhar</span>
+              </div>
+            )}
+            {isPaused && (
+              <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
+                <Pause className="w-2.5 h-2.5 text-muted-foreground" strokeWidth={2} />
+                <span className="text-[10px] font-semibold text-muted-foreground">Em pausa</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Sharing controls ── */}
+        <div className="px-4 pt-3 pb-10 space-y-2">
+          <div className="glass-card p-4 space-y-0">
+
+            {/* Toggle row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    mySharing && !isPaused
+                      ? 'bg-rose-50 dark:bg-rose-950/30'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <Heart
+                    className={`w-4 h-4 ${
+                      mySharing && !isPaused
+                        ? 'text-rose-400'
+                        : 'text-muted-foreground/40'
+                    }`}
+                    strokeWidth={1.5}
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[13px] font-medium text-foreground">
+                    Partilhar a minha presença
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    {isPaused
+                      ? 'Presença em pausa'
+                      : mySharing
+                      ? 'O teu par sabe onde estás'
+                      : 'O teu par não te consegue ver'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={mySharing && !isPaused}
+                onCheckedChange={() => {
+                  if (isPaused) handleResume();
+                  else toggleSharing();
+                }}
+              />
+            </div>
+
+            {/* Pause section */}
+            {mySharing && !isPaused && (
+              <div className="mt-3 pt-3 border-t border-border/30">
+                <button
+                  onClick={() => setShowPauseMenu(v => !v)}
+                  className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Pause className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  Pausar por...
+                </button>
+
+                {showPauseMenu && (
+                  <div className="mt-2.5 grid grid-cols-2 gap-2">
+                    {PAUSE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.label}
+                        onClick={() => handlePause(opt)}
+                        className="py-2.5 px-3 rounded-xl bg-muted/50 hover:bg-muted text-[12px] text-muted-foreground active:scale-95 transition-all text-left"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Resume when paused */}
+            {isPaused && (
+              <div className="mt-3 pt-3 border-t border-border/30">
+                <button
+                  onClick={handleResume}
+                  className="w-full py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-500 text-[12px] font-semibold active:scale-95 transition-all border border-rose-100 dark:border-rose-900/30"
+                >
+                  Retomar presença
+                </button>
+              </div>
+            )}
+          </div>
+
+          {!partnerSharing && !loading && (
+            <p className="text-[11px] text-muted-foreground/50 text-center pt-0.5">
+              O teu par ainda não ativou a partilha de presença.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
