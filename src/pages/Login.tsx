@@ -16,7 +16,7 @@ async function getPostLoginDestination(userId: string): Promise<string> {
     .select("onboarding_completed")
     .eq("user_id", userId)
     .maybeSingle();
-  return data?.onboarding_completed ? "/casa" : "/onboarding";
+  return data?.onboarding_completed ? "/casa" : "/inicio";
 }
 
 // Google "G" SVG icon — official brand colour
@@ -115,7 +115,7 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmed,
-        options: { emailRedirectTo: window.location.origin + "/onboarding" },
+        options: { emailRedirectTo: window.location.origin + "/inicio" },
       });
       if (error) throw error;
       track("login_magic_link_sent");

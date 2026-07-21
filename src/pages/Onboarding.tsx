@@ -315,7 +315,7 @@ export default function Onboarding() {
     markSeen();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/onboarding" },
+      options: { redirectTo: window.location.origin + "/inicio" },
     });
     if (error) {
       toast({ variant: "destructive", title: "Erro com Google", description: error.message });
