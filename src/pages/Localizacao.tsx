@@ -455,7 +455,7 @@ export default function Localizacao() {
                   {partner?.display_name ?? 'O teu par'}
                 </p>
                 <p className="text-[12px] text-muted-foreground/70 mt-0.5">
-                  Não está a partilhar a presença
+                  Não está presente de momento
                 </p>
               </div>
             </div>
@@ -546,8 +546,8 @@ export default function Localizacao() {
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
             {myReal && !isPaused && (
               <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
-                <div className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-                <span className="text-[10px] font-semibold text-foreground">A partilhar</span>
+                <Heart className="w-2.5 h-2.5 text-rose-400 animate-pulse" strokeWidth={2} fill="currentColor" />
+                <span className="text-[10px] font-semibold text-rose-500">Presente</span>
               </div>
             )}
             {isPaused && (
@@ -590,8 +590,8 @@ export default function Localizacao() {
                     {isPaused
                       ? 'Presença em pausa'
                       : mySharing
-                      ? 'O teu par sabe onde estás'
-                      : 'O teu par não te consegue ver'}
+                      ? 'O teu par sente que estás aqui'
+                      : 'O teu par não te consegue sentir'}
                   </p>
                 </div>
               </div>
@@ -646,7 +646,7 @@ export default function Localizacao() {
 
           {!partnerSharing && !loading && (
             <p className="text-[11px] text-muted-foreground/50 text-center pt-0.5">
-              O teu par ainda não ativou a partilha de presença.
+              Quando o teu par ativar a presença, vais sentir onde está.
             </p>
           )}
         </div>
