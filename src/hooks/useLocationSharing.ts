@@ -11,9 +11,12 @@ export interface LocationRecord {
   address: string | null;
   sharing_enabled: boolean;
   updated_at: string;
+  battery_level: number | null;
+  is_charging: boolean | null;
+  network_type: string | null;
+  speed_kmh: number | null;
 }
 
-// ── Haversine distance between two GPS points (metres) ──────────────────────
 function haversineMeters(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number }
@@ -29,7 +32,6 @@ function haversineMeters(
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
-// ── Reverse geocode via Nominatim (OpenStreetMap) ────────────────────────────
 async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
     const res = await fetch(
@@ -48,7 +50,22 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
   }
 }
 
-// ── Hook ────────────────────────────────────────────────────────────────────
+async function getBatteryInfo(): Promise<{ level: number | null; charging: boolean | null }> {
+  try {
+    if ("getBattery" in navigator) {
+      const bat = await (navigator as any).getBattery();
+      return { level: Math.round(bat.level * 100), charging: bat.charging };
+    }
+  } catch { /* not supported */ }
+  return { level: null, charging: null };
+}
+
+function getNetworkType(): string | null {
+  const conn = (navigator as any).connection ?? (navigator as any).mozConnection;
+  if (!conn) return null;
+  return conn.effectiveType ?? conn.type ?? null;
+}
+
 export function useLocationSharing() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
@@ -59,10 +76,10 @@ export function useLocationSharing() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [geoErrorMsg,      setGeoErrorMsg]      = useState<string | null>(null);
 
-  // Refs to avoid stale closures nos callbacks de geolocalização
   const intervalIdRef      = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUploadedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const lastGeocodedPosRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastHistoryPosRef  = useRef<{ lat: number; lng: number; time: number } | null>(null);
   const userIdRef          = useRef<string | null>(null);
   const spaceIdRef         = useRef<string | null>(null);
   const mySharingRef       = useRef(false);
@@ -70,17 +87,16 @@ export function useLocationSharing() {
   userIdRef.current  = user?.id  ?? null;
   spaceIdRef.current = spaceId;
 
-  // ── Fetch both rows from DB ──────────────────────────────────────────────
   const fetchLocations = useCallback(async () => {
     if (!spaceId || !user?.id) { setLoading(false); return; }
     const { data } = await (supabase as any)
       .from("member_locations")
-      .select("user_id,lat,lng,accuracy,address,sharing_enabled,updated_at")
+      .select("user_id,lat,lng,accuracy,address,sharing_enabled,updated_at,battery_level,is_charging,network_type,speed_kmh")
       .eq("couple_space_id", spaceId);
 
     if (data) {
-      const mine    = (data as LocationRecord[]).find(r => r.user_id === user.id)    ?? null;
-      const partner = (data as LocationRecord[]).find(r => r.user_id !== user.id) ?? null;
+      const mine    = (data as LocationRecord[]).find(r => r.user_id === user.id)  ?? null;
+      const partner = (data as LocationRecord[]).find(r => r.user_id !== user.id)  ?? null;
       setMyLocation(mine);
       setPartnerLocation(partner);
       mySharingRef.current = mine?.sharing_enabled ?? false;
@@ -88,24 +104,25 @@ export function useLocationSharing() {
     setLoading(false);
   }, [spaceId, user?.id]);
 
-  // ── Leitura única de posição e upload ───────────────────────────────────
   const getAndUpload = useCallback(() => {
     if (!("geolocation" in navigator)) return;
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         setPermissionDenied(false);
-        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        const { latitude: lat, longitude: lng, accuracy, speed } = pos.coords;
         const uid = userIdRef.current;
         const sid = spaceIdRef.current;
         if (!uid || !sid) return;
 
         const current = { lat, lng };
+        const speedKmh = speed !== null && speed !== undefined ? Math.round(speed * 3.6) : null;
 
-        if (
-          lastUploadedPosRef.current &&
-          haversineMeters(lastUploadedPosRef.current, current) < 50
-        ) return;
+        // Only upsert member_locations if moved > 50m
+        const shouldUpload =
+          !lastUploadedPosRef.current ||
+          haversineMeters(lastUploadedPosRef.current, current) >= 50;
 
+        // Geocode if moved > 200m from last geocode
         let address: string | null = null;
         if (
           !lastGeocodedPosRef.current ||
@@ -115,55 +132,92 @@ export function useLocationSharing() {
           if (address) lastGeocodedPosRef.current = current;
         }
 
-        lastUploadedPosRef.current = current;
+        const { level: batteryLevel, charging: isCharging } = await getBatteryInfo();
+        const networkType = getNetworkType();
 
-        const row = {
-          user_id:         uid,
-          couple_space_id: sid,
-          lat,
-          lng,
-          accuracy:        accuracy ?? null,
-          ...(address !== null ? { address } : {}),
-          sharing_enabled: true,
-          updated_at:      new Date().toISOString(),
-        };
+        if (shouldUpload) {
+          lastUploadedPosRef.current = current;
 
-        await (supabase as any)
-          .from("member_locations")
-          .upsert(row, { onConflict: "user_id,couple_space_id" });
+          const row: any = {
+            user_id:         uid,
+            couple_space_id: sid,
+            lat,
+            lng,
+            accuracy:        accuracy ?? null,
+            sharing_enabled: true,
+            updated_at:      new Date().toISOString(),
+            speed_kmh:       speedKmh,
+            battery_level:   batteryLevel,
+            is_charging:     isCharging,
+            network_type:    networkType,
+            ...(address !== null ? { address } : {}),
+          };
 
-        setMyLocation(prev => ({
-          ...(prev ?? { user_id: uid, accuracy: null, address: null, sharing_enabled: true, updated_at: row.updated_at }),
-          lat, lng,
-          accuracy: accuracy ?? null,
-          ...(address !== null ? { address } : {}),
-          updated_at: row.updated_at,
-        }));
+          await (supabase as any)
+            .from("member_locations")
+            .upsert(row, { onConflict: "user_id,couple_space_id" });
+
+          setMyLocation(prev => ({
+            ...(prev ?? {
+              user_id: uid, accuracy: null, address: null,
+              sharing_enabled: true, updated_at: row.updated_at,
+              battery_level: null, is_charging: null, network_type: null, speed_kmh: null,
+            }),
+            lat, lng,
+            accuracy:      accuracy ?? null,
+            speed_kmh:     speedKmh,
+            battery_level: batteryLevel,
+            is_charging:   isCharging,
+            network_type:  networkType,
+            updated_at:    row.updated_at,
+            ...(address !== null ? { address } : {}),
+          }));
+        }
+
+        // Route history: log if moved > 30m OR > 5 min since last log
+        const now = Date.now();
+        const lastH = lastHistoryPosRef.current;
+        const historyDist = lastH ? haversineMeters(lastH, current) : Infinity;
+        const historyTime = lastH ? now - lastH.time : Infinity;
+
+        if (historyDist >= 30 || historyTime >= 5 * 60 * 1000) {
+          lastHistoryPosRef.current = { lat, lng, time: now };
+          (supabase as any).from("location_history").insert({
+            couple_space_id: sid,
+            user_id:         uid,
+            lat,
+            lng,
+            speed_kmh:       speedKmh,
+            recorded_at:     new Date().toISOString(),
+          });
+        }
       },
       (err) => {
         setGeoErrorMsg(`[${err.code}] ${err.message}`);
-        if (err.code === 1 /* PERMISSION_DENIED */) {
+        if (err.code === 1) {
           setPermissionDenied(true);
           if (intervalIdRef.current !== null) {
             clearInterval(intervalIdRef.current);
             intervalIdRef.current = null;
           }
         }
-        // POSITION_UNAVAILABLE (2) e TIMEOUT (3): transitórios, próximo intervalo tenta de novo
       },
       { enableHighAccuracy: false, timeout: 30_000 }
     );
   }, []);
 
-  // ── Start polling (getCurrentPosition a cada 30s) ────────────────────────
+  // Adaptive interval: every 15s if moving fast, 30s normally
+  const speedRef = useRef<number | null>(null);
+
   const startWatch = useCallback(() => {
     if (!("geolocation" in navigator)) return;
-    if (intervalIdRef.current !== null) return; // already running
-    getAndUpload(); // leitura imediata
-    intervalIdRef.current = setInterval(getAndUpload, 30_000);
+    if (intervalIdRef.current !== null) return;
+    getAndUpload();
+    intervalIdRef.current = setInterval(() => {
+      getAndUpload();
+    }, 30_000);
   }, [getAndUpload]);
 
-  // ── Stop polling ─────────────────────────────────────────────────────────
   const stopWatch = useCallback(() => {
     if (intervalIdRef.current !== null) {
       clearInterval(intervalIdRef.current);
@@ -171,7 +225,6 @@ export function useLocationSharing() {
     }
   }, []);
 
-  // ── Toggle sharing on/off ────────────────────────────────────────────────
   const toggleSharing = useCallback(async () => {
     const uid = userIdRef.current;
     const sid = spaceIdRef.current;
@@ -206,7 +259,6 @@ export function useLocationSharing() {
     }
   }, [myLocation, startWatch, stopWatch]);
 
-  // ── Initial load + start watch if already enabled ───────────────────────
   useEffect(() => {
     fetchLocations().then(() => {
       if (mySharingRef.current) startWatch();
@@ -214,24 +266,17 @@ export function useLocationSharing() {
     return () => stopWatch();
   }, [fetchLocations, startWatch, stopWatch]);
 
-  // ── Realtime: partner location updates ───────────────────────────────────
   useEffect(() => {
     if (!spaceId || !user?.id) return;
     const channel = supabase
       .channel(`location-rt-${spaceId}`)
       .on(
         "postgres_changes",
-        {
-          event:  "*",
-          schema: "public",
-          table:  "member_locations",
-          filter: `couple_space_id=eq.${spaceId}`,
-        },
+        { event: "*", schema: "public", table: "member_locations", filter: `couple_space_id=eq.${spaceId}` },
         (payload) => {
           const row = payload.new as LocationRecord;
           if (!row) return;
           if (row.user_id === user.id) {
-            // Own row updated externally (e.g. from Settings toggle on another device)
             setMyLocation(row);
             mySharingRef.current = row.sharing_enabled;
             if (row.sharing_enabled && intervalIdRef.current === null) startWatch();
@@ -245,9 +290,6 @@ export function useLocationSharing() {
     return () => { supabase.removeChannel(channel); };
   }, [spaceId, user?.id, startWatch, stopWatch]);
 
-  const mySharing      = myLocation?.sharing_enabled      ?? false;
-  const partnerSharing = partnerLocation?.sharing_enabled ?? false;
-
   const retryWatch = useCallback(() => {
     setPermissionDenied(false);
     setGeoErrorMsg(null);
@@ -258,8 +300,8 @@ export function useLocationSharing() {
   return {
     myLocation,
     partnerLocation,
-    mySharing,
-    partnerSharing,
+    mySharing:      myLocation?.sharing_enabled      ?? false,
+    partnerSharing: partnerLocation?.sharing_enabled ?? false,
     toggleSharing,
     retryWatch,
     loading,

@@ -5,7 +5,10 @@ import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl';
 import {
   ArrowLeft, Heart, Navigation, Pause,
   Clock, MapPin, MapPinOff, GraduationCap,
-  Plane, Coffee, type LucideIcon,
+  Plane, Coffee, Car, Footprints,
+  Home, Briefcase, ShoppingBag, Dumbbell, Church,
+  Battery, BatteryLow, BatteryCharging, Wifi, Signal,
+  type LucideIcon,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { pt } from 'date-fns/locale';
@@ -17,6 +20,7 @@ import { useMeetingMoments } from '@/hooks/useMeetingMoments';
 import { useFavoritePlaces } from '@/hooks/useFavoritePlaces';
 import { useLocationEvents } from '@/hooks/useLocationEvents';
 import { useLocationNotifPrefs } from '@/hooks/useLocationNotifPrefs';
+import { useLocationHistory } from '@/hooks/useLocationHistory';
 import { FavoritePlacesSection } from '@/features/location/FavoritePlacesSection';
 import { ActivityTimeline } from '@/features/location/ActivityTimeline';
 import { LocationNotifSettings } from '@/features/location/LocationNotifSettings';
@@ -51,6 +55,12 @@ function timeAgo(iso: string): string {
   }
 }
 
+// Map of place icon keys to Lucide components
+const PLACE_ICON_MAP: Record<string, LucideIcon> = {
+  Home, Briefcase, GraduationCap, Coffee, Heart,
+  ShoppingBag, Dumbbell, Church, MapPin,
+};
+
 function detectContext(address: string | null): { Icon: LucideIcon; label: string } {
   if (!address) return { Icon: MapPin, label: '' };
   const a = address.toLowerCase();
@@ -60,6 +70,55 @@ function detectContext(address: string | null): { Icon: LucideIcon; label: strin
   if (a.includes('café') || a.includes('restaurante') || a.includes('coffee'))
     return { Icon: Coffee, label: 'Num café' };
   return { Icon: Navigation, label: address.split(',')[0].trim() };
+}
+
+function detectStatus(
+  speedKmh: number | null,
+  address: string | null,
+  placeName: string | null,
+): { Icon: LucideIcon; label: string } {
+  if (placeName) {
+    const Icon = PLACE_ICON_MAP[Object.keys(PLACE_ICON_MAP)[0]] ?? MapPin; // fallback
+    return { Icon: MapPin, label: placeName };
+  }
+  if (speedKmh !== null) {
+    if (speedKmh > 25) return { Icon: Car, label: 'Em movimento' };
+    if (speedKmh > 4) return { Icon: Footprints, label: 'A caminhar' };
+  }
+  return detectContext(address);
+}
+
+function emotionalDistance(m: number): string {
+  if (m < 100) return 'Mesmo sítio';
+  if (m < 1000) return `${Math.round(m)} m`;
+  const km = m / 1000;
+  const min = Math.round((km / (km > 5 ? 60 : 40)) * 60);
+  return `${km.toFixed(1)} km · ~${min} min`;
+}
+
+function BatteryIcon({ level, charging }: { level: number | null; charging: boolean | null }) {
+  if (level === null) return null;
+  const Icon = charging ? BatteryCharging : level <= 20 ? BatteryLow : Battery;
+  const color = charging ? '#22c55e' : level <= 20 ? '#ef4444' : '#6b7280';
+  return (
+    <div className="flex items-center gap-1">
+      <Icon className="w-3 h-3 shrink-0" style={{ color }} strokeWidth={1.5} />
+      <span className="text-[10px]" style={{ color }}>{level}%</span>
+    </div>
+  );
+}
+
+function NetworkIcon({ type }: { type: string | null }) {
+  if (!type) return null;
+  const isWifi = type === 'wifi';
+  const label = isWifi ? 'Wi-Fi' : type.toUpperCase();
+  const Icon = isWifi ? Wifi : Signal;
+  return (
+    <div className="flex items-center gap-1">
+      <Icon className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+      <span className="text-[10px] text-muted-foreground/50">{label}</span>
+    </div>
+  );
 }
 
 // ── Avatar marker (used inside Mapbox Marker) ─────────────────────────────────
@@ -212,7 +271,14 @@ export default function Localizacao() {
     partnerReal && partnerLocation
       ? detectPlace(partnerLocation.lat, partnerLocation.lng)
       : null;
-  const partnerCtx = detectContext(partnerPlaceName ?? partnerLocation?.address ?? null);
+  const partnerCtx = detectStatus(
+    partnerLocation?.speed_kmh ?? null,
+    partnerLocation?.address ?? null,
+    partnerPlaceName,
+  );
+
+  // Rota de hoje do parceiro
+  const { partnerPath } = useLocationHistory(partnerLocation?.user_id ?? null);
 
   // ── Smart camera — only re-fits when visible marker count changes ──
   const prevCountRef = useRef(0);
@@ -426,19 +492,26 @@ export default function Localizacao() {
                         fill="currentColor"
                       />
                       <p className="text-[11px] font-medium text-rose-400">
-                        {formatDistance(distance)} de ti
+                        {emotionalDistance(distance)}
                       </p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Live badge */}
-              <div className="shrink-0 flex flex-col items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">
-                  AO VIVO
-                </span>
+              {/* Battery + network + live badge */}
+              <div className="shrink-0 flex flex-col items-end gap-1.5">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">
+                    AO VIVO
+                  </span>
+                </div>
+                <BatteryIcon
+                  level={partnerLocation.battery_level ?? null}
+                  charging={partnerLocation.is_charging ?? null}
+                />
+                <NetworkIcon type={partnerLocation.network_type ?? null} />
               </div>
             </div>
           ) : (
@@ -491,7 +564,37 @@ export default function Localizacao() {
               attributionControl={false}
               reuseMaps
             >
-              {/* Connecting line */}
+              {/* Partner's route today (faint trail) */}
+              {partnerPath.length >= 2 && (
+                <Source
+                  id="partner-route-src"
+                  type="geojson"
+                  data={{
+                    type: 'FeatureCollection',
+                    features: [{
+                      type: 'Feature',
+                      properties: {},
+                      geometry: {
+                        type: 'LineString',
+                        coordinates: partnerPath.map(p => [p.lng, p.lat]),
+                      },
+                    }],
+                  }}
+                >
+                  <Layer
+                    id="partner-route"
+                    type="line"
+                    paint={{
+                      'line-color': '#9CA3AF',
+                      'line-opacity': 0.35,
+                      'line-width': 2,
+                    }}
+                    layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+                  />
+                </Source>
+              )}
+
+              {/* Connecting line between the two people */}
               {lineData && (
                 <Source id="couple-line-src" type="geojson" data={lineData}>
                   <Layer
@@ -506,6 +609,48 @@ export default function Localizacao() {
                   />
                 </Source>
               )}
+
+              {/* Favorite places markers */}
+              {places.map(place => {
+                const PlaceIc = PLACE_ICON_MAP[place.icon] ?? MapPin;
+                return (
+                  <Marker
+                    key={place.id}
+                    longitude={place.lng}
+                    latitude={place.lat}
+                    anchor="bottom"
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: 9,
+                        background: 'rgba(255,255,255,0.92)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1.5px solid rgba(196,120,140,0.35)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                      }}>
+                        <PlaceIc style={{ width: 13, height: 13, color: '#C4788C', strokeWidth: 1.5 }} />
+                      </div>
+                      <div style={{
+                        background: 'rgba(255,255,255,0.92)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: 5,
+                        padding: '1px 5px',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        color: '#374151',
+                        whiteSpace: 'nowrap',
+                        maxWidth: 72,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                      }}>
+                        {place.name}
+                      </div>
+                    </div>
+                  </Marker>
+                );
+              })}
 
               {/* My marker — offset left when close to partner */}
               {myReal && myLocation && (
