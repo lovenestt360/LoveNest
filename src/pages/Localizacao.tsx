@@ -15,7 +15,11 @@ import { usePartnerProfile } from '@/hooks/usePartnerProfile';
 import { useProfile } from '@/hooks/useProfile';
 import { useMeetingMoments } from '@/hooks/useMeetingMoments';
 import { useFavoritePlaces } from '@/hooks/useFavoritePlaces';
+import { useLocationEvents } from '@/hooks/useLocationEvents';
+import { useLocationNotifPrefs } from '@/hooks/useLocationNotifPrefs';
 import { FavoritePlacesSection } from '@/features/location/FavoritePlacesSection';
+import { ActivityTimeline } from '@/features/location/ActivityTimeline';
+import { LocationNotifSettings } from '@/features/location/LocationNotifSettings';
 import { LocationOnboarding } from '@/features/location/LocationOnboarding';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -194,6 +198,13 @@ export default function Localizacao() {
   const { places, detectPlace } = useFavoritePlaces();
   const { todayMoments } = useMeetingMoments(
     myLocation, partnerLocation, mySharing, partnerSharing,
+  );
+
+  // Etapa 12 + 14: notificações inteligentes e timeline de atividade
+  const myName = profile?.display_name ?? 'O teu par';
+  const { prefs: notifPrefs, updatePref } = useLocationNotifPrefs();
+  const { partnerTodayEvents } = useLocationEvents(
+    myLocation, partnerLocation, places, myName, notifPrefs,
   );
 
   // Contexto do par: verificar primeiro se está num local favorito
@@ -667,11 +678,17 @@ export default function Localizacao() {
           </div>
         )}
 
+        {/* ── Timeline de atividade do par (Etapa 14) ── */}
+        <ActivityTimeline events={partnerTodayEvents} />
+
         {/* ── Locais Favoritos ── */}
         <FavoritePlacesSection
           myLat={myReal && myLocation ? myLocation.lat : null}
           myLng={myReal && myLocation ? myLocation.lng : null}
         />
+
+        {/* ── Notificações inteligentes (Etapa 12) ── */}
+        <LocationNotifSettings prefs={notifPrefs} onUpdate={updatePref} />
       </div>
 
       {/* ── Onboarding (primeira visita) ── */}
