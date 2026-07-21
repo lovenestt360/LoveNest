@@ -202,19 +202,26 @@ export default function Localizacao() {
     prevCountRef.current = count;
 
     if (myReal && partnerReal && myLocation && partnerLocation) {
-      mapRef.current.fitBounds(
-        [
-          [
-            Math.min(myLocation.lng, partnerLocation.lng),
-            Math.min(myLocation.lat, partnerLocation.lat),
+      const d = haversineMeters(myLocation, partnerLocation);
+      if (d < 150) {
+        // Very close — fly to midpoint at street level
+        mapRef.current.flyTo({
+          center: [
+            (myLocation.lng + partnerLocation.lng) / 2,
+            (myLocation.lat + partnerLocation.lat) / 2,
           ],
+          zoom: 17,
+          duration: 1400,
+        });
+      } else {
+        mapRef.current.fitBounds(
           [
-            Math.max(myLocation.lng, partnerLocation.lng),
-            Math.max(myLocation.lat, partnerLocation.lat),
+            [Math.min(myLocation.lng, partnerLocation.lng), Math.min(myLocation.lat, partnerLocation.lat)],
+            [Math.max(myLocation.lng, partnerLocation.lng), Math.max(myLocation.lat, partnerLocation.lat)],
           ],
-        ],
-        { padding: 80, duration: 1500, maxZoom: 16 },
-      );
+          { padding: 80, duration: 1500, maxZoom: 16 },
+        );
+      }
     } else if (myReal && myLocation) {
       mapRef.current.flyTo({ center: [myLocation.lng, myLocation.lat], zoom: 14, duration: 1200 });
     } else if (partnerReal && partnerLocation) {
@@ -452,7 +459,10 @@ export default function Localizacao() {
         {/* ── Map ── */}
         <div
           className="mx-4 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
-          style={{ height: 'clamp(200px, 42vh, 340px)' }}
+          style={{
+            height: 'clamp(200px, 42vh, 340px)',
+            filter: isDark ? 'none' : 'brightness(1.08) contrast(0.88) saturate(0.72)',
+          }}
         >
           {!loading && (
             <Map
@@ -481,19 +491,25 @@ export default function Localizacao() {
                 </Source>
               )}
 
-              {/* My marker */}
+              {/* My marker — offset left when close to partner */}
               {myReal && myLocation && (
-                <Marker longitude={myLocation.lng} latitude={myLocation.lat} anchor="center">
+                <Marker
+                  longitude={myLocation.lng}
+                  latitude={myLocation.lat}
+                  anchor="center"
+                  offset={distance !== null && distance < 150 && partnerReal ? [-28, 0] : [0, 0]}
+                >
                   <AvatarMarker initial={myInitial} ring="#C4788C" size={44} />
                 </Marker>
               )}
 
-              {/* Partner marker */}
+              {/* Partner marker — offset right when close */}
               {partnerReal && partnerLocation && (
                 <Marker
                   longitude={partnerLocation.lng}
                   latitude={partnerLocation.lat}
                   anchor="center"
+                  offset={distance !== null && distance < 150 && myReal ? [28, 0] : [0, 0]}
                 >
                   <AvatarMarker
                     avatarUrl={partner?.avatar_url}
