@@ -154,27 +154,11 @@ export default function Localizacao() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showPauseMenu, setShowPauseMenu] = useState(false);
   const [pauseUntil, setPauseUntil] = useState<Date | null>(null);
-  const [isDark, setIsDark] = useState(
-    () => document.documentElement.classList.contains('dark'),
-  );
-
   // Stale-safe refs for callbacks
   const toggleRef = useRef(toggleSharing);
   toggleRef.current = toggleSharing;
   const mySharingRef = useRef(mySharing);
   mySharingRef.current = mySharing;
-
-  // ── Dark mode observer ──
-  useEffect(() => {
-    const obs = new MutationObserver(() =>
-      setIsDark(document.documentElement.classList.contains('dark')),
-    );
-    obs.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme'],
-    });
-    return () => obs.disconnect();
-  }, []);
 
   // ── Derived state ──
   const hasRealPos = (loc: { lat: number; lng: number } | null) =>
@@ -278,9 +262,7 @@ export default function Localizacao() {
         }
       : null;
 
-  const mapStyle = isDark
-    ? 'mapbox://styles/mapbox/dark-v11'
-    : 'mapbox://styles/mapbox/light-v11';
+  const mapStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
   return (
     <div className="flex flex-col bg-background" style={{ height: '100dvh' }}>
@@ -459,10 +441,7 @@ export default function Localizacao() {
         {/* ── Map ── */}
         <div
           className="mx-4 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
-          style={{
-            height: 'clamp(200px, 42vh, 340px)',
-            filter: isDark ? 'none' : 'brightness(1.08) contrast(0.88) saturate(0.72)',
-          }}
+          style={{ height: 'clamp(200px, 42vh, 340px)' }}
         >
           {!loading && (
             <Map
