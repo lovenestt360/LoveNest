@@ -72,6 +72,7 @@ export default function Localizacao() {
     retryWatch,
     loading,
     permissionDenied,
+    geoErrorMsg,
   } = useLocationSharing();
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
@@ -125,10 +126,13 @@ export default function Localizacao() {
       {/* ── Aviso permissão negada ── */}
       {permissionDenied && (
         <div className="mx-4 mt-3 shrink-0 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 space-y-2">
-          <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">Acesso à localização bloqueado</p>
+          <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">Acesso à localização bloqueado pelo Chrome</p>
           <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 leading-relaxed">
-            Vai às definições do teu browser → Privacidade → Localização e permite o acesso a este site. Depois toca em "Tentar novamente".
+            Abre o Chrome → copia e cola na barra de endereço: <span className="font-mono font-semibold select-all">chrome://settings/content/location</span> → em "Não é permitido" remove este site, depois volta aqui e toca em "Tentar novamente".
           </p>
+          {geoErrorMsg && (
+            <p className="text-[10px] font-mono text-rose-400/50 break-all">{geoErrorMsg}</p>
+          )}
           <button
             onClick={retryWatch}
             className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 underline underline-offset-2 active:opacity-60"

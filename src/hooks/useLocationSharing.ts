@@ -57,6 +57,7 @@ export function useLocationSharing() {
   const [partnerLocation, setPartnerLocation] = useState<LocationRecord | null>(null);
   const [loading,         setLoading]         = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [geoErrorMsg,      setGeoErrorMsg]      = useState<string | null>(null);
 
   // Refs to avoid stale closures nos callbacks de geolocalização
   const intervalIdRef      = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -140,6 +141,7 @@ export function useLocationSharing() {
         }));
       },
       (err) => {
+        setGeoErrorMsg(`[${err.code}] ${err.message}`);
         if (err.code === 1 /* PERMISSION_DENIED */) {
           setPermissionDenied(true);
           if (intervalIdRef.current !== null) {
@@ -149,7 +151,7 @@ export function useLocationSharing() {
         }
         // POSITION_UNAVAILABLE (2) e TIMEOUT (3): transitórios, próximo intervalo tenta de novo
       },
-      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 30_000 }
+      { enableHighAccuracy: false, timeout: 30_000 }
     );
   }, []);
 
@@ -248,6 +250,7 @@ export function useLocationSharing() {
 
   const retryWatch = useCallback(() => {
     setPermissionDenied(false);
+    setGeoErrorMsg(null);
     stopWatch();
     startWatch();
   }, [startWatch, stopWatch]);
@@ -261,5 +264,6 @@ export function useLocationSharing() {
     retryWatch,
     loading,
     permissionDenied,
+    geoErrorMsg,
   };
 }
