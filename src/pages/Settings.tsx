@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles, Globe, Users } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles, Globe, Users, MapPin } from "lucide-react";
+import { useLocationSharing } from "@/hooks/useLocationSharing";
 import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
 import { VerificationSection } from "@/features/verification/VerificationSection";
@@ -97,6 +98,29 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+// Sub-componente isolado — só montado quando a secção de notificações está visível.
+// Mantém o hook useLocationSharing fora do ciclo de vida da Settings completa.
+function LocationToggleRow() {
+  const { mySharing, toggleSharing, loading } = useLocationSharing();
+  if (loading) return null;
+  return (
+    <div className="glass-card p-5 mt-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center">
+            <MapPin className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-[13px] font-medium text-foreground">Partilhar localização</p>
+            <p className="text-[11px] text-muted-foreground/65">O teu par vê onde estás em tempo real</p>
+          </div>
+        </div>
+        <Switch checked={mySharing} onCheckedChange={toggleSharing} />
+      </div>
+    </div>
+  );
 }
 
 export default function Settings() {
@@ -921,6 +945,8 @@ export default function Settings() {
                   ))}
                 </div>
               </div>
+
+              <LocationToggleRow />
 
                             <Button variant="ghost" size="sm" className="w-full text-[9px] opacity-10" onClick={() => setShowDebug(!showDebug)}>{showDebug ? "Fechar Logs" : "Abrir Logs"}</Button>
               {showDebug && (

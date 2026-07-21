@@ -55,7 +55,8 @@ const TimeCapsule = lazy(() => import("./pages/TimeCapsule"));
 const LoveWrapped = lazy(() => import("./pages/LoveWrapped"));
 const Jornada = lazy(() => import("./pages/Jornada"));
 const Descobrir = lazy(() => import("./pages/Descobrir"));
-const Momentos  = lazy(() => import("./pages/Momentos"));
+const Momentos    = lazy(() => import("./pages/Momentos"));
+const Localizacao = lazy(() => import("./pages/Localizacao"));
 const Biblioteca = lazy(() => import("./pages/Biblioteca"));
 const BookDetail = lazy(() => import("./pages/BookDetail"));
 const BookReader = lazy(() => import("./pages/BookReader"));
@@ -157,6 +158,9 @@ const AppRoutes = () => (
           <Route path="descobrir" element={<Descobrir />} />
         </Route>
         <Route path="momentos" element={<Momentos />} />
+        <Route element={<PremiumGuard requiredFeature="location_sharing" />}>
+          <Route path="localizacao" element={<Localizacao />} />
+        </Route>
       </Route>
     </Route>
 

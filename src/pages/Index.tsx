@@ -42,6 +42,7 @@ import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
 import { LoveStreakCard } from "@/components/LoveStreakCard";
 import { CycleHomeCard } from "@/features/cycle/CycleHomeCard";
+import { LocationHomeCard } from "@/features/location/LocationHomeCard";
 import { Coffee } from "lucide-react";
 
 /* ── data hooks ── */
@@ -613,8 +614,15 @@ const Index = () => {
           </div>
         )}
 
+        {/* Location Card */}
+        {isEnabled("home_localizacao") && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "210ms" }}>
+            <LocationHomeCard />
+          </div>
+        )}
+
         {/* Cycle Preview */}
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "210ms" }}>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "250ms" }}>
           <CycleHomeCard />
         </div>
 
