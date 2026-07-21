@@ -13,6 +13,10 @@ import { Switch } from '@/components/ui/switch';
 import { useLocationSharing } from '@/hooks/useLocationSharing';
 import { usePartnerProfile } from '@/hooks/usePartnerProfile';
 import { useProfile } from '@/hooks/useProfile';
+import { useMeetingMoments } from '@/hooks/useMeetingMoments';
+import { useFavoritePlaces } from '@/hooks/useFavoritePlaces';
+import { FavoritePlacesSection } from '@/features/location/FavoritePlacesSection';
+import { LocationOnboarding } from '@/features/location/LocationOnboarding';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -150,6 +154,16 @@ export default function Localizacao() {
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
 
+  // Onboarding: mostrar na primeira visita
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return localStorage.getItem('location-onboarding-seen') !== 'true';
+  });
+
+  const handleOnboardingClose = () => {
+    localStorage.setItem('location-onboarding-seen', 'true');
+    setShowOnboarding(false);
+  };
+
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -175,7 +189,19 @@ export default function Localizacao() {
 
   const myInitial = (profile?.display_name ?? 'Eu').charAt(0).toUpperCase();
   const partnerInitial = (partner?.display_name ?? 'P').charAt(0).toUpperCase();
-  const partnerCtx = detectContext(partnerLocation?.address ?? null);
+
+  // Locais favoritos + encontros
+  const { places, detectPlace } = useFavoritePlaces();
+  const { todayMoments } = useMeetingMoments(
+    myLocation, partnerLocation, mySharing, partnerSharing,
+  );
+
+  // Contexto do par: verificar primeiro se está num local favorito
+  const partnerPlaceName =
+    partnerReal && partnerLocation
+      ? detectPlace(partnerLocation.lat, partnerLocation.lng)
+      : null;
+  const partnerCtx = detectContext(partnerPlaceName ?? partnerLocation?.address ?? null);
 
   // ── Smart camera — only re-fits when visible marker count changes ──
   const prevCountRef = useRef(0);
@@ -613,7 +639,43 @@ export default function Localizacao() {
             </p>
           )}
         </div>
+
+        {/* ── Momentos de Encontro (hoje) ── */}
+        {todayMoments.length > 0 && (
+          <div className="px-4 pb-4 space-y-2">
+            <p className="text-[12px] font-semibold text-muted-foreground/70 uppercase tracking-wider px-0.5">
+              Encontros de hoje
+            </p>
+            <div className="glass-card divide-y divide-border/30">
+              {todayMoments.map(m => (
+                <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
+                    <Heart className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} fill="currentColor" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-medium text-foreground">
+                      Encontraram-se
+                      {m.place_name ? ` em ${m.place_name}` : ''}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                      {new Date(m.met_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Locais Favoritos ── */}
+        <FavoritePlacesSection
+          myLat={myReal && myLocation ? myLocation.lat : null}
+          myLng={myReal && myLocation ? myLocation.lng : null}
+        />
       </div>
+
+      {/* ── Onboarding (primeira visita) ── */}
+      {showOnboarding && <LocationOnboarding onClose={handleOnboardingClose} />}
     </div>
   );
 }
