@@ -529,7 +529,6 @@ export default function Onboarding() {
   }
 
   if (phase === "country") {
-    const selectedCountryName = COUNTRIES.find(c => c.code === countryCode)?.name ?? "";
     return (
       <StepShell onBack={() => goToStep("welcome")}>
         <div className="w-full max-w-[320px] mx-auto space-y-6">
@@ -542,12 +541,10 @@ export default function Onboarding() {
             onSelect={(code) => {
               setCountryCode(code);
               setCountry(COUNTRIES.find(c => c.code === code)?.name ?? "");
+              setTimeout(() => goToStep("gender"), 300);
             }}
           />
-          <div className="space-y-2 pt-2">
-            <CtaBtn onClick={() => goToStep("gender")} disabled={!countryCode} label="Continuar" />
-            <SkipBtn onClick={() => goToStep("gender")} />
-          </div>
+          <SkipBtn onClick={() => goToStep("gender")} />
         </div>
       </StepShell>
     );
@@ -563,15 +560,16 @@ export default function Onboarding() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {GENDER_OPTIONS.map(o => (
-              <OptionBtn key={o.value} selected={gender === o.value} onClick={() => setGender(o.value)}>
+              <OptionBtn
+                key={o.value}
+                selected={gender === o.value}
+                onClick={() => { setGender(o.value); setTimeout(() => goToStep("spiritual"), 300); }}
+              >
                 {o.label}
               </OptionBtn>
             ))}
           </div>
-          <div className="space-y-2 pt-2">
-            <CtaBtn onClick={() => goToStep("spiritual")} disabled={!gender} label="Continuar" />
-            <SkipBtn onClick={() => goToStep("spiritual")} />
-          </div>
+          <SkipBtn onClick={() => goToStep("spiritual")} />
         </div>
       </StepShell>
     );
@@ -587,15 +585,16 @@ export default function Onboarding() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {RELIGION_OPTIONS.map(o => (
-              <OptionBtn key={o.value} selected={religion === o.value} onClick={() => setReligion(o.value)}>
+              <OptionBtn
+                key={o.value}
+                selected={religion === o.value}
+                onClick={() => { setReligion(o.value); setTimeout(() => goToStep("mode"), 300); }}
+              >
                 {o.label}
               </OptionBtn>
             ))}
           </div>
-          <div className="space-y-2 pt-2">
-            <CtaBtn onClick={() => goToStep("mode")} disabled={!religion} label="Continuar" />
-            <SkipBtn onClick={() => goToStep("mode")} />
-          </div>
+          <SkipBtn onClick={() => goToStep("mode")} />
         </div>
       </StepShell>
     );
@@ -613,7 +612,7 @@ export default function Onboarding() {
             {MODE_OPTIONS.map(o => (
               <button
                 key={o.value}
-                onClick={() => setUsageMode(o.value)}
+                onClick={() => { setUsageMode(o.value); setTimeout(() => goToStep("goal"), 300); }}
                 className={cn(
                   "w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]",
                   usageMode === o.value
@@ -626,7 +625,7 @@ export default function Onboarding() {
               </button>
             ))}
           </div>
-          <CtaBtn onClick={() => goToStep("goal")} disabled={!usageMode} label="Continuar" />
+          <SkipBtn onClick={() => goToStep("goal")} />
         </div>
       </StepShell>
     );
@@ -641,21 +640,18 @@ export default function Onboarding() {
           </div>
           <div className="space-y-2">
             {GOAL_OPTIONS.map(o => (
-              <OptionBtn key={o.value} selected={primaryGoal === o.value} onClick={() => setPrimaryGoal(o.value)}>
+              <OptionBtn
+                key={o.value}
+                selected={primaryGoal === o.value}
+                onClick={() => { setPrimaryGoal(o.value); setTimeout(handleSaveProfile, 400); }}
+              >
                 {o.label}
               </OptionBtn>
             ))}
           </div>
-          <div className="space-y-2 pt-2">
-            <button
-              onClick={handleSaveProfile}
-              disabled={!primaryGoal || savingProfile}
-              className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              style={{ background: PINK, boxShadow: `0 6px 28px ${PINK}44` }}
-            >
-              {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Entrar no espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>}
-            </button>
-            <button onClick={handleSaveProfile} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+          <div className="pt-2">
+            <button onClick={handleSaveProfile} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors flex items-center justify-center gap-1.5">
+              {savingProfile && <Loader2 className="w-3 h-3 animate-spin" />}
               Saltar
             </button>
           </div>

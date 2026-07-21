@@ -83,10 +83,13 @@ const AppRoutes = () => (
     {/* Public routes */}
     <Route path="/landing" element={<Landing />} />
     <Route path="/inicio" element={<Onboarding />} />
+    {/* /onboarding alias — destination of Google OAuth redirects */}
+    <Route path="/onboarding" element={<Onboarding />} />
     <Route path="/confirmar-email" element={<ConfirmEmail />} />
     <Route path="/entrar" element={<Login />} />
-    <Route path="/criar-conta" element={<Signup />} />
-    <Route path="/signup" element={<Signup />} />
+    {/* /criar-conta and /signup redirect to full onboarding flow */}
+    <Route path="/criar-conta" element={<Navigate to="/inicio" replace />} />
+    <Route path="/signup" element={<Navigate to="/inicio" replace />} />
     <Route path="/redefinir-senha" element={<ResetPassword />} />
     <Route path="/guardiao-preview" element={<GuardianPreview />} />
     <Route path="/flame-demo" element={<FlameDemo />} />

@@ -154,7 +154,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + "/onboarding",
+          redirectTo: window.location.origin + "/inicio",
           queryParams: {
             access_type: "offline",
             prompt: "consent",
