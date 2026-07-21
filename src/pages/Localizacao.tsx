@@ -81,9 +81,13 @@ export default function Localizacao() {
   const myIcon      = createDivIcon("#C4788C", myInitial);
   const partnerIcon = createDivIcon("#6B7280", partnerInitial);
 
+  // Filtra coordenadas 0,0 — são placeholder de quando a posição ainda não chegou
+  const hasRealPos = (loc: { lat: number; lng: number } | null) =>
+    !!loc && (loc.lat !== 0 || loc.lng !== 0);
+
   const positions: [number, number][] = [];
-  if (myLocation && mySharing)      positions.push([myLocation.lat, myLocation.lng]);
-  if (partnerLocation && partnerSharing) positions.push([partnerLocation.lat, partnerLocation.lng]);
+  if (mySharing      && hasRealPos(myLocation))      positions.push([myLocation!.lat, myLocation!.lng]);
+  if (partnerSharing && hasRealPos(partnerLocation)) positions.push([partnerLocation!.lat, partnerLocation!.lng]);
 
   const defaultCenter: [number, number] = [38.7169, -9.1399]; // Lisboa como fallback
 
@@ -143,11 +147,11 @@ export default function Localizacao() {
 
             <ChangeView positions={positions} />
 
-            {myLocation && mySharing && (
-              <Marker position={[myLocation.lat, myLocation.lng]} icon={myIcon} />
+            {mySharing && hasRealPos(myLocation) && (
+              <Marker position={[myLocation!.lat, myLocation!.lng]} icon={myIcon} />
             )}
-            {partnerLocation && partnerSharing && (
-              <Marker position={[partnerLocation.lat, partnerLocation.lng]} icon={partnerIcon} />
+            {partnerSharing && hasRealPos(partnerLocation) && (
+              <Marker position={[partnerLocation!.lat, partnerLocation!.lng]} icon={partnerIcon} />
             )}
           </MapContainer>
         )}
@@ -157,8 +161,8 @@ export default function Localizacao() {
           <div className="absolute inset-0 bg-muted/30 animate-pulse" />
         )}
 
-        {/* Badge "A minha localização" quando partilha activa */}
-        {mySharing && myLocation && (
+        {/* Badge "A minha localização" — só com posição real */}
+        {mySharing && hasRealPos(myLocation) && (
           <div className="absolute top-3 left-3 z-[500] bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/50">
             <div className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
             <span className="text-[11px] font-semibold text-foreground">A partilhar</span>

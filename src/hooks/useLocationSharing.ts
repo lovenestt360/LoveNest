@@ -143,7 +143,25 @@ export function useLocationSharing() {
         }));
       },
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) setPermissionDenied(true);
+        if (err.code === err.PERMISSION_DENIED) {
+          setPermissionDenied(true);
+          // Auto-desativa sharing — não faz sentido continuar com partilha ativa sem GPS
+          const uid = userIdRef.current;
+          const sid = spaceIdRef.current;
+          if (uid && sid) {
+            mySharingRef.current = false;
+            setMyLocation(prev => prev ? { ...prev, sharing_enabled: false } : null);
+            (supabase as any)
+              .from("member_locations")
+              .update({ sharing_enabled: false })
+              .eq("user_id", uid)
+              .eq("couple_space_id", sid);
+          }
+          if (watchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+            watchIdRef.current = null;
+          }
+        }
       },
       { enableHighAccuracy: true, maximumAge: 20_000, timeout: 10_000 }
     );
