@@ -69,6 +69,7 @@ export default function Localizacao() {
     mySharing,
     partnerSharing,
     toggleSharing,
+    retryWatch,
     loading,
     permissionDenied,
   } = useLocationSharing();
@@ -123,11 +124,17 @@ export default function Localizacao() {
 
       {/* ── Aviso permissão negada ── */}
       {permissionDenied && (
-        <div className="mx-4 mt-3 shrink-0 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3">
-          <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">Permissão de localização negada</p>
-          <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 mt-0.5">
-            Ativa a localização nas definições do teu browser para partilhar a tua posição.
+        <div className="mx-4 mt-3 shrink-0 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 space-y-2">
+          <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">Acesso à localização bloqueado</p>
+          <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 leading-relaxed">
+            Vai às definições do teu browser → Privacidade → Localização e permite o acesso a este site. Depois toca em "Tentar novamente".
           </p>
+          <button
+            onClick={retryWatch}
+            className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 underline underline-offset-2 active:opacity-60"
+          >
+            Tentar novamente
+          </button>
         </div>
       )}
 

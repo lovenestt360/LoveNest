@@ -87,44 +87,11 @@ export function useLocationSharing() {
     setLoading(false);
   }, [spaceId, user?.id]);
 
-  // ── Auto-desativa sharing e atualiza DB ─────────────────────────────────
-  const disableSharing = useCallback(() => {
-    const uid = userIdRef.current;
-    const sid = spaceIdRef.current;
-    if (!uid || !sid) return;
-    mySharingRef.current = false;
-    setMyLocation(prev => prev ? { ...prev, sharing_enabled: false } : null);
-    (supabase as any)
-      .from("member_locations")
-      .update({ sharing_enabled: false })
-      .eq("user_id", uid)
-      .eq("couple_space_id", sid);
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-  }, []);
-
   // ── Start GPS watch ──────────────────────────────────────────────────────
-  const startWatch = useCallback(async () => {
+  const startWatch = useCallback(() => {
     if (!("geolocation" in navigator)) return;
     if (watchIdRef.current !== null) return; // already watching
 
-    // Verifica permissão antes de chamar watchPosition
-    // (evita o erro 1 quando o utilizador já negou)
-    if ("permissions" in navigator) {
-      try {
-        const perm = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-        if (perm.state === "denied") {
-          setPermissionDenied(true);
-          disableSharing();
-          return;
-        }
-      } catch { /* browser não suporta permissions API — continua normalmente */ }
-    }
-
-    // Usa enableHighAccuracy: false para máxima compatibilidade
-    // (alta precisão pode falhar com PERMISSION_DENIED em desktop e alguns iOS)
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (pos) => {
         setPermissionDenied(false); // GPS funcionou — limpa erro anterior
@@ -177,16 +144,22 @@ export function useLocationSharing() {
         }));
       },
       (err) => {
+        // Mostra banner apenas para PERMISSION_DENIED (1)
+        // Não auto-desativa o sharing — o utilizador pode ter concedido permissão
+        // entretanto; o botão "Tentar novamente" na UI reinicia o watch
         if (err.code === 1 /* PERMISSION_DENIED */) {
           setPermissionDenied(true);
-          disableSharing();
+          if (watchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+            watchIdRef.current = null;
+          }
         }
-        // POSITION_UNAVAILABLE (2) e TIMEOUT (3) são erros transitórios —
-        // watchPosition volta a tentar automaticamente, não fazemos nada
+        // POSITION_UNAVAILABLE (2) e TIMEOUT (3): erros transitórios, watchPosition
+        // volta a tentar automaticamente
       },
       { enableHighAccuracy: false, maximumAge: 30_000, timeout: 30_000 }
     );
-  }, [disableSharing]);
+  }, []);
 
   // ── Stop GPS watch ───────────────────────────────────────────────────────
   const stopWatch = useCallback(() => {
@@ -224,12 +197,12 @@ export function useLocationSharing() {
     );
 
     if (newSharing) {
-      setPermissionDenied(false); // reset — permissão pode ter sido concedida entretanto
+      setPermissionDenied(false);
       startWatch();
     } else {
       stopWatch();
     }
-  }, [myLocation, startWatch, stopWatch, disableSharing]);
+  }, [myLocation, startWatch, stopWatch]);
 
   // ── Initial load + start watch if already enabled ───────────────────────
   useEffect(() => {
@@ -273,12 +246,22 @@ export function useLocationSharing() {
   const mySharing      = myLocation?.sharing_enabled      ?? false;
   const partnerSharing = partnerLocation?.sharing_enabled ?? false;
 
+  const retryWatch = useCallback(() => {
+    setPermissionDenied(false);
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    startWatch();
+  }, [startWatch]);
+
   return {
     myLocation,
     partnerLocation,
     mySharing,
     partnerSharing,
     toggleSharing,
+    retryWatch,
     loading,
     permissionDenied,
   };
