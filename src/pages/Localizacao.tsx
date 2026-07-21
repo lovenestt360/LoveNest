@@ -1,5 +1,5 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl';
 import {
@@ -22,7 +22,6 @@ import { useLocationEvents } from '@/hooks/useLocationEvents';
 import { useLocationNotifPrefs } from '@/hooks/useLocationNotifPrefs';
 import { useLocationHistory } from '@/hooks/useLocationHistory';
 import { FavoritePlacesSection } from '@/features/location/FavoritePlacesSection';
-import { ActivityTimeline } from '@/features/location/ActivityTimeline';
 import { LocationNotifSettings } from '@/features/location/LocationNotifSettings';
 import { LocationOnboarding } from '@/features/location/LocationOnboarding';
 
@@ -41,10 +40,6 @@ function haversineMeters(
       Math.cos((b.lat * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-}
-
-function formatDistance(m: number): string {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
 function timeAgo(iso: string): string {
@@ -117,6 +112,49 @@ function NetworkIcon({ type }: { type: string | null }) {
     <div className="flex items-center gap-1">
       <Icon className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
       <span className="text-[10px] text-muted-foreground/50">{label}</span>
+    </div>
+  );
+}
+
+// ── Magic message — interpreta dados emocionalmente ──────────────────────────
+
+function magicMessage(
+  myReal: boolean,
+  partnerReal: boolean,
+  distance: number | null,
+  partnerPlaceName: string | null,
+  partnerName: string,
+): { headline: string; sub: string } | null {
+  if (!myReal && !partnerReal) return null;
+  if (myReal && partnerReal && distance !== null) {
+    if (distance < 100)
+      return { headline: 'Estão juntos neste momento', sub: 'O melhor sítio do mundo é ao lado do outro' };
+    if (distance < 500)
+      return { headline: 'A distância nunca foi tão pequena', sub: `Estão a apenas ${Math.round(distance)} m um do outro` };
+    if (distance < 2000)
+      return { headline: 'Tão perto, tão perto', sub: `${(distance / 1000).toFixed(1)} km e um coração a pensar no outro` };
+    const atHome = partnerPlaceName && /\bcasa\b|\bhome\b/i.test(partnerPlaceName);
+    if (atHome)
+      return { headline: `${partnerName} já chegou a casa`, sub: `A ${(distance / 1000).toFixed(1)} km — o dia acabou para os dois` };
+    return { headline: 'Mesmo longe, continuam ligados', sub: `A ${(distance / 1000).toFixed(1)} km um do outro` };
+  }
+  if (myReal && !partnerReal)
+    return { headline: 'A tua presença está ativa', sub: `${partnerName} sabe onde estás` };
+  if (!myReal && partnerReal)
+    return { headline: `${partnerName} está presente`, sub: 'Ativa a tua presença para estarem mais perto' };
+  return null;
+}
+
+function MagicHeroCard({ headline, sub }: { headline: string; sub: string }) {
+  return (
+    <div className="mx-4 mt-3 mb-2 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border border-rose-100/80 dark:border-rose-900/30 px-4 py-3.5 flex items-center gap-3">
+      <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
+        <Heart className="w-4 h-4 text-rose-400" strokeWidth={2} fill="currentColor" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[13px] font-semibold text-rose-700 dark:text-rose-300 leading-tight">{headline}</p>
+        <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 mt-0.5 leading-tight">{sub}</p>
+      </div>
     </div>
   );
 }
@@ -280,6 +318,49 @@ export default function Localizacao() {
   // Rota de hoje do parceiro
   const { partnerPath } = useLocationHistory(partnerLocation?.user_id ?? null);
 
+  // Magic message
+  const magic = magicMessage(myReal, partnerReal, distance, partnerPlaceName, partner?.display_name ?? 'O teu par');
+
+  // Partner state change flash animation
+  const [stateFlash, setStateFlash] = useState(false);
+  const prevPartnerStateRef = useRef('');
+  useEffect(() => {
+    const label = partnerCtx.label;
+    if (!label) return;
+    if (label !== prevPartnerStateRef.current) {
+      if (prevPartnerStateRef.current) {
+        setStateFlash(true);
+        const t = setTimeout(() => setStateFlash(false), 700);
+        return () => clearTimeout(t);
+      }
+      prevPartnerStateRef.current = label;
+    }
+  }, [partnerCtx.label]);
+
+  // Unified diary: meetings + activity events in one chronological list
+  type DiaryEntry =
+    | { kind: 'meeting'; id: string; time: Date; placeName: string | null }
+    | { kind: 'arrive'; id: string; time: Date; placeName: string }
+    | { kind: 'leave'; id: string; time: Date; placeName: string };
+
+  const diary = useMemo<DiaryEntry[]>(() => {
+    const entries: DiaryEntry[] = [
+      ...todayMoments.map(m => ({
+        kind: 'meeting' as const,
+        id: m.id,
+        time: new Date(m.met_at),
+        placeName: m.place_name,
+      })),
+      ...partnerTodayEvents.map(e => ({
+        kind: (e.event_type === 'enter' ? 'arrive' : 'leave') as 'arrive' | 'leave',
+        id: e.id,
+        time: new Date(e.occurred_at),
+        placeName: e.place_name,
+      })),
+    ];
+    return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
+  }, [todayMoments, partnerTodayEvents]);
+
   // ── Smart camera — only re-fits when visible marker count changes ──
   const prevCountRef = useRef(0);
   useEffect(() => {
@@ -423,8 +504,11 @@ export default function Localizacao() {
           </div>
         )}
 
-        {/* ── Hero — partner card ── */}
-        <div className="px-4 pt-4 pb-2">
+        {/* ── Mensagem mágica — interpretação emocional dos dados ── */}
+        {magic && <MagicHeroCard headline={magic.headline} sub={magic.sub} />}
+
+        {/* ── Cartão do par ── */}
+        <div className="px-4 pt-2 pb-2">
           {loading ? (
             <div className="glass-card p-4 animate-pulse flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-muted shrink-0" />
@@ -435,22 +519,17 @@ export default function Localizacao() {
               </div>
             </div>
           ) : partnerSharing && partnerLocation ? (
-            <div className="glass-card p-4 flex items-center gap-4">
+            <div
+              className={`glass-card p-4 flex items-center gap-4 transition-all duration-700 ${
+                stateFlash ? 'ring-1 ring-rose-300/40 dark:ring-rose-700/30' : ''
+              }`}
+            >
               {/* Partner avatar */}
-              <div
-                className="w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-offset-2 ring-offset-background ring-border/40"
-              >
+              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-offset-2 ring-offset-background ring-border/40">
                 {partner?.avatar_url ? (
-                  <img
-                    src={partner.avatar_url}
-                    className="w-full h-full object-cover"
-                    alt=""
-                  />
+                  <img src={partner.avatar_url} className="w-full h-full object-cover" alt="" />
                 ) : (
-                  <div
-                    className="w-full h-full flex items-center justify-center"
-                    style={{ background: '#6B7280' }}
-                  >
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: '#6B7280' }}>
                     <span className="text-white font-bold text-2xl">{partnerInitial}</span>
                   </div>
                 )}
@@ -461,39 +540,21 @@ export default function Localizacao() {
                 <p className="text-[16px] font-semibold text-foreground leading-tight">
                   {partner?.display_name ?? 'O teu par'}
                 </p>
-
                 {partnerCtx.label && (
                   <div className="flex items-center gap-1.5 mt-1">
-                    <partnerCtx.Icon
-                      className="w-3 h-3 text-rose-400 shrink-0"
-                      strokeWidth={2}
-                    />
-                    <p className="text-[12px] text-muted-foreground truncate">
-                      {partnerCtx.label}
-                    </p>
+                    <partnerCtx.Icon className="w-3 h-3 text-rose-400 shrink-0" strokeWidth={2} />
+                    <p className="text-[12px] text-muted-foreground truncate">{partnerCtx.label}</p>
                   </div>
                 )}
-
                 <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                   <div className="flex items-center gap-1">
-                    <Clock
-                      className="w-3 h-3 text-muted-foreground/40 shrink-0"
-                      strokeWidth={1.5}
-                    />
-                    <p className="text-[11px] text-muted-foreground/60">
-                      {timeAgo(partnerLocation.updated_at)}
-                    </p>
+                    <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+                    <p className="text-[11px] text-muted-foreground/60">{timeAgo(partnerLocation.updated_at)}</p>
                   </div>
                   {distance !== null && (
                     <div className="flex items-center gap-1">
-                      <Heart
-                        className="w-3 h-3 text-rose-300 shrink-0"
-                        strokeWidth={2}
-                        fill="currentColor"
-                      />
-                      <p className="text-[11px] font-medium text-rose-400">
-                        {emotionalDistance(distance)}
-                      </p>
+                      <Heart className="w-3 h-3 text-rose-300 shrink-0" strokeWidth={2} fill="currentColor" />
+                      <p className="text-[11px] font-medium text-rose-400">{emotionalDistance(distance)}</p>
                     </div>
                   )}
                 </div>
@@ -503,54 +564,28 @@ export default function Localizacao() {
               <div className="shrink-0 flex flex-col items-end gap-1.5">
                 <div className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">
-                    AO VIVO
-                  </span>
+                  <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
                 </div>
-                <BatteryIcon
-                  level={partnerLocation.battery_level ?? null}
-                  charging={partnerLocation.is_charging ?? null}
-                />
+                <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
                 <NetworkIcon type={partnerLocation.network_type ?? null} />
               </div>
             </div>
           ) : (
             <div className="glass-card p-4 flex items-center gap-4 opacity-70">
-              <div
-                className="w-16 h-16 rounded-full bg-muted shrink-0 flex items-center justify-center"
-              >
-                <span className="text-muted-foreground font-bold text-2xl">
-                  {partnerInitial}
-                </span>
+              <div className="w-16 h-16 rounded-full bg-muted shrink-0 flex items-center justify-center">
+                <span className="text-muted-foreground font-bold text-2xl">{partnerInitial}</span>
               </div>
               <div>
-                <p className="text-[15px] font-semibold text-foreground">
-                  {partner?.display_name ?? 'O teu par'}
-                </p>
-                <p className="text-[12px] text-muted-foreground/70 mt-0.5">
-                  Não está presente de momento
-                </p>
+                <p className="text-[15px] font-semibold text-foreground">{partner?.display_name ?? 'O teu par'}</p>
+                <p className="text-[12px] text-muted-foreground/70 mt-0.5">Não está presente de momento</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* ── Distance banner ── */}
-        {distance !== null && (
-          <div className="mx-4 mb-2">
-            <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
-              <Heart className="w-3 h-3 text-rose-400" strokeWidth={2} fill="currentColor" />
-              <span className="text-[11px] font-medium text-rose-500 dark:text-rose-400">
-                Estão a {formatDistance(distance)} um do outro
-              </span>
-              <Heart className="w-3 h-3 text-rose-400" strokeWidth={2} fill="currentColor" />
-            </div>
-          </div>
-        )}
-
-        {/* ── Map ── */}
+        {/* ── Mapa ── */}
         <div
-          className="mx-4 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
+          className="mx-4 mt-1 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
           style={{ height: 'clamp(200px, 42vh, 340px)' }}
         >
           {!loading && (
@@ -564,7 +599,7 @@ export default function Localizacao() {
               attributionControl={false}
               reuseMaps
             >
-              {/* Partner's route today (faint trail) */}
+              {/* Partner route today */}
               {partnerPath.length >= 2 && (
                 <Source
                   id="partner-route-src"
@@ -574,57 +609,39 @@ export default function Localizacao() {
                     features: [{
                       type: 'Feature',
                       properties: {},
-                      geometry: {
-                        type: 'LineString',
-                        coordinates: partnerPath.map(p => [p.lng, p.lat]),
-                      },
+                      geometry: { type: 'LineString', coordinates: partnerPath.map(p => [p.lng, p.lat]) },
                     }],
                   }}
                 >
                   <Layer
                     id="partner-route"
                     type="line"
-                    paint={{
-                      'line-color': '#9CA3AF',
-                      'line-opacity': 0.35,
-                      'line-width': 2,
-                    }}
+                    paint={{ 'line-color': '#9CA3AF', 'line-opacity': 0.35, 'line-width': 2 }}
                     layout={{ 'line-join': 'round', 'line-cap': 'round' }}
                   />
                 </Source>
               )}
 
-              {/* Connecting line between the two people */}
+              {/* Connecting line */}
               {lineData && (
                 <Source id="couple-line-src" type="geojson" data={lineData}>
                   <Layer
                     id="couple-line"
                     type="line"
-                    paint={{
-                      'line-color': '#C4788C',
-                      'line-opacity': 0.28,
-                      'line-width': 2.5,
-                      'line-dasharray': [4, 3],
-                    }}
+                    paint={{ 'line-color': '#C4788C', 'line-opacity': 0.28, 'line-width': 2.5, 'line-dasharray': [4, 3] }}
                   />
                 </Source>
               )}
 
-              {/* Favorite places markers */}
+              {/* Favorite places */}
               {places.map(place => {
                 const PlaceIc = PLACE_ICON_MAP[place.icon] ?? MapPin;
                 return (
-                  <Marker
-                    key={place.id}
-                    longitude={place.lng}
-                    latitude={place.lat}
-                    anchor="bottom"
-                  >
+                  <Marker key={place.id} longitude={place.lng} latitude={place.lat} anchor="bottom">
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
                       <div style={{
                         width: 30, height: 30, borderRadius: 9,
-                        background: 'rgba(255,255,255,0.92)',
-                        backdropFilter: 'blur(10px)',
+                        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
                         border: '1.5px solid rgba(196,120,140,0.35)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
@@ -632,17 +649,10 @@ export default function Localizacao() {
                         <PlaceIc style={{ width: 13, height: 13, color: '#C4788C', strokeWidth: 1.5 }} />
                       </div>
                       <div style={{
-                        background: 'rgba(255,255,255,0.92)',
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: 5,
-                        padding: '1px 5px',
-                        fontSize: 9,
-                        fontWeight: 700,
-                        color: '#374151',
-                        whiteSpace: 'nowrap',
-                        maxWidth: 72,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+                        borderRadius: 5, padding: '1px 5px', fontSize: 9, fontWeight: 700,
+                        color: '#374151', whiteSpace: 'nowrap', maxWidth: 72,
+                        overflow: 'hidden', textOverflow: 'ellipsis',
                         boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
                       }}>
                         {place.name}
@@ -652,7 +662,7 @@ export default function Localizacao() {
                 );
               })}
 
-              {/* My marker — offset left when close to partner */}
+              {/* My marker */}
               {myReal && myLocation && (
                 <Marker
                   longitude={myLocation.lng}
@@ -664,7 +674,7 @@ export default function Localizacao() {
                 </Marker>
               )}
 
-              {/* Partner marker — offset right when close */}
+              {/* Partner marker */}
               {partnerReal && partnerLocation && (
                 <Marker
                   longitude={partnerLocation.lng}
@@ -672,20 +682,13 @@ export default function Localizacao() {
                   anchor="center"
                   offset={distance !== null && distance < 150 && myReal ? [28, 0] : [0, 0]}
                 >
-                  <AvatarMarker
-                    avatarUrl={partner?.avatar_url}
-                    initial={partnerInitial}
-                    ring="#6B7280"
-                    size={52}
-                  />
+                  <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} ring="#6B7280" size={52} />
                 </Marker>
               )}
             </Map>
           )}
 
-          {loading && (
-            <div className="absolute inset-0 bg-muted/30 animate-pulse" />
-          )}
+          {loading && <div className="absolute inset-0 bg-muted/30 animate-pulse" />}
 
           {/* Status chips */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
@@ -704,52 +707,27 @@ export default function Localizacao() {
           </div>
         </div>
 
-        {/* ── Sharing controls ── */}
-        <div className="px-4 pt-3 pb-10 space-y-2">
+        {/* ── Partilha de presença ── */}
+        <div className="px-4 pt-3 pb-4 space-y-2">
           <div className="glass-card p-4 space-y-0">
-
-            {/* Toggle row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    mySharing && !isPaused
-                      ? 'bg-rose-50 dark:bg-rose-950/30'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <Heart
-                    className={`w-4 h-4 ${
-                      mySharing && !isPaused
-                        ? 'text-rose-400'
-                        : 'text-muted-foreground/40'
-                    }`}
-                    strokeWidth={1.5}
-                  />
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${mySharing && !isPaused ? 'bg-rose-50 dark:bg-rose-950/30' : 'bg-muted'}`}>
+                  <Heart className={`w-4 h-4 ${mySharing && !isPaused ? 'text-rose-400' : 'text-muted-foreground/40'}`} strokeWidth={1.5} />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[13px] font-medium text-foreground">
-                    Partilhar a minha presença
-                  </p>
+                  <p className="text-[13px] font-medium text-foreground">Partilhar a minha presença</p>
                   <p className="text-[11px] text-muted-foreground/60">
-                    {isPaused
-                      ? 'Presença em pausa'
-                      : mySharing
-                      ? 'O teu par sente que estás aqui'
-                      : 'O teu par não te consegue sentir'}
+                    {isPaused ? 'Presença em pausa' : mySharing ? 'O teu par sente que estás aqui' : 'O teu par não te consegue sentir'}
                   </p>
                 </div>
               </div>
               <Switch
                 checked={mySharing && !isPaused}
-                onCheckedChange={() => {
-                  if (isPaused) handleResume();
-                  else toggleSharing();
-                }}
+                onCheckedChange={() => { if (isPaused) handleResume(); else toggleSharing(); }}
               />
             </div>
 
-            {/* Pause section */}
             {mySharing && !isPaused && (
               <div className="mt-3 pt-3 border-t border-border/30">
                 <button
@@ -759,7 +737,6 @@ export default function Localizacao() {
                   <Pause className="w-3.5 h-3.5" strokeWidth={1.5} />
                   Pausar por...
                 </button>
-
                 {showPauseMenu && (
                   <div className="mt-2.5 grid grid-cols-2 gap-2">
                     {PAUSE_OPTIONS.map(opt => (
@@ -776,7 +753,6 @@ export default function Localizacao() {
               </div>
             )}
 
-            {/* Resume when paused */}
             {isPaused && (
               <div className="mt-3 pt-3 border-t border-border/30">
                 <button
@@ -796,35 +772,52 @@ export default function Localizacao() {
           )}
         </div>
 
-        {/* ── Momentos de Encontro (hoje) ── */}
-        {todayMoments.length > 0 && (
+        {/* ── Hoje — diário unificado ── */}
+        {diary.length > 0 && (
           <div className="px-4 pb-4 space-y-2">
             <p className="text-[12px] font-semibold text-muted-foreground/70 uppercase tracking-wider px-0.5">
-              Encontros de hoje
+              Hoje
             </p>
-            <div className="glass-card divide-y divide-border/30">
-              {todayMoments.map(m => (
-                <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
-                    <Heart className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} fill="currentColor" />
+            <div className="glass-card divide-y divide-border/20">
+              {diary.map(entry => {
+                const time = entry.time.toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' });
+                if (entry.kind === 'meeting') {
+                  return (
+                    <div key={entry.id} className="flex items-start gap-3 px-4 py-3">
+                      <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0 mt-0.5">
+                        <Heart className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} fill="currentColor" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium text-foreground leading-snug">
+                          Encontraram-se{entry.placeName ? ` em ${entry.placeName}` : ''}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/50 mt-0.5">{time}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                const isArrive = entry.kind === 'arrive';
+                return (
+                  <div key={entry.id} className="flex items-start gap-3 px-4 py-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${isArrive ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-muted/50'}`}>
+                      {isArrive
+                        ? <MapPin className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.5} />
+                        : <Navigation className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-medium text-foreground leading-snug">
+                        {partner?.display_name ?? 'O teu par'}{' '}
+                        {isArrive ? `chegou a ${entry.placeName}` : `saiu de ${entry.placeName}`}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">{time}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium text-foreground">
-                      Encontraram-se
-                      {m.place_name ? ` em ${m.place_name}` : ''}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {new Date(m.met_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
-
-        {/* ── Timeline de atividade do par (Etapa 14) ── */}
-        <ActivityTimeline events={partnerTodayEvents} />
 
         {/* ── Locais Favoritos ── */}
         <FavoritePlacesSection
@@ -832,8 +825,10 @@ export default function Localizacao() {
           myLng={myReal && myLocation ? myLocation.lng : null}
         />
 
-        {/* ── Notificações inteligentes (Etapa 12) ── */}
+        {/* ── Notificações inteligentes ── */}
         <LocationNotifSettings prefs={notifPrefs} onUpdate={updatePref} />
+
+        <div className="h-6" />
       </div>
 
       {/* ── Onboarding (primeira visita) ── */}
