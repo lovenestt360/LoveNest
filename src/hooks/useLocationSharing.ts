@@ -94,6 +94,8 @@ export function useLocationSharing() {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (pos) => {
+        // GPS funcionou — limpa o estado de permissão negada
+        setPermissionDenied(false);
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
         const uid     = userIdRef.current;
         const sid     = spaceIdRef.current;
@@ -203,6 +205,7 @@ export function useLocationSharing() {
     );
 
     if (newSharing) {
+      setPermissionDenied(false); // reset ao reativar — permissão pode ter sido concedida entretanto
       startWatch();
     } else {
       stopWatch();
