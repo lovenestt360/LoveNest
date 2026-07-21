@@ -87,29 +87,61 @@ export function useLocationSharing() {
     setLoading(false);
   }, [spaceId, user?.id]);
 
+  // ── Auto-desativa sharing e atualiza DB ─────────────────────────────────
+  const disableSharing = useCallback(() => {
+    const uid = userIdRef.current;
+    const sid = spaceIdRef.current;
+    if (!uid || !sid) return;
+    mySharingRef.current = false;
+    setMyLocation(prev => prev ? { ...prev, sharing_enabled: false } : null);
+    (supabase as any)
+      .from("member_locations")
+      .update({ sharing_enabled: false })
+      .eq("user_id", uid)
+      .eq("couple_space_id", sid);
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+  }, []);
+
   // ── Start GPS watch ──────────────────────────────────────────────────────
-  const startWatch = useCallback(() => {
+  const startWatch = useCallback(async () => {
     if (!("geolocation" in navigator)) return;
     if (watchIdRef.current !== null) return; // already watching
 
+    // Verifica permissão antes de chamar watchPosition
+    // (evita o erro 1 quando o utilizador já negou)
+    if ("permissions" in navigator) {
+      try {
+        const perm = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+        if (perm.state === "denied") {
+          setPermissionDenied(true);
+          disableSharing();
+          return;
+        }
+      } catch { /* browser não suporta permissions API — continua normalmente */ }
+    }
+
+    // Usa enableHighAccuracy: false para máxima compatibilidade
+    // (alta precisão pode falhar com PERMISSION_DENIED em desktop e alguns iOS)
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (pos) => {
-        // GPS funcionou — limpa o estado de permissão negada
-        setPermissionDenied(false);
+        setPermissionDenied(false); // GPS funcionou — limpa erro anterior
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-        const uid     = userIdRef.current;
-        const sid     = spaceIdRef.current;
+        const uid = userIdRef.current;
+        const sid = spaceIdRef.current;
         if (!uid || !sid) return;
 
         const current = { lat, lng };
 
-        // Only upload if moved >50m from last upload
+        // Só envia para o servidor se moveu >50m desde o último upload
         if (
           lastUploadedPosRef.current &&
           haversineMeters(lastUploadedPosRef.current, current) < 50
         ) return;
 
-        // Reverse geocode if moved >200m from last geocode
+        // Reverse geocode apenas se moveu >200m desde o último geocode
         let address: string | null = null;
         if (
           !lastGeocodedPosRef.current ||
@@ -145,29 +177,16 @@ export function useLocationSharing() {
         }));
       },
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
+        if (err.code === 1 /* PERMISSION_DENIED */) {
           setPermissionDenied(true);
-          // Auto-desativa sharing — não faz sentido continuar com partilha ativa sem GPS
-          const uid = userIdRef.current;
-          const sid = spaceIdRef.current;
-          if (uid && sid) {
-            mySharingRef.current = false;
-            setMyLocation(prev => prev ? { ...prev, sharing_enabled: false } : null);
-            (supabase as any)
-              .from("member_locations")
-              .update({ sharing_enabled: false })
-              .eq("user_id", uid)
-              .eq("couple_space_id", sid);
-          }
-          if (watchIdRef.current !== null) {
-            navigator.geolocation.clearWatch(watchIdRef.current);
-            watchIdRef.current = null;
-          }
+          disableSharing();
         }
+        // POSITION_UNAVAILABLE (2) e TIMEOUT (3) são erros transitórios —
+        // watchPosition volta a tentar automaticamente, não fazemos nada
       },
-      { enableHighAccuracy: true, maximumAge: 20_000, timeout: 10_000 }
+      { enableHighAccuracy: false, maximumAge: 30_000, timeout: 30_000 }
     );
-  }, []);
+  }, [disableSharing]);
 
   // ── Stop GPS watch ───────────────────────────────────────────────────────
   const stopWatch = useCallback(() => {
@@ -205,12 +224,12 @@ export function useLocationSharing() {
     );
 
     if (newSharing) {
-      setPermissionDenied(false); // reset ao reativar — permissão pode ter sido concedida entretanto
+      setPermissionDenied(false); // reset — permissão pode ter sido concedida entretanto
       startWatch();
     } else {
       stopWatch();
     }
-  }, [myLocation, startWatch, stopWatch]);
+  }, [myLocation, startWatch, stopWatch, disableSharing]);
 
   // ── Initial load + start watch if already enabled ───────────────────────
   useEffect(() => {
