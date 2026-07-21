@@ -58,8 +58,8 @@ export function useLocationSharing() {
   const [loading,         setLoading]         = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
-  // Refs to avoid stale closures in watchPosition callbacks
-  const watchIdRef         = useRef<number | null>(null);
+  // Refs to avoid stale closures nos callbacks de geolocalização
+  const intervalIdRef      = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUploadedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const lastGeocodedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const userIdRef          = useRef<string | null>(null);
@@ -87,14 +87,12 @@ export function useLocationSharing() {
     setLoading(false);
   }, [spaceId, user?.id]);
 
-  // ── Start GPS watch ──────────────────────────────────────────────────────
-  const startWatch = useCallback(() => {
+  // ── Leitura única de posição e upload ───────────────────────────────────
+  const getAndUpload = useCallback(() => {
     if (!("geolocation" in navigator)) return;
-    if (watchIdRef.current !== null) return; // already watching
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        setPermissionDenied(false); // GPS funcionou — limpa erro anterior
+        setPermissionDenied(false);
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
         const uid = userIdRef.current;
         const sid = spaceIdRef.current;
@@ -102,13 +100,11 @@ export function useLocationSharing() {
 
         const current = { lat, lng };
 
-        // Só envia para o servidor se moveu >50m desde o último upload
         if (
           lastUploadedPosRef.current &&
           haversineMeters(lastUploadedPosRef.current, current) < 50
         ) return;
 
-        // Reverse geocode apenas se moveu >200m desde o último geocode
         let address: string | null = null;
         if (
           !lastGeocodedPosRef.current ||
@@ -144,28 +140,32 @@ export function useLocationSharing() {
         }));
       },
       (err) => {
-        // Mostra banner apenas para PERMISSION_DENIED (1)
-        // Não auto-desativa o sharing — o utilizador pode ter concedido permissão
-        // entretanto; o botão "Tentar novamente" na UI reinicia o watch
         if (err.code === 1 /* PERMISSION_DENIED */) {
           setPermissionDenied(true);
-          if (watchIdRef.current !== null) {
-            navigator.geolocation.clearWatch(watchIdRef.current);
-            watchIdRef.current = null;
+          if (intervalIdRef.current !== null) {
+            clearInterval(intervalIdRef.current);
+            intervalIdRef.current = null;
           }
         }
-        // POSITION_UNAVAILABLE (2) e TIMEOUT (3): erros transitórios, watchPosition
-        // volta a tentar automaticamente
+        // POSITION_UNAVAILABLE (2) e TIMEOUT (3): transitórios, próximo intervalo tenta de novo
       },
-      { enableHighAccuracy: false, maximumAge: 30_000, timeout: 30_000 }
+      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 30_000 }
     );
   }, []);
 
-  // ── Stop GPS watch ───────────────────────────────────────────────────────
+  // ── Start polling (getCurrentPosition a cada 30s) ────────────────────────
+  const startWatch = useCallback(() => {
+    if (!("geolocation" in navigator)) return;
+    if (intervalIdRef.current !== null) return; // already running
+    getAndUpload(); // leitura imediata
+    intervalIdRef.current = setInterval(getAndUpload, 30_000);
+  }, [getAndUpload]);
+
+  // ── Stop polling ─────────────────────────────────────────────────────────
   const stopWatch = useCallback(() => {
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
+    if (intervalIdRef.current !== null) {
+      clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
     }
   }, []);
 
@@ -232,8 +232,8 @@ export function useLocationSharing() {
             // Own row updated externally (e.g. from Settings toggle on another device)
             setMyLocation(row);
             mySharingRef.current = row.sharing_enabled;
-            if (row.sharing_enabled && watchIdRef.current === null) startWatch();
-            if (!row.sharing_enabled && watchIdRef.current !== null) stopWatch();
+            if (row.sharing_enabled && intervalIdRef.current === null) startWatch();
+            if (!row.sharing_enabled && intervalIdRef.current !== null) stopWatch();
           } else {
             setPartnerLocation(row);
           }
@@ -248,12 +248,9 @@ export function useLocationSharing() {
 
   const retryWatch = useCallback(() => {
     setPermissionDenied(false);
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
+    stopWatch();
     startWatch();
-  }, [startWatch]);
+  }, [startWatch, stopWatch]);
 
   return {
     myLocation,
