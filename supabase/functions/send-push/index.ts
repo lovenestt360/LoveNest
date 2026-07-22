@@ -68,13 +68,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { couple_space_id, title, body, url, type, is_test, template_key } = await req.json();
+    // Read body once — HTTP request stream can only be consumed once.
+    const payload = await req.json();
+    const { couple_space_id, title, body: notifBody, url, type, is_test, template_key, ping } = payload;
     await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, template_key });
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     let finalTitle = title;
-    let finalBody = body;
+    let finalBody = notifBody;
     let finalType = type || "chat";
 
     if (template_key) {
@@ -84,7 +86,7 @@ Deno.serve(async (req) => {
         .eq("key", template_key)
         .eq("is_active", true)
         .maybeSingle();
-      
+
       if (!templateError && template) {
         finalTitle = template.title;
         finalBody = template.body;
@@ -95,16 +97,14 @@ Deno.serve(async (req) => {
     // Get Sender ID from Token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
-    
-    // If auth fails, we check if it was just a ping
+
     if (userError || !user) {
       await logInternal("AUTH_VERIFY_FAILED", { userError, token_preview: token.substring(0, 10) });
-      
-      // If it's a manual ping from debug console, allow it to return config info
-      const { ping } = await req.json().catch(() => ({}));
+
+      // Debug ping — extracted from the already-parsed body above
       if (ping) {
-        return new Response(JSON.stringify({ 
-          status: "Function reachable", 
+        return new Response(JSON.stringify({
+          status: "Function reachable",
           auth_error: userError?.message,
           config: { url: !!supabaseUrl, pub: !!vapidPublicKey, priv: !!vapidPrivateKey }
         }), {
