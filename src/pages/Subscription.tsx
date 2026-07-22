@@ -33,6 +33,12 @@ const FEATURE_LABELS: Record<string, string> = {
     stats: "Estatísticas do casal",
     time_capsules: "Cápsulas do tempo",
     challenges: "Desafios de casal",
+    wrapped: "LoveWrapped anual",
+    lovestreak: "Jornada e missões",
+    descobrir: "Descobrir",
+    biblioteca: "Biblioteca de leitura",
+    location_sharing: "Partilha de localização",
+    historia: "A nossa história",
 };
 
 const resolveFeatureLabel = (feat: string) => FEATURE_LABELS[feat] ?? feat;

@@ -96,7 +96,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "feature_flags" | "biblioteca">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca">("overview");
     const [verifications, setVerifications] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
