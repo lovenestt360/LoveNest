@@ -8,6 +8,7 @@ import {
   Plane, Coffee, Car, Footprints,
   Home, Briefcase, ShoppingBag, Dumbbell, Church,
   Battery, BatteryLow, BatteryCharging, Wifi, Signal,
+  Moon, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -116,44 +117,165 @@ function NetworkIcon({ type }: { type: string | null }) {
   );
 }
 
-// ── Magic message — interpreta dados emocionalmente ──────────────────────────
+// ── Daily variety system ──────────────────────────────────────────────────────
 
-function magicMessage(
-  myReal: boolean,
-  partnerReal: boolean,
-  distance: number | null,
+const DAILY_TAGLINES = [
+  'A pensar em ti.',
+  'A sorrir por ti.',
+  'Mais perto do que parece.',
+  'O coração nunca se esquece.',
+  'Sempre presente, mesmo longe.',
+  'A cada momento, lembro-me de ti.',
+  'O amor não conhece distâncias.',
+  'Ligados pelo coração.',
+  'Juntos, de alguma forma.',
+  'O dia fica melhor ao teu lado.',
+  'Com saudade tua.',
+  'Perto no coração.',
+  'Sempre na memória.',
+  'A distância é apenas um número.',
+];
+
+const DAILY_RING_COLORS = [
+  '#C4788C', '#B8607C', '#D08898', '#C07080',
+  '#CC7888', '#B86070', '#D09090', '#C86888',
+];
+
+function dailyIndex(len: number): number {
+  const d = new Date();
+  const dayOfYear = Math.floor(
+    (d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000,
+  );
+  return (d.getFullYear() * 500 + dayOfYear) % len;
+}
+
+// ── Diary entry type (shared between component and helpers) ───────────────────
+
+type DiaryEntry =
+  | { kind: 'meeting'; id: string; time: Date; placeName: string | null }
+  | { kind: 'arrive'; id: string; time: Date; placeName: string }
+  | { kind: 'leave'; id: string; time: Date; placeName: string };
+
+// ── Contextual messages — special situations ──────────────────────────────────
+
+interface CtxMsg { Icon: LucideIcon; headline: string; sub: string }
+
+function getContextualMsg(
+  diary: DiaryEntry[],
   partnerPlaceName: string | null,
+  myPlaceName: string | null,
   partnerName: string,
-): { headline: string; sub: string } | null {
-  if (!myReal && !partnerReal) return null;
-  if (myReal && partnerReal && distance !== null) {
-    if (distance < 100)
-      return { headline: 'Estão juntos neste momento', sub: 'O melhor sítio do mundo é ao lado do outro' };
-    if (distance < 500)
-      return { headline: 'A distância nunca foi tão pequena', sub: `Estão a apenas ${Math.round(distance)} m um do outro` };
-    if (distance < 2000)
-      return { headline: 'Tão perto, tão perto', sub: `${(distance / 1000).toFixed(1)} km e um coração a pensar no outro` };
-    const atHome = partnerPlaceName && /\bcasa\b|\bhome\b/i.test(partnerPlaceName);
-    if (atHome)
-      return { headline: `${partnerName} já chegou a casa`, sub: `A ${(distance / 1000).toFixed(1)} km — o dia acabou para os dois` };
-    return { headline: 'Mesmo longe, continuam ligados', sub: `A ${(distance / 1000).toFixed(1)} km um do outro` };
-  }
-  if (myReal && !partnerReal)
-    return { headline: 'A tua presença está ativa', sub: `${partnerName} sabe onde estás` };
-  if (!myReal && partnerReal)
-    return { headline: `${partnerName} está presente`, sub: 'Ativa a tua presença para estarem mais perto' };
+): CtxMsg | null {
+  const hour = new Date().getHours();
+  const atHome = (name: string | null) => name != null && /\bcasa\b|\bhome\b/i.test(name);
+
+  if (atHome(partnerPlaceName) && atHome(myPlaceName) && hour >= 20)
+    return { Icon: Moon, headline: 'Boa noite aos dois', sub: 'O dia terminou com os dois em casa' };
+
+  const recentHome = diary.find(
+    e => e.kind === 'arrive' && atHome(e.placeName) && Date.now() - e.time.getTime() < 30 * 60_000,
+  );
+  if (recentHome)
+    return { Icon: Home, headline: 'O dia terminou em segurança', sub: `${partnerName} já está em casa` };
+
   return null;
 }
 
-function MagicHeroCard({ headline, sub }: { headline: string; sub: string }) {
+// ── PresenceHero — círculo emocional de abertura ─────────────────────────────
+
+function PresenceHero({
+  partnerName,
+  partnerAvatarUrl,
+  partnerInitial,
+  state,
+  tagline,
+  ringColor,
+  stateFlash,
+}: {
+  partnerName: string;
+  partnerAvatarUrl?: string | null;
+  partnerInitial: string;
+  state: string;
+  tagline: string;
+  ringColor: string;
+  stateFlash: boolean;
+}) {
   return (
-    <div className="mx-4 mt-3 mb-2 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border border-rose-100/80 dark:border-rose-900/30 px-4 py-3.5 flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
-        <Heart className="w-4 h-4 text-rose-400" strokeWidth={2} fill="currentColor" />
+    <div className="mx-4 mt-3 mb-2 rounded-3xl border border-rose-100/50 dark:border-rose-900/25 bg-gradient-to-b from-rose-50/70 to-transparent dark:from-rose-950/15 dark:to-transparent px-4 py-5 flex flex-col items-center text-center">
+      <p className="text-[9px] font-bold text-rose-400/60 uppercase tracking-[0.18em] mb-3">
+        Presença Atual
+      </p>
+
+      <div className="relative mb-4">
+        {/* Soft glow — intensifica quando estado muda */}
+        <div
+          className="absolute inset-0 rounded-full transition-opacity duration-700"
+          style={{
+            background: ringColor,
+            filter: 'blur(14px)',
+            transform: 'scale(1.35)',
+            opacity: stateFlash ? 0.45 : 0.12,
+          }}
+        />
+        {/* Avatar */}
+        <div
+          className="relative w-20 h-20 rounded-full overflow-hidden"
+          style={{ boxShadow: `0 0 0 2.5px white, 0 0 0 4.5px ${ringColor}` }}
+        >
+          {partnerAvatarUrl ? (
+            <img src={partnerAvatarUrl} className="w-full h-full object-cover" alt="" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center" style={{ background: '#6B7280' }}>
+              <span className="text-white font-bold text-2xl">{partnerInitial}</span>
+            </div>
+          )}
+        </div>
+        {/* Coração badge */}
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-card border-2 border-background flex items-center justify-center shadow-sm">
+          <Heart className="w-3 h-3 text-rose-400" strokeWidth={2} fill="currentColor" />
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-[13px] font-semibold text-rose-700 dark:text-rose-300 leading-tight">{headline}</p>
-        <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 mt-0.5 leading-tight">{sub}</p>
+
+      <p className="text-[18px] font-semibold text-foreground leading-tight">{partnerName}</p>
+      {state && (
+        <p className={`text-[13px] mt-1 transition-colors duration-500 ${stateFlash ? 'text-rose-400' : 'text-muted-foreground'}`}>
+          {state}
+        </p>
+      )}
+      <p className="text-[12px] text-rose-500/50 dark:text-rose-400/40 mt-2.5 italic leading-relaxed">
+        {tagline}
+      </p>
+    </div>
+  );
+}
+
+// ── MomentoEspecial — quando estão juntos (<100m) ────────────────────────────
+
+function MomentoEspecial({ onNavigate }: { onNavigate: (path: string) => void }) {
+  return (
+    <div className="mx-4 mb-3 rounded-2xl bg-rose-50/90 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 px-4 py-4">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+          <Sparkles className="w-3 h-3 text-rose-400" strokeWidth={2} />
+        </div>
+        <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-300">Momento Especial</p>
+      </div>
+      <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 mb-3 leading-relaxed">
+        Vocês estão juntos agora. Que tal aproveitar este momento?
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onNavigate('/memorias')}
+          className="flex-1 py-2 rounded-xl bg-white/80 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 text-[11px] font-medium text-rose-500 active:scale-95 transition-all"
+        >
+          Criar Memória
+        </button>
+        <button
+          onClick={() => onNavigate('/historia')}
+          className="flex-1 py-2 rounded-xl bg-white/80 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 text-[11px] font-medium text-rose-500 active:scale-95 transition-all"
+        >
+          Nossa História
+        </button>
       </div>
     </div>
   );
@@ -318,8 +440,12 @@ export default function Localizacao() {
   // Rota de hoje do parceiro
   const { partnerPath } = useLocationHistory(partnerLocation?.user_id ?? null);
 
-  // Magic message
-  const magic = magicMessage(myReal, partnerReal, distance, partnerPlaceName, partner?.display_name ?? 'O teu par');
+  // Daily variety
+  const todayTagline  = DAILY_TAGLINES[dailyIndex(DAILY_TAGLINES.length)];
+  const todayRingColor = DAILY_RING_COLORS[dailyIndex(DAILY_RING_COLORS.length)];
+
+  // My own place detection (for "both at home" logic)
+  const myPlaceName = myReal && myLocation ? detectPlace(myLocation.lat, myLocation.lng) : null;
 
   // Partner state change flash animation
   const [stateFlash, setStateFlash] = useState(false);
@@ -338,11 +464,6 @@ export default function Localizacao() {
   }, [partnerCtx.label]);
 
   // Unified diary: meetings + activity events in one chronological list
-  type DiaryEntry =
-    | { kind: 'meeting'; id: string; time: Date; placeName: string | null }
-    | { kind: 'arrive'; id: string; time: Date; placeName: string }
-    | { kind: 'leave'; id: string; time: Date; placeName: string };
-
   const diary = useMemo<DiaryEntry[]>(() => {
     const entries: DiaryEntry[] = [
       ...todayMoments.map(m => ({
@@ -360,6 +481,14 @@ export default function Localizacao() {
     ];
     return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
   }, [todayMoments, partnerTodayEvents]);
+
+  // Contextual message (Boa noite, segurança)
+  const contextualMsg = getContextualMsg(
+    diary,
+    partnerPlaceName,
+    myPlaceName,
+    partner?.display_name ?? 'O teu par',
+  );
 
   // ── Smart camera — only re-fits when visible marker count changes ──
   const prevCountRef = useRef(0);
@@ -460,7 +589,7 @@ export default function Localizacao() {
           <ArrowLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
         </button>
 
-        <h1 className="text-base font-semibold text-foreground">Onde Estamos</h1>
+        <h1 className="text-base font-semibold text-foreground">Presença</h1>
 
         <button
           onClick={toggleSharing}
@@ -504,84 +633,72 @@ export default function Localizacao() {
           </div>
         )}
 
-        {/* ── Mensagem mágica — interpretação emocional dos dados ── */}
-        {magic && <MagicHeroCard headline={magic.headline} sub={magic.sub} />}
-
-        {/* ── Cartão do par ── */}
-        <div className="px-4 pt-2 pb-2">
-          {loading ? (
-            <div className="glass-card p-4 animate-pulse flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-muted shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-muted rounded-full w-28" />
-                <div className="h-3 bg-muted rounded-full w-20" />
-                <div className="h-3 bg-muted rounded-full w-16" />
-              </div>
+        {/* ── Presence Hero ── */}
+        {loading ? (
+          <div className="mx-4 mt-3 mb-2 rounded-3xl bg-muted/30 animate-pulse" style={{ height: 196 }} />
+        ) : partnerSharing && partnerLocation ? (
+          <PresenceHero
+            partnerName={partner?.display_name ?? 'O teu par'}
+            partnerAvatarUrl={partner?.avatar_url}
+            partnerInitial={partnerInitial}
+            state={partnerCtx.label}
+            tagline={todayTagline}
+            ringColor={todayRingColor}
+            stateFlash={stateFlash}
+          />
+        ) : !loading ? (
+          <div className="mx-4 mt-3 mb-2 rounded-3xl border border-border/30 glass-card p-4 flex items-center gap-4 opacity-70">
+            <div className="w-14 h-14 rounded-full bg-muted shrink-0 flex items-center justify-center">
+              <span className="text-muted-foreground font-bold text-xl">{partnerInitial}</span>
             </div>
-          ) : partnerSharing && partnerLocation ? (
-            <div
-              className={`glass-card p-4 flex items-center gap-4 transition-all duration-700 ${
-                stateFlash ? 'ring-1 ring-rose-300/40 dark:ring-rose-700/30' : ''
-              }`}
-            >
-              {/* Partner avatar */}
-              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-offset-2 ring-offset-background ring-border/40">
-                {partner?.avatar_url ? (
-                  <img src={partner.avatar_url} className="w-full h-full object-cover" alt="" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ background: '#6B7280' }}>
-                    <span className="text-white font-bold text-2xl">{partnerInitial}</span>
-                  </div>
-                )}
-              </div>
+            <div>
+              <p className="text-[15px] font-semibold text-foreground">{partner?.display_name ?? 'O teu par'}</p>
+              <p className="text-[12px] text-muted-foreground/60 mt-0.5">Não está presente de momento</p>
+            </div>
+          </div>
+        ) : null}
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[16px] font-semibold text-foreground leading-tight">
-                  {partner?.display_name ?? 'O teu par'}
-                </p>
-                {partnerCtx.label && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <partnerCtx.Icon className="w-3 h-3 text-rose-400 shrink-0" strokeWidth={2} />
-                    <p className="text-[12px] text-muted-foreground truncate">{partnerCtx.label}</p>
-                  </div>
-                )}
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
-                    <p className="text-[11px] text-muted-foreground/60">{timeAgo(partnerLocation.updated_at)}</p>
-                  </div>
-                  {distance !== null && (
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-3 h-3 text-rose-300 shrink-0" strokeWidth={2} fill="currentColor" />
-                      <p className="text-[11px] font-medium text-rose-400">{emotionalDistance(distance)}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Battery + network + live badge */}
-              <div className="shrink-0 flex flex-col items-end gap-1.5">
+        {/* ── Info strip (distância · tempo · bateria · rede) ── */}
+        {partnerSharing && partnerLocation && (
+          <div className="mx-4 mb-2 flex items-center justify-between px-1">
+            <div className="flex items-center gap-3">
+              {distance !== null && (
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
+                  <Heart className="w-3 h-3 text-rose-300 shrink-0" strokeWidth={2} fill="currentColor" />
+                  <span className="text-[11px] font-medium text-rose-400">{emotionalDistance(distance)}</span>
                 </div>
-                <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-                <NetworkIcon type={partnerLocation.network_type ?? null} />
+              )}
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+                <span className="text-[11px] text-muted-foreground/60">{timeAgo(partnerLocation.updated_at)}</span>
               </div>
             </div>
-          ) : (
-            <div className="glass-card p-4 flex items-center gap-4 opacity-70">
-              <div className="w-16 h-16 rounded-full bg-muted shrink-0 flex items-center justify-center">
-                <span className="text-muted-foreground font-bold text-2xl">{partnerInitial}</span>
-              </div>
-              <div>
-                <p className="text-[15px] font-semibold text-foreground">{partner?.display_name ?? 'O teu par'}</p>
-                <p className="text-[12px] text-muted-foreground/70 mt-0.5">Não está presente de momento</p>
+            <div className="flex items-center gap-2.5">
+              <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
+              <NetworkIcon type={partnerLocation.network_type ?? null} />
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* ── Momento Especial — estão juntos ── */}
+        {distance !== null && distance < 100 && (
+          <MomentoEspecial onNavigate={navigate} />
+        )}
+
+        {/* ── Mensagem contextual (Boa noite / segurança) ── */}
+        {contextualMsg && !(distance !== null && distance < 100) && (
+          <div className="mx-4 mb-3 rounded-2xl bg-rose-50/60 dark:bg-rose-950/15 border border-rose-100/60 dark:border-rose-900/30 px-4 py-3 flex items-center gap-3">
+            <contextualMsg.Icon className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-300">{contextualMsg.headline}</p>
+              <p className="text-[11px] text-rose-500/60 dark:text-rose-400/50 mt-0.5">{contextualMsg.sub}</p>
+            </div>
+          </div>
+        )}
 
         {/* ── Mapa ── */}
         <div
