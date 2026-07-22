@@ -124,7 +124,7 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
     }
 
     if (access === "paywall") {
-        return <Paywall />;
+        return <Paywall feature={requiredFeature} />;
     }
 
     return <Outlet />;
