@@ -121,6 +121,10 @@ export default function TimeCapsule() {
         .select("id")
         .single();
       if (error) throw error;
+      toast({
+        title: "Cápsula selada",
+        description: `Será aberta a ${format(new Date(sealedDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}.`,
+      });
       notifyPartner({ couple_space_id: houseId, title: "Cápsula do Tempo",
         body: "O teu par guardou uma memória para o futuro.", url: "/capsula", type: "memorias" });
       setNewMessage(""); setUnlockDate(""); setSelectedImage(null); setIsAdding(false);
