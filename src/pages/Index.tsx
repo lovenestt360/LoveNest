@@ -363,7 +363,7 @@ const Index = () => {
   // Evita o flash de cartões de casal antes do perfil carregar (profile
   // começa null, logo isSolo seria false por um instante para quem é solo).
   const profileReady = !profileLoading;
-  const { streak: streakData } = useStreak();
+  const { streak: streakData, loading: streakLoading } = useStreak();
   const { pendingMilestone, recentMilestone, confirmMilestone } = useMilestone(
     streakData?.currentStreak ?? 0,
     spaceId
@@ -597,7 +597,7 @@ const Index = () => {
 
         {profileReady && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: "80ms" }}>
-            <LoveStreakCard />
+            <LoveStreakCard streak={streakData} loading={streakLoading} />
             {/* Milestone micro-memory — visible for 24h after any streak milestone */}
             {recentMilestone && (
               <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 mt-1.5 animate-in fade-in duration-500">

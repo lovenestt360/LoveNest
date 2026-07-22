@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { todayLocal } from "@/lib/timezone";
-import { useStreak } from "@/features/streak/useStreak";
+import { type StreakState } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
 import { getJourneyLevel, getStreakLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
@@ -298,13 +298,12 @@ function useCardData(threshold: number) {
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-export function LoveStreakCard() {
-  const { streak, loading } = useStreak();
+export function LoveStreakCard({ streak, loading }: { streak: StreakState; loading: boolean }) {
   const { profile }         = useProfile();
 
   const isSolo          = profile?.usage_mode === "solo";
   const hasSpiritual    = profile?.religion !== "none";
-  const threshold        = isSolo ? 1 : (streak?.totalMembers ?? 2);
+  const threshold        = isSolo ? 1 : Math.max(streak.totalMembers, 2);
   const { points, lifetimePoints, missions } = useCardData(threshold);
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();

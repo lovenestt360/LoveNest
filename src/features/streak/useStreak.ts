@@ -270,15 +270,13 @@ export function useStreak() {
     return () => clearInterval(interval);
   }, [refresh]);
 
-  // Regresso à Home (keep-alive) e qualquer actividade registada — silencioso
+  // Regresso à Home (keep-alive) — silencioso
+  // Não escuta streak-updated: o canal Realtime daily_activity trata partner check-ins
+  // directamente; o próprio checkIn() já chama refresh() antes de despachar o evento.
   useEffect(() => {
     const h = () => refresh(true);
     window.addEventListener("home-visible", h);
-    window.addEventListener("streak-updated", h);
-    return () => {
-      window.removeEventListener("home-visible", h);
-      window.removeEventListener("streak-updated", h);
-    };
+    return () => window.removeEventListener("home-visible", h);
   }, [refresh]);
 
   // Rollover de meia-noite — silencioso (em hora local do utilizador)
