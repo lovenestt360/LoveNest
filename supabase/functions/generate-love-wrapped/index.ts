@@ -223,6 +223,18 @@ Deno.serve(async (req) => {
               }
             }
             console.log(`  - Push Sent: ${(subs as any[]).length} recipients`);
+
+            // Registar em notification_history para que smart-notifications
+            // não envie um segundo "wrapped_ready" (cooldown 72h)
+            for (const sub of (subs as any[])) {
+              if (sub.user_id) {
+                await sb.from("notification_history").insert({
+                  user_id: sub.user_id,
+                  couple_space_id: spaceId,
+                  rule_key: "wrapped_ready",
+                }).then(); // fire-and-forget, falha silenciosamente
+              }
+            }
           }
         } catch (pushErr: any) {
           console.error(`  - Push Failed for ${spaceId}:`, pushErr.message);
