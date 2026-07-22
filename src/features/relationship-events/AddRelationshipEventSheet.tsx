@@ -22,6 +22,8 @@ interface Props {
   onCreate: (userId: string, input: CreateRelationshipEventInput) => Promise<{ error: any }>;
   onUpdate: (id: string, input: Partial<CreateRelationshipEventInput>) => Promise<{ error: any }>;
   onCreated?: (title: string) => void;
+  defaultTitle?: string;
+  defaultDate?: string;
 }
 
 const EVENT_TYPES = Object.keys(EVENT_TYPE_CONFIG) as RelationshipEventType[];
@@ -77,6 +79,8 @@ export function AddRelationshipEventSheet({
   onCreate,
   onUpdate,
   onCreated,
+  defaultTitle,
+  defaultDate,
 }: Props) {
   const { toast } = useToast();
 
@@ -94,8 +98,8 @@ export function AddRelationshipEventSheet({
 
   useEffect(() => {
     if (!open) { setSaved(false); return; }
-    setTitle(editingEvent?.title ?? "");
-    setEventDate(editingEvent?.event_date ?? "");
+    setTitle(editingEvent?.title ?? defaultTitle ?? "");
+    setEventDate(editingEvent?.event_date ?? defaultDate ?? "");
     setEventType(editingEvent?.event_type ?? "custom");
     setDescription(editingEvent?.description ?? "");
     setImageFile(null);

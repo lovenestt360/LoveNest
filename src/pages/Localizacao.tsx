@@ -25,6 +25,10 @@ import { useLocationHistory } from '@/hooks/useLocationHistory';
 import { FavoritePlacesSection } from '@/features/location/FavoritePlacesSection';
 import { LocationNotifSettings } from '@/features/location/LocationNotifSettings';
 import { LocationOnboarding } from '@/features/location/LocationOnboarding';
+import { AddRelationshipEventSheet } from '@/features/relationship-events/AddRelationshipEventSheet';
+import { useRelationshipEvents } from '@/features/relationship-events/useRelationshipEvents';
+import { useAuth } from '@/features/auth/AuthContext';
+import { useCoupleSpaceId } from '@/hooks/useCoupleSpaceId';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -265,7 +269,13 @@ function PresenceHero({
 
 // ── MomentoEspecial — quando estão juntos (<100m) ────────────────────────────
 
-function MomentoEspecial({ onNavigate }: { onNavigate: (path: string) => void }) {
+function MomentoEspecial({
+  onNavigate,
+  onHistoria,
+}: {
+  onNavigate: (path: string) => void;
+  onHistoria: () => void;
+}) {
   return (
     <div className="mx-4 mb-3 rounded-2xl bg-rose-50/90 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 px-4 py-4">
       <div className="flex items-center gap-2 mb-2">
@@ -285,7 +295,7 @@ function MomentoEspecial({ onNavigate }: { onNavigate: (path: string) => void })
           Criar Memória
         </button>
         <button
-          onClick={() => onNavigate('/historia')}
+          onClick={onHistoria}
           className="flex-1 py-2 rounded-xl bg-white/80 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 text-[11px] font-medium text-rose-500 active:scale-95 transition-all"
         >
           Nossa História
@@ -377,6 +387,8 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
 export default function Localizacao() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const spaceId = useCoupleSpaceId();
   const {
     myLocation,
     partnerLocation,
@@ -390,6 +402,8 @@ export default function Localizacao() {
   } = useLocationSharing();
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
+  const { createEvent } = useRelationshipEvents(spaceId);
+  const [showHistoriaSheet, setShowHistoriaSheet] = useState(false);
 
   // Onboarding: mostrar na primeira visita
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -708,7 +722,10 @@ export default function Localizacao() {
 
         {/* ── Momento Especial — estão juntos ── */}
         {distance !== null && distance < 100 && (
-          <MomentoEspecial onNavigate={navigate} />
+          <MomentoEspecial
+            onNavigate={navigate}
+            onHistoria={() => setShowHistoriaSheet(true)}
+          />
         )}
 
         {/* ── Mensagem contextual (Boa noite / segurança) ── */}
@@ -969,6 +986,27 @@ export default function Localizacao() {
 
         <div className="h-6" />
       </div>
+
+      {/* ── Nossa História sheet — aberto pelo Momento Especial ── */}
+      <AddRelationshipEventSheet
+        open={showHistoriaSheet}
+        onOpenChange={setShowHistoriaSheet}
+        coupleSpaceId={spaceId ?? ''}
+        userId={user?.id ?? ''}
+        editingEvent={null}
+        onCreate={createEvent}
+        onUpdate={async () => ({ error: null })}
+        defaultTitle={
+          todayMoments[0]?.place_name
+            ? `Encontrámo-nos em ${todayMoments[0].place_name}`
+            : 'Encontrámo-nos'
+        }
+        defaultDate={new Date().toISOString().split('T')[0]}
+        onCreated={() => {
+          setShowHistoriaSheet(false);
+          navigate('/historia');
+        }}
+      />
 
       {/* ── Onboarding (primeira visita) ── */}
       {showOnboarding && <LocationOnboarding onClose={handleOnboardingClose} />}
