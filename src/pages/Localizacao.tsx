@@ -51,6 +51,20 @@ function timeAgo(iso: string): string {
   }
 }
 
+function shortTimeAgo(iso: string): string {
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1) return 'agora';
+    if (mins < 60) return `há ${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `há ${hrs}h`;
+    return `há ${Math.floor(hrs / 24)}d`;
+  } catch {
+    return '';
+  }
+}
+
 // Map of place icon keys to Lucide components
 const PLACE_ICON_MAP: Record<string, LucideIcon> = {
   Home, Briefcase, GraduationCap, Coffee, Heart,
@@ -660,25 +674,33 @@ export default function Localizacao() {
 
         {/* ── Info strip (distância · tempo · bateria · rede) ── */}
         {partnerSharing && partnerLocation && (
-          <div className="mx-4 mb-2 flex items-center justify-between px-1">
-            <div className="flex items-center gap-3">
-              {distance !== null && (
-                <div className="flex items-center gap-1">
+          <div className="mx-4 mb-3">
+            <div className="glass-card px-4 py-2.5 space-y-2">
+              {/* Linha 1: distância (esq) + AO VIVO (dir) */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <Heart className="w-3 h-3 text-rose-300 shrink-0" strokeWidth={2} fill="currentColor" />
-                  <span className="text-[11px] font-medium text-rose-400">{emotionalDistance(distance)}</span>
+                  <span className="text-[12px] font-medium text-rose-400 whitespace-nowrap">
+                    {distance !== null ? emotionalDistance(distance) : '—'}
+                  </span>
                 </div>
-              )}
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
-                <span className="text-[11px] text-muted-foreground/60">{timeAgo(partnerLocation.updated_at)}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-              <NetworkIcon type={partnerLocation.network_type ?? null} />
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
+              {/* Linha 2: tempo (esq) + bateria + rede (dir) */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+                  <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">
+                    {shortTimeAgo(partnerLocation.updated_at)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
+                  <NetworkIcon type={partnerLocation.network_type ?? null} />
+                </div>
               </div>
             </div>
           </div>
