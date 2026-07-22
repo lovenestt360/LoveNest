@@ -76,7 +76,7 @@ export function useLocationSharing() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [geoErrorMsg,      setGeoErrorMsg]      = useState<string | null>(null);
 
-  const intervalIdRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalIdRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUploadedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const lastGeocodedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const lastHistoryPosRef  = useRef<{ lat: number; lng: number; time: number } | null>(null);
@@ -116,6 +116,7 @@ export function useLocationSharing() {
 
         const current = { lat, lng };
         const speedKmh = speed !== null && speed !== undefined ? Math.round(speed * 3.6) : null;
+        speedRef.current = speedKmh;
 
         // Only upsert member_locations if moved > 50m
         const shouldUpload =
@@ -197,7 +198,7 @@ export function useLocationSharing() {
         if (err.code === 1) {
           setPermissionDenied(true);
           if (intervalIdRef.current !== null) {
-            clearInterval(intervalIdRef.current);
+            clearTimeout(intervalIdRef.current);
             intervalIdRef.current = null;
           }
         }
@@ -206,21 +207,27 @@ export function useLocationSharing() {
     );
   }, []);
 
-  // Adaptive interval: every 15s if moving fast, 30s normally
-  const speedRef = useRef<number | null>(null);
+  // Adaptive polling: 15s when moving fast (>20 km/h), 30s otherwise
+  const speedRef      = useRef<number | null>(null);
+  const scheduleNext  = useRef<(() => void) | null>(null);
+  scheduleNext.current = () => {
+    const delay = speedRef.current !== null && speedRef.current > 20 ? 15_000 : 30_000;
+    intervalIdRef.current = setTimeout(() => {
+      getAndUpload();
+      scheduleNext.current?.();
+    }, delay);
+  };
 
   const startWatch = useCallback(() => {
     if (!("geolocation" in navigator)) return;
     if (intervalIdRef.current !== null) return;
     getAndUpload();
-    intervalIdRef.current = setInterval(() => {
-      getAndUpload();
-    }, 30_000);
+    scheduleNext.current?.();
   }, [getAndUpload]);
 
   const stopWatch = useCallback(() => {
     if (intervalIdRef.current !== null) {
-      clearInterval(intervalIdRef.current);
+      clearTimeout(intervalIdRef.current);
       intervalIdRef.current = null;
     }
   }, []);
