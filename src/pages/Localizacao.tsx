@@ -451,7 +451,7 @@ export default function Localizacao() {
   const myName = profile?.display_name ?? 'O teu par';
   const { prefs: notifPrefs, updatePref } = useLocationNotifPrefs();
   const { partnerTodayEvents } = useLocationEvents(
-    myLocation, partnerLocation, places, myName, notifPrefs,
+    myLocation, partnerLocation, myName, notifPrefs,
   );
 
   // Contexto do par: verificar primeiro se está num local favorito

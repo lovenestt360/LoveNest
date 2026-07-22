@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAuth } from "@/features/auth/AuthContext";
 import type { LocationRecord } from "@/hooks/useLocationSharing";
-import type { FavoritePlace } from "@/hooks/useFavoritePlaces";
 import type { LocationNotifPrefs } from "@/hooks/useLocationNotifPrefs";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { useCallback } from "react";
 
 export interface LocationEvent {
   id: string;
@@ -31,23 +31,9 @@ function haversineMeters(
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
-function detectNearestPlace(
-  lat: number,
-  lng: number,
-  places: FavoritePlace[],
-): string | null {
-  for (const p of places) {
-    if (haversineMeters({ lat, lng }, { lat: p.lat, lng: p.lng }) <= p.radius_m) {
-      return p.name;
-    }
-  }
-  return null;
-}
-
 export function useLocationEvents(
   myLocation: LocationRecord | null,
   partnerLocation: LocationRecord | null,
-  places: FavoritePlace[],
   myName: string,
   notifPrefs: LocationNotifPrefs,
 ) {
@@ -55,8 +41,6 @@ export function useLocationEvents(
   const { user } = useAuth();
   const [partnerTodayEvents, setPartnerTodayEvents] = useState<LocationEvent[]>([]);
 
-  const prevPlaceRef = useRef<string | null | undefined>(undefined);
-  const hasInitRef = useRef(false);
   const proxNotifiedRef = useRef(false);
 
   // Fetch partner's events for today on mount
@@ -76,7 +60,7 @@ export function useLocationEvents(
 
   useEffect(() => { fetchPartnerEvents(); }, [fetchPartnerEvents]);
 
-  // Realtime: new partner events appear instantly in the timeline
+  // Realtime: partner events appear in the timeline as they arrive
   useEffect(() => {
     if (!spaceId || !user?.id) return;
     const ch = (supabase as any)
@@ -94,62 +78,7 @@ export function useLocationEvents(
     return () => { (supabase as any).removeChannel(ch); };
   }, [spaceId, user?.id]);
 
-  // Detect MY own place transitions → record event + optionally notify partner
-  useEffect(() => {
-    if (!spaceId || !user?.id) return;
-    if (!myLocation || (myLocation.lat === 0 && myLocation.lng === 0)) return;
-    if (places.length === 0) return;
-
-    const currentPlace = detectNearestPlace(myLocation.lat, myLocation.lng, places);
-
-    if (!hasInitRef.current) {
-      prevPlaceRef.current = currentPlace;
-      hasInitRef.current = true;
-      return;
-    }
-
-    if (currentPlace === prevPlaceRef.current) return;
-
-    const prevPlace = prevPlaceRef.current;
-    prevPlaceRef.current = currentPlace;
-
-    const record = (eventType: "enter" | "exit", placeName: string) =>
-      (supabase as any).from("location_events").insert({
-        couple_space_id: spaceId,
-        user_id: user.id,
-        event_type: eventType,
-        place_name: placeName,
-        occurred_at: new Date().toISOString(),
-      });
-
-    if (prevPlace != null) {
-      record("exit", prevPlace);
-      if (notifPrefs.notify_leaves) {
-        notifyPartner({
-          couple_space_id: spaceId,
-          title: myName,
-          body: `Saiu de ${prevPlace}`,
-          url: "/localizacao",
-          type: "location",
-        });
-      }
-    }
-
-    if (currentPlace != null) {
-      record("enter", currentPlace);
-      if (notifPrefs.notify_arrives) {
-        notifyPartner({
-          couple_space_id: spaceId,
-          title: myName,
-          body: `Chegou a ${currentPlace}`,
-          url: "/localizacao",
-          type: "location",
-        });
-      }
-    }
-  }, [spaceId, user?.id, myLocation, places, myName, notifPrefs]);
-
-  // Detect proximity → notify partner when both < 100 m
+  // Proximity detection — requires both positions client-side
   useEffect(() => {
     if (!spaceId || !notifPrefs.notify_proximity) return;
     if (!myLocation || !partnerLocation) return;

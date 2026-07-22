@@ -158,6 +158,11 @@ export function useLocationSharing() {
             .from("member_locations")
             .upsert(row, { onConflict: "user_id,couple_space_id" });
 
+          // Server-side geofence detection — runs even when useLocationEvents is unmounted
+          supabase.functions.invoke("geofence-check", {
+            body: { user_id: uid, couple_space_id: sid, lat, lng },
+          }).catch(() => {});
+
           setMyLocation(prev => ({
             ...(prev ?? {
               user_id: uid, accuracy: null, address: null,
