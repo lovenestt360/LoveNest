@@ -70,7 +70,7 @@ const RITUALS: Ritual[] = [
   {
     question: "Como podem surpreender-se um ao outro hoje?",
     Icon: Sparkles,
-    to: "/descobrir",
+    to: "/desafios",
     label: "Explorar juntos",
     bg: "bg-emerald-50 dark:bg-emerald-950/30",
     border: "border-emerald-100 dark:border-emerald-800/40",

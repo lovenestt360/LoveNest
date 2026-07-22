@@ -108,15 +108,6 @@ const FEATURE_INFO: Record<string, FeatureInfo> = {
             "Recompensas pela vossa consistência",
         ],
     },
-    descobrir: {
-        title: "Descobrir",
-        description: "Conteúdo e sugestões personalizadas para o vosso casal, renovadas cada semana.",
-        benefits: [
-            "Conteúdo personalizado para o vosso estilo de casal",
-            "Artigos, dicas e sugestões à medida",
-            "Novidades todas as semanas",
-        ],
-    },
     location_sharing: {
         title: "Partilha de Localização",
         description: "Saibam sempre onde está o vosso par, em tempo real e com total privacidade.",

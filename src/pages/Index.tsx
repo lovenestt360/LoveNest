@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckSquare, Smile, Camera, CalendarDays, BookHeart, CalendarHeart,
   HeartHandshake, MessageCircle, Heart,
-  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2, Compass
+  ArrowRight, Megaphone, Trophy, Clock, Sparkles, Share2
 } from "lucide-react";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { useProfile } from "@/hooks/useProfile";
@@ -773,14 +773,6 @@ const Index = () => {
             />
           )}
 
-           {isEnabled("home_descobrir") && (
-            <AppIconButton
-              icon={<Compass className="w-5 h-5" />}
-              label="Descobrir"
-              to="/descobrir"
-              color="text-emerald-500"
-            />
-          )}
         </div>
       </section>
 

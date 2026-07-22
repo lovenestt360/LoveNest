@@ -27,7 +27,6 @@ const DEFAULT_FEATURE_KEYS = [
   "home_ciclo",
   "home_rotina",
   "home_conflitos",
-  "home_descobrir",
   "home_localizacao",
   "system_premium"
 ];

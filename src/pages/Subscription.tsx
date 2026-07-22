@@ -35,7 +35,6 @@ const FEATURE_LABELS: Record<string, string> = {
     challenges: "Desafios de casal",
     wrapped: "LoveWrapped anual",
     lovestreak: "Jornada e missões",
-    descobrir: "Descobrir",
     biblioteca: "Biblioteca de leitura",
     location_sharing: "Partilha de localização",
     historia: "A nossa história",
