@@ -71,6 +71,7 @@ const defaultPrefs = {
   chat: true,
   humor: true,
   tarefas: true,
+  agenda: true,
   memorias: true,
   oracao: true,
   conflitos: true,
@@ -928,7 +929,8 @@ export default function Settings() {
                 {([
                   { key: 'chat',      label: 'Mensagens',  desc: 'Nova mensagem do teu par' },
                   { key: 'humor',     label: 'Humor',      desc: 'Quando o par partilha como se sente' },
-                  { key: 'tarefas',   label: 'Agenda',     desc: 'Tarefas e eventos pendentes' },
+                  { key: 'tarefas',   label: 'Tarefas',    desc: 'Tarefas atribuídas ou concluídas' },
+                  { key: 'agenda',    label: 'Agenda',      desc: 'Novos eventos e rotinas do casal' },
                   { key: 'memorias',  label: 'Memórias',   desc: 'Novas memórias adicionadas' },
                   { key: 'oracao',    label: 'Oração',     desc: 'Momento de oração em conjunto' },
                   { key: 'conflitos', label: 'Desabafos',  desc: 'Novos desabafos para resolver' },

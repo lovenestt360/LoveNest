@@ -36,6 +36,7 @@ const defaultPrefs = {
   chat: true,
   humor: true,
   tarefas: true,
+  agenda: true,
   memorias: true,
   oracao: true,
   conflitos: true,
@@ -203,7 +204,7 @@ export function useAppNotifications() {
           if (row.created_by === user.id) return;
           if (locationRef.current !== "/agenda") {
             setScheduleUnread((c) => c + 1);
-            if (getNotifPrefs().tarefas !== false) {
+            if (getNotifPrefs().agenda !== false) {
               toast({ title: "Novo evento", description: row.title });
             }
           }
@@ -217,8 +218,7 @@ export function useAppNotifications() {
           if (!row || row.user_id === user.id) return;
           if (locationRef.current !== "/agenda") {
             setScheduleUnread((c) => c + 1);
-            // using tarefas config as fallback for agenda/rotinas since agenda missing from toggles
-            if (getNotifPrefs().tarefas !== false) {
+            if (getNotifPrefs().agenda !== false) {
               toast({ title: "Rotina actualizada", description: row.title });
             }
           }
