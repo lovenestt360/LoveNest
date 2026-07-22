@@ -219,6 +219,29 @@ Deno.serve(async (req) => {
         // Healthy hours: 8h–22h
         if (localHour < 8 || localHour >= 22) continue;
 
+        // User notification settings — categories + preferred hour
+        const { data: userSettings } = await sb
+          .from("notification_settings")
+          .select("category, enabled, preferred_hour")
+          .eq("user_id", userId);
+
+        const categoryEnabled = (cat: string): boolean => {
+          const s = (userSettings || []).find((r: any) => r.category === cat);
+          return s ? s.enabled !== false : true; // default: enabled if no setting
+        };
+
+        const preferredHour: number | null = (() => {
+          const s = (userSettings || []).find((r: any) => r.preferred_hour != null);
+          return s?.preferred_hour ?? null;
+        })();
+
+        // If user set a preferred hour, only send within ±2h of that hour
+        if (preferredHour !== null) {
+          const diff = Math.abs(localHour - preferredHour);
+          const wrapped = Math.min(diff, 24 - diff);
+          if (wrapped > 2) continue;
+        }
+
         // Daily cap: max 2 smart notifications per user per day
         const todayStart = new Date(now);
         todayStart.setUTCHours(0, 0, 0, 0);
@@ -251,7 +274,7 @@ Deno.serve(async (req) => {
         let msg: { title: string; body: string } | null = null;
 
         // ── RULE 1: Perfect Day (highest emotional value) ───────────
-        if (!rule && isPerfectDay && myActiveToday) {
+        if (!rule && isPerfectDay && myActiveToday && categoryEnabled("engagement")) {
           const mKey = `perfect_day_${todayISO}`;
           if (!(await recentlySent(mKey))) {
             rule = mKey;
@@ -261,7 +284,7 @@ Deno.serve(async (req) => {
 
         // ── RULE 2: Streak Milestone ─────────────────────────────────
         const MILESTONES = [7, 14, 30, 50, 100, 365];
-        if (!rule && MILESTONES.includes(streak) && myActiveToday) {
+        if (!rule && MILESTONES.includes(streak) && myActiveToday && categoryEnabled("engagement")) {
           const mKey = `milestone_${streak}`;
           if (!(await recentlySent(mKey))) {
             rule = mKey;
@@ -271,7 +294,7 @@ Deno.serve(async (req) => {
         }
 
         // ── RULE 3: Capsule soon ─────────────────────────────────────
-        if (!rule && (capsules?.length ?? 0) > 0) {
+        if (!rule && (capsules?.length ?? 0) > 0 && categoryEnabled("system")) {
           if (!(await recentlySent("capsule_soon"))) {
             rule = "capsule_soon";
             msg  = pick(MSGS.capsule_soon);
@@ -279,7 +302,7 @@ Deno.serve(async (req) => {
         }
 
         // ── RULE 4: Wrapped ready ────────────────────────────────────
-        if (!rule && wrapped) {
+        if (!rule && wrapped && categoryEnabled("system")) {
           if (!(await recentlySent("wrapped_ready"))) {
             rule = "wrapped_ready";
             msg  = pick(MSGS.wrapped_ready);
@@ -290,7 +313,7 @@ Deno.serve(async (req) => {
         const flameRisk = isSolo
           ? (streak > 0 && localHour >= 19 && !myActiveToday)
           : (streak > 0 && localHour >= 19 && (!myActiveToday || !partnerActive));
-        if (!rule && flameRisk) {
+        if (!rule && flameRisk && categoryEnabled("engagement")) {
           if (!(await recentlySent("flame_risk"))) {
             rule = "flame_risk";
             msg  = pick(isSolo ? MSGS.flame_risk_solo : MSGS.flame_risk);
@@ -299,8 +322,8 @@ Deno.serve(async (req) => {
 
         // ── RULE 6: Partner Presence — só para casal ────────────────
         // ~35% dos triggers — mantém raro e significativo
-        if (!rule && !isSolo && partnerUserId && partnerActive && !myActiveToday) {
-          if (!(await recentlySent("partner_active")) && Math.random() <= 0.35) {
+        if (!rule && !isSolo && partnerUserId && partnerActive && !myActiveToday && categoryEnabled("partner")) {
+          if (!(await recentlySent("partner_active"))) {
             rule = "partner_active";
             msg  = pick(MSGS.partner_active);
           }
@@ -310,7 +333,7 @@ Deno.serve(async (req) => {
         const silentCondition = isSolo
           ? (!myActiveToday && localHour >= 19 && localHour < 21)
           : (!myActiveToday && !partnerActive && localHour >= 19 && localHour < 21);
-        if (!rule && silentCondition) {
+        if (!rule && silentCondition && categoryEnabled("emotion")) {
           if (!(await recentlySent("silent_day"))) {
             const { count: yesterdayCount } = await sb
               .from("daily_activity")
@@ -345,7 +368,7 @@ Deno.serve(async (req) => {
             ? (nowMs - new Date(recentAct.activity_date + "T00:00:00Z").getTime()) / 3600000
             : Infinity;
 
-          if (hoursInactive >= 48) {
+          if (hoursInactive >= 48 && categoryEnabled("emotion")) {
             if (!(await recentlySent("silent_day"))) {
               rule = "silent_day";
               msg  = pick(MSGS.silent_day);
