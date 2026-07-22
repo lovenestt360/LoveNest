@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
   try {
     const { data: spaces, error: err } = await sb
       .from("couple_spaces")
-      .select("id, streak_count, last_streak_date, members(user_id, profiles(display_name, timezone))");
+      .select("id, streak_count, last_streak_date, members(user_id)");
 
     if (err) throw err;
 
@@ -225,11 +225,17 @@ Deno.serve(async (req) => {
       // ── Per-member evaluation ─────────────────────────────────────
       for (const member of members) {
         const userId  = member.user_id;
-        const profile = (member.profiles as any) || {};
         const partner = members.find((m: any) => m.user_id !== userId);
 
+        // Fetch timezone from profiles (members.user_id has no FK so no auto-join)
+        const { data: profileData } = await sb
+          .from("profiles")
+          .select("timezone")
+          .eq("user_id", userId)
+          .maybeSingle();
+
         // Resolve user's local hour
-        const tz        = profile.timezone || "UTC";
+        const tz        = (profileData as any)?.timezone || "UTC";
         const localHour = parseInt(
           new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hour12: false }).format(now)
         );
