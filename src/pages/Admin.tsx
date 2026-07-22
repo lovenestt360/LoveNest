@@ -199,6 +199,8 @@ export default function Admin() {
         { id: "lovestreak", label: "Jornada" },
         { id: "descobrir", label: "Descobrir" },
         { id: "biblioteca", label: "Biblioteca" },
+        { id: "location_sharing", label: "Localização" },
+        { id: "historia", label: "Nossa História" },
     ];
 
     const { toast } = useToast();
