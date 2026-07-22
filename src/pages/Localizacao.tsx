@@ -29,6 +29,7 @@ import { AddRelationshipEventSheet } from '@/features/relationship-events/AddRel
 import { useRelationshipEvents } from '@/features/relationship-events/useRelationshipEvents';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useCoupleSpaceId } from '@/hooks/useCoupleSpaceId';
+import { cn } from '@/lib/utils';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -409,6 +410,7 @@ export default function Localizacao() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return localStorage.getItem('location-onboarding-seen') !== 'true';
   });
+  const [tab, setTab] = useState<'presenca' | 'config'>('presenca');
 
   const handleOnboardingClose = () => {
     localStorage.setItem('location-onboarding-seen', 'true');
@@ -635,330 +637,353 @@ export default function Localizacao() {
         </button>
       </div>
 
+      {/* ── Tab bar ── */}
+      <div className="shrink-0 flex border-b border-border/20 bg-background">
+        {(['presenca', 'config'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              'flex-1 py-2.5 text-[12px] font-semibold transition-all relative',
+              tab === t ? 'text-foreground' : 'text-muted-foreground/50',
+            )}
+          >
+            {t === 'presenca' ? 'Presença' : 'Configurações'}
+            {tab === t && (
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-rose-400" />
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto">
 
-        {/* Permission denied */}
-        {permissionDenied && (
-          <div className="mx-4 mt-3 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 space-y-2">
-            <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">
-              Acesso à localização bloqueado
-            </p>
-            <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 leading-relaxed">
-              Em{' '}
-              <span className="font-mono font-medium">chrome://settings/content/location</span>{' '}
-              remove este site dos bloqueados.
-            </p>
-            {geoErrorMsg && (
-              <p className="text-[10px] font-mono text-rose-400/50 break-all">{geoErrorMsg}</p>
-            )}
-            <button
-              onClick={retryWatch}
-              className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 underline underline-offset-2 active:opacity-60"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        )}
-
-        {/* ── Presence Hero ── */}
-        {loading ? (
-          <div className="mx-4 mt-3 mb-2 rounded-3xl bg-muted/30 animate-pulse" style={{ height: 196 }} />
-        ) : partnerSharing && partnerLocation ? (
-          <PresenceHero
-            partnerName={partner?.display_name ?? 'O teu par'}
-            partnerAvatarUrl={partner?.avatar_url}
-            partnerInitial={partnerInitial}
-            state={partnerCtx.label}
-            tagline={todayTagline}
-            ringColor={todayRingColor}
-            stateFlash={stateFlash}
-          />
-        ) : !loading ? (
-          <div className="mx-4 mt-3 mb-2 rounded-3xl border border-border/30 glass-card p-4 flex items-center gap-4 opacity-70">
-            <div className="w-14 h-14 rounded-full bg-muted shrink-0 flex items-center justify-center">
-              <span className="text-muted-foreground font-bold text-xl">{partnerInitial}</span>
-            </div>
-            <div>
-              <p className="text-[15px] font-semibold text-foreground">{partner?.display_name ?? 'O teu par'}</p>
-              <p className="text-[12px] text-muted-foreground/60 mt-0.5">Não está presente de momento</p>
-            </div>
-          </div>
-        ) : null}
-
-        {/* ── Info strip (distância · tempo · bateria · rede) ── */}
-        {partnerSharing && partnerLocation && (
-          <div className="mx-4 mb-3">
-            <div className="glass-card px-4 py-2.5 space-y-2">
-              {/* Linha 1: distância (esq) + AO VIVO (dir) */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Heart className="w-3 h-3 text-rose-300 shrink-0" strokeWidth={2} fill="currentColor" />
-                  <span className="text-[12px] font-medium text-rose-400 whitespace-nowrap">
-                    {distance !== null ? emotionalDistance(distance) : '—'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
-                </div>
-              </div>
-              {/* Linha 2: tempo (esq) + bateria + rede (dir) */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
-                  <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">
-                    {shortTimeAgo(partnerLocation.updated_at)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-                  <NetworkIcon type={partnerLocation.network_type ?? null} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Momento Especial — estão juntos ── */}
-        {distance !== null && distance < 100 && (
-          <MomentoEspecial
-            onNavigate={navigate}
-            onHistoria={() => setShowHistoriaSheet(true)}
-          />
-        )}
-
-        {/* ── Mensagem contextual (Boa noite / segurança) ── */}
-        {contextualMsg && !(distance !== null && distance < 100) && (
-          <div className="mx-4 mb-3 rounded-2xl bg-rose-50/60 dark:bg-rose-950/15 border border-rose-100/60 dark:border-rose-900/30 px-4 py-3 flex items-center gap-3">
-            <contextualMsg.Icon className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
-            <div className="min-w-0">
-              <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-300">{contextualMsg.headline}</p>
-              <p className="text-[11px] text-rose-500/60 dark:text-rose-400/50 mt-0.5">{contextualMsg.sub}</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Mapa ── */}
-        <div
-          className="mx-4 mt-1 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
-          style={{ height: 'clamp(200px, 42vh, 340px)' }}
-        >
-          {!loading && (
-            <Map
-              ref={mapRef}
-              mapboxAccessToken={MAPBOX_TOKEN}
-              mapStyle={mapStyle}
-              initialViewState={{ longitude: -9.1399, latitude: 38.7169, zoom: 12 }}
-              style={{ width: '100%', height: '100%' }}
-              onLoad={() => setMapLoaded(true)}
-              attributionControl={false}
-              reuseMaps
-            >
-              {/* Partner route today */}
-              {partnerPath.length >= 2 && (
-                <Source
-                  id="partner-route-src"
-                  type="geojson"
-                  data={{
-                    type: 'FeatureCollection',
-                    features: [{
-                      type: 'Feature',
-                      properties: {},
-                      geometry: { type: 'LineString', coordinates: partnerPath.map(p => [p.lng, p.lat]) },
-                    }],
-                  }}
-                >
-                  <Layer
-                    id="partner-route"
-                    type="line"
-                    paint={{ 'line-color': '#9CA3AF', 'line-opacity': 0.35, 'line-width': 2 }}
-                    layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-                  />
-                </Source>
-              )}
-
-              {/* Connecting line */}
-              {lineData && (
-                <Source id="couple-line-src" type="geojson" data={lineData}>
-                  <Layer
-                    id="couple-line"
-                    type="line"
-                    paint={{ 'line-color': '#C4788C', 'line-opacity': 0.28, 'line-width': 2.5, 'line-dasharray': [4, 3] }}
-                  />
-                </Source>
-              )}
-
-              {/* Favorite places */}
-              {places.map(place => {
-                const PlaceIc = PLACE_ICON_MAP[place.icon] ?? MapPin;
-                return (
-                  <Marker key={place.id} longitude={place.lng} latitude={place.lat} anchor="bottom">
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: 9,
-                        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
-                        border: '1.5px solid rgba(196,120,140,0.35)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
-                      }}>
-                        <PlaceIc style={{ width: 13, height: 13, color: '#C4788C', strokeWidth: 1.5 }} />
-                      </div>
-                      <div style={{
-                        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
-                        borderRadius: 5, padding: '1px 5px', fontSize: 9, fontWeight: 700,
-                        color: '#374151', whiteSpace: 'nowrap', maxWidth: 72,
-                        overflow: 'hidden', textOverflow: 'ellipsis',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-                      }}>
-                        {place.name}
-                      </div>
-                    </div>
-                  </Marker>
-                );
-              })}
-
-              {/* My marker */}
-              {myReal && myLocation && (
-                <Marker
-                  longitude={myLocation.lng}
-                  latitude={myLocation.lat}
-                  anchor="center"
-                  offset={distance !== null && distance < 150 && partnerReal ? [-28, 0] : [0, 0]}
-                >
-                  <AvatarMarker initial={myInitial} ring="#C4788C" size={44} />
-                </Marker>
-              )}
-
-              {/* Partner marker */}
-              {partnerReal && partnerLocation && (
-                <Marker
-                  longitude={partnerLocation.lng}
-                  latitude={partnerLocation.lat}
-                  anchor="center"
-                  offset={distance !== null && distance < 150 && myReal ? [28, 0] : [0, 0]}
-                >
-                  <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} ring="#6B7280" size={52} />
-                </Marker>
-              )}
-            </Map>
-          )}
-
-          {loading && <div className="absolute inset-0 bg-muted/30 animate-pulse" />}
-
-          {/* Status chips */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            {myReal && !isPaused && (
-              <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
-                <Heart className="w-2.5 h-2.5 text-rose-400 animate-pulse" strokeWidth={2} fill="currentColor" />
-                <span className="text-[10px] font-semibold text-rose-500">Presente</span>
-              </div>
-            )}
-            {isPaused && (
-              <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
-                <Pause className="w-2.5 h-2.5 text-muted-foreground" strokeWidth={2} />
-                <span className="text-[10px] font-semibold text-muted-foreground">Em pausa</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Partilha de presença ── */}
-        <div className="px-4 pt-3 pb-4 space-y-2">
-          <div className="glass-card p-4 space-y-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${mySharing && !isPaused ? 'bg-rose-50 dark:bg-rose-950/30' : 'bg-muted'}`}>
-                  <Heart className={`w-4 h-4 ${mySharing && !isPaused ? 'text-rose-400' : 'text-muted-foreground/40'}`} strokeWidth={1.5} />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[13px] font-medium text-foreground">Partilhar a minha presença</p>
-                  <p className="text-[11px] text-muted-foreground/60">
-                    {isPaused ? 'Presença em pausa' : mySharing ? 'O teu par sente que estás aqui' : 'O teu par não te consegue sentir'}
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={mySharing && !isPaused}
-                onCheckedChange={() => { if (isPaused) handleResume(); else toggleSharing(); }}
-              />
-            </div>
-
-            {mySharing && !isPaused && (
-              <div className="mt-3 pt-3 border-t border-border/30">
+        {/* ── Aba: Presença ── */}
+        {tab === 'presenca' && (
+          <>
+            {/* Permission denied */}
+            {permissionDenied && (
+              <div className="mx-4 mt-3 rounded-2xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 space-y-2">
+                <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">
+                  Acesso à localização bloqueado
+                </p>
+                <p className="text-[11px] text-rose-500/70 dark:text-rose-400/60 leading-relaxed">
+                  Em{' '}
+                  <span className="font-mono font-medium">chrome://settings/content/location</span>{' '}
+                  remove este site dos bloqueados.
+                </p>
+                {geoErrorMsg && (
+                  <p className="text-[10px] font-mono text-rose-400/50 break-all">{geoErrorMsg}</p>
+                )}
                 <button
-                  onClick={() => setShowPauseMenu(v => !v)}
-                  className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={retryWatch}
+                  className="text-[11px] font-semibold text-rose-500 dark:text-rose-400 underline underline-offset-2 active:opacity-60"
                 >
-                  <Pause className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  Pausar por...
+                  Tentar novamente
                 </button>
-                {showPauseMenu && (
-                  <div className="mt-2.5 grid grid-cols-2 gap-2">
-                    {PAUSE_OPTIONS.map(opt => (
-                      <button
-                        key={opt.label}
-                        onClick={() => handlePause(opt)}
-                        className="py-2.5 px-3 rounded-xl bg-muted/50 hover:bg-muted text-[12px] text-muted-foreground active:scale-95 transition-all text-left"
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+              </div>
+            )}
+
+            {/* ── Presence Hero ── */}
+            {loading ? (
+              <div className="mx-4 mt-3 mb-2 rounded-3xl bg-muted/30 animate-pulse" style={{ height: 196 }} />
+            ) : partnerSharing && partnerLocation ? (
+              <PresenceHero
+                partnerName={partner?.display_name ?? 'O teu par'}
+                partnerAvatarUrl={partner?.avatar_url}
+                partnerInitial={partnerInitial}
+                state={partnerCtx.label}
+                tagline={todayTagline}
+                ringColor={todayRingColor}
+                stateFlash={stateFlash}
+              />
+            ) : !loading ? (
+              <div className="mx-4 mt-3 mb-2 rounded-3xl border border-border/30 glass-card p-4 flex items-center gap-4 opacity-70">
+                <div className="w-14 h-14 rounded-full bg-muted shrink-0 flex items-center justify-center">
+                  <span className="text-muted-foreground font-bold text-xl">{partnerInitial}</span>
+                </div>
+                <div>
+                  <p className="text-[15px] font-semibold text-foreground">{partner?.display_name ?? 'O teu par'}</p>
+                  <p className="text-[12px] text-muted-foreground/60 mt-0.5">Não está presente de momento</p>
+                </div>
+              </div>
+            ) : null}
+
+            {/* ── Info strip (distância · tempo · bateria · rede) ── */}
+            {partnerSharing && partnerLocation && (
+              <div className="mx-4 mb-3">
+                <div className="glass-card px-4 py-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Heart className="w-3 h-3 text-rose-300 shrink-0" strokeWidth={2} fill="currentColor" />
+                      <span className="text-[12px] font-medium text-rose-400 whitespace-nowrap">
+                        {distance !== null ? emotionalDistance(distance) : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] font-semibold text-emerald-500 tracking-wider">AO VIVO</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+                      <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">
+                        {shortTimeAgo(partnerLocation.updated_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
+                      <NetworkIcon type={partnerLocation.network_type ?? null} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Momento Especial — estão juntos ── */}
+            {distance !== null && distance < 100 && (
+              <MomentoEspecial
+                onNavigate={navigate}
+                onHistoria={() => setShowHistoriaSheet(true)}
+              />
+            )}
+
+            {/* ── Mensagem contextual (Boa noite / segurança) ── */}
+            {contextualMsg && !(distance !== null && distance < 100) && (
+              <div className="mx-4 mb-3 rounded-2xl bg-rose-50/60 dark:bg-rose-950/15 border border-rose-100/60 dark:border-rose-900/30 px-4 py-3 flex items-center gap-3">
+                <contextualMsg.Icon className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
+                <div className="min-w-0">
+                  <p className="text-[12px] font-semibold text-rose-600 dark:text-rose-300">{contextualMsg.headline}</p>
+                  <p className="text-[11px] text-rose-500/60 dark:text-rose-400/50 mt-0.5">{contextualMsg.sub}</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Mapa ── */}
+            <div
+              className="mx-4 mt-1 rounded-3xl overflow-hidden shadow-md border border-border/20 relative"
+              style={{ height: 'clamp(200px, 42vh, 340px)' }}
+            >
+              {!loading && (
+                <Map
+                  ref={mapRef}
+                  mapboxAccessToken={MAPBOX_TOKEN}
+                  mapStyle={mapStyle}
+                  initialViewState={{ longitude: -9.1399, latitude: 38.7169, zoom: 12 }}
+                  style={{ width: '100%', height: '100%' }}
+                  onLoad={() => setMapLoaded(true)}
+                  attributionControl={false}
+                  reuseMaps
+                >
+                  {partnerPath.length >= 2 && (
+                    <Source
+                      id="partner-route-src"
+                      type="geojson"
+                      data={{
+                        type: 'FeatureCollection',
+                        features: [{
+                          type: 'Feature',
+                          properties: {},
+                          geometry: { type: 'LineString', coordinates: partnerPath.map(p => [p.lng, p.lat]) },
+                        }],
+                      }}
+                    >
+                      <Layer
+                        id="partner-route"
+                        type="line"
+                        paint={{ 'line-color': '#9CA3AF', 'line-opacity': 0.35, 'line-width': 2 }}
+                        layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+                      />
+                    </Source>
+                  )}
+
+                  {lineData && (
+                    <Source id="couple-line-src" type="geojson" data={lineData}>
+                      <Layer
+                        id="couple-line"
+                        type="line"
+                        paint={{ 'line-color': '#C4788C', 'line-opacity': 0.28, 'line-width': 2.5, 'line-dasharray': [4, 3] }}
+                      />
+                    </Source>
+                  )}
+
+                  {places.map(place => {
+                    const PlaceIc = PLACE_ICON_MAP[place.icon] ?? MapPin;
+                    return (
+                      <Marker key={place.id} longitude={place.lng} latitude={place.lat} anchor="bottom">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
+                          <div style={{
+                            width: 30, height: 30, borderRadius: 9,
+                            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+                            border: '1.5px solid rgba(196,120,140,0.35)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                          }}>
+                            <PlaceIc style={{ width: 13, height: 13, color: '#C4788C', strokeWidth: 1.5 }} />
+                          </div>
+                          <div style={{
+                            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+                            borderRadius: 5, padding: '1px 5px', fontSize: 9, fontWeight: 700,
+                            color: '#374151', whiteSpace: 'nowrap', maxWidth: 72,
+                            overflow: 'hidden', textOverflow: 'ellipsis',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                          }}>
+                            {place.name}
+                          </div>
+                        </div>
+                      </Marker>
+                    );
+                  })}
+
+                  {myReal && myLocation && (
+                    <Marker
+                      longitude={myLocation.lng}
+                      latitude={myLocation.lat}
+                      anchor="center"
+                      offset={distance !== null && distance < 150 && partnerReal ? [-28, 0] : [0, 0]}
+                    >
+                      <AvatarMarker initial={myInitial} ring="#C4788C" size={44} />
+                    </Marker>
+                  )}
+
+                  {partnerReal && partnerLocation && (
+                    <Marker
+                      longitude={partnerLocation.lng}
+                      latitude={partnerLocation.lat}
+                      anchor="center"
+                      offset={distance !== null && distance < 150 && myReal ? [28, 0] : [0, 0]}
+                    >
+                      <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} ring="#6B7280" size={52} />
+                    </Marker>
+                  )}
+                </Map>
+              )}
+
+              {loading && <div className="absolute inset-0 bg-muted/30 animate-pulse" />}
+
+              <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+                {myReal && !isPaused && (
+                  <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
+                    <Heart className="w-2.5 h-2.5 text-rose-400 animate-pulse" strokeWidth={2} fill="currentColor" />
+                    <span className="text-[10px] font-semibold text-rose-500">Presente</span>
+                  </div>
+                )}
+                {isPaused && (
+                  <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-border/30">
+                    <Pause className="w-2.5 h-2.5 text-muted-foreground" strokeWidth={2} />
+                    <span className="text-[10px] font-semibold text-muted-foreground">Em pausa</span>
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
-            {isPaused && (
-              <div className="mt-3 pt-3 border-t border-border/30">
-                <button
-                  onClick={handleResume}
-                  className="w-full py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-500 text-[12px] font-semibold active:scale-95 transition-all border border-rose-100 dark:border-rose-900/30"
-                >
-                  Retomar presença
-                </button>
+            {/* ── Histórico ── */}
+            <div className="px-4 pt-3 pb-4">
+              <button
+                onClick={() => navigate('/localizacao/historico')}
+                className="w-full glass-card px-4 py-3.5 flex items-center gap-3 active:scale-[0.98] transition-all"
+              >
+                <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/25 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-[13px] font-semibold text-foreground">Histórico de Presença</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                    {diary.length > 0
+                      ? `${diary.length} ${diary.length === 1 ? 'evento' : 'eventos'} hoje`
+                      : 'Encontros, chegadas e saídas'}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+              </button>
+            </div>
+
+            <div className="h-4" />
+          </>
+        )}
+
+        {/* ── Aba: Configurações ── */}
+        {tab === 'config' && (
+          <>
+            {/* ── Partilha de presença ── */}
+            <div className="px-4 pt-4 pb-3 space-y-2">
+              <div className="glass-card p-4 space-y-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${mySharing && !isPaused ? 'bg-rose-50 dark:bg-rose-950/30' : 'bg-muted'}`}>
+                      <Heart className={`w-4 h-4 ${mySharing && !isPaused ? 'text-rose-400' : 'text-muted-foreground/40'}`} strokeWidth={1.5} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[13px] font-medium text-foreground">Partilhar a minha presença</p>
+                      <p className="text-[11px] text-muted-foreground/60">
+                        {isPaused ? 'Presença em pausa' : mySharing ? 'O teu par sente que estás aqui' : 'O teu par não te consegue sentir'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={mySharing && !isPaused}
+                    onCheckedChange={() => { if (isPaused) handleResume(); else toggleSharing(); }}
+                  />
+                </div>
+
+                {mySharing && !isPaused && (
+                  <div className="mt-3 pt-3 border-t border-border/30">
+                    <button
+                      onClick={() => setShowPauseMenu(v => !v)}
+                      className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Pause className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      Pausar por...
+                    </button>
+                    {showPauseMenu && (
+                      <div className="mt-2.5 grid grid-cols-2 gap-2">
+                        {PAUSE_OPTIONS.map(opt => (
+                          <button
+                            key={opt.label}
+                            onClick={() => handlePause(opt)}
+                            className="py-2.5 px-3 rounded-xl bg-muted/50 hover:bg-muted text-[12px] text-muted-foreground active:scale-95 transition-all text-left"
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isPaused && (
+                  <div className="mt-3 pt-3 border-t border-border/30">
+                    <button
+                      onClick={handleResume}
+                      className="w-full py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-500 text-[12px] font-semibold active:scale-95 transition-all border border-rose-100 dark:border-rose-900/30"
+                    >
+                      Retomar presença
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {!partnerSharing && !loading && (
-            <p className="text-[11px] text-muted-foreground/50 text-center pt-0.5">
-              Quando o teu par ativar a presença, vais sentir onde está.
-            </p>
-          )}
-        </div>
-
-        {/* ── Histórico — acesso ao diário completo ── */}
-        <div className="px-4 pb-4">
-          <button
-            onClick={() => navigate('/localizacao/historico')}
-            className="w-full glass-card px-4 py-3.5 flex items-center gap-3 active:scale-[0.98] transition-all"
-          >
-            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/25 flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+              {!partnerSharing && !loading && (
+                <p className="text-[11px] text-muted-foreground/50 text-center pt-0.5">
+                  Quando o teu par ativar a presença, vais sentir onde está.
+                </p>
+              )}
             </div>
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-[13px] font-semibold text-foreground">Histórico de Presença</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                {diary.length > 0
-                  ? `${diary.length} ${diary.length === 1 ? 'evento' : 'eventos'} hoje`
-                  : 'Encontros, chegadas e saídas'}
-              </p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
-          </button>
-        </div>
 
-        {/* ── Locais Favoritos ── */}
-        <FavoritePlacesSection
-          myLat={myReal && myLocation ? myLocation.lat : null}
-          myLng={myReal && myLocation ? myLocation.lng : null}
-        />
+            {/* ── Locais Favoritos ── */}
+            <FavoritePlacesSection
+              myLat={myReal && myLocation ? myLocation.lat : null}
+              myLng={myReal && myLocation ? myLocation.lng : null}
+            />
 
-        {/* ── Notificações inteligentes ── */}
-        <LocationNotifSettings prefs={notifPrefs} onUpdate={updatePref} />
+            {/* ── Notificações inteligentes ── */}
+            <LocationNotifSettings prefs={notifPrefs} onUpdate={updatePref} />
 
-        <div className="h-6" />
+            <div className="h-6" />
+          </>
+        )}
       </div>
 
       {/* ── Nossa História sheet — aberto pelo Momento Especial ── */}
