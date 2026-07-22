@@ -108,6 +108,16 @@ const COOLDOWNS: Record<string, number> = {
   milestone:     168, // 7 days
   capsule_soon:   48,
   wrapped_ready:  72,
+  // Ciclo menstrual (opt-in explícito)
+  ciclo_lembrete:           20,
+  ciclo_menstruacao:        12,
+  ciclo_fertil:             22,
+  // Jejum (opt-in via fasting_reminders)
+  fasting_registar_dia:     22,
+  fasting_oracao:           22,
+  fasting_motivacao_dia:    22,
+  fasting_hora_terminar:    23,
+  fasting_reflexao_noturna: 22,
 };
 
 // ── Deep-link per rule ────────────────────────────────────────────────
@@ -119,6 +129,14 @@ const RULE_URLS: Record<string, string> = {
   milestone:      "/jornada",
   capsule_soon:   "/capsula",
   wrapped_ready:  "/wrapped",
+  ciclo_lembrete:           "/ciclo",
+  ciclo_menstruacao:        "/ciclo",
+  ciclo_fertil:             "/ciclo",
+  fasting_registar_dia:     "/jornada-espiritual?tab=jejum",
+  fasting_oracao:           "/jornada-espiritual?tab=oracao",
+  fasting_motivacao_dia:    "/jornada-espiritual?tab=jejum",
+  fasting_hora_terminar:    "/jornada-espiritual?tab=jejum",
+  fasting_reflexao_noturna: "/jornada-espiritual?tab=jejum",
 };
 
 // ─────────────────────────────────────────────────────────────────────
@@ -235,6 +253,12 @@ Deno.serve(async (req) => {
           return s?.preferred_hour ?? null;
         })();
 
+        // Ciclo categories: strict opt-in (default false, never send unless user enabled)
+        const cicloEnabled = (cat: string): boolean => {
+          const s = (userSettings || []).find((r: any) => r.category === cat);
+          return s?.enabled === true;
+        };
+
         // If user set a preferred hour, only send within ±2h of that hour
         if (preferredHour !== null) {
           const diff = Math.abs(localHour - preferredHour);
@@ -272,6 +296,153 @@ Deno.serve(async (req) => {
 
         let rule: string | null = null;
         let msg: { title: string; body: string } | null = null;
+
+        // ── FASTING NOTIFICATIONS — lembrete de jejum ativo ─────────
+        // Utiliza fasting_reminders (boolean toggles) + fasting_profiles (plano ativo hoje)
+        if (!rule) {
+          const { data: fReminders } = await sb
+            .from("fasting_reminders")
+            .select("registar_dia, oracao, hora_terminar, reflexao_noturna, motivacao_dia")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          const hasAnyFastPref = fReminders && (
+            fReminders.registar_dia || fReminders.oracao ||
+            fReminders.hora_terminar || fReminders.reflexao_noturna ||
+            fReminders.motivacao_dia
+          );
+
+          if (hasAnyFastPref) {
+            const { data: fProfile } = await sb
+              .from("fasting_profiles")
+              .select("until_hour")
+              .eq("user_id", userId)
+              .eq("is_active", true)
+              .lte("start_date", todayISO)
+              .gte("end_date", todayISO)
+              .maybeSingle();
+
+            if (fProfile) {
+              // registar_dia: 8h–9h, só se o utilizador ainda não registou hoje
+              if (!rule && fReminders.registar_dia && localHour >= 8 && localHour < 9) {
+                const { data: todayLog } = await sb
+                  .from("fasting_day_logs")
+                  .select("id")
+                  .eq("user_id", userId)
+                  .eq("day_key", todayISO)
+                  .maybeSingle();
+                if (!todayLog && !(await recentlySent("fasting_registar_dia"))) {
+                  rule = "fasting_registar_dia";
+                  msg  = { title: "Jejum", body: "Ainda não registaste o teu dia de jejum." };
+                }
+              }
+
+              // oracao: 9h–10h
+              if (!rule && fReminders.oracao && localHour >= 9 && localHour < 10) {
+                if (!(await recentlySent("fasting_oracao"))) {
+                  rule = "fasting_oracao";
+                  msg  = { title: "Oração", body: "Um momento de oração para fortalecer o teu jejum." };
+                }
+              }
+
+              // motivacao_dia: 12h–13h
+              if (!rule && fReminders.motivacao_dia && localHour >= 12 && localHour < 13) {
+                if (!(await recentlySent("fasting_motivacao_dia"))) {
+                  rule = "fasting_motivacao_dia";
+                  msg  = { title: "O teu jejum", body: "Continua forte. O jejum é uma forma de cuidado." };
+                }
+              }
+
+              // hora_terminar: 25–35 minutos antes do fim do jejum
+              if (!rule && fReminders.hora_terminar && fProfile.until_hour) {
+                const [fhStr, fmStr] = (fProfile.until_hour as string).split(":");
+                const fastEndMin = parseInt(fhStr) * 60 + parseInt(fmStr || "0");
+                const nowMin     = localHour * 60 + now.getMinutes();
+                const remaining  = fastEndMin - nowMin;
+                if (remaining >= 25 && remaining <= 35) {
+                  if (!(await recentlySent("fasting_hora_terminar"))) {
+                    rule = "fasting_hora_terminar";
+                    msg  = { title: "O teu jejum", body: "O teu jejum termina em cerca de 30 minutos." };
+                  }
+                }
+              }
+
+              // reflexao_noturna: 20h–21h
+              if (!rule && fReminders.reflexao_noturna && localHour >= 20 && localHour < 21) {
+                if (!(await recentlySent("fasting_reflexao_noturna"))) {
+                  rule = "fasting_reflexao_noturna";
+                  msg  = { title: "Reflexão", body: "Um momento de reflexão sobre o teu dia de jejum." };
+                }
+              }
+            }
+          }
+        }
+
+        // ── CICLO NOTIFICATIONS — lembrete menstrual (opt-in explícito) ──
+        if (!rule) {
+          const cicloLembrete    = cicloEnabled("ciclo_lembrete");
+          const cicloMenstruacao = cicloEnabled("ciclo_menstruacao");
+          const cicloFertil      = cicloEnabled("ciclo_fertil");
+
+          if (cicloLembrete || cicloMenstruacao || cicloFertil) {
+            const { data: cycleProfile } = await sb
+              .from("cycle_profiles")
+              .select("avg_cycle_length, luteal_length")
+              .eq("user_id", userId)
+              .maybeSingle();
+
+            if (cycleProfile) {
+              const cycleLen  = (cycleProfile.avg_cycle_length as number) || 28;
+              const lutealLen = (cycleProfile.luteal_length as number) || 14;
+
+              const { data: lastPeriod } = await sb
+                .from("period_entries")
+                .select("start_date")
+                .eq("user_id", userId)
+                .order("start_date", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+              if (lastPeriod?.start_date) {
+                const lastStart  = new Date((lastPeriod.start_date as string) + "T00:00:00Z");
+                const nextStart  = new Date(lastStart.getTime() + cycleLen * 86400000);
+                const daysUntil  = Math.round((nextStart.getTime() - nowMs) / 86400000);
+
+                // Janela fértil: ovulação ≈ cycleLen − lutealLen dias após o início
+                const ovDay      = cycleLen - lutealLen;
+                const fertileFrom = new Date(lastStart.getTime() + (ovDay - 3) * 86400000);
+                const fertileTo   = new Date(lastStart.getTime() + (ovDay + 2) * 86400000);
+                const inFertile   = now >= fertileFrom && now <= fertileTo;
+
+                // ciclo_menstruacao: período esperado em 1–2 dias
+                if (!rule && cicloMenstruacao && (daysUntil === 1 || daysUntil === 2)) {
+                  if (!(await recentlySent("ciclo_menstruacao"))) {
+                    rule = "ciclo_menstruacao";
+                    msg  = { title: "O teu ciclo", body: daysUntil === 1
+                      ? "O teu período pode chegar amanhã."
+                      : "O teu período pode chegar em breve." };
+                  }
+                }
+
+                // ciclo_fertil: dentro da janela fértil
+                if (!rule && cicloFertil && inFertile) {
+                  if (!(await recentlySent("ciclo_fertil"))) {
+                    rule = "ciclo_fertil";
+                    msg  = { title: "O teu ciclo", body: "Estás na tua janela fértil." };
+                  }
+                }
+              }
+
+              // ciclo_lembrete: lembrete geral 8h–10h
+              if (!rule && cicloLembrete && localHour >= 8 && localHour < 10) {
+                if (!(await recentlySent("ciclo_lembrete"))) {
+                  rule = "ciclo_lembrete";
+                  msg  = { title: "O teu ciclo", body: "Consulta o teu ciclo menstrual." };
+                }
+              }
+            }
+          }
+        }
 
         // ── RULE 1: Perfect Day (highest emotional value) ───────────
         if (!rule && isPerfectDay && myActiveToday && categoryEnabled("engagement")) {

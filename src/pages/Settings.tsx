@@ -474,10 +474,24 @@ export default function Settings() {
     }
   };
 
+  const CICLO_NOTIF_KEYS = ["ciclo_lembrete", "ciclo_menstruacao", "ciclo_fertil"];
+
   const toggleNotif = (key: string) => {
     setNotifPrefs((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
+      const newEnabled = !prev[key];
+      const next = { ...prev, [key]: newEnabled };
       localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+      // Sincroniza prefs de ciclo com Supabase para o backend poder ler
+      if (CICLO_NOTIF_KEYS.includes(key) && user) {
+        supabase.from("notification_settings" as any).upsert({
+          user_id: user.id,
+          category: key,
+          enabled: newEnabled,
+          preferred_hour: preferredHour,
+        }, { onConflict: "user_id,category" }).then(({ error }: any) => {
+          if (error) console.error("ciclo notif sync:", error);
+        });
+      }
       return next;
     });
   };
