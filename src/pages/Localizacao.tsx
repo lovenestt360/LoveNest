@@ -8,7 +8,7 @@ import {
   Plane, Coffee, Car, Footprints,
   Home, Briefcase, ShoppingBag, Dumbbell, Church,
   Battery, BatteryLow, BatteryCharging, Wifi, Signal,
-  Moon, Sparkles,
+  Moon, Sparkles, ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -928,52 +928,26 @@ export default function Localizacao() {
           )}
         </div>
 
-        {/* ── Hoje — diário unificado ── */}
-        {diary.length > 0 && (
-          <div className="px-4 pb-4 space-y-2">
-            <p className="text-[12px] font-semibold text-muted-foreground/70 uppercase tracking-wider px-0.5">
-              Hoje
-            </p>
-            <div className="glass-card divide-y divide-border/20">
-              {diary.map(entry => {
-                const time = entry.time.toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' });
-                if (entry.kind === 'meeting') {
-                  return (
-                    <div key={entry.id} className="flex items-start gap-3 px-4 py-3">
-                      <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0 mt-0.5">
-                        <Heart className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} fill="currentColor" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-medium text-foreground leading-snug">
-                          Encontraram-se{entry.placeName ? ` em ${entry.placeName}` : ''}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/50 mt-0.5">{time}</p>
-                      </div>
-                    </div>
-                  );
-                }
-                const isArrive = entry.kind === 'arrive';
-                return (
-                  <div key={entry.id} className="flex items-start gap-3 px-4 py-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${isArrive ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-muted/50'}`}>
-                      {isArrive
-                        ? <MapPin className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.5} />
-                        : <Navigation className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-medium text-foreground leading-snug">
-                        {partner?.display_name ?? 'O teu par'}{' '}
-                        {isArrive ? `chegou a ${entry.placeName}` : `saiu de ${entry.placeName}`}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">{time}</p>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* ── Histórico — acesso ao diário completo ── */}
+        <div className="px-4 pb-4">
+          <button
+            onClick={() => navigate('/localizacao/historico')}
+            className="w-full glass-card px-4 py-3.5 flex items-center gap-3 active:scale-[0.98] transition-all"
+          >
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/25 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
             </div>
-          </div>
-        )}
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-[13px] font-semibold text-foreground">Histórico de Presença</p>
+              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                {diary.length > 0
+                  ? `${diary.length} ${diary.length === 1 ? 'evento' : 'eventos'} hoje`
+                  : 'Encontros, chegadas e saídas'}
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+          </button>
+        </div>
 
         {/* ── Locais Favoritos ── */}
         <FavoritePlacesSection

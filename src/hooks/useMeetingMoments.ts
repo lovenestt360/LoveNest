@@ -34,8 +34,12 @@ export function useMeetingMoments(
   const spaceId = useCoupleSpaceId();
   const [todayMoments, setTodayMoments] = useState<MeetingMoment[]>([]);
   const lastMeetingRef = useRef<Date | null>(null);
+  // Guard: prevent detection effect from running before fetchToday completes.
+  // Without this, the component mounts with lastMeetingRef=null, the detection
+  // effect fires immediately (before the async fetch sets lastMeetingRef to the
+  // most recent meeting), and a duplicate entry is recorded on every remount.
+  const fetchedRef = useRef(false);
 
-  // Fetch today's meetings on mount
   const fetchToday = useCallback(async () => {
     if (!spaceId) return;
     const today = new Date();
@@ -52,13 +56,18 @@ export function useMeetingMoments(
         lastMeetingRef.current = new Date((data as MeetingMoment[])[0].met_at);
       }
     }
+    fetchedRef.current = true;
   }, [spaceId]);
 
-  useEffect(() => { fetchToday(); }, [fetchToday]);
+  useEffect(() => {
+    fetchedRef.current = false;
+    fetchToday();
+  }, [fetchToday]);
 
   // Detect new meeting when both are within 100m
   useEffect(() => {
     if (!spaceId) return;
+    if (!fetchedRef.current) return; // wait for initial fetch before recording
     if (!mySharing || !partnerSharing) return;
     if (!myLocation || !partnerLocation) return;
 
