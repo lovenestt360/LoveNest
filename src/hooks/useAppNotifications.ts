@@ -391,7 +391,8 @@ export function useAppNotifications() {
       }
     };
 
-    refreshSubscription();
+    // Diferir 5s para não competir com queries críticas do arranque
+    const startTimer = setTimeout(refreshSubscription, 5000);
 
     const onSwMessage = (event: MessageEvent) => {
       if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED") {
@@ -400,7 +401,10 @@ export function useAppNotifications() {
     };
 
     navigator.serviceWorker.addEventListener("message", onSwMessage);
-    return () => navigator.serviceWorker.removeEventListener("message", onSwMessage);
+    return () => {
+      clearTimeout(startTimer);
+      navigator.serviceWorker.removeEventListener("message", onSwMessage);
+    };
   }, [user, spaceId]);
 
   return { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread, resetChatUnread, resetMoodUnread, resetTasksUnread, resetMemoriesUnread, resetScheduleUnread, resetPrayerUnread, resetComplaintsUnread, resetCapsuleUnread };
