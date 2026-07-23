@@ -273,15 +273,21 @@ export default function Jornada() {
   const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
 
   // ── Deteção de level-up entre sessões ──────────────────────────────────
-  // Chave por user.id (não spaceId) para cada membro ter a sua própria
-  // celebração. Só corre depois de lifetimePoints estar carregado (> 0)
-  // para evitar falsos positivos durante o loading inicial (0 → valor real).
+  // Chave por user.id — cada membro tem a sua própria celebração.
+  // Guard (currentStreak === 0) evita falsos positivos no loading inicial.
+  // stored = 0 → primeira visita ao Jornada: mostrar animação se level > 1
+  //              (o guard já garante que não é o estado vazio do loading).
+  // stored > 0 → visita de retorno: mostrar só quando o level subiu.
   const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
   useEffect(() => {
     if (!user?.id || currentStreak === 0) return;
     const key = `lovenest_last_streak_level_${user.id}`;
     const stored = parseInt(localStorage.getItem(key) ?? "0");
-    if (stored > 0 && streakPhase.level > stored) {
+    const neverStored = stored === 0;
+    const shouldShow = neverStored
+      ? streakPhase.level > 1              // Primeira visita: mostrar se acima de Faísca
+      : streakPhase.level > stored;        // Visita de retorno: mostrar só se subiu
+    if (shouldShow) {
       const prev = STREAK_LEVELS.find(l => l.level === stored);
       setLevelUpData({ prevName: prev?.name ?? "Faísca" });
       hapticCelebrate();
