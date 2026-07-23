@@ -2,23 +2,14 @@ import { useState } from "react";
 import { Download, X } from "lucide-react";
 import { usePWATutorial } from "./PWATutorialContext";
 
-const DISMISS_KEY = "lovenest_install_banner_v2";
-const DISMISS_MS  = 7 * 24 * 3600 * 1000; // volta em 7 dias
-
-function wasDismissed() {
-  try {
-    const ts = localStorage.getItem(DISMISS_KEY);
-    return ts ? Date.now() - parseInt(ts) < DISMISS_MS : false;
-  } catch { return false; }
-}
-
 // Banner fixo acima da barra de navegação inferior.
 // Android/Desktop → botão "Instalar" usa o prompt nativo (1 clique).
 // iOS             → botão "Como instalar" abre o modal passo a passo.
 // Desaparece se já estiver instalado como PWA.
+// Dismiss é só de sessão — volta ao refrescar a página.
 export function InstallBanner() {
   const { installPrompt, isIOS, setShowModal } = usePWATutorial();
-  const [dismissed, setDismissed] = useState(wasDismissed);
+  const [dismissed, setDismissed] = useState(false);
 
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -28,10 +19,7 @@ export function InstallBanner() {
   // Mostrar só se há prompt nativo (Android/Desktop) ou é iOS
   if (!installPrompt && !isIOS) return null;
 
-  const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, Date.now().toString());
-    setDismissed(true);
-  };
+  const dismiss = () => setDismissed(true);
 
   const handleAction = () => {
     if (installPrompt) {
