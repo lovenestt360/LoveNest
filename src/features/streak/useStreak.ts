@@ -203,23 +203,31 @@ export function useStreak() {
 
       const newState = buildState(raw, memberListCount);
 
-      // Timezone guard: o servidor usa o timezone do perfil para v_today.
-      // Se lastActiveDate (= last_streak_date, data em que ambos estiveram ativos)
-      // for anterior ao dia local, pode significar duas coisas:
-      //   A) Edge-case de timezone: servidor atrás do cliente (1h para UTC+1)
-      //   B) Normal: só um parceiro fez check-in hoje → streak ainda não avançou
+      // Timezone guard: o servidor usa profiles.timezone para calcular v_today.
+      // Se timezone estiver null, usa UTC como fallback — em fusos UTC+ o servidor
+      // pode estar "atrás" do cliente: server_today < localToday.
       //
-      // Em ambos os casos reseta bothActiveToday/activeCount (derivados do streak).
-      // NÃO reseta myCheckedIn: o servidor responde diretamente se ESTE utilizador
-      // fez check-in hoje — não depende de o parceiro também ter feito.
-      const localToday = todayLocal();
-      const staleServerDate =
-        newState.lastActiveDate !== null && newState.lastActiveDate < localToday;
-      // staleServerDate apenas afecta bothActiveToday (o streak ainda não avançou
-      // porque o parceiro ainda não fez check-in) — NÃO zeramos activeCount:
-      // o servidor responde com active_today=1 quando o utilizador já fez check-in,
-      // e esse valor é correcto mesmo que last_streak_date seja ontem.
-      const finalState: StreakState = staleServerDate
+      // Caso A — servidor atrás do cliente (timezone bug / profiles.timezone nulo):
+      //   server_today < localToday → o servidor devolveu dados de "ontem" como se
+      //   fossem de "hoje"; zeramos myCheckedIn e activeCount para não mostrar
+      //   corações acesos num novo dia sem check-in.
+      //
+      // Caso B — servidor correto mas só um parceiro fez check-in (normal):
+      //   server_today = localToday, lastActiveDate = ontem → zeramos só bothActiveToday.
+      const localToday      = todayLocal();
+      const serverToday     = raw.server_today as string | undefined;
+      const serverBehind    = serverToday !== undefined && serverToday < localToday;
+      const staleServerDate = newState.lastActiveDate !== null && newState.lastActiveDate < localToday;
+
+      const finalState: StreakState = serverBehind
+        ? {
+            ...newState,
+            myCheckedIn:     false,
+            activeCount:     0,
+            bothActiveToday: false,
+            streakAtRisk:    newState.currentStreak > 0,
+          }
+        : staleServerDate
         ? {
             ...newState,
             bothActiveToday: false,

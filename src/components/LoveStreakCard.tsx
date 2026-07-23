@@ -180,18 +180,22 @@ function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToda
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
 
-type CardCache = { points: number; lifetimePoints: number; missions: MissionStatus };
+type CardCache = { points: number; lifetimePoints: number; missions: MissionStatus; cacheDate?: string };
 
 function readCardCache(spaceId: string | null): CardCache | null {
   if (!spaceId) return null;
   try {
     const raw = sessionStorage.getItem(`ln_card_${spaceId}`);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const cached: CardCache = JSON.parse(raw);
+    // Missões são diárias — cache de outro dia deve ser descartada
+    if (cached.cacheDate !== todayLocal()) return null;
+    return cached;
   } catch { return null; }
 }
 
 function writeCardCache(spaceId: string, c: CardCache) {
-  try { sessionStorage.setItem(`ln_card_${spaceId}`, JSON.stringify(c)); } catch {}
+  try { sessionStorage.setItem(`ln_card_${spaceId}`, JSON.stringify({ ...c, cacheDate: todayLocal() })); } catch {}
 }
 
 const EMPTY_MISSIONS: MissionStatus = {
