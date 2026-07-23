@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
@@ -99,7 +99,47 @@ export default function Challenges() {
   const [completionPhrase, setCompletionPhrase] = useState(MEMORY_PHRASES[0]);
   const [lastCompletedTitle, setLastCompletedTitle] = useState("");
 
+  // Ref para não mostrar overlay duplicado no próprio dispositivo via Realtime
+  const justCompletedRef = useRef<string | null>(null);
+  // Ref para snapshot do estado anterior (usado no handler de Realtime UPDATE)
+  const challengesRef = useRef<any[]>([]);
+  useEffect(() => { challengesRef.current = challenges; }, [challenges]);
+
   useEffect(() => { loadChallenges(); }, [user]);
+
+  // Realtime: INSERT/UPDATE/DELETE propagam instantaneamente para ambos os parceiros
+  useEffect(() => {
+    if (!houseId) return;
+    const channel = supabase
+      .channel(`challenges-rt-${houseId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "couple_challenges", filter: `couple_space_id=eq.${houseId}` },
+        ({ new: row }: any) => {
+          setChallenges(prev => prev.some(c => c.id === row.id) ? prev : [row, ...prev]);
+        })
+      .on("postgres_changes",
+        { event: "UPDATE", schema: "public", table: "couple_challenges", filter: `couple_space_id=eq.${houseId}` },
+        ({ new: row }: any) => {
+          // Verificar estado ANTES desta atualização (via ref síncrona)
+          const existing = challengesRef.current.find(c => c.id === row.id);
+          const wasInProgress = existing && !existing.is_completed;
+          // Mostrar overlay de celebração apenas para o parceiro (não para quem concluiu)
+          if (row.is_completed && wasInProgress && justCompletedRef.current !== row.id) {
+            setLastCompletedTitle(row.title);
+            setCompletionPhrase(MEMORY_PHRASES[Math.floor(Math.random() * MEMORY_PHRASES.length)]);
+            setShowSuccessOverlay(true);
+            setTimeout(() => setShowSuccessOverlay(false), 4000);
+          }
+          setChallenges(prev => prev.map(c => c.id === row.id ? row : c));
+        })
+      .on("postgres_changes",
+        { event: "DELETE", schema: "public", table: "couple_challenges", filter: `couple_space_id=eq.${houseId}` },
+        ({ old: row }: any) => {
+          setChallenges(prev => prev.filter(c => c.id !== row.id));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [houseId]);
 
   const loadChallenges = async () => {
     if (!user) return;
@@ -161,10 +201,26 @@ export default function Challenges() {
       if (error) throw error;
       loadChallenges();
       if (becomeCompleted) {
+        // Marcar este id para que o handler Realtime não duplique o overlay
+        justCompletedRef.current = challenge.id;
+        setTimeout(() => { justCompletedRef.current = null; }, 10_000);
+
         setLastCompletedTitle(challenge.title);
         setCompletionPhrase(MEMORY_PHRASES[Math.floor(Math.random() * MEMORY_PHRASES.length)]);
         setShowSuccessOverlay(true);
         setTimeout(() => setShowSuccessOverlay(false), 4000);
+
+        // Push notification para o parceiro
+        if (houseId) {
+          supabase.functions.invoke("send-push", {
+            body: {
+              couple_space_id: houseId,
+              title: "Desafio concluído",
+              body: `"${challenge.title}" foi vivido juntos. Uma nova memória criada.`,
+              url: "/desafios",
+            },
+          }).catch(() => {});
+        }
       }
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
