@@ -49,10 +49,10 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 
     fetchInitials();
 
-    const t1 = setTimeout(() => mounted && setStage(1), 300);
-    const t2 = setTimeout(() => mounted && setStage(2), 600);
-    const t3 = setTimeout(() => mounted && setStage(3), 1600);
-    const t4 = setTimeout(onDone, 2200);
+    const t1 = setTimeout(() => mounted && setStage(1), 400);
+    const t2 = setTimeout(() => mounted && setStage(2), 750);
+    const t3 = setTimeout(() => mounted && setStage(3), 2300);
+    const t4 = setTimeout(onDone, 2900);
 
     return () => {
       mounted = false;
