@@ -86,7 +86,40 @@ export function CycleHomeCard() {
   }, [targetUserId]);
 
   if (loadingTarget || !loaded) return null;
-  if (!profile) return null;
+
+  // Utilizador masculino sem ciclo da parceira configurado → não mostrar
+  if (!profile && isMale) return null;
+
+  // Utilizadora sem ciclo configurado → card de descoberta
+  if (!profile) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate("/ciclo")}
+        className="glass-card glass-card-hover w-full text-left p-4 space-y-2 transition-all active:scale-[0.99]"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full shrink-0 bg-rose-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Ciclo Menstrual
+            </span>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Droplets className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
+          <p className="text-sm font-semibold text-foreground">Acompanha o teu ciclo</p>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          Regista o teu ciclo e recebe lembretes personalizados para vocês dois.
+        </p>
+        <p className="text-[11px] font-semibold text-rose-500 dark:text-rose-400">
+          Configurar agora
+        </p>
+      </button>
+    );
+  }
 
   const engine = runCycleEngineFromProfile(profile, lastPeriod);
   if (!engine) return null;
