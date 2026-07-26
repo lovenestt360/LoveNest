@@ -87,10 +87,7 @@ export function CycleHomeCard() {
 
   if (loadingTarget || !loaded) return null;
 
-  // Utilizador masculino sem ciclo da parceira configurado → não mostrar
-  if (!profile && isMale) return null;
-
-  // Utilizadora sem ciclo configurado → card de descoberta
+  // Sem ciclo configurado → card de descoberta (diferente para ela e para ele)
   if (!profile) {
     return (
       <button
@@ -109,13 +106,17 @@ export function CycleHomeCard() {
         </div>
         <div className="flex items-center gap-2">
           <Droplets className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
-          <p className="text-sm font-semibold text-foreground">Acompanha o teu ciclo</p>
+          <p className="text-sm font-semibold text-foreground">
+            {isMale ? "Ciclo da tua parceira" : "Acompanha o teu ciclo"}
+          </p>
         </div>
         <p className="text-[11px] text-muted-foreground leading-snug">
-          Regista o teu ciclo e recebe lembretes personalizados para vocês dois.
+          {isMale
+            ? "Quando ela configurar o ciclo, vais acompanhar a fase dela aqui e estares mais presente."
+            : "Regista o teu ciclo e recebe lembretes personalizados para vocês dois."}
         </p>
         <p className="text-[11px] font-semibold text-rose-500 dark:text-rose-400">
-          Configurar agora
+          {isMale ? "Ver mais" : "Configurar agora"}
         </p>
       </button>
     );
