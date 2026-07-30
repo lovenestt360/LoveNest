@@ -135,6 +135,11 @@ const GOAL_OPTIONS = [
 export default function Onboarding() {
   const [phase, setPhase] = useState<Phase>("intro");
 
+  // If URL has ?code= we're in an OAuth callback — don't show intro until session resolves
+  const [authResolved, setAuthResolved] = useState(
+    () => !new URLSearchParams(window.location.search).get("code")
+  );
+
   const [name, setName]           = useState(localStorage.getItem("onboarding_name") || "");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
@@ -189,10 +194,16 @@ export default function Onboarding() {
   // Detect Google OAuth return: user already logged in, check onboarding status
   useEffect(() => {
     let handled = false;
+    const hasCode = !!new URLSearchParams(window.location.search).get("code");
 
     const handleSession = async (session: { user: { id: string } } | null) => {
-      if (handled || !session) return;
+      if (handled || !session) {
+        // Only mark resolved if not waiting for PKCE exchange
+        if (!hasCode) setAuthResolved(true);
+        return;
+      }
       handled = true;
+      setAuthResolved(true);
       setSignedInUserId(session.user.id);
       const { data: profile } = await supabase
         .from("profiles")
@@ -207,15 +218,16 @@ export default function Onboarding() {
       }
     };
 
-    // Check for existing session immediately
     supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));
 
-    // Also listen for PKCE code exchange completion (Google OAuth redirect)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       handleSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    // Safety: if code exchange never resolves, show intro after 4s
+    const timer = setTimeout(() => setAuthResolved(true), 4000);
+
+    return () => { clearTimeout(timer); subscription.unsubscribe(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -335,6 +347,16 @@ export default function Onboarding() {
       setGoogleLoading(false);
     }
   };
+
+  // ── OAuth callback loading ─────────────────────────────────────────────────
+
+  if (phase === "intro" && !authResolved) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+      </div>
+    );
+  }
 
   // ── Intro screen ──────────────────────────────────────────────────────────
 
