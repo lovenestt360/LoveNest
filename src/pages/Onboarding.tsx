@@ -188,8 +188,11 @@ export default function Onboarding() {
 
   // Detect Google OAuth return: user already logged in, check onboarding status
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
+    let handled = false;
+
+    const handleSession = async (session: { user: { id: string } } | null) => {
+      if (handled || !session) return;
+      handled = true;
       setSignedInUserId(session.user.id);
       const { data: profile } = await supabase
         .from("profiles")
@@ -202,7 +205,17 @@ export default function Onboarding() {
         markSeen();
         goToStep("welcome");
       }
+    };
+
+    // Check for existing session immediately
+    supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));
+
+    // Also listen for PKCE code exchange completion (Google OAuth redirect)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
     });
+
+    return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
