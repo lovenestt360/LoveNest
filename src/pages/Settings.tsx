@@ -646,8 +646,9 @@ export default function Settings() {
         .eq("user_id", user.id)
         .eq("couple_space_id", spaceId);
       if (error) throw error;
-      // Clear any local state tied to this couple space
+      // Clear all cached couple_space state so hooks don't re-use the old id
       sessionStorage.removeItem("lovenest_ref");
+      sessionStorage.removeItem(`ln_space_id_${user.id}`);
       window.location.assign("/casa");
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro ao sair", description: err.message });
