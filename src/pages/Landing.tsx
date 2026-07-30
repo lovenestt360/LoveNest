@@ -364,7 +364,7 @@ export default function Landing() {
             <span className="text-[14px] font-bold tracking-tight" style={{ color: NAVY }}>LoveNest</span>
           </div>
           <button
-            onClick={() => navigate("/entrar")}
+            onClick={() => navigate("/entrar?returning=1")}
             className="text-[13px] font-semibold transition-opacity hover:opacity-60"
             style={{ color: NAVY }}
           >
@@ -437,7 +437,7 @@ export default function Landing() {
             </button>
             <div>
               <button
-                onClick={() => navigate("/entrar")}
+                onClick={() => navigate("/entrar?returning=1")}
                 className="text-[13px] font-medium"
                 style={{ color: "#aaa", transition: "color 150ms" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "#717171")}
