@@ -52,13 +52,6 @@
       align-items: center;
       gap: 12px;
     }
-    .logo-mark {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 800; font-size: 13px; letter-spacing: -0.5px;
-      flex-shrink: 0;
-    }
     header h1 {
       font-size: 15px; font-weight: 600; color: var(--text);
     }
@@ -141,7 +134,23 @@
 </head>
 <body>
   <header>
-    <div class="logo-mark">LN</div>
+    <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="LoveNest" style="flex-shrink:0;border-radius:7px">
+      <rect width="512" height="512" rx="112" fill="#0B1324"/>
+      <defs>
+        <mask id="pp-pink-mask">
+          <rect width="512" height="512" fill="black"/>
+          <ellipse cx="198" cy="265" rx="115" ry="195" fill="white"/>
+          <ellipse cx="256" cy="252" rx="97" ry="172" fill="black"/>
+        </mask>
+        <mask id="pp-blue-mask">
+          <rect width="512" height="512" fill="black"/>
+          <ellipse cx="314" cy="265" rx="115" ry="195" fill="white"/>
+          <ellipse cx="256" cy="252" rx="97" ry="172" fill="black"/>
+        </mask>
+      </defs>
+      <rect width="512" height="512" fill="#FF6B8F" mask="url(#pp-pink-mask)"/>
+      <rect width="512" height="512" fill="#4D7CFE" mask="url(#pp-blue-mask)"/>
+    </svg>
     <div>
       <h1>LoveNest <span>— Política de Privacidade</span></h1>
     </div>
