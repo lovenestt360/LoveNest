@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidade — LoveNest</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #FAFAF9;
+      --surface:  #FFFFFF;
+      --border:   #E5E3E0;
+      --text:     #1A1A1A;
+      --muted:    #6B6760;
+      --accent:   #C4546A;
+      --accent-bg:#FDF2F4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:       #0F0F0E;
+        --surface:  #1A1A19;
+        --border:   #2A2A28;
+        --text:     #F0EDEA;
+        --muted:    #8C8A86;
+        --accent:   #E07088;
+        --accent-bg:#1F1215;
+      }
+    }
+    :root[data-theme="light"] {
+      --bg: #FAFAF9; --surface: #FFFFFF; --border: #E5E3E0;
+      --text: #1A1A1A; --muted: #6B6760; --accent: #C4546A; --accent-bg: #FDF2F4;
+    }
+    :root[data-theme="dark"] {
+      --bg: #0F0F0E; --surface: #1A1A19; --border: #2A2A28;
+      --text: #F0EDEA; --muted: #8C8A86; --accent: #E07088; --accent-bg: #1F1215;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 13px; letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 15px; font-weight: 600; color: var(--text);
+    }
+    header span {
+      font-size: 13px; color: var(--muted); margin-left: 4px;
+    }
+
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 6px;
+      text-wrap: balance;
+    }
+    .page-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+
+    .notice {
+      background: var(--accent-bg);
+      border-left: 3px solid var(--accent);
+      padding: 14px 18px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 40px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    section { margin-bottom: 40px; }
+
+    h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    p { margin-bottom: 12px; color: var(--text); }
+    p:last-child { margin-bottom: 0; }
+
+    ul {
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+    li {
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    li::marker { color: var(--accent); }
+
+    strong { font-weight: 600; }
+
+    .contact-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+    }
+    .contact-box p { margin-bottom: 8px; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-mark">LN</div>
+    <div>
+      <h1>LoveNest <span>— Política de Privacidade</span></h1>
+    </div>
+  </header>
+
+  <main>
+    <h1 class="page-title">Política de Privacidade</h1>
+    <p class="page-meta">Última atualização: 30 de julho de 2026</p>
+
+    <div class="notice">
+      O LoveNest é uma aplicação para casais. Alguns dados partilhados entre parceiros fazem parte do funcionamento da app. Esta política explica exatamente o quê, porquê e como.
+    </div>
+
+    <section>
+      <h2>1. Quem somos</h2>
+      <p>O LoveNest é desenvolvido e operado a título pessoal por <strong>Dilson Quissico</strong>, acessível em <strong>lovenestt.com</strong>. Para contacto direto, usa o endereço indicado na secção 9.</p>
+    </section>
+
+    <section>
+      <h2>2. Dados que recolhemos</h2>
+      <p>Recolhemos apenas os dados necessários para o funcionamento da aplicação:</p>
+      <ul>
+        <li><strong>Conta:</strong> endereço de email e palavra-passe (geridos pela Supabase Auth)</li>
+        <li><strong>Perfil:</strong> nome, género, fuso horário e nível de nível de guardião</li>
+        <li><strong>Espaço de casal:</strong> iniciais do casal, identificador do espaço partilhado</li>
+        <li><strong>Ciclo menstrual:</strong> perfil de ciclo, registos de período, sintomas diários e registos de intimidade — apenas para a utilizadora que os introduz (ou visíveis ao parceiro, se configurado)</li>
+        <li><strong>Desafios e jornada:</strong> desafios concluídos, entradas do diário de casal</li>
+        <li><strong>Atividade diária:</strong> registo de dias consecutivos de uso (streak)</li>
+        <li><strong>Notificações push:</strong> token do dispositivo para envio de notificações</li>
+        <li><strong>Localização (opcional):</strong> coordenadas GPS, apenas quando o utilizador ativa explicitamente a partilha de localização</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Como usamos os dados</h2>
+      <p>Os dados são usados exclusivamente para:</p>
+      <ul>
+        <li>Fornecer as funcionalidades da aplicação (ciclo, desafios, jornada, streak)</li>
+        <li>Sincronizar informação em tempo real entre os dois parceiros do mesmo casal</li>
+        <li>Enviar notificações push relevantes (ex: desafio concluído pelo parceiro)</li>
+        <li>Lembretes inteligentes de uso da app (máximo 3 por dia)</li>
+      </ul>
+      <p>Não usamos os dados para publicidade, não os vendemos, e não construímos perfis para fins comerciais.</p>
+    </section>
+
+    <section>
+      <h2>4. Partilha de dados entre parceiros</h2>
+      <p>Dentro de um casal, alguns dados são partilhados por design:</p>
+      <ul>
+        <li>O estado do ciclo menstrual é visível ao parceiro, de acordo com o nível de partilha configurado pela utilizadora</li>
+        <li>Os desafios concluídos são visíveis a ambos</li>
+        <li>A localização só é visível ao parceiro quando ambos ativam explicitamente a partilha</li>
+        <li>Entradas do diário marcadas como privadas não são partilhadas</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Terceiros e subprocessadores</h2>
+      <ul>
+        <li><strong>Supabase</strong> (supabase.com) — base de dados, autenticação e armazenamento. Servidores na AWS us-east-1.</li>
+        <li><strong>Vercel</strong> (vercel.com) — alojamento da aplicação web.</li>
+        <li><strong>Google Firebase Cloud Messaging</strong> — envio de notificações push para Android e iOS.</li>
+        <li><strong>Google Play Store</strong> — distribuição da app Android.</li>
+      </ul>
+      <p>Estes fornecedores têm as suas próprias políticas de privacidade. Não partilhamos dados com outros terceiros.</p>
+    </section>
+
+    <section>
+      <h2>6. Segurança</h2>
+      <p>Todos os dados são transmitidos via HTTPS. O acesso à base de dados é protegido por Row-Level Security (RLS) — cada utilizador só acede aos seus próprios dados e aos do seu espaço de casal. As palavras-passe são geridas pela Supabase Auth e nunca armazenadas em texto simples.</p>
+    </section>
+
+    <section>
+      <h2>7. Retenção de dados</h2>
+      <p>Os dados são mantidos enquanto a conta estiver ativa. Ao eliminar a conta, todos os dados associados são permanentemente removidos da base de dados dentro de 30 dias. Os dados de ciclo menstrual podem ser exportados antes da eliminação contactando o suporte.</p>
+    </section>
+
+    <section>
+      <h2>8. Os teus direitos</h2>
+      <p>Tens direito a:</p>
+      <ul>
+        <li><strong>Acesso:</strong> solicitar uma cópia dos teus dados</li>
+        <li><strong>Correção:</strong> corrigir dados incorretos diretamente na app</li>
+        <li><strong>Eliminação:</strong> eliminar a conta e todos os dados associados</li>
+        <li><strong>Portabilidade:</strong> solicitar exportação dos dados em formato legível</li>
+        <li><strong>Oposição:</strong> desativar notificações push a qualquer momento nas definições da app</li>
+      </ul>
+      <p>Para exercer qualquer um destes direitos, contacta-nos através do email abaixo.</p>
+    </section>
+
+    <section>
+      <h2>9. Contacto</h2>
+      <div class="contact-box">
+        <p><strong>LoveNest — Dilson Quissico</strong></p>
+        <p>Email: <a href="mailto:lovenestt360@gmail.com" style="color: var(--accent);">lovenestt360@gmail.com</a></p>
+        <p>Site: <a href="https://www.lovenestt.com" style="color: var(--accent);">www.lovenestt.com</a></p>
+      </div>
+    </section>
+
+    <section>
+      <h2>10. Alterações a esta política</h2>
+      <p>Caso alteremos esta política de forma significativa, notificamos os utilizadores por push notification ou por email, com pelo menos 7 dias de antecedência. A data de "última atualização" no topo reflete sempre a versão em vigor.</p>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2026 LoveNest. Feito com cuidado para casais.
+  </footer>
+</body>
+</html>
