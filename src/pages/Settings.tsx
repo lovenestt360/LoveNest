@@ -596,8 +596,27 @@ export default function Settings() {
   const [leaveConfirming, setLeaveConfirming] = useState(false);
   const [leaveLoading, setLeaveLoading] = useState(false);
 
+  const [deleteSpaceConfirming, setDeleteSpaceConfirming] = useState(false);
+  const [deleteSpaceLoading, setDeleteSpaceLoading] = useState(false);
+
   const [deleteConfirming, setDeleteConfirming] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteSpace = async () => {
+    if (!user || !spaceId) return;
+    setDeleteSpaceLoading(true);
+    try {
+      const { error } = await supabase.rpc("delete_couple_space", { p_couple_space_id: spaceId });
+      if (error) throw error;
+      sessionStorage.removeItem("lovenest_ref");
+      sessionStorage.removeItem(`ln_space_id_${user.id}`);
+      window.location.assign("/casa");
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao eliminar casa", description: err.message });
+      setDeleteSpaceLoading(false);
+      setDeleteSpaceConfirming(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (!user) return;
@@ -1190,6 +1209,66 @@ export default function Settings() {
                       }
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* ── Delete couple space ── */}
+              {spaceId && (
+                <div className="pt-1">
+                  {!deleteSpaceConfirming ? (
+                    <button
+                      onClick={() => setDeleteSpaceConfirming(true)}
+                      className="glass-card p-4 flex items-center justify-between w-full text-rose-600 hover:bg-rose-50/40 dark:hover:bg-rose-950/20 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Trash2 className="h-5 w-5" strokeWidth={1.5} />
+                        <div className="text-left">
+                          <p className="text-sm font-semibold">Eliminar casa</p>
+                          <p className="text-[11px] text-muted-foreground/65 font-normal">Apaga todos os dados do espaço partilhado</p>
+                        </div>
+                      </div>
+                      <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground/55" strokeWidth={1.5} />
+                    </button>
+                  ) : (
+                    <div className="glass-card border-rose-200/80 dark:border-rose-900/60 p-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="space-y-1">
+                        <p className="text-[15px] font-bold text-foreground">Eliminar casa permanentemente?</p>
+                        <p className="text-[12px] text-muted-foreground/80 leading-relaxed">
+                          Esta ação é irreversível e afeta ambos os parceiros.
+                        </p>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          "Todas as mensagens, memórias, desafios e dados do casal serão apagados.",
+                          "Ambos os parceiros perdem acesso ao espaço imediatamente.",
+                          "Esta ação não pode ser desfeita.",
+                        ].map((text) => (
+                          <div key={text} className="flex items-start gap-2.5">
+                            <div className="w-1 h-1 rounded-full bg-rose-400/60 mt-2 shrink-0" />
+                            <p className="text-[12px] text-muted-foreground/90 leading-relaxed">{text}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => setDeleteSpaceConfirming(false)}
+                          className="flex-1 h-11 rounded-xl bg-muted text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleDeleteSpace}
+                          disabled={deleteSpaceLoading}
+                          className="flex-1 h-11 rounded-xl bg-rose-600 text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                        >
+                          {deleteSpaceLoading
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : "Eliminar tudo"
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
