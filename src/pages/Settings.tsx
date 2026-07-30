@@ -606,14 +606,28 @@ export default function Settings() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão inválida.");
 
-      const { error } = await supabase.functions.invoke("delete-account", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (error) throw error;
+      // Raw fetch para evitar que o SDK intercepte a resposta quando a sessão
+      // é invalidada durante a execução da função (apagar auth user mid-flight)
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Erro ${res.status}`);
+      }
 
-      // Clear local state and redirect
+      // Sinalizar eliminação ANTES de limpar storage para suprimir eventos espúrios
+      sessionStorage.setItem("account_deleting", "1");
       localStorage.clear();
       sessionStorage.clear();
+      sessionStorage.setItem("account_deleting", "1");
       window.location.assign("/inicio");
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro ao eliminar conta", description: err.message });

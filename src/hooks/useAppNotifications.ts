@@ -107,6 +107,7 @@ export function useAppNotifications() {
     };
 
     function onMissionComplete(e: Event) {
+      if (sessionStorage.getItem("account_deleting")) return;
       const type = (e as CustomEvent<{ type: string }>).detail?.type ?? "general";
       const label = MISSION_LABELS[type] ?? MISSION_LABELS.general;
       toast({ title: "Missão Completa!", description: label });
