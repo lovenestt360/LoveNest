@@ -6,6 +6,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { formatShortDate, formatLongDate } from "./engine";
 import type { CycleData } from "./useCycleData";
+import { CycleHistoryStrip } from "./CycleHistoryStrip";
 import { cn } from "@/lib/utils";
 
 // ── Paleta emocional por fase — espelha CycleToday
@@ -246,6 +247,9 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
           </div>
         </div>
       </div>
+
+      {/* ── Histórico do ciclo ── */}
+      <CycleHistoryStrip data={data} />
 
       {/* ── Quote de fase — mesmo card emocional que CycleToday ── */}
       <div className={cn("rounded-3xl border px-5 py-5", palette.quoteBg, palette.quoteBorder)}>
