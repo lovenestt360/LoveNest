@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Droplets, Wind, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { runCycleEngineFromProfile } from "./engine";
-import { useCycleTarget, type CycleProfile, type PeriodEntry } from "./useCycleData";
+import { useCycleData } from "./useCycleData";
 import type { CycleEngineOutput } from "./engine";
 
 // ── Metadados por fase ────────────────────────────────────────────────────────
@@ -65,27 +63,9 @@ function nextEventText(engine: CycleEngineOutput, isMale: boolean): string {
 
 export function CycleHomeCard() {
   const navigate = useNavigate();
-  const { targetUserId, isMale, loadingTarget } = useCycleTarget();
+  const { profile, lastPeriod, isMale, loading } = useCycleData();
 
-  const [profile, setProfile] = useState<CycleProfile | null>(null);
-  const [lastPeriod, setLastPeriod] = useState<PeriodEntry | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!targetUserId) return;
-    setLoaded(false);
-    Promise.all([
-      supabase.from("cycle_profiles").select("*").eq("user_id", targetUserId).maybeSingle(),
-      supabase.from("period_entries").select("*").eq("user_id", targetUserId)
-        .order("start_date", { ascending: false }).limit(1).maybeSingle(),
-    ]).then(([pRes, peRes]) => {
-      setProfile((pRes.data as CycleProfile | null) ?? null);
-      setLastPeriod((peRes.data as PeriodEntry | null) ?? null);
-      setLoaded(true);
-    });
-  }, [targetUserId]);
-
-  if (loadingTarget || !loaded) return null;
+  if (loading) return null;
 
   // Sem ciclo configurado → card de descoberta (diferente para ela e para ele)
   if (!profile) {
