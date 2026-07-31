@@ -44,6 +44,16 @@ export interface LibrarySettings {
     banner_link_book_id: string | null;
 }
 
+export interface LibraryBanner {
+    id: string;
+    sort_order: number;
+    enabled: boolean;
+    image_url: string | null;
+    title: string | null;
+    subtitle: string | null;
+    link_book_id: string | null;
+}
+
 export interface RejectedPurchase {
     id: string;
     admin_notes: string | null;
@@ -55,6 +65,7 @@ export function useBiblioteca() {
     const [books, setBooks] = useState<Book[]>([]);
     const [categories, setCategories] = useState<BookCategory[]>([]);
     const [settings, setSettings] = useState<LibrarySettings | null>(null);
+    const [banners, setBanners] = useState<LibraryBanner[]>([]);
     const [ownedBookIds, setOwnedBookIds] = useState<Set<string>>(new Set());
     const [pendingBookIds, setPendingBookIds] = useState<Set<string>>(new Set());
     const [rejectedPurchases, setRejectedPurchases] = useState<Map<string, RejectedPurchase>>(new Map());
@@ -74,10 +85,11 @@ export function useBiblioteca() {
         // ficheiro de comprovativo já selecionado no formulário de compra).
         if (!hasLoadedRef.current) setLoading(true);
 
-        const [booksRes, categoriesRes, settingsRes, purchasesRes, progressRes] = await Promise.all([
+        const [booksRes, categoriesRes, settingsRes, bannersRes, purchasesRes, progressRes] = await Promise.all([
             supabase.from("books" as any).select("*").eq("status", "published").order("sort_order"),
             supabase.from("book_categories" as any).select("*").order("sort_order"),
             supabase.from("library_settings" as any).select("*").maybeSingle(),
+            supabase.from("library_banners" as any).select("*").eq("enabled", true).order("sort_order"),
             supabase.from("book_purchases" as any).select("id, book_id, status, admin_notes").eq("couple_space_id", spaceId),
             supabase.from("book_reading_progress" as any).select("book_id, progress_percent").eq("couple_space_id", spaceId).eq("user_id", user.id),
         ]);
@@ -85,6 +97,7 @@ export function useBiblioteca() {
         if (booksRes.data) setBooks(booksRes.data as unknown as Book[]);
         if (categoriesRes.data) setCategories(categoriesRes.data as unknown as BookCategory[]);
         if (settingsRes.data) setSettings(settingsRes.data as unknown as LibrarySettings);
+        if (bannersRes.data) setBanners(bannersRes.data as unknown as LibraryBanner[]);
 
         const owned = new Set<string>();
         const pending = new Set<string>();
@@ -111,5 +124,5 @@ export function useBiblioteca() {
 
     useEffect(() => { fetchAll(); }, [fetchAll]);
 
-    return { books, categories, settings, ownedBookIds, pendingBookIds, rejectedPurchases, myProgressByBook, loading, refetch: fetchAll };
+    return { books, categories, settings, banners, ownedBookIds, pendingBookIds, rejectedPurchases, myProgressByBook, loading, refetch: fetchAll };
 }

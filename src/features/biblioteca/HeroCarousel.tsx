@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import type { Book, LibrarySettings } from "@/hooks/useBiblioteca";
+import type { Book, LibraryBanner, LibrarySettings } from "@/hooks/useBiblioteca";
 
 interface Slide {
     key: string;
@@ -12,14 +12,31 @@ interface Slide {
     onClick?: () => void;
 }
 
-export function HeroCarousel({ settings, books }: { settings: LibrarySettings | null; books: Book[] }) {
+export function HeroCarousel({ settings, books, banners = [] }: { settings: LibrarySettings | null; books: Book[]; banners?: LibraryBanner[] }) {
     const navigate = useNavigate();
     const [index, setIndex] = useState(0);
 
     const slides = useMemo<Slide[]>(() => {
         const list: Slide[] = [];
 
-        if (settings?.banner_enabled && settings.banner_image_url) {
+        // Banners da tabela library_banners (múltiplos)
+        for (const b of banners) {
+            if (b.image_url) {
+                list.push({
+                    key: `banner-${b.id}`,
+                    label: "Promoção",
+                    title: b.title ?? "",
+                    subtitle: b.subtitle ?? undefined,
+                    image: b.image_url,
+                    onClick: b.link_book_id
+                        ? () => navigate(`/biblioteca/${b.link_book_id}`)
+                        : undefined,
+                });
+            }
+        }
+
+        // Fallback: banner legado da library_settings (se ainda existir)
+        if (banners.length === 0 && settings?.banner_enabled && settings.banner_image_url) {
             list.push({
                 key: "promo",
                 label: "Promoção",

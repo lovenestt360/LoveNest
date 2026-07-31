@@ -12,7 +12,7 @@ import { ReadingStatsCard } from "@/features/biblioteca/ReadingStatsCard";
 const TRENDING_LIMIT = 10;
 
 export default function Biblioteca() {
-    const { books, categories, settings, ownedBookIds, pendingBookIds, myProgressByBook, loading } = useBiblioteca();
+    const { books, categories, settings, banners, ownedBookIds, pendingBookIds, myProgressByBook, loading } = useBiblioteca();
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     const continueReading = useMemo(() => {
@@ -68,7 +68,7 @@ export default function Biblioteca() {
                 </div>
             ) : (
                 <>
-                    <HeroCarousel settings={settings} books={books} />
+                    <HeroCarousel settings={settings} books={books} banners={banners} />
 
                     <ReadingStatsCard />
 

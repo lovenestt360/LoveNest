@@ -61,6 +61,18 @@ type LibrarySettings = {
     banner_link_book_id: string | null;
 };
 
+type LibraryBanner = {
+    id: string;
+    sort_order: number;
+    enabled: boolean;
+    image_url: string | null;
+    title: string | null;
+    subtitle: string | null;
+    link_book_id: string | null;
+    _isNew?: boolean;
+    _localId?: string;
+};
+
 type BookPurchase = {
     id: string;
     couple_space_id: string;
@@ -95,10 +107,11 @@ export default function AdminBiblioteca({ adminClient }: { adminClient: any }) {
     const [categories, setCategories] = useState<BookCategory[]>([]);
     const [books, setBooks] = useState<Book[]>([]);
     const [purchases, setPurchases] = useState<BookPurchase[]>([]);
+    const [banners, setBanners] = useState<LibraryBanner[]>([]);
 
     const fetchAll = async () => {
         setLoading(true);
-        const [settingsRes, categoriesRes, booksRes, purchasesRes] = await Promise.all([
+        const [settingsRes, categoriesRes, booksRes, purchasesRes, bannersRes] = await Promise.all([
             adminClient.from("library_settings" as any).select("*").maybeSingle(),
             adminClient.from("book_categories" as any).select("*").order("sort_order"),
             adminClient.from("books" as any).select("*").order("sort_order"),
@@ -106,12 +119,14 @@ export default function AdminBiblioteca({ adminClient }: { adminClient: any }) {
                 .select("*, books(title, cover_url), couple_spaces(house_name, partner1_name, partner2_name)")
                 .eq("status", "pending")
                 .order("created_at", { ascending: false }),
+            adminClient.from("library_banners" as any).select("*").order("sort_order"),
         ]);
 
         if (settingsRes.data) setSettings(settingsRes.data);
         if (categoriesRes.data) setCategories(categoriesRes.data);
         if (booksRes.data) setBooks(booksRes.data);
         if (purchasesRes.data) setPurchases(purchasesRes.data);
+        if (bannersRes.data) setBanners(bannersRes.data);
 
         if (settingsRes.error || categoriesRes.error || booksRes.error || purchasesRes.error) {
             toast({ variant: "destructive", title: "Erro ao carregar Biblioteca", description: "Verifica se a migration da Biblioteca foi aplicada." });
@@ -144,7 +159,7 @@ export default function AdminBiblioteca({ adminClient }: { adminClient: any }) {
                 </TabsList>
 
                 <TabsContent value="settings" className="pt-6">
-                    <SettingsPanel adminClient={adminClient} settings={settings} books={books} onSaved={fetchAll} />
+                    <SettingsPanel adminClient={adminClient} settings={settings} books={books} banners={banners} onSaved={fetchAll} />
                 </TabsContent>
 
                 <TabsContent value="categories" className="pt-6">
@@ -165,46 +180,67 @@ export default function AdminBiblioteca({ adminClient }: { adminClient: any }) {
 
 // ── 1. Definições da Biblioteca ────────────────────────────────────────
 
-function SettingsPanel({ adminClient, settings, books, onSaved }: {
+function SettingsPanel({ adminClient, settings, books, banners: initialBanners, onSaved }: {
     adminClient: any;
     settings: LibrarySettings | null;
     books: Book[];
+    banners: LibraryBanner[];
     onSaved: () => void;
 }) {
     const { toast } = useToast();
     const [gridColumns, setGridColumns] = useState("2");
-    const [bannerEnabled, setBannerEnabled] = useState(false);
-    const [bannerImageUrl, setBannerImageUrl] = useState<string | null>(null);
-    const [bannerTitle, setBannerTitle] = useState("");
-    const [bannerSubtitle, setBannerSubtitle] = useState("");
-    const [bannerLinkBookId, setBannerLinkBookId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
-    const [uploadingBanner, setUploadingBanner] = useState(false);
+    const [banners, setBanners] = useState<LibraryBanner[]>([]);
+    const [deletedIds, setDeletedIds] = useState<string[]>([]);
+    const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
     useEffect(() => {
         if (!settings) return;
         setGridColumns(String(settings.grid_columns ?? 2));
-        setBannerEnabled(!!settings.banner_enabled);
-        setBannerImageUrl(settings.banner_image_url ?? null);
-        setBannerTitle(settings.banner_title ?? "");
-        setBannerSubtitle(settings.banner_subtitle ?? "");
-        setBannerLinkBookId(settings.banner_link_book_id ?? null);
     }, [settings]);
 
-    const handleUploadBanner = async (file: File) => {
-        if (!settings) return;
-        setUploadingBanner(true);
+    useEffect(() => {
+        setBanners(initialBanners);
+    }, [initialBanners]);
+
+    const addBanner = () => {
+        const localId = crypto.randomUUID();
+        setBanners(prev => [...prev, {
+            id: localId,
+            sort_order: prev.length,
+            enabled: true,
+            image_url: null,
+            title: null,
+            subtitle: null,
+            link_book_id: null,
+            _isNew: true,
+            _localId: localId,
+        }]);
+    };
+
+    const deleteBanner = (idx: number) => {
+        const b = banners[idx];
+        if (!b._isNew) setDeletedIds(prev => [...prev, b.id]);
+        setBanners(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const updateBanner = (idx: number, patch: Partial<LibraryBanner>) => {
+        setBanners(prev => prev.map((b, i) => i === idx ? { ...b, ...patch } : b));
+    };
+
+    const handleUploadBannerImage = async (idx: number, file: File) => {
+        setUploadingIdx(idx);
         try {
             const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
             const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
             const { error: uploadError } = await adminClient.storage.from("library-banners").upload(path, file, { upsert: true });
             if (uploadError) throw uploadError;
             const { data } = adminClient.storage.from("library-banners").getPublicUrl(path);
-            setBannerImageUrl(data.publicUrl);
+            updateBanner(idx, { image_url: data.publicUrl });
         } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao enviar banner", description: err.message });
+            toast({ variant: "destructive", title: "Erro ao enviar imagem", description: err.message });
         } finally {
-            setUploadingBanner(false);
+            setUploadingIdx(null);
         }
     };
 
@@ -212,15 +248,40 @@ function SettingsPanel({ adminClient, settings, books, onSaved }: {
         if (!settings) return;
         setSaving(true);
         try {
-            const { error } = await adminClient.from("library_settings" as any).update({
-                grid_columns: Number(gridColumns),
-                banner_enabled: bannerEnabled,
-                banner_image_url: bannerImageUrl,
-                banner_title: bannerTitle || null,
-                banner_subtitle: bannerSubtitle || null,
-                banner_link_book_id: bannerLinkBookId,
-            }).eq("id", settings.id);
-            if (error) throw error;
+            // Guarda colunas
+            const { error: settingsErr } = await adminClient.from("library_settings" as any)
+                .update({ grid_columns: Number(gridColumns) }).eq("id", settings.id);
+            if (settingsErr) throw settingsErr;
+
+            // Elimina banners removidos
+            if (deletedIds.length > 0) {
+                const { error: delErr } = await adminClient.from("library_banners" as any)
+                    .delete().in("id", deletedIds);
+                if (delErr) throw delErr;
+            }
+
+            // Upsert banners existentes e novos
+            for (let i = 0; i < banners.length; i++) {
+                const b = banners[i];
+                const payload = {
+                    sort_order: i,
+                    enabled: b.enabled,
+                    image_url: b.image_url,
+                    title: b.title || null,
+                    subtitle: b.subtitle || null,
+                    link_book_id: b.link_book_id || null,
+                };
+                if (b._isNew) {
+                    const { error } = await adminClient.from("library_banners" as any).insert(payload);
+                    if (error) throw error;
+                } else {
+                    const { error } = await adminClient.from("library_banners" as any)
+                        .update(payload).eq("id", b.id);
+                    if (error) throw error;
+                }
+            }
+
+            setDeletedIds([]);
             toast({ title: "Definições guardadas" });
             onSaved();
         } catch (err: any) {
@@ -235,8 +296,9 @@ function SettingsPanel({ adminClient, settings, books, onSaved }: {
     }
 
     return (
-        <div className="bg-card border rounded-3xl p-6 shadow-sm space-y-6 max-w-2xl">
-            <div>
+        <div className="space-y-6 max-w-2xl">
+            {/* Layout */}
+            <div className="bg-card border rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
                     <LayoutGrid className="w-5 h-5 text-primary" /> Layout da grelha
                 </h3>
@@ -256,67 +318,88 @@ function SettingsPanel({ adminClient, settings, books, onSaved }: {
                 </div>
             </div>
 
-            <div className="border-t pt-6">
-                <div className="flex items-center justify-between mb-3">
+            {/* Banners */}
+            <div className="bg-card border rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-bold">Banner em destaque</h3>
-                        <p className="text-sm text-muted-foreground">Mostra um banner no topo da Biblioteca.</p>
+                        <h3 className="text-lg font-bold flex items-center gap-2">
+                            <ImageIcon className="w-5 h-5 text-primary" /> Banners em destaque
+                        </h3>
+                        <p className="text-sm text-muted-foreground">Aparecem no carousel do topo da Biblioteca.</p>
                     </div>
-                    <Switch checked={bannerEnabled} onCheckedChange={setBannerEnabled} />
+                    <Button variant="outline" size="sm" onClick={addBanner} className="gap-2">
+                        <Plus className="w-4 h-4" /> Adicionar
+                    </Button>
                 </div>
 
-                {bannerEnabled && (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            {bannerImageUrl ? (
-                                <img src={bannerImageUrl} alt="Banner" className="w-40 h-20 object-cover rounded-xl border" />
-                            ) : (
-                                <div className="w-40 h-20 rounded-xl border bg-muted flex items-center justify-center text-muted-foreground">
-                                    <ImageIcon className="w-6 h-6" />
-                                </div>
-                            )}
-                            <Button variant="secondary" className="gap-2" disabled={uploadingBanner} asChild>
-                                <label className="cursor-pointer">
-                                    {uploadingBanner ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                    Carregar imagem
-                                    <input type="file" accept="image/*" hidden onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) handleUploadBanner(file);
-                                    }} />
-                                </label>
-                            </Button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Label className="text-sm font-bold text-muted-foreground mb-1 block">Título do banner</Label>
-                                <Input value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} placeholder="Ex: Novidade da semana" className="bg-background" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-bold text-muted-foreground mb-1 block">Subtítulo</Label>
-                                <Input value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} placeholder="Ex: Descobre a nossa nova edição" className="bg-background" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Livro em destaque (ao clicar no banner)</Label>
-                            <Select value={bannerLinkBookId ?? "none"} onValueChange={(v) => setBannerLinkBookId(v === "none" ? null : v)}>
-                                <SelectTrigger className="bg-background">
-                                    <SelectValue placeholder="Nenhum" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">Nenhum</SelectItem>
-                                    {books.map(b => (
-                                        <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                {banners.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">Nenhum banner. Clica em "Adicionar" para criar um.</p>
                 )}
+
+                <div className="space-y-4">
+                    {banners.map((b, idx) => (
+                        <div key={b._localId ?? b.id} className="border rounded-2xl p-4 space-y-3 bg-muted/30">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Banner {idx + 1}</span>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-7 w-7" onClick={() => deleteBanner(idx)}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+
+                            {/* Imagem */}
+                            <div className="flex items-center gap-4">
+                                {b.image_url ? (
+                                    <img src={b.image_url} alt="Banner" className="w-32 h-16 object-cover rounded-xl border" />
+                                ) : (
+                                    <div className="w-32 h-16 rounded-xl border bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                                        <ImageIcon className="w-5 h-5" />
+                                    </div>
+                                )}
+                                <Button variant="secondary" size="sm" className="gap-2" disabled={uploadingIdx === idx} asChild>
+                                    <label className="cursor-pointer">
+                                        {uploadingIdx === idx ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                                        Imagem
+                                        <input type="file" accept="image/*" hidden onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleUploadBannerImage(idx, file);
+                                        }} />
+                                    </label>
+                                </Button>
+                            </div>
+
+                            {/* Título + Subtítulo */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-xs font-bold text-muted-foreground mb-1 block">Título</Label>
+                                    <Input value={b.title ?? ""} onChange={(e) => updateBanner(idx, { title: e.target.value })} placeholder="Ex: Novidade da semana" className="bg-background h-8 text-sm" />
+                                </div>
+                                <div>
+                                    <Label className="text-xs font-bold text-muted-foreground mb-1 block">Subtítulo</Label>
+                                    <Input value={b.subtitle ?? ""} onChange={(e) => updateBanner(idx, { subtitle: e.target.value })} placeholder="Ex: Descobre a nossa nova edição" className="bg-background h-8 text-sm" />
+                                </div>
+                            </div>
+
+                            {/* Livro */}
+                            <div>
+                                <Label className="text-xs font-bold text-muted-foreground mb-1 block">Livro (ao clicar no banner)</Label>
+                                <Select value={b.link_book_id ?? "none"} onValueChange={(v) => updateBanner(idx, { link_book_id: v === "none" ? null : v })}>
+                                    <SelectTrigger className="bg-background h-8 text-sm">
+                                        <SelectValue placeholder="Nenhum" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Nenhum</SelectItem>
+                                        {books.map(bk => (
+                                            <SelectItem key={bk.id} value={bk.id}>{bk.title}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end">
                 <Button onClick={handleSave} disabled={saving} className="gap-2">
                     {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                     Guardar Definições
