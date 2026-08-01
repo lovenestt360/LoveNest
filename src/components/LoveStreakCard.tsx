@@ -263,22 +263,34 @@ function useCardData(threshold: number) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
-    const h = () => fetchData();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const h = () => {
+      fetchData();
+      // Segundo fetch com delay cobre race conditions onde o primeiro corre
+      // antes do INSERT ser visível numa query concorrente (PgBouncer).
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(fetchData, 600);
+    };
     window.addEventListener("streak-updated", h);
     window.addEventListener("home-visible", h);
-    // Quando uma notificação de missão dispara, garantir que o ícone do card
-    // também atualiza — cobre o caso em que o evento de streak-updated chegou
-    // antes de ambas as entradas em daily_activity estarem confirmadas.
     window.addEventListener("mission-complete", h);
     return () => {
       window.removeEventListener("streak-updated", h);
       window.removeEventListener("home-visible", h);
       window.removeEventListener("mission-complete", h);
+      if (timer) clearTimeout(timer);
     };
   }, [fetchData]);
   useEffect(() => {
-    const t = setInterval(fetchData, 3 * 60_000);
+    const t = setInterval(fetchData, 20_000);
     return () => clearInterval(t);
+  }, [fetchData]);
+  // Quando a PWA volta ao primeiro plano (ex: utilizador regressa de outra app),
+  // o WebSocket do Realtime pode ter sido suspenso pelo OS — atualizar imediatamente.
+  useEffect(() => {
+    const h = () => { if (document.visibilityState === "visible") fetchData(); };
+    document.addEventListener("visibilitychange", h);
+    return () => document.removeEventListener("visibilitychange", h);
   }, [fetchData]);
   // Realtime — reage imediatamente quando qualquer membro insere/atualiza
   // uma atividade ou registo espiritual neste couple_space.
