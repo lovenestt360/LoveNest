@@ -86,14 +86,18 @@ async function sendFcmMessage(
       body: JSON.stringify({
         message: {
           token: fcmToken,
-          // data-only: onBackgroundMessage no SW trata o display
+          // notification: Firebase mostra a notificação automaticamente em background
+          notification: { title, body },
           data: {
-            title,
-            body,
-            icon: "/icon-192.png",
             url: url || "/chat",
           },
           webpush: {
+            notification: {
+              icon: "https://lovenestt.com/icon-192.png",
+              badge: "https://lovenestt.com/icon-192.png",
+              tag: "lovenest-notif",
+            },
+            fcm_options: { link: `https://lovenestt.com${url || "/"}` },
             headers: { TTL: "86400" },
           },
         },

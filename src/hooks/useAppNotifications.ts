@@ -4,7 +4,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
-import { getFirebaseMessaging, getToken } from "@/lib/firebase";
+import { getFirebaseMessaging, getToken, onMessage } from "@/lib/firebase";
 
 async function upsertFcmToken(fcmToken: string, userId: string, spaceId: string) {
   await supabase.from("push_subscriptions").upsert(
@@ -331,6 +331,31 @@ export function useAppNotifications() {
       }
     }
   }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread]);
+
+  // ── Notificações FCM em foreground ───────────────────────────────────────
+  useEffect(() => {
+    const messaging = getFirebaseMessaging();
+    if (!messaging) return;
+    const unsub = onMessage(messaging, (payload) => {
+      const title = payload.notification?.title || "LoveNest";
+      const body  = payload.notification?.body  || "";
+      const url   = (payload.data?.url as string) || "/";
+      // Mostra via SW para ter o mesmo aspecto que em background
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.showNotification(title, {
+          body,
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          tag: "lovenest-notif",
+          data: { url },
+        } as NotificationOptions);
+      }).catch(() => {
+        // Fallback: toast se SW não disponível
+        toast({ title, description: body });
+      });
+    });
+    return () => unsub();
+  }, []);
 
   // ── Auto-refresh do token FCM ─────────────────────────────────────────────
   // No arranque: se permissão já concedida, garante que o FCM token
