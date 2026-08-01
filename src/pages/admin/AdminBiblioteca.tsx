@@ -13,10 +13,11 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
     Library, Plus, Trash2, Pencil, Upload, RefreshCw, Check, X,
-    Image as ImageIcon, FileText, LayoutGrid, ShoppingBag, BookText, Layers,
+    Image as ImageIcon, FileText, LayoutGrid, ShoppingBag, BookText, Layers, Bell,
 } from "lucide-react";
 import { ChapterManagerDialog } from "./ChapterManagerDialog";
 
@@ -605,6 +606,7 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
     const [uploadingCover, setUploadingCover] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
+    const [notifying, setNotifying] = useState<"launch" | "price" | null>(null);
 
     // Para LoveNest Book, chapter_count e estimated_minutes são mantidos por
     // trigger na BD — sincroniza os valores mostrados sempre que a lista de
@@ -741,6 +743,26 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
             toast({ variant: "destructive", title: "Erro ao guardar livro", description: err.message });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleNotify = async (kind: "launch" | "price") => {
+        if (!editingId) return;
+        setNotifying(kind);
+        try {
+            const title = kind === "launch" ? "Novo livro disponível" : "Preço actualizado";
+            const body = kind === "launch"
+                ? form.title
+                : `${form.title} — ${form.is_free ? "Grátis" : `${form.price} MZN`}`;
+            const { error } = await supabase.functions.invoke("send-push", {
+                body: { title, body, url: `/biblioteca/${editingId}`, type: "biblioteca", broadcast: true },
+            });
+            if (error) throw error;
+            toast({ title: "Notificação enviada" });
+        } catch (err: any) {
+            toast({ variant: "destructive", title: "Erro ao enviar notificação", description: err.message });
+        } finally {
+            setNotifying(null);
         }
     };
 
@@ -996,6 +1018,58 @@ function BooksPanel({ adminClient, books, categories, onChanged }: {
                             Cancelar
                         </Button>
                     </div>
+
+                    {editingId && (
+                        <div className="border-t pt-4 space-y-3">
+                            <p className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+                                <Bell className="w-4 h-4" /> Notificar Utilizadores
+                            </p>
+                            <p className="text-xs text-muted-foreground">Envia push notification a todos os utilizadores com notificações ativas.</p>
+                            <div className="flex flex-wrap gap-2">
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="outline" size="sm" className="gap-2" disabled={notifying !== null}>
+                                            {notifying === "launch" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+                                            Novo Lançamento
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Notificar todos os utilizadores?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Será enviada uma notificação de "Novo livro disponível — {form.title}" para todos os utilizadores com push ativo.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleNotify("launch")}>Enviar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="outline" size="sm" className="gap-2" disabled={notifying !== null}>
+                                            {notifying === "price" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+                                            Alteração de Preço
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Notificar alteração de preço?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Será enviada uma notificação de "Preço actualizado — {form.title}" para todos os utilizadores com push ativo.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleNotify("price")}>Enviar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </div>
+                    )}
                 </form>
             )}
 

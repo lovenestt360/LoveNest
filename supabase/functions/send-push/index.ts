@@ -70,8 +70,8 @@ Deno.serve(async (req) => {
 
     // Read body once — HTTP request stream can only be consumed once.
     const payload = await req.json();
-    const { couple_space_id, title, body: notifBody, url, type, is_test, template_key, ping } = payload;
-    await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, template_key });
+    const { couple_space_id, title, body: notifBody, url, type, is_test, template_key, ping, broadcast } = payload;
+    await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, template_key, broadcast });
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -122,15 +122,17 @@ Deno.serve(async (req) => {
     const senderId = user.id;
 
     // Fetch Target Subscriptions
-    let query = adminClient
-      .from("push_subscriptions")
-      .select("*")
-      .eq("couple_space_id", couple_space_id);
-    
-    if (is_test) {
-      query = query.eq("user_id", senderId);
+    let query = adminClient.from("push_subscriptions").select("*");
+
+    if (broadcast) {
+      // broadcast: send to all users regardless of couple_space
     } else {
-      query = query.neq("user_id", senderId);
+      query = query.eq("couple_space_id", couple_space_id);
+      if (is_test) {
+        query = query.eq("user_id", senderId);
+      } else {
+        query = query.neq("user_id", senderId);
+      }
     }
 
     const { data: subs, error: subsError } = await query;
