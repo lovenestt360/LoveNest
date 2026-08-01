@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { generateInitials } from "@/utils/initials";
 import { cn } from "@/lib/utils";
+import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
 
 interface Profile {
   display_name: string | null;
@@ -90,16 +91,6 @@ function loadPrefs(): Record<string, boolean> {
   }
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
 
 // Sub-componente isolado — só montado quando a secção de notificações está visível.
 // Mantém o hook useLocationSharing fora do ciclo de vida da Settings completa.
@@ -218,19 +209,20 @@ export default function Settings() {
       setPushPermission("unsupported");
     } else {
       setPushPermission(Notification.permission);
-      navigator.serviceWorker?.ready.then((reg) => {
-        (reg as any).pushManager.getSubscription().then((sub: any) => {
-          setPushSubscribed(!!sub);
-          if (sub && user) {
-            checkSubscriptionInDB(sub.endpoint);
-          }
-        });
-      });
+      if (Notification.permission === "granted" && user && spaceId) {
+        checkFcmTokenInDB();
+      }
     }
-  }, [user]);
+  }, [user, spaceId]);
 
-  const checkSubscriptionInDB = async (endpoint: string) => {
-    const { data } = await supabase.from('push_subscriptions').select('*').eq('endpoint', endpoint).maybeSingle();
+  const checkFcmTokenInDB = async () => {
+    const { data } = await supabase
+      .from("push_subscriptions")
+      .select("id, fcm_token")
+      .eq("user_id", user!.id)
+      .not("fcm_token", "is", null)
+      .maybeSingle();
+    setPushSubscribed(!!data?.fcm_token);
     setDbSubscription(data);
   };
 
@@ -507,22 +499,35 @@ export default function Settings() {
       const permission = await Notification.requestPermission();
       setPushPermission(permission);
       if (permission === "granted") {
-        const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        const messaging = getFirebaseMessaging();
+        if (!messaging) throw new Error("Firebase Messaging não disponível.");
+
         const reg = await navigator.serviceWorker.register("/sw.js");
-        const subscription = await (reg as any).pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
+
+        // Fetch FCM VAPID key da edge function
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const keyResp = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+          headers: { Authorization: `Bearer ${anonKey}` },
         });
-        const subJson = subscription.toJSON();
-        const { error: upsertErr } = await supabase.from("push_subscriptions").upsert({
-          couple_space_id: spaceId,
-          user_id: user.id,
-          endpoint: subJson.endpoint!,
-          p256dh: subJson.keys!.p256dh!,
-          auth: subJson.keys!.auth!,
-          user_agent: navigator.userAgent,
-        }, { onConflict: "user_id,endpoint" });
-        if (upsertErr) throw new Error("Subscrição não guardada: " + upsertErr.message);
+        const fcmVapidKey = keyResp.ok ? (await keyResp.text()).trim() : null;
+        if (!fcmVapidKey) throw new Error("Não foi possível obter a chave FCM.");
+
+        const fcmToken = await getToken(messaging, {
+          vapidKey: fcmVapidKey,
+          serviceWorkerRegistration: reg,
+        });
+
+        const { error: upsertErr } = await supabase.from("push_subscriptions").upsert(
+          {
+            couple_space_id: spaceId,
+            user_id: user.id,
+            fcm_token: fcmToken,
+            user_agent: navigator.userAgent,
+          },
+          { onConflict: "fcm_token" }
+        );
+        if (upsertErr) throw new Error("Token não guardado: " + upsertErr.message);
         setPushSubscribed(true);
         toast({ title: "Notificações ativadas" });
         window.dispatchEvent(new CustomEvent("onboarding-refresh"));
@@ -537,14 +542,15 @@ export default function Settings() {
   const handleDisablePush = async () => {
     setPushLoading(true);
     try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) {
-        const sub = await (reg as any).pushManager.getSubscription();
-        if (sub) {
-          await sub.unsubscribe();
-          await supabase.from("push_subscriptions").delete().eq("user_id", user!.id).eq("endpoint", sub.endpoint);
-        }
+      const messaging = getFirebaseMessaging();
+      if (messaging) {
+        try { await deleteToken(messaging); } catch { /* ignora se não havia token */ }
       }
+      await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("user_id", user!.id)
+        .not("fcm_token", "is", null);
       setPushSubscribed(false);
       toast({ title: "Notificações desativadas" });
     } catch {

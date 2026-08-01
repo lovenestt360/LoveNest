@@ -50,6 +50,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "epubjs": "^0.3.93",
+    "firebase": "^12.17.0",
     "framer-motion": "^12.42.2",
     "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",

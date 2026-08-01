@@ -4,30 +4,17 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
+import { getFirebaseMessaging, getToken } from "@/lib/firebase";
 
-function vapidKeyToUint8Array(base64: string): Uint8Array {
-  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
-  const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
-  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-}
-
-async function upsertPushSubscription(
-  sub: PushSubscription,
-  userId: string,
-  spaceId: string
-) {
-  const j = sub.toJSON();
-  if (!j.endpoint || !j.keys?.p256dh || !j.keys?.auth) return;
+async function upsertFcmToken(fcmToken: string, userId: string, spaceId: string) {
   await supabase.from("push_subscriptions").upsert(
     {
       couple_space_id: spaceId,
       user_id: userId,
-      endpoint: j.endpoint,
-      p256dh: j.keys.p256dh,
-      auth: j.keys.auth,
+      fcm_token: fcmToken,
       user_agent: navigator.userAgent,
     },
-    { onConflict: "user_id,endpoint" }
+    { onConflict: "fcm_token" }
   );
 }
 
@@ -345,59 +332,49 @@ export function useAppNotifications() {
     }
   }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread]);
 
-  // ── Auto-refresh da subscrição push ──────────────────────────────────────
-  // 1. No arranque: se permissão já concedida, garante que a subscrição
-  //    existe no BD com o couple_space_id correto (recupera após SW update).
-  // 2. Mensagem SW: o sw.js envia PUSH_SUBSCRIPTION_CHANGED quando o browser
-  //    invalida a subscrição; recria e guarda silenciosamente.
+  // ── Auto-refresh do token FCM ─────────────────────────────────────────────
+  // No arranque: se permissão já concedida, garante que o FCM token
+  // existe no BD. Firebase Cloud Messaging substitui o antigo Web Push VAPID.
   useEffect(() => {
     if (!user || !spaceId) return;
-    if (typeof Notification === "undefined" || !("PushManager" in window)) return;
+    if (typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
 
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
-    if (!vapidKey) return;
-
-    const refreshSubscription = async () => {
+    const refreshFcmToken = async () => {
       try {
+        const messaging = getFirebaseMessaging();
+        if (!messaging) return;
+
         const reg = await navigator.serviceWorker.ready;
-        let sub = await reg.pushManager.getSubscription();
 
-        if (sub) {
-          // Verifica se esta subscrição ainda existe no BD.
-          // Se não existe (foi apagada após 410 Gone), cria uma nova.
-          const { data: dbRow } = await supabase
-            .from("push_subscriptions")
-            .select("id")
-            .eq("endpoint", sub.toJSON().endpoint ?? "")
-            .maybeSingle();
+        // Busca a FCM VAPID key pública da edge function
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const keyResp = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+          headers: { Authorization: `Bearer ${anonKey}` },
+        });
+        const fcmVapidKey = keyResp.ok ? (await keyResp.text()).trim() : null;
+        if (!fcmVapidKey) return;
 
-          if (!dbRow) {
-            await sub.unsubscribe();
-            sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: vapidKeyToUint8Array(vapidKey),
-            });
-          }
-        } else {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: vapidKeyToUint8Array(vapidKey),
-          });
+        const fcmToken = await getToken(messaging, {
+          vapidKey: fcmVapidKey,
+          serviceWorkerRegistration: reg,
+        });
+
+        if (fcmToken) {
+          await upsertFcmToken(fcmToken, user.id, spaceId);
         }
-
-        await upsertPushSubscription(sub, user.id, spaceId);
       } catch (e) {
-        console.warn("[push] auto-refresh falhou:", e);
+        console.warn("[fcm] token refresh falhou:", e);
       }
     };
 
     // Diferir 5s para não competir com queries críticas do arranque
-    const startTimer = setTimeout(refreshSubscription, 5000);
+    const startTimer = setTimeout(refreshFcmToken, 5000);
 
     const onSwMessage = (event: MessageEvent) => {
       if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED") {
-        refreshSubscription();
+        refreshFcmToken();
       }
     };
 
