@@ -3,6 +3,9 @@
   "target": {
     "namespace": "android_app",
     "package_name": "com.lovenestt.app",
-    "sha256_cert_fingerprints": ["F5:40:06:52:5E:12:41:F7:73:F7:73:90:15:56:81:7F:7B:DC:21:9E:CF:FD:59:DA:0E:D4:0C:51:6D:05:A1:45"]
+    "sha256_cert_fingerprints": [
+      "7C:D4:B8:FB:9C:5E:7D:6F:0F:98:72:ED:EB:71:4D:E7:B8:11:A9:46:A0:A7:2D:B0:4F:FF:1E:23:3D:D4:C2:56",
+      "F5:40:06:52:5E:12:41:F7:73:F7:73:90:15:56:81:7F:7B:DC:21:9E:CF:FD:59:DA:0E:D4:0C:51:6D:05:A1:45"
+    ]
   }
 }]
