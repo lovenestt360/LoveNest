@@ -504,14 +504,9 @@ export default function Settings() {
 
         const reg = await navigator.serviceWorker.register("/sw.js");
 
-        // Fetch FCM VAPID key da edge function
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-        const keyResp = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
-          headers: { Authorization: `Bearer ${anonKey}` },
-        });
-        const fcmVapidKey = keyResp.ok ? (await keyResp.text()).trim() : null;
-        if (!fcmVapidKey) throw new Error("Não foi possível obter a chave FCM.");
+        const fcmVapidKey =
+          (import.meta.env.VITE_FCM_VAPID_KEY as string | undefined)?.trim() || null;
+        if (!fcmVapidKey) throw new Error("Chave FCM não configurada.");
 
         const fcmToken = await getToken(messaging, {
           vapidKey: fcmVapidKey,

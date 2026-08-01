@@ -347,13 +347,9 @@ export function useAppNotifications() {
 
         const reg = await navigator.serviceWorker.ready;
 
-        // Busca a FCM VAPID key pública da edge function
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-        const keyResp = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
-          headers: { Authorization: `Bearer ${anonKey}` },
-        });
-        const fcmVapidKey = keyResp.ok ? (await keyResp.text()).trim() : null;
+        // VITE_FCM_VAPID_KEY tem prioridade (evita depender da edge function)
+        const fcmVapidKey =
+          (import.meta.env.VITE_FCM_VAPID_KEY as string | undefined)?.trim() || null;
         if (!fcmVapidKey) return;
 
         const fcmToken = await getToken(messaging, {
