@@ -27,19 +27,22 @@ const ITEMS: { key: keyof LocationNotifPrefs; label: string; desc: string }[] = 
 
 export function LocationNotifSettings({ prefs, onUpdate }: Props) {
   return (
-    <div className="px-4 pb-6 space-y-2">
-      <div className="flex items-center gap-1.5 px-0.5">
-        <Bell className="w-3 h-3 text-muted-foreground/50" strokeWidth={1.5} />
-        <p className="text-[12px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
+    <div className="px-4 pb-6 mt-4 space-y-2">
+      <div className="flex items-center gap-1.5 px-0.5 mb-1">
+        <Bell className="w-3.5 h-3.5 text-muted-foreground/50" strokeWidth={1.5} />
+        <p className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">
           Notificações
         </p>
       </div>
-      <div className="glass-card divide-y divide-border/30">
-        {ITEMS.map(item => (
-          <div key={item.key} className="flex items-center justify-between px-4 py-3.5">
-            <div className="flex-1 min-w-0 mr-3 space-y-0.5">
-              <p className="text-[13px] font-medium text-foreground">{item.label}</p>
-              <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+      <div className="rounded-2xl border border-border/60 overflow-hidden">
+        {ITEMS.map((item, i) => (
+          <div
+            key={item.key}
+            className={`flex items-center justify-between px-4 py-3.5 bg-card ${i < ITEMS.length - 1 ? 'border-b border-border/40' : ''}`}
+          >
+            <div className="flex-1 min-w-0 mr-4 space-y-0.5">
+              <p className="text-[13px] font-semibold text-foreground">{item.label}</p>
+              <p className="text-[11px] text-muted-foreground/55 leading-relaxed">
                 {item.desc}
               </p>
             </div>

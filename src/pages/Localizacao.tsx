@@ -8,7 +8,7 @@ import {
   Plane, Coffee, Car, Footprints,
   Home, Briefcase, ShoppingBag, Dumbbell, Church,
   Battery, BatteryLow, BatteryCharging, Wifi, Signal,
-  Moon, Camera, ChevronRight, Users, Layers,
+  Moon, Camera, ChevronRight, Users, Layers, LogOut,
   type LucideIcon,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -107,6 +107,16 @@ function BatteryIcon({ level, charging }: { level: number | null; charging: bool
       <span className="text-[10px]" style={{ color }}>{level}%</span>
     </div>
   );
+}
+
+
+function formatDuration(ms: number): string {
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
 // ── Daily ring colour ─────────────────────────────────────────────────────────
@@ -268,6 +278,23 @@ export default function Localizacao() {
       })),
     ].sort((a, b) => b.time.getTime() - a.time.getTime());
   }, [todayMoments, partnerTodayEvents]);
+
+  // ── Estatísticas de casa do par (hoje) ──
+  const homeStats = useMemo(() => {
+    const isHome = (name: string | null) => !!name && /\bcasa\b|\bhome\b/i.test(name);
+    const leaves = diary.filter(e => e.kind === 'leave' && isHome(e.placeName as string));
+    const arrivals = diary.filter(e => e.kind === 'arrive' && isHome(e.placeName as string));
+    let totalAwayMs = 0;
+    for (const lv of leaves) {
+      const nextArrival = arrivals
+        .filter(a => a.time > lv.time)
+        .sort((a, b) => a.time.getTime() - b.time.getTime())[0];
+      totalAwayMs += nextArrival
+        ? nextArrival.time.getTime() - lv.time.getTime()
+        : Date.now() - lv.time.getTime();
+    }
+    return { timesLeft: leaves.length, totalAwayMs };
+  }, [diary]);
 
   // Line connecting the two
   const lineData = myReal && partnerReal && myLocation && partnerLocation
@@ -668,12 +695,45 @@ export default function Localizacao() {
                         </p>
                       </div>
 
-                      {/* Bateria + tempo */}
+                      {/* Bateria + rede + tempo */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-                        <span className="text-[10px] text-muted-foreground/45">{shortTimeAgo(partnerLocation.updated_at)}</span>
+                        {partnerLocation.network_type && (
+                          <div className="flex items-center gap-0.5">
+                            {partnerLocation.network_type === 'wifi'
+                              ? <Wifi className="w-2.5 h-2.5 text-muted-foreground/50" strokeWidth={1.5} />
+                              : <Signal className="w-2.5 h-2.5 text-muted-foreground/50" strokeWidth={1.5} />
+                            }
+                            <span className="text-[10px] text-muted-foreground/45">
+                              {partnerLocation.network_type === 'wifi' ? 'Wi-Fi' : (partnerLocation.network_type ?? '').toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-[10px] text-muted-foreground/40">{shortTimeAgo(partnerLocation.updated_at)}</span>
                       </div>
                     </div>
+
+                    {/* Chips: saídas de casa + tempo fora */}
+                    {(homeStats.timesLeft > 0 || homeStats.totalAwayMs > 60_000) && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {homeStats.timesLeft > 0 && (
+                          <div className="flex items-center gap-1 bg-muted/60 rounded-full px-2 py-0.5">
+                            <LogOut className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={1.5} />
+                            <span className="text-[10px] text-muted-foreground/70">
+                              Saiu {homeStats.timesLeft === 1 ? '1 vez' : `${homeStats.timesLeft}×`} hoje
+                            </span>
+                          </div>
+                        )}
+                        {homeStats.totalAwayMs > 60_000 && (
+                          <div className="flex items-center gap-1 bg-muted/60 rounded-full px-2 py-0.5">
+                            <Clock className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={1.5} />
+                            <span className="text-[10px] text-muted-foreground/70">
+                              {formatDuration(homeStats.totalAwayMs)} fora de casa
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Linha de distância — só se não estiverem juntos */}
                     {distance !== null && !together && (
