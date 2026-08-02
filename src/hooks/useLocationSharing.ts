@@ -61,9 +61,16 @@ async function getBatteryInfo(): Promise<{ level: number | null; charging: boole
 }
 
 function getNetworkType(): string | null {
-  const conn = (navigator as any).connection ?? (navigator as any).mozConnection;
+  const conn = (navigator as any).connection
+    ?? (navigator as any).mozConnection
+    ?? (navigator as any).webkitConnection;
   if (!conn) return null;
-  return conn.effectiveType ?? conn.type ?? null;
+  // conn.type dá o tipo real ('wifi', 'cellular', 'ethernet', …)
+  // conn.effectiveType é estimativa de velocidade ('4g', '3g', …)
+  // Preferimos o tipo real quando disponível e significativo
+  const t = conn.type;
+  if (t && t !== 'unknown' && t !== 'other' && t !== 'none') return t;
+  return conn.effectiveType ?? null;
 }
 
 export function useLocationSharing() {
@@ -78,6 +85,7 @@ export function useLocationSharing() {
 
   const intervalIdRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUploadedPosRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastUploadTimeRef  = useRef<number>(0);
   const lastGeocodedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const lastHistoryPosRef  = useRef<{ lat: number; lng: number; time: number } | null>(null);
   const userIdRef          = useRef<string | null>(null);
@@ -118,10 +126,12 @@ export function useLocationSharing() {
         const speedKmh = speed !== null && speed !== undefined ? Math.round(speed * 3.6) : null;
         speedRef.current = speedKmh;
 
-        // Only upsert member_locations if moved > 50m
-        const shouldUpload =
+        // Upsert se moveu >20m OU passaram >2min (heartbeat — mantém updated_at fresco)
+        const movedEnough =
           !lastUploadedPosRef.current ||
-          haversineMeters(lastUploadedPosRef.current, current) >= 50;
+          haversineMeters(lastUploadedPosRef.current, current) >= 20;
+        const heartbeat = Date.now() - lastUploadTimeRef.current >= 2 * 60_000;
+        const shouldUpload = movedEnough || heartbeat;
 
         // Geocode if moved > 200m from last geocode
         let address: string | null = null;
@@ -138,6 +148,7 @@ export function useLocationSharing() {
 
         if (shouldUpload) {
           lastUploadedPosRef.current = current;
+          lastUploadTimeRef.current  = Date.now();
 
           const row: any = {
             user_id:         uid,
@@ -208,15 +219,15 @@ export function useLocationSharing() {
           }
         }
       },
-      { enableHighAccuracy: false, timeout: 30_000 }
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 5_000 }
     );
   }, []);
 
-  // Adaptive polling: 15s when moving fast (>20 km/h), 30s otherwise
+  // Polling adaptativo: 10s em movimento rápido (>20 km/h), 20s caso contrário
   const speedRef      = useRef<number | null>(null);
   const scheduleNext  = useRef<(() => void) | null>(null);
   scheduleNext.current = () => {
-    const delay = speedRef.current !== null && speedRef.current > 20 ? 15_000 : 30_000;
+    const delay = speedRef.current !== null && speedRef.current > 20 ? 10_000 : 20_000;
     intervalIdRef.current = setTimeout(() => {
       getAndUpload();
       scheduleNext.current?.();

@@ -60,6 +60,21 @@ function shortTimeAgo(iso: string): string {
   }
 }
 
+function networkLabel(type: string | null): string | null {
+  if (!type) return null;
+  if (type === 'wifi')         return 'Wi-Fi';
+  if (type === 'cellular')     return 'Dados';
+  if (type === 'ethernet')     return 'Ethernet';
+  if (type === '4g')           return '4G';
+  if (type === '3g')           return '3G';
+  if (type === '2g' || type === 'slow-2g') return '2G';
+  return type.toUpperCase();
+}
+
+function isWifi(type: string | null): boolean {
+  return type === 'wifi';
+}
+
 function distanceLabel(m: number): string {
   if (m < 100) return 'Juntos';
   if (m < 1000) return `${Math.round(m)} m`;
@@ -698,14 +713,14 @@ export default function Localizacao() {
                       {/* Bateria + rede + tempo */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-                        {partnerLocation.network_type && (
+                        {networkLabel(partnerLocation.network_type) && (
                           <div className="flex items-center gap-0.5">
-                            {partnerLocation.network_type === 'wifi'
+                            {isWifi(partnerLocation.network_type)
                               ? <Wifi className="w-2.5 h-2.5 text-muted-foreground/50" strokeWidth={1.5} />
                               : <Signal className="w-2.5 h-2.5 text-muted-foreground/50" strokeWidth={1.5} />
                             }
                             <span className="text-[10px] text-muted-foreground/45">
-                              {partnerLocation.network_type === 'wifi' ? 'Wi-Fi' : (partnerLocation.network_type ?? '').toUpperCase()}
+                              {networkLabel(partnerLocation.network_type)}
                             </span>
                           </div>
                         )}
