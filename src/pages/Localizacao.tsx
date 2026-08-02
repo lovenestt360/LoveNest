@@ -8,7 +8,7 @@ import {
   Plane, Coffee, Car, Footprints,
   Home, Briefcase, ShoppingBag, Dumbbell, Church,
   Battery, BatteryLow, BatteryCharging, Wifi, Signal,
-  Moon, Camera, ChevronRight, Users,
+  Moon, Camera, ChevronRight, Users, Layers,
   type LucideIcon,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -186,7 +186,12 @@ function maxH() { return fullH() + 24; }
 // ── Constantes de mapa ────────────────────────────────────────────────────────
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-const MAP_STYLE = 'mapbox://styles/mapbox/satellite-streets-v12';
+
+const MAP_STYLES = [
+  { id: 'satellite', url: 'mapbox://styles/mapbox/satellite-streets-v12', label: 'Satélite' },
+  { id: 'streets',   url: 'mapbox://styles/mapbox/streets-v12',           label: 'Mapa'     },
+  { id: 'dark',      url: 'mapbox://styles/mapbox/dark-v11',              label: 'Escuro'   },
+] as const;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -216,7 +221,8 @@ export default function Localizacao() {
   const [sheetH, setSheetH] = useState(DEFAULT_H);
   const [dragging, setDragging] = useState(false);
   const [activeMarker, setActiveMarker] = useState<'me' | 'partner' | null>(null);
-  const [showActions, setShowActions] = useState(false); // "Juntos" actions mini-panel
+  const [showActions, setShowActions] = useState(false);
+  const [mapStyleIdx, setMapStyleIdx] = useState(0);
 
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
   const toggleRef = useRef(toggleSharing);
@@ -377,7 +383,7 @@ export default function Localizacao() {
           <Map
             ref={mapRef}
             mapboxAccessToken={MAPBOX_TOKEN}
-            mapStyle={MAP_STYLE}
+            mapStyle={MAP_STYLES[mapStyleIdx].url}
             initialViewState={{ longitude: -9.1399, latitude: 38.7169, zoom: 12 }}
             style={{ width: '100%', height: '100%' }}
             onLoad={() => setMapLoaded(true)}
@@ -549,32 +555,43 @@ export default function Localizacao() {
         </div>
       )}
 
-      {/* Botão centrar câmara */}
-      <button
-        onClick={centerCamera}
-        className="absolute right-4 z-30 w-10 h-10 rounded-full flex items-center justify-center active:scale-95"
+      {/* Botões flutuantes acima da sheet */}
+      <div
+        className="absolute right-4 z-30 flex flex-col gap-2"
         style={{
           bottom: sheetH + 12,
-          background: 'rgba(0,0,0,0.46)',
-          backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
           transition: dragging ? 'none' : 'bottom 0.35s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
-        <Navigation className="w-4 h-4 text-white/80" strokeWidth={1.5} />
-      </button>
+        {/* Ciclar estilo do mapa */}
+        <button
+          onClick={() => setMapStyleIdx(i => (i + 1) % MAP_STYLES.length)}
+          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{ background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}
+          title={MAP_STYLES[(mapStyleIdx + 1) % MAP_STYLES.length].label}
+        >
+          <Layers className="w-4 h-4 text-white/80" strokeWidth={1.5} />
+        </button>
+
+        {/* Centrar câmara */}
+        <button
+          onClick={centerCamera}
+          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{ background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}
+        >
+          <Navigation className="w-4 h-4 text-white/80" strokeWidth={1.5} />
+        </button>
+      </div>
 
       {/* ── BOTTOM SHEET ── */}
       <div
-        className="absolute left-0 right-0 bottom-0 z-20"
+        className="absolute left-0 right-0 bottom-0 z-20 bg-card"
         style={{
           height: SHEET_MAX,
           transform: `translateY(${SHEET_MAX - sheetH}px)`,
           transition: dragging ? 'none' : 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
           borderRadius: '20px 20px 0 0',
-          background: 'var(--background)',
-          boxShadow: '0 -6px 40px rgba(0,0,0,0.18)',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.22)',
         }}
       >
         {/* Handle — drag zone */}
