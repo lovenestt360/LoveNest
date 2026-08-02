@@ -19,6 +19,8 @@ export function AppShell() {
   const isOnline = useOnlineStatus();
   const location = useLocation();
   const isChat = location.pathname === "/chat";
+  const isLocation = location.pathname.startsWith("/localizacao");
+  const isFullscreen = isChat || isLocation;
   const isHome = location.pathname === "/";
 
   // Quando o utilizador navega de volta para a Home (keep-alive esconde/mostra),
@@ -64,7 +66,7 @@ export function AppShell() {
   return (
     <div className={cn(
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
-      isChat ? "bg-transparent" : "bg-background"
+      isFullscreen ? "bg-transparent" : "bg-background"
     )}>
       <ChatWallpaper />
       <div className="bg-mesh" aria-hidden="true" />
@@ -78,7 +80,7 @@ export function AppShell() {
 
       <main className={cn(
         "mx-auto w-full max-w-md relative z-10",
-        isChat ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-6"
+        isFullscreen ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-6"
       )}>
         {/*
           ── KEEP-ALIVE DA HOME ───────────────────────────────────────────
@@ -103,7 +105,7 @@ export function AppShell() {
         )}
       </main>
 
-      {!isChat && <BottomTabs />}
+      {!isFullscreen && <BottomTabs />}
       <FloatingSetupChecklist />
       <VerificationPrompt />
     </div>
