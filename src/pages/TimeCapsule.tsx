@@ -46,7 +46,12 @@ export default function TimeCapsule() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-  const [unlockDate, setUnlockDate] = useState("");
+  const [unlockDay,   setUnlockDay]   = useState("");
+  const [unlockMonth, setUnlockMonth] = useState("");
+  const [unlockYear,  setUnlockYear]  = useState("");
+  const unlockDate = (unlockDay && unlockMonth && unlockYear)
+    ? `${unlockYear}-${unlockMonth.padStart(2, "0")}-${unlockDay.padStart(2, "0")}`
+    : "";
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -98,6 +103,21 @@ export default function TimeCapsule() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !unlockDate || !houseId || !user) return;
+    // Validar data: dia pode ser inválido para o mês (ex: 31 de Fev)
+    const parsedDate = new Date(parseInt(unlockYear), parseInt(unlockMonth) - 1, parseInt(unlockDay));
+    const isValidDay =
+      parsedDate.getFullYear() === parseInt(unlockYear) &&
+      parsedDate.getMonth()    === parseInt(unlockMonth) - 1 &&
+      parsedDate.getDate()     === parseInt(unlockDay);
+    if (!isValidDay) {
+      toast({ title: "Data inválida", description: "Verifica o dia e o mês selecionados.", variant: "destructive" });
+      return;
+    }
+    const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+    if (parsedDate <= todayMidnight) {
+      toast({ title: "Data inválida", description: "Escolhe uma data futura.", variant: "destructive" });
+      return;
+    }
     try {
       setUploading(true);
       let publicUrl: string | null = null;
@@ -127,7 +147,7 @@ export default function TimeCapsule() {
       });
       notifyPartner({ couple_space_id: houseId, title: "Cápsula do Tempo",
         body: "O teu par guardou uma memória para o futuro.", url: "/capsula", type: "memorias" });
-      setNewMessage(""); setUnlockDate(""); setSelectedImage(null); setIsAdding(false);
+      setNewMessage(""); setUnlockDay(""); setUnlockMonth(""); setUnlockYear(""); setSelectedImage(null); setIsAdding(false);
       loadCapsules();
       window.dispatchEvent(new CustomEvent("lovenest-capsule-sealed", {
         detail: { imageUrl: publicUrl, unlockDate: sealedDate, capsuleId: inserted?.id ?? `${Date.now()}` },
@@ -188,7 +208,6 @@ export default function TimeCapsule() {
 
   if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
 
-  const today = format(new Date(), "yyyy-MM-dd");
   const userId = user?.id;
 
   // Tipo por utilizador: data passada + utilizador ainda não viu a revelação → "ready"
@@ -325,12 +344,34 @@ export default function TimeCapsule() {
             </div>
             <form onSubmit={handleCreate} className="space-y-3">
               <div className="bg-muted rounded-2xl divide-y divide-border/50">
-                <div className="px-4 py-2.5 flex items-center gap-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground shrink-0">Data</p>
-                  <input type="date" value={unlockDate}
-                    onChange={e => setUnlockDate(e.target.value)}
-                    min={today} required
-                    className="bg-transparent border-none outline-none text-sm text-foreground flex-1 text-right" />
+                <div className="px-4 py-3 flex items-start gap-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground shrink-0 mt-[3px]">Data</p>
+                  <div className="flex-1 flex items-center justify-end gap-1.5">
+                    {/* Dia */}
+                    <select value={unlockDay} onChange={e => setUnlockDay(e.target.value)}
+                      className="appearance-none bg-muted rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[44px]">
+                      <option value="" disabled>Dia</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                        <option key={d} value={String(d)}>{d}</option>
+                      ))}
+                    </select>
+                    {/* Mês */}
+                    <select value={unlockMonth} onChange={e => setUnlockMonth(e.target.value)}
+                      className="appearance-none bg-muted rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center">
+                      <option value="" disabled>Mês</option>
+                      {["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].map((m, i) => (
+                        <option key={i + 1} value={String(i + 1)}>{m}</option>
+                      ))}
+                    </select>
+                    {/* Ano */}
+                    <select value={unlockYear} onChange={e => setUnlockYear(e.target.value)}
+                      className="appearance-none bg-muted rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[60px]">
+                      <option value="" disabled>Ano</option>
+                      {Array.from({ length: 21 }, (_, i) => new Date().getFullYear() + i).map(y => (
+                        <option key={y} value={String(y)}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="px-4 py-3 space-y-1">
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Mensagem</p>
