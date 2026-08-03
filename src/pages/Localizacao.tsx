@@ -272,7 +272,8 @@ export default function Localizacao() {
   const myName = profile?.display_name ?? 'O teu par';
   const { prefs: notifPrefs, updatePref } = useLocationNotifPrefs();
   const { partnerTodayEvents } = useLocationEvents(myLocation, partnerLocation, myName, notifPrefs);
-  const { partnerPath } = useLocationHistory(partnerLocation?.user_id ?? null);
+  const { path: partnerPath } = useLocationHistory(partnerLocation?.user_id ?? null);
+  const { path: myPath }      = useLocationHistory(user?.id ?? null);
 
   const partnerPlaceName = partnerReal && partnerLocation
     ? detectPlace(partnerLocation.lat, partnerLocation.lng) : null;
@@ -294,22 +295,44 @@ export default function Localizacao() {
     ].sort((a, b) => b.time.getTime() - a.time.getTime());
   }, [todayMoments, partnerTodayEvents]);
 
-  // ── Estatísticas de casa do par (hoje) ──
+  // ── Estatísticas de casa do par — calculadas a partir do histórico GPS (mais fiável que geofence events) ──
   const homeStats = useMemo(() => {
-    const isHome = (name: string | null) => !!name && /\bcasa\b|\bhome\b/i.test(name);
-    const leaves = diary.filter(e => e.kind === 'leave' && isHome(e.placeName as string));
-    const arrivals = diary.filter(e => e.kind === 'arrive' && isHome(e.placeName as string));
+    const homePlace = places.find(p => /\bcasa\b|\bhome\b/i.test(p.name) || p.icon === 'Home');
+    if (!homePlace) return { timesLeft: 0, totalAwayMs: 0 };
+
+    // Inclui posição atual do par como último ponto
+    const fullPath = [
+      ...partnerPath,
+      ...(partnerReal && partnerLocation
+        ? [{ lat: partnerLocation.lat, lng: partnerLocation.lng, recorded_at: partnerLocation.updated_at, speed_kmh: null }]
+        : []),
+    ];
+    if (fullPath.length < 2) return { timesLeft: 0, totalAwayMs: 0 };
+
+    const THRESHOLD = homePlace.radius_m ?? 150;
+    let timesLeft = 0;
     let totalAwayMs = 0;
-    for (const lv of leaves) {
-      const nextArrival = arrivals
-        .filter(a => a.time > lv.time)
-        .sort((a, b) => a.time.getTime() - b.time.getTime())[0];
-      totalAwayMs += nextArrival
-        ? nextArrival.time.getTime() - lv.time.getTime()
-        : Date.now() - lv.time.getTime();
+    let wasAtHome: boolean | null = null;
+    let leaveTime: number | null = null;
+
+    for (const pt of fullPath) {
+      const dist = haversineMeters({ lat: pt.lat, lng: pt.lng }, { lat: homePlace.lat, lng: homePlace.lng });
+      const atHome = dist <= THRESHOLD;
+      if (wasAtHome === null) { wasAtHome = atHome; continue; }
+      if (wasAtHome && !atHome) {
+        timesLeft++;
+        leaveTime = new Date(pt.recorded_at).getTime();
+        wasAtHome = false;
+      } else if (!wasAtHome && atHome) {
+        if (leaveTime !== null) totalAwayMs += new Date(pt.recorded_at).getTime() - leaveTime;
+        leaveTime = null;
+        wasAtHome = true;
+      }
     }
-    return { timesLeft: leaves.length, totalAwayMs };
-  }, [diary]);
+    // Ainda fora de casa agora
+    if (wasAtHome === false && leaveTime !== null) totalAwayMs += Date.now() - leaveTime;
+    return { timesLeft, totalAwayMs };
+  }, [partnerPath, places, partnerReal, partnerLocation]);
 
   // Line connecting the two
   const lineData = myReal && partnerReal && myLocation && partnerLocation
@@ -433,13 +456,22 @@ export default function Localizacao() {
             attributionControl={false}
             reuseMaps
           >
-            {/* Rota do parceiro */}
+            {/* Rasto do par (graphite) */}
             {partnerPath.length >= 2 && (
               <Source id="prt-route" type="geojson" data={{
                 type: 'FeatureCollection',
                 features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: partnerPath.map(p => [p.lng, p.lat]) } }],
               }}>
-                <Layer id="prt-route-l" type="line" paint={{ 'line-color': '#9CA3AF', 'line-opacity': 0.3, 'line-width': 2 }} layout={{ 'line-join': 'round', 'line-cap': 'round' }} />
+                <Layer id="prt-route-l" type="line" paint={{ 'line-color': '#9CA3AF', 'line-opacity': 0.65, 'line-width': 3 }} layout={{ 'line-join': 'round', 'line-cap': 'round' }} />
+              </Source>
+            )}
+            {/* Rasto próprio (rose) */}
+            {myPath.length >= 2 && (
+              <Source id="my-route" type="geojson" data={{
+                type: 'FeatureCollection',
+                features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: myPath.map(p => [p.lng, p.lat]) } }],
+              }}>
+                <Layer id="my-route-l" type="line" paint={{ 'line-color': '#f43f5e', 'line-opacity': 0.55, 'line-width': 3 }} layout={{ 'line-join': 'round', 'line-cap': 'round' }} />
               </Source>
             )}
 

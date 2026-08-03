@@ -83,7 +83,7 @@ export function useLocationSharing() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [geoErrorMsg,      setGeoErrorMsg]      = useState<string | null>(null);
 
-  const intervalIdRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const watchIdRef         = useRef<number | null>(null);
   const lastUploadedPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const lastUploadTimeRef  = useRef<number>(0);
   const lastGeocodedPosRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -112,139 +112,125 @@ export function useLocationSharing() {
     setLoading(false);
   }, [spaceId, user?.id]);
 
-  const getAndUpload = useCallback(() => {
-    if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        setPermissionDenied(false);
-        const { latitude: lat, longitude: lng, accuracy, speed } = pos.coords;
-        const uid = userIdRef.current;
-        const sid = spaceIdRef.current;
-        if (!uid || !sid) return;
+  // processPosition: callback direto do watchPosition — toda a lógica de upload aqui
+  const processPosition = useCallback(async (pos: GeolocationPosition) => {
+    setPermissionDenied(false);
+    const { latitude: lat, longitude: lng, accuracy, speed } = pos.coords;
+    const uid = userIdRef.current;
+    const sid = spaceIdRef.current;
+    if (!uid || !sid) return;
 
-        const current = { lat, lng };
-        const speedKmh = speed !== null && speed !== undefined ? Math.round(speed * 3.6) : null;
-        speedRef.current = speedKmh;
+    const current = { lat, lng };
+    const speedKmh = speed !== null && speed !== undefined ? Math.round(speed * 3.6) : null;
 
-        // Upsert se moveu >20m OU passaram >2min (heartbeat — mantém updated_at fresco)
-        const movedEnough =
-          !lastUploadedPosRef.current ||
-          haversineMeters(lastUploadedPosRef.current, current) >= 20;
-        const heartbeat = Date.now() - lastUploadTimeRef.current >= 2 * 60_000;
-        const shouldUpload = movedEnough || heartbeat;
+    // Upsert se moveu >20m OU passaram >2min (heartbeat — mantém updated_at fresco)
+    const movedEnough =
+      !lastUploadedPosRef.current ||
+      haversineMeters(lastUploadedPosRef.current, current) >= 20;
+    const heartbeat = Date.now() - lastUploadTimeRef.current >= 2 * 60_000;
+    const shouldUpload = movedEnough || heartbeat;
 
-        // Geocode if moved > 200m from last geocode
-        let address: string | null = null;
-        if (
-          !lastGeocodedPosRef.current ||
-          haversineMeters(lastGeocodedPosRef.current, current) > 200
-        ) {
-          address = await reverseGeocode(lat, lng);
-          if (address) lastGeocodedPosRef.current = current;
-        }
+    // Geocode se moveu >200m desde o último geocode
+    let address: string | null = null;
+    if (
+      !lastGeocodedPosRef.current ||
+      haversineMeters(lastGeocodedPosRef.current, current) > 200
+    ) {
+      address = await reverseGeocode(lat, lng);
+      if (address) lastGeocodedPosRef.current = current;
+    }
 
-        const { level: batteryLevel, charging: isCharging } = await getBatteryInfo();
-        const networkType = getNetworkType();
+    const { level: batteryLevel, charging: isCharging } = await getBatteryInfo();
+    const networkType = getNetworkType();
 
-        if (shouldUpload) {
-          lastUploadedPosRef.current = current;
-          lastUploadTimeRef.current  = Date.now();
+    if (shouldUpload) {
+      lastUploadedPosRef.current = current;
+      lastUploadTimeRef.current  = Date.now();
 
-          const row: any = {
-            user_id:         uid,
-            couple_space_id: sid,
-            lat,
-            lng,
-            accuracy:        accuracy ?? null,
-            sharing_enabled: true,
-            updated_at:      new Date().toISOString(),
-            speed_kmh:       speedKmh,
-            battery_level:   batteryLevel,
-            is_charging:     isCharging,
-            network_type:    networkType,
-            ...(address !== null ? { address } : {}),
-          };
+      const row: any = {
+        user_id:         uid,
+        couple_space_id: sid,
+        lat,
+        lng,
+        accuracy:        accuracy ?? null,
+        sharing_enabled: true,
+        updated_at:      new Date().toISOString(),
+        speed_kmh:       speedKmh,
+        battery_level:   batteryLevel,
+        is_charging:     isCharging,
+        network_type:    networkType,
+        ...(address !== null ? { address } : {}),
+      };
 
-          await (supabase as any)
-            .from("member_locations")
-            .upsert(row, { onConflict: "user_id,couple_space_id" });
+      await (supabase as any)
+        .from("member_locations")
+        .upsert(row, { onConflict: "user_id,couple_space_id" });
 
-          // Server-side geofence detection — runs even when useLocationEvents is unmounted
-          supabase.functions.invoke("geofence-check", {
-            body: { user_id: uid, couple_space_id: sid, lat, lng },
-          }).catch(() => {});
+      // Deteção de geofence no servidor
+      supabase.functions.invoke("geofence-check", {
+        body: { user_id: uid, couple_space_id: sid, lat, lng },
+      }).catch(() => {});
 
-          setMyLocation(prev => ({
-            ...(prev ?? {
-              user_id: uid, accuracy: null, address: null,
-              sharing_enabled: true, updated_at: row.updated_at,
-              battery_level: null, is_charging: null, network_type: null, speed_kmh: null,
-            }),
-            lat, lng,
-            accuracy:      accuracy ?? null,
-            speed_kmh:     speedKmh,
-            battery_level: batteryLevel,
-            is_charging:   isCharging,
-            network_type:  networkType,
-            updated_at:    row.updated_at,
-            ...(address !== null ? { address } : {}),
-          }));
-        }
+      setMyLocation(prev => ({
+        ...(prev ?? {
+          user_id: uid, accuracy: null, address: null,
+          sharing_enabled: true, updated_at: row.updated_at,
+          battery_level: null, is_charging: null, network_type: null, speed_kmh: null,
+        }),
+        lat, lng,
+        accuracy:      accuracy ?? null,
+        speed_kmh:     speedKmh,
+        battery_level: batteryLevel,
+        is_charging:   isCharging,
+        network_type:  networkType,
+        updated_at:    row.updated_at,
+        ...(address !== null ? { address } : {}),
+      }));
+    }
 
-        // Route history: log if moved > 30m OR > 5 min since last log
-        const now = Date.now();
-        const lastH = lastHistoryPosRef.current;
-        const historyDist = lastH ? haversineMeters(lastH, current) : Infinity;
-        const historyTime = lastH ? now - lastH.time : Infinity;
+    // Histórico de rota: regista se moveu >30m OU >5 min desde o último registo
+    const now = Date.now();
+    const lastH = lastHistoryPosRef.current;
+    const historyDist = lastH ? haversineMeters(lastH, current) : Infinity;
+    const historyTime = lastH ? now - lastH.time : Infinity;
 
-        if (historyDist >= 30 || historyTime >= 5 * 60 * 1000) {
-          lastHistoryPosRef.current = { lat, lng, time: now };
-          (supabase as any).from("location_history").insert({
-            couple_space_id: sid,
-            user_id:         uid,
-            lat,
-            lng,
-            speed_kmh:       speedKmh,
-            recorded_at:     new Date().toISOString(),
-          });
-        }
-      },
-      (err) => {
-        setGeoErrorMsg(`[${err.code}] ${err.message}`);
-        if (err.code === 1) {
-          setPermissionDenied(true);
-          if (intervalIdRef.current !== null) {
-            clearTimeout(intervalIdRef.current);
-            intervalIdRef.current = null;
-          }
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 5_000 }
-    );
+    if (historyDist >= 30 || historyTime >= 5 * 60 * 1000) {
+      lastHistoryPosRef.current = { lat, lng, time: now };
+      (supabase as any).from("location_history").insert({
+        couple_space_id: sid,
+        user_id:         uid,
+        lat,
+        lng,
+        speed_kmh:       speedKmh,
+        recorded_at:     new Date().toISOString(),
+      });
+    }
   }, []);
 
-  // Polling adaptativo: 10s em movimento rápido (>20 km/h), 20s caso contrário
-  const speedRef      = useRef<number | null>(null);
-  const scheduleNext  = useRef<(() => void) | null>(null);
-  scheduleNext.current = () => {
-    const delay = speedRef.current !== null && speedRef.current > 20 ? 10_000 : 20_000;
-    intervalIdRef.current = setTimeout(() => {
-      getAndUpload();
-      scheduleNext.current?.();
-    }, delay);
-  };
+  const handleGeoError = useCallback((err: GeolocationPositionError) => {
+    setGeoErrorMsg(`[${err.code}] ${err.message}`);
+    if (err.code === 1) {
+      setPermissionDenied(true);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    }
+  }, []);
 
   const startWatch = useCallback(() => {
     if (!("geolocation" in navigator)) return;
-    if (intervalIdRef.current !== null) return;
-    getAndUpload();
-    scheduleNext.current?.();
-  }, [getAndUpload]);
+    if (watchIdRef.current !== null) return;
+    const opts: PositionOptions = { enableHighAccuracy: true, timeout: 15_000, maximumAge: 5_000 };
+    // Posição imediata ao iniciar; depois watchPosition trata das atualizações contínuas
+    navigator.geolocation.getCurrentPosition(processPosition, handleGeoError, { ...opts, maximumAge: 0 });
+    watchIdRef.current = navigator.geolocation.watchPosition(processPosition, handleGeoError, opts);
+  }, [processPosition, handleGeoError]);
 
   const stopWatch = useCallback(() => {
-    if (intervalIdRef.current !== null) {
-      clearTimeout(intervalIdRef.current);
-      intervalIdRef.current = null;
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
     }
   }, []);
 
@@ -302,8 +288,8 @@ export function useLocationSharing() {
           if (row.user_id === user.id) {
             setMyLocation(row);
             mySharingRef.current = row.sharing_enabled;
-            if (row.sharing_enabled && intervalIdRef.current === null) startWatch();
-            if (!row.sharing_enabled && intervalIdRef.current !== null) stopWatch();
+            if (row.sharing_enabled && watchIdRef.current === null) startWatch();
+            if (!row.sharing_enabled && watchIdRef.current !== null) stopWatch();
           } else {
             setPartnerLocation(row);
           }
