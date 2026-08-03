@@ -263,8 +263,9 @@ export default function Jornada() {
   const shieldUsedToday  = streak?.shieldUsedToday   ?? false;
   const shieldsRemaining = streak?.shieldsRemaining  ?? 0;
   const shieldsPurchased = streak?.shieldsPurchasedThisMonth ?? 0;
-  const missionsDone   = missions.filter(m => m.completed).length;
-  const missionsPts    = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
+  const missionsDone         = missions.filter(m => m.completed).length;
+  const missionsPts          = missions.filter(m => m.completed).reduce((a, m) => a + m.points, 0);
+  const missionsInProgress   = missions.filter(m => !m.completed && m.completedCount > 0).length;
   const canBuyShield   = totalPoints >= 200;
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
   const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
@@ -452,7 +453,7 @@ export default function Jornada() {
     const { ok, message } = await checkIn();
     if (ok) {
       hapticSuccess();
-      toast.success(isSolo ? "Protegeste a chama hoje" : "Vocês protegeram a chama hoje");
+      toast.success("O teu gesto foi guardado");
     } else {
       toast.error(message || (isSolo ? "Não foi possível registar a tua presença." : "Não foi possível registar a vossa presença."));
     }
@@ -479,6 +480,22 @@ export default function Jornada() {
     document.addEventListener("visibilitychange", handleVisible);
     return () => document.removeEventListener("visibilitychange", handleVisible);
   }, [fetchAllData]);
+
+  // Re-executa fetchMissions quando totalMembers passa de 0 para positivo.
+  // fetchMissions e fetchAllData correm em paralelo no carregamento inicial;
+  // se não houver cache o totalMembers é 0 quando fetchMissions é criada
+  // e o threshold fica errado. Quando refresh() termina e actualiza
+  // totalMembers, esta guarda re-executa fetchMissions com o valor correcto.
+  const prevTotalMembersRef = useRef(totalMembers);
+  useEffect(() => {
+    if (prevTotalMembersRef.current === 0 && totalMembers > 0 && spaceId) {
+      fetchMissions();
+    }
+    prevTotalMembersRef.current = totalMembers;
+  // fetchMissions muda quando totalMembers muda — não criar loop infinito,
+  // pois fetchMissions só actualiza `missions`, não `totalMembers`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalMembers, spaceId, fetchMissions]);
 
   // ── Loading guard ─────────────────────────
   if (loading && !streak) {
@@ -866,14 +883,18 @@ export default function Jornada() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
-                  {missionsDone === 0 ? "Pequenos gestos fortalecem o amor"
-                    : missionsDone === missionDefs.length ? "Hoje foram extraordinários"
-                    : (isSolo ? "Continua — a chama agradece" : "Continuem — a chama agradece")}
+                  {missionsDone === missionDefs.length && missionsDone > 0
+                    ? "Hoje foram extraordinários"
+                    : (missionsDone > 0 || missionsInProgress > 0)
+                    ? (isSolo ? "Continua — a chama agradece" : "Continuem — a chama agradece")
+                    : "Pequenos gestos fortalecem o amor"}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {missionsDone === 0
-                    ? "Nenhum gesto ainda hoje"
-                    : `${missionsDone} de ${missionDefs.length} gestos dados · +${missionsPts} pts`}
+                  {missionsDone > 0
+                    ? `${missionsDone} de ${missionDefs.length} gestos dados · +${missionsPts} pts`
+                    : missionsInProgress > 0
+                    ? `${missionsInProgress} gesto${missionsInProgress > 1 ? "s" : ""} em progresso`
+                    : "Nenhum gesto ainda hoje"}
                 </p>
               </div>
               <Target className="w-5 h-5 text-rose-400 shrink-0" strokeWidth={1.5} />
