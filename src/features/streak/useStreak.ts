@@ -212,12 +212,20 @@ export function useStreak() {
       //   fossem de "hoje"; zeramos myCheckedIn e activeCount para não mostrar
       //   corações acesos num novo dia sem check-in.
       //
-      // Caso B — servidor correto mas só um parceiro fez check-in (normal):
-      //   server_today = localToday, lastActiveDate = ontem → zeramos só bothActiveToday.
+      // Caso B — staleServerDate: last_streak_date < hoje MAS both_active já é true.
+      //   Isto acontece quando update_streak ainda não correu (ou falhou) mas ambos
+      //   já fizeram check-in — daily_activity já tem as duas linhas de hoje, por
+      //   isso o servidor devolve both_active=true. Neste caso NÃO suprimimos
+      //   bothActiveToday, pois daily_activity é a fonte de verdade.
+      //   Só suprimimos se o servidor TAMBÉM disser both_active=false (ninguém
+      //   ativo hoje).
       const localToday      = todayLocal();
       const serverToday     = raw.server_today as string | undefined;
       const serverBehind    = serverToday !== undefined && serverToday < localToday;
-      const staleServerDate = newState.lastActiveDate !== null && newState.lastActiveDate < localToday;
+      const staleServerDate =
+        newState.lastActiveDate !== null &&
+        newState.lastActiveDate < localToday &&
+        !newState.bothActiveToday;   // ← só suprime se o servidor também diz false
 
       const finalState: StreakState = serverBehind
         ? {
