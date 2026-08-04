@@ -381,21 +381,20 @@ export default function TimeCapsule() {
                     rows={3} required
                     className="bg-transparent border-none p-0 resize-none text-sm focus-visible:ring-0 placeholder:text-muted-foreground/50" />
                 </div>
-                <div className="px-4 py-2.5 flex items-center gap-3 cursor-pointer active:bg-muted/80 transition-colors"
-                  onClick={() => document.getElementById("capsule-img")?.click()}>
+                <label htmlFor="capsule-img" className="px-4 py-2.5 flex items-center gap-3 cursor-pointer active:bg-muted/80 transition-colors">
                   <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
                   <span className={cn("text-sm flex-1 truncate", selectedImage ? "text-foreground font-medium" : "text-muted-foreground")}>
                     {selectedImage ? selectedImage.name : "Foto (opcional)"}
                   </span>
                   {selectedImage && (
-                    <button type="button" onClick={e => { e.stopPropagation(); setSelectedImage(null); }}
+                    <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setSelectedImage(null); }}
                       className="w-6 h-6 rounded-full bg-border flex items-center justify-center shrink-0">
                       <X className="w-3 h-3 text-muted-foreground" />
                     </button>
                   )}
                   <input id="capsule-img" type="file" accept="image/*,video/*" className="hidden"
-                    onChange={e => { if (e.target.files?.[0]) setSelectedImage(e.target.files[0]); }} />
-                </div>
+                    onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setSelectedImage(f); }} />
+                </label>
               </div>
               <button type="submit"
                 disabled={uploading || !newMessage.trim() || !unlockDate}

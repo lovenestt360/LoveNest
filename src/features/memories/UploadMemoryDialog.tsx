@@ -38,6 +38,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    e.target.value = "";
     if (!f) return;
     setFile(f);
     const reader = new FileReader();
@@ -145,10 +146,9 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted p-10 active:scale-[0.98] transition-all"
-              onClick={() => inputRef.current?.click()}
+            <label
+              htmlFor="upload-memory-dialog-file"
+              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted p-10 active:scale-[0.98] transition-all cursor-pointer"
             >
               <div className="h-12 w-12 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-400">
                 <ImagePlus className="h-6 w-6" />
@@ -157,9 +157,9 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
                 <span className="text-sm font-semibold text-foreground block">Escolher foto da galeria</span>
                 <span className="text-[11px] text-muted-foreground/65 mt-0.5 block">JPG, PNG, WEBP</span>
               </div>
-            </button>
+            </label>
           )}
-          <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input id="upload-memory-dialog-file" ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
           <div className="bg-card border border-border rounded-2xl divide-y divide-border">
             <div className="p-4 space-y-1">

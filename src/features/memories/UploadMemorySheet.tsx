@@ -32,6 +32,8 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    // Limpa o valor para permitir selecionar o mesmo ficheiro novamente
+    e.target.value = "";
     if (!f) return;
     setFile(f);
     const reader = new FileReader();
@@ -101,10 +103,9 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
 
       {/* Photo picker or preview */}
       {!preview ? (
-        <button
-          type="button"
-          className="flex-1 flex flex-col items-center justify-center gap-5 px-8 active:bg-muted/30 transition-colors"
-          onClick={() => inputRef.current?.click()}
+        <label
+          htmlFor="upload-memory-file"
+          className="flex-1 flex flex-col items-center justify-center gap-5 px-8 active:bg-muted/30 transition-colors cursor-pointer"
         >
           <div className="w-20 h-20 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
             <ImagePlus className="w-9 h-9 text-rose-400" />
@@ -113,7 +114,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
             <p className="text-base font-bold text-foreground">Escolher fotografia</p>
             <p className="text-sm text-muted-foreground">Toca para escolher da galeria</p>
           </div>
-        </button>
+        </label>
       ) : (
         <>
           {/* Large preview */}
@@ -158,7 +159,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
         </>
       )}
 
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input id="upload-memory-file" ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
     </div>
   );
 }
