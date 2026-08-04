@@ -7,17 +7,21 @@ import "./index.css";
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE,
-  enabled: import.meta.env.PROD,
   integrations: [
     Sentry.replayIntegration({
       maskAllText: false,
       blockAllMedia: false,
     }),
   ],
-  // 100% temporário para verificar integração — baixar para 0.1 depois
   replaysSessionSampleRate: 1.0,
   replaysOnErrorSampleRate: 1.0,
 });
+
+// Evento de teste — confirma que o DSN está a ser lido e o Sentry inicializado.
+// Apagar depois de confirmar que aparece em Issues.
+if (import.meta.env.VITE_SENTRY_DSN) {
+  setTimeout(() => Sentry.captureMessage("LoveNest Sentry OK — integração activa"), 3000);
+}
 
 // Register service worker
 if ("serviceWorker" in navigator) {
