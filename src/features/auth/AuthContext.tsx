@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useReferralTracking } from "@/hooks/useReferral";
@@ -44,6 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         ensureProfileRow(session.user).catch(() => {});
+        Sentry.setUser({ id: session.user.id, email: session.user.email });
+      } else {
+        Sentry.setUser(null);
       }
       setLoading(false);
     });

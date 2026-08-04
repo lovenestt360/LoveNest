@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import * as Sentry from "@sentry/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { todayLocal, yesterdayLocal } from "@/lib/timezone";
@@ -188,6 +189,9 @@ export function useStreak() {
       ]);
 
       if (streakRes.error) {
+        Sentry.captureException(new Error(`get_streak: ${streakRes.error.message}`), {
+          tags: { rpc: "get_streak", spaceId },
+        });
         setError(`get_streak: ${streakRes.error.message}`);
         return;
       }
@@ -270,6 +274,7 @@ export function useStreak() {
         setInitialized(true);
       }
     } catch (err: any) {
+      Sentry.captureException(err, { tags: { context: "useStreak.refresh", spaceId } });
       setError(err?.message ?? "Erro inesperado em useStreak");
     } finally {
       setLoading(false);
@@ -356,6 +361,9 @@ export function useStreak() {
       });
 
       if (rpcError) {
+        Sentry.captureException(new Error(`log_daily_activity: ${rpcError.message}`), {
+          tags: { rpc: "log_daily_activity", spaceId },
+        });
         return { ok: false, message: `Erro do servidor: ${rpcError.message}` };
       }
 
@@ -379,6 +387,7 @@ export function useStreak() {
       setTimeout(() => window.dispatchEvent(new CustomEvent("streak-updated", { detail: { spaceId } })), 800);
       return { ok: true };
     } catch (err: any) {
+      Sentry.captureException(err, { tags: { context: "useStreak.checkIn", spaceId } });
       return { ok: false, message: err?.message ?? "Erro inesperado" };
     } finally {
       setCheckingIn(false);

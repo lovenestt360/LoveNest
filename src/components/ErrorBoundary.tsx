@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
+import * as Sentry from "@sentry/react";
 import { AlertCircle } from "lucide-react";
 
 interface Props {
@@ -47,6 +48,10 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
     this.setState({ errorInfo });
+
+    Sentry.captureException(error, {
+      extra: { componentStack: errorInfo.componentStack },
+    });
 
     if (isChunkLoadError(error) && !sessionStorage.getItem(RELOAD_GUARD_KEY)) {
       sessionStorage.setItem(RELOAD_GUARD_KEY, "1");
