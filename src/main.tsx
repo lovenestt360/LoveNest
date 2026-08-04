@@ -14,8 +14,8 @@ Sentry.init({
       blockAllMedia: false,
     }),
   ],
-  // 10% das sessões normais; 100% quando há erro — economiza quota no plano grátis
-  replaysSessionSampleRate: 0.1,
+  // 100% temporário para verificar integração — baixar para 0.1 depois
+  replaysSessionSampleRate: 1.0,
   replaysOnErrorSampleRate: 1.0,
 });
 
