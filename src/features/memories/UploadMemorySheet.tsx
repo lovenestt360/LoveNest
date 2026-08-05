@@ -159,7 +159,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
         </>
       )}
 
-      <input id="upload-memory-file" ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input id="upload-memory-file" ref={inputRef} type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
     </div>
   );
 }

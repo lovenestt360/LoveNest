@@ -253,7 +253,7 @@ export function AddRelationshipEventSheet({
                   id="rel-event-img"
                   type="file"
                   accept="image/*"
-                  className="hidden"
+                  className="sr-only"
                   onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; setImageFile(f); }}
                 />
               </div>

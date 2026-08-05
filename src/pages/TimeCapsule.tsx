@@ -392,7 +392,7 @@ export default function TimeCapsule() {
                       <X className="w-3 h-3 text-muted-foreground" />
                     </button>
                   )}
-                  <input id="capsule-img" type="file" accept="image/*,video/*" className="hidden"
+                  <input id="capsule-img" type="file" accept="image/*,video/*" className="sr-only"
                     onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setSelectedImage(f); }} />
                 </label>
               </div>
