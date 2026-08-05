@@ -381,20 +381,22 @@ export default function TimeCapsule() {
                     rows={3} required
                     className="bg-transparent border-none p-0 resize-none text-sm focus-visible:ring-0 placeholder:text-muted-foreground/50" />
                 </div>
-                <label htmlFor="capsule-img" className="px-4 py-2.5 flex items-center gap-3 cursor-pointer active:bg-muted/80 transition-colors">
-                  <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
-                  <span className={cn("text-sm flex-1 truncate", selectedImage ? "text-foreground font-medium" : "text-muted-foreground")}>
-                    {selectedImage ? selectedImage.name : "Foto (opcional)"}
-                  </span>
+                <div className="px-4 py-2.5 flex items-center gap-3">
+                  <div className="relative flex-1 flex items-center gap-3 cursor-pointer active:opacity-70 transition-opacity">
+                    <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                    <span className={cn("text-sm truncate", selectedImage ? "text-foreground font-medium" : "text-muted-foreground")}>
+                      {selectedImage ? selectedImage.name : "Foto (opcional)"}
+                    </span>
+                    <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setSelectedImage(f); }} />
+                  </div>
                   {selectedImage && (
-                    <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setSelectedImage(null); }}
+                    <button type="button" onClick={() => setSelectedImage(null)}
                       className="w-6 h-6 rounded-full bg-border flex items-center justify-center shrink-0">
                       <X className="w-3 h-3 text-muted-foreground" />
                     </button>
                   )}
-                  <input id="capsule-img" type="file" accept="image/*,video/*" className="sr-only"
-                    onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setSelectedImage(f); }} />
-                </label>
+                </div>
               </div>
               <button type="submit"
                 disabled={uploading || !newMessage.trim() || !unlockDate}

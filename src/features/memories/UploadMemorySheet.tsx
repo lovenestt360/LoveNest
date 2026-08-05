@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { awardLovePoints } from "@/lib/lovePoints";
@@ -19,8 +19,6 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
   const [caption, setCaption] = useState("");
   const [takenOn, setTakenOn] = useState("");
   const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const reset = () => {
     setFile(null);
     setPreview(null);
@@ -103,10 +101,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
 
       {/* Photo picker or preview */}
       {!preview ? (
-        <label
-          htmlFor="upload-memory-file"
-          className="flex-1 flex flex-col items-center justify-center gap-5 px-8 active:bg-muted/30 transition-colors cursor-pointer"
-        >
+        <div className="relative flex-1 flex flex-col items-center justify-center gap-5 px-8 active:bg-muted/30 transition-colors cursor-pointer">
           <div className="w-20 h-20 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
             <ImagePlus className="w-9 h-9 text-rose-400" />
           </div>
@@ -114,7 +109,8 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
             <p className="text-base font-bold text-foreground">Escolher fotografia</p>
             <p className="text-sm text-muted-foreground">Toca para escolher da galeria</p>
           </div>
-        </label>
+          <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+        </div>
       ) : (
         <>
           {/* Large preview */}
@@ -159,7 +155,6 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
         </>
       )}
 
-      <input id="upload-memory-file" ref={inputRef} type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
     </div>
   );
 }

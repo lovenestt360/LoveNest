@@ -241,21 +241,13 @@ export function AddRelationshipEventSheet({
                     </button>
                   </div>
                 ) : (
-                  <label
-                    htmlFor="rel-event-img"
-                    className="w-full rounded-xl border border-dashed border-border/40 py-2.5 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors cursor-pointer"
-                  >
+                  <div className="relative w-full rounded-xl border border-dashed border-border/40 py-2.5 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors cursor-pointer">
                     <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
                     <span className="text-[12px] text-muted-foreground">Adicionar fotografia (opcional)</span>
-                  </label>
-                )}
-                <input
-                  id="rel-event-img"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; setImageFile(f); }}
-                />
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; setImageFile(f); }} />
+                  </div>
+                }}
               </div>
 
               {/* Título */}
