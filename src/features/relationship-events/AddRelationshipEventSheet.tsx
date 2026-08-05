@@ -247,7 +247,7 @@ export function AddRelationshipEventSheet({
                     <input type="file" accept="image/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                       onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; setImageFile(f); }} />
                   </div>
-                }}
+                )}
               </div>
 
               {/* Título */}
