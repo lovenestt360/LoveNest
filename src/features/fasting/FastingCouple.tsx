@@ -4,7 +4,7 @@ import { pt } from "date-fns/locale";
 import { Flame, Send, UserRound, Loader2, CheckCircle2, Clock, XCircle, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
-import { useFastingCouple } from "./useFastingCouple";
+import type { UseFastingCoupleReturn } from "./useFastingCouple";
 import type { CreatePlanInput, DayResult } from "./types";
 
 const QUICK_MESSAGES = [
@@ -23,12 +23,13 @@ function resultBadge(result: DayResult) {
 }
 
 interface Props {
+  coupleData: UseFastingCoupleReturn;
   createPlan: (input: CreatePlanInput) => Promise<void>;
   hasMyPlan: boolean;
 }
 
-export function FastingCouple({ createPlan, hasMyPlan }: Props) {
-  const { loading, partner, myUserId, messages, sendMessage, joinPartnerPlan } = useFastingCouple();
+export function FastingCouple({ coupleData, createPlan, hasMyPlan }: Props) {
+  const { loading, partner, myUserId, messages, sendMessage, joinPartnerPlan } = coupleData;
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [joining, setJoining] = useState(false);
