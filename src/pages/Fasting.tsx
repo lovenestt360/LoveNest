@@ -17,7 +17,7 @@ import { FastingAbstentions } from "@/features/fasting/FastingAbstentions";
 import { FastingStats } from "@/features/fasting/FastingStats";
 import { FastingReminders } from "@/features/fasting/FastingReminders";
 import { FastingGuide } from "@/features/fasting/FastingGuide";
-import { FastingPartnerShare } from "@/features/fasting/FastingPartnerShare";
+import { FastingCouple } from "@/features/fasting/FastingCouple";
 import { PLAN_TYPES, DEFAULT_DO_ITEMS, DEFAULT_AVOID_ITEMS } from "@/features/fasting/types";
 import type { PlanType, CreatePlanInput } from "@/features/fasting/types";
 
@@ -198,12 +198,13 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
             )}
 
             <Tabs defaultValue={defaultTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 h-auto">
-                    <TabsTrigger value="hoje" className="text-[11px] py-1.5">Hoje</TabsTrigger>
-                    <TabsTrigger value="calendario" className="text-[11px] py-1.5">Calendário</TabsTrigger>
-                    <TabsTrigger value="plano" className="text-[11px] py-1.5">Plano</TabsTrigger>
-                    <TabsTrigger value="stats" className="text-[11px] py-1.5">Stats</TabsTrigger>
-                    <TabsTrigger value="guia" className="text-[11px] py-1.5">Guia</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-6 h-auto">
+                    <TabsTrigger value="hoje" className="text-[10px] py-1.5">Hoje</TabsTrigger>
+                    <TabsTrigger value="calendario" className="text-[10px] py-1.5">Cal.</TabsTrigger>
+                    <TabsTrigger value="plano" className="text-[10px] py-1.5">Plano</TabsTrigger>
+                    <TabsTrigger value="stats" className="text-[10px] py-1.5">Stats</TabsTrigger>
+                    <TabsTrigger value="casal" className="text-[10px] py-1.5">Casal</TabsTrigger>
+                    <TabsTrigger value="guia" className="text-[10px] py-1.5">Guia</TabsTrigger>
                 </TabsList>
 
                 {/* ── Hoje ── */}
@@ -225,7 +226,11 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
                 {/* ── Stats ── */}
                 <TabsContent value="stats" className="mt-4 space-y-4">
                     <FastingStats data={data} />
-                    <FastingPartnerShare data={data} />
+                </TabsContent>
+
+                {/* ── Casal ── */}
+                <TabsContent value="casal" className="mt-4 space-y-4">
+                    <FastingCouple createPlan={data.createPlan} hasMyPlan={!!data.profile} />
                 </TabsContent>
 
                 {/* ── Guia ── */}
