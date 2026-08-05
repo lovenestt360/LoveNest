@@ -2,21 +2,20 @@ import { useMemo } from "react";
 import { todayLocal } from "@/lib/timezone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Heart, Flame, Clock } from "lucide-react";
+import { Heart, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UseFastingReturn } from "./useFasting";
-import { getEasterDate, dayResultLabel, dayResultColor } from "./types";
+import { dayResultLabel } from "./types";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
 
-function Countdown() {
-    const easterStr = getEasterDate();
-    const easter = new Date(easterStr + "T00:00:00");
+function Countdown({ endDate }: { endDate: string }) {
+    const end = new Date(endDate + "T00:00:00");
     const now = new Date();
-    const diff = easter.getTime() - now.getTime();
+    const diff = end.getTime() - now.getTime();
 
     if (diff <= 0) return (
-        <div className="text-center text-sm text-muted-foreground">A Páscoa chegou!</div>
+        <div className="glass-card rounded-2xl p-4 text-center text-sm text-muted-foreground">O jejum chegou ao fim!</div>
     );
 
     const days = Math.floor(diff / 86400000);
@@ -26,7 +25,7 @@ function Countdown() {
     return (
         <div className="glass-card rounded-2xl p-4 text-center space-y-1">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                Tempo para a Páscoa
+                Tempo restante
             </p>
             <div className="flex items-center justify-center gap-3">
                 {[{ v: days, l: "dias" }, { v: hours, l: "hrs" }, { v: mins, l: "min" }].map(({ v, l }, i) => (
@@ -42,7 +41,7 @@ function Countdown() {
                 ))}
             </div>
             <p className="text-[11px] text-muted-foreground">
-                Páscoa: {format(easter, "d 'de' MMMM", { locale: pt })}
+                Fim: {format(end, "d 'de' MMMM", { locale: pt })}
             </p>
         </div>
     );
@@ -73,7 +72,7 @@ export function FastingOverview({ data, onRegister }: Props) {
 
     return (
         <div className="space-y-4 animate-fade-in">
-            <Countdown />
+            {profile && <Countdown endDate={profile.end_date} />}
 
             {profile && (
                 <>

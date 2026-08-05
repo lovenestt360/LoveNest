@@ -18,27 +18,27 @@ import { FastingStats } from "@/features/fasting/FastingStats";
 import { FastingReminders } from "@/features/fasting/FastingReminders";
 import { FastingGuide } from "@/features/fasting/FastingGuide";
 import { FastingPartnerShare } from "@/features/fasting/FastingPartnerShare";
-import { PLAN_TYPES, DEFAULT_DO_ITEMS, DEFAULT_AVOID_ITEMS, getEasterDate, easterDate } from "@/features/fasting/types";
+import { PLAN_TYPES, DEFAULT_DO_ITEMS, DEFAULT_AVOID_ITEMS } from "@/features/fasting/types";
 import type { PlanType, CreatePlanInput } from "@/features/fasting/types";
 
 // ── Wizard de criação de plano ───────────────────────────────────
 function CreatePlanWizard({ onSubmit }: { onSubmit: (input: CreatePlanInput) => Promise<void> }) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const easterStr = getEasterDate();
-    const startDefault = new Date(new Date(easterStr + "T12:00:00").getTime() - 40 * 86400000)
-        .toLocaleDateString('sv-SE');
+    const today = todayLocal();
+    const defaultEnd = new Date(new Date(today + "T12:00:00").getTime() + 39 * 86400000).toLocaleDateString('sv-SE');
 
-    const [planName, setPlanName] = useState("Quaresma " + easterStr.slice(0, 4));
+    const [planName, setPlanName] = useState("O meu Jejum");
     const [planType, setPlanType] = useState<PlanType>("combined");
     const [untilHour, setUntilHour] = useState("15:00");
-    const [startDate, setStartDate] = useState(startDefault);
-    const [endDate, setEndDate] = useState(easterStr);
-    const [totalDays, setTotalDays] = useState(40);
+    const [startDate, setStartDate] = useState(today);
+    const [endDate, setEndDate] = useState(defaultEnd);
     const [allowed, setAllowed] = useState("");
     const [forbidden, setForbidden] = useState("");
     const [exceptions, setExceptions] = useState("");
     const [saving, setSaving] = useState(false);
+
+    const totalDays = Math.max(1, Math.round(
+        (new Date(endDate + "T12:00:00").getTime() - new Date(startDate + "T12:00:00").getTime()) / 86400000
+    ) + 1);
 
     const handleSubmit = async () => {
         setSaving(true);
@@ -109,9 +109,9 @@ function CreatePlanWizard({ onSubmit }: { onSubmit: (input: CreatePlanInput) => 
                     </div>
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">Total de dias</label>
-                    <Input type="number" value={totalDays} onChange={e => setTotalDays(Number(e.target.value))} min={1} max={365} />
+                <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
+                    <span className="text-xs text-muted-foreground">Total:</span>
+                    <span className="text-sm font-bold text-foreground">{totalDays} {totalDays === 1 ? "dia" : "dias"}</span>
                 </div>
 
                 <div className="space-y-1">
@@ -175,7 +175,7 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
             <section className="space-y-4">
                 {!hideHeader && (
                     <header>
-                        <h1 className="text-2xl font-semibold tracking-tight">Jejum (Páscoa)</h1>
+                        <h1 className="text-2xl font-semibold tracking-tight">Jejum</h1>
                         <p className="text-sm text-muted-foreground">
                             Um percurso de disciplina, fé e constância — dia após dia.
                         </p>
@@ -190,7 +190,7 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
         <section className="space-y-4 pb-6">
             {!hideHeader && (
                 <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">Jejum (Páscoa)</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight">Jejum</h1>
                     <p className="text-sm text-muted-foreground">
                         Um percurso de disciplina, fé e constância — dia após dia.
                     </p>
