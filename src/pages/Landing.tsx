@@ -446,11 +446,6 @@ export default function Landing() {
           style={{ width: "50%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px 7vw", position: "relative", zIndex: 2 }}
         >
           <div style={{ ...heroIn(0) }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, background: `${PINK}0e`, border: `1px solid ${PINK}25`, marginBottom: 36 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: PINK }} />
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: PINK }}>Um espaço só para vocês</span>
-            </div>
-
             <h1 style={{ fontSize: "clamp(38px, 5.2vw, 72px)", fontWeight: 900, lineHeight: 1.03, letterSpacing: "-0.03em", color: NAVY, margin: "0 0 24px" }}>
               O amor<br />vive nos<br />
               <span style={{ color: PINK }}>dias comuns.</span>
