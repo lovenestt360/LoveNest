@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -26,7 +26,7 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchFlags = async () => {
+  const fetchFlags = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -43,11 +43,11 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFlags();
-  }, []);
+  }, [fetchFlags]);
 
   const isEnabled = (key: string): boolean => {
     // 0. Master Switch Check
@@ -76,7 +76,7 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
     isEnabled,
     loading,
     refresh: fetchFlags
-  }), [flags, loading, user?.id, spaceId]);
+  }), [flags, loading, user?.id, spaceId, fetchFlags]);
 
   return (
     <FeatureAccessContext.Provider value={value}>

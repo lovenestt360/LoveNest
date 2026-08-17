@@ -544,8 +544,7 @@ export default function Settings() {
       await supabase
         .from("push_subscriptions")
         .delete()
-        .eq("user_id", user!.id)
-        .not("fcm_token", "is", null);
+        .eq("user_id", user!.id);
       setPushSubscribed(false);
       toast({ title: "Notificações desativadas" });
     } catch {

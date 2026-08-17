@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/features/auth/AuthContext";
 
-let cachedValue: boolean | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL = 60_000; // 1 minute
+// Cache por userId — impede que sessões de utilizadores diferentes partilhem o mesmo valor
+const cache = new Map<string, { value: boolean; timestamp: number }>();
+const CACHE_TTL = 60_000;
 
 export function useFreeMode() {
-  const [freeMode, setFreeMode] = useState<boolean>(cachedValue ?? false);
-  const [loading, setLoading] = useState(cachedValue === null);
+  const { user } = useAuth();
+  const uid = user?.id ?? "anon";
+  const cached = cache.get(uid);
+
+  const [freeMode, setFreeMode] = useState<boolean>(cached?.value ?? false);
+  const [loading, setLoading] = useState(!cached || Date.now() - cached.timestamp >= CACHE_TTL);
 
   useEffect(() => {
     const now = Date.now();
-    if (cachedValue !== null && now - cacheTimestamp < CACHE_TTL) {
-      setFreeMode(cachedValue);
+    const c = cache.get(uid);
+    if (c && now - c.timestamp < CACHE_TTL) {
+      setFreeMode(c.value);
       setLoading(false);
       return;
     }
@@ -24,30 +30,24 @@ export function useFreeMode() {
         .eq("key", "free_mode")
         .maybeSingle()
         .then(({ data, error }: any) => {
-          if (error) {
-            setLoading(false);
-            return;
-          }
+          if (error) { setLoading(false); return; }
           const val = data?.value === "true";
-          cachedValue = val;
-          cacheTimestamp = Date.now();
+          cache.set(uid, { value: val, timestamp: Date.now() });
           setFreeMode(val);
           setLoading(false);
         });
     };
 
     fetchStatus();
-    
-    // Check every 30s as a fallback for sync
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [uid]);
 
   return { freeMode, loading };
 }
 
-/** Invalidate the cache so next render re-fetches */
-export function invalidateFreeModeCache() {
-  cachedValue = null;
-  cacheTimestamp = 0;
+/** Invalidar cache — passar userId para limpar só uma sessão, ou sem args para limpar tudo */
+export function invalidateFreeModeCache(userId?: string) {
+  if (userId) cache.delete(userId);
+  else cache.clear();
 }

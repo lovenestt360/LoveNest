@@ -55,7 +55,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
         taken_on: takenOn || null,
       });
       if (insertErr) throw insertErr;
-      awardLovePoints(spaceId, 5, "memoria", "Nova memória guardada", userId);
+      awardLovePoints(spaceId, 5, "memoria", "Nova memória guardada", userId).catch(console.error);
       notifyPartner({
         couple_space_id: spaceId,
         title: "Nova memória",

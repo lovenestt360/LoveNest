@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { todayLocal } from "@/lib/timezone";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -161,9 +161,11 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
     const [sheetOpen, setSheetOpen] = useState(false);
     const [showWizard, setShowWizard] = useState(false);
 
-    if (searchParams.get("register")) {
-        setSearchParams({}, { replace: true });
-    }
+    useEffect(() => {
+        if (searchParams.get("register")) {
+            setSearchParams({}, { replace: true });
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const openToday = () => { setSheetDay(todayLocal()); setSheetOpen(true); };
     const openDay = (dayKey: string) => { setSheetDay(dayKey); setSheetOpen(true); };

@@ -137,8 +137,8 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
   useEffect(() => {
     if (!spaceId) return;
     const ch = supabase.channel(`prayer-room-${spaceId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_prayers" }, () => fetchBackground())
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_spiritual_logs" }, () => fetchBackground())
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_prayers", filter: `couple_space_id=eq.${spaceId}` }, () => fetchBackground())
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_spiritual_logs", filter: `couple_space_id=eq.${spaceId}` }, () => fetchBackground())
       .subscribe();
 
     const poll = setInterval(() => fetchBackground(), 20_000);

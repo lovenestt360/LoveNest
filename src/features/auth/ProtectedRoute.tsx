@@ -71,8 +71,8 @@ export function ProtectedRoute() {
 
       setHasCoupleSpace(!!data?.couple_space_id);
 
-      // Check Suspension & Trial Status
-      const { data: houseMember } = await supabase.from("members").select("couple_space_id").eq("user_id", verifiedUser.id).maybeSingle();
+      // Check Suspension & Trial Status — reusa o resultado da query anterior
+      const houseMember = data;
       if (houseMember) {
         const { data: house } = await supabase.from("couple_spaces").select("*").eq("id", houseMember.couple_space_id).maybeSingle();
         if (house) {

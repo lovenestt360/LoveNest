@@ -62,7 +62,7 @@ export function useProfile() {
                 }
                 return;
             }
-            if (attempt < 3) await new Promise(r => setTimeout(r, 400));
+            if (attempt < 3) await new Promise(r => setTimeout(r, 200 * Math.pow(2, attempt)));
         }
         setProfile(null);
         setLoading(false);

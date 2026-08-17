@@ -242,19 +242,23 @@ export function useLocationSharing() {
     const newSharing = !mySharingRef.current;
     mySharingRef.current = newSharing;
 
-    await (supabase as any)
-      .from("member_locations")
-      .upsert(
-        {
-          user_id:         uid,
-          couple_space_id: sid,
-          lat:             myLocation?.lat ?? 0,
-          lng:             myLocation?.lng ?? 0,
-          sharing_enabled: newSharing,
-          updated_at:      new Date().toISOString(),
-        },
-        { onConflict: "user_id,couple_space_id" }
-      );
+    // Ao ativar sem localização prévia, evitar upsert com (0,0) — o watchPosition
+    // fará o primeiro upsert com as coordenadas reais assim que o GPS responder
+    if (!newSharing || myLocation) {
+      await (supabase as any)
+        .from("member_locations")
+        .upsert(
+          {
+            user_id:         uid,
+            couple_space_id: sid,
+            lat:             myLocation?.lat ?? 0,
+            lng:             myLocation?.lng ?? 0,
+            sharing_enabled: newSharing,
+            updated_at:      new Date().toISOString(),
+          },
+          { onConflict: "user_id,couple_space_id" }
+        );
+    }
 
     setMyLocation(prev =>
       prev ? { ...prev, sharing_enabled: newSharing } : null
