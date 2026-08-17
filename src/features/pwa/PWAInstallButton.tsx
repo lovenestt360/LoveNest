@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { usePWATutorial } from "./PWATutorialContext";
 import { Download } from "lucide-react";
 
@@ -5,7 +6,11 @@ import { Download } from "lucide-react";
 // Android/Desktop com prompt nativo → 1 clique instala.
 // iOS / sem prompt → abre o modal com instruções passo a passo.
 export function PWAInstallButton() {
+  const location = useLocation();
   const { setShowModal, installPrompt } = usePWATutorial();
+
+  // Não mostrar na landing page — prejudica a experiência de marketing
+  if (location.pathname === "/landing") return null;
 
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||

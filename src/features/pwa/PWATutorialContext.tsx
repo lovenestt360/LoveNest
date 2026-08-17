@@ -47,10 +47,9 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
       if (!error && data) {
         setSettings(data);
         
-        // Auto-show logic: Only show if NOT already installed as PWA
+        // Auto-show only for authenticated users — never on landing/public pages
         const hasSeen = localStorage.getItem("pwa_tutorial_seen") === "true";
-        if (data.is_enabled && !hasSeen && !isStandalone) {
-          // Delay a bit to wait for splash/login transition
+        if (data.is_enabled && !hasSeen && !isStandalone && user) {
           setTimeout(() => setShowModal(true), 3500);
         }
       }

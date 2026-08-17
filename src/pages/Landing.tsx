@@ -12,6 +12,19 @@ const CREAM = "#FAF9F7";
 
 // ── Hooks used by below-the-fold sections (preserved) ─────────────────────────
 
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const h = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, [query]);
+  return matches;
+}
+
 function useReveal(threshold = 0.14) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -238,24 +251,32 @@ const FEATURES = [
   { icon: Camera,        label: "Memórias", title: "A vossa história.", desc: "Um álbum privado que cresce dia após dia. Nenhum algoritmo decide o que aparece primeiro — apenas a vossa linha do tempo." },
 ];
 
+function FeatureCards() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, padding: "64px 24px" }}>
+      {FEATURES.map(({ icon: I, label: l, title: t, desc: d }) => (
+        <div key={l} style={{ background: "white", borderRadius: 20, padding: 24 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${PINK}12`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <I className="w-4 h-4" style={{ color: PINK }} strokeWidth={1.5} />
+          </div>
+          <p style={{ fontSize: 17, fontWeight: 800, color: NAVY, marginBottom: 8, marginTop: 0 }}>{t}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "#9CA3AF", margin: 0 }}>{d}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PinnedFeatures({ reduced }: { reduced: boolean | null }) {
+  const isMob = useMediaQuery("(max-width: 767px)");
   const outerRef = useRef<HTMLDivElement>(null);
   const progress = useSectionProgress(outerRef);
   const fi = Math.min(FEATURES.length - 1, Math.floor(progress * FEATURES.length));
   const { icon: Icon, label, title, desc } = FEATURES[fi];
 
-  if (reduced) {
-    return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24, padding: "80px 24px" }}>
-        {FEATURES.map(({ icon: I, label: l, title: t, desc: d }) => (
-          <div key={l} style={{ background: "white", borderRadius: 20, padding: 28 }}>
-            <I className="w-5 h-5" style={{ color: PINK, marginBottom: 16 }} strokeWidth={1.5} />
-            <p style={{ fontSize: 18, fontWeight: 800, color: NAVY, marginBottom: 10 }}>{t}</p>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#9CA3AF" }}>{d}</p>
-          </div>
-        ))}
-      </div>
-    );
+  // Mobile and reduced-motion: flat card layout (no sticky, no 2-col)
+  if (reduced || isMob) {
+    return <FeatureCards />;
   }
 
   return (
