@@ -1,26 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Lock, Flame, Heart, MessageCircle, Camera } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
+import { ArrowRight, Flame, Heart, MessageCircle, Camera } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
+import { LandingNav } from "@/features/landing/LandingNav";
+import { HeroScene } from "@/features/landing/HeroScene";
 
 const PINK = "#E0637A";
 const NAVY = "#0B1324";
 const CREAM = "#FAF9F7";
 
-// ── Motion hooks ──────────────────────────────────────────────────────────────
-
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const h = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
-  return reduced;
-}
+// ── Hooks used by below-the-fold sections (preserved) ─────────────────────────
 
 function useReveal(threshold = 0.14) {
   const ref = useRef<HTMLDivElement>(null);
@@ -60,7 +50,7 @@ function useSectionProgress(outerRef: React.RefObject<HTMLDivElement>) {
 
 // ── Images ────────────────────────────────────────────────────────────────────
 
-type ImgName = "hero" | "distance" | "gestures";
+type ImgName = "hero" | "distance" | "gestures" | "safe";
 
 function Pic({ name, alt, eager = false, imgStyle }: {
   name: ImgName; alt: string; eager?: boolean; imgStyle?: React.CSSProperties;
@@ -131,7 +121,7 @@ function Marquee() {
   );
 }
 
-// ── Phone content per feature ─────────────────────────────────────────────────
+// ── Phone content per feature (PinnedFeatures) ───────────────────────────────
 
 function PhoneScreen({ index }: { index: number }) {
   const screens = [
@@ -160,7 +150,6 @@ function PhoneScreen({ index }: { index: number }) {
         </div>
       </div>
     </div>,
-
     // 1 — Humor
     <div style={{ padding: "48px 16px 24px" }}>
       <p style={{ fontSize: 10, color: "#aaa", marginBottom: 4 }}>Como estás hoje?</p>
@@ -178,7 +167,6 @@ function PhoneScreen({ index }: { index: number }) {
         <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 999, background: `${PINK}15`, color: PINK }}>Feliz</span>
       </div>
     </div>,
-
     // 2 — Chat
     <div style={{ padding: "48px 16px 24px" }}>
       <p style={{ fontSize: 17, fontWeight: 800, color: NAVY, marginBottom: 16 }}>Só de vocês</p>
@@ -201,7 +189,6 @@ function PhoneScreen({ index }: { index: number }) {
         </div>
       ))}
     </div>,
-
     // 3 — Memórias
     <div style={{ padding: "48px 16px 24px" }}>
       <p style={{ fontSize: 17, fontWeight: 800, color: NAVY, marginBottom: 16 }}>As vossas memórias</p>
@@ -225,8 +212,6 @@ function PhoneScreen({ index }: { index: number }) {
     </div>
   );
 }
-
-// ── Phone frame ───────────────────────────────────────────────────────────────
 
 function PhoneMockup({ featureIndex }: { featureIndex: number }) {
   return (
@@ -253,7 +238,7 @@ const FEATURES = [
   { icon: Camera,        label: "Memórias", title: "A vossa história.", desc: "Um álbum privado que cresce dia após dia. Nenhum algoritmo decide o que aparece primeiro — apenas a vossa linha do tempo." },
 ];
 
-function PinnedFeatures({ reduced }: { reduced: boolean }) {
+function PinnedFeatures({ reduced }: { reduced: boolean | null }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const progress = useSectionProgress(outerRef);
   const fi = Math.min(FEATURES.length - 1, Math.floor(progress * FEATURES.length));
@@ -276,10 +261,8 @@ function PinnedFeatures({ reduced }: { reduced: boolean }) {
   return (
     <div ref={outerRef} style={{ height: `${FEATURES.length * 100}vh` }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden" }}>
-
         {/* Left — text */}
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 6% 0 7%", background: "white" }}>
-          {/* Dot nav */}
           <div style={{ display: "flex", gap: 8, marginBottom: 48 }}>
             {FEATURES.map((_, i) => (
               <div key={i} style={{
@@ -290,16 +273,12 @@ function PinnedFeatures({ reduced }: { reduced: boolean }) {
               }} />
             ))}
           </div>
-
-          {/* Label */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: `${PINK}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Icon className="w-4 h-4" style={{ color: PINK }} strokeWidth={1.5} />
             </div>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase", color: PINK }}>{label}</span>
           </div>
-
-          {/* Title + desc — keyed so they re-animate on change */}
           <h2 key={`t-${fi}`} style={{
             fontSize: "clamp(28px, 3.2vw, 48px)", fontWeight: 900, lineHeight: 1.06, letterSpacing: "-0.025em",
             color: NAVY, marginBottom: 20,
@@ -313,8 +292,6 @@ function PinnedFeatures({ reduced }: { reduced: boolean }) {
           }}>
             {desc}
           </p>
-
-          {/* Progress bar */}
           <div style={{ marginTop: 44 }}>
             <div style={{ height: 2, background: `${PINK}15`, borderRadius: 1, maxWidth: 180, overflow: "hidden" }}>
               <div style={{
@@ -326,13 +303,9 @@ function PinnedFeatures({ reduced }: { reduced: boolean }) {
             <p style={{ fontSize: 11, color: "#d0d0d0", marginTop: 8 }}>{fi + 1} / {FEATURES.length}</p>
           </div>
         </div>
-
         {/* Right — phone */}
         <div style={{ background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-          <div style={{
-            position: "absolute", width: 360, height: 360, borderRadius: "50%",
-            background: `${PINK}14`, filter: "blur(80px)", pointerEvents: "none",
-          }} />
+          <div style={{ position: "absolute", width: 360, height: 360, borderRadius: "50%", background: `${PINK}14`, filter: "blur(80px)", pointerEvents: "none" }} />
           <PhoneMockup featureIndex={fi} />
         </div>
       </div>
@@ -344,7 +317,7 @@ function PinnedFeatures({ reduced }: { reduced: boolean }) {
 
 const MANIFESTO_TEXT = "O amor não precisa de grandes gestos para ser real. Precisa de aparecer. Todos os dias. Em pequenos momentos que, somados, se tornam a história de vocês.";
 
-function ManifestoSection({ reduced }: { reduced: boolean }) {
+function ManifestoSection({ reduced }: { reduced: boolean | null }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const progress = useSectionProgress(outerRef);
   const words = MANIFESTO_TEXT.split(" ");
@@ -352,10 +325,8 @@ function ManifestoSection({ reduced }: { reduced: boolean }) {
   return (
     <div ref={outerRef} style={{ height: "200vh" }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", background: NAVY, display: "flex", alignItems: "center", overflow: "hidden" }}>
-        {/* Ambient */}
         <div style={{ position: "absolute", top: "25%", right: "-8%", width: 440, height: 440, borderRadius: "50%", background: `${PINK}16`, filter: "blur(90px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "20%", left: "-5%", width: 300, height: 300, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(70px)", pointerEvents: "none" }} />
-
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 7%" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}88`, marginBottom: 36 }}>
             Manifesto
@@ -382,8 +353,7 @@ function ManifestoSection({ reduced }: { reduced: boolean }) {
 export default function Landing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const reduced = useReducedMotion();
-  const [heroReady, setHeroReady] = useState(false);
+  const reduced = useReducedMotion(); // from framer-motion
   const [activeBtn, setActiveBtn] = useState<string | null>(null);
 
   useEffect(() => {
@@ -392,15 +362,7 @@ export default function Landing() {
       sessionStorage.setItem("lovenest_ref", ref.toUpperCase());
       localStorage.setItem("lovenest_ref", ref.toUpperCase());
     }
-    const t = setTimeout(() => setHeroReady(true), 80);
-    return () => clearTimeout(t);
   }, [searchParams]);
-
-  const heroIn = (delay: number): React.CSSProperties => ({
-    opacity: heroReady ? 1 : 0,
-    transform: (heroReady || reduced) ? "none" : "translateY(20px)",
-    transition: reduced ? "none" : `opacity 900ms cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 900ms cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-  });
 
   const btn = (id: string): React.CSSProperties => ({
     background: PINK,
@@ -414,109 +376,27 @@ export default function Landing() {
       <style>{`
         @keyframes ln-marquee    { from { transform: translateX(0) } to { transform: translateX(-50%) } }
         @keyframes ln-feature-in { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
-        @keyframes ln-scroll-cue { 0%,100% { opacity: 0.25; transform: translateY(0) } 50% { opacity: 0.5; transform: translateY(8px) } }
-        @media (max-width: 900px) { .ln-hero-img { display: none !important } .ln-hero-text { width: 100% !important; padding: 80px 24px !important } }
         @media (max-width: 768px) { .ln-two-col { grid-template-columns: 1fr !important } .ln-steps { grid-template-columns: 1fr !important } }
       `}</style>
 
-      {/* ── NAV ── */}
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(14px)", borderBottom: "1px solid #f0f0f0" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <LogoMark size={24} />
-            <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: NAVY }}>LoveNest</span>
-          </div>
-          <button
-            onClick={() => navigate("/entrar?returning=1")}
-            style={{ fontSize: 13, fontWeight: 600, color: NAVY, opacity: 0.55, background: "none", border: "none", cursor: "pointer", transition: "opacity 150ms" }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-            onMouseLeave={e => (e.currentTarget.style.opacity = "0.55")}
-          >
-            Entrar
-          </button>
-        </div>
-      </header>
+      {/* Fixed nav — floats above all scenes */}
+      <LandingNav />
 
-      {/* ══ 01 HERO ══ */}
-      <section style={{ minHeight: "92vh", display: "flex", alignItems: "stretch", position: "relative", overflow: "hidden" }}>
-
-        {/* Left — text */}
-        <div
-          className="ln-hero-text"
-          style={{ width: "50%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px 7vw", position: "relative", zIndex: 2 }}
-        >
-          <div style={{ ...heroIn(0) }}>
-            <h1 style={{ fontSize: "clamp(38px, 5.2vw, 72px)", fontWeight: 900, lineHeight: 1.03, letterSpacing: "-0.03em", color: NAVY, margin: "0 0 24px" }}>
-              O amor<br />vive nos<br />
-              <span style={{ color: PINK }}>dias comuns.</span>
-            </h1>
-
-            <p style={{ fontSize: "clamp(15px, 1.4vw, 18px)", lineHeight: 1.68, color: "#6B7280", maxWidth: 380, margin: "0 0 40px" }}>
-              Não nos grandes gestos. Nos bons dias, nos momentos simples e nas manhãs de segunda-feira.
-            </p>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12, ...heroIn(220) }}>
-            <button
-              onClick={() => navigate("/inicio")}
-              onMouseEnter={() => setActiveBtn("hero")}
-              onMouseLeave={() => setActiveBtn(null)}
-              style={{ height: 54, padding: "0 32px", borderRadius: 16, color: "white", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, ...btn("hero") }}
-            >
-              Criar o nosso espaço
-              <ArrowRight style={{ width: 16, height: 16 }} strokeWidth={2.5} />
-            </button>
-            <button
-              onClick={() => navigate("/entrar?returning=1")}
-              style={{ fontSize: 13, fontWeight: 600, color: "#aaa", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-            >
-              Já tenho convite do meu par
-            </button>
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 40, ...heroIn(380) }}>
-            {["Privado", "Sem publicidade", "Só de vocês"].map(t => (
-              <div key={t} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: "#f8f8f8", border: "1px solid #efefef" }}>
-                <Lock style={{ width: 10, height: 10, color: "#ccc" }} strokeWidth={2} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#999" }}>{t}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right — image */}
-        <div
-          className="ln-hero-img"
-          style={{
-            flex: 1, position: "relative", overflow: "hidden",
-            opacity: heroReady ? 1 : 0,
-            transform: (heroReady || reduced) ? "none" : "translateX(20px)",
-            transition: reduced ? "none" : "opacity 1400ms cubic-bezier(0.16,1,0.3,1) 120ms, transform 1400ms cubic-bezier(0.16,1,0.3,1) 120ms",
-          }}
-        >
-          <Pic name="hero" alt="Dois num mesmo espaço" eager imgStyle={{ position: "absolute", inset: "0", width: "100%", height: "100%" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, white 0%, transparent 16%)" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(255,255,255,0.3) 0%, transparent 25%)" }} />
-        </div>
-
-        {/* Scroll cue */}
-        <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 10, animation: "ln-scroll-cue 2.2s ease-in-out infinite" }}>
-          <div style={{ width: 1, height: 36, background: NAVY, opacity: 0.2, margin: "0 auto" }} />
-        </div>
-      </section>
+      {/* ══ CENA 01 — HERO (cinematic scroll) ══ */}
+      <HeroScene />
 
       {/* ══ MARQUEE ══ */}
       <Marquee />
 
-      {/* ══ 02 PRESENÇA ══ */}
+      {/* ══ PRESENÇA ══ */}
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px" }}>
         <div className="ln-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "center" }}>
-          <Reveal reduced={reduced}>
+          <Reveal reduced={!!reduced}>
             <div style={{ borderRadius: 28, overflow: "hidden", aspectRatio: "4/3", boxShadow: "0 24px 60px rgba(11,19,36,0.10)" }}>
               <Pic name="distance" alt="Presença" />
             </div>
           </Reveal>
-          <Reveal delay={100} reduced={reduced}>
+          <Reveal delay={100} reduced={!!reduced}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: PINK, marginBottom: 20, marginTop: 0 }}>Presença</p>
               <h2 style={{ fontSize: "clamp(26px, 3vw, 44px)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.025em", color: NAVY, marginTop: 0, marginBottom: 20 }}>
@@ -534,16 +414,16 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ══ 03 PINNED FEATURES ══ */}
+      {/* ══ PINNED FEATURES (Phase 3 will replace) ══ */}
       <div style={{ background: CREAM }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <PinnedFeatures reduced={reduced} />
         </div>
       </div>
 
-      {/* ══ 04 EDITORIAL IMAGE ══ */}
+      {/* ══ EDITORIAL IMAGE ══ */}
       <section style={{ padding: "24px 24px" }}>
-        <Reveal reduced={reduced}>
+        <Reveal reduced={!!reduced}>
           <div style={{ borderRadius: 28, overflow: "hidden", minHeight: 480, position: "relative", boxShadow: "0 32px 80px rgba(11,19,36,0.15)" }}>
             <Pic name="gestures" alt="Pequenos gestos" imgStyle={{ position: "absolute", inset: "0", width: "100%", height: "100%" }} />
             <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${NAVY}f2 0%, ${NAVY}a8 32%, transparent 65%)` }} />
@@ -561,12 +441,12 @@ export default function Landing() {
         </Reveal>
       </section>
 
-      {/* ══ 05 MANIFESTO WORD REVEAL ══ */}
+      {/* ══ MANIFESTO (Phase 6 will replace) ══ */}
       <ManifestoSection reduced={reduced} />
 
-      {/* ══ 06 COMO FUNCIONA ══ */}
+      {/* ══ COMO FUNCIONA ══ */}
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 24px" }}>
-        <Reveal reduced={reduced}>
+        <Reveal reduced={!!reduced}>
           <h2 style={{ fontSize: "clamp(26px, 3.2vw, 44px)", fontWeight: 900, letterSpacing: "-0.025em", color: NAVY, marginTop: 0, marginBottom: 64 }}>
             Tão simples como<br />um bom dia.
           </h2>
@@ -577,7 +457,7 @@ export default function Landing() {
             { title: "Convidam o vosso par",     desc: "Um código. Uma mensagem. E o outro está lá — no mesmo espaço, ao mesmo tempo.", delay: 80 },
             { title: "Aparecem um para o outro", desc: "Todos os dias. Nos grandes momentos e nos ordinários. O amor constrói-se assim.", delay: 160 },
           ].map(({ title, desc, delay }) => (
-            <Reveal key={title} delay={delay} reduced={reduced}>
+            <Reveal key={title} delay={delay} reduced={!!reduced}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                 <div style={{ width: 28, height: 2, background: PINK, borderRadius: 1, marginBottom: 24 }} />
                 <p style={{ fontSize: "clamp(15px, 1.4vw, 17px)", fontWeight: 800, color: NAVY, margin: "0 0 10px" }}>{title}</p>
@@ -588,12 +468,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ══ 07 CTA ══ */}
+      {/* ══ CTA ══ */}
       <section style={{ background: NAVY, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "30%", right: "-5%", width: 500, height: 500, borderRadius: "50%", background: `${PINK}1a`, filter: "blur(100px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "10%", left: "-8%", width: 350, height: 350, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(80px)", pointerEvents: "none" }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
-          <Reveal reduced={reduced}>
+          <Reveal reduced={!!reduced}>
             <div>
               <h2 style={{ fontSize: "clamp(30px, 5vw, 68px)", fontWeight: 900, color: "white", lineHeight: 1.04, letterSpacing: "-0.03em", marginTop: 0, marginBottom: 20 }}>
                 O vosso ninho<br />espera por vocês.
