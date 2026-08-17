@@ -47,9 +47,9 @@
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "LoveStreak",
-      "short_name": "Streak",
-      "url": "/lovestreak",
+      "name": "Jornada",
+      "short_name": "Jornada",
+      "url": "/jornada",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]

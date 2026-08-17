@@ -330,7 +330,7 @@ export function useAppNotifications() {
         (navigator as any).clearAppBadge().catch(console.error);
       }
     }
-  }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread]);
+  }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread]);
 
   // ── Notificações FCM em foreground ───────────────────────────────────────
   useEffect(() => {

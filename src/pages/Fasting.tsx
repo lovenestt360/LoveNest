@@ -218,7 +218,7 @@ export default function Fasting({ hideHeader = false }: { hideHeader?: boolean }
     // Última mensagem do par (para notificação no Hoje)
     const lastPartnerMsg = [...coupleData.messages]
         .reverse()
-        .find(m => m.sender_id !== coupleData.partner?.userId);
+        .find(m => m.sender_id === coupleData.partner?.userId);
 
     return (
         <section className="space-y-4 pb-6">
