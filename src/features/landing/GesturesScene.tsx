@@ -258,6 +258,11 @@ export function GesturesScene() {
   const M_phoneY     = useTransform(p, [0.78, 0.90],                 [70, 0]);
   const M_phoneScale = useTransform(p, [0.78, 0.95],                 [0.90, 1]);
 
+  // Mobile: imagem fica totalmente visível até o telefone emergir, depois recua suavemente
+  const M_imgOp      = useTransform(p, [0.80, 0.97],                 [1, 0.15]);
+  // Desktop: imagem mantém-se estável ao longo de toda a cena
+  const D_imgOp      = useTransform(p, [0, 1],                       [1, 1]);
+
   // Pick active transform set
   const imgScale   = isMob ? M_imgScale   : D_imgScale;
   const hlOp       = isMob ? M_hlOp       : D_hlOp;
@@ -275,6 +280,7 @@ export function GesturesScene() {
   const phoneOp    = isMob ? M_phoneOp    : D_phoneOp;
   const phoneY     = isMob ? M_phoneY     : D_phoneY;
   const phoneScale = isMob ? M_phoneScale : D_phoneScale;
+  const imgOp      = isMob ? M_imgOp      : D_imgOp;
 
   if (reduced) return <GesturesReduced />;
 
@@ -290,7 +296,7 @@ export function GesturesScene() {
         {/* ── Background image — lazy loaded (hero already loaded) ──────────── */}
         <motion.div
           aria-hidden
-          style={{ position: "absolute", inset: 0, scale: imgScale, transformOrigin: "center 38%" }}
+          style={{ position: "absolute", inset: 0, scale: imgScale, opacity: imgOp, transformOrigin: "center 38%" }}
         >
           <picture>
             <source
@@ -311,7 +317,9 @@ export function GesturesScene() {
           style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background: isMob
-              ? `linear-gradient(to bottom, ${NAVY}d0 0%, ${NAVY}a8 38%, ${NAVY}80 100%)`
+              // Mobile: janela clara no centro onde a fotografia respira
+              // 0%: tint leve (nav); 20-52%: fotografia claramente visível; 78%+: navy escuro para o telefone
+              ? `linear-gradient(to bottom, rgba(11,19,36,0.62) 0%, rgba(11,19,36,0.08) 22%, rgba(11,19,36,0.06) 52%, rgba(11,19,36,0.80) 80%, rgba(11,19,36,0.97) 100%)`
               : `linear-gradient(110deg, ${NAVY}f2 0%, ${NAVY}d4 26%, ${NAVY}88 50%, ${NAVY}44 70%, transparent 100%)`,
           }}
         />
@@ -333,7 +341,10 @@ export function GesturesScene() {
               fontSize: isMob ? "clamp(30px, 9.5vw, 46px)" : "clamp(36px, 4.5vw, 64px)",
               fontWeight: 900, lineHeight: 1.04, letterSpacing: "-0.025em",
               color: "white", margin: "0 0 8px",
-              textShadow: "0 2px 20px rgba(0,0,0,0.28)",
+              // Mobile: sombra mais forte para legibilidade sobre fotografia clara
+              textShadow: isMob
+                ? "0 2px 28px rgba(0,0,0,0.75), 0 1px 6px rgba(0,0,0,0.55)"
+                : "0 2px 20px rgba(0,0,0,0.28)",
             }}
           >
             Pequenos gestos.
@@ -344,7 +355,9 @@ export function GesturesScene() {
               fontSize: isMob ? "clamp(13px, 4vw, 18px)" : "clamp(15px, 1.7vw, 22px)",
               fontWeight: 700, color: "rgba(255,255,255,0.78)",
               letterSpacing: "-0.01em", margin: 0,
-              textShadow: "0 2px 16px rgba(0,0,0,0.28)",
+              textShadow: isMob
+                ? "0 2px 28px rgba(0,0,0,0.75), 0 1px 6px rgba(0,0,0,0.55)"
+                : "0 2px 16px rgba(0,0,0,0.28)",
             }}
           >
             Que dizem 'estou aqui'.
