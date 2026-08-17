@@ -14,7 +14,11 @@ export const firebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 export function getFirebaseMessaging() {
-  if (typeof window === "undefined" || !("Notification" in window)) return null;
+  if (typeof window === "undefined") return null;
+  if (!("Notification" in window)) return null;
+  if (!("serviceWorker" in navigator)) return null;
+  if (!("PushManager" in window)) return null;
+  if (!("indexedDB" in window)) return null;
   try {
     return getMessaging(firebaseApp);
   } catch {
