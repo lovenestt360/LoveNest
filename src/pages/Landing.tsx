@@ -5,6 +5,7 @@ import { ArrowRight, Flame, Heart, MessageCircle, Camera } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { LandingNav } from "@/features/landing/LandingNav";
 import { HeroScene } from "@/features/landing/HeroScene";
+import { GesturesScene } from "@/features/landing/GesturesScene";
 
 const PINK = "#E0637A";
 const NAVY = "#0B1324";
@@ -59,29 +60,6 @@ function useSectionProgress(outerRef: React.RefObject<HTMLDivElement>) {
     return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
   }, []);
   return progress;
-}
-
-// ── Images ────────────────────────────────────────────────────────────────────
-
-type ImgName = "hero" | "distance" | "gestures" | "safe";
-
-function Pic({ name, alt, eager = false, imgStyle }: {
-  name: ImgName; alt: string; eager?: boolean; imgStyle?: React.CSSProperties;
-}) {
-  return (
-    <picture>
-      <source
-        type="image/webp"
-        srcSet={`/${name}-768.webp 768w, /${name}-1280.webp 1280w, /${name}-1920.webp 1920w`}
-        sizes="(max-width: 768px) 768px, (max-width: 1280px) 1280px, 1920px"
-      />
-      <img
-        src={`/${name}.jpg`} alt={alt}
-        loading={eager ? "eager" : "lazy"} fetchPriority={eager ? "high" : "low"} decoding="async"
-        style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", ...imgStyle }}
-      />
-    </picture>
-  );
 }
 
 // ── Reveal ────────────────────────────────────────────────────────────────────
@@ -409,31 +387,8 @@ export default function Landing() {
       {/* ══ MARQUEE ══ */}
       <Marquee />
 
-      {/* ══ PRESENÇA ══ */}
-      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px" }}>
-        <div className="ln-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "center" }}>
-          <Reveal reduced={!!reduced}>
-            <div style={{ borderRadius: 28, overflow: "hidden", aspectRatio: "4/3", boxShadow: "0 24px 60px rgba(11,19,36,0.10)" }}>
-              <Pic name="distance" alt="Presença" />
-            </div>
-          </Reveal>
-          <Reveal delay={100} reduced={!!reduced}>
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: PINK, marginBottom: 20, marginTop: 0 }}>Presença</p>
-              <h2 style={{ fontSize: "clamp(26px, 3vw, 44px)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.025em", color: NAVY, marginTop: 0, marginBottom: 20 }}>
-                Estar perto não chega.<br />
-                <span style={{ color: PINK }}>Estar presente, sim.</span>
-              </h2>
-              <p style={{ fontSize: "clamp(14px, 1.3vw, 16px)", lineHeight: 1.72, color: "#6B7280", marginBottom: 16 }}>
-                A vida move-se depressa. Os dias enchem-se. E de repente passam semanas sem que realmente se tenham visto — mesmo estando no mesmo sítio.
-              </p>
-              <p style={{ fontSize: "clamp(14px, 1.3vw, 16px)", lineHeight: 1.72, color: "#6B7280", margin: 0 }}>
-                O LoveNest é um lembrete diário de que o outro existe. E que tu também.
-              </p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      {/* ══ CENA 02 — GESTURES ══ */}
+      <GesturesScene />
 
       {/* ══ PINNED FEATURES (Phase 3 will replace) ══ */}
       <div style={{ background: CREAM }}>
@@ -441,26 +396,6 @@ export default function Landing() {
           <PinnedFeatures reduced={reduced} />
         </div>
       </div>
-
-      {/* ══ EDITORIAL IMAGE ══ */}
-      <section style={{ padding: "24px 24px" }}>
-        <Reveal reduced={!!reduced}>
-          <div style={{ borderRadius: 28, overflow: "hidden", minHeight: 480, position: "relative", boxShadow: "0 32px 80px rgba(11,19,36,0.15)" }}>
-            <Pic name="gestures" alt="Pequenos gestos" imgStyle={{ position: "absolute", inset: "0", width: "100%", height: "100%" }} />
-            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${NAVY}f2 0%, ${NAVY}a8 32%, transparent 65%)` }} />
-            <div style={{ position: "absolute", inset: 0, padding: "clamp(36px, 5vw, 64px)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-              <div style={{ maxWidth: 480 }}>
-                <h2 style={{ fontSize: "clamp(24px, 3.5vw, 48px)", fontWeight: 900, color: "white", lineHeight: 1.1, letterSpacing: "-0.025em", marginTop: 0, marginBottom: 16 }}>
-                  São os pequenos<br />gestos que ficam.
-                </h2>
-                <p style={{ fontSize: "clamp(13px, 1.3vw, 16px)", lineHeight: 1.72, color: "rgba(255,255,255,0.60)", margin: 0 }}>
-                  Uma mensagem de bom dia. Registar como te sentes. Uma foto de algo que te fez lembrar dele. Não é sobre fazer mais — é sobre estar presente de propósito.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </section>
 
       {/* ══ MANIFESTO (Phase 6 will replace) ══ */}
       <ManifestoSection reduced={reduced} />
