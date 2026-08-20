@@ -6,6 +6,7 @@ import { LogoMark } from "@/components/Logo";
 import { LandingNav } from "@/features/landing/LandingNav";
 import { HeroScene } from "@/features/landing/HeroScene";
 import { GesturesScene } from "@/features/landing/GesturesScene";
+import { DistanceScene } from "@/features/landing/DistanceScene";
 
 const PINK = "#E0637A";
 const NAVY = "#0B1324";
@@ -168,8 +169,8 @@ export default function Landing() {
       {/* ══ CENA 02 — PEQUENOS GESTOS ══ */}
       <GesturesScene />
 
-      {/* ══ CENA 03 — MESMO LONGE (placeholder) ══ */}
-      <ScenePlaceholder number="03" title="Mesmo Longe" />
+      {/* ══ CENA 03 — MESMO LONGE ══ */}
+      <DistanceScene />
 
       {/* ══ CENA 04 — MEMÓRIAS (placeholder) ══ */}
       <ScenePlaceholder number="04" title="Memórias" />
