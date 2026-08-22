@@ -41,10 +41,10 @@ const ROUTE_GEOJSON = {
 
 const DIST_VALS = [
   { threshold: 0.00, label: "4,2" },
-  { threshold: 0.64, label: "2,8" },
-  { threshold: 0.70, label: "1,1" },
-  { threshold: 0.76, label: "0,4" },
-  { threshold: 0.82, label: "0,1" },
+  { threshold: 0.56, label: "2,8" },
+  { threshold: 0.63, label: "1,1" },
+  { threshold: 0.70, label: "0,4" },
+  { threshold: 0.78, label: "0,1" },
 ];
 
 function useMediaQuery(query: string): boolean {
@@ -329,18 +329,22 @@ function DistanceAnimated() {
   const hlOp = useTransform(p, [0.00, 0.08, 0.42, 0.50], [0, 1, 1, 0]);
   const hlY  = useTransform(p, [0.00, 0.10], [20, 0]);
 
-  // Phone A — present from scene start, exits as map expands
-  const phoneAOp = useTransform(p, [0.00, 0.08, 0.40, 0.52], [0, 1, 1, 0]);
-  const D_phoneAX = useTransform(p, [0.00, 0.08], [-60, 0]);
-  const M_phoneAY = useTransform(p, [0.00, 0.08], [-30, 0]);
+  // Phone A — enters from left, stays through approach, exits at "Juntos"
+  // Desktop x: entrance(-300) → stable(-156) → converge(-96)
+  // Mobile  y: entrance(-40)  → stable(0)    → converge(+40 = down toward center)
+  const phoneAOp  = useTransform(p, [0.00, 0.08, 0.80, 0.90], [0, 1, 1, 0]);
+  const D_phoneAX = useTransform(p, [0.00, 0.08, 0.44, 0.82], [-300, -156, -156, -96]);
+  const M_phoneAY = useTransform(p, [0.00, 0.08, 0.44, 0.82], [-40, 0, 0, 40]);
 
-  // Phone B — enters from right (desktop) or below (mobile)
-  const phoneBOp  = useTransform(p, [0.14, 0.26, 0.40, 0.52], [0, 1, 1, 0]);
-  const D_phoneBX = useTransform(p, [0.14, 0.26], [80, 0]);
-  const M_phoneBY = useTransform(p, [0.14, 0.26], [70, 0]);
+  // Phone B — enters from right/below, converges toward Phone A
+  // Desktop x: entrance(+300) → stable(+156) → converge(+96)
+  // Mobile  y: entrance(+70)  → stable(0)    → converge(-40 = up toward center)
+  const phoneBOp  = useTransform(p, [0.14, 0.26, 0.80, 0.90], [0, 1, 1, 0]);
+  const D_phoneBX = useTransform(p, [0.14, 0.26, 0.44, 0.82], [300, 156, 156, 96]);
+  const M_phoneBY = useTransform(p, [0.14, 0.26, 0.44, 0.82], [70, 0, 0, -40]);
 
-  // Distance label between phones — "4,2 km"
-  const distBtwOp = useTransform(p, [0.26, 0.34, 0.40, 0.50], [0, 1, 1, 0]);
+  // Distance label between phones — static "4,2 km", exits before convergence starts
+  const distBtwOp = useTransform(p, [0.26, 0.34, 0.38, 0.48], [0, 1, 1, 0]);
   const distBtwY  = useTransform(p, [0.26, 0.34], [12, 0]);
 
   // Map clip-path expansion: inset box → full viewport
@@ -359,8 +363,8 @@ function DistanceAnimated() {
   const M_mapClip = useMotionTemplate`inset(${M_clipT}% ${M_clipR}% ${M_clipB}% ${M_clipL}% round ${clipRad}px)`;
 
   // Map distance badge (centered at bottom, large — visible during approximation)
-  const mapBadgeOp = useTransform(p, [0.58, 0.66, 0.84, 0.90], [0, 1, 1, 0]);
-  const mapBadgeY  = useTransform(p, [0.58, 0.66], [16, 0]);
+  const mapBadgeOp = useTransform(p, [0.52, 0.60, 0.84, 0.90], [0, 1, 1, 0]);
+  const mapBadgeY  = useTransform(p, [0.52, 0.60], [16, 0]);
 
   // Map dims as "Juntos" takes over
   const mapDim = useTransform(p, [0.82, 0.92], [1, 0.18]);
@@ -479,18 +483,18 @@ function DistanceAnimated() {
         </div>
 
         {/* ── PHONES layer ─────────────────────────────────────────────────── */}
-        {/* Desktop: side by side, centered */}
+        {/* Desktop: side by side, centered via motion x */}
         {!isMob && (
           <>
-            {/* Phone A — enters from left */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "50%", transform: "translate(calc(-50% - 160px), -50%)" }}>
+            {/* Phone A — wrapper centers at 50%,50%; motion.div handles full X offset including convergence */}
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
               <motion.div style={{ opacity: phoneAOp, x: D_phoneAX }}>
                 <PhoneFrame><PhoneScreenA /></PhoneFrame>
               </motion.div>
             </div>
 
-            {/* Phone B — enters from right */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "50%", transform: "translate(calc(-50% + 160px), -50%)" }}>
+            {/* Phone B — same pattern, enters from right and converges toward center */}
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
               <motion.div style={{ opacity: phoneBOp, x: D_phoneBX }}>
                 <PhoneFrame><PhoneScreenB /></PhoneFrame>
               </motion.div>
@@ -515,17 +519,17 @@ function DistanceAnimated() {
           </>
         )}
 
-        {/* Mobile: vertical stack */}
+        {/* Mobile: vertical stack with convergence */}
         {isMob && (
           <>
-            {/* Phone A — top third */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "18%", transform: "translateX(-50%)" }}>
+            {/* Phone A — upper position; M_phoneAY handles entrance and downward convergence */}
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "20%", transform: "translateX(-50%)" }}>
               <motion.div style={{ opacity: phoneAOp, y: M_phoneAY }}>
                 <PhoneFrame small><PhoneScreenA /></PhoneFrame>
               </motion.div>
             </div>
 
-            {/* Distance — middle */}
+            {/* Distance — middle, fades before convergence */}
             <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none" }}>
               <motion.div style={{ opacity: distBtwOp, y: distBtwY, textAlign: "center" }}>
                 <div style={{
@@ -542,7 +546,7 @@ function DistanceAnimated() {
               </motion.div>
             </div>
 
-            {/* Phone B — lower third */}
+            {/* Phone B — lower position; M_phoneBY handles entrance and upward convergence */}
             <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "63%", transform: "translateX(-50%)" }}>
               <motion.div style={{ opacity: phoneBOp, y: M_phoneBY }}>
                 <PhoneFrame small><PhoneScreenB /></PhoneFrame>
