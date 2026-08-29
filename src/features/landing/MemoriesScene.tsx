@@ -182,10 +182,10 @@ function MemoriesAnimated() {
 
   // ─── DESKTOP transforms ───────────────────────────────────────────────────
 
-  // Photo 1 (distance.jpg) — main protagonist
-  const D_p1Op    = useTransform(p, [0.10, 0.22, 0.88, 0.97], [0, 1, 1, 0.25]);
-  const D_p1Scale = useTransform(p, [0.10, 0.22, 0.68, 0.82], [0.94, 1, 1, 1.07]);
-  const D_p1Y_r   = useTransform(p, [0.10, 0.22, 0.68], [30, 0, -44]);
+  // Photo 1 (distance.jpg) — main protagonist; enters early to avoid dead zone
+  const D_p1Op    = useTransform(p, [0.04, 0.18, 0.88, 0.97], [0, 1, 1, 0.25]);
+  const D_p1Scale = useTransform(p, [0.04, 0.18, 0.68, 0.82], [0.94, 1, 1, 1.07]);
+  const D_p1Y_r   = useTransform(p, [0.04, 0.18, 0.68], [30, 0, -44]);
   const D_p1Y     = useSpring(D_p1Y_r, { stiffness: 48, damping: 18 });
   const D_p1X     = useTransform(p, [0.68, 0.82], [0, -26]);
 
@@ -216,10 +216,10 @@ function MemoriesAnimated() {
   // Photos 2/3/4 appear on top of Photo 1, then fade to REVEAL Photo 1 again.
   // This creates the "layers of memory converging" effect.
 
-  // Photo 1 (distance) — base layer z=2, anchor; scale breathes up at payoff
-  const M_p1Op    = useTransform(p, [0.10, 0.22, 0.93, 1.00], [0, 1, 1, 0.25]);
-  const M_p1Scale = useTransform(p, [0.10, 0.22, 0.82, 0.92], [0.93, 1, 1, 1.06]);
-  const M_p1Y_r   = useTransform(p, [0.10, 0.22], [32, 0]);
+  // Photo 1 (distance) — base layer z=2, anchor; enters early to avoid dead zone
+  const M_p1Op    = useTransform(p, [0.04, 0.18, 0.93, 1.00], [0, 1, 1, 0.25]);
+  const M_p1Scale = useTransform(p, [0.04, 0.18, 0.82, 0.92], [0.93, 1, 1, 1.06]);
+  const M_p1Y_r   = useTransform(p, [0.04, 0.18], [32, 0]);
   const M_p1Y     = useSpring(M_p1Y_r, { stiffness: 44, damping: 20 });
 
   // Photo 2 (gestures) — z=3; long dissolve entrance/exit, medium spring
@@ -239,11 +239,12 @@ function MemoriesAnimated() {
 
   // ─── Common texts ─────────────────────────────────────────────────────────
 
-  const labelOp   = useTransform(p, [0.12, 0.22, 0.72, 0.80], [0, 1, 1, 0]);
+  // label appears with Photo 1 (p 0.06-0.16); phrase1 waits for Photo 1 to be fully visible (0.22)
+  const labelOp   = useTransform(p, [0.06, 0.16, 0.72, 0.80], [0, 1, 1, 0]);
   const phrase1Op = useTransform(p, [0.22, 0.30, 0.48, 0.56], [0, 1, 1, 0]);
   const phrase1Y  = useTransform(p, [0.22, 0.30], [10, 0]);
 
-  // "Mas alguns ficam." — THE BIG MOMENT; p 0.80–0.84 is the breathing room after layers fade
+  // "Mas alguns ficam." — THE BIG MOMENT; p 0.80–0.84 is breathing room (Photo 1 alone)
   const phrase2Op = useTransform(p, [0.84, 0.90, 0.93, 0.96], [0, 1, 1, 0]);
   const phrase2Y  = useTransform(p, [0.84, 0.90], [14, 0]);
 
