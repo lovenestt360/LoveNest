@@ -7,6 +7,7 @@ import { LandingNav } from "@/features/landing/LandingNav";
 import { HeroScene } from "@/features/landing/HeroScene";
 import { GesturesScene } from "@/features/landing/GesturesScene";
 import { DistanceScene } from "@/features/landing/DistanceScene";
+import { MemoriesScene } from "@/features/landing/MemoriesScene";
 
 const PINK = "#E0637A";
 const NAVY = "#0B1324";
@@ -172,8 +173,8 @@ export default function Landing() {
       {/* ══ CENA 03 — MESMO LONGE ══ */}
       <DistanceScene />
 
-      {/* ══ CENA 04 — MEMÓRIAS (placeholder) ══ */}
-      <ScenePlaceholder number="04" title="Memórias" />
+      {/* ══ CENA 04 — MEMÓRIAS ══ */}
+      <MemoriesScene />
 
       {/* ══ CENA 05 — A VOSSA CHAMA (placeholder) ══ */}
       <ScenePlaceholder number="05" title="A Vossa Chama" />
