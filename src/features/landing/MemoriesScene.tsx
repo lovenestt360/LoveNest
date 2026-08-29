@@ -4,6 +4,7 @@ import {
   useScroll,
   useTransform,
   useSpring,
+  useMotionTemplate,
   useReducedMotion,
 } from "framer-motion";
 
@@ -188,24 +189,26 @@ function MemoriesAnimated() {
   const D_p1Y     = useSpring(D_p1Y_r, { stiffness: 48, damping: 18 });
   const D_p1X     = useTransform(p, [0.68, 0.82], [0, -26]);
 
-  // Photo 2 (gestures.jpg) — left, middle plane
-  const D_p2Op    = useTransform(p, [0.28, 0.38, 0.68, 0.80], [0, 0.84, 0.84, 0]);
-  const D_p2Scale = useTransform(p, [0.28, 0.38, 0.68, 0.80], [0.96, 1, 1, 0.76]);
-  const D_p2Y_r   = useTransform(p, [0.28, 0.68], [10, -28]);
+  // Photo 2 (gestures.jpg) — left, middle plane; enters slightly earlier
+  const D_p2Op    = useTransform(p, [0.26, 0.38, 0.68, 0.80], [0, 0.84, 0.84, 0]);
+  const D_p2Scale = useTransform(p, [0.26, 0.38, 0.68, 0.80], [0.96, 1, 1, 0.76]);
+  const D_p2Y_r   = useTransform(p, [0.26, 0.68], [10, -28]);
   const D_p2Y     = useSpring(D_p2Y_r, { stiffness: 56, damping: 20 });
   const D_p2X     = useTransform(p, [0.68, 0.80], [0, 120]);
 
-  // Photo 3 (safe.jpg) — right, front plane
-  const D_p3Op    = useTransform(p, [0.34, 0.44, 0.68, 0.80], [0, 0.72, 0.72, 0]);
-  const D_p3Scale = useTransform(p, [0.34, 0.44, 0.68, 0.80], [0.96, 1, 1, 0.76]);
-  const D_p3Y_r   = useTransform(p, [0.34, 0.68], [0, -56]);
+  // Photo 3 (safe.jpg) — right, front plane; enters slightly earlier than before
+  const D_p3Op    = useTransform(p, [0.32, 0.44, 0.68, 0.80], [0, 0.72, 0.72, 0]);
+  const D_p3Scale = useTransform(p, [0.32, 0.44, 0.68, 0.80], [0.96, 1, 1, 0.76]);
+  const D_p3Y_r   = useTransform(p, [0.32, 0.68], [0, -56]);
   const D_p3Y     = useSpring(D_p3Y_r, { stiffness: 64, damping: 22 });
   const D_p3X     = useTransform(p, [0.68, 0.80], [0, -120]);
 
-  // Photo 4 (hero.jpg) — background, far plane
+  // Photo 4 (hero.jpg) — background; blur deepens as it converges and fades
   const D_p4Op    = useTransform(p, [0.40, 0.50, 0.68, 0.78], [0, 0.42, 0.42, 0]);
   const D_p4Y_r   = useTransform(p, [0.40, 0.68], [0, -18]);
   const D_p4Y     = useSpring(D_p4Y_r, { stiffness: 38, damping: 18 });
+  const D_p4BlurV = useTransform(p, [0.40, 0.68, 0.78], [2.5, 2.5, 5]);
+  const D_p4Filter = useMotionTemplate`blur(${D_p4BlurV}px)`;
 
   // ─── MOBILE transforms — crossfade stack at same center ─────────────────
   //
@@ -213,40 +216,40 @@ function MemoriesAnimated() {
   // Photos 2/3/4 appear on top of Photo 1, then fade to REVEAL Photo 1 again.
   // This creates the "layers of memory converging" effect.
 
-  // Photo 1 (distance) — base layer z=2, always present
+  // Photo 1 (distance) — base layer z=2, anchor; scale breathes up at payoff
   const M_p1Op    = useTransform(p, [0.10, 0.22, 0.93, 1.00], [0, 1, 1, 0.25]);
-  const M_p1Scale = useTransform(p, [0.10, 0.22, 0.78, 0.88], [0.94, 1, 1, 1.04]);
-  const M_p1Y_r   = useTransform(p, [0.10, 0.22], [30, 0]);
-  const M_p1Y     = useSpring(M_p1Y_r, { stiffness: 48, damping: 18 });
+  const M_p1Scale = useTransform(p, [0.10, 0.22, 0.82, 0.92], [0.93, 1, 1, 1.06]);
+  const M_p1Y_r   = useTransform(p, [0.10, 0.22], [32, 0]);
+  const M_p1Y     = useSpring(M_p1Y_r, { stiffness: 44, damping: 20 });
 
-  // Photo 2 (gestures) — z=3, crossfades with Photo 1
-  const M_p2Op    = useTransform(p, [0.32, 0.42, 0.58, 0.66], [0, 1, 1, 0]);
-  const M_p2Y_r   = useTransform(p, [0.32, 0.42], [14, 0]);
-  const M_p2Y     = useSpring(M_p2Y_r, { stiffness: 50, damping: 18 });
+  // Photo 2 (gestures) — z=3; long dissolve entrance/exit, medium spring
+  const M_p2Op    = useTransform(p, [0.30, 0.44, 0.62, 0.72], [0, 1, 1, 0]);
+  const M_p2Y_r   = useTransform(p, [0.30, 0.44], [16, 0]);
+  const M_p2Y     = useSpring(M_p2Y_r, { stiffness: 52, damping: 20 });
 
-  // Photo 3 (safe) — z=4
-  const M_p3Op    = useTransform(p, [0.52, 0.62, 0.74, 0.80], [0, 1, 1, 0]);
-  const M_p3Y_r   = useTransform(p, [0.52, 0.62], [14, 0]);
-  const M_p3Y     = useSpring(M_p3Y_r, { stiffness: 50, damping: 18 });
+  // Photo 3 (safe) — z=4; different timing — offset from Photo 2, looser spring
+  const M_p3Op    = useTransform(p, [0.50, 0.64, 0.74, 0.80], [0, 1, 1, 0]);
+  const M_p3Y_r   = useTransform(p, [0.50, 0.64], [16, 0]);
+  const M_p3Y     = useSpring(M_p3Y_r, { stiffness: 46, damping: 16 });
 
-  // Photo 4 (hero) — z=5, brief appearance
-  const M_p4Op    = useTransform(p, [0.68, 0.73, 0.80], [0, 0.60, 0]);
-  const M_p4Y_r   = useTransform(p, [0.68, 0.73], [12, 0]);
-  const M_p4Y     = useSpring(M_p4Y_r, { stiffness: 50, damping: 18 });
+  // Photo 4 (hero) — z=5, distant memory: low opacity, slow spring, slight blur
+  const M_p4Op    = useTransform(p, [0.66, 0.72, 0.80], [0, 0.50, 0]);
+  const M_p4Y_r   = useTransform(p, [0.66, 0.72], [14, 0]);
+  const M_p4Y     = useSpring(M_p4Y_r, { stiffness: 36, damping: 15 });
 
   // ─── Common texts ─────────────────────────────────────────────────────────
 
-  const labelOp   = useTransform(p, [0.12, 0.20, 0.68, 0.76], [0, 1, 1, 0]);
-  const phrase1Op = useTransform(p, [0.20, 0.28, 0.46, 0.54], [0, 1, 1, 0]);
-  const phrase1Y  = useTransform(p, [0.20, 0.28], [10, 0]);
+  const labelOp   = useTransform(p, [0.12, 0.22, 0.72, 0.80], [0, 1, 1, 0]);
+  const phrase1Op = useTransform(p, [0.22, 0.30, 0.48, 0.56], [0, 1, 1, 0]);
+  const phrase1Y  = useTransform(p, [0.22, 0.30], [10, 0]);
 
-  // "Mas alguns ficam." — the BIG MOMENT
-  const phrase2Op = useTransform(p, [0.80, 0.88, 0.92, 0.97], [0, 1, 1, 0]);
-  const phrase2Y  = useTransform(p, [0.80, 0.88], [14, 0]);
+  // "Mas alguns ficam." — THE BIG MOMENT; p 0.80–0.84 is the breathing room after layers fade
+  const phrase2Op = useTransform(p, [0.84, 0.90, 0.93, 0.96], [0, 1, 1, 0]);
+  const phrase2Y  = useTransform(p, [0.84, 0.90], [14, 0]);
 
-  // "Guardem o que importa." — crossfades with phrase 2
-  const phrase3Op = useTransform(p, [0.92, 0.98], [0, 1]);
-  const phrase3Y  = useTransform(p, [0.92, 0.98], [14, 0]);
+  // "Guardem o que importa." — starts only after phrase 2 fully fades (pivot at p 0.96)
+  const phrase3Op = useTransform(p, [0.96, 1.00], [0, 1]);
+  const phrase3Y  = useTransform(p, [0.96, 1.00], [14, 0]);
 
   // ─── Cena 05 glow ────────────────────────────────────────────────────────
   const glowOp    = useTransform(p, [0.94, 1.00], [0, 0.80]);
@@ -280,7 +283,7 @@ function MemoriesAnimated() {
           <>
             {/* Photo 4 — far-left, background plane, blurred */}
             <div style={{ position: "absolute", zIndex: 2, left: "12%", top: "31%", transform: "translate(-50%, -50%)" }}>
-              <motion.div style={{ opacity: D_p4Op, y: D_p4Y, rotate: -2, filter: "blur(2.5px)" }}>
+              <motion.div style={{ opacity: D_p4Op, y: D_p4Y, rotate: -2, filter: D_p4Filter }}>
                 <PhotoFrame width={248} height={165} borderOpacity={0.48}>
                   <MemoryImg {...MEMORIES[3]} />
                 </PhotoFrame>
@@ -353,7 +356,7 @@ function MemoriesAnimated() {
 
             {/* Photo 4 — z=5, brief glimpse */}
             <div style={{ position: "absolute", zIndex: 5, left: "50%", top: "40%", transform: "translate(-50%, -50%)" }}>
-              <motion.div style={{ opacity: M_p4Op, y: M_p4Y, rotate: -0.6 }}>
+              <motion.div style={{ opacity: M_p4Op, y: M_p4Y, rotate: -0.6, filter: "blur(1.5px)" }}>
                 <PhotoFrame width="min(76vw, 304px)" height="auto" borderOpacity={0.55}>
                   <MemoryImg {...MEMORIES[3]} imgStyle={{ aspectRatio: "3/2" }} />
                 </PhotoFrame>
