@@ -329,7 +329,7 @@ function MemoriesAnimated() {
         {isMob && (
           <>
             {/* Photo 1 — base layer (z=2), always present */}
-            <div style={{ position: "absolute", zIndex: 2, left: "50%", top: "40%", transform: "translate(-50%, -50%)" }}>
+            <div style={{ position: "absolute", zIndex: 2, left: "50%", top: "46%", transform: "translate(-50%, -50%)" }}>
               <motion.div style={{ opacity: M_p1Op, scale: M_p1Scale, y: M_p1Y }}>
                 <PhotoFrame width="min(88vw, 360px)" height="auto">
                   <MemoryImg {...MEMORIES[0]} priority imgStyle={{ aspectRatio: "3/2" }} />
@@ -338,7 +338,7 @@ function MemoriesAnimated() {
             </div>
 
             {/* Photo 2 — z=3, crossfades over Photo 1 */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "40%", transform: "translate(-50%, -50%)" }}>
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "46%", transform: "translate(-50%, -50%)" }}>
               <motion.div style={{ opacity: M_p2Op, y: M_p2Y, rotate: -0.8 }}>
                 <PhotoFrame width="min(84vw, 344px)" height="auto" borderOpacity={0.80}>
                   <MemoryImg {...MEMORIES[1]} imgStyle={{ aspectRatio: "3/2" }} />
@@ -347,7 +347,7 @@ function MemoriesAnimated() {
             </div>
 
             {/* Photo 3 — z=4 */}
-            <div style={{ position: "absolute", zIndex: 4, left: "50%", top: "40%", transform: "translate(-50%, -50%)" }}>
+            <div style={{ position: "absolute", zIndex: 4, left: "50%", top: "46%", transform: "translate(-50%, -50%)" }}>
               <motion.div style={{ opacity: M_p3Op, y: M_p3Y, rotate: 1.1 }}>
                 <PhotoFrame width="min(80vw, 324px)" height="auto" borderOpacity={0.70}>
                   <MemoryImg {...MEMORIES[2]} imgStyle={{ aspectRatio: "3/2" }} />
@@ -356,7 +356,7 @@ function MemoriesAnimated() {
             </div>
 
             {/* Photo 4 — z=5, brief glimpse */}
-            <div style={{ position: "absolute", zIndex: 5, left: "50%", top: "40%", transform: "translate(-50%, -50%)" }}>
+            <div style={{ position: "absolute", zIndex: 5, left: "50%", top: "46%", transform: "translate(-50%, -50%)" }}>
               <motion.div style={{ opacity: M_p4Op, y: M_p4Y, rotate: -0.6, filter: "blur(1.5px)" }}>
                 <PhotoFrame width="min(76vw, 304px)" height="auto" borderOpacity={0.55}>
                   <MemoryImg {...MEMORIES[3]} imgStyle={{ aspectRatio: "3/2" }} />
@@ -400,7 +400,7 @@ function MemoriesAnimated() {
         {/* "Mas alguns ficam." — THE BIG MOMENT — bottom left */}
         <div style={{
           position: "absolute", zIndex: 6, pointerEvents: "none",
-          bottom: isMob ? "clamp(52px, 9vh, 72px)" : "clamp(56px, 8vh, 84px)",
+          bottom: isMob ? "clamp(68px, 12vh, 86px)" : "clamp(56px, 8vh, 84px)",
           left: "7%",
         }}>
           <motion.p style={{
@@ -418,7 +418,7 @@ function MemoriesAnimated() {
         {/* "Guardem o que importa." — crossfades with "Mas alguns ficam." */}
         <div style={{
           position: "absolute", zIndex: 6, pointerEvents: "none",
-          bottom: isMob ? "clamp(52px, 9vh, 72px)" : "clamp(56px, 8vh, 84px)",
+          bottom: isMob ? "clamp(68px, 12vh, 86px)" : "clamp(56px, 8vh, 84px)",
           left: "7%",
         }}>
           <motion.p style={{

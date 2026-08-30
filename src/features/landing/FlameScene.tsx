@@ -141,13 +141,13 @@ function FlameAnimated() {
   const exitScale = useTransform(p, [0.90, 1.00], [0.50, 2.40]);
 
   const sceneH  = isMob ? "260vh" : "280vh";
-  const flameW  = isMob ? "min(52vw, 214px)" : "256px";
-  const flameH  = isMob ? "min(69vw, 285px)" : "340px";
-  const flameTop = isMob ? "40%" : "43%";
+  const flameW  = isMob ? "min(60vw, 240px)" : "256px";
+  const flameH  = isMob ? "min(80vw, 320px)" : "340px";
+  const flameTop = isMob ? "44%" : "43%";
 
   // Text bottom offsets — headline higher, phrase2 below
-  const hlBottom  = isMob ? "clamp(90px, 16vh, 116px)" : "clamp(96px, 14vh, 130px)";
-  const ph2Bottom = isMob ? "clamp(52px, 9vh, 70px)"  : "clamp(56px, 8vh,  82px)";
+  const hlBottom  = isMob ? "clamp(100px, 18vh, 120px)" : "clamp(96px, 14vh, 130px)";
+  const ph2Bottom = isMob ? "clamp(58px, 10vh, 76px)"  : "clamp(56px, 8vh,  82px)";
 
   return (
     <section

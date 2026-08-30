@@ -166,25 +166,26 @@ function PhoneScreenB() {
   );
 }
 
-function PhoneFrame({ children, small }: { children: React.ReactNode; small?: boolean }) {
-  const w = small ? 158 : 196;
-  const h = small ? 322 : 400;
+function PhoneFrame({ children, small, xs }: { children: React.ReactNode; small?: boolean; xs?: boolean }) {
+  const w = xs ? 128 : small ? 158 : 196;
+  const h = xs ? 260 : small ? 322 : 400;
+  const r = xs ? 22 : small ? 30 : 36;
   return (
     <div style={{
       width: w,
       height: h,
-      borderRadius: small ? 30 : 36,
+      borderRadius: r,
       background: "#141414",
       padding: 3,
       boxShadow: "0 32px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.03)",
       flexShrink: 0,
       position: "relative",
     }}>
-      <div style={{ width: "100%", height: "100%", borderRadius: small ? 28 : 34, overflow: "hidden" }}>
+      <div style={{ width: "100%", height: "100%", borderRadius: r - 2, overflow: "hidden" }}>
         {/* Notch */}
         <div aria-hidden style={{
           position: "absolute", top: 7, left: "50%", transform: "translateX(-50%)",
-          width: small ? 70 : 84, height: small ? 16 : 20,
+          width: xs ? 56 : small ? 70 : 84, height: xs ? 13 : small ? 16 : 20,
           background: "#141414", borderRadius: "0 0 12px 12px", zIndex: 10,
         }} />
         {children}
@@ -522,15 +523,15 @@ function DistanceAnimated() {
         {/* Mobile: vertical stack with convergence */}
         {isMob && (
           <>
-            {/* Phone A — upper position; M_phoneAY handles entrance and downward convergence */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "20%", transform: "translateX(-50%)" }}>
+            {/* Phone A — upper; xs size so both phones fit without overflow */}
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "clamp(50px, 12vh, 90px)", transform: "translateX(-50%)" }}>
               <motion.div style={{ opacity: phoneAOp, y: M_phoneAY }}>
-                <PhoneFrame small><PhoneScreenA /></PhoneFrame>
+                <PhoneFrame xs><PhoneScreenA /></PhoneFrame>
               </motion.div>
             </div>
 
-            {/* Distance — middle, fades before convergence */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none" }}>
+            {/* Distance — between phones; 54% centers it in the gap */}
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "54%", transform: "translate(-50%, -50%)", pointerEvents: "none" }}>
               <motion.div style={{ opacity: distBtwOp, y: distBtwY, textAlign: "center" }}>
                 <div style={{
                   fontSize: "clamp(36px, 10vw, 52px)",
@@ -546,10 +547,10 @@ function DistanceAnimated() {
               </motion.div>
             </div>
 
-            {/* Phone B — lower position; M_phoneBY handles entrance and upward convergence */}
-            <div style={{ position: "absolute", zIndex: 3, left: "50%", top: "63%", transform: "translateX(-50%)" }}>
+            {/* Phone B — anchored to bottom so it never overflows the viewport */}
+            <div style={{ position: "absolute", zIndex: 3, left: "50%", bottom: "clamp(18px, 3vh, 36px)", transform: "translateX(-50%)" }}>
               <motion.div style={{ opacity: phoneBOp, y: M_phoneBY }}>
-                <PhoneFrame small><PhoneScreenB /></PhoneFrame>
+                <PhoneFrame xs><PhoneScreenB /></PhoneFrame>
               </motion.div>
             </div>
           </>
