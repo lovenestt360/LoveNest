@@ -125,8 +125,22 @@ function ManifestoScene({ reduced }: { reduced: boolean | null }) {
   const isMob = useMediaQuery("(max-width: 767px)");
   const words = MANIFESTO_TEXT.split(" ");
 
+  if (isMob) {
+    return (
+      <section style={{ background: NAVY, padding: "72px 7%", position: "relative", overflow: "hidden" }}>
+        <div aria-hidden style={{ position: "absolute", top: "20%", right: "-8%", width: 260, height: 260, borderRadius: "50%", background: `${PINK}16`, filter: "blur(70px)", pointerEvents: "none" }} />
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}88`, marginBottom: 24, marginTop: 0, position: "relative" }}>
+          Manifesto
+        </p>
+        <p style={{ fontSize: "clamp(18px, 5.5vw, 26px)", fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: 0, color: "white", position: "relative" }}>
+          {MANIFESTO_TEXT}
+        </p>
+      </section>
+    );
+  }
+
   return (
-    <div ref={outerRef} style={{ height: isMob ? "140vh" : "200vh" }}>
+    <div ref={outerRef} style={{ height: "200vh" }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", background: NAVY, display: "flex", alignItems: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "25%", right: "-8%", width: 440, height: 440, borderRadius: "50%", background: `${PINK}16`, filter: "blur(90px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "20%", left: "-5%", width: 300, height: 300, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(70px)", pointerEvents: "none" }} />

@@ -301,6 +301,7 @@ function FlameAnimated() {
 
 export function FlameScene() {
   const reduced = useReducedMotion();
-  if (reduced) return <FlameSceneReduced />;
+  const isMob = useMediaQuery("(max-width: 767px)");
+  if (reduced || isMob) return <FlameSceneReduced />;
   return <FlameAnimated />;
 }

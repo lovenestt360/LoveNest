@@ -160,7 +160,7 @@ function GesturesPhone({ isMob }: { isMob: boolean }) {
 
 // ── Reduced-motion fallback ───────────────────────────────────────────────────
 
-function GesturesReduced() {
+function GesturesReduced({ isMob }: { isMob?: boolean }) {
   return (
     <section style={{ background: NAVY, position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", inset: 0 }}>
@@ -191,7 +191,7 @@ function GesturesReduced() {
           </p>
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <GesturesPhone isMob={false} />
+          <GesturesPhone isMob={isMob ?? false} />
         </div>
       </div>
     </section>
@@ -282,7 +282,7 @@ export function GesturesScene() {
   const phoneScale = isMob ? M_phoneScale : D_phoneScale;
   const imgOp      = isMob ? M_imgOp      : D_imgOp;
 
-  if (reduced) return <GesturesReduced />;
+  if (reduced || isMob) return <GesturesReduced isMob={isMob} />;
 
   return (
     // VIDEO SLOT — future: add /gestures.mp4 to background when available

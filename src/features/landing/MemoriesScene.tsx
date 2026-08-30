@@ -459,6 +459,7 @@ function MemoriesAnimated() {
 
 export function MemoriesScene() {
   const reduced = useReducedMotion();
-  if (reduced) return <MemoriesReduced />;
+  const isMob = useMediaQuery("(max-width: 767px)");
+  if (reduced || isMob) return <MemoriesReduced />;
   return <MemoriesAnimated />;
 }

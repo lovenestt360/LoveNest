@@ -217,7 +217,7 @@ export function HeroScene() {
   const closingOpacity = isMob ? M_closingOpacity : D_closingOpacity;
   const closingY       = isMob ? M_closingY       : D_closingY;
 
-  if (reduced) {
+  if (reduced || isMob) {
     return <HeroReduced onStart={() => navigate("/inicio")} onLogin={() => navigate("/entrar?returning=1")} />;
   }
 

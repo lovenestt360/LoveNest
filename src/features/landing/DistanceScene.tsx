@@ -206,7 +206,7 @@ function DotMarker({ isA }: { isA?: boolean }) {
 
 // ── Reduced-motion fallback ───────────────────────────────────────────────────
 
-function DistanceReduced() {
+function DistanceReduced({ isMob }: { isMob?: boolean }) {
   const [mapReady, setMapReady] = useState(false);
   const [isNear, setIsNear] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -235,12 +235,14 @@ function DistanceReduced() {
           </h2>
         </div>
 
-        {/* Two phones + distance */}
-        <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
-          <PhoneFrame>
-            <PhoneScreenA />
-          </PhoneFrame>
-          <div style={{ flex: 1, minWidth: 120, textAlign: "center" }}>
+        {/* Two phones + distance — vertical on mobile, horizontal on desktop */}
+        <div style={{ display: "flex", alignItems: "center", gap: isMob ? 20 : 32, flexWrap: "wrap", flexDirection: isMob ? "column" : "row" }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <PhoneFrame xs={isMob}>
+              <PhoneScreenA />
+            </PhoneFrame>
+          </div>
+          <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 900, color: "white", letterSpacing: "-0.04em", lineHeight: 1 }}>
               4,2 km
             </div>
@@ -248,9 +250,11 @@ function DistanceReduced() {
               de distância
             </div>
           </div>
-          <PhoneFrame>
-            <PhoneScreenB />
-          </PhoneFrame>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <PhoneFrame xs={isMob}>
+              <PhoneScreenB />
+            </PhoneFrame>
+          </div>
         </div>
 
         {/* Map */}
@@ -631,6 +635,7 @@ function DistanceAnimated() {
 
 export function DistanceScene() {
   const reduced = useReducedMotion();
-  if (reduced) return <DistanceReduced />;
+  const isMob = useMediaQuery("(max-width: 767px)");
+  if (reduced || isMob) return <DistanceReduced isMob={isMob} />;
   return <DistanceAnimated />;
 }
