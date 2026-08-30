@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   motion,
   useScroll,
@@ -87,6 +87,16 @@ function FlameAnimated() {
   const outerRef = useRef<HTMLDivElement>(null);
   const isMob = useMediaQuery("(max-width: 767px)");
   const [stage, setStage] = useState<FlameStage>("brasa");
+  const [stageOpacity, setStageOpacity] = useState(1);
+  const stageInitRef = useRef(true);
+
+  // Softens the PNG swap when stage changes — feels like evolution, not a cut
+  useLayoutEffect(() => {
+    if (stageInitRef.current) { stageInitRef.current = false; return; }
+    setStageOpacity(0.80);
+    const t = setTimeout(() => setStageOpacity(1), 220);
+    return () => clearTimeout(t);
+  }, [stage]);
 
   const { scrollYProgress: p } = useScroll({
     target: outerRef,
@@ -198,7 +208,11 @@ function FlameAnimated() {
           transform: "translate(-50%, -50%)",
         }}>
           <motion.div style={{ opacity: petOp, scale: petScale, y: petY }}>
-            <div style={{ width: flameW, height: flameH }}>
+            <div style={{
+              width: flameW, height: flameH,
+              opacity: stageOpacity,
+              transition: "opacity 180ms ease-in-out",
+            }}>
               <FlamePet
                 stage={stage}
                 mood="apaixonado"
