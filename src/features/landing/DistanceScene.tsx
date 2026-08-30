@@ -398,7 +398,7 @@ function DistanceAnimated() {
     }
   });
 
-  const sceneHeight = isMob ? "340vh" : "420vh";
+  const sceneHeight = isMob ? "180vh" : "420vh";
   const mapClip     = isMob ? M_mapClip : D_mapClip;
 
   return (

@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
+
+function useMediaQuery(query: string): boolean {
+  const [m, setM] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const h = (e: MediaQueryListEvent) => setM(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, [query]);
+  return m;
+}
 import { ArrowRight } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { LandingNav } from "@/features/landing/LandingNav";
@@ -109,10 +122,11 @@ const MANIFESTO_TEXT = "O amor não precisa de grandes gestos para ser real. Pre
 function ManifestoScene({ reduced }: { reduced: boolean | null }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const progress = useSectionProgress(outerRef);
+  const isMob = useMediaQuery("(max-width: 767px)");
   const words = MANIFESTO_TEXT.split(" ");
 
   return (
-    <div ref={outerRef} style={{ height: "200vh" }}>
+    <div ref={outerRef} style={{ height: isMob ? "140vh" : "200vh" }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", background: NAVY, display: "flex", alignItems: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "25%", right: "-8%", width: 440, height: 440, borderRadius: "50%", background: `${PINK}16`, filter: "blur(90px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "20%", left: "-5%", width: 300, height: 300, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(70px)", pointerEvents: "none" }} />
@@ -143,6 +157,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const reduced = useReducedMotion();
+  const isMob = useMediaQuery("(max-width: 767px)");
   const [activeBtn, setActiveBtn] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,7 +202,7 @@ export default function Landing() {
       <section style={{ background: NAVY, position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ position: "absolute", top: "30%", right: "-5%", width: 500, height: 500, borderRadius: "50%", background: `${PINK}1a`, filter: "blur(100px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "10%", left: "-8%", width: 350, height: 350, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(80px)", pointerEvents: "none" }} />
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMob ? "72px 24px" : "100px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
           <Reveal reduced={!!reduced}>
             <div>
               <h2 style={{ fontSize: "clamp(30px, 5vw, 68px)", fontWeight: 900, color: "white", lineHeight: 1.04, letterSpacing: "-0.03em", marginTop: 0, marginBottom: 20 }}>

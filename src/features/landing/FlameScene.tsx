@@ -140,7 +140,7 @@ function FlameAnimated() {
   const exitOp    = useTransform(p, [0.90, 1.00], [0, 0.88]);
   const exitScale = useTransform(p, [0.90, 1.00], [0.50, 2.40]);
 
-  const sceneH  = isMob ? "260vh" : "280vh";
+  const sceneH  = isMob ? "180vh" : "280vh";
   const flameW  = isMob ? "min(60vw, 240px)" : "256px";
   const flameH  = isMob ? "min(80vw, 320px)" : "340px";
   const flameTop = isMob ? "44%" : "43%";

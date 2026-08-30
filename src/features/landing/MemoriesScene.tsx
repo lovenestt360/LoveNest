@@ -256,7 +256,7 @@ function MemoriesAnimated() {
   const glowOp    = useTransform(p, [0.94, 1.00], [0, 0.80]);
   const glowScale = useTransform(p, [0.94, 1.00], [0.45, 2.0]);
 
-  const sceneH = isMob ? "280vh" : "300vh";
+  const sceneH = isMob ? "200vh" : "300vh";
 
   return (
     <section

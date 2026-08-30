@@ -225,7 +225,7 @@ export function HeroScene() {
     // 200vh on mobile (≈100vh effective scroll), 300vh on desktop (≈200vh)
     <section
       ref={containerRef}
-      style={{ height: isMob ? "200vh" : "300vh", position: "relative" }}
+      style={{ height: isMob ? "160vh" : "300vh", position: "relative" }}
       aria-label="Apresentação da LoveNest"
     >
       {/* Sticky viewport */}

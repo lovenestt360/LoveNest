@@ -288,7 +288,7 @@ export function GesturesScene() {
     // VIDEO SLOT — future: add /gestures.mp4 to background when available
     <section
       ref={containerRef}
-      style={{ height: isMob ? "210vh" : "300vh", position: "relative" }}
+      style={{ height: isMob ? "165vh" : "300vh", position: "relative" }}
       aria-label="Pequenos gestos"
     >
       <div style={{ position: "sticky", top: 0, height: "100dvh", overflow: "hidden" }}>
