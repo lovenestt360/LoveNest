@@ -14,7 +14,7 @@ function useMediaQuery(query: string): boolean {
   }, [query]);
   return m;
 }
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Flame } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { LandingNav } from "@/features/landing/LandingNav";
 import { HeroScene } from "@/features/landing/HeroScene";
@@ -115,6 +115,143 @@ function ScenePlaceholder({ number, title }: { number: string; title: string }) 
   );
 }
 
+// ── Cena 05.5 — Momento Interativo ────────────────────────────────────────────
+
+function FlameInteractive({ reduced }: { reduced: boolean }) {
+  const progressRef = useRef(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
+  const [done, setDone] = useState(false);
+  const pressing = useRef(false);
+  const rafId = useRef(0);
+  const DURATION = 1500;
+
+  useEffect(() => () => { cancelAnimationFrame(rafId.current); }, []);
+
+  const updateProgress = (v: number) => {
+    progressRef.current = v;
+    setDisplayProgress(v);
+  };
+
+  const startHold = () => {
+    if (done) return;
+    pressing.current = true;
+    const started = performance.now() - progressRef.current * DURATION;
+    const tick = (now: number) => {
+      if (!pressing.current) return;
+      const p = Math.min(1, (now - started) / DURATION);
+      updateProgress(p);
+      if (p >= 1) { pressing.current = false; setDone(true); }
+      else rafId.current = requestAnimationFrame(tick);
+    };
+    rafId.current = requestAnimationFrame(tick);
+  };
+
+  const endHold = () => {
+    if (!pressing.current) return;
+    pressing.current = false;
+    cancelAnimationFrame(rafId.current);
+    const startP = progressRef.current;
+    if (startP <= 0) return;
+    const t0 = performance.now();
+    const ease = (now: number) => {
+      const t = Math.min(1, (now - t0) / 700);
+      const p = startP * (1 - t * t);
+      updateProgress(Math.max(0, p));
+      if (p > 0.002) rafId.current = requestAnimationFrame(ease);
+      else updateProgress(0);
+    };
+    rafId.current = requestAnimationFrame(ease);
+  };
+
+  const RADIUS = 36;
+  const CIRC = 2 * Math.PI * RADIUS;
+  const glowAlpha = done ? 0.22 : displayProgress * 0.18;
+
+  return (
+    <section
+      style={{
+        background: NAVY, padding: "80px 7%", textAlign: "center",
+        position: "relative", overflow: "hidden",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+      }}
+      aria-label="O vosso ritual"
+    >
+      <div aria-hidden style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${PINK} 0%, transparent 70%)`,
+        opacity: glowAlpha,
+        transition: done ? "opacity 600ms ease" : "none",
+      }} />
+      <p style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
+        textTransform: "uppercase", color: `${PINK}88`,
+        marginBottom: 40, marginTop: 0, position: "relative",
+      }}>
+        O vosso ritual
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, position: "relative" }}>
+        <div style={{ position: "relative", width: 96, height: 96, userSelect: "none" }}>
+          <svg
+            style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}
+            width="96" height="96" viewBox="0 0 96 96"
+            aria-hidden
+          >
+            <circle cx="48" cy="48" r={RADIUS} fill="none" stroke={`${PINK}28`} strokeWidth="3" />
+            <circle
+              cx="48" cy="48" r={RADIUS}
+              fill="none" stroke={PINK} strokeWidth="3"
+              strokeDasharray={CIRC}
+              strokeDashoffset={CIRC * (1 - displayProgress)}
+              strokeLinecap="round"
+            />
+          </svg>
+          <button
+            onPointerDown={reduced ? () => setDone(true) : startHold}
+            onPointerUp={reduced ? undefined : endHold}
+            onPointerLeave={reduced ? undefined : endHold}
+            onContextMenu={(e) => e.preventDefault()}
+            aria-label={done ? "Chama acesa" : "Manter pressionado para acender a chama"}
+            style={{
+              position: "absolute", inset: 8, borderRadius: "50%", border: "none",
+              background: `rgba(224,99,122,${done ? 0.24 : 0.06 + displayProgress * 0.18})`,
+              cursor: done ? "default" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              touchAction: "none",
+              WebkitUserSelect: "none",
+              transition: "background 200ms ease",
+            } as React.CSSProperties}
+          >
+            <Flame
+              style={{
+                width: 28, height: 28,
+                color: done ? PINK : `rgba(224,99,122,${0.35 + displayProgress * 0.65})`,
+                transition: "color 200ms ease",
+              }}
+              strokeWidth={1.5}
+            />
+          </button>
+        </div>
+        <p style={{
+          fontSize: 14, fontWeight: 600, margin: 0, letterSpacing: "-0.01em",
+          color: done ? PINK : "rgba(255,255,255,0.40)",
+          transition: "color 400ms ease",
+        }}>
+          {done ? "A chama está acesa." : "Manter pressionado"}
+        </p>
+        <p style={{
+          fontSize: 13, color: "rgba(255,255,255,0.50)", margin: 0,
+          maxWidth: "28ch", lineHeight: 1.6,
+          opacity: done ? 1 : 0,
+          transform: done ? "none" : "translateY(8px)",
+          transition: "opacity 600ms ease, transform 600ms ease",
+        }}>
+          Pequenos gestos mantêm o que importa aceso.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 // ── Cena 06 — Manifesto ───────────────────────────────────────────────────────
 
 const MANIFESTO_TEXT = "O amor não precisa de grandes gestos para ser real. Precisa de aparecer. Todos os dias. Em pequenos momentos que, somados, se tornam a história de vocês.";
@@ -132,7 +269,7 @@ function ManifestoScene({ reduced }: { reduced: boolean | null }) {
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}88`, marginBottom: 24, marginTop: 0, position: "relative" }}>
           Manifesto
         </p>
-        <p style={{ fontSize: "clamp(18px, 5.5vw, 26px)", fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: 0, color: "white", position: "relative" }}>
+        <p style={{ fontSize: "clamp(18px, 5.5vw, 26px)", fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: 0, color: "white", position: "relative", fontFamily: "'Fraunces', Georgia, serif" }}>
           {MANIFESTO_TEXT}
         </p>
       </section>
@@ -148,7 +285,7 @@ function ManifestoScene({ reduced }: { reduced: boolean | null }) {
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}88`, marginBottom: 36, marginTop: 0 }}>
             Manifesto
           </p>
-          <p style={{ fontSize: "clamp(20px, 3.6vw, 46px)", fontWeight: 800, lineHeight: 1.38, letterSpacing: "-0.01em", maxWidth: 860, margin: 0 }}>
+          <p style={{ fontSize: "clamp(20px, 3.6vw, 46px)", fontWeight: 800, lineHeight: 1.38, letterSpacing: "-0.01em", maxWidth: 860, margin: 0, fontFamily: "'Fraunces', Georgia, serif" }}>
             {words.map((word, i) => {
               const threshold = (i / (words.length - 1)) * 0.9;
               const lit = reduced || progress > threshold;
@@ -191,9 +328,13 @@ export default function Landing() {
 
   return (
     <div style={{ minHeight: "100vh", background: NAVY, overflowX: "hidden" }}>
+      {/* Skip link — acessibilidade */}
+      <a href="#main" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0, left: 0, top: 0 }}>Saltar para o conteúdo</a>
+
       {/* Fixed nav — flutua sobre todas as cenas */}
       <LandingNav />
 
+      <main id="main" tabIndex={-1} style={{ outline: "none" }}>
       {/* ══ CENA 01 — HERO ══ */}
       <HeroScene />
 
@@ -209,6 +350,9 @@ export default function Landing() {
       {/* ══ CENA 05 — A VOSSA CHAMA ══ */}
       <FlameScene />
 
+      {/* ══ CENA 05.5 — RITUAL INTERATIVO ══ */}
+      <FlameInteractive reduced={!!reduced} />
+
       {/* ══ CENA 06 — MANIFESTO ══ */}
       <ManifestoScene reduced={reduced} />
 
@@ -219,10 +363,10 @@ export default function Landing() {
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMob ? "72px 24px" : "100px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
           <Reveal reduced={!!reduced}>
             <div>
-              <h2 style={{ fontSize: "clamp(30px, 5vw, 68px)", fontWeight: 900, color: "white", lineHeight: 1.04, letterSpacing: "-0.03em", marginTop: 0, marginBottom: 20 }}>
+              <h2 style={{ fontSize: "clamp(30px, 5vw, 68px)", fontWeight: 900, color: "white", lineHeight: 1.04, letterSpacing: "-0.03em", marginTop: 0, marginBottom: 20, fontFamily: "'Fraunces', Georgia, serif" }}>
                 O vosso ninho<br />espera por vocês.
               </h2>
-              <p style={{ fontSize: 15, color: "rgba(255,255,255,0.38)", marginBottom: 44, maxWidth: 260, marginLeft: "auto", marginRight: "auto" }}>
+              <p style={{ fontSize: 15, color: "rgba(255,255,255,0.60)", marginBottom: 44, maxWidth: 260, marginLeft: "auto", marginRight: "auto" }}>
                 Criem o vosso espaço e comecem a construir a vossa história juntos.
               </p>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
@@ -235,12 +379,14 @@ export default function Landing() {
                   Criar o nosso espaço
                   <ArrowRight style={{ width: 16, height: 16 }} strokeWidth={2.5} />
                 </button>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.20)", margin: 0 }}>Grátis · Privado · Sem publicidade</p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", margin: 0 }}>Grátis · Privado · Sem publicidade</p>
               </div>
             </div>
           </Reveal>
         </div>
       </section>
+
+      </main>
 
       {/* ── FOOTER ── */}
       <footer style={{ background: NAVY, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
@@ -249,7 +395,7 @@ export default function Landing() {
             <LogoMark size={20} />
             <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>LoveNest</span>
           </div>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.22)", margin: 0 }}>Um espaço privado para o vosso amor.</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", margin: 0 }}>Um espaço privado para o vosso amor.</p>
         </div>
       </footer>
     </div>

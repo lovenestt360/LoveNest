@@ -131,9 +131,9 @@ function HeroReduced({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg, ${NAVY}e0 0%, ${NAVY}88 60%, transparent 100%)` }} />
       </div>
       <div style={{ position: "relative", zIndex: 1, maxWidth: 560 }}>
-        <h1 style={{ fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 900, lineHeight: 1.03, letterSpacing: "-0.03em", color: "white", margin: "0 0 20px" }}>
+        <h1 style={{ fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 900, lineHeight: 1.03, letterSpacing: "-0.03em", color: "white", margin: "0 0 20px", fontFamily: "'Fraunces', Georgia, serif" }}>
           O amor também<br />vive nos<br />
-          <span style={{ color: PINK }}>dias comuns.</span>
+          <span style={{ color: PINK, fontStyle: "italic" }}>dias comuns.</span>
         </h1>
         <p style={{ fontSize: "clamp(14px, 1.5vw, 18px)", lineHeight: 1.68, color: "rgba(255,255,255,0.65)", margin: "0 0 36px", maxWidth: 380 }}>
           Não nos grandes gestos. Nos bons dias, nos momentos simples — e nas manhãs de segunda-feira.
@@ -278,9 +278,10 @@ export function HeroScene() {
               letterSpacing: "-0.03em",
               color: "white", margin: 0,
               maxWidth: isMob ? "90vw" : "clamp(280px, 55vw, 640px)",
+              fontFamily: "'Fraunces', Georgia, serif",
             }}>
               O amor também<br />vive nos<br />
-              <span style={{ color: PINK }}>dias comuns.</span>
+              <span style={{ color: PINK, fontStyle: "italic" }}>dias comuns.</span>
             </h1>
           </motion.div>
 
