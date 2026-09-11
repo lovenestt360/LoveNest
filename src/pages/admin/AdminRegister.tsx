@@ -6,12 +6,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Chave lida de variável de ambiente — nunca hardcoded no bundle.
-// Serve apenas para desbloquear o formulário no cliente; a validação que
-// conta é feita no servidor (Edge Function admin-claim) contra o segredo
-// ADMIN_SETUP_KEY, que nunca é exposto ao browser.
-const SETUP_KEY = import.meta.env.VITE_ADMIN_SETUP_KEY ?? "";
-
+// Sem verificação de chave no cliente: uma variável VITE_* fica sempre
+// visível no bundle publicado (é assim que o Vite funciona), por isso
+// comparar aqui só daria a ilusão de segurança — e se essa chave fosse
+// igual à do servidor, publicava-a. A chave escrita no formulário abaixo
+// segue direto para a Edge Function admin-claim, que é quem valida contra
+// o segredo ADMIN_SETUP_KEY do servidor (nunca enviado ao browser).
 export default function AdminRegister() {
     const [email, setEmail]             = useState("");
     const [username, setUsername]       = useState("");
@@ -45,24 +45,6 @@ export default function AdminRegister() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!SETUP_KEY) {
-            toast({
-                title: "Setup desativado",
-                description: "VITE_ADMIN_SETUP_KEY não está configurada.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        if (securityKey !== SETUP_KEY) {
-            toast({
-                title: "Chave Incorreta",
-                description: "Não tens permissão para criar administradores.",
-                variant: "destructive",
-            });
-            return;
-        }
 
         if (password.length < 8) {
             toast({
@@ -100,7 +82,14 @@ export default function AdminRegister() {
             const { error: claimError } = await supabase.functions.invoke("admin-claim", {
                 body: { setup_key: securityKey, username: username || email },
             });
-            if (claimError) throw new Error(claimError.message || "Falha ao criar administrador.");
+            if (claimError) {
+                let message = claimError.message || "Falha ao criar administrador.";
+                try {
+                    const body = await (claimError as any).context?.json?.();
+                    if (body?.error) message = body.error;
+                } catch { /* mantém a mensagem genérica */ }
+                throw new Error(message);
+            }
 
             toast({ title: "Admin Criado!", description: "Já podes fazer login." });
             navigate("/admin-login");
