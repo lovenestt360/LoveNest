@@ -20,6 +20,17 @@
 
 DROP POLICY IF EXISTS "Public select admin_users for auth" ON public.admin_users;
 
+-- CRÍTICO: "Admin setup" era uma policy de INSERT aberta a "public" — o
+-- mesmo problema de nome divergente (o ficheiro original chamava-lhe
+-- "Allow registration of admin users"). Isto deixava QUALQUER visitante,
+-- sem sessão nenhuma, inserir-se directamente em admin_users e tornar-se
+-- admin — ignorando por completo a validação da Edge Function
+-- admin-claim (que confirma ADMIN_SETUP_KEY no servidor). A ligação
+-- inicial de uma conta a admin_users já só deve acontecer através dessa
+-- Edge Function (service role, ignora RLS) ou de outro admin já
+-- autenticado (coberto por "Admins full access admin_users").
+DROP POLICY IF EXISTS "Admin setup" ON public.admin_users;
+
 
 -- ────────────────────────────────────────────────────────────────────────
 -- couple_daily_missions / mission_completions — só escritas por
