@@ -60,23 +60,28 @@ export default function AdminRegister() {
             // 1. Cria (ou reutiliza) uma conta real do Supabase Auth para o admin
             //    — a ligação a admin_users passa a exigir esta sessão, em vez de
             //    um INSERT direto que qualquer visitante podia fazer.
+            //
+            //    O Supabase não dá erro em signUp() quando o email já existe mas
+            //    ainda não está confirmado (evita confirmar a existência da conta
+            //    a quem não é dono dela) — só devolve session: null. Por isso a
+            //    reação certa a "sem sessão" é sempre tentar signInWithPassword a
+            //    seguir, não só quando signUp devolve um erro explícito.
             const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-            let userId = signUpData?.user?.id;
 
-            if (signUpError && signUpError.message.toLowerCase().includes("already registered")) {
+            let session = signUpData?.session ?? null;
+
+            if (!session) {
                 const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-                if (signInError) throw signInError;
-                userId = signInData.user?.id;
-            } else if (signUpError) {
-                throw signUpError;
+                if (signInError) {
+                    if (signInError.message.toLowerCase().includes("email not confirmed")) {
+                        throw new Error("O email ainda não está confirmado no Supabase Auth.");
+                    }
+                    throw signUpError ?? signInError;
+                }
+                session = signInData.session;
             }
 
-            if (!userId) throw new Error("Não foi possível criar a sessão.");
-
-            const { data: sessionData } = await supabase.auth.getSession();
-            if (!sessionData.session) {
-                throw new Error("Confirma o email (se a confirmação estiver ativa) e tenta novamente.");
-            }
+            if (!session) throw new Error("Não foi possível criar a sessão.");
 
             // 2. Liga esta conta a admin_users — validado no servidor
             const { error: claimError } = await supabase.functions.invoke("admin-claim", {
