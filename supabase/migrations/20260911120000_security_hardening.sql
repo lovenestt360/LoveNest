@@ -74,11 +74,13 @@ CREATE POLICY "Admins full access admin_users"
 --    escritos só através de funções SECURITY DEFINER auditadas abaixo.
 -- ────────────────────────────────────────────────────────────────────────
 
+-- age_gap_flag aparecia em src/integrations/supabase/types.ts mas não
+-- existe de facto na tabela (tipos desatualizados, como o próprio
+-- relatório já assinalava) — por isso fica fora desta lista.
 REVOKE UPDATE ON public.couple_spaces FROM authenticated;
 GRANT UPDATE (
   house_name, partner1_name, partner2_name, initials,
-  relationship_start_date, chat_wallpaper_url, chat_wallpaper_opacity,
-  age_gap_flag
+  relationship_start_date, chat_wallpaper_url, chat_wallpaper_opacity
 ) ON public.couple_spaces TO authenticated;
 
 -- activate_trial() — substitui o UPDATE direto que ProtectedRoute.tsx
