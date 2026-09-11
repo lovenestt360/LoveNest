@@ -38,6 +38,20 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const admin = createClient(supabaseUrl, serviceRoleKey);
+
+    // Antes só se confirmava que existia um header Authorization — nunca se
+    // verificava a quem pertencia o token, por isso qualquer pedido
+    // autenticado podia indicar user_id/couple_space_id arbitrários.
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await admin.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Sessão inválida" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { user_id, couple_space_id, lat, lng } = await req.json();
     if (!user_id || !couple_space_id || lat == null || lng == null) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
@@ -46,7 +60,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(supabaseUrl, serviceRoleKey);
+    if (user.id !== user_id) {
+      return new Response(JSON.stringify({ error: "user_id não corresponde ao token" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: membership } = await admin
+      .from("members")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("couple_space_id", couple_space_id)
+      .maybeSingle();
+
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Não pertences a este espaço" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // 1. Fetch favorite places for this couple space
     const { data: places } = await admin

@@ -156,7 +156,7 @@ export function UploadMemoryDialog({ open, onOpenChange, spaceId, userId, onUplo
               </div>
               <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
             </div>
-          }}
+          )}
 
           <div className="bg-card border border-border rounded-2xl divide-y divide-border">
             <div className="p-4 space-y-1">

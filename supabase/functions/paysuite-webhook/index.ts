@@ -126,24 +126,56 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (eventType === "payment.failed") {
-      await adminClient.from("payments").update({ status: "rejected", external_id: externalId ?? null }).eq("id", payment.id);
+    // Listas explícitas — antes só "payment.failed" era tratado e QUALQUER
+    // outro evento (incluindo um tipo desconhecido, vazio ou malformado)
+    // caía no ramo de aprovação. Agora só um evento de sucesso conhecido
+    // ativa a subscrição; um tipo não reconhecido fica pendente e é
+    // registado, nunca aprovado por omissão.
+    const FAILURE_EVENTS = new Set(["payment.failed", "payment.cancelled", "payment.expired"]);
+    const SUCCESS_EVENTS = new Set(["payment.success", "payment.completed", "payment.paid"]);
+
+    if (FAILURE_EVENTS.has(eventType)) {
+      const { error: rejectError } = await adminClient
+        .from("payments")
+        .update({ status: "rejected", external_id: externalId ?? null })
+        .eq("id", payment.id);
+
+      if (rejectError) {
+        await logInternal("REJECT_UPDATE_FAILED", { message: rejectError.message, paymentId: payment.id });
+        return new Response(JSON.stringify({ error: "Falha ao marcar pagamento como rejeitado" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // payment.success (ou qualquer outro evento de sucesso) — replica handleApprovePayment
-    await adminClient.from("payments").update({ status: "approved", external_id: externalId ?? null }).eq("id", payment.id);
+    if (!SUCCESS_EVENTS.has(eventType)) {
+      await logInternal("UNKNOWN_EVENT_TYPE", { eventType, reference, paymentId: payment.id });
+      // 200 para a PaySuite não reenviar indefinidamente — mas o pagamento
+      // fica "pending", nunca aprovado sem uma confirmação explícita.
+      return new Response(JSON.stringify({ ok: true, note: "unhandled event type, ignored" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
+    // payment.success — ativa o espaço PRIMEIRO, e só marca o pagamento como
+    // aprovado depois disso ter sucesso. Pela ordem antiga, se a ativação do
+    // espaço falhasse depois do pagamento já estar "approved", a verificação
+    // de idempotência acima fazia uma reentrega do webhook devolver
+    // "already processed" sem nunca voltar a tentar ativar o espaço.
     const { data: plan } = await adminClient
       .from("subscription_plans")
       .select("id, tier_level")
       .ilike("name", payment.plan_name)
       .maybeSingle();
 
-    await adminClient
+    const { error: spaceError } = await adminClient
       .from("couple_spaces")
       .update({
         subscription_status: "active",
@@ -151,6 +183,27 @@ Deno.serve(async (req) => {
         ...(plan?.tier_level ? { tier_level: plan.tier_level } : {}),
       })
       .eq("id", payment.couple_space_id);
+
+    if (spaceError) {
+      await logInternal("SPACE_ACTIVATION_FAILED", { message: spaceError.message, paymentId: payment.id });
+      return new Response(JSON.stringify({ error: "Falha ao ativar espaço" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { error: approveError } = await adminClient
+      .from("payments")
+      .update({ status: "approved", external_id: externalId ?? null })
+      .eq("id", payment.id);
+
+    if (approveError) {
+      await logInternal("APPROVE_UPDATE_FAILED", { message: approveError.message, paymentId: payment.id });
+      return new Response(JSON.stringify({ error: "Falha ao marcar pagamento como aprovado" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,

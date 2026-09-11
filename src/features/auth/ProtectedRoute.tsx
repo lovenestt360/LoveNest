@@ -77,9 +77,9 @@ export function ProtectedRoute() {
         const { data: house } = await supabase.from("couple_spaces").select("*").eq("id", houseMember.couple_space_id).maybeSingle();
         if (house) {
           setHouseData(house);
-          if (house.is_suspended) {
-            setIsSuspended(true);
-          }
+          // Sincroniza sempre com o valor atual — antes só ligava, nunca desligava,
+          // por isso uma conta reativada continuava bloqueada até recarregar a página.
+          setIsSuspended(!!house.is_suspended);
         }
       }
 
@@ -103,15 +103,13 @@ export function ProtectedRoute() {
     try {
       setSavingTrial(true);
 
-      // 15 days from now
-      const endsAt = new Date();
-      endsAt.setDate(endsAt.getDate() + 15);
-
-      const { error } = await supabase.from("couple_spaces").update({
-        trial_started_at: new Date().toISOString(),
-        trial_ends_at: endsAt.toISOString(),
-        trial_used: true
-      }).eq("id", houseData.id);
+      // Via RPC (SECURITY DEFINER) em vez de UPDATE direto: couple_spaces
+      // também guarda subscription_status/tier_level, e um membro com
+      // permissão de UPDATE na linha não deve conseguir tocar nesses
+      // campos de faturação a partir do browser.
+      const { error } = await supabase.rpc("activate_trial" as any, {
+        p_couple_space_id: houseData.id,
+      });
 
       if (error) throw error;
 
@@ -167,7 +165,7 @@ export function ProtectedRoute() {
     );
   }
 
-  if (isSuspended) {
+  if (isSuspended && location.pathname !== '/subscricao') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="w-full max-w-md rounded-lg border border-destructive bg-destructive/10 p-6 text-center space-y-4 shadow-sm animate-in zoom-in-95">

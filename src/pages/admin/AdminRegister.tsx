@@ -6,28 +6,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Chave lida de variável de ambiente — nunca hardcoded no bundle
-// Definir VITE_ADMIN_SETUP_KEY no .env e nas env vars do Vercel
+// Chave lida de variável de ambiente — nunca hardcoded no bundle.
+// Serve apenas para desbloquear o formulário no cliente; a validação que
+// conta é feita no servidor (Edge Function admin-claim) contra o segredo
+// ADMIN_SETUP_KEY, que nunca é exposto ao browser.
 const SETUP_KEY = import.meta.env.VITE_ADMIN_SETUP_KEY ?? "";
 
-async function hashText(message: string): Promise<string> {
-    if (!crypto?.subtle) {
-        // Fallback básico se crypto não estiver disponível
-        let hash = 0;
-        for (let i = 0; i < message.length; i++) {
-            hash = ((hash << 5) - hash) + message.charCodeAt(i);
-            hash = hash & hash;
-        }
-        return hash.toString();
-    }
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-    return Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
-}
-
 export default function AdminRegister() {
+    const [email, setEmail]             = useState("");
     const [username, setUsername]       = useState("");
     const [password, setPassword]       = useState("");
     const [securityKey, setSecurityKey] = useState("");
@@ -44,7 +30,6 @@ export default function AdminRegister() {
                 .select("id", { count: "exact", head: true });
 
             if ((count ?? 0) > 0) {
-                // Já existe admin → rota não deve estar acessível
                 toast({
                     title: "Setup já concluído",
                     description: "Já existe um administrador. Faz login.",
@@ -90,13 +75,32 @@ export default function AdminRegister() {
 
         setLoading(true);
         try {
-            const hashedPwd = await hashText(password);
+            // 1. Cria (ou reutiliza) uma conta real do Supabase Auth para o admin
+            //    — a ligação a admin_users passa a exigir esta sessão, em vez de
+            //    um INSERT direto que qualquer visitante podia fazer.
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+            let userId = signUpData?.user?.id;
 
-            const { error } = await supabase
-                .from("admin_users" as any)
-                .insert({ username, password_hash: hashedPwd });
+            if (signUpError && signUpError.message.toLowerCase().includes("already registered")) {
+                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+                if (signInError) throw signInError;
+                userId = signInData.user?.id;
+            } else if (signUpError) {
+                throw signUpError;
+            }
 
-            if (error) throw error;
+            if (!userId) throw new Error("Não foi possível criar a sessão.");
+
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (!sessionData.session) {
+                throw new Error("Confirma o email (se a confirmação estiver ativa) e tenta novamente.");
+            }
+
+            // 2. Liga esta conta a admin_users — validado no servidor
+            const { error: claimError } = await supabase.functions.invoke("admin-claim", {
+                body: { setup_key: securityKey, username: username || email },
+            });
+            if (claimError) throw new Error(claimError.message || "Falha ao criar administrador.");
 
             toast({ title: "Admin Criado!", description: "Já podes fazer login." });
             navigate("/admin-login");
@@ -126,11 +130,17 @@ export default function AdminRegister() {
 
                 <form onSubmit={handleRegister} className="space-y-4">
                     <Input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="Email"
+                        required
+                    />
+                    <Input
                         type="text"
                         value={username}
                         onChange={e => setUsername(e.target.value)}
-                        placeholder="Nome de Utilizador"
-                        required
+                        placeholder="Nome de Utilizador (opcional)"
                         minLength={3}
                     />
                     <Input

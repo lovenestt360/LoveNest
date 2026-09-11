@@ -1,118 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { getFcmAccessToken, sendFcmMessage, FCM_PROJECT_ID } from "../_shared/fcm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-// ── FCM HTTP v1 helpers ──────────────────────────────────────────────────────
-
-function toBase64Url(buf: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
-
-async function getFcmAccessToken(clientEmail: string, privateKeyPem: string): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-
-  const keyData = privateKeyPem
-    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-    .replace(/-----END PRIVATE KEY-----/g, "")
-    .replace(/\\n/g, "")
-    .replace(/\n/g, "")
-    .trim();
-
-  const binaryKey = Uint8Array.from(atob(keyData), (c) => c.charCodeAt(0));
-
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const header = toBase64Url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
-  const payload = toBase64Url(
-    new TextEncoder().encode(
-      JSON.stringify({
-        iss: clientEmail,
-        scope: "https://www.googleapis.com/auth/firebase.messaging",
-        aud: "https://oauth2.googleapis.com/token",
-        exp: now + 3600,
-        iat: now,
-      })
-    )
-  );
-
-  const sigInput = new TextEncoder().encode(`${header}.${payload}`);
-  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, sigInput);
-  const jwt = `${header}.${payload}.${toBase64Url(sig)}`;
-
-  const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
-  });
-
-  if (!tokenResp.ok) {
-    const errText = await tokenResp.text();
-    throw new Error(`Google token exchange failed: ${errText}`);
-  }
-
-  const tokenData = await tokenResp.json();
-  return tokenData.access_token as string;
-}
-
-async function sendFcmMessage(
-  accessToken: string,
-  projectId: string,
-  fcmToken: string,
-  title: string,
-  body: string,
-  url: string
-): Promise<{ ok: boolean; error?: string }> {
-  const resp = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          token: fcmToken,
-          // notification: Firebase mostra a notificação automaticamente em background
-          notification: { title, body },
-          data: {
-            url: url || "/chat",
-          },
-          webpush: {
-            notification: {
-              icon: "https://lovenestt.com/icon-192.png",
-              badge: "https://lovenestt.com/icon-192.png",
-              tag: "lovenest-notif",
-            },
-            fcm_options: { link: `https://lovenestt.com${url || "/"}` },
-            headers: { TTL: "86400" },
-          },
-        },
-      }),
-    }
-  );
-
-  if (!resp.ok) {
-    const errBody = await resp.json().catch(() => ({}));
-    const code = errBody?.error?.details?.[0]?.errorCode ?? errBody?.error?.status ?? resp.status;
-    return { ok: false, error: String(code) };
-  }
-
-  return { ok: true };
-}
 
 // ── Edge Function ────────────────────────────────────────────────────────────
 
@@ -216,13 +109,47 @@ Deno.serve(async (req) => {
 
     const senderId = user.id;
 
+    // Autorização: broadcast exige admin; envio a um espaço exige que o
+    // remetente pertença a esse espaço. Sem isto, qualquer conta autenticada
+    // podia pedir um broadcast global ou notificar um espaço alheio.
+    if (broadcast) {
+      const { data: adminRow } = await adminClient
+        .from("admin_users")
+        .select("id")
+        .eq("user_id", senderId)
+        .maybeSingle();
+
+      if (!adminRow) {
+        await logInternal("BROADCAST_DENIED", { senderId });
+        return new Response(JSON.stringify({ error: "Apenas administradores podem enviar notificações globais" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      const { data: membership } = await adminClient
+        .from("members")
+        .select("id")
+        .eq("user_id", senderId)
+        .eq("couple_space_id", couple_space_id)
+        .maybeSingle();
+
+      if (!membership) {
+        await logInternal("MEMBERSHIP_DENIED", { senderId, couple_space_id });
+        return new Response(JSON.stringify({ error: "Não pertences a este espaço" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     let query = adminClient
       .from("push_subscriptions")
       .select("id, fcm_token, user_id")
       .not("fcm_token", "is", null);
 
     if (broadcast) {
-      // sem filtro — envia a todos
+      // sem filtro — envia a todos (já validado que o remetente é admin acima)
     } else {
       query = query.eq("couple_space_id", couple_space_id);
       if (is_test) {
@@ -246,7 +173,6 @@ Deno.serve(async (req) => {
 
     // Obter access token Google uma única vez para todo o batch
     const accessToken = await getFcmAccessToken(fcmClientEmail, fcmPrivateKey);
-    const projectId   = "lovenest-d7f81";
 
     let sentCount = 0;
     const errors: { token: string; error: string }[] = [];
@@ -254,7 +180,7 @@ Deno.serve(async (req) => {
     for (const sub of subs) {
       const result = await sendFcmMessage(
         accessToken,
-        projectId,
+        FCM_PROJECT_ID,
         sub.fcm_token!,
         finalTitle || "LoveNest",
         finalBody  || "",

@@ -1,9 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getFcmAccessToken, sendFcmMessage, FCM_PROJECT_ID } from "../_shared/fcm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-admin-id",
+    "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 Deno.serve(async (req) => {
@@ -14,6 +15,9 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const cronSecret = Deno.env.get("LOVE_WRAPPED_CRON_SECRET");
+    const fcmClientEmail = Deno.env.get("FCM_CLIENT_EMAIL");
+    const fcmPrivateKey = Deno.env.get("FCM_PRIVATE_KEY");
 
     if (!supabaseUrl || !serviceKey) {
       console.error("Missing environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -24,6 +28,32 @@ Deno.serve(async (req) => {
     }
 
     const sb = createClient(supabaseUrl, serviceKey);
+
+    // Autorização: antes esta função corria com service role sem validar o
+    // chamador (verify_jwt=false no config.toml) e percorria TODOS os
+    // espaços — qualquer pedido HTTP disparava a geração global. Agora
+    // exige ou o segredo partilhado do agendador, ou uma sessão de admin.
+    const providedSecret = req.headers.get("x-cron-secret");
+    const authHeader = req.headers.get("Authorization");
+
+    let authorized = false;
+    if (cronSecret && providedSecret && providedSecret === cronSecret) {
+      authorized = true;
+    } else if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await sb.auth.getUser(token);
+      if (user) {
+        const { data: adminRow } = await sb.from("admin_users").select("id").eq("user_id", user.id).maybeSingle();
+        authorized = !!adminRow;
+      }
+    }
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Determine which month to generate (previous month)
     const now = new Date();
@@ -52,7 +82,7 @@ Deno.serve(async (req) => {
 
     // Get all couple spaces (streak_count comes from couple_spaces after V5 refactor)
     const { data: spaces, error: fetchError } = await sb.from("couple_spaces").select("id, house_name, streak_count");
-    
+
     if (fetchError) {
       console.error("Error fetching spaces:", fetchError.message);
       return new Response(JSON.stringify({ error: `Fetch error: ${fetchError.message}` }), {
@@ -73,10 +103,20 @@ Deno.serve(async (req) => {
     let processed = 0;
     const failures: { id: string; name: string; error: string }[] = [];
 
+    // Access token Google FCM obtido uma única vez para todo o batch
+    let fcmAccessToken: string | null = null;
+    if (fcmClientEmail && fcmPrivateKey) {
+      try {
+        fcmAccessToken = await getFcmAccessToken(fcmClientEmail, fcmPrivateKey);
+      } catch (e: any) {
+        console.error("FCM token fetch failed:", e.message);
+      }
+    }
+
     for (const space of spaces) {
       const spaceId = space.id;
       const spaceName = space.house_name || spaceId;
-      
+
       try {
         console.log(`- Processing space: ${spaceName}`);
 
@@ -126,7 +166,7 @@ Deno.serve(async (req) => {
         console.log(`  - Moods: ${moodEntries?.length ?? 0}`);
 
         const moodCount = moodEntries?.length ?? 0;
-        
+
         // Calculate top_mood
         let topMood = null;
         if (moodEntries && moodEntries.length > 0) {
@@ -148,7 +188,14 @@ Deno.serve(async (req) => {
 
         if (checkError) throw new Error(`Check existing failed: ${checkError.message}`);
 
+        let shouldNotify = true;
+
         if (existing) {
+          if (!overwrite) {
+            console.log(`  - Record exists (ID: ${existing.id}) and overwrite=false — a ignorar.`);
+            processed++;
+            continue;
+          }
           console.log(`  - Record exists (ID: ${existing.id}), updating...`);
           const { error: updateError } = await sb
             .from("love_wrapped")
@@ -162,7 +209,7 @@ Deno.serve(async (req) => {
               generated_at: new Date().toISOString(),
             })
             .eq("id", existing.id);
-          
+
           if (updateError) throw new Error(`Update failed: ${updateError.message}`);
           console.log(`  - Update: SUCCESS`);
         } else {
@@ -180,64 +227,56 @@ Deno.serve(async (req) => {
               mood_checkins: moodCount,
               top_mood: topMood,
             });
-          
+
           if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
           console.log(`  - Insert: SUCCESS`);
         }
 
-        // --- SEND NOTIFICATION (Requirement #7) ---
-        try {
-          const { data: subs } = await sb
-            .from("push_subscriptions")
-            .select("*")
-            .eq("couple_space_id", spaceId);
+        // --- SEND NOTIFICATION (via FCM, mesmo caminho do send-push) ---
+        if (shouldNotify) {
+          try {
+            const { data: subs } = await sb
+              .from("push_subscriptions")
+              .select("id, fcm_token, user_id")
+              .eq("couple_space_id", spaceId)
+              .not("fcm_token", "is", null);
 
-          if (subs && (subs as any[]).length > 0) {
-            const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
-            const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
-            const webpush = await import("npm:web-push");
-            
-            webpush.default.setVapidDetails(
-              "mailto:app@lovenestt.lovable.app",
-              vapidPublicKey.trim(),
-              vapidPrivateKey.trim()
-            );
-
-            const payload = JSON.stringify({
-              title: "O vosso mês está pronto",
-              body: "O resumo LoveWrapped deste mês já está disponível. Querem reviver?",
-              icon: "/icon-192.png",
-              data: { url: "/wrapped", type: "system" }
-            });
-
-            for (const sub of (subs as any[])) {
-              try {
-                await (webpush as any).default.sendNotification(
-                  { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-                  payload
+            if (subs && subs.length > 0 && fcmAccessToken) {
+              let sent = 0;
+              for (const sub of subs as any[]) {
+                const result = await sendFcmMessage(
+                  fcmAccessToken,
+                  FCM_PROJECT_ID,
+                  sub.fcm_token,
+                  "O vosso mês está pronto",
+                  "O resumo LoveWrapped deste mês já está disponível. Querem reviver?",
+                  "/wrapped"
                 );
-              } catch (e: any) {
-                if (e.statusCode === 410 || e.statusCode === 404) {
+                if (result.ok) {
+                  sent++;
+                } else if (result.error === "UNREGISTERED" || result.error === "INVALID_ARGUMENT") {
                   await sb.from("push_subscriptions").delete().eq("id", sub.id);
                 }
               }
-            }
-            console.log(`  - Push Sent: ${(subs as any[]).length} recipients`);
+              console.log(`  - Push Sent: ${sent}/${subs.length} recipients`);
 
-            // Registar em notification_history para que smart-notifications
-            // não envie um segundo "wrapped_ready" (cooldown 72h)
-            for (const sub of (subs as any[])) {
-              if (sub.user_id) {
-                await sb.from("notification_history").insert({
-                  user_id: sub.user_id,
-                  couple_space_id: spaceId,
-                  rule_key: "wrapped_ready",
-                }).then(); // fire-and-forget, falha silenciosamente
+              // Registar em notification_history para que smart-notifications
+              // não envie um segundo "wrapped_ready" (cooldown 72h)
+              for (const sub of subs as any[]) {
+                if (sub.user_id) {
+                  await sb.from("notification_history").insert({
+                    user_id: sub.user_id,
+                    couple_space_id: spaceId,
+                    rule_key: "wrapped_ready",
+                  }).then(() => {}); // fire-and-forget, falha silenciosamente
+                }
               }
+            } else if (!fcmAccessToken) {
+              console.warn("  - Push skipped: FCM credentials not configured");
             }
+          } catch (pushErr: any) {
+            console.error(`  - Push Failed for ${spaceId}:`, pushErr.message);
           }
-        } catch (pushErr: any) {
-          console.error(`  - Push Failed for ${spaceId}:`, pushErr.message);
         }
 
         processed++;
@@ -250,14 +289,14 @@ Deno.serve(async (req) => {
     console.log(`Final stats: ${processed} processed, ${failures.length} failures, ${spaces.length} total.`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         total_spaces: spaces.length,
-        processed, 
+        processed,
         generated: processed, // Backward compatibility
         failures,
-        month, 
-        year 
+        month,
+        year
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

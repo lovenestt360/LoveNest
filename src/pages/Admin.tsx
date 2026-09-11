@@ -1,7 +1,6 @@
 // V12.1-BACKEND-DEPLOY-SYNC
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createClient } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,7 +23,7 @@ import {
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 import AdminBiblioteca from "./admin/AdminBiblioteca";
 
-function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminToken: string | null }) {
+function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminUserId: string | null }) {
     const [freeMode, setFreeMode] = useState(false);
     const [loadingFM, setLoadingFM] = useState(true);
     const [togglingFM, setTogglingFM] = useState(false);
@@ -53,7 +52,7 @@ function FreeModeToggle({ adminClient, adminToken }: { adminClient: any; adminTo
 
             // Log the action
             await adminClient.from("free_mode_logs").insert({
-                admin_id: adminToken || "unknown",
+                admin_id: adminUserId || "unknown",
                 action: checked ? "activated" : "deactivated"
             });
 
@@ -205,19 +204,15 @@ export default function Admin() {
     const { toast } = useToast();
     const navigate = useNavigate();
 
-    const adminToken = localStorage.getItem("lovenest_admin_token");
-    const adminClient = useMemo(() => {
-        if (!adminToken) return supabase;
-        return createClient(
-            import.meta.env.VITE_SUPABASE_URL,
-            import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            {
-                global: {
-                    headers: { 'x-admin-id': adminToken }
-                }
-            }
-        );
-    }, [adminToken]);
+    // A autorização de escrita já não depende de um header x-admin-id
+    // controlado pelo cliente — is_admin() agora verifica auth.uid() do
+    // lado do servidor, por isso o cliente normal (com a sessão real do
+    // Supabase Auth) já chega para todas as chamadas admin.
+    const [adminUserId, setAdminUserId] = useState<string | null>(null);
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => setAdminUserId(data.user?.id ?? null));
+    }, []);
+    const adminClient = supabase;
 
     useEffect(() => {
         fetchAllData();
@@ -341,8 +336,8 @@ export default function Admin() {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("lovenest_admin_token");
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         navigate("/admin-login");
     };
 
@@ -384,7 +379,7 @@ export default function Admin() {
 
     const handleToggleSuspension = async (houseId: string, currentStatus: boolean) => {
         try {
-            const { error } = await adminClient.from("couple_spaces").update({ is_suspended: !currentStatus }).eq("id", houseId);
+            const { error } = await adminClient.rpc("admin_set_suspended" as any, { p_couple_space_id: houseId, p_suspended: !currentStatus });
             if (error) throw error;
             toast({ title: "Sucesso", description: `Casa ${!currentStatus ? 'suspensa' : 'ativada'} com sucesso.` });
             fetchAllData();
@@ -399,23 +394,14 @@ export default function Admin() {
             setAssigningPlan(true);
             const planDetails = plans.find(p => p.name === selectedPlanForAssign);
 
-            const updates: any = {
-                subscription_status: 'active',
-                plan_id: planDetails?.id ?? null,
-                tier_level: planDetails?.tier_level ?? 1,
-            };
+            const trialDays = parseInt(assignTrialDays) || 0;
 
-            const trialDays = parseInt(assignTrialDays);
-            if (trialDays > 0) {
-                const now = new Date();
-                const future = new Date();
-                future.setDate(now.getDate() + trialDays);
-                updates.trial_started_at = now.toISOString();
-                updates.trial_ends_at = future.toISOString();
-                updates.trial_used = true;
-            }
-
-            const { error: hErr } = await adminClient.from("couple_spaces").update(updates).eq("id", selectedHouse.id);
+            const { error: hErr } = await adminClient.rpc("admin_assign_plan" as any, {
+                p_couple_space_id: selectedHouse.id,
+                p_plan_id: planDetails?.id ?? null,
+                p_tier_level: planDetails?.tier_level ?? 1,
+                p_trial_days: trialDays,
+            });
             if (hErr) throw hErr;
 
             toast({ title: "Plano Atribuído!", description: `A casa agora tem acesso ao plano ${selectedPlanForAssign}.` });
@@ -435,11 +421,7 @@ export default function Admin() {
         if (!selectedHouse) return;
         try {
             setAssigningPlan(true);
-            const { error } = await adminClient.from("couple_spaces").update({
-                subscription_status: 'inactive',
-                plan_id: null,
-                tier_level: 0,
-            }).eq("id", selectedHouse.id);
+            const { error } = await adminClient.rpc("admin_remove_plan" as any, { p_couple_space_id: selectedHouse.id });
             if (error) throw error;
             toast({ title: "Plano Removido", description: "A casa voltou ao estado sem plano." });
             setAssignModalOpen(false);
@@ -456,7 +438,7 @@ export default function Admin() {
 
     const handleToggleHouseVerification = async (id: string, currentStatus: boolean) => {
         try {
-            const { error } = await adminClient.from("couple_spaces").update({ is_verified: !currentStatus }).eq("id", id);
+            const { error } = await adminClient.rpc("admin_set_verified" as any, { p_couple_space_id: id, p_verified: !currentStatus });
             if (error) throw error;
             toast({ title: !currentStatus ? "Casa Verificada!" : "Selo Removido", description: "O estado de confiança da casa foi atualizado." });
             fetchAllData();
@@ -1594,7 +1576,7 @@ export default function Admin() {
                         <h2 className="text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6 text-primary" /> Configurações</h2>
 
                         {/* FREE MODE TOGGLE */}
-                        <FreeModeToggle adminClient={adminClient} adminToken={adminToken} />
+                        <FreeModeToggle adminClient={adminClient} adminUserId={adminUserId} />
 
                         <h3 className="text-xl font-bold text-muted-foreground">Configurações de Pagamento</h3>
                         <form onSubmit={handleSaveSettings} className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">

@@ -1,32 +1,13 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { ShieldCheck, Lock, User, ArrowRight } from "lucide-react";
+import { ShieldCheck, Lock, Mail, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Simple SHA-256 string hash for basic frontend matching (not bank-grade, but fine for this simple implementation)
-async function hashText(message: string) {
-    if (!crypto || !crypto.subtle) {
-        // Fallback for non-HTTPS (like local IP dev) where crypto.subtle is undefined
-        console.warn("crypto.subtle está indisponível. Usando fallback básico.");
-        let hash = 0;
-        for (let i = 0; i < message.length; i++) {
-            const char = message.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32bit integer
-        }
-        return hash.toString();
-    }
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 export default function AdminLogin() {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -37,27 +18,27 @@ export default function AdminLogin() {
         setLoading(true);
 
         try {
-            const hashedAttempt = await hashText(password);
+            // Autenticação real via Supabase Auth — substitui a comparação de
+            // hash no browser + token em localStorage. O acesso de admin é
+            // verificado a seguir através de admin_users.user_id = auth.uid(),
+            // decidido no servidor pelas políticas RLS, não pelo cliente.
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+            if (authError) throw new Error("Credenciais inválidas.");
+            if (!authData.user) throw new Error("Sessão inválida.");
 
-            // Check against DB
-            const { data, error } = await supabase
-                .from("admin_users")
-                .select("id, password_hash")
-                .eq("username", username)
+            const { data: adminRow, error: adminError } = await supabase
+                .from("admin_users" as any)
+                .select("id")
+                .eq("user_id", authData.user.id)
                 .maybeSingle();
 
-            if (error) throw error;
-            if (!data) throw new Error("Credenciais inválidas.");
-
-            if (data.password_hash === hashedAttempt) {
-                // Success - set local storage token for protected route
-                localStorage.setItem("lovenest_admin_token", data.id);
-                toast({ title: "Bem-vindo", description: "Login efetuado com sucesso." });
-                navigate("/admin");
-            } else {
-                throw new Error("Credenciais inválidas.");
+            if (adminError || !adminRow) {
+                await supabase.auth.signOut();
+                throw new Error("Esta conta não tem acesso de administrador.");
             }
 
+            toast({ title: "Bem-vindo", description: "Login efetuado com sucesso." });
+            navigate("/admin");
         } catch (error: any) {
             console.error("Login Error:", error);
             toast({ title: "Erro de Autenticação", description: error.message || "Erro desconhecido", variant: "destructive" });
@@ -70,7 +51,7 @@ export default function AdminLogin() {
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
             {/* Background elements */}
             <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-50" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-amber-500/10 rounded-full blur-3xl opacity-50" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-primary/5 rounded-full blur-3xl opacity-50" />
 
             <div className="w-full max-w-sm glass-card rounded-3xl p-8 z-10 shadow-xl border border-primary/10">
                 <div className="flex flex-col items-center mb-8">
@@ -83,15 +64,15 @@ export default function AdminLogin() {
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Usuário</label>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Email</label>
                         <div className="relative">
-                            <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                            <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                             <Input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="pl-10 h-12 bg-background/50 border-primary/20"
-                                placeholder="nome_admin"
+                                placeholder="admin@lovenestt.com"
                                 required
                             />
                         </div>

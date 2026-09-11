@@ -144,6 +144,11 @@ export function useLocationSharing() {
     const networkType = getNetworkType();
 
     if (shouldUpload) {
+      // A partilha pode ter sido desativada enquanto este callback estava em
+      // curso (reverseGeocode/getBatteryInfo); sem isto, uma resposta tardia
+      // reativava sharing_enabled mesmo depois do utilizador o desligar.
+      if (!mySharingRef.current) return;
+
       lastUploadedPosRef.current = current;
       lastUploadTimeRef.current  = Date.now();
 
@@ -196,7 +201,7 @@ export function useLocationSharing() {
 
     if (historyDist >= 30 || historyTime >= 5 * 60 * 1000) {
       lastHistoryPosRef.current = { lat, lng, time: now };
-      (supabase as any).from("location_history").insert({
+      await (supabase as any).from("location_history").insert({
         couple_space_id: sid,
         user_id:         uid,
         lat,

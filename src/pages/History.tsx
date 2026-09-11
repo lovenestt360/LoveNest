@@ -246,8 +246,6 @@ export default function History() {
     if (error) toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
   };
 
-  if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
-
   const entries   = buildTimelineEntries(events, time.startDate);
   const timeLabel = buildTimeLabel(time.days);
 
@@ -258,6 +256,10 @@ export default function History() {
       .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime())[0]
       ?.image_path ?? null;
   }, [events]);
+
+  // Hook acima de qualquer return condicional — senão o nº de hooks muda
+  // entre renders quando profileLoading termina e ativa este redirect.
+  if (!profileLoading && profile?.usage_mode === "solo") return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen bg-background pb-28">
