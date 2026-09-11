@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CreditCard, UploadCloud, CheckCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useReceiptUpload } from "@/hooks/useReceiptUpload";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Book } from "@/hooks/useBiblioteca";
@@ -19,10 +20,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
     const [methods, setMethods] = useState<PaymentMethod[]>([]);
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
     const [loadingSettings, setLoadingSettings] = useState(true);
-    const [receiptFile, setReceiptFile] = useState<File | null>(null);
-    const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
-    const [proofUrl, setProofUrl] = useState<string | null>(null);
-    const [uploadingReceipt, setUploadingReceipt] = useState(false);
+    const receipt = useReceiptUpload();
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -44,38 +42,11 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
         return () => { active = false; };
     }, []);
 
-    // Envia o comprovativo para o storage logo que é escolhido, em vez de
-    // esperar pelo botão "Confirmar" — reduz o tempo em que o ficheiro só
-    // existe em memória local (vulnerável a o telemóvel descarregar a app em
-    // segundo plano enquanto a galeria/câmara está aberta).
-    const handleFileSelected = async (file: File) => {
-        setReceiptFile(file);
-        setReceiptPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
-        setProofUrl(null);
-        setUploadingReceipt(true);
-        try {
-            const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-            const fileName = `book-${book.id}-${coupleSpaceId}-${Date.now()}.${ext}`;
-            const { error: uploadError } = await supabase.storage
-                .from("receipts")
-                .upload(fileName, file, { contentType: file.type || "image/jpeg", upsert: false });
-            if (uploadError) throw uploadError;
-
-            const { data: publicUrlData } = supabase.storage.from("receipts").getPublicUrl(fileName);
-            setProofUrl(publicUrlData.publicUrl);
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao enviar comprovativo", description: err.message });
-            setReceiptFile(null);
-            setReceiptPreview(null);
-        } finally {
-            setUploadingReceipt(false);
-        }
-    };
-
-    const resetReceipt = () => {
-        setReceiptFile(null);
-        setReceiptPreview(null);
-        setProofUrl(null);
+    const handleFileSelected = (file: File) => {
+        receipt.select(file, (f) => {
+            const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+            return `book-${book.id}-${coupleSpaceId}-${Date.now()}.${ext}`;
+        });
     };
 
     const handleSubmit = async () => {
@@ -83,7 +54,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
             toast({ variant: "destructive", title: "Escolhe um método de pagamento" });
             return;
         }
-        if (!proofUrl) {
+        if (!receipt.proofUrl) {
             toast({ variant: "destructive", title: "Falta comprovativo", description: "Envia o comprovativo de pagamento." });
             return;
         }
@@ -98,7 +69,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
                 status: "pending",
                 amount: `${Number(book.price).toFixed(2)} ${book.currency}`,
                 method: selectedMethod.name,
-                proof_url: proofUrl,
+                proof_url: receipt.proofUrl,
                 requested_by: user?.id ?? null,
                 admin_notes: null,
             };
@@ -171,24 +142,24 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
 
             <div className="space-y-2">
                 <p className="text-[13px] font-bold text-foreground">Comprovativo</p>
-                {receiptFile ? (
+                {receipt.file ? (
                     <div className="border-2 border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 rounded-2xl overflow-hidden">
-                        {receiptPreview ? (
-                            <img src={receiptPreview} alt="Comprovativo" className="w-full max-h-44 object-contain bg-black/5" />
+                        {receipt.preview ? (
+                            <img src={receipt.preview} alt="Comprovativo" className="w-full max-h-44 object-contain bg-black/5" />
                         ) : (
                             <div className="p-4 flex items-center gap-2">
                                 <CheckCircle className="w-5 h-5 text-rose-400 shrink-0" />
-                                <p className="text-[12px] font-bold text-foreground truncate flex-1">{receiptFile.name}</p>
+                                <p className="text-[12px] font-bold text-foreground truncate flex-1">{receipt.file.name}</p>
                             </div>
                         )}
                         <div className="p-2 border-t border-rose-200 dark:border-rose-900/40 flex items-center justify-between gap-2">
                             <span className="text-[11px] font-semibold flex items-center gap-1.5 px-1">
-                                {uploadingReceipt ? (
+                                {receipt.uploading ? (
                                     <>
                                         <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
                                         <span className="text-rose-500">A enviar comprovativo...</span>
                                     </>
-                                ) : proofUrl ? (
+                                ) : receipt.proofUrl ? (
                                     <>
                                         <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                                         <span className="text-emerald-600">Comprovativo enviado</span>
@@ -199,9 +170,9 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
                             </span>
                             <button
                                 type="button"
-                                disabled={uploadingReceipt}
+                                disabled={receipt.uploading}
                                 className="text-[12px] text-rose-500 font-semibold disabled:opacity-40 shrink-0"
-                                onClick={resetReceipt}
+                                onClick={receipt.reset}
                             >
                                 Alterar
                             </button>
@@ -230,7 +201,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
 
             <Button
                 onClick={handleSubmit}
-                disabled={submitting || uploadingReceipt || !proofUrl}
+                disabled={submitting || receipt.uploading || !receipt.proofUrl}
                 className="w-full h-12 rounded-2xl font-bold text-[15px] bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
             >
                 {submitting ? "A enviar..." : "Confirmar pedido de compra"}

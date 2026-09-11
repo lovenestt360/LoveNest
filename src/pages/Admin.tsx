@@ -95,7 +95,7 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca">("overview");
+    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("overview");
     const [verifications, setVerifications] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -171,8 +171,8 @@ export default function Admin() {
     const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth() || 12);
     const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
     const [searchHouse, setSearchHouse] = useState("");
-    const [allFeatureFlags, setAllFeatureFlags] = useState<any[]>([]);
-    const [fetchingFlags, setFetchingFlags] = useState(false);
+    const [paymentsSearch, setPaymentsSearch] = useState("");
+    const [paymentsFilter, setPaymentsFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
     const [planToDelete, setPlanToDelete] = useState<string | null>(null);
     const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -180,23 +180,23 @@ export default function Admin() {
     const [savingPwa, setSavingPwa] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState<"android" | "ios" | null>(null);
 
+    // Só os ids que algum PremiumGuard/useTierAccess realmente consulta —
+    // home/chat/stats/biblioteca/fasting foram removidos porque mudar o
+    // nível mínimo deles no admin não tinha qualquer efeito (nenhum gate
+    // em toda a app os lê; "fasting" em particular partilha sempre o
+    // gate "prayer" porque /jejum redireciona para /jornada-espiritual).
     const ALL_FEATURES = [
-        { id: "home", label: "Home" },
-        { id: "chat", label: "Chat" },
         { id: "mood", label: "Humor" },
         { id: "memories", label: "Memórias" },
         { id: "agenda", label: "Agenda" },
         { id: "prayer", label: "Oração" },
-        { id: "fasting", label: "Jejum" },
         { id: "cycle", label: "Ciclo" },
         { id: "conflicts", label: "Conflitos" },
         { id: "wallpapers", label: "Wallpapers" },
-        { id: "stats", label: "Estatísticas" },
         { id: "time_capsules", label: "Cápsulas" },
         { id: "challenges", label: "Desafios" },
         { id: "wrapped", label: "LoveWrapped" },
         { id: "lovestreak", label: "Jornada" },
-        { id: "biblioteca", label: "Biblioteca" },
         { id: "location_sharing", label: "Localização" },
         { id: "historia", label: "Nossa História" },
     ];
@@ -314,9 +314,6 @@ export default function Admin() {
                 .order("created_at", { ascending: false });
             setVerifications(verData || []);
 
-            // 10. Feature Flags
-            fetchFeatureFlags();
-
             // 11. Feature Tiers
             const { data: ftData } = await adminClient
                 .from("feature_tiers" as any)
@@ -341,29 +338,27 @@ export default function Admin() {
         navigate("/admin-login");
     };
 
-    const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
-        try {
-            const { error: pErr } = await adminClient
-                .from("payments" as any)
-                .update({ status: 'approved' })
-                .eq("id", paymentId);
-            if (pErr) throw pErr;
+    const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
+    const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
 
-            // 2. Encontrar o plan_id correspondente ao nome do plano (se existir)
+    const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
+        setProcessingPaymentId(paymentId);
+        try {
+            // Encontrar o plan_id correspondente ao nome do plano (se existir)
             const matchedPlan = plans.find(
                 p => p.name?.toLowerCase() === planName?.toLowerCase()
             );
 
-            // 3. Activar subscrição da casa + atribuir plano + tier_level
-            const houseUpdate: any = { subscription_status: 'active' };
-            if (matchedPlan?.id) houseUpdate.plan_id = matchedPlan.id;
-            if (matchedPlan?.tier_level != null) houseUpdate.tier_level = matchedPlan.tier_level;
-
-            const { error: hErr } = await adminClient
-                .from("couple_spaces")
-                .update(houseUpdate)
-                .eq("id", houseId);
-            if (hErr) throw hErr;
+            // Aprova o pagamento e ativa a subscrição da casa num único RPC —
+            // couple_spaces.subscription_status/plan_id/tier_level deixaram
+            // de ser editáveis por UPDATE direto desde a migration de
+            // segurança de hoje; ver admin_approve_payment.
+            const { error } = await adminClient.rpc("admin_approve_payment" as any, {
+                p_payment_id: paymentId,
+                p_plan_id: matchedPlan?.id ?? null,
+                p_tier_level: matchedPlan?.tier_level ?? null,
+            });
+            if (error) throw error;
 
             toast({
                 title: "Pagamento Aprovado",
@@ -374,6 +369,25 @@ export default function Admin() {
             fetchAllData();
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setProcessingPaymentId(null);
+        }
+    };
+
+    const handleRejectPayment = async (paymentId: string) => {
+        setProcessingPaymentId(paymentId);
+        try {
+            const { error } = await adminClient.rpc("admin_reject_payment" as any, {
+                p_payment_id: paymentId,
+                p_notes: rejectNotes[paymentId] || null,
+            });
+            if (error) throw error;
+            toast({ title: "Pagamento Rejeitado" });
+            fetchAllData();
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setProcessingPaymentId(null);
         }
     };
 
@@ -744,52 +758,23 @@ export default function Admin() {
         }
     };
 
-    const fetchFeatureFlags = async () => {
-        try {
-            setFetchingFlags(true);
-            const { data, error } = await adminClient.from("feature_flags").select("*").order("key");
-            if (error) throw error;
-            setAllFeatureFlags(data || []);
-        } catch (error: any) {
-            console.error("Error fetching flags:", error);
-        } finally {
-            setFetchingFlags(false);
-        }
-    };
-
-    const handleToggleFeature = async (id: string, currentStatus: boolean) => {
-        try {
-            const { error } = await adminClient.from("feature_flags" as any).update({ enabled: !currentStatus } as any).eq("id", id);
-            if (error) throw error;
-            toast({ title: "Sucesso", description: "Estado da funcionalidade atualizado." });
-            fetchFeatureFlags();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
-    const handleCreateFeatureFlag = async (key: string, scope: string, targetId?: string) => {
-        try {
-            const { error } = await adminClient.from("feature_flags" as any).insert({
-                key,
-                scope,
-                target_id: targetId || null,
-                enabled: true
-            } as any);
-            if (error) throw error;
-            toast({ title: "Flag Criada", description: `Funcionalidade ${key} adicionada ao escopo ${scope}.` });
-            fetchFeatureFlags();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
     if (loading && payments.length === 0) {
         return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
     }
 
     const pendingPayments = payments.filter(p => p.status === 'pending');
     const activeHouses = houses.filter(h => !h.is_suspended);
+
+    const filteredPayments = payments.filter(p => {
+        if (paymentsFilter !== "all" && p.status !== paymentsFilter) return false;
+        if (!paymentsSearch) return true;
+        const q = paymentsSearch.toLowerCase();
+        return (
+            p.couple_spaces?.house_name?.toLowerCase().includes(q) ||
+            p.couple_spaces?.partner1_name?.toLowerCase().includes(q) ||
+            p.couple_spaces?.partner2_name?.toLowerCase().includes(q)
+        );
+    });
 
     const filteredHouses = houses.filter(h => 
         (h.house_name?.toLowerCase().includes(searchHouse.toLowerCase())) ||
@@ -944,6 +929,9 @@ export default function Admin() {
                     <Button variant={tab === "houses" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("houses")}>
                         <Home className="w-4 h-4" /> <span className="hidden md:inline">Casas ({houses.length})</span>
                     </Button>
+                    <Button variant={tab === "payments" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("payments")}>
+                        <CreditCard className="w-4 h-4" /> <span className="hidden md:inline">Pagamentos {pendingPayments.length > 0 && `(${pendingPayments.length})`}</span>
+                    </Button>
                     <Button variant={tab === "users" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("users")}>
                         <Users className="w-4 h-4" /> <span className="hidden md:inline">Utilizadores ({users.length})</span>
                     </Button>
@@ -1024,39 +1012,132 @@ export default function Admin() {
                             </div>
                         </div>
 
-                        {/* Pending Subscriptions */}
+                        {/* Pending Subscriptions — resumo curto, gestão completa fica na aba Pagamentos */}
                         <div className="mt-8">
-                            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                                Aguardam Pagamento
-                                {pendingPayments.length > 0 && <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{pendingPayments.length}</span>}
-                            </h3>
-                            <div className="space-y-3">
-                                {pendingPayments.map((payment) => (
-                                    <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 rounded-xl bg-orange-400/10 text-orange-500 flex items-center justify-center shrink-0">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg leading-tight">
+                                            {pendingPayments.length > 0
+                                                ? `${pendingPayments.length} pagamento${pendingPayments.length === 1 ? "" : "s"} a aguardar aprovação`
+                                                : "Sem pagamentos pendentes"}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">Aprovação, rejeição e histórico completo na aba Pagamentos.</p>
+                                    </div>
+                                </div>
+                                <Button className="w-full md:w-auto font-bold" onClick={() => setTab("payments")}>
+                                    Ver Pagamentos
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* PAYMENTS TAB */}
+                {tab === "payments" && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-bold flex items-center gap-2"><CreditCard className="w-6 h-6 text-primary" /> Pagamentos</h2>
+                            <div className="relative w-full md:w-72">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Pesquisar por casa..."
+                                    value={paymentsSearch}
+                                    onChange={(e) => setPaymentsSearch(e.target.value)}
+                                    className="pl-9"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            {(["pending", "approved", "rejected", "all"] as const).map((s) => (
+                                <Button
+                                    key={s}
+                                    size="sm"
+                                    variant={paymentsFilter === s ? "secondary" : "ghost"}
+                                    onClick={() => setPaymentsFilter(s)}
+                                    className="font-bold"
+                                >
+                                    {s === "pending" ? "Pendentes" : s === "approved" ? "Aprovados" : s === "rejected" ? "Rejeitados" : "Todos"}
+                                </Button>
+                            ))}
+                        </div>
+
+                        <div className="space-y-3">
+                            {filteredPayments.length === 0 ? (
+                                <div className="bg-card border rounded-2xl p-8 text-center text-muted-foreground italic">
+                                    Nenhum pagamento encontrado.
+                                </div>
+                            ) : filteredPayments.map((payment) => (
+                                <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm space-y-3">
+                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
-                                                <span className="text-[10px] font-bold uppercase bg-orange-400/10 text-orange-500 px-2 py-0.5 rounded-md">Pendente</span>
+                                                <span className={cn(
+                                                    "text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
+                                                    payment.status === "pending" && "bg-orange-400/10 text-orange-500",
+                                                    payment.status === "approved" && "bg-green-500/10 text-green-600",
+                                                    payment.status === "rejected" && "bg-destructive/10 text-destructive",
+                                                )}>
+                                                    {payment.status === "pending" ? "Pendente" : payment.status === "approved" ? "Aprovado" : "Rejeitado"}
+                                                </span>
+                                                {payment.provider === "paysuite" && (
+                                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600">PaySuite</span>
+                                                )}
                                             </div>
                                             <p className="text-sm text-muted-foreground">Casal: {payment.couple_spaces?.partner1_name} & {payment.couple_spaces?.partner2_name}</p>
-                                            <p className="text-sm font-medium mt-1">Plano Solicitado: <span className="text-primary">{payment.plan_name}</span></p>
-                                            <p className="text-xs text-muted-foreground mt-0.5">Método de Pagamento: {payment.method}</p>
+                                            <p className="text-sm font-medium mt-1">Plano: <span className="text-primary">{payment.plan_name}</span> · <span className="font-bold">{payment.amount}</span></p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Método: {payment.method} · {new Date(payment.created_at).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                            {payment.admin_notes && (
+                                                <p className="text-xs text-destructive mt-1">Nota: {payment.admin_notes}</p>
+                                            )}
                                         </div>
-                                        <div className="flex w-full md:w-auto gap-2">
+                                        <div className="flex w-full md:w-auto gap-2 shrink-0">
                                             {payment.proof_url ? (
-                                                <Button size="sm" variant="outline" className="flex-1 md:flex-none" onClick={() => setSelectedImage(payment.proof_url)}>
+                                                <Button size="sm" variant="outline" onClick={() => setSelectedImage(payment.proof_url)}>
                                                     <ImageIcon className="w-4 h-4 mr-2" /> Comprovativo
                                                 </Button>
                                             ) : (
-                                                <Button size="sm" variant="outline" disabled className="flex-1 md:flex-none">Sem Anexo</Button>
+                                                <Button size="sm" variant="outline" disabled>Sem Anexo</Button>
                                             )}
-                                            <Button size="sm" className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprovePayment(payment.id, payment.couple_space_id, payment.plan_name)}>
-                                                <Check className="w-4 h-4 mr-1" /> Aprovar
-                                            </Button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+
+                                    {payment.status === "pending" && (
+                                        <div className="flex flex-col md:flex-row gap-2 pt-1 border-t">
+                                            <Textarea
+                                                placeholder="Nota (opcional, mostrada em caso de rejeição)"
+                                                value={rejectNotes[payment.id] || ""}
+                                                onChange={(e) => setRejectNotes(n => ({ ...n, [payment.id]: e.target.value }))}
+                                                className="bg-background min-h-[40px] flex-1 mt-3"
+                                            />
+                                            <div className="flex gap-2 shrink-0 mt-3">
+                                                <Button
+                                                    disabled={processingPaymentId === payment.id}
+                                                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                                    onClick={() => handleApprovePayment(payment.id, payment.couple_space_id, payment.plan_name)}
+                                                >
+                                                    {processingPaymentId === payment.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                    Aprovar
+                                                </Button>
+                                                <Button
+                                                    disabled={processingPaymentId === payment.id}
+                                                    variant="destructive"
+                                                    className="gap-2"
+                                                    onClick={() => handleRejectPayment(payment.id)}
+                                                >
+                                                    {processingPaymentId === payment.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                                                    Rejeitar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

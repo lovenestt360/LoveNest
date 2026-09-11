@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createClient } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -63,19 +62,10 @@ export default function FeaturesControl() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const adminToken = localStorage.getItem("lovenest_admin_token");
-  const adminClient = useMemo(() => {
-    if (!adminToken) return supabase;
-    return createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      {
-        global: {
-          headers: { 'x-admin-id': adminToken }
-        }
-      }
-    );
-  }, [adminToken]);
+  // A autorização já não depende de um header x-admin-id controlado pelo
+  // cliente — is_admin() verifica auth.uid() do lado do servidor, por isso
+  // o cliente normal já chega para todas as chamadas admin.
+  const adminClient = supabase;
 
   useEffect(() => {
     localStorage.setItem('admin_feature_keys', JSON.stringify(featureKeys));
@@ -101,15 +91,15 @@ export default function FeaturesControl() {
   };
 
   const checkAdmin = async () => {
-    if (!adminToken) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       navigate("/admin-login");
       return;
     }
-    // Verificar admin na tabela admin_users (bypass RLS via adminClient)
-    const { data: adminUser, error } = await adminClient
+    const { data: adminUser, error } = await supabase
       .from("admin_users" as any)
       .select("id, username")
-      .eq("id", adminToken)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (error || !adminUser) {

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
+import { useReceiptUpload } from "@/hooks/useReceiptUpload";
 
 const PAYSUITE_METHODS: { id: "mpesa" | "emola" | "credit_card"; label: string; icon: typeof Smartphone }[] = [
     { id: "mpesa", label: "M-Pesa", icon: Smartphone },
@@ -54,9 +55,8 @@ export default function Subscription() {
     const [paymentSettings, setPaymentSettings] = useState<any>(null);
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 
-    const [uploading, setUploading] = useState(false);
-    const [receiptFile, setReceiptFile] = useState<File | null>(null);
-    const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const receipt = useReceiptUpload();
     const [userEmail, setUserEmail] = useState("");
     const [userName, setUserName] = useState("");
 
@@ -68,6 +68,36 @@ export default function Subscription() {
     useEffect(() => {
         loadData();
     }, []);
+
+    // Feedback em tempo real: antes o pagador tinha de recarregar a página
+    // à mão para saber se o pagamento foi aprovado/rejeitado. Mesmo padrão
+    // de canal Realtime já usado em useLocationSharing.ts/useUserSettings.ts.
+    useEffect(() => {
+        if (!house?.id || !pendingPayment?.id) return;
+        const channel = supabase
+            .channel(`payments-rt-${house.id}`)
+            .on(
+                "postgres_changes",
+                { event: "UPDATE", schema: "public", table: "payments", filter: `couple_space_id=eq.${house.id}` },
+                (payload: any) => {
+                    const row = payload.new;
+                    if (!row || row.id !== pendingPayment.id) return;
+                    if (row.status === "approved") {
+                        toast({ title: "Pagamento aprovado!", description: "A vossa subscrição já está ativa." });
+                        loadData();
+                    } else if (row.status === "rejected") {
+                        toast({
+                            title: "Pagamento rejeitado",
+                            description: row.admin_notes || "Contacta o suporte para mais informações.",
+                            variant: "destructive",
+                        });
+                        setPendingPayment(null);
+                    }
+                }
+            )
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [house?.id, pendingPayment?.id]);
 
     const loadData = async () => {
         try {
@@ -131,44 +161,35 @@ export default function Subscription() {
             toast({ title: "Falta Plano", description: "Por favor escolhe um plano.", variant: "destructive" });
             return;
         }
-        if (!receiptFile) {
+        if (!receipt.proofUrl) {
             toast({ title: "Falta comprovativo", description: "Por favor envia o comprovativo de pagamento.", variant: "destructive" });
             return;
         }
 
         try {
-            setUploading(true);
+            setSubmitting(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             if (!house) throw new Error("Sem casa associada.");
 
-            const fileExt = (receiptFile.name.split('.').pop() || 'jpg').toLowerCase();
-            const fileName = `${house.id}_${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage
-                .from("receipts")
-                .upload(fileName, receiptFile, { contentType: receiptFile.type || 'image/jpeg', upsert: false });
-            if (uploadError) throw uploadError;
-
-            const { data: publicUrlData } = supabase.storage.from("receipts").getPublicUrl(fileName);
             const { data: inserted, error: paymentError } = await supabase.from("payments").insert({
                 couple_space_id: house.id,
                 plan_name: selectedPlan.name,
                 amount: selectedPlan.price,
                 method: selectedMethod?.name || '',
-                proof_url: publicUrlData.publicUrl,
+                proof_url: receipt.proofUrl,
                 status: 'pending'
             }).select().single();
             if (paymentError) throw paymentError;
 
             // Update state directly — avoids loadData() flash (loading=true → full page reload effect)
             setPendingPayment(inserted);
-            setReceiptFile(null);
-            setReceiptPreview(null);
+            receipt.reset();
             toast({ title: "Comprovativo enviado!", description: "Aguarda a aprovação do admin." });
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
-            setUploading(false);
+            setSubmitting(false);
         }
     };
 
@@ -419,26 +440,35 @@ export default function Subscription() {
                             <div className="space-y-3">
                                 <h3 className="font-bold text-base">Comprovativo de Pagamento</h3>
 
-                                {receiptFile ? (
+                                {receipt.file ? (
                                     <div className="border-2 border-primary bg-primary/5 rounded-2xl overflow-hidden">
-                                        {receiptPreview ? (
+                                        {receipt.preview ? (
                                             <img
-                                                src={receiptPreview}
+                                                src={receipt.preview}
                                                 alt="Comprovativo"
                                                 className="w-full max-h-52 object-contain bg-black/5"
                                             />
                                         ) : (
                                             <div className="p-5 flex items-center gap-3">
                                                 <CheckCircle className="w-6 h-6 text-primary shrink-0" strokeWidth={1.5} />
-                                                <p className="text-sm font-bold text-foreground truncate flex-1">{receiptFile.name}</p>
+                                                <p className="text-sm font-bold text-foreground truncate flex-1">{receipt.file.name}</p>
                                             </div>
                                         )}
                                         <div className="p-3 border-t border-primary/20 flex items-center justify-between gap-2">
-                                            <p className="text-xs text-primary font-semibold truncate flex-1">{receiptFile.name}</p>
+                                            <span className="text-xs font-semibold flex items-center gap-1.5 flex-1 truncate">
+                                                {receipt.uploading ? (
+                                                    <><Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> <span className="text-primary">A enviar...</span></>
+                                                ) : receipt.proofUrl ? (
+                                                    <><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> <span className="text-emerald-600 truncate">{receipt.file.name}</span></>
+                                                ) : (
+                                                    <span className="text-destructive">Falha ao enviar — tenta de novo</span>
+                                                )}
+                                            </span>
                                             <button
                                                 type="button"
-                                                className="text-xs text-muted-foreground underline shrink-0"
-                                                onClick={() => { setReceiptFile(null); setReceiptPreview(null); }}
+                                                disabled={receipt.uploading}
+                                                className="text-xs text-muted-foreground underline shrink-0 disabled:opacity-40"
+                                                onClick={receipt.reset}
                                             >
                                                 Alterar
                                             </button>
@@ -461,13 +491,11 @@ export default function Subscription() {
                                             accept="image/*,.pdf"
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                setReceiptFile(file);
-                                                if (file.type.startsWith('image/')) {
-                                                    setReceiptPreview(URL.createObjectURL(file));
-                                                } else {
-                                                    setReceiptPreview(null);
-                                                }
+                                                if (!file || !house) return;
+                                                receipt.select(file, (f) => {
+                                                    const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+                                                    return `${house.id}_${Date.now()}.${ext}`;
+                                                });
                                             }}
                                             style={{
                                                 position: 'absolute',
@@ -501,9 +529,9 @@ export default function Subscription() {
                             <Button
                                 className="w-full h-14 rounded-2xl font-bold text-[16px] shadow-lg active:scale-95 transition-transform"
                                 onClick={handleSubscribe}
-                                disabled={uploading || !plans.length}
+                                disabled={submitting || receipt.uploading || !plans.length || !receipt.proofUrl}
                             >
-                                {uploading ? "A enviar..." : `Confirmar Pagamento — ${selectedPlan?.price || ''}`}
+                                {submitting ? "A enviar..." : `Confirmar Pagamento — ${selectedPlan?.price || ''}`}
                             </Button>
 
                             <p className="text-center text-[11px] text-muted-foreground pb-2">
