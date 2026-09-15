@@ -14,6 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/reui/badge";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -783,7 +793,7 @@ export default function Admin() {
     );
 
     return (
-        <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-muted/30">
+        <div className="admin-scope flex flex-col md:flex-row h-screen overflow-hidden bg-muted/30">
             {/* Image Modal */}
             {selectedImage && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setSelectedImage(null)}>
@@ -795,88 +805,87 @@ export default function Admin() {
             )}
 
             {/* Manual Assignment Modal */}
-            {assignModalOpen && selectedHouse && (() => {
+            <Dialog open={assignModalOpen && !!selectedHouse} onOpenChange={setAssignModalOpen}>
+                {selectedHouse && (() => {
                 const currentPlan = plans.find(p => p.id === selectedHouse.plan_id);
                 const hasActivePlan = selectedHouse.subscription_status === 'active' && currentPlan;
                 const trialActive = selectedHouse.trial_used && selectedHouse.trial_ends_at && new Date(selectedHouse.trial_ends_at) > new Date();
                 const trialEndsAt = selectedHouse.trial_ends_at ? new Date(selectedHouse.trial_ends_at).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
                 return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-card w-full max-w-md rounded-2xl shadow-xl overflow-hidden border">
-                        <div className="p-6 border-b flex justify-between items-center bg-muted/30">
-                            <h3 className="font-bold text-lg">Atribuir Plano Manualmente</h3>
-                            <Button variant="ghost" size="icon" onClick={() => setAssignModalOpen(false)}><X className="w-5 h-5" /></Button>
+                <DialogContent className="max-w-md rounded-2xl p-0 gap-0 overflow-hidden">
+                    <DialogHeader className="p-6 border-b bg-muted/30 text-left space-y-0">
+                        <DialogTitle>Atribuir Plano Manualmente</DialogTitle>
+                    </DialogHeader>
+                    <div className="p-6 space-y-4">
+                        {/* House info */}
+                        <div>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Casa</p>
+                            <p className="font-bold">{selectedHouse.house_name} <span className="text-muted-foreground font-normal">({selectedHouse.partner1_name} & {selectedHouse.partner2_name})</span></p>
                         </div>
-                        <div className="p-6 space-y-4">
-                            {/* House info */}
-                            <div>
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Casa</p>
-                                <p className="font-bold">{selectedHouse.house_name} <span className="text-muted-foreground font-normal">({selectedHouse.partner1_name} & {selectedHouse.partner2_name})</span></p>
-                            </div>
 
-                            {/* Current plan status */}
-                            <div className={`rounded-xl p-4 space-y-1 ${hasActivePlan ? 'bg-green-500/10 border border-green-500/20' : 'bg-muted/50 border border-dashed'}`}>
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Estado Atual</p>
-                                {hasActivePlan ? (
-                                    <>
-                                        <p className="font-bold text-green-600 dark:text-green-400">{currentPlan.name}
-                                            <span className="ml-2 text-xs font-normal text-muted-foreground">Tier {currentPlan.tier_level}</span>
-                                        </p>
-                                        {trialActive && trialEndsAt && (
-                                            <p className="text-xs text-muted-foreground">Trial termina: <span className="font-bold text-foreground">{trialEndsAt}</span></p>
-                                        )}
-                                    </>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">
-                                        {trialActive
-                                            ? <span>Trial ativo até <span className="font-bold text-foreground">{trialEndsAt}</span></span>
-                                            : "Sem plano ativo"}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Plan selector */}
-                            <div>
-                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Atribuir Novo Plano</label>
-                                <select
-                                    className="w-full h-10 px-3 py-2 rounded-md border bg-background text-sm"
-                                    value={selectedPlanForAssign}
-                                    onChange={(e) => setSelectedPlanForAssign(e.target.value)}
-                                >
-                                    <option value="">-- Selecione --</option>
-                                    {plans.map(p => (
-                                        <option key={p.id} value={p.name}>{p.name} · {p.price} · Tier {p.tier_level}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Trial days */}
-                            <div>
-                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Renovar Trial (dias, 0 = não alterar)</label>
-                                <Input type="number" min="0" value={assignTrialDays} onChange={(e) => setAssignTrialDays(e.target.value)} />
-                            </div>
-                        </div>
-                        <div className="p-4 bg-muted/30 border-t flex justify-between gap-2">
+                        {/* Current plan status */}
+                        <div className={cn("rounded-xl p-4 space-y-1", hasActivePlan ? 'bg-success/10 border border-success/20' : 'bg-muted/50 border border-dashed')}>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Estado Atual</p>
                             {hasActivePlan ? (
-                                <Button variant="destructive" size="sm" className="font-bold" disabled={assigningPlan} onClick={handleRemovePlan}>
-                                    Remover Plano
-                                </Button>
-                            ) : <div />}
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancelar</Button>
-                                <Button className="font-bold" disabled={!selectedPlanForAssign || assigningPlan} onClick={handleAssignPlan}>
-                                    {assigningPlan ? "A guardar..." : "Confirmar"}
-                                </Button>
-                            </div>
+                                <>
+                                    <p className="font-bold text-success">{currentPlan.name}
+                                        <span className="ml-2 text-xs font-normal text-muted-foreground">Tier {currentPlan.tier_level}</span>
+                                    </p>
+                                    {trialActive && trialEndsAt && (
+                                        <p className="text-xs text-muted-foreground">Trial termina: <span className="font-bold text-foreground">{trialEndsAt}</span></p>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    {trialActive
+                                        ? <span>Trial ativo até <span className="font-bold text-foreground">{trialEndsAt}</span></span>
+                                        : "Sem plano ativo"}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Plan selector */}
+                        <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Atribuir Novo Plano</label>
+                            <Select value={selectedPlanForAssign} onValueChange={setSelectedPlanForAssign}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="-- Selecione --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {plans.map(p => (
+                                        <SelectItem key={p.id} value={p.name}>{p.name} · {p.price} · Tier {p.tier_level}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Trial days */}
+                        <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Renovar Trial (dias, 0 = não alterar)</label>
+                            <Input type="number" min="0" value={assignTrialDays} onChange={(e) => setAssignTrialDays(e.target.value)} />
                         </div>
                     </div>
-                </div>
+                    <DialogFooter className="p-4 bg-muted/30 border-t flex-row justify-between sm:justify-between gap-2">
+                        {hasActivePlan ? (
+                            <Button variant="destructive" size="sm" className="font-bold" disabled={assigningPlan} onClick={handleRemovePlan}>
+                                Remover Plano
+                            </Button>
+                        ) : <div />}
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancelar</Button>
+                            <Button className="font-bold" disabled={!selectedPlanForAssign || assigningPlan} onClick={handleAssignPlan}>
+                                {assigningPlan ? "A guardar..." : "Confirmar"}
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
                 );
-            })()}
+                })()}
+            </Dialog>
 
             {/* Delete Plan Confirmation */}
             <AlertDialog open={!!planToDelete} onOpenChange={open => !open && setPlanToDelete(null)}>
-                <AlertDialogContent className="rounded-[2rem]">
+                <AlertDialogContent className="rounded-3xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Eliminar Plano?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -894,7 +903,7 @@ export default function Admin() {
 
             {/* Clear Wrapped Confirmation */}
             <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
-                <AlertDialogContent className="rounded-[2rem]">
+                <AlertDialogContent className="rounded-3xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Limpar Todos os LoveWrapped?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -1077,16 +1086,14 @@ export default function Admin() {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
-                                                <span className={cn(
-                                                    "text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
-                                                    payment.status === "pending" && "bg-orange-400/10 text-orange-500",
-                                                    payment.status === "approved" && "bg-green-500/10 text-green-600",
-                                                    payment.status === "rejected" && "bg-destructive/10 text-destructive",
-                                                )}>
+                                                <Badge
+                                                    size="sm"
+                                                    variant={payment.status === "pending" ? "warning-light" : payment.status === "approved" ? "success-light" : "destructive-light"}
+                                                >
                                                     {payment.status === "pending" ? "Pendente" : payment.status === "approved" ? "Aprovado" : "Rejeitado"}
-                                                </span>
+                                                </Badge>
                                                 {payment.provider === "paysuite" && (
-                                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600">PaySuite</span>
+                                                    <Badge size="sm" variant="info-light">PaySuite</Badge>
                                                 )}
                                             </div>
                                             <p className="text-sm text-muted-foreground">Casal: {payment.couple_spaces?.partner1_name} & {payment.couple_spaces?.partner2_name}</p>
@@ -1118,7 +1125,7 @@ export default function Admin() {
                                             <div className="flex gap-2 shrink-0 mt-3">
                                                 <Button
                                                     disabled={processingPaymentId === payment.id}
-                                                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                                    className="gap-2 bg-success hover:bg-success/90 text-success-foreground"
                                                     onClick={() => handleApprovePayment(payment.id, payment.couple_space_id, payment.plan_name)}
                                                 >
                                                     {processingPaymentId === payment.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -1160,18 +1167,17 @@ export default function Admin() {
                         </div>
 
                         <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-muted/50 border-b">
-                                        <tr>
-                                            <th className="p-4 font-bold text-muted-foreground">Casa / Iniciais</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Parceiros</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Plano / Estado</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Trial / Expiração</th>
-                                            <th className="p-4 font-bold text-muted-foreground text-right">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
+                                <Table>
+                                    <TableHeader className="bg-muted/50">
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="font-bold">Casa / Iniciais</TableHead>
+                                            <TableHead className="font-bold">Parceiros</TableHead>
+                                            <TableHead className="font-bold">Plano / Estado</TableHead>
+                                            <TableHead className="font-bold">Trial / Expiração</TableHead>
+                                            <TableHead className="font-bold text-right">Ações</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {filteredHouses.map((house) => {
                                             const activePayment = payments.find(p => p.couple_space_id === house.id && p.status === 'approved');
                                             const effectiveTrialEnd = house.trial_ends_at
@@ -1187,16 +1193,16 @@ export default function Admin() {
                                             const verificationStatus = verifications.find(v => v.couple_space_id === house.id);
                                             
                                             return (
-                                                <tr key={house.id} className={cn("hover:bg-muted/30 transition-colors", house.is_suspended && "bg-destructive/[0.02] opacity-80")}>
-                                                    <td className="p-4">
+                                                <TableRow key={house.id} className={cn(house.is_suspended && "bg-destructive/[0.02] opacity-80")}>
+                                                    <TableCell>
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
                                                                 {house.initials || "LN"}
                                                             </div>
                                                             <span className="font-bold truncate max-w-[150px]">{house.house_name || "Sem Nome"}</span>
                                                         </div>
-                                                    </td>
-                                                    <td className="p-4">
+                                                    </TableCell>
+                                                    <TableCell>
                                                         <div className="flex flex-col gap-1">
                                                             <p className="text-muted-foreground whitespace-nowrap font-medium flex items-center gap-2">
                                                                 {house.partner1_name || "P1"} & {house.partner2_name || "P2"}
@@ -1208,7 +1214,7 @@ export default function Admin() {
                                                                     return (
                                                                         <div key={m.user_id} className={cn(
                                                                             "text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0",
-                                                                            isV ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground/60"
+                                                                            isV ? "bg-success/10 text-success" : "bg-muted text-muted-foreground/60"
                                                                         )}>
                                                                             {isV ? <ShieldCheck className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
                                                                             {profile?.display_name?.split(' ')[0] || `P${idx+1}`}
@@ -1217,24 +1223,21 @@ export default function Admin() {
                                                                 })}
                                                             </div>
                                                         </div>
-                                                    </td>
-                                                    <td className="p-4">
+                                                    </TableCell>
+                                                    <TableCell>
                                                         <div className="flex flex-col gap-1">
                                                             <span className="font-medium text-xs truncate max-w-[120px]">{activePayment?.plan_name || "Trial / Sem Plano"}</span>
-                                                            <span className={cn(
-                                                                "text-[10px] font-bold uppercase px-2 py-0.5 rounded-md w-fit",
-                                                                house.subscription_status === 'active' ? "bg-green-500/10 text-green-600" : "bg-orange-400/10 text-orange-500"
-                                                            )}>
+                                                            <Badge size="sm" variant={house.subscription_status === 'active' ? "success-light" : "warning-light"} className="w-fit">
                                                                 {house.subscription_status}
-                                                            </span>
+                                                            </Badge>
                                                         </div>
-                                                    </td>
-                                                    <td className="p-4">
+                                                    </TableCell>
+                                                    <TableCell>
                                                         {house.trial_started_at ? (
                                                             <div className="flex flex-col">
                                                                 <span className={cn(
                                                                     "text-xs font-bold",
-                                                                    !isTrialExpired ? "text-green-500" : "text-destructive"
+                                                                    !isTrialExpired ? "text-success" : "text-destructive"
                                                                 )}>
                                                                     {(!isTrialExpired) ? "Ativo" : "Expirado"}
                                                                 </span>
@@ -1243,14 +1246,14 @@ export default function Admin() {
                                                         ) : (
                                                             <span className="text-xs text-muted-foreground">—</span>
                                                         )}
-                                                    </td>
-                                                    <td className="p-4 text-right">
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
                                                         <div className="flex justify-end items-center gap-2">
                                                             {/* House Verification Badge / Action */}
                                                             {house.is_verified ? (
                                                                 <button 
                                                                     onClick={() => handleToggleHouseVerification(house.id, true)}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success text-success-foreground text-[10px] font-black shadow-lg shadow-success/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                                                                 >
                                                                     <Sparkles className="w-3.5 h-3.5" /> Verificada
                                                                 </button>
@@ -1300,18 +1303,17 @@ export default function Admin() {
                                                                 {house.is_suspended ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                                                             </Button>
                                                         </div>
-                                                    </td>
-                                                </tr>
+                                                    </TableCell>
+                                                </TableRow>
                                             );
                                         })}
                                         {filteredHouses.length === 0 && (
-                                            <tr>
-                                                <td colSpan={5} className="p-8 text-center text-muted-foreground italic">Nenhuma casa encontrada...</td>
-                                            </tr>
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="p-8 text-center text-muted-foreground italic">Nenhuma casa encontrada...</TableCell>
+                                            </TableRow>
                                         )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </TableBody>
+                                </Table>
                         </div>
                     </div>
                 )}
@@ -1321,26 +1323,24 @@ export default function Admin() {
                     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
                         <h2 className="text-2xl font-bold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Todos os Utilizadores</h2>
                         <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-muted/50 border-b">
-                                        <tr>
-                                            <th className="p-4 font-bold text-muted-foreground">Nome (Display)</th>
-                                            <th className="p-4 font-bold text-muted-foreground">Data Registo</th>
-                                            <th className="p-4 font-bold text-muted-foreground">ID Interno</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
+                                <Table>
+                                    <TableHeader className="bg-muted/50">
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="font-bold">Nome (Display)</TableHead>
+                                            <TableHead className="font-bold">Data Registo</TableHead>
+                                            <TableHead className="font-bold">ID Interno</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {users.map((u) => (
-                                            <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                                                <td className="p-4 font-medium">{u.display_name || "Sem Nome"}</td>
-                                                <td className="p-4 text-muted-foreground">{new Date(u.created_at).toLocaleDateString('pt-PT')}</td>
-                                                <td className="p-4 text-xs font-mono text-muted-foreground/60">{u.id}</td>
-                                            </tr>
+                                            <TableRow key={u.id}>
+                                                <TableCell className="font-medium">{u.display_name || "Sem Nome"}</TableCell>
+                                                <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString('pt-PT')}</TableCell>
+                                                <TableCell className="text-xs font-mono text-muted-foreground/60">{u.id}</TableCell>
+                                            </TableRow>
                                         ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </TableBody>
+                                </Table>
                         </div>
                     </div>
                 )}
@@ -1425,13 +1425,11 @@ export default function Admin() {
                         </form>
 
                         {/* Edit Plan Modal */}
-                        {editingPlan && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-                                <div className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
-                                    <div className="p-6 border-b flex justify-between items-center bg-muted/30">
-                                        <h3 className="font-bold text-lg">Editar Plano</h3>
-                                        <Button variant="ghost" size="icon" onClick={() => setEditingPlan(null)}><X className="w-5 h-5" /></Button>
-                                    </div>
+                        <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
+                            <DialogContent className="max-w-lg rounded-2xl p-0 gap-0 overflow-hidden">
+                                    <DialogHeader className="p-6 border-b bg-muted/30 text-left space-y-0">
+                                        <DialogTitle>Editar Plano</DialogTitle>
+                                    </DialogHeader>
                                     <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                                         <div>
                                             <label className="text-sm font-bold text-muted-foreground mb-1 block">Nome do Plano</label>
@@ -1495,15 +1493,14 @@ export default function Admin() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="p-4 bg-muted/30 border-t flex justify-end gap-2">
+                                    <DialogFooter className="p-4 bg-muted/30 border-t">
                                         <Button variant="outline" onClick={() => setEditingPlan(null)}>Cancelar</Button>
                                         <Button className="font-bold" disabled={savingPlanEdit || !editPlanName.trim() || !editPlanPrice.trim()} onClick={handleSavePlanEdit}>
                                             {savingPlanEdit ? "A guardar..." : "Guardar Alterações"}
                                         </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                                    </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {plans.map((p) => (
@@ -1514,9 +1511,9 @@ export default function Admin() {
                                             <p className="text-2xl font-black">{p.price}</p>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${p.is_active ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                                            <Badge size="sm" variant={p.is_active ? "success-light" : "secondary"}>
                                                 {p.is_active ? 'Visível' : 'Oculto'}
-                                            </span>
+                                            </Badge>
                                             <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${TIER_LEVELS.find(t => t.level === (p.tier_level ?? 1))?.color ?? 'bg-muted text-muted-foreground'}`}>
                                                 Tier {p.tier_level ?? 1} · {TIER_LEVELS.find(t => t.level === (p.tier_level ?? 1))?.label ?? 'Plus'}
                                             </span>
@@ -1743,18 +1740,19 @@ export default function Admin() {
                                     <div className="space-y-2 text-left">
                                         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Mês</label>
                                         <div className="relative">
-                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                            <select 
-                                                className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none"
-                                                value={wrappedMonth}
-                                                onChange={(e) => setWrappedMonth(parseInt(e.target.value))}
-                                            >
-                                                {Array.from({ length: 12 }, (_, i) => (
-                                                    <option key={i + 1} value={i + 1}>
-                                                        {new Intl.DateTimeFormat('pt-PT', { month: 'long' }).format(new Date(2024, i))}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
+                                            <Select value={String(wrappedMonth)} onValueChange={(v) => setWrappedMonth(parseInt(v))}>
+                                                <SelectTrigger className="h-11 pl-10 rounded-xl font-medium">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Array.from({ length: 12 }, (_, i) => (
+                                                        <SelectItem key={i + 1} value={String(i + 1)}>
+                                                            {new Intl.DateTimeFormat('pt-PT', { month: 'long' }).format(new Date(2024, i))}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                     <div className="space-y-2 text-left">
@@ -1780,7 +1778,7 @@ export default function Admin() {
                                         </span>
                                     ) : (
                                         <span className="flex items-center gap-2">
-                                            <Sparkles className="w-5 h-5 text-rose-400 fill-rose-400" />
+                                            <Sparkles className="w-5 h-5 text-primary fill-primary" />
                                             Disparar Geração Global
                                         </span>
                                     )}
@@ -1908,7 +1906,7 @@ export default function Admin() {
                                 });
 
                                 return houseGroups.map((group) => (
-                                    <div key={group.id} className="bg-card border-2 rounded-[2rem] p-6 shadow-md flex flex-col gap-6 transition-all overflow-hidden relative">
+                                    <div key={group.id} className="bg-card border-2 rounded-3xl p-6 shadow-md flex flex-col gap-6 transition-all overflow-hidden relative">
                                         
                                         {/* HOUSE HEADER */}
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dashed">
@@ -1919,7 +1917,7 @@ export default function Admin() {
                                                 <div>
                                                     <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
                                                         {group.name}
-                                                        {group.isOrphan && <span className="text-[10px] bg-orange-400/10 text-orange-500 px-2 py-0.5 rounded-full font-bold">Avulso</span>}
+                                                        {group.isOrphan && <Badge size="sm" variant="warning-light">Avulso</Badge>}
                                                     </h3>
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-0.5">
                                                         <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
@@ -1952,7 +1950,7 @@ export default function Admin() {
                                                         {group.is_verified ? (
                                                             <button 
                                                                 onClick={() => handleToggleHouseVerification(group.id, true)}
-                                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 text-white text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-success text-success-foreground text-[10px] font-black shadow-lg shadow-success/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                                                             >
                                                                 <Sparkles className="w-3.5 h-3.5" /> Selo Ativo
                                                             </button>
@@ -2013,14 +2011,12 @@ export default function Admin() {
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center gap-2">
                                                                             <h4 className="font-bold text-lg leading-tight">{submission.full_name}</h4>
-                                                                            <span className={cn(
-                                                                                "text-[9px] font-black uppercase px-2 py-0.5 rounded-full",
-                                                                                submission.status === 'pending' ? "bg-blue-100 text-blue-700" :
-                                                                                submission.status === 'verified' ? "bg-emerald-100 text-emerald-700" :
-                                                                                "bg-orange-100 text-orange-700"
-                                                                            )}>
+                                                                            <Badge
+                                                                                size="sm"
+                                                                                variant={submission.status === 'pending' ? "info-light" : submission.status === 'verified' ? "success-light" : "destructive-light"}
+                                                                            >
                                                                                 {submission.status}
-                                                                            </span>
+                                                                            </Badge>
                                                                         </div>
                                                                         <p className="text-xs text-muted-foreground font-medium">@{profile?.display_name || "utilizador"} • Submetido a {new Date(submission.created_at).toLocaleDateString()}</p>
                                                                     </div>
@@ -2094,7 +2090,7 @@ export default function Admin() {
 
                 {tab === "pwa" && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="glass-card rounded-[2.5rem] p-8 space-y-8">
+                    <div className="glass-card rounded-3xl p-8 space-y-8">
                         <div className="flex justify-between items-start">
                             <div>
                                 <h2 className="text-2xl font-bold mb-2">Tutorial de Instalação PWA</h2>
@@ -2108,7 +2104,7 @@ export default function Admin() {
                         </div>
 
                         {!pwaSettings && !loading ? (
-                            <div className="p-8 border-2 border-dashed border-primary/20 rounded-[2rem] bg-primary/5 text-center space-y-4">
+                            <div className="p-8 border-2 border-dashed border-primary/20 rounded-3xl bg-primary/5 text-center space-y-4">
                                 <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mx-auto">
                                     <AlertTriangle className="w-8 h-8" />
                                 </div>
@@ -2162,7 +2158,7 @@ export default function Admin() {
                                                 ANDROID
                                             </Label>
                                             {pwaSettings.android_video_url && (
-                                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">VÍDEO ATIVO</span>
+                                                <Badge size="sm" variant="success-light">VÍDEO ATIVO</Badge>
                                             )}
                                         </div>
                                         
@@ -2206,7 +2202,7 @@ export default function Admin() {
                                                 IPHONE (iOS)
                                             </Label>
                                             {pwaSettings.ios_video_url && (
-                                                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">VÍDEO ATIVO</span>
+                                                <Badge size="sm" variant="info-light">VÍDEO ATIVO</Badge>
                                             )}
                                         </div>
                                         

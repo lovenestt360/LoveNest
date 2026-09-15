@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/reui/badge";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_FEATURE_KEYS = [
@@ -262,19 +263,19 @@ export default function FeaturesControl() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
-      <header className="bg-white border-b p-6 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/80">
+    <div className="admin-scope min-h-screen bg-background pb-20 font-sans">
+      <header className="bg-card border-b p-6 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-card/80">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-black flex items-center gap-2 text-slate-900">
+              <h1 className="text-xl font-black flex items-center gap-2 text-foreground">
                 <Hash className="w-6 h-6 text-primary" />
                 Feature Manager
               </h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Painel de Controlo Simplificado</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">Painel de Controlo Simplificado</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="rounded-xl border-2">
@@ -288,11 +289,11 @@ export default function FeaturesControl() {
         {/* Top Control Bar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <section className={cn(
-            "lg:col-span-2 bg-white border-2 rounded-[2.5rem] p-6 shadow-xl flex items-center justify-between transition-all",
-            isSystemEnabled ? "border-emerald-500/20 bg-emerald-50/30" : "border-rose-500/40 bg-rose-50/30"
+            "lg:col-span-2 bg-card border-2 rounded-3xl p-6 shadow-xl flex items-center justify-between transition-all",
+            isSystemEnabled ? "border-success/20 bg-success/5" : "border-destructive/40 bg-destructive/5"
           )}>
             <div className="flex items-center gap-5">
-              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg", isSystemEnabled ? "bg-emerald-500" : "bg-rose-500")}>
+              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg", isSystemEnabled ? "bg-success" : "bg-destructive")}>
                 <Power className="w-7 h-7 text-white" />
               </div>
               <div className="space-y-0.5">
@@ -328,13 +329,13 @@ export default function FeaturesControl() {
                 fetchData();
                 toast({ title: "Erro", description: err.message, variant: "destructive" });
               }
-            }} className="scale-125 data-[state=checked]:bg-emerald-500" />
+            }} className="scale-125 data-[state=checked]:bg-success" />
           </section>
 
-          <section className="bg-white border-2 border-slate-200 rounded-[2.5rem] p-6 shadow-xl flex flex-col justify-center gap-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Destaque de Teste</Label>
-            <select 
-              className="w-full h-11 px-4 rounded-xl bg-slate-50 border-none text-sm font-bold outline-none ring-primary/20 focus:ring-2"
+          <section className="bg-card border-2 border-border rounded-3xl p-6 shadow-xl flex flex-col justify-center gap-3">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Destaque de Teste</Label>
+            <select
+              className="w-full h-11 px-4 rounded-xl bg-muted border-none text-sm font-bold outline-none ring-primary/20 focus:ring-2"
               value={defaultTestTarget ? `${defaultTestTarget.scope}:${defaultTestTarget.id}` : ""}
               onChange={(e) => {
                 const [scope, id] = e.target.value.split(":");
@@ -348,12 +349,12 @@ export default function FeaturesControl() {
                 }
               }}
             >
-              <option value="">👤 Admin (Eu)</option>
+              <option value="">Admin (Eu)</option>
               <optgroup label="Casas">
-                {houses.map(h => <option key={h.id} value={`couple:${h.id}`}>🏠 {h.house_name || "Sem nome"}</option>)}
+                {houses.map(h => <option key={h.id} value={`couple:${h.id}`}>{h.house_name || "Sem nome"}</option>)}
               </optgroup>
               <optgroup label="Utilizadores">
-                {users.map(u => <option key={u.user_id} value={`user:${u.user_id}`}>👤 {u.display_name}</option>)}
+                {users.map(u => <option key={u.user_id} value={`user:${u.user_id}`}>{u.display_name}</option>)}
               </optgroup>
             </select>
           </section>
@@ -362,7 +363,7 @@ export default function FeaturesControl() {
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
           {features.map(feature => (
-            <div key={feature.key} className="bg-card rounded-[2.5rem] border border-border/50 p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+            <div key={feature.key} className="bg-card rounded-3xl border border-border/50 p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
               <div className="flex items-start justify-between mb-8">
                 <div>
                   <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-1">
@@ -373,18 +374,15 @@ export default function FeaturesControl() {
                   </code>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <div className={cn(
-                    "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                    feature.globalEnabled ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
-                  )}>
+                  <Badge size="sm" variant={feature.globalEnabled ? "success-light" : "destructive-light"}>
                     {feature.globalEnabled ? "Ativo em Todos" : "Privado/Restrito"}
-                  </div>
-                  <Switch 
-                    checked={feature.globalEnabled} 
-                    onCheckedChange={(c) => toggleGlobal(feature.key, feature.globalEnabled)} 
+                  </Badge>
+                  <Switch
+                    checked={feature.globalEnabled}
+                    onCheckedChange={(c) => toggleGlobal(feature.key, feature.globalEnabled)}
                     className={cn(
                       "scale-110",
-                      feature.globalEnabled ? "data-[state=checked]:bg-emerald-500" : "data-[state=unchecked]:bg-rose-500"
+                      feature.globalEnabled ? "data-[state=checked]:bg-success" : "data-[state=unchecked]:bg-destructive"
                     )}
                   />
                 </div>
@@ -404,15 +402,15 @@ export default function FeaturesControl() {
                         <span className="text-[8px] text-muted-foreground font-mono uppercase tracking-tighter">{f.target_id.slice(0, 10)}...</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch 
-                          checked={f.enabled} 
-                          onCheckedChange={(c) => toggleOverride(f, c)} 
+                        <Switch
+                          checked={f.enabled}
+                          onCheckedChange={(c) => toggleOverride(f, c)}
                           className={cn(
                             "scale-75",
-                            f.enabled ? "data-[state=checked]:bg-emerald-500" : "data-[state=unchecked]:bg-rose-500"
+                            f.enabled ? "data-[state=checked]:bg-success" : "data-[state=unchecked]:bg-destructive"
                           )}
                         />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 hover:bg-rose-50" onClick={() => deleteFlag(f.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => deleteFlag(f.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -424,10 +422,10 @@ export default function FeaturesControl() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-rose-100 hover:bg-rose-50 text-rose-500" onClick={() => handleFastAdd(feature.key)}>
-                     <Zap className="h-3.5 w-3.5 mr-2 fill-rose-500" /> Teste Rápido
+                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-primary/20 hover:bg-primary/5 text-primary" onClick={() => handleFastAdd(feature.key)}>
+                     <Zap className="h-3.5 w-3.5 mr-2 fill-primary" /> Teste Rápido
                    </Button>
-                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-emerald-100 hover:bg-emerald-50 text-emerald-500" onClick={() => setIsAddingForFeature(feature.key)}>
+                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-success/20 hover:bg-success/5 text-success" onClick={() => setIsAddingForFeature(feature.key)}>
                      <Plus className="h-3.5 w-3.5 mr-2" /> Novo Alvo
                    </Button>
                 </div>
@@ -435,20 +433,20 @@ export default function FeaturesControl() {
 
               {/* Add Override Modal Overlay */}
               {isAddingForFeature === feature.key && (
-                <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col p-8 animate-in zoom-in-95">
+                <div className="absolute inset-0 bg-card/95 backdrop-blur-sm z-20 flex flex-col p-8 animate-in zoom-in-95">
                   <div className="flex items-center justify-between mb-6">
                     <h4 className="text-lg font-black uppercase italic tracking-tighter">Novo Alvo para {feature.key.split('_').pop()}</h4>
                     <Button variant="ghost" size="sm" onClick={() => setIsAddingForFeature(null)} className="rounded-full h-8 w-8 p-0">X</Button>
                   </div>
                   <div className="space-y-4">
                     <Input placeholder="Filtrar..." value={searchTarget} onChange={(e) => setSearchTarget(e.target.value)} className="h-10 rounded-xl" />
-                    <select id={`target-${feature.key}`} className="w-full h-11 px-4 rounded-xl bg-slate-50 border-none font-bold text-sm">
+                    <select id={`target-${feature.key}`} className="w-full h-11 px-4 rounded-xl bg-muted border-none font-bold text-sm">
                       <option value="">Selecionar...</option>
                       <optgroup label="Casas">
-                        {filteredHouses.map(h => <option key={h.id} value={`couple:${h.id}`}>🏠 {h.house_name}</option>)}
+                        {filteredHouses.map(h => <option key={h.id} value={`couple:${h.id}`}>{h.house_name}</option>)}
                       </optgroup>
                       <optgroup label="Utilizadores">
-                        {filteredUsers.map(u => <option key={u.user_id} value={`user:${u.user_id}`}>👤 {u.display_name}</option>)}
+                        {filteredUsers.map(u => <option key={u.user_id} value={`user:${u.user_id}`}>{u.display_name}</option>)}
                       </optgroup>
                     </select>
                     <Button className="w-full h-12 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/25" onClick={() => {
@@ -464,11 +462,11 @@ export default function FeaturesControl() {
           ))}
 
           {/* Add Manual Feature Card */}
-          <div className="bg-slate-200/30 rounded-[2.5rem] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-8 transition-all hover:bg-slate-200/50 min-h-[400px]">
+          <div className="bg-muted/50 rounded-3xl border-2 border-dashed border-border flex flex-col items-center justify-center p-8 transition-all hover:bg-muted min-h-[400px]">
             {isAddingFeature ? (
               <div className="w-full space-y-4 animate-in fade-in zoom-in-95">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Feature Key (ID)</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Feature Key (ID)</Label>
                   <Input placeholder="ex: home_new_module" value={newFeatureKey} onChange={(e) => setNewFeatureKey(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addFeatureKey()} className="h-12 rounded-xl border-none shadow-sm focus-visible:ring-primary" autoFocus />
                 </div>
                 <div className="flex gap-2">
@@ -477,11 +475,11 @@ export default function FeaturesControl() {
                 </div>
               </div>
             ) : (
-              <Button variant="ghost" className="h-full w-full flex flex-col gap-4 rounded-[2.5rem]" onClick={() => setIsAddingFeature(true)}>
-                <div className="w-16 h-16 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center shadow-md"><Plus className="w-8 h-8 text-emerald-500" /></div>
+              <Button variant="ghost" className="h-full w-full flex flex-col gap-4 rounded-3xl" onClick={() => setIsAddingFeature(true)}>
+                <div className="w-16 h-16 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-md"><Plus className="w-8 h-8 text-success" /></div>
                 <div className="text-center">
                   <span className="block text-2xl font-black italic tracking-tighter uppercase">Adicionar</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nova Funcionalidade</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nova Funcionalidade</span>
                 </div>
               </Button>
             )}
@@ -496,7 +494,7 @@ export default function FeaturesControl() {
                 <h3 className="text-3xl font-black italic tracking-tighter uppercase">Arquitetura de Controlo</h3>
                 <p className="text-sm text-slate-400 font-bold leading-relaxed">
                   As regras aplicam-se em cascata. <br/>
-                  Clica em <span className="text-rose-400">Teste Rápido</span> para libertar funcionalidades para ti sem abrir ao público.
+                  Clica em <span className="text-primary">Teste Rápido</span> para libertar funcionalidades para ti sem abrir ao público.
                 </p>
              </div>
              <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-3 font-black text-[11px] uppercase tracking-widest">
