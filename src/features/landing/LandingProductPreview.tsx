@@ -60,7 +60,7 @@ export function LandingProductPreview() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white/8 px-3 py-2.5">
+                <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white/[0.08] px-3 py-2.5">
                   <div className="flex -space-x-1.5">
                     <div className="h-5 w-5 rounded-full border-2 border-[#0B1324] bg-rose-300" />
                     <div className="h-5 w-5 rounded-full border-2 border-[#0B1324] bg-indigo-300" />
