@@ -161,7 +161,7 @@ export default function Subscription() {
             toast({ title: "Falta Plano", description: "Por favor escolhe um plano.", variant: "destructive" });
             return;
         }
-        if (!receipt.proofUrl) {
+        if (!receipt.proofRef) {
             toast({ title: "Falta comprovativo", description: "Por favor envia o comprovativo de pagamento.", variant: "destructive" });
             return;
         }
@@ -177,7 +177,7 @@ export default function Subscription() {
                 plan_name: selectedPlan.name,
                 amount: selectedPlan.price,
                 method: selectedMethod?.name || '',
-                proof_url: receipt.proofUrl,
+                proof_url: receipt.proofRef,
                 status: 'pending'
             }).select().single();
             if (paymentError) throw paymentError;
@@ -459,7 +459,7 @@ export default function Subscription() {
                                             <span className="text-xs font-semibold flex items-center gap-1.5 flex-1 truncate">
                                                 {receipt.uploading ? (
                                                     <><Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> <span className="text-primary">A enviar...</span></>
-                                                ) : receipt.proofUrl ? (
+                                                ) : receipt.proofRef ? (
                                                     <><CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> <span className="text-emerald-600 truncate">{receipt.file.name}</span></>
                                                 ) : (
                                                     <span className="text-destructive">Falha ao enviar — tenta de novo</span>
@@ -530,7 +530,7 @@ export default function Subscription() {
                             <Button
                                 className="w-full h-14 rounded-2xl font-bold text-[16px] shadow-lg active:scale-95 transition-transform"
                                 onClick={handleSubscribe}
-                                disabled={submitting || receipt.uploading || !plans.length || !receipt.proofUrl}
+                                disabled={submitting || receipt.uploading || !plans.length || !receipt.proofRef}
                             >
                                 {submitting ? "A enviar..." : `Confirmar Pagamento — ${selectedPlan?.price || ''}`}
                             </Button>
