@@ -1,207 +1,123 @@
-import { useState } from "react";
 import type { ComponentType } from "react";
-import { NavLink } from "@/components/NavLink";
-import { useNavigate, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
-import { useFreeMode } from "@/hooks/useFreeMode";
-import { useProfile } from "@/hooks/useProfile";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
+  CalendarHeart,
+  Heart,
   Home,
   MessageCircle,
-  Smile,
-  CheckSquare,
-  MoreHorizontal,
-  HeartHandshake,
-  CalendarDays,
-  Image,
-  Settings,
-  BookOpen,
-  Flower2,
-  ClipboardList,
-  CreditCard,
-  Heart,
-  Library,
-  CalendarHeart,
+  UserRound,
 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
+import { useProfile } from "@/hooks/useProfile";
 
-const mainTabs = [
-  { to: "/", label: "Home", Icon: Home },
-  { to: "/chat", label: "Chat", Icon: MessageCircle },
-  { to: "/humor", label: "Mood", Icon: Smile },
-  { to: "/biblioteca", label: "Biblioteca", Icon: Library },
-] as const;
+type Tab = {
+  to: string;
+  label: string;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  active: (pathname: string) => boolean;
+  badge?: number;
+};
 
-const moreItems = [
-  { to: "/memorias", label: "Memórias", Icon: Image },
-  { to: "/historia", label: "Nossa História", Icon: CalendarHeart },
-  { to: "/ciclo", label: "Ciclo", Icon: Flower2 },
-  { to: "/jornada-espiritual", label: "Espiritual", Icon: BookOpen },
-  { to: "/conflitos", label: "Conflitos", Icon: HeartHandshake },
-  { to: "/plano", label: "Plano", Icon: CheckSquare },
-  { to: "/configuracoes", label: "Definições", Icon: Settings },
-  { to: "/subscricao", label: "Subscrição", Icon: CreditCard },
-] as const;
-
-const MORE_PATHS = moreItems.map((i) => i.to);
+const startsWithAny = (pathname: string, paths: string[]) =>
+  paths.some((path) => pathname === path || pathname.startsWith(path + "/"));
 
 export function BottomTabs() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { profile } = useProfile();
   const {
     chatUnread,
-    moodUnread,
-    tasksUnread,
     memoriesUnread,
+    tasksUnread,
     scheduleUnread,
     prayerUnread,
     complaintsUnread,
     capsuleUnread,
   } = useAppNotifContext();
-  const { freeMode } = useFreeMode();
-  const { profile } = useProfile();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const isSolo = profile?.usage_mode === "solo";
-  const hideCiclo = isSolo && profile?.gender === "male";
-  const visibleMainTabs = isSolo ? mainTabs.filter(t => t.to !== "/chat") : mainTabs;
 
-  const hasSpiritual = profile?.religion !== "none";
-  const effectivePrayerUnread = hasSpiritual ? prayerUnread : 0;
-  const effectiveComplaintsUnread = isSolo ? 0 : complaintsUnread;
-  const effectiveChatUnread = isSolo ? 0 : chatUnread;
-  const effectiveMemoriesUnread = isSolo ? 0 : memoriesUnread;
-
-  const moreBadge =
-    effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + tasksUnread;
-  const isMoreActive = MORE_PATHS.some((p) => location.pathname === p);
-
-  const effectiveCapsuleUnread = isSolo ? 0 : capsuleUnread;
-  const totalUnread = effectiveChatUnread + moodUnread + tasksUnread + effectiveMemoriesUnread + scheduleUnread + effectivePrayerUnread + effectiveComplaintsUnread + effectiveCapsuleUnread;
-
-  const getBadge = (to: string) => {
-    switch (to) {
-      case "/": return totalUnread;
-      case "/chat": return chatUnread;
-      case "/humor": return moodUnread;
-      default: return 0;
-    }
-  };
-
-  const getMoreBadge = (to: string) => {
-    switch (to) {
-      case "/memorias": return memoriesUnread;
-      case "/agenda": return scheduleUnread;
-      case "/jornada-espiritual": return prayerUnread;
-      case "/conflitos": return complaintsUnread;
-      case "/plano": return tasksUnread + scheduleUnread;
-      default: return 0;
-    }
-  };
+  const tabs: Tab[] = [
+    {
+      to: "/",
+      label: "Hoje",
+      icon: Home,
+      active: (pathname) => pathname === "/" || startsWithAny(pathname, ["/humor", "/jornada"]),
+    },
+    ...(!isSolo
+      ? [{
+          to: "/chat",
+          label: "Chat",
+          icon: MessageCircle,
+          active: (pathname: string) => pathname === "/chat",
+          badge: chatUnread,
+        }]
+      : []),
+    {
+      to: "/nos",
+      label: isSolo ? "Eu" : "Nós",
+      icon: Heart,
+      active: (pathname) =>
+        startsWithAny(pathname, [
+          "/nos",
+          "/momentos",
+          "/memorias",
+          "/historia",
+          "/desafios",
+          "/conflitos",
+          "/capsula",
+          "/wrapped",
+        ]),
+      badge: isSolo ? 0 : memoriesUnread + complaintsUnread + capsuleUnread,
+    },
+    {
+      to: "/vida",
+      label: "Vida",
+      icon: CalendarHeart,
+      active: (pathname) =>
+        startsWithAny(pathname, [
+          "/vida",
+          "/plano",
+          "/rotina",
+          "/ciclo",
+          "/jornada-espiritual",
+          "/localizacao",
+          "/biblioteca",
+        ]),
+      badge: tasksUnread + scheduleUnread + prayerUnread,
+    },
+    {
+      to: "/configuracoes",
+      label: "Perfil",
+      icon: UserRound,
+      active: (pathname) => startsWithAny(pathname, ["/configuracoes", "/subscricao"]),
+    },
+  ];
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pointer-events-none"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.7rem)]"
       aria-label="Navegação principal"
     >
       <div className="pointer-events-auto mx-auto max-w-md">
-        <div className="relative overflow-hidden rounded-[28px] border border-white/50 dark:border-white/10 bg-card/75 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.6)]">
-          {/* Specular highlight — glass sheen */}
-          <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/40 dark:ring-white/[0.06]" />
+        <div className="relative overflow-hidden rounded-[1.65rem] border border-white/60 bg-card/88 shadow-[0_16px_45px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:border-white/10 dark:bg-card/90">
+          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/35 dark:ring-white/[0.05]" />
 
-          <div className={cn("relative grid h-16", visibleMainTabs.length === 4 ? "grid-cols-5" : "grid-cols-4")}>
-            {visibleMainTabs.map(({ to, label, Icon }) => (
-              <TabItem
-                key={to}
-                to={to}
-                label={label}
-                Icon={Icon}
-                badge={getBadge(to)}
+          <div
+            className={cn(
+              "relative grid h-[66px]",
+              tabs.length === 5 ? "grid-cols-5" : "grid-cols-4",
+            )}
+          >
+            {tabs.map((tab) => (
+              <TabButton
+                key={tab.to}
+                tab={tab}
+                isActive={tab.active(location.pathname)}
+                onClick={() => navigate(tab.to)}
               />
             ))}
-
-            {/* More tab */}
-            <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-              <SheetTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors duration-150 active:opacity-60",
-                    isMoreActive ? "text-rose-500" : "text-muted-foreground"
-                  )}
-                  aria-label="Mais"
-                >
-                  <span className="relative">
-                    <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={isMoreActive ? 2 : 1.5} />
-                    {moreBadge > 0 && <Badge count={moreBadge} />}
-                  </span>
-                  <span className="leading-none">More</span>
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="bottom"
-                className="rounded-t-[2rem] border-t border-border bg-card pb-[max(env(safe-area-inset-bottom),1.5rem)]"
-              >
-                {/* Drag handle */}
-                <div className="flex justify-center pt-2 pb-5">
-                  <div className="w-10 h-1 rounded-full bg-border" />
-                </div>
-
-                {/* Header */}
-                <div className="flex items-center justify-between px-1 pb-5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
-                      <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-base font-bold text-foreground">LoveNest</span>
-                  </div>
-                  <span className="text-[11px] font-medium text-muted-foreground">Mais funcionalidades</span>
-                </div>
-
-                <div className="grid grid-cols-4 gap-3">
-                  {moreItems
-                    .filter(item => freeMode ? item.to !== "/subscricao" : true)
-                    .filter(item => profile?.religion === "none" ? item.to !== "/jornada-espiritual" : true)
-                    .filter(item => isSolo ? item.to !== "/conflitos" : true)
-                    .filter(item => isSolo ? item.to !== "/historia" : true)
-                    .filter(item => isSolo ? item.to !== "/memorias" : true)
-                    .filter(item => hideCiclo ? item.to !== "/ciclo" : true)
-                    .map(({ to, label, Icon }) => {
-                      const badge = getMoreBadge(to);
-                      const active = location.pathname === to;
-                      return (
-                        <button
-                          key={to}
-                          type="button"
-                          onClick={() => { setMoreOpen(false); navigate(to); }}
-                          className="relative flex flex-col items-center gap-2 active:scale-[0.95] transition-all duration-150 outline-none"
-                        >
-                          <div className={cn(
-                            "w-14 h-14 rounded-2xl flex items-center justify-center relative border transition-colors",
-                            active
-                              ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40 text-rose-500"
-                              : "bg-card border-border text-rose-400 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
-                          )}>
-                            <Icon className="h-6 w-6" strokeWidth={1.5} />
-                            {badge > 0 && <Badge count={badge} />}
-                          </div>
-                          <span className={cn(
-                            "text-[10px] font-medium leading-tight text-center",
-                            active ? "text-rose-500" : "text-foreground/60"
-                          )}>{label}</span>
-                        </button>
-                      );
-                    })}
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
       </div>
@@ -209,48 +125,44 @@ export function BottomTabs() {
   );
 }
 
-function Badge({ count }: { count: number }) {
-  return (
-    <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white leading-none">
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-}
-
-function ActiveDot() {
-  return (
-    <span className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-rose-500" />
-  );
-}
-
-function TabItem({
-  to,
-  label,
-  Icon,
-  badge = 0,
+function TabButton({
+  tab,
+  isActive,
+  onClick,
 }: {
-  to: string;
-  label: string;
-  Icon: ComponentType<{ className?: string; strokeWidth?: number }>;
-  badge?: number;
+  tab: Tab;
+  isActive: boolean;
+  onClick: () => void;
 }) {
-  const location = useLocation();
-  const isActive = location.pathname === to;
+  const Icon = tab.icon;
+  const badge = tab.badge ?? 0;
 
   return (
-    <NavLink
-      to={to}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors duration-150 active:opacity-60"
+        "relative flex flex-col items-center justify-center gap-1 text-[9px] font-semibold transition-colors active:opacity-60",
+        isActive ? "text-rose-500" : "text-muted-foreground",
       )}
-      activeClassName="text-rose-500"
-      aria-label={label}
     >
       <span className="relative">
-        <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2 : 1.5} />
+        <Icon className="h-[21px] w-[21px]" strokeWidth={isActive ? 2 : 1.5} />
         {badge > 0 && <Badge count={badge} />}
       </span>
-      <span className="leading-none">{label}</span>
-    </NavLink>
+      <span className="leading-none">{tab.label}</span>
+      {isActive && (
+        <span className="absolute bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-rose-500" />
+      )}
+    </button>
+  );
+}
+
+function Badge({ count }: { count: number }) {
+  return (
+    <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black leading-none text-white ring-2 ring-card">
+      {count > 9 ? "9+" : count}
+    </span>
   );
 }
