@@ -54,7 +54,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
             toast({ variant: "destructive", title: "Escolhe um método de pagamento" });
             return;
         }
-        if (!receipt.proofUrl) {
+        if (!receipt.proofRef) {
             toast({ variant: "destructive", title: "Falta comprovativo", description: "Envia o comprovativo de pagamento." });
             return;
         }
@@ -69,7 +69,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
                 status: "pending",
                 amount: `${Number(book.price).toFixed(2)} ${book.currency}`,
                 method: selectedMethod.name,
-                proof_url: receipt.proofUrl,
+                proof_url: receipt.proofRef,
                 requested_by: user?.id ?? null,
                 admin_notes: null,
             };
@@ -159,7 +159,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
                                         <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
                                         <span className="text-rose-500">A enviar comprovativo...</span>
                                     </>
-                                ) : receipt.proofUrl ? (
+                                ) : receipt.proofRef ? (
                                     <>
                                         <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                                         <span className="text-emerald-600">Comprovativo enviado</span>
@@ -201,7 +201,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
 
             <Button
                 onClick={handleSubmit}
-                disabled={submitting || receipt.uploading || !receipt.proofUrl}
+                disabled={submitting || receipt.uploading || !receipt.proofRef}
                 className="w-full h-12 rounded-2xl font-bold text-[15px] bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
             >
                 {submitting ? "A enviar..." : "Confirmar pedido de compra"}
