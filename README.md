@@ -43,6 +43,20 @@ SELECT tablename, policyname, cmd, roles, qual, with_check FROM pg_policies WHER
 
 `supabase functions deploy <nome>`. Segredos necessários (`supabase secrets set`): `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`, `FCM_VAPID_KEY`, `PAYSUITE_API_KEY`, `PAYSUITE_WEBHOOK_SECRET`, `ADMIN_SETUP_KEY`, `LOVE_WRAPPED_CRON_SECRET`.
 
+### LoveWrapped (`generate-love-wrapped`)
+
+Corre no dia 1 às 08:00 UTC via `pg_cron` (`love-wrapped-monthly`, segredo lido do Vault — ver `supabase/migrations/20261007000000_reschedule_love_wrapped_cron.sql`). Autenticação: sessão de admin ou header `x-cron-secret`. Body opcional:
+
+| Campo | Efeito |
+|---|---|
+| `month`, `year` | Mês a gerar (por omissão, o anterior) |
+| `couple_space_id` | Só uma casa |
+| `dry_run: true` | Devolve `preview` por casa; não escreve nada, não notifica |
+| `silent: true` / `notify: false` | Escreve `love_wrapped`, mas sem push nem `notification_history` (backfills) |
+| `overwrite: true` | Atualiza registos existentes (senão são ignorados) |
+
+Resposta: `inserted`, `updated`, `skipped`, `notifications_sent`, `failures`, `processed`, `total_spaces`. `streak_days` é o streak vivo no último dia do mês, reconstruído a partir de `lovepoints_ledger` (`supabase/functions/_shared/streak.ts`).
+
 ## Admin
 
 Login em `/admin-login` com uma conta real do Supabase Auth que tenha linha em `admin_users`. O primeiro admin é criado em `/admin-setup-secret` (validado no servidor pela função `admin-claim` contra `ADMIN_SETUP_KEY`). Todas as escritas de faturação passam por RPCs `SECURITY DEFINER` que verificam `is_admin()`.
