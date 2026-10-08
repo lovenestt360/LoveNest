@@ -6,7 +6,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import { useReceiptUpload } from "@/hooks/useReceiptUpload";
-import { trackPixelEvent } from "@/lib/metaPixel";
 
 const PAYSUITE_METHODS: { id: "mpesa" | "emola" | "credit_card"; label: string; icon: typeof Smartphone }[] = [
     { id: "mpesa", label: "M-Pesa", icon: Smartphone },
@@ -185,7 +184,6 @@ export default function Subscription() {
 
             // Update state directly — avoids loadData() flash (loading=true → full page reload effect)
             setPendingPayment(inserted);
-            trackPixelEvent("InitiateCheckout", { content_name: selectedPlan.name, currency: "MZN" });
             receipt.reset();
             toast({ title: "Comprovativo enviado!", description: "Aguarda a aprovação do admin." });
         } catch (error: any) {
@@ -199,7 +197,6 @@ export default function Subscription() {
         if (!selectedPlan?.price_mzn || !house) return;
         try {
             setPayingMethod(method);
-            trackPixelEvent("InitiateCheckout", { content_name: selectedPlan.name, value: Number(selectedPlan.price_mzn), currency: "MZN" });
             const { data, error } = await supabase.functions.invoke("create-paysuite-payment", {
                 body: { couple_space_id: house.id, plan_id: selectedPlan.id, method },
             });

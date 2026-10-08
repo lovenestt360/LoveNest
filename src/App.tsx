@@ -3,8 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 // TooltipProvider removed to avoid duplicate React instance crash
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { lazy, Suspense, useEffect } from "react";
-import { trackPageView } from "@/lib/metaPixel";
+import { lazy, Suspense } from "react";
 import { AppShell } from "@/app/layout/AppShell";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
@@ -73,12 +72,6 @@ function PageLoader() {
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
     </div>
   );
-}
-
-function MetaPixelRouteTracker() {
-  const { pathname } = useLocation();
-  useEffect(() => { trackPageView(pathname); }, [pathname]);
-  return null;
 }
 
 const AppRoutes = () => (
@@ -200,7 +193,6 @@ const App = () => (
       <Toaster />
       <SonnerToaster />
       <BrowserRouter>
-        <MetaPixelRouteTracker />
         <SplashGate>
           <AuthProvider>
             <FeatureAccessProvider>

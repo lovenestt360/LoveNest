@@ -9,7 +9,6 @@ import { track } from "@vercel/analytics";
 import { getPasswordError } from "@/lib/passwordPolicy";
 import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
-import { trackPixelEvent } from "@/lib/metaPixel";
 
 // ── Brand ─────────────────────────────────────────────────────────────────────
 const PINK = "#FF6B8F";
@@ -315,7 +314,6 @@ export default function Onboarding() {
         },
       });
       if (error) throw error;
-      trackPixelEvent("CompleteRegistration", { method: "email" });
 
       markSeen();
       localStorage.removeItem("onboarding_name");
