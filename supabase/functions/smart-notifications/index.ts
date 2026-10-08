@@ -316,11 +316,12 @@ Deno.serve(async (req) => {
           return s?.enabled === true;
         };
 
-        const todayStart = new Date(now);
-        todayStart.setUTCHours(0, 0, 0, 0);
+        const dailyWindow = new Date(nowMs - 24 * 3600000).toISOString();
         const { count: dailyCount } = await sb
-          .from("notification_history").select("id", { count: "exact", head: true })
-          .eq("user_id", userId).gte("sent_at", todayStart.toISOString());
+          .from("notification_history")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("sent_at", dailyWindow);
         if ((dailyCount ?? 0) >= 2) continue;
 
         const recentlySent = async (ruleKey: string): Promise<boolean> => {
