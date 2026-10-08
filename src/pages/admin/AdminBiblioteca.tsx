@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { getReceiptSignedUrl } from "@/lib/receiptStorage";
 import {
     Library, Plus, Trash2, Pencil, Upload, RefreshCw, Check, X,
     Image as ImageIcon, FileText, LayoutGrid, ShoppingBag, BookText, Layers, Bell,
@@ -1164,6 +1165,15 @@ function PurchasesPanel({ adminClient, purchases, onChanged }: {
     const [notes, setNotes] = useState<Record<string, string>>({});
     const [processingId, setProcessingId] = useState<string | null>(null);
 
+    const handleOpenReceipt = async (ref: string) => {
+        try {
+            const signedUrl = await getReceiptSignedUrl(ref);
+            window.open(signedUrl, "_blank", "noopener,noreferrer");
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Erro ao abrir comprovativo", description: error.message });
+        }
+    };
+
     const handleApprove = async (id: string) => {
         setProcessingId(id);
         try {
@@ -1231,9 +1241,13 @@ function PurchasesPanel({ adminClient, purchases, onChanged }: {
                         </div>
 
                         {p.proof_url && (
-                            <a href={p.proof_url} target="_blank" rel="noreferrer" className="inline-block">
-                                <img src={p.proof_url} alt="Comprovativo" className="h-32 rounded-lg border object-cover" />
-                            </a>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenReceipt(p.proof_url!)}
+                            >
+                                Abrir comprovativo
+                            </Button>
                         )}
 
                         <div className="flex flex-col md:flex-row gap-2 pt-1">

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import { LogoIcon } from "@/components/Logo";
+import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -244,6 +245,37 @@ export function ProtectedRoute() {
             </button>
           </div>
 
+        </div>
+      </div>
+    );
+  }
+
+  const paidSubscriptionExpired =
+    houseData &&
+    houseData.subscription_status === "active" &&
+    !hasActivePaidSubscription(houseData);
+
+  if (paidSubscriptionExpired && location.pathname !== "/subscricao") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-5">
+        <div className="w-full max-w-sm text-center space-y-7 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex flex-col items-center gap-3">
+            <LogoIcon size={72} />
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">
+              A vossa subscrição<br />terminou
+            </h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Renovem o plano para continuarem a usar as funcionalidades Premium do LoveNest.
+            </p>
+          </div>
+          <button
+            className="w-full h-14 rounded-2xl font-bold text-base bg-primary text-primary-foreground shadow-md active:scale-95 transition-transform"
+            onClick={() => window.location.assign("/subscricao")}
+          >
+            Renovar subscrição
+          </button>
         </div>
       </div>
     );

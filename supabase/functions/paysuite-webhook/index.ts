@@ -1,9 +1,16 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { amountsMatch } from "../_shared/paysuite.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-webhook-signature, x-account-id",
 };
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 async function verifySignature(rawBody: string, signatureHex: string, secret: string): Promise<boolean> {
   const key = await crypto.subtle.importKey(
@@ -26,34 +33,15 @@ async function verifySignature(rawBody: string, signatureHex: string, secret: st
   return diff === 0;
 }
 
-/**
- * paysuite-webhook Edge Function
- *
- * Recebe payment.success / payment.failed da PaySuite e replica o mesmo
- * efeito final que Admin.tsx → handleApprovePayment fazia manualmente:
- * marca o pagamento e activa (ou rejeita) a subscrição da couple_space.
- *
- * NOTA: os nomes exactos dos campos do payload (event/type, reference,
- * id) são os documentados em paysuite.tech/docs no momento em que isto
- * foi escrito. Se o primeiro webhook real chegar com nomes diferentes,
- * o log em edge_function_logs (se a tabela existir) mostra o payload
- * em bruto para ajustar — ver o catch-all de log mais abaixo.
- */
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Método não permitido" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const webhookSecret = Deno.env.get("PAYSUITE_WEBHOOK_SECRET");
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    return new Response(JSON.stringify({ error: "Servidor mal configurado" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!supabaseUrl || !serviceRoleKey) return json({ error: "Servidor mal configurado" }, 500);
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -65,7 +53,7 @@ Deno.serve(async (req) => {
         payload,
       });
     } catch {
-      // tabela pode não existir — não é crítico
+      // Logging must never break payment processing.
     }
   };
 
@@ -75,19 +63,12 @@ Deno.serve(async (req) => {
 
     if (!webhookSecret) {
       await logInternal("MISSING_SECRET", { note: "PAYSUITE_WEBHOOK_SECRET não configurado" });
-      return new Response(JSON.stringify({ error: "Webhook não configurado" }), {
-        status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Webhook não configurado" }, 503);
     }
 
-    const valid = signature && (await verifySignature(rawBody, signature, webhookSecret));
-    if (!valid) {
+    if (!signature || !(await verifySignature(rawBody, signature, webhookSecret))) {
       await logInternal("INVALID_SIGNATURE", { signaturePresent: !!signature });
-      return new Response(JSON.stringify({ error: "Assinatura inválida" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Assinatura inválida" }, 401);
     }
 
     const body = JSON.parse(rawBody);
@@ -96,125 +77,120 @@ Deno.serve(async (req) => {
     const eventType: string = body?.event ?? body?.type ?? "";
     const data = body?.data ?? body;
     const reference: string | undefined = data?.reference;
-    const externalId: string | undefined = data?.id ?? data?.transaction_id;
+    const externalId = data?.id != null ? String(data.id) : null;
 
-    if (!reference) {
-      return new Response(JSON.stringify({ error: "Sem reference no payload" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!reference) return json({ error: "Sem reference no payload" }, 400);
 
     const { data: payment } = await adminClient
       .from("payments")
-      .select("id, couple_space_id, plan_name, status")
+      .select("id, couple_space_id, plan_id, plan_name, amount, status, provider, external_id")
       .eq("id", reference)
       .maybeSingle();
 
-    if (!payment) {
-      return new Response(JSON.stringify({ error: "Pagamento não encontrado" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!payment) return json({ error: "Pagamento não encontrado" }, 404);
+
+    if (payment.provider !== "paysuite") {
+      await logInternal("WRONG_PROVIDER", { reference, provider: payment.provider });
+      return json({ ok: true, note: "reference does not belong to PaySuite" });
     }
 
-    // Idempotente — se a PaySuite reenviar o mesmo webhook, não processa duas vezes.
     if (payment.status === "approved" || payment.status === "rejected") {
-      return new Response(JSON.stringify({ ok: true, note: "already processed" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: true, note: "already processed" });
     }
 
-    // Listas explícitas — antes só "payment.failed" era tratado e QUALQUER
-    // outro evento (incluindo um tipo desconhecido, vazio ou malformado)
-    // caía no ramo de aprovação. Agora só um evento de sucesso conhecido
-    // ativa a subscrição; um tipo não reconhecido fica pendente e é
-    // registado, nunca aprovado por omissão.
+    if (payment.external_id && externalId && String(payment.external_id) !== externalId) {
+      await logInternal("EXTERNAL_ID_MISMATCH", {
+        paymentId: payment.id,
+        expected: payment.external_id,
+        received: externalId,
+      });
+      return json({ ok: true, note: "provider payment id mismatch, ignored" });
+    }
+
     const FAILURE_EVENTS = new Set(["payment.failed", "payment.cancelled", "payment.expired"]);
     const SUCCESS_EVENTS = new Set(["payment.success", "payment.completed", "payment.paid"]);
 
     if (FAILURE_EVENTS.has(eventType)) {
       const { error: rejectError } = await adminClient
         .from("payments")
-        .update({ status: "rejected", external_id: externalId ?? null })
-        .eq("id", payment.id);
+        .update({
+          status: "rejected",
+          external_id: externalId ?? payment.external_id ?? null,
+          admin_notes: data?.error ? String(data.error) : null,
+        })
+        .eq("id", payment.id)
+        .eq("status", "pending");
 
       if (rejectError) {
         await logInternal("REJECT_UPDATE_FAILED", { message: rejectError.message, paymentId: payment.id });
-        return new Response(JSON.stringify({ error: "Falha ao marcar pagamento como rejeitado" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ error: "Falha ao marcar pagamento como rejeitado" }, 500);
       }
-
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: true });
     }
 
     if (!SUCCESS_EVENTS.has(eventType)) {
       await logInternal("UNKNOWN_EVENT_TYPE", { eventType, reference, paymentId: payment.id });
-      // 200 para a PaySuite não reenviar indefinidamente — mas o pagamento
-      // fica "pending", nunca aprovado sem uma confirmação explícita.
-      return new Response(JSON.stringify({ ok: true, note: "unhandled event type, ignored" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: true, note: "unhandled event type, ignored" });
     }
 
-    // payment.success — ativa o espaço PRIMEIRO, e só marca o pagamento como
-    // aprovado depois disso ter sucesso. Pela ordem antiga, se a ativação do
-    // espaço falhasse depois do pagamento já estar "approved", a verificação
-    // de idempotência acima fazia uma reentrega do webhook devolver
-    // "already processed" sem nunca voltar a tentar ativar o espaço.
-    const { data: plan } = await adminClient
-      .from("subscription_plans")
-      .select("id, tier_level")
-      .ilike("name", payment.plan_name)
-      .maybeSingle();
+    if (!amountsMatch(payment.amount, data?.amount)) {
+      await logInternal("AMOUNT_MISMATCH", {
+        paymentId: payment.id,
+        expected: payment.amount,
+        received: data?.amount,
+      });
+      // Signed event, but it does not match what LoveNest requested. Keep it
+      // pending for manual investigation instead of granting premium.
+      return json({ ok: true, note: "amount mismatch, ignored" });
+    }
 
-    const { error: spaceError } = await adminClient
-      .from("couple_spaces")
-      .update({
-        subscription_status: "active",
-        ...(plan?.id ? { plan_id: plan.id } : {}),
-        ...(plan?.tier_level ? { tier_level: plan.tier_level } : {}),
-      })
-      .eq("id", payment.couple_space_id);
+    let planQuery = adminClient.from("subscription_plans").select("id");
+    if (payment.plan_id) {
+      planQuery = planQuery.eq("id", payment.plan_id);
+    } else {
+      planQuery = planQuery.ilike("name", payment.plan_name);
+    }
+
+    const { data: plan, error: planError } = await planQuery.maybeSingle();
+    if (planError || !plan) {
+      await logInternal("PLAN_RESOLUTION_FAILED", {
+        paymentId: payment.id,
+        planId: payment.plan_id,
+        planName: payment.plan_name,
+        message: planError?.message,
+      });
+      return json({ error: "Plano do pagamento não encontrado" }, 500);
+    }
+
+    const { error: spaceError } = await adminClient.rpc("activate_paid_subscription", {
+      p_couple_space_id: payment.couple_space_id,
+      p_plan_id: plan.id,
+      p_effective_at: new Date().toISOString(),
+    });
 
     if (spaceError) {
       await logInternal("SPACE_ACTIVATION_FAILED", { message: spaceError.message, paymentId: payment.id });
-      return new Response(JSON.stringify({ error: "Falha ao ativar espaço" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Falha ao ativar subscrição" }, 500);
     }
 
     const { error: approveError } = await adminClient
       .from("payments")
-      .update({ status: "approved", external_id: externalId ?? null })
-      .eq("id", payment.id);
+      .update({
+        status: "approved",
+        external_id: externalId ?? payment.external_id ?? null,
+      })
+      .eq("id", payment.id)
+      .eq("status", "pending");
 
     if (approveError) {
       await logInternal("APPROVE_UPDATE_FAILED", { message: approveError.message, paymentId: payment.id });
-      return new Response(JSON.stringify({ error: "Falha ao marcar pagamento como aprovado" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Falha ao marcar pagamento como aprovado" }, 500);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: true });
   } catch (err: any) {
     console.error("[paysuite-webhook] Exception:", err);
     await logInternal("EXCEPTION", { message: err?.message });
-    return new Response(JSON.stringify({ error: err?.message ?? "Erro inesperado" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: err?.message ?? "Erro inesperado" }, 500);
   }
 });

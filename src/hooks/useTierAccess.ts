@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useFreeMode } from "@/hooks/useFreeMode";
+import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
 export function useTierAccess(featureId: string) {
   const { freeMode, loading: freeModeLoading } = useFreeMode();
@@ -25,7 +26,7 @@ export function useTierAccess(featureId: string) {
 
         const { data: house } = await supabase
           .from("couple_spaces")
-          .select("subscription_status, trial_used, trial_ends_at, tier_level")
+          .select("*")
           .eq("id", member.couple_space_id)
           .maybeSingle();
         if (!house) { setAllowed(false); setLoading(false); return; }
@@ -36,7 +37,7 @@ export function useTierAccess(featureId: string) {
           house.trial_ends_at &&
           new Date(house.trial_ends_at) > new Date();
         if (trialActive) userTier = 999;
-        else if (house.subscription_status === "active") userTier = house.tier_level ?? 1;
+        else if (hasActivePaidSubscription(house as any)) userTier = house.tier_level ?? 1;
 
         const { data: ft } = await (supabase as any)
           .from("feature_tiers")
