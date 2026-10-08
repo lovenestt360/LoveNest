@@ -388,7 +388,7 @@ function MessageBubble({
             "px-3.5 py-2 text-[14px] leading-5 select-none",
             isMine
               ? "bg-[#0B1324] text-white rounded-[1.25rem] rounded-br-[0.4rem] shadow-[0_8px_24px_rgba(11,19,36,0.14)] dark:bg-slate-100 dark:text-slate-950"
-              : "rounded-[1.25rem] rounded-bl-[0.4rem] border border-border/60 bg-card/92 text-foreground shadow-[0_6px_18px_rgba(15,23,42,0.045)] backdrop-blur",
+              : "rounded-[1.25rem] rounded-bl-[0.4rem] border border-border/60 bg-card/[0.92] text-foreground shadow-[0_6px_18px_rgba(15,23,42,0.045)] backdrop-blur",
             isDeleted && "opacity-60",
             msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
           )}
@@ -804,7 +804,7 @@ export default function Chat() {
       )}
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 border-b border-border/60 bg-card/88 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
+      <header className="relative z-20 shrink-0 border-b border-border/60 bg-card/[0.88] pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
         <div className="flex items-center gap-2.5 px-3.5 py-2.5">
           {/* Back */}
           <button onClick={() => navigate("/")}
@@ -915,7 +915,7 @@ export default function Chat() {
       )}
 
       {/* ── Bottom Input Bar (WhatsApp style) ── */}
-      <div className="relative z-50 shrink-0 border-t border-border/60 bg-background/88 px-2.5 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
+      <div className="relative z-50 shrink-0 border-t border-border/60 bg-background/[0.88] px-2.5 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
 
         {/* Edit mode banner */}
         {editingMsg && (
