@@ -156,8 +156,6 @@ export default function Settings() {
   
   // Smart Notifications State
   const [smartSettings, setSmartSettings] = useState<any[]>([]);
-  const [preferredHour, setPreferredHour] = useState(10);
-  const [savingSmart, setSavingSmart] = useState(false);
 
   const [currentCategory, setCurrentCategory] = useState<'menu' | 'profile' | 'house' | 'personalization' | 'notifications' | 'customization' | 'verification' | 'data'>('menu');
 
@@ -290,8 +288,6 @@ export default function Settings() {
 
       if (smartRows.length > 0) {
         setSmartSettings(smartRows);
-        const rowWithHour = smartRows.find((row: any) => row.preferred_hour != null);
-        if (rowWithHour) setPreferredHour(rowWithHour.preferred_hour);
       } else {
         const defaultCats = ["engagement", "emotion", "partner", "system"];
         setSmartSettings(defaultCats.map(category => ({ category, enabled: true })));
@@ -418,44 +414,10 @@ export default function Settings() {
         user_id: user.id,
         category,
         enabled: newState,
-        preferred_hour: preferredHour
+        preferred_hour: 10
       }, { onConflict: 'user_id,category' });
     } catch (e) {
       console.error("Error updating smart settings:", e);
-    }
-  };
-
-  const updatePreferredHour = async (hour: string) => {
-    if (!user) return;
-    const h = parseInt(hour);
-    setPreferredHour(h);
-    
-    try {
-      setSavingSmart(true);
-      // Update all categories with the new preferred hour
-      const updates = smartSettings.map(s => ({
-        user_id: user.id,
-        category: s.category,
-        enabled: s.enabled,
-        preferred_hour: h
-      }));
-      
-      if (updates.length > 0) {
-        await supabase.from("notification_settings" as any).upsert(updates, { onConflict: 'user_id,category' });
-      } else {
-        // Just create one to store the hour if nothing exists
-        await supabase.from("notification_settings" as any).upsert({
-          user_id: user.id,
-          category: 'system',
-          enabled: true,
-          preferred_hour: h
-        }, { onConflict: 'user_id,category' });
-      }
-      toast({ title: "Horário atualizado!" });
-    } catch (e) {
-      console.error("Error updating hour:", e);
-    } finally {
-      setSavingSmart(false);
     }
   };
 
@@ -470,7 +432,7 @@ export default function Settings() {
           user_id: user.id,
           category: key,
           enabled: newEnabled,
-          preferred_hour: preferredHour,
+          preferred_hour: 10,
         }, { onConflict: "user_id,category" }).then(({ error }: any) => {
           if (error) {
             console.error("notification preference sync:", error);
@@ -953,18 +915,9 @@ export default function Settings() {
                   </div>
                 ))}
                 <div className="pt-4 border-t border-border">
-                  <p className="text-[11px] font-medium text-muted-foreground/80 mb-1">Horário preferido</p>
-                  <p className="text-[10px] text-muted-foreground/60 mb-2">Usado apenas para lembretes flexíveis. Alertas ligados a um momento específico podem chegar noutra hora.</p>
-                  <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
-                    <SelectTrigger className="h-11 bg-white dark:bg-white/5 border border-border rounded-xl text-[13px]">
-                      <SelectValue placeholder="Escolhe uma hora..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <p className="text-[10px] leading-4 text-muted-foreground/60">
+                    O LoveNest envia estes lembretes apenas entre 08:00 e 22:00 no teu fuso horário e limita o volume para evitar spam.
+                  </p>
                 </div>
               </div>
 
