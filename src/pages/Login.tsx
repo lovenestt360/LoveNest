@@ -201,7 +201,7 @@ export default function Login() {
   };
 
   const fieldClass =
-    "h-13 rounded-[1rem] border-slate-200/80 bg-white px-4 text-[14px] shadow-none focus-visible:border-rose-300 focus-visible:ring-2 focus-visible:ring-rose-200/50";
+    "h-[52px] rounded-[1rem] border-slate-200/80 bg-white px-4 text-[14px] shadow-none focus-visible:border-rose-300 focus-visible:ring-2 focus-visible:ring-rose-200/50";
 
   return (
     <AuthScaffold
@@ -213,14 +213,14 @@ export default function Login() {
           : "Continua exatamente onde vocês deixaram a vossa história."
       }
     >
-      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
+      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/[0.08]0 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
         {!forgotView && (
           <>
             <button
               type="button"
               onClick={handleGoogle}
               disabled={googleLoading || loading}
-              className="flex h-13 w-full items-center justify-center gap-3 rounded-[1rem] border border-slate-200/80 bg-white text-[13px] font-bold text-[#0B1324] transition hover:bg-slate-50 active:scale-[0.99] disabled:opacity-60"
+              className="flex h-[52px] w-full items-center justify-center gap-3 rounded-[1rem] border border-slate-200/80 bg-white text-[13px] font-bold text-[#0B1324] transition hover:bg-slate-50 active:scale-[0.99] disabled:opacity-60"
             >
               {googleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
@@ -320,7 +320,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="mt-1 flex h-13 w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] transition active:scale-[0.99] disabled:opacity-60"
+              className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] transition active:scale-[0.99] disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Entrar <ArrowRight className="h-4 w-4" /></>}
             </button>
@@ -379,7 +379,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex h-13 w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Enviar link <ArrowRight className="h-4 w-4" /></>}
               </button>
@@ -431,7 +431,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading || googleLoading}
-                className="flex h-13 w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Enviar link <ArrowRight className="h-4 w-4" /></>}
               </button>
