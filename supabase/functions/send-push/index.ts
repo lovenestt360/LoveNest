@@ -234,7 +234,8 @@ Deno.serve(async (req) => {
         sub.fcm_token!,
         finalTitle || "LoveNest",
         finalBody  || "",
-        url || "/chat"
+        url || "/chat",
+        type
       );
 
       if (result.ok) {
