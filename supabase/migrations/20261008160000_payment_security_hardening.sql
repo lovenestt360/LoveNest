@@ -22,6 +22,21 @@ ALTER TABLE public.payments
   ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES public.subscription_plans(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 
+ALTER TABLE public.couple_spaces
+  ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMPTZ;
+
+-- Legacy plans were created when billing_type defaulted to "one_time".
+-- Normalize them once so paid access always has an explicit duration.
+UPDATE public.subscription_plans
+SET billing_type = CASE
+  WHEN lower(name) LIKE '%lifetime%' OR lower(name) LIKE '%vital%' THEN 'lifetime'
+  WHEN lower(name) LIKE '%semestr%' THEN 'semiannual'
+  WHEN lower(name) LIKE '%anual%' OR lower(name) LIKE '%annual%' THEN 'annual'
+  ELSE 'monthly'
+END
+WHERE billing_type IS NULL OR billing_type = 'one_time';
+
 -- Best-effort backfill for existing rows.
 UPDATE public.payments p
 SET plan_id = (
@@ -32,6 +47,137 @@ SET plan_id = (
   LIMIT 1
 )
 WHERE p.plan_id IS NULL;
+
+-- ── Paid subscription lifecycle ───────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.activate_paid_subscription(
+  p_couple_space_id UUID,
+  p_plan_id UUID,
+  p_effective_at TIMESTAMPTZ DEFAULT now()
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  v_plan RECORD;
+  v_existing_end TIMESTAMPTZ;
+  v_base TIMESTAMPTZ;
+  v_new_end TIMESTAMPTZ;
+BEGIN
+  SELECT id, tier_level, billing_type
+  INTO v_plan
+  FROM public.subscription_plans
+  WHERE id = p_plan_id
+    AND is_active = true
+  LIMIT 1;
+
+  IF v_plan.id IS NULL THEN
+    RAISE EXCEPTION 'active subscription plan not found';
+  END IF;
+
+  SELECT subscription_ends_at
+  INTO v_existing_end
+  FROM public.couple_spaces
+  WHERE id = p_couple_space_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'couple space not found';
+  END IF;
+
+  -- A renewal never destroys unused paid time. Lifetime has no end date.
+  v_base := CASE
+    WHEN v_existing_end IS NOT NULL AND v_existing_end > p_effective_at
+      THEN v_existing_end
+    ELSE p_effective_at
+  END;
+
+  v_new_end := CASE v_plan.billing_type
+    WHEN 'monthly'    THEN v_base + INTERVAL '1 month'
+    WHEN 'semiannual' THEN v_base + INTERVAL '6 months'
+    WHEN 'annual'     THEN v_base + INTERVAL '1 year'
+    WHEN 'lifetime'   THEN NULL
+    ELSE NULL
+  END;
+
+  IF v_plan.billing_type NOT IN ('monthly', 'semiannual', 'annual', 'lifetime') THEN
+    RAISE EXCEPTION 'unsupported billing type: %', v_plan.billing_type;
+  END IF;
+
+  UPDATE public.couple_spaces
+  SET subscription_status     = 'active',
+      plan_id                 = v_plan.id,
+      tier_level              = COALESCE(v_plan.tier_level, 0),
+      subscription_started_at = COALESCE(subscription_started_at, p_effective_at),
+      subscription_ends_at    = v_new_end
+  WHERE id = p_couple_space_id;
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.activate_paid_subscription(UUID, UUID, TIMESTAMPTZ)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.activate_paid_subscription(UUID, UUID, TIMESTAMPTZ)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.expire_due_subscriptions()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  v_count INTEGER;
+BEGIN
+  UPDATE public.couple_spaces
+  SET subscription_status = 'inactive',
+      tier_level = 0
+  WHERE subscription_status = 'active'
+    AND subscription_ends_at IS NOT NULL
+    AND subscription_ends_at <= now();
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.expire_due_subscriptions() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.expire_due_subscriptions() TO service_role;
+
+-- Give existing active non-lifetime customers one complete term from rollout
+-- if historical activation dates are unavailable. This is intentionally
+-- generous rather than expiring a legitimate customer immediately.
+DO $
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT cs.id AS couple_space_id, cs.plan_id
+    FROM public.couple_spaces cs
+    WHERE cs.subscription_status = 'active'
+      AND cs.plan_id IS NOT NULL
+      AND cs.subscription_started_at IS NULL
+  LOOP
+    PERFORM public.activate_paid_subscription(r.couple_space_id, r.plan_id, now());
+  END LOOP;
+END $;
+
+-- Keep status/tier in sync for older clients that only understand
+-- subscription_status. pg_cron is already used elsewhere in LoveNest.
+DO $
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'expire-subscriptions-hourly') THEN
+      PERFORM cron.unschedule('expire-subscriptions-hourly');
+    END IF;
+
+    PERFORM cron.schedule(
+      'expire-subscriptions-hourly',
+      '5 * * * *',
+      'SELECT public.expire_due_subscriptions();'
+    );
+  END IF;
+END $;
 
 -- ── Manual payment normalization ───────────────────────────────────────────
 -- Any authenticated browser insert is treated as a manual request. The user
@@ -316,7 +462,6 @@ DECLARE
   v_stored_plan_id  UUID;
   v_plan_name       TEXT;
   v_final_plan_id   UUID;
-  v_final_tier      INT;
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'not authorized';
@@ -333,15 +478,10 @@ BEGIN
   END IF;
 
   IF v_stored_plan_id IS NOT NULL THEN
-    SELECT id, tier_level
-    INTO v_final_plan_id, v_final_tier
-    FROM public.subscription_plans
-    WHERE id = v_stored_plan_id
-    LIMIT 1;
+    v_final_plan_id := v_stored_plan_id;
   ELSE
-    -- Legacy row fallback.
-    SELECT id, tier_level
-    INTO v_final_plan_id, v_final_tier
+    SELECT id
+    INTO v_final_plan_id
     FROM public.subscription_plans
     WHERE lower(name) = lower(v_plan_name)
     ORDER BY created_at DESC
@@ -352,11 +492,7 @@ BEGIN
     RAISE EXCEPTION 'payment plan not found';
   END IF;
 
-  UPDATE public.couple_spaces
-  SET subscription_status = 'active',
-      plan_id              = v_final_plan_id,
-      tier_level           = COALESCE(v_final_tier, 0)
-  WHERE id = v_couple_space_id;
+  PERFORM public.activate_paid_subscription(v_couple_space_id, v_final_plan_id, now());
 
   UPDATE public.payments
   SET status = 'approved', updated_at = now()
@@ -366,6 +502,59 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_approve_payment(UUID, UUID, INT) TO authenticated;
+
+
+-- Admin plan assignment follows the same duration rules as paid activation.
+CREATE OR REPLACE FUNCTION public.admin_assign_plan(
+  p_couple_space_id UUID,
+  p_plan_id UUID,
+  p_tier_level INT,
+  p_trial_days INT DEFAULT 0
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+
+  PERFORM public.activate_paid_subscription(p_couple_space_id, p_plan_id, now());
+
+  IF p_trial_days > 0 THEN
+    UPDATE public.couple_spaces
+    SET trial_started_at = now(),
+        trial_ends_at = now() + make_interval(days => p_trial_days),
+        trial_used = true
+    WHERE id = p_couple_space_id;
+  END IF;
+END;
+$;
+GRANT EXECUTE ON FUNCTION public.admin_assign_plan(UUID, UUID, INT, INT) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_remove_plan(p_couple_space_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+
+  UPDATE public.couple_spaces
+  SET subscription_status = 'inactive',
+      plan_id = NULL,
+      tier_level = 0,
+      subscription_started_at = NULL,
+      subscription_ends_at = NULL
+  WHERE id = p_couple_space_id;
+END;
+$;
+GRANT EXECUTE ON FUNCTION public.admin_remove_plan(UUID) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
