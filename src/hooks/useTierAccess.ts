@@ -26,7 +26,7 @@ export function useTierAccess(featureId: string) {
 
         const { data: house } = await supabase
           .from("couple_spaces")
-          .select("subscription_status, trial_used, trial_ends_at, tier_level")
+          .select("*")
           .eq("id", member.couple_space_id)
           .maybeSingle();
         if (!house) { setAllowed(false); setLoading(false); return; }
