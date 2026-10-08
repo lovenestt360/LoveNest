@@ -421,32 +421,33 @@ export default function Settings() {
     }
   };
 
-  const toggleNotif = (key: string) => {
-    setNotifPrefs((prev) => {
-      const newEnabled = !prev[key];
-      const next = { ...prev, [key]: newEnabled };
-      cacheNotificationPrefs(next);
+  const toggleNotif = async (key: string) => {
+    const previous = notifPrefs;
+    const newEnabled = !(previous[key] ?? true);
+    const next = { ...previous, [key]: newEnabled };
 
-      if (user) {
-        supabase.from("notification_settings" as any).upsert({
-          user_id: user.id,
-          category: key,
-          enabled: newEnabled,
-          preferred_hour: 10,
-        }, { onConflict: "user_id,category" }).then(({ error }: any) => {
-          if (error) {
-            console.error("notification preference sync:", error);
-            toast({
-              title: "Não foi possível guardar a preferência",
-              description: "Tenta novamente dentro de alguns instantes.",
-              variant: "destructive",
-            });
-          }
-        });
-      }
+    setNotifPrefs(next);
+    cacheNotificationPrefs(next);
 
-      return next;
-    });
+    if (!user) return;
+
+    const { error } = await supabase.from("notification_settings" as any).upsert({
+      user_id: user.id,
+      category: key,
+      enabled: newEnabled,
+      preferred_hour: 10,
+    }, { onConflict: "user_id,category" });
+
+    if (error) {
+      setNotifPrefs(previous);
+      cacheNotificationPrefs(previous);
+      console.error("notification preference sync:", error);
+      toast({
+        title: "Não foi possível guardar a preferência",
+        description: "A alteração foi revertida. Tenta novamente dentro de alguns instantes.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEnablePush = async () => {
