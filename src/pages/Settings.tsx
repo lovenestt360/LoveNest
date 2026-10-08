@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTierAccess } from "@/hooks/useTierAccess";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -21,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles, Globe, Users, MapPin } from "lucide-react";
+import { Loader2, LogOut, Download, Camera, Bell, BellOff, Image as ImageIcon, Trash2, ChevronLeft, User, Heart, Palette, Shield, ShieldCheck, Moon, Sun, Monitor, Copy, Sparkles, Globe, Users, MapPin, CreditCard } from "lucide-react";
 import { useLocationSharing } from "@/hooks/useLocationSharing";
 import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
@@ -116,6 +117,7 @@ function LocationToggleRow() {
 }
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { toast } = useToast();
@@ -710,6 +712,21 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/subscricao")}
+            className="mb-4 flex w-full items-center gap-4 rounded-[1.35rem] border border-rose-200/70 bg-rose-50/65 p-4 text-left transition active:scale-[0.99] dark:border-rose-900/30 dark:bg-rose-950/20"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-rose-500 shadow-sm dark:bg-card">
+              <CreditCard className="h-5 w-5" strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">Plano e subscrição</p>
+              <p className="text-[11px] text-muted-foreground">Ver plano atual, preços e renovação</p>
+            </div>
+            <ChevronLeft className="h-4 w-4 shrink-0 rotate-180 text-muted-foreground/60" strokeWidth={1.5} />
+          </button>
 
           {/* Menu items */}
           <div className="space-y-2">
