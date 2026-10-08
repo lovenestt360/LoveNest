@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   CalendarHeart,
@@ -14,7 +14,7 @@ import { useProfile } from "@/hooks/useProfile";
 type Tab = {
   to: string;
   label: string;
-  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   active: (pathname: string) => boolean;
   badge?: number;
 };
