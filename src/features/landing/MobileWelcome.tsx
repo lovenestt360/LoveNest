@@ -87,7 +87,7 @@ export function MobileWelcome({ onExplore }: { onExplore: () => void }) {
           <button
             type="button"
             onClick={login}
-            className="h-13 w-full rounded-[1.25rem] border border-slate-200/80 bg-white/70 py-3.5 text-[14px] font-bold text-[#0B1324] backdrop-blur active:scale-[0.985]"
+            className="h-[52px] w-full rounded-[1.25rem] border border-slate-200/80 bg-white/70 py-3.5 text-[14px] font-bold text-[#0B1324] backdrop-blur active:scale-[0.985]"
           >
             Já tenho conta
           </button>
