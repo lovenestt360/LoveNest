@@ -1,401 +1,382 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useReducedMotion } from "framer-motion";
-
-function useMediaQuery(query: string): boolean {
-  const [m, setM] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(query).matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const h = (e: MediaQueryListEvent) => setM(e.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, [query]);
-  return m;
-}
-import { ArrowRight, Flame } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  ArrowRight,
+  CalendarHeart,
+  Camera,
+  Heart,
+  LockKeyhole,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { LogoMark } from "@/components/Logo";
-import { LandingNav } from "@/features/landing/LandingNav";
-import { HeroScene } from "@/features/landing/HeroScene";
-import { GesturesScene } from "@/features/landing/GesturesScene";
-import { DistanceScene } from "@/features/landing/DistanceScene";
-import { MemoriesScene } from "@/features/landing/MemoriesScene";
-import { FlameScene } from "@/features/landing/FlameScene";
+import { MobileWelcome } from "@/features/landing/MobileWelcome";
+import { LandingProductPreview } from "@/features/landing/LandingProductPreview";
 
-const PINK = "#E0637A";
-const NAVY = "#0B1324";
-
-// ── Reveal (used by FinalCTA) ─────────────────────────────────────────────────
-
-function useReveal(threshold = 0.14) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
-
-function Reveal({ children, reduced = false }: {
-  children: React.ReactNode; reduced?: boolean;
-}) {
-  const { ref, visible } = useReveal();
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: (visible || reduced) ? "none" : "translate(0px, 24px)",
-        transition: reduced
-          ? "opacity 300ms ease"
-          : "opacity 900ms cubic-bezier(0.16,1,0.3,1), transform 900ms cubic-bezier(0.16,1,0.3,1)",
-      }}
-    >
-      {children}
-    </div>
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches,
   );
-}
 
-// ── Scene scroll progress (used by ManifestoScene) ───────────────────────────
-
-function useSectionProgress(outerRef: React.RefObject<HTMLDivElement>) {
-  const [progress, setProgress] = useState(0);
   useEffect(() => {
-    let raf: number;
-    const update = () => {
-      const el = outerRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const scrollable = el.offsetHeight - window.innerHeight;
-      if (scrollable <= 0) { setProgress(0); return; }
-      setProgress(Math.max(0, Math.min(1, -rect.top / scrollable)));
-    };
-    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    update();
-    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
-  }, []);
-  return progress;
+    const media = window.matchMedia(query);
+    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches);
+    setMatches(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [query]);
+
+  return matches;
 }
 
-// ── Scene placeholders (Cenas 03–05) ─────────────────────────────────────────
+const pillars = [
+  {
+    icon: Heart,
+    eyebrow: "Presença",
+    title: "Um pouco, todos os dias.",
+    copy: "Check-ins, pequenos gestos e a vossa chama transformam presença em hábito — sem pressão.",
+  },
+  {
+    icon: MessageCircle,
+    eyebrow: "Ligação",
+    title: "Conversem num espaço só vosso.",
+    copy: "Chat, humor e momentos importantes juntos, longe do ruído das redes sociais.",
+  },
+  {
+    icon: Camera,
+    eyebrow: "História",
+    title: "O que vivem não se perde.",
+    copy: "Memórias, datas, cápsulas e capítulos da relação ficam organizados para vocês revisitarem.",
+  },
+] as const;
 
-function ScenePlaceholder({ number, title }: { number: string; title: string }) {
-  return (
-    <div style={{
-      background: NAVY,
-      borderTop: "1px solid rgba(255,255,255,0.05)",
-      padding: "52px 7%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-      gap: 12,
-    }}>
-      <div>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}40`, margin: "0 0 6px" }}>
-          Cena {number}
-        </p>
-        <p style={{ fontSize: "clamp(18px, 2.2vw, 26px)", fontWeight: 800, color: "rgba(255,255,255,0.10)", margin: 0, letterSpacing: "-0.02em" }}>
-          {title}
-        </p>
-      </div>
-      <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.07)", margin: 0 }}>
-        Em construção
-      </p>
-    </div>
-  );
-}
+const trust = [
+  "Espaço privado para o casal",
+  "Sem publicidade dentro da experiência",
+  "Vocês escolhem o que partilhar",
+] as const;
 
-// ── Cena 05.5 — Momento Interativo ────────────────────────────────────────────
-
-function FlameInteractive({ reduced }: { reduced: boolean }) {
-  const progressRef = useRef(0);
-  const [displayProgress, setDisplayProgress] = useState(0);
-  const [done, setDone] = useState(false);
-  const pressing = useRef(false);
-  const rafId = useRef(0);
-  const DURATION = 1500;
-
-  useEffect(() => () => { cancelAnimationFrame(rafId.current); }, []);
-
-  const updateProgress = (v: number) => {
-    progressRef.current = v;
-    setDisplayProgress(v);
-  };
-
-  const startHold = () => {
-    if (done) return;
-    pressing.current = true;
-    const started = performance.now() - progressRef.current * DURATION;
-    const tick = (now: number) => {
-      if (!pressing.current) return;
-      const p = Math.min(1, (now - started) / DURATION);
-      updateProgress(p);
-      if (p >= 1) { pressing.current = false; setDone(true); }
-      else rafId.current = requestAnimationFrame(tick);
-    };
-    rafId.current = requestAnimationFrame(tick);
-  };
-
-  const endHold = () => {
-    if (!pressing.current) return;
-    pressing.current = false;
-    cancelAnimationFrame(rafId.current);
-    const startP = progressRef.current;
-    if (startP <= 0) return;
-    const t0 = performance.now();
-    const ease = (now: number) => {
-      const t = Math.min(1, (now - t0) / 700);
-      const p = startP * (1 - t * t);
-      updateProgress(Math.max(0, p));
-      if (p > 0.002) rafId.current = requestAnimationFrame(ease);
-      else updateProgress(0);
-    };
-    rafId.current = requestAnimationFrame(ease);
-  };
-
-  const RADIUS = 36;
-  const CIRC = 2 * Math.PI * RADIUS;
-  const glowAlpha = done ? 0.22 : displayProgress * 0.18;
+function DesktopNav() {
+  const navigate = useNavigate();
 
   return (
-    <section
-      style={{
-        background: NAVY, padding: "80px 7%", textAlign: "center",
-        position: "relative", overflow: "hidden",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-      }}
-      aria-label="O vosso ritual"
-    >
-      <div aria-hidden style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${PINK} 0%, transparent 70%)`,
-        opacity: glowAlpha,
-        transition: done ? "opacity 600ms ease" : "none",
-      }} />
-      <p style={{
-        fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
-        textTransform: "uppercase", color: `${PINK}88`,
-        marginBottom: 40, marginTop: 0, position: "relative",
-      }}>
-        O vosso ritual
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, position: "relative" }}>
-        <div style={{ position: "relative", width: 96, height: 96, userSelect: "none" }}>
-          <svg
-            style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}
-            width="96" height="96" viewBox="0 0 96 96"
-            aria-hidden
-          >
-            <circle cx="48" cy="48" r={RADIUS} fill="none" stroke={`${PINK}28`} strokeWidth="3" />
-            <circle
-              cx="48" cy="48" r={RADIUS}
-              fill="none" stroke={PINK} strokeWidth="3"
-              strokeDasharray={CIRC}
-              strokeDashoffset={CIRC * (1 - displayProgress)}
-              strokeLinecap="round"
-            />
-          </svg>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-900/[0.05] bg-[#FBF9F7]/85 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="flex items-center gap-2.5"
+          aria-label="LoveNest — início"
+        >
+          <LogoMark size={30} />
+          <span className="text-[16px] font-extrabold tracking-[-0.025em] text-[#0B1324]">LoveNest</span>
+        </button>
+
+        <div className="flex items-center gap-2">
           <button
-            onPointerDown={reduced ? () => setDone(true) : startHold}
-            onPointerUp={reduced ? undefined : endHold}
-            onPointerLeave={reduced ? undefined : endHold}
-            onContextMenu={(e) => e.preventDefault()}
-            aria-label={done ? "Chama acesa" : "Manter pressionado para acender a chama"}
-            style={{
-              position: "absolute", inset: 8, borderRadius: "50%", border: "none",
-              background: `rgba(224,99,122,${done ? 0.24 : 0.06 + displayProgress * 0.18})`,
-              cursor: done ? "default" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              touchAction: "none",
-              WebkitUserSelect: "none",
-              transition: "background 200ms ease",
-            } as React.CSSProperties}
+            type="button"
+            onClick={() => navigate("/entrar?returning=1")}
+            className="rounded-full px-4 py-2.5 text-[13px] font-bold text-slate-600 transition hover:bg-white"
           >
-            <Flame
-              style={{
-                width: 28, height: 28,
-                color: done ? PINK : `rgba(224,99,122,${0.35 + displayProgress * 0.65})`,
-                transition: "color 200ms ease",
-              }}
-              strokeWidth={1.5}
-            />
+            Entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/inicio")}
+            className="rounded-full bg-[#0B1324] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_10px_25px_rgba(11,19,36,0.12)] transition hover:-translate-y-0.5"
+          >
+            Criar LoveNest
           </button>
         </div>
-        <p style={{
-          fontSize: 14, fontWeight: 600, margin: 0, letterSpacing: "-0.01em",
-          color: done ? PINK : "rgba(255,255,255,0.40)",
-          transition: "color 400ms ease",
-        }}>
-          {done ? "A chama está acesa." : "Manter pressionado"}
-        </p>
-        <p style={{
-          fontSize: 13, color: "rgba(255,255,255,0.50)", margin: 0,
-          maxWidth: "28ch", lineHeight: 1.6,
-          opacity: done ? 1 : 0,
-          transform: done ? "none" : "translateY(8px)",
-          transition: "opacity 600ms ease, transform 600ms ease",
-        }}>
-          Pequenos gestos mantêm o que importa aceso.
-        </p>
       </div>
-    </section>
+    </header>
   );
 }
-
-// ── Cena 06 — Manifesto ───────────────────────────────────────────────────────
-
-const MANIFESTO_TEXT = "O amor não precisa de grandes gestos para ser real. Precisa de aparecer. Todos os dias. Em pequenos momentos que, somados, se tornam a história de vocês.";
-
-function ManifestoScene({ reduced }: { reduced: boolean | null }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const progress = useSectionProgress(outerRef);
-  const isMob = useMediaQuery("(max-width: 767px)");
-  const words = MANIFESTO_TEXT.split(" ");
-
-  if (isMob) {
-    return (
-      <section style={{ background: NAVY, padding: "72px 7%", position: "relative", overflow: "hidden" }}>
-        <div aria-hidden style={{ position: "absolute", top: "20%", right: "-8%", width: 260, height: 260, borderRadius: "50%", background: `${PINK}16`, filter: "blur(70px)", pointerEvents: "none" }} />
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}88`, marginBottom: 24, marginTop: 0, position: "relative" }}>
-          Manifesto
-        </p>
-        <p style={{ fontSize: "clamp(18px, 5.5vw, 26px)", fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: 0, color: "white", position: "relative", fontFamily: "'Fraunces', Georgia, serif" }}>
-          {MANIFESTO_TEXT}
-        </p>
-      </section>
-    );
-  }
-
-  return (
-    <div ref={outerRef} style={{ height: "200vh" }}>
-      <div style={{ position: "sticky", top: 0, height: "100vh", background: NAVY, display: "flex", alignItems: "center", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "25%", right: "-8%", width: 440, height: 440, borderRadius: "50%", background: `${PINK}16`, filter: "blur(90px)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "20%", left: "-5%", width: 300, height: 300, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(70px)", pointerEvents: "none" }} />
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 7%", width: "100%" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: `${PINK}88`, marginBottom: 36, marginTop: 0 }}>
-            Manifesto
-          </p>
-          <p style={{ fontSize: "clamp(20px, 3.6vw, 46px)", fontWeight: 800, lineHeight: 1.38, letterSpacing: "-0.01em", maxWidth: 860, margin: 0, fontFamily: "'Fraunces', Georgia, serif" }}>
-            {words.map((word, i) => {
-              const threshold = (i / (words.length - 1)) * 0.9;
-              const lit = reduced || progress > threshold;
-              return (
-                <span key={i} style={{ color: lit ? "white" : "rgba(255,255,255,0.1)", transition: "color 0.35s ease" }}>
-                  {word}{" "}
-                </span>
-              );
-            })}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Landing ───────────────────────────────────────────────────────────────────
 
 export default function Landing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const reduced = useReducedMotion();
-  const isMob = useMediaQuery("(max-width: 767px)");
-  const [activeBtn, setActiveBtn] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const reducedMotion = useReducedMotion();
+  const [showMarketingOnMobile, setShowMarketingOnMobile] = useState(false);
 
   useEffect(() => {
-    const ref = searchParams.get("ref");
-    if (ref) {
-      sessionStorage.setItem("lovenest_ref", ref.toUpperCase());
-      localStorage.setItem("lovenest_ref", ref.toUpperCase());
-    }
+    const referral = searchParams.get("ref");
+    if (!referral) return;
+    const normalized = referral.toUpperCase();
+    sessionStorage.setItem("lovenest_ref", normalized);
+    localStorage.setItem("lovenest_ref", normalized);
   }, [searchParams]);
 
-  const btn = (id: string): React.CSSProperties => ({
-    background: PINK,
-    boxShadow: activeBtn === id ? `0 14px 40px ${PINK}55` : `0 4px 20px ${PINK}44`,
-    transform: activeBtn === id ? "translateY(-2px)" : "none",
-    transition: "box-shadow 200ms ease, transform 200ms ease",
-  });
+  if (isMobile && !showMarketingOnMobile) {
+    return <MobileWelcome onExplore={() => setShowMarketingOnMobile(true)} />;
+  }
+
+  const fadeUp = {
+    initial: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.22 },
+    transition: { duration: reducedMotion ? 0 : 0.6, ease: [0.16, 1, 0.3, 1] as const },
+  };
 
   return (
-    <div style={{ minHeight: "100vh", background: NAVY, overflowX: "hidden" }}>
-      {/* Skip link — acessibilidade */}
-      <a href="#main" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0, left: 0, top: 0 }}>Saltar para o conteúdo</a>
+    <div className="min-h-screen overflow-x-hidden bg-[#FBF9F7] text-[#0B1324]">
+      {!isMobile ? (
+        <DesktopNav />
+      ) : (
+        <header className="sticky top-0 z-50 border-b border-slate-900/[0.05] bg-[#FBF9F7]/90 px-5 py-3 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-md items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowMarketingOnMobile(false)}
+              className="flex items-center gap-2"
+            >
+              <LogoMark size={27} />
+              <span className="text-sm font-extrabold tracking-tight">LoveNest</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/entrar?returning=1")}
+              className="rounded-full px-3 py-2 text-xs font-bold text-slate-500"
+            >
+              Entrar
+            </button>
+          </div>
+        </header>
+      )}
 
-      {/* Fixed nav — flutua sobre todas as cenas */}
-      <LandingNav />
+      <main>
+        <section className="relative overflow-hidden pt-10 md:pt-16 lg:pt-24">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-32 top-12 h-[440px] w-[440px] rounded-full bg-rose-200/45 blur-[120px]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-36 bottom-0 h-[360px] w-[360px] rounded-full bg-indigo-100/70 blur-[110px]"
+          />
 
-      <main id="main" tabIndex={-1} style={{ outline: "none" }}>
-      {/* ══ CENA 01 — HERO ══ */}
-      <HeroScene />
+          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-8 md:min-h-[720px] md:grid-cols-[1.02fr_0.98fr] md:px-8 md:pb-24 lg:gap-8">
+            <motion.div
+              initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.65, ease: [0.16, 1, 0.3, 1] }}
+              className="mx-auto max-w-xl text-center md:mx-0 md:text-left"
+            >
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-rose-200/70 bg-white/70 px-3.5 py-2 text-[11px] font-bold text-rose-500 shadow-sm backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                Feito para a vida real a dois
+              </div>
 
-      {/* ══ CENA 02 — PEQUENOS GESTOS ══ */}
-      <GesturesScene />
+              <h1 className="text-[44px] font-black leading-[0.98] tracking-[-0.055em] text-[#0B1324] sm:text-[54px] lg:text-[72px]">
+                O vosso espaço.
+                <span className="block text-rose-500">Todos os dias.</span>
+              </h1>
 
-      {/* ══ CENA 03 — MESMO LONGE ══ */}
-      <DistanceScene />
-
-      {/* ══ CENA 04 — MEMÓRIAS ══ */}
-      <MemoriesScene />
-
-      {/* ══ CENA 05 — A VOSSA CHAMA ══ */}
-      <FlameScene />
-
-      {/* ══ CENA 05.5 — RITUAL INTERATIVO ══ */}
-      <FlameInteractive reduced={!!reduced} />
-
-      {/* ══ CENA 06 — MANIFESTO ══ */}
-      <ManifestoScene reduced={reduced} />
-
-      {/* ══ CENA 07 — CTA FINAL ══ */}
-      <section style={{ background: NAVY, position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ position: "absolute", top: "30%", right: "-5%", width: 500, height: 500, borderRadius: "50%", background: `${PINK}1a`, filter: "blur(100px)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "10%", left: "-8%", width: 350, height: 350, borderRadius: "50%", background: "rgba(77,124,254,0.09)", filter: "blur(80px)", pointerEvents: "none" }} />
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMob ? "72px 24px" : "100px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
-          <Reveal reduced={!!reduced}>
-            <div>
-              <h2 style={{ fontSize: "clamp(30px, 5vw, 68px)", fontWeight: 900, color: "white", lineHeight: 1.04, letterSpacing: "-0.03em", marginTop: 0, marginBottom: 20, fontFamily: "'Fraunces', Georgia, serif" }}>
-                O vosso ninho<br />espera por vocês.
-              </h2>
-              <p style={{ fontSize: 15, color: "rgba(255,255,255,0.60)", marginBottom: 44, maxWidth: 260, marginLeft: "auto", marginRight: "auto" }}>
-                Criem o vosso espaço e comecem a construir a vossa história juntos.
+              <p className="mx-auto mt-6 max-w-[520px] text-[16px] leading-7 text-slate-500 md:mx-0 md:text-[18px]">
+                LoveNest junta presença, conversa, memórias e vida a dois num lugar privado —
+                sem transformar a relação numa lista de tarefas.
               </p>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row md:justify-start">
                 <button
+                  type="button"
                   onClick={() => navigate("/inicio")}
-                  onMouseEnter={() => setActiveBtn("cta")}
-                  onMouseLeave={() => setActiveBtn(null)}
-                  style={{ height: 56, padding: "0 40px", borderRadius: 18, color: "white", fontWeight: 700, fontSize: 16, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, ...btn("cta") }}
+                  className="flex h-14 items-center justify-center gap-2 rounded-[1.15rem] bg-[#0B1324] px-7 text-[14px] font-bold text-white shadow-[0_16px_35px_rgba(11,19,36,0.16)] transition hover:-translate-y-0.5 active:scale-[0.985]"
                 >
                   Criar o nosso espaço
-                  <ArrowRight style={{ width: 16, height: 16 }} strokeWidth={2.5} />
+                  <ArrowRight className="h-4 w-4" strokeWidth={2} />
                 </button>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", margin: 0 }}>Grátis · Privado · Sem publicidade</p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/entrar?returning=1")}
+                  className="h-14 rounded-[1.15rem] border border-slate-200 bg-white/70 px-7 text-[14px] font-bold text-[#0B1324] backdrop-blur transition hover:bg-white active:scale-[0.985]"
+                >
+                  Já temos LoveNest
+                </button>
+              </div>
+
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-semibold text-slate-400 md:justify-start">
+                {trust.map((item) => (
+                  <span key={item} className="flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2} />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.97, y: 22 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.75, delay: reducedMotion ? 0 : 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="relative"
+            >
+              <LandingProductPreview />
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="border-y border-slate-900/[0.05] bg-white/55">
+          <div className="mx-auto max-w-7xl px-6 py-20 md:px-8 md:py-28">
+            <motion.div {...fadeUp} className="mx-auto max-w-3xl text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rose-500/80">
+                Menos funções à vista. Mais sentido.
+              </p>
+              <h2 className="mt-4 text-[34px] font-black leading-[1.05] tracking-[-0.04em] md:text-[50px]">
+                Não é uma rede social para casais.
+                <span className="block text-slate-400">É um lugar para vocês.</span>
+              </h2>
+              <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-7 text-slate-500 md:text-[17px]">
+                A tecnologia fica em segundo plano. Na frente ficam os pequenos sinais de presença,
+                os planos que importam e a história que estão a construir.
+              </p>
+            </motion.div>
+
+            <div className="mt-14 grid gap-4 md:grid-cols-3">
+              {pillars.map(({ icon: Icon, eyebrow, title, copy }, index) => (
+                <motion.article
+                  key={title}
+                  {...fadeUp}
+                  transition={{ ...fadeUp.transition, delay: reducedMotion ? 0 : index * 0.06 }}
+                  className="rounded-[1.75rem] border border-slate-900/[0.06] bg-[#FBF9F7] p-6 shadow-[0_16px_45px_rgba(15,23,42,0.04)] md:p-7"
+                >
+                  <div className="mb-7 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
+                    <Icon className="h-5 w-5 text-rose-400" strokeWidth={1.7} />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{eyebrow}</p>
+                  <h3 className="mt-2 text-[21px] font-extrabold tracking-[-0.03em]">{title}</h3>
+                  <p className="mt-3 text-[14px] leading-6 text-slate-500">{copy}</p>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:px-8 md:py-28">
+          <motion.div {...fadeUp}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-500/70">Vida a dois</p>
+            <h2 className="mt-4 max-w-xl text-[34px] font-black leading-[1.06] tracking-[-0.04em] md:text-[48px]">
+              Tudo cabe. Mas nem tudo precisa aparecer ao mesmo tempo.
+            </h2>
+            <p className="mt-5 max-w-xl text-[15px] leading-7 text-slate-500 md:text-[17px]">
+              Humor, planos, ciclo, espiritualidade, localização, biblioteca e memórias continuam disponíveis.
+              O LoveNest aprende a mostrar o que faz sentido para vocês naquele momento.
+            </p>
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              {[
+                [CalendarHeart, "Planos e datas", "O que vem a seguir, sem agenda pesada."],
+                [Camera, "Memórias", "Fotos e capítulos organizados naturalmente."],
+                [MessageCircle, "Conversa", "Um lugar íntimo para manter contacto."],
+                [Sparkles, "Rituais", "Pequenas ações que criam consistência."],
+              ].map(([Icon, title, copy]) => {
+                const IconComponent = Icon as typeof Heart;
+                return (
+                  <div key={title as string} className="flex gap-3 rounded-2xl bg-white/60 p-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900/[0.04]">
+                      <IconComponent className="h-4 w-4 text-slate-500" strokeWidth={1.7} />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold">{title as string}</p>
+                      <p className="mt-1 text-[12px] leading-5 text-slate-400">{copy as string}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          <motion.div {...fadeUp} className="relative">
+            <div className="rounded-[2rem] border border-slate-900/[0.06] bg-[#0B1324] p-7 text-white shadow-[0_30px_70px_rgba(11,19,36,0.18)] md:p-9">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-white/40">Hoje para vocês</p>
+                <LockKeyhole className="h-4 w-4 text-rose-300" strokeWidth={1.8} />
+              </div>
+              <p className="mt-5 text-[27px] font-extrabold leading-tight tracking-[-0.035em]">
+                Duas pessoas. Um espaço. Só o que importa agora.
+              </p>
+              <div className="mt-8 space-y-3">
+                {[
+                  "O teu par partilhou como se sente.",
+                  "Têm um plano para sexta-feira.",
+                  "A vossa chama está protegida hoje.",
+                ].map((text, index) => (
+                  <div key={text} className="flex items-center gap-3 rounded-2xl bg-white/[0.07] px-4 py-3.5">
+                    <div className={index === 0 ? "h-2 w-2 rounded-full bg-rose-300" : index === 1 ? "h-2 w-2 rounded-full bg-indigo-300" : "h-2 w-2 rounded-full bg-orange-300"} />
+                    <span className="text-[13px] font-medium text-white/70">{text}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </Reveal>
-        </div>
-      </section>
+          </motion.div>
+        </section>
 
+        <section className="bg-[#0B1324] text-white">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 md:grid-cols-[0.8fr_1.2fr] md:px-8 md:py-28">
+            <motion.div {...fadeUp}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.08]">
+                <LockKeyhole className="h-5 w-5 text-rose-300" strokeWidth={1.7} />
+              </div>
+              <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-rose-300/80">Privacidade</p>
+              <h2 className="mt-3 text-[34px] font-black leading-[1.05] tracking-[-0.04em] md:text-[46px]">
+                A relação não é conteúdo.
+              </h2>
+            </motion.div>
+
+            <motion.div {...fadeUp} className="max-w-2xl">
+              <p className="text-[16px] leading-8 text-white/60 md:text-[18px]">
+                O LoveNest foi pensado para informação íntima: conversas, humor, memórias,
+                localização e momentos pessoais. O produto deve tratar isso como responsabilidade,
+                não como combustível para publicidade.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-2">
+                {["Privado por defeito", "Controlo do casal", "Sem feed público", "Sem publicidade no espaço"].map((item) => (
+                  <span key={item} className="rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-2 text-[11px] font-semibold text-white/60">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden px-6 py-24 md:py-32">
+          <div
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-200/45 blur-[100px]"
+          />
+          <motion.div {...fadeUp} className="relative mx-auto max-w-3xl text-center">
+            <LogoMark size={42} />
+            <h2 className="mt-6 text-[38px] font-black leading-[1.02] tracking-[-0.045em] md:text-[58px]">
+              Comecem pelos dias comuns.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-7 text-slate-500 md:text-[17px]">
+              Criem o vosso espaço e deixem o LoveNest crescer com a vossa história.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/inicio")}
+              className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-[1.15rem] bg-[#0B1324] px-8 text-[14px] font-bold text-white shadow-[0_16px_35px_rgba(11,19,36,0.16)] transition hover:-translate-y-0.5 active:scale-[0.985]"
+            >
+              Criar o nosso LoveNest
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </motion.div>
+        </section>
       </main>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ background: NAVY, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <LogoMark size={20} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>LoveNest</span>
+      <footer className="border-t border-slate-900/[0.06] px-6 py-7">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <div className="flex items-center gap-2">
+            <LogoMark size={22} />
+            <span className="text-xs font-bold">LoveNest</span>
           </div>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", margin: 0 }}>Um espaço privado para o vosso amor.</p>
+          <p className="text-[10px] font-medium text-slate-400">
+            O amor também vive nos dias comuns.
+          </p>
         </div>
       </footer>
     </div>
