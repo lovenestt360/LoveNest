@@ -74,14 +74,14 @@ export function AuthScaffold({
             <span className="text-[15px] font-extrabold tracking-[-0.02em]">LoveNest</span>
           </header>
 
-          <div className="relative mx-auto flex w-full max-w-[520px] flex-1 flex-col justify-center px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7 sm:px-8 lg:px-10 lg:py-14">
-            <div className="mb-7">
+          <div className="relative mx-auto flex w-full max-w-[520px] flex-1 flex-col justify-start px-5 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] pt-5 sm:px-8 lg:justify-center lg:px-10 lg:py-14">
+            <div className="mb-5">
               {eyebrow && (
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-500/80">
                   {eyebrow}
                 </p>
               )}
-              <h1 className="mt-2 text-[32px] font-black leading-tight tracking-[-0.04em] sm:text-[36px]">
+              <h1 className="mt-2 text-[30px] font-black leading-[1.08] tracking-[-0.04em] sm:text-[36px]">
                 {title}
               </h1>
               <p className="mt-2 max-w-md text-[14px] leading-6 text-slate-500">{subtitle}</p>
