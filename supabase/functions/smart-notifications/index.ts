@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
         if (localHour < 8 || localHour >= 22) continue;
 
         const { data: userSettings } = await sb
-          .from("notification_settings").select("category, enabled, preferred_hour")
+          .from("notification_settings").select("category, enabled")
           .eq("user_id", userId);
 
         const categoryEnabled = (cat: string): boolean => {
@@ -264,16 +264,6 @@ Deno.serve(async (req) => {
           const s = (userSettings || []).find((r: any) => r.category === cat);
           return s?.enabled === true;
         };
-
-        const preferredHour: number | null = (() => {
-          const s = (userSettings || []).find((r: any) => r.preferred_hour != null);
-          return s?.preferred_hour ?? null;
-        })();
-
-        if (preferredHour !== null) {
-          const diff = Math.abs(localHour - preferredHour);
-          if (Math.min(diff, 24 - diff) > 2) continue;
-        }
 
         const todayStart = new Date(now);
         todayStart.setUTCHours(0, 0, 0, 0);
