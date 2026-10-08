@@ -277,11 +277,31 @@ Deno.serve(async (req) => {
           .eq("user_id", userId).maybeSingle();
 
         const tz = (profileData as any)?.timezone || "UTC";
-        const localHour = parseInt(
-          new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hour12: false }).format(now)
-        );
+        const calendar = localCalendarParts(now, tz);
+        const localHour = calendar.hour;
+        const localMinute = calendar.minute;
+        const todayISO = calendar.localDate;
+        const yesterdayISO = calendar.yesterday;
 
         if (localHour < 8 || localHour >= 22) continue;
+
+        const { data: localActivity } = await sb
+          .from("daily_activity")
+          .select("user_id, type")
+          .eq("couple_space_id", spaceId)
+          .eq("activity_date", todayISO);
+
+        const activeUsersToday = new Set((localActivity || []).map((row: any) => row.user_id));
+        const typeMap: Record<string, Set<string>> = {};
+        for (const row of (localActivity || []) as any[]) {
+          if (!typeMap[row.type]) typeMap[row.type] = new Set();
+          typeMap[row.type].add(row.user_id);
+        }
+
+        const missionThreshold = isSolo ? 1 : 2;
+        const missionTypes = isSolo ? ["plano", "checkin", "mood"] : ["message", "checkin", "mood"];
+        const missionsDone = missionTypes.filter((type) => (typeMap[type]?.size ?? 0) >= missionThreshold).length;
+        const isPerfectDay = missionsDone === missionTypes.length;
 
         const { data: userSettings } = await sb
           .from("notification_settings").select("category, enabled")
@@ -362,7 +382,7 @@ Deno.serve(async (req) => {
               if (!rule && fReminders.hora_terminar && fProfile.until_hour) {
                 const [fhStr, fmStr] = (fProfile.until_hour as string).split(":");
                 const fastEndMin = parseInt(fhStr) * 60 + parseInt(fmStr || "0");
-                const nowMin     = localHour * 60 + now.getMinutes();
+                const nowMin     = localHour * 60 + localMinute;
                 const remaining  = fastEndMin - nowMin;
                 if (remaining >= 25 && remaining <= 35 && !(await recentlySent("fasting_hora_terminar"))) {
                   rule = "fasting_hora_terminar";
