@@ -597,7 +597,7 @@ const Index = () => {
           className="flex w-full items-center gap-3 rounded-[1.45rem] border border-border/70 bg-card p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.03)] active:scale-[0.99]"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-950/25">
-            <CalendarHeart className="h-4.5 w-4.5" strokeWidth={1.7} />
+            <CalendarHeart className="h-[18px] w-[18px]" strokeWidth={1.7} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
