@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function OnboardingStepShell({
@@ -18,49 +18,72 @@ export function OnboardingStepShell({
     continueLabel?: string;
 }) {
     return (
-        <div key={step} className="min-h-screen flex flex-col bg-background px-6 pt-6 pb-8 animate-fade-in overflow-hidden">
-            <div className="flex items-center gap-3 mb-8">
-                {onBack ? (
-                    <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                ) : (
-                    <div className="w-9" />
-                )}
-                <div className="flex-1 flex items-center gap-1.5">
-                    {Array.from({ length: total }).map((_, i) => (
-                        <div
-                            key={i}
-                            className={cn(
-                                "h-1.5 flex-1 rounded-full transition-colors",
-                                i < step ? "bg-rose-500" : "bg-muted"
-                            )}
-                        />
-                    ))}
-                </div>
-                <span className="text-[11px] font-bold text-muted-foreground shrink-0 tabular-nums">{step} de {total}</span>
-            </div>
+        <main
+            key={step}
+            className="relative min-h-[100dvh] overflow-hidden bg-[#F8F5F4] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+1rem)] text-[#0B1324] animate-fade-in"
+        >
+            <div aria-hidden className="pointer-events-none absolute -right-28 -top-20 h-72 w-72 rounded-full bg-rose-100/55 blur-3xl" />
 
-            <div className="flex-1 flex flex-col items-center text-center justify-center animate-slide-up">
-                {icon && (
-                    <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mb-5">
-                        {icon}
+            <div className="relative mx-auto flex min-h-[calc(100dvh-2.25rem)] w-full max-w-md flex-col">
+                <header className="flex items-center gap-3">
+                    {onBack ? (
+                        <button
+                            type="button"
+                            onClick={onBack}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/70 bg-white/65 text-slate-500 transition active:scale-95"
+                            aria-label="Voltar"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                        </button>
+                    ) : (
+                        <div className="h-10 w-10 shrink-0" />
+                    )}
+
+                    <div className="flex flex-1 items-center gap-1.5">
+                        {Array.from({ length: total }).map((_, index) => (
+                            <div
+                                key={index}
+                                className={cn(
+                                    "h-1 flex-1 rounded-full transition-colors duration-300",
+                                    index < step ? "bg-rose-400" : "bg-slate-200/80",
+                                )}
+                            />
+                        ))}
                     </div>
-                )}
-                <h1 className="text-2xl font-black tracking-tight text-foreground">{title}</h1>
-                {subtitle && <p className="text-[14px] text-muted-foreground mt-2 max-w-xs">{subtitle}</p>}
 
-                {children && <div className="w-full max-w-sm mt-8">{children}</div>}
+                    <span className="w-10 shrink-0 text-right text-[10px] font-bold tabular-nums text-slate-400">
+                        {step}/{total}
+                    </span>
+                </header>
+
+                <section className="flex flex-1 flex-col items-center justify-center py-8 text-center animate-slide-up">
+                    {icon && (
+                        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-white/70 bg-white/70 shadow-[0_12px_35px_rgba(15,23,42,0.05)]">
+                            {icon}
+                        </div>
+                    )}
+
+                    <h1 className="max-w-sm text-[30px] font-black leading-[1.08] tracking-[-0.04em]">{title}</h1>
+
+                    {subtitle && (
+                        <p className="mt-3 max-w-[330px] text-[14px] leading-6 text-slate-500">
+                            {subtitle}
+                        </p>
+                    )}
+
+                    {children && <div className="mt-8 w-full max-w-sm">{children}</div>}
+                </section>
+
+                <button
+                    type="button"
+                    onClick={onContinue}
+                    disabled={continueDisabled}
+                    className="flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-[1.2rem] bg-[#0B1324] text-[14px] font-bold text-white shadow-[0_14px_35px_rgba(11,19,36,0.14)] transition active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35"
+                >
+                    {continueLabel}
+                    <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                </button>
             </div>
-
-            <button
-                type="button"
-                onClick={onContinue}
-                disabled={continueDisabled}
-                className="w-full h-14 rounded-2xl font-bold text-[15px] bg-rose-500 hover:bg-rose-600 disabled:opacity-40 disabled:pointer-events-none text-white shadow-lg active:scale-[0.98] transition-all shrink-0"
-            >
-                {continueLabel}
-            </button>
-        </div>
+        </main>
     );
 }
