@@ -80,7 +80,7 @@ export function AppShell() {
 
       <main className={cn(
         "mx-auto w-full max-w-md relative z-10",
-        isFullscreen ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-6"
+        isFullscreen ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-[calc(env(safe-area-inset-top)+1.5rem)]"
       )}>
         {/*
           ── KEEP-ALIVE DA HOME ───────────────────────────────────────────
