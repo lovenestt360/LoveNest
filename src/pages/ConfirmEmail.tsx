@@ -1,35 +1,36 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AuthScaffold } from "@/features/auth/AuthScaffold";
 
 export default function ConfirmEmail() {
-  const email   = localStorage.getItem("confirm_email") || "";
+  const email = localStorage.getItem("confirm_email") || "";
   const navigate = useNavigate();
   const { toast } = useToast();
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
 
-  // If user somehow already has a session (clicked the link), redirect to app
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate("/casa", { replace: true });
     });
 
-    // Also listen for auth state changes (link clicked in same browser tab)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         localStorage.removeItem("confirm_email");
         navigate("/casa", { replace: true });
       }
     });
+
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleResend = async () => {
     if (!email) return;
     setResending(true);
+
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
@@ -38,68 +39,74 @@ export default function ConfirmEmail() {
       });
       if (error) throw error;
       setResent(true);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro", description: err.message });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Não foi possível reenviar", description: error.message });
     } finally {
       setResending(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-      {/* Ambient glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-
-      <div className="relative z-10 w-full max-w-[300px] text-center space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-
-        {/* Icon */}
-        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900 flex items-center justify-center mx-auto">
-          <Mail className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
+    <AuthScaffold
+      eyebrow="Só falta confirmar"
+      title="Vê o teu email."
+      subtitle="O link de confirmação protege a conta antes de entrares no vosso espaço."
+    >
+      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/80 p-6 text-center shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-400">
+          <Mail className="h-5 w-5" strokeWidth={1.7} />
         </div>
 
-        {/* Text */}
-        <div className="space-y-3">
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-            Verifica o teu email.
-          </h1>
-          <p className="text-[14px] text-muted-foreground leading-relaxed">
-            Enviámos um link de confirmação para{" "}
-            {email && <span className="font-semibold text-foreground">{email}</span>}.
-            Clica no link para activares a tua conta.
+        <p className="mx-auto mt-5 max-w-sm text-[13px] leading-6 text-slate-500">
+          Enviámos um link para{" "}
+          {email ? (
+            <span className="font-bold text-slate-700">{email}</span>
+          ) : (
+            "o email usado no registo"
+          )}.
+        </p>
+
+        <div className="mt-5 flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" strokeWidth={1.8} />
+          <p className="text-[11px] leading-5 text-slate-500">
+            Depois de confirmares, volta ao LoveNest. Se o link abrir neste dispositivo, a entrada pode acontecer automaticamente.
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => navigate("/entrar?returning=1")}
+          className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] active:scale-[0.99]"
+        >
+          Já confirmei
+          <ArrowRight className="h-4 w-4" />
+        </button>
+
+        {!resent ? (
           <button
-            onClick={() => navigate("/entrar")}
-            className="w-full h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
+            type="button"
+            onClick={handleResend}
+            disabled={resending || !email}
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[11px] font-bold text-slate-400 transition hover:text-slate-600 disabled:opacity-40"
           >
-            Já confirmei — Entrar
-            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+            {resending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Reenviar email
           </button>
-
-          {!resent ? (
-            <button
-              onClick={handleResend}
-              disabled={resending}
-              className="w-full h-11 rounded-2xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
-            >
-              {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Reenviar email de confirmação
-            </button>
-          ) : (
-            <p className="text-[12px] text-rose-400 font-medium">
-              Email reenviado. Verifica a caixa de entrada.
-            </p>
-          )}
-        </div>
-
-        {/* Help text */}
-        <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
-          Não encontras o email? Verifica a pasta de spam ou tenta com outro endereço.
-        </p>
+        ) : (
+          <p className="mt-4 text-[11px] font-semibold text-emerald-600">
+            Email reenviado. Verifica também a pasta de spam.
+          </p>
+        )}
       </div>
-    </div>
+
+      <button
+        type="button"
+        onClick={() => navigate("/landing")}
+        className="mx-auto mt-5 flex items-center gap-1.5 text-[11px] font-bold text-slate-400"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Voltar ao início
+      </button>
+    </AuthScaffold>
   );
 }
