@@ -154,9 +154,11 @@ BEGIN
   FOR r IN
     SELECT cs.id AS couple_space_id, cs.plan_id
     FROM public.couple_spaces cs
+    JOIN public.subscription_plans sp ON sp.id = cs.plan_id
     WHERE cs.subscription_status = 'active'
       AND cs.plan_id IS NOT NULL
       AND cs.subscription_started_at IS NULL
+      AND sp.is_active = true
   LOOP
     PERFORM public.activate_paid_subscription(r.couple_space_id, r.plan_id, now());
   END LOOP;
