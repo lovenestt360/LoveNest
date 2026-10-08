@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useTimeTogether } from "@/hooks/useTimeTogether";
+import { todayLocal } from "@/lib/timezone";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
@@ -82,7 +83,7 @@ function usePlanoStats() {
 function useMoodToday() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = todayLocal();
 
   const { data } = useQuery({
     queryKey: ["mood-today", spaceId, user?.id, today],
@@ -119,7 +120,7 @@ function useMessagePreview() {
   const spaceId = useCoupleSpaceId();
 
   const { data } = useQuery({
-    queryKey: ["message-preview", spaceId],
+    queryKey: ["message-preview", spaceId, user?.id],
     enabled: !!spaceId,
     staleTime: 30_000,
     queryFn: async () => {
@@ -515,7 +516,7 @@ const Index = () => {
         </section>
       )}
 
-      {profileReady && !isSolo && !avatars.partner && houseInviteCode ? (
+      {profileReady && !avatars.loading && !isSolo && !avatars.partner && houseInviteCode ? (
         <section className="rounded-[1.6rem] border border-rose-200/70 bg-gradient-to-br from-rose-50 to-white p-5 shadow-[0_12px_35px_rgba(244,63,94,0.06)] dark:border-rose-900/30 dark:from-rose-950/20 dark:to-card">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-500 dark:bg-rose-950/40">
