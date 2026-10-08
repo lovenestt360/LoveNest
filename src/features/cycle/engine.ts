@@ -76,7 +76,7 @@ const DEFAULTS = {
   periodLength: 5,
   lutealLength: 14,
   pmsDays: 5,
-} as const;
+};
 
 const PHASE_LABELS: Record<CyclePhase, string> = {
   menstrual: "Menstruação",

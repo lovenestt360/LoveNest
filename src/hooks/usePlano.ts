@@ -49,7 +49,7 @@ export function usePlano() {
     if (error) {
       console.error("Error fetching plano items:", error);
     } else {
-      setItems(data || []);
+      setItems((data || []) as PlanoItem[]);
     }
     setLoading(false);
   }, [spaceId]);

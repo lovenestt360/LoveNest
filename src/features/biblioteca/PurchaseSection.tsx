@@ -26,7 +26,7 @@ export function PurchaseSection({ book, coupleSpaceId, existingPurchaseId, admin
     useEffect(() => {
         let active = true;
         (async () => {
-            const { data } = await supabase.from("payment_settings" as any).select("*").limit(1).maybeSingle();
+            const { data } = await supabase.from("payment_settings").select("*").limit(1).maybeSingle();
             if (!active) return;
             if (data) {
                 const accountName = data.account_name || "LoveNest";

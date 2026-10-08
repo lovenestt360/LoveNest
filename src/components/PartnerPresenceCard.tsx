@@ -40,7 +40,7 @@ function usePartnerPresence() {
           .eq("couple_space_id", spaceId)
           .eq("activity_date", today) as any)
           .then(({ data: acts }: any) => {
-            const ids: string[] = [...new Set((acts ?? []).map((a: any) => a.user_id as string))];
+            const ids: string[] = [...new Set<string>((acts ?? []).map((a: any) => a.user_id as string))];
             setState({
               partnerName: pName,
               partnerActive: ids.includes(pId),

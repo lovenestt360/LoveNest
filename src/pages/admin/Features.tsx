@@ -98,7 +98,7 @@ export default function FeaturesControl() {
       return;
     }
     const { data: adminUser, error } = await supabase
-      .from("admin_users" as any)
+      .from("admin_users")
       .select("id, username")
       .eq("user_id", user.id)
       .maybeSingle();

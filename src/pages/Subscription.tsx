@@ -220,7 +220,8 @@ export default function Subscription() {
             .replace("{house_name}", house.house_name || 'Sem Nome')
             .replace("{plan_name}", pendingPayment.plan_name)
             .replace("{plan_price}", pendingPayment.amount);
-        const number = paymentSettings.whatsapp_number || "258841234567";
+        const number = paymentSettings.whatsapp_number;
+        if (!number) return;
         window.open(`https://wa.me/${number.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, "_blank");
     };
 
@@ -297,7 +298,7 @@ export default function Subscription() {
                                 </div>
                             </div>
 
-                            {pendingPayment.provider !== "paysuite" && (
+                            {pendingPayment.provider !== "paysuite" && paymentSettings?.whatsapp_number && (
                                 <>
                                     <Button onClick={handleWhatsApp} className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 h-14 font-bold text-[15px] rounded-2xl shadow-lg">
                                         <MessageCircle className="w-5 h-5" strokeWidth={1.5} /> Acelerar via WhatsApp

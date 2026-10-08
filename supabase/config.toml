@@ -1,4 +1,4 @@
-project_id = "jxwvvbqitdcczlwnptxj"
+project_id = "zyzeiwyfsnbnpzdqtxik"
 
 [functions.create-couple-space]
 verify_jwt = false

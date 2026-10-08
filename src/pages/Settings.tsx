@@ -121,7 +121,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { wallpaperUrl, wallpaperOpacity, updateSettings: updateWallpaper, uploadWallpaper, removeWallpaper } = useUserSettings();
-  const { allowed: wallpaperAllowed } = useTierAccess("wallpapers");
+  const { allowed: wallpaperAllowed, loading: wallpaperTierLoading } = useTierAccess("wallpapers");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -299,7 +299,7 @@ export default function Settings() {
       
       // Load Smart Notif Settings
       const { data: sNotifs } = await supabase
-        .from("notification_settings" as any)
+        .from("notification_settings")
         .select("*")
         .eq("user_id", user.id);
       
@@ -576,7 +576,7 @@ export default function Settings() {
       const results: any = {};
       const tables = ["messages", "mood_checkins", "tasks", "photos", "events", "routine_items"];
       for (const t of tables) {
-        const { data } = await supabase.from(t).select("*").eq("couple_space_id", spaceId).limit(1000);
+        const { data } = await (supabase as any).from(t).select("*").eq("couple_space_id", spaceId).limit(1000);
         results[t] = data || [];
       }
       const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
@@ -1055,7 +1055,7 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground mb-4">Escolha uma foto para o fundo das conversas.</p>
                   </div>
 
-                  {!wallpaperAllowed ? (
+                  {wallpaperTierLoading ? null : !wallpaperAllowed ? (
                     <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-5 flex flex-col items-center gap-3 text-center">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                         <Sparkles className="h-5 w-5 text-primary" />

@@ -1,73 +1,48 @@
-# Welcome to your Lovable project
+# LoveNest
 
-## Project info
+Espaço privado para casais (e modo individual): chat, memórias, humor, ciclo, rotinas, oração e jejum, biblioteca, jornada com LovePoints, localização partilhada e subscrições.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Produção: https://www.lovenestt.com
 
-## How can I edit this code?
+## Stack
 
-There are several ways of editing your application.
+- React 18 + TypeScript + Vite, Tailwind, shadcn/ui, Framer Motion
+- Supabase: Auth, Postgres com RLS, Storage, Realtime, Edge Functions (Deno), pg_cron
+- Firebase Cloud Messaging para notificações push
+- PaySuite para pagamentos (M-Pesa, e-Mola, cartão) + pagamento manual com comprovativo
+- Sentry para erros, Vercel para o frontend
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Desenvolvimento
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev        # servidor local
+npm run build      # build de produção
+npx tsc --noEmit -p tsconfig.app.json   # verificação de tipos (o build não corre isto)
 ```
 
-**Edit a file directly in GitHub**
+Variáveis de ambiente (`.env`, nunca versionado): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_VAPID_PUBLIC_KEY`, `VITE_MAPBOX_ACCESS_TOKEN`, `VITE_SENTRY_DSN`. Qualquer variável `VITE_*` acaba no bundle público — nunca pôr segredos nelas.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Tipos do Supabase (regenerar depois de mudar o schema):
 
-**Use GitHub Codespaces**
+```sh
+supabase gen types typescript --project-id zyzeiwyfsnbnpzdqtxik > src/integrations/supabase/types.ts
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Base de dados e migrações
 
-## What technologies are used for this project?
+O histórico de migrações da CLI está dessincronizado com a produção — **não usar `supabase db push`**. Cada migração nova em `supabase/migrations/` é aplicada à mão no SQL Editor (ou `supabase db query --linked -f <ficheiro>`), e deve ser idempotente (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP POLICY IF EXISTS`).
 
-This project is built with:
+Nomes de policies em produção nem sempre coincidem com os ficheiros antigos. Antes de mexer em RLS, confirmar o estado real:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```sql
+SELECT tablename, policyname, cmd, roles, qual, with_check FROM pg_policies WHERE schemaname = 'public';
+```
 
-## How can I deploy this project?
+## Edge Functions
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+`supabase functions deploy <nome>`. Segredos necessários (`supabase secrets set`): `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`, `FCM_VAPID_KEY`, `PAYSUITE_API_KEY`, `PAYSUITE_WEBHOOK_SECRET`, `ADMIN_SETUP_KEY`, `LOVE_WRAPPED_CRON_SECRET`.
 
-## Can I connect a custom domain to my Lovable project?
+## Admin
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Login em `/admin-login` com uma conta real do Supabase Auth que tenha linha em `admin_users`. O primeiro admin é criado em `/admin-setup-secret` (validado no servidor pela função `admin-claim` contra `ADMIN_SETUP_KEY`). Todas as escritas de faturação passam por RPCs `SECURITY DEFINER` que verificam `is_admin()`.

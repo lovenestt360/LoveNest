@@ -30,7 +30,7 @@ export function VerificationSection({ userId }: Props) {
       // 2. Fetch admin notes if rejected
       if (profile?.verification_status === "rejected" || profile?.verification_status === "pending") {
         const { data: verification } = await supabase
-          .from("identity_verifications" as any)
+          .from("identity_verifications")
           .select("admin_notes, status")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })

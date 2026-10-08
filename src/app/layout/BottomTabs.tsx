@@ -231,7 +231,7 @@ function TabItem({
 }: {
   to: string;
   label: string;
-  Icon: ComponentType<{ className?: string }>;
+  Icon: ComponentType<{ className?: string; strokeWidth?: number }>;
   badge?: number;
 }) {
   const location = useLocation();

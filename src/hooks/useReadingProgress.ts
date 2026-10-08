@@ -24,7 +24,7 @@ export function useReadingProgress(bookId: string | undefined) {
         setLoading(true);
 
         const { data } = await supabase
-            .from("book_reading_progress" as any)
+            .from("book_reading_progress")
             .select("user_id, progress_percent, location, updated_at, total_minutes_read")
             .eq("book_id", bookId)
             .eq("couple_space_id", spaceId);

@@ -90,8 +90,8 @@ export function useBiblioteca() {
             supabase.from("book_categories" as any).select("*").order("sort_order"),
             supabase.from("library_settings" as any).select("*").maybeSingle(),
             supabase.from("library_banners" as any).select("*").eq("enabled", true).order("sort_order"),
-            supabase.from("book_purchases" as any).select("id, book_id, status, admin_notes").eq("couple_space_id", spaceId),
-            supabase.from("book_reading_progress" as any).select("book_id, progress_percent").eq("couple_space_id", spaceId).eq("user_id", user.id),
+            supabase.from("book_purchases").select("id, book_id, status, admin_notes").eq("couple_space_id", spaceId),
+            supabase.from("book_reading_progress").select("book_id, progress_percent").eq("couple_space_id", spaceId).eq("user_id", user.id),
         ]);
 
         if (booksRes.data) setBooks(booksRes.data as unknown as Book[]);

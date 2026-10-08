@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -42,22 +42,22 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          password_hash: string
           role: string | null
+          user_id: string | null
           username: string
         }
         Insert: {
           created_at?: string
           id?: string
-          password_hash: string
           role?: string | null
+          user_id?: string | null
           username: string
         }
         Update: {
           created_at?: string
           id?: string
-          password_hash?: string
           role?: string | null
+          user_id?: string | null
           username?: string
         }
         Relationships: []
@@ -98,22 +98,437 @@ export type Database = {
         Row: {
           id: string
           key: string
-          updated_at: string
+          updated_at: string | null
           value: string
         }
         Insert: {
           id?: string
           key: string
-          updated_at?: string
-          value?: string
+          updated_at?: string | null
+          value: string
         }
         Update: {
           id?: string
           key?: string
-          updated_at?: string
+          updated_at?: string | null
           value?: string
         }
         Relationships: []
+      }
+      book_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      book_chapters: {
+        Row: {
+          book_id: string
+          content: string
+          created_at: string
+          id: string
+          order_index: number
+          status: string
+          title: string
+          updated_at: string
+          word_count: number
+        }
+        Insert: {
+          book_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          status?: string
+          title: string
+          updated_at?: string
+          word_count?: number
+        }
+        Update: {
+          book_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          word_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_favorites: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_favorites_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_purchases: {
+        Row: {
+          admin_notes: string | null
+          amount: string | null
+          book_id: string
+          couple_space_id: string
+          created_at: string
+          external_id: string | null
+          id: string
+          method: string | null
+          proof_url: string | null
+          provider: string
+          requested_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount?: string | null
+          book_id: string
+          couple_space_id: string
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          method?: string | null
+          proof_url?: string | null
+          provider?: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: string | null
+          book_id?: string
+          couple_space_id?: string
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          method?: string | null
+          proof_url?: string | null
+          provider?: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_purchases_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_purchases_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_ratings: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_ratings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_reading_progress: {
+        Row: {
+          book_id: string
+          completed_at: string | null
+          couple_space_id: string
+          created_at: string
+          id: string
+          location: string | null
+          progress_percent: number
+          total_minutes_read: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          completed_at?: string | null
+          couple_space_id: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          progress_percent?: number
+          total_minutes_read?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          completed_at?: string | null
+          couple_space_id?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          progress_percent?: number
+          total_minutes_read?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reading_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_reading_progress_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_reflections: {
+        Row: {
+          book_id: string
+          chapter_id: string
+          content: string
+          couple_space_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter_id: string
+          content: string
+          couple_space_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string
+          content?: string
+          couple_space_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reflections_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_reflections_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      books: {
+        Row: {
+          author: string | null
+          category_id: string | null
+          chapter_count: number | null
+          cover_url: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          estimated_minutes: number | null
+          file_path: string | null
+          file_type: string | null
+          id: string
+          is_featured: boolean
+          is_free: boolean
+          is_recommended: boolean
+          page_count: number | null
+          price: number | null
+          sort_order: number
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          author?: string | null
+          category_id?: string | null
+          chapter_count?: number | null
+          cover_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          file_path?: string | null
+          file_type?: string | null
+          id?: string
+          is_featured?: boolean
+          is_free?: boolean
+          is_recommended?: boolean
+          page_count?: number | null
+          price?: number | null
+          sort_order?: number
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          author?: string | null
+          category_id?: string | null
+          chapter_count?: number | null
+          cover_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          file_path?: string | null
+          file_type?: string | null
+          id?: string
+          is_featured?: boolean
+          is_free?: boolean
+          is_recommended?: boolean
+          page_count?: number | null
+          price?: number | null
+          sort_order?: number
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "book_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ceremonies_log: {
+        Row: {
+          ceremony_key: string
+          ceremony_type: string
+          couple_space_id: string
+          id: string
+          shown_at: string
+        }
+        Insert: {
+          ceremony_key: string
+          ceremony_type: string
+          couple_space_id: string
+          id?: string
+          shown_at?: string
+        }
+        Update: {
+          ceremony_key?: string
+          ceremony_type?: string
+          couple_space_id?: string
+          id?: string
+          shown_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ceremonies_log_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       complaint_messages: {
         Row: {
@@ -210,81 +625,6 @@ export type Database = {
           },
         ]
       }
-      love_missions: {
-        Row: {
-          category: string
-          created_at: string | null
-          description: string
-          emoji: string
-          id: string
-          points_reward: number
-          title: string
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          description: string
-          emoji?: string
-          id?: string
-          points_reward?: number
-          title: string
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          description?: string
-          emoji?: string
-          id?: string
-          points_reward?: number
-          title?: string
-        }
-        Relationships: []
-      }
-      couple_missions: {
-        Row: {
-          couple_space_id: string
-          created_at: string | null
-          day_key: string
-          id: string
-          is_completed_p1: boolean | null
-          is_completed_p2: boolean | null
-          mission_id: string
-        }
-        Insert: {
-          couple_space_id: string
-          created_at?: string | null
-          day_key?: string
-          id?: string
-          is_completed_p1?: boolean | null
-          is_completed_p2?: boolean | null
-          mission_id: string
-        }
-        Update: {
-          couple_space_id?: string
-          created_at?: string | null
-          day_key?: string
-          id?: string
-          is_completed_p1?: boolean | null
-          is_completed_p2?: boolean | null
-          mission_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "couple_missions_couple_space_id_fkey"
-            columns: ["couple_space_id"]
-            isOneToOne: false
-            referencedRelation: "couple_spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "couple_missions_mission_id_fkey"
-            columns: ["mission_id"]
-            isOneToOne: false
-            referencedRelation: "love_missions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       couple_challenges: {
         Row: {
           completed_at: string | null
@@ -323,73 +663,237 @@ export type Database = {
           },
         ]
       }
+      couple_daily_missions: {
+        Row: {
+          assignment_date: string
+          couple_space_id: string
+          id: string
+          mission_id: string
+        }
+        Insert: {
+          assignment_date?: string
+          couple_space_id: string
+          id?: string
+          mission_id: string
+        }
+        Update: {
+          assignment_date?: string
+          couple_space_id?: string
+          id?: string
+          mission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_daily_missions_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_daily_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "love_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couple_mission_rewards: {
+        Row: {
+          couple_space_id: string
+          created_at: string | null
+          id: string
+          mission_id: string
+          points_awarded: number
+          reward_date: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string | null
+          id?: string
+          mission_id: string
+          points_awarded?: number
+          reward_date?: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string | null
+          id?: string
+          mission_id?: string
+          points_awarded?: number
+          reward_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_mission_rewards_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_mission_rewards_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "love_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couple_missions: {
+        Row: {
+          completed: boolean
+          couple_id: string | null
+          created_at: string | null
+          day: string
+          id: string
+          mission_id: string | null
+          progress: number
+        }
+        Insert: {
+          completed?: boolean
+          couple_id?: string | null
+          created_at?: string | null
+          day: string
+          id?: string
+          mission_id?: string | null
+          progress?: number
+        }
+        Update: {
+          completed?: boolean
+          couple_id?: string | null
+          created_at?: string | null
+          day?: string
+          id?: string
+          mission_id?: string | null
+          progress?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_missions_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "love_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couple_spaces: {
         Row: {
-          age_gap_flag: boolean | null
-          chat_wallpaper_opacity: number
+          chat_wallpaper_opacity: number | null
           chat_wallpaper_url: string | null
           created_at: string
+          house_image: string | null
           house_name: string | null
           id: string
           initials: string | null
           invite_code: string
           is_suspended: boolean | null
+          is_verified: boolean | null
+          last_perfect_day_date: string | null
           last_streak_date: string | null
+          longest_streak: number | null
           partner1_name: string | null
           partner2_name: string | null
+          perfect_days_count: number
           plan_id: string | null
           relationship_start_date: string | null
-          status: string
+          status: string | null
           streak_count: number | null
           subscription_status: string | null
+          tier_level: number
+          timezone: string | null
           trial_ends_at: string | null
           trial_started_at: string | null
           trial_used: boolean | null
           updated_at: string
         }
         Insert: {
-          chat_wallpaper_opacity?: number
+          chat_wallpaper_opacity?: number | null
           chat_wallpaper_url?: string | null
           created_at?: string
+          house_image?: string | null
           house_name?: string | null
           id?: string
           initials?: string | null
           invite_code: string
           is_suspended?: boolean | null
+          is_verified?: boolean | null
+          last_perfect_day_date?: string | null
           last_streak_date?: string | null
+          longest_streak?: number | null
           partner1_name?: string | null
           partner2_name?: string | null
+          perfect_days_count?: number
           plan_id?: string | null
           relationship_start_date?: string | null
-          status?: string
+          status?: string | null
           streak_count?: number | null
           subscription_status?: string | null
+          tier_level?: number
+          timezone?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           trial_used?: boolean | null
           updated_at?: string
         }
         Update: {
-          chat_wallpaper_opacity?: number
+          chat_wallpaper_opacity?: number | null
           chat_wallpaper_url?: string | null
           created_at?: string
+          house_image?: string | null
           house_name?: string | null
           id?: string
           initials?: string | null
           invite_code?: string
           is_suspended?: boolean | null
+          is_verified?: boolean | null
+          last_perfect_day_date?: string | null
           last_streak_date?: string | null
+          longest_streak?: number | null
           partner1_name?: string | null
           partner2_name?: string | null
+          perfect_days_count?: number
           plan_id?: string | null
           relationship_start_date?: string | null
-          status?: string
+          status?: string | null
           streak_count?: number | null
           subscription_status?: string | null
+          tier_level?: number
+          timezone?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           trial_used?: boolean | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      couples: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_1: string | null
+          user_2: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_1?: string | null
+          user_2?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_1?: string | null
+          user_2?: string | null
         }
         Relationships: []
       }
@@ -439,6 +943,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_activity: {
+        Row: {
+          activity_date: string
+          couple_id: string | null
+          couple_space_id: string | null
+          created_at: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          activity_date?: string
+          couple_id?: string | null
+          couple_space_id?: string | null
+          created_at?: string | null
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          couple_id?: string | null
+          couple_space_id?: string | null
+          created_at?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       daily_interactions: {
         Row: {
@@ -516,7 +1050,6 @@ export type Database = {
       daily_spiritual_logs: {
         Row: {
           couple_space_id: string
-          created_at: string
           cried_today: boolean
           day_key: string
           gratitude_note: string | null
@@ -528,7 +1061,6 @@ export type Database = {
         }
         Insert: {
           couple_space_id: string
-          created_at?: string
           cried_today?: boolean
           day_key?: string
           gratitude_note?: string | null
@@ -540,7 +1072,6 @@ export type Database = {
         }
         Update: {
           couple_space_id?: string
-          created_at?: string
           cried_today?: boolean
           day_key?: string
           gratitude_note?: string | null
@@ -694,6 +1225,30 @@ export type Database = {
           },
         ]
       }
+      edge_function_logs: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          function_name: string
+          id: string
+          payload: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          function_name: string
+          id?: string
+          payload?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          function_name?: string
+          id?: string
+          payload?: Json | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           couple_space_id: string
@@ -746,33 +1301,30 @@ export type Database = {
           category: string
           created_at: string
           id: string
-          label: string
-          note: string | null
+          notes: string | null
           priority: string
           profile_id: string
-          sort_order: number
+          title: string
           user_id: string
         }
         Insert: {
           category?: string
           created_at?: string
           id?: string
-          label: string
-          note?: string | null
+          notes?: string | null
           priority?: string
           profile_id: string
-          sort_order?: number
+          title: string
           user_id: string
         }
         Update: {
           category?: string
           created_at?: string
           id?: string
-          label?: string
-          note?: string | null
+          notes?: string | null
           priority?: string
           profile_id?: string
-          sort_order?: number
+          title?: string
           user_id?: string
         }
         Relationships: [
@@ -789,7 +1341,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          is_active: boolean
+          is_active: boolean | null
           label: string
           profile_id: string
           section: string
@@ -799,7 +1351,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           label: string
           profile_id: string
           section: string
@@ -809,7 +1361,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           label?: string
           profile_id?: string
           section?: string
@@ -826,6 +1378,38 @@ export type Database = {
           },
         ]
       }
+      fasting_couple_messages: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          id: string
+          message: string
+          sender_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          id?: string
+          message: string
+          sender_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fasting_couple_messages_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fasting_day_item_logs: {
         Row: {
           created_at: string
@@ -833,7 +1417,6 @@ export type Database = {
           id: string
           label: string
           reason: string | null
-          section: string
           status: string
           template_id: string | null
           updated_at: string
@@ -845,8 +1428,7 @@ export type Database = {
           id?: string
           label: string
           reason?: string | null
-          section: string
-          status: string
+          status?: string
           template_id?: string | null
           updated_at?: string
           user_id: string
@@ -857,7 +1439,6 @@ export type Database = {
           id?: string
           label?: string
           reason?: string | null
-          section?: string
           status?: string
           template_id?: string | null
           updated_at?: string
@@ -890,7 +1471,7 @@ export type Database = {
           mood: string | null
           note: string | null
           profile_id: string
-          result: string | null
+          result: string
           updated_at: string
           user_id: string
         }
@@ -903,7 +1484,7 @@ export type Database = {
           mood?: string | null
           note?: string | null
           profile_id: string
-          result?: string | null
+          result?: string
           updated_at?: string
           user_id: string
         }
@@ -916,7 +1497,7 @@ export type Database = {
           mood?: string | null
           note?: string | null
           profile_id?: string
-          result?: string | null
+          result?: string
           updated_at?: string
           user_id?: string
         }
@@ -989,13 +1570,13 @@ export type Database = {
           end_date: string
           id?: string
           is_active?: boolean
-          plan_name: string
-          plan_type: string
+          plan_name?: string
+          plan_type?: string
           rules_allowed?: string | null
           rules_exceptions?: string | null
           rules_forbidden?: string | null
           start_date: string
-          total_days: number
+          total_days?: number
           until_hour?: string | null
           updated_at?: string
           user_id: string
@@ -1029,37 +1610,129 @@ export type Database = {
       }
       fasting_reminders: {
         Row: {
-          alerta_calendario: boolean
-          hora_terminar: boolean
+          alerta_calendario: boolean | null
+          hora_terminar: boolean | null
           id: string
-          motivacao_dia: boolean
-          oracao: boolean
-          reflexao_noturna: boolean
-          registar_dia: boolean
+          motivacao_dia: boolean | null
+          oracao: boolean | null
+          reflexao_noturna: boolean | null
+          registar_dia: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          alerta_calendario?: boolean
-          hora_terminar?: boolean
+          alerta_calendario?: boolean | null
+          hora_terminar?: boolean | null
           id?: string
-          motivacao_dia?: boolean
-          oracao?: boolean
-          reflexao_noturna?: boolean
-          registar_dia?: boolean
+          motivacao_dia?: boolean | null
+          oracao?: boolean | null
+          reflexao_noturna?: boolean | null
+          registar_dia?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          alerta_calendario?: boolean
-          hora_terminar?: boolean
+          alerta_calendario?: boolean | null
+          hora_terminar?: boolean | null
           id?: string
-          motivacao_dia?: boolean
-          oracao?: boolean
-          reflexao_noturna?: boolean
-          registar_dia?: boolean
+          motivacao_dia?: boolean | null
+          oracao?: boolean | null
+          reflexao_noturna?: boolean | null
+          registar_dia?: boolean | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      favorite_places: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          created_by: string
+          icon: string
+          id: string
+          lat: number
+          lng: number
+          name: string
+          radius_m: number
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          created_by: string
+          icon?: string
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          radius_m?: number
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          created_by?: string
+          icon?: string
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          radius_m?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_places_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          enabled: boolean | null
+          id: string
+          key: string
+          scope: string
+          target_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          key: string
+          scope: string
+          target_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          key?: string
+          scope?: string
+          target_id?: string | null
+        }
+        Relationships: []
+      }
+      feature_tiers: {
+        Row: {
+          feature_id: string
+          feature_label: string
+          min_tier: number
+          updated_at: string | null
+        }
+        Insert: {
+          feature_id: string
+          feature_label: string
+          min_tier?: number
+          updated_at?: string | null
+        }
+        Update: {
+          feature_id?: string
+          feature_label?: string
+          min_tier?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1067,90 +1740,526 @@ export type Database = {
         Row: {
           action: string
           admin_id: string
-          created_at: string
+          created_at: string | null
           id: string
         }
         Insert: {
           action: string
           admin_id: string
-          created_at?: string
+          created_at?: string | null
           id?: string
         }
         Update: {
           action?: string
           admin_id?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
         }
         Relationships: []
       }
-      streaks: {
+      guardian_state: {
         Row: {
-          couple_id: string
-          current_streak: number
-          id: string
-          last_valid_day: string | null
-          updated_at: string | null
+          couple_space_id: string
+          glow_color: string
+          ring_enabled: boolean
+          ring_unlocked: boolean
+          updated_at: string
         }
         Insert: {
-          couple_id: string
-          current_streak?: number
-          id?: string
-          last_valid_day?: string | null
-          updated_at?: string | null
+          couple_space_id: string
+          glow_color?: string
+          ring_enabled?: boolean
+          ring_unlocked?: boolean
+          updated_at?: string
         }
         Update: {
-          couple_id?: string
-          current_streak?: number
-          id?: string
-          last_valid_day?: string | null
-          updated_at?: string | null
+          couple_space_id?: string
+          glow_color?: string
+          ring_enabled?: boolean
+          ring_unlocked?: boolean
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "streaks_couple_id_fkey"
-            columns: ["couple_id"]
+            foreignKeyName: "guardian_state_couple_space_id_fkey"
+            columns: ["couple_space_id"]
             isOneToOne: true
             referencedRelation: "couple_spaces"
             referencedColumns: ["id"]
           },
         ]
       }
+      identity_verifications: {
+        Row: {
+          admin_notes: string | null
+          age: number | null
+          created_at: string | null
+          document_back_url: string | null
+          document_type: string | null
+          document_url: string | null
+          full_name: string | null
+          id: string
+          id_card_url: string | null
+          id_number: string | null
+          selfie_url: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          age?: number | null
+          created_at?: string | null
+          document_back_url?: string | null
+          document_type?: string | null
+          document_url?: string | null
+          full_name?: string | null
+          id?: string
+          id_card_url?: string | null
+          id_number?: string | null
+          selfie_url?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          age?: number | null
+          created_at?: string | null
+          document_back_url?: string | null
+          document_type?: string | null
+          document_url?: string | null
+          full_name?: string | null
+          id?: string
+          id_card_url?: string | null
+          id_number?: string | null
+          selfie_url?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      intimacy_logs: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          day_key: string
+          id: string
+          notes: string | null
+          protection_method: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          day_key?: string
+          id?: string
+          notes?: string | null
+          protection_method?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          day_key?: string
+          id?: string
+          notes?: string | null
+          protection_method?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intimacy_logs_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_banners: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          image_url: string | null
+          link_book_id: string | null
+          sort_order: number
+          subtitle: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          link_book_id?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          link_book_id?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_banners_link_book_id_fkey"
+            columns: ["link_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_settings: {
+        Row: {
+          banner_enabled: boolean
+          banner_image_url: string | null
+          banner_link_book_id: string | null
+          banner_subtitle: string | null
+          banner_title: string | null
+          grid_columns: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          banner_enabled?: boolean
+          banner_image_url?: string | null
+          banner_link_book_id?: string | null
+          banner_subtitle?: string | null
+          banner_title?: string | null
+          grid_columns?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          banner_enabled?: boolean
+          banner_image_url?: string | null
+          banner_link_book_id?: string | null
+          banner_subtitle?: string | null
+          banner_title?: string | null
+          grid_columns?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_settings_banner_link_book_id_fkey"
+            columns: ["banner_link_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_events: {
+        Row: {
+          couple_space_id: string
+          event_type: string
+          id: string
+          occurred_at: string
+          place_name: string
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          event_type: string
+          id?: string
+          occurred_at?: string
+          place_name: string
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          place_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_events_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_history: {
+        Row: {
+          couple_space_id: string
+          id: string
+          lat: number
+          lng: number
+          recorded_at: string
+          speed_kmh: number | null
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          id?: string
+          lat: number
+          lng: number
+          recorded_at?: string
+          speed_kmh?: number | null
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          id?: string
+          lat?: number
+          lng?: number
+          recorded_at?: string
+          speed_kmh?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_history_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_notification_prefs: {
+        Row: {
+          notify_arrives: boolean
+          notify_leaves: boolean
+          notify_proximity: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          notify_arrives?: boolean
+          notify_leaves?: boolean
+          notify_proximity?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          notify_arrives?: boolean
+          notify_leaves?: boolean
+          notify_proximity?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      love_events: {
+        Row: {
+          couple_space_id: string
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "love_events_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      love_missions: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          emoji: string | null
+          id: string
+          mission_type: string
+          reward_points: number | null
+          target_count: number
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          mission_type: string
+          reward_points?: number | null
+          target_count: number
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          mission_type?: string
+          reward_points?: number | null
+          target_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      love_points: {
+        Row: {
+          couple_space_id: string | null
+          id: string
+          points: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          couple_space_id?: string | null
+          id?: string
+          points?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          couple_space_id?: string | null
+          id?: string
+          points?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "love_points_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      love_points_history: {
+        Row: {
+          amount: number
+          couple_space_id: string | null
+          created_at: string
+          id: string
+          reason: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          couple_space_id?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          couple_space_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "love_points_history_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      love_shields: {
+        Row: {
+          couple_space_id: string
+          last_purchased_month: string | null
+          last_replenished_month: string | null
+          last_shield_used_date: string | null
+          shields: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          couple_space_id: string
+          last_purchased_month?: string | null
+          last_replenished_month?: string | null
+          last_shield_used_date?: string | null
+          shields?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          couple_space_id?: string
+          last_purchased_month?: string | null
+          last_replenished_month?: string | null
+          last_shield_used_date?: string | null
+          shields?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       love_wrapped: {
         Row: {
-          challenges_completed: number
+          challenges_completed: number | null
           couple_space_id: string
-          generated_at: string
+          generated_at: string | null
           id: string
-          memories_count: number
-          messages_count: number
+          memories_count: number | null
+          messages_count: number | null
           month: number
-          mood_checkins: number
-          streak_days: number
+          mood_checkins: number | null
+          streak_days: number | null
+          top_mood: string | null
           year: number
         }
         Insert: {
-          challenges_completed?: number
+          challenges_completed?: number | null
           couple_space_id: string
-          generated_at?: string
+          generated_at?: string | null
           id?: string
-          memories_count?: number
-          messages_count?: number
+          memories_count?: number | null
+          messages_count?: number | null
           month: number
-          mood_checkins?: number
-          streak_days?: number
+          mood_checkins?: number | null
+          streak_days?: number | null
+          top_mood?: string | null
           year: number
         }
         Update: {
-          challenges_completed?: number
+          challenges_completed?: number | null
           couple_space_id?: string
-          generated_at?: string
+          generated_at?: string | null
           id?: string
-          memories_count?: number
-          messages_count?: number
+          memories_count?: number | null
+          messages_count?: number | null
           month?: number
-          mood_checkins?: number
-          streak_days?: number
+          mood_checkins?: number | null
+          streak_days?: number | null
+          top_mood?: string | null
           year?: number
         }
         Relationships: [
@@ -1163,50 +2272,126 @@ export type Database = {
           },
         ]
       }
-      identity_verifications: {
+      lovepoints_ledger: {
         Row: {
-          admin_notes: string | null
-          age: number
+          amount: number
+          couple_space_id: string
           created_at: string
-          document_url: string
-          full_name: string
+          description: string | null
           id: string
-          id_number: string
-          status: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          couple_space_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          couple_space_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lovepoints_ledger_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_moments: {
+        Row: {
+          couple_space_id: string
+          id: string
+          met_at: string
+          place_name: string | null
+        }
+        Insert: {
+          couple_space_id: string
+          id?: string
+          met_at?: string
+          place_name?: string | null
+        }
+        Update: {
+          couple_space_id?: string
+          id?: string
+          met_at?: string
+          place_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_moments_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_locations: {
+        Row: {
+          accuracy: number | null
+          address: string | null
+          battery_level: number | null
+          couple_space_id: string
+          id: string
+          is_charging: boolean | null
+          lat: number
+          lng: number
+          network_type: string | null
+          sharing_enabled: boolean
+          speed_kmh: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          admin_notes?: string | null
-          age: number
-          created_at?: string
-          document_url: string
-          full_name: string
+          accuracy?: number | null
+          address?: string | null
+          battery_level?: number | null
+          couple_space_id: string
           id?: string
-          id_number: string
-          status?: string
+          is_charging?: boolean | null
+          lat: number
+          lng: number
+          network_type?: string | null
+          sharing_enabled?: boolean
+          speed_kmh?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          admin_notes?: string | null
-          age?: number
-          created_at?: string
-          document_url?: string
-          full_name?: string
+          accuracy?: number | null
+          address?: string | null
+          battery_level?: number | null
+          couple_space_id?: string
           id?: string
-          id_number?: string
-          status?: string
+          is_charging?: boolean | null
+          lat?: number
+          lng?: number
+          network_type?: string | null
+          sharing_enabled?: boolean
+          speed_kmh?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "identity_verifications_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "member_locations_couple_space_id_fkey"
+            columns: ["couple_space_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1351,7 +2536,9 @@ export type Database = {
           created_at: string
           emoji: string | null
           id: string
+          min_requirement: number | null
           points: number
+          trigger_type: string | null
         }
         Insert: {
           challenge_text: string
@@ -1359,7 +2546,9 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           id?: string
+          min_requirement?: number | null
           points?: number
+          trigger_type?: string | null
         }
         Update: {
           challenge_text?: string
@@ -1367,17 +2556,46 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           id?: string
+          min_requirement?: number | null
           points?: number
+          trigger_type?: string | null
+        }
+        Relationships: []
+      }
+      mission_completions: {
+        Row: {
+          completed_at: string
+          couple_space_id: string
+          created_at: string | null
+          id: string
+          mission_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at: string
+          couple_space_id: string
+          created_at?: string | null
+          id?: string
+          mission_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          couple_space_id?: string
+          created_at?: string | null
+          id?: string
+          mission_id?: string
+          user_id?: string
         }
         Relationships: []
       }
       mood_checkins: {
         Row: {
-          activities: string[]
+          activities: string[] | null
           couple_space_id: string
           created_at: string
           day_key: string
-          emotions: string[]
+          emotions: string[] | null
           id: string
           mood_key: string
           mood_percent: number
@@ -1386,11 +2604,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          activities?: string[]
+          activities?: string[] | null
           couple_space_id: string
           created_at?: string
           day_key?: string
-          emotions?: string[]
+          emotions?: string[] | null
           id?: string
           mood_key: string
           mood_percent: number
@@ -1399,11 +2617,11 @@ export type Database = {
           user_id: string
         }
         Update: {
-          activities?: string[]
+          activities?: string[] | null
           couple_space_id?: string
           created_at?: string
           day_key?: string
-          emotions?: string[]
+          emotions?: string[] | null
           id?: string
           mood_key?: string
           mood_percent?: number
@@ -1421,37 +2639,126 @@ export type Database = {
           },
         ]
       }
+      notification_history: {
+        Row: {
+          couple_space_id: string
+          id: string
+          rule_key: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          id?: string
+          rule_key: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          id?: string
+          rule_key?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_history_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          category: string
+          enabled: boolean
+          id: string
+          preferred_hour: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          enabled?: boolean
+          id?: string
+          preferred_hour?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          enabled?: boolean
+          id?: string
+          preferred_hour?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_templates: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          key: string
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key: string
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payment_settings: {
         Row: {
           account_name: string | null
-          created_at: string
           emola_number: string | null
           id: string
           mkesh_number: string | null
           mpesa_number: string | null
-          updated_at: string
+          updated_at: string | null
           whatsapp_message_template: string | null
           whatsapp_number: string | null
         }
         Insert: {
           account_name?: string | null
-          created_at?: string
           emola_number?: string | null
           id?: string
           mkesh_number?: string | null
           mpesa_number?: string | null
-          updated_at?: string
+          updated_at?: string | null
           whatsapp_message_template?: string | null
           whatsapp_number?: string | null
         }
         Update: {
           account_name?: string | null
-          created_at?: string
           emola_number?: string | null
           id?: string
           mkesh_number?: string | null
           mpesa_number?: string | null
-          updated_at?: string
+          updated_at?: string | null
           whatsapp_message_template?: string | null
           whatsapp_number?: string | null
         }
@@ -1459,6 +2766,7 @@ export type Database = {
       }
       payments: {
         Row: {
+          admin_notes: string | null
           amount: string
           couple_space_id: string
           created_at: string | null
@@ -1469,8 +2777,10 @@ export type Database = {
           proof_url: string | null
           provider: string
           status: string | null
+          updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
           amount: string
           couple_space_id: string
           created_at?: string | null
@@ -1481,8 +2791,10 @@ export type Database = {
           proof_url?: string | null
           provider?: string
           status?: string | null
+          updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
           amount?: string
           couple_space_id?: string
           created_at?: string | null
@@ -1493,6 +2805,7 @@ export type Database = {
           proof_url?: string | null
           provider?: string
           status?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1596,6 +2909,48 @@ export type Database = {
           },
         ]
       }
+      photo_reactions: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          id: string
+          photo_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          id?: string
+          photo_id: string
+          reaction: string
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          id?: string
+          photo_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_reactions_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_reactions_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           album_id: string | null
@@ -1644,6 +2999,77 @@ export type Database = {
           },
         ]
       }
+      plano_items: {
+        Row: {
+          category: string | null
+          completed: boolean | null
+          couple_space_id: string | null
+          created_at: string | null
+          description: string | null
+          for_whom: string | null
+          id: string
+          is_important: boolean | null
+          plan_at: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          completed?: boolean | null
+          couple_space_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          for_whom?: string | null
+          id?: string
+          is_important?: boolean | null
+          plan_at?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          completed?: boolean | null
+          couple_space_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          for_whom?: string | null
+          id?: string
+          is_important?: boolean | null
+          plan_at?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_items_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      points: {
+        Row: {
+          couple_space_id: string
+          id: string
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          couple_space_id: string
+          id?: string
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          couple_space_id?: string
+          id?: string
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
@@ -1659,6 +3085,7 @@ export type Database = {
           onboarding_completed_at: string | null
           primary_goal: string | null
           referral_code: string | null
+          referred_by_id: string | null
           religion: string | null
           timezone: string | null
           updated_at: string
@@ -1667,6 +3094,7 @@ export type Database = {
           verification_status: string | null
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
           birthday?: string | null
           country?: string | null
@@ -1679,13 +3107,16 @@ export type Database = {
           onboarding_completed_at?: string | null
           primary_goal?: string | null
           referral_code?: string | null
+          referred_by_id?: string | null
           religion?: string | null
           timezone?: string | null
           updated_at?: string
           usage_mode?: string | null
           user_id: string
+          verification_status?: string | null
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
           birthday?: string | null
           country?: string | null
@@ -1698,42 +3129,47 @@ export type Database = {
           onboarding_completed_at?: string | null
           primary_goal?: string | null
           referral_code?: string | null
+          referred_by_id?: string | null
           religion?: string | null
           timezone?: string | null
           updated_at?: string
           usage_mode?: string | null
           user_id?: string
+          verification_status?: string | null
         }
         Relationships: []
       }
       push_subscriptions: {
         Row: {
-          auth: string
+          auth: string | null
           couple_space_id: string
           created_at: string
-          endpoint: string
+          endpoint: string | null
+          fcm_token: string | null
           id: string
-          p256dh: string
+          p256dh: string | null
           user_agent: string | null
           user_id: string
         }
         Insert: {
-          auth: string
+          auth?: string | null
           couple_space_id: string
           created_at?: string
-          endpoint: string
+          endpoint?: string | null
+          fcm_token?: string | null
           id?: string
-          p256dh: string
+          p256dh?: string | null
           user_agent?: string | null
           user_id: string
         }
         Update: {
-          auth?: string
+          auth?: string | null
           couple_space_id?: string
           created_at?: string
-          endpoint?: string
+          endpoint?: string | null
+          fcm_token?: string | null
           id?: string
-          p256dh?: string
+          p256dh?: string | null
           user_agent?: string | null
           user_id?: string
         }
@@ -1776,33 +3212,115 @@ export type Database = {
       }
       referrals: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
-          new_user_id: string
-          referrer_user_id: string
+          new_user_id: string | null
+          points_awarded: boolean | null
+          referrer_user_id: string | null
           reward_given: boolean
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          new_user_id: string
-          referrer_user_id: string
+          new_user_id?: string | null
+          points_awarded?: boolean | null
+          referrer_user_id?: string | null
           reward_given?: boolean
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          new_user_id?: string
-          referrer_user_id?: string
+          new_user_id?: string | null
+          points_awarded?: boolean | null
+          referrer_user_id?: string | null
           reward_given?: boolean
         }
         Relationships: []
+      }
+      relationship_events: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          event_date: string
+          event_type: string
+          id: string
+          image_path: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          event_date: string
+          event_type?: string
+          id?: string
+          image_path?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          image_path?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relationship_events_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relationship_milestones: {
+        Row: {
+          couple_space_id: string
+          created_at: string
+          id: string
+          milestone_type: string
+          milestone_value: number
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string
+          id?: string
+          milestone_type: string
+          milestone_value: number
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string
+          id?: string
+          milestone_type?: string
+          milestone_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relationship_milestones_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       routine_day_logs: {
         Row: {
           checked_item_ids: string[]
           completion_rate: number
-          couple_space_id: string
+          couple_space_id: string | null
           created_at: string
           day: string
           id: string
@@ -1814,7 +3332,7 @@ export type Database = {
         Insert: {
           checked_item_ids?: string[]
           completion_rate?: number
-          couple_space_id: string
+          couple_space_id?: string | null
           created_at?: string
           day: string
           id?: string
@@ -1826,7 +3344,7 @@ export type Database = {
         Update: {
           checked_item_ids?: string[]
           completion_rate?: number
-          couple_space_id?: string
+          couple_space_id?: string | null
           created_at?: string
           day?: string
           id?: string
@@ -1848,7 +3366,7 @@ export type Database = {
       routine_items: {
         Row: {
           active: boolean
-          couple_space_id: string
+          couple_space_id: string | null
           created_at: string
           emoji: string | null
           id: string
@@ -1859,7 +3377,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          couple_space_id: string
+          couple_space_id?: string | null
           created_at?: string
           emoji?: string | null
           id?: string
@@ -1870,7 +3388,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          couple_space_id?: string
+          couple_space_id?: string | null
           created_at?: string
           emoji?: string | null
           id?: string
@@ -1882,6 +3400,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "routine_items_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routine_logs: {
+        Row: {
+          completed_at: string | null
+          day_key: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          day_key?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          day_key?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      routines: {
+        Row: {
+          couple_space_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          couple_space_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          couple_space_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routines_couple_space_id_fkey"
             columns: ["couple_space_id"]
             isOneToOne: false
             referencedRelation: "couple_spaces"
@@ -1942,6 +3522,73 @@ export type Database = {
           },
         ]
       }
+      shields: {
+        Row: {
+          couple_id: string | null
+          couple_space_id: string | null
+          id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          couple_id?: string | null
+          couple_space_id?: string | null
+          id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          couple_id?: string | null
+          couple_space_id?: string | null
+          id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shields_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: true
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_purchases: {
+        Row: {
+          couple_space_id: string
+          id: string
+          item_key: string
+          price_paid: number
+          purchased_at: string
+          user_id: string | null
+        }
+        Insert: {
+          couple_space_id: string
+          id?: string
+          item_key: string
+          price_paid: number
+          purchased_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          couple_space_id?: string
+          id?: string
+          item_key?: string
+          price_paid?: number
+          purchased_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_purchases_couple_space_id_fkey"
+            columns: ["couple_space_id"]
+            isOneToOne: false
+            referencedRelation: "couple_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           billing_type: string | null
@@ -1952,6 +3599,7 @@ export type Database = {
           name: string
           price: string
           price_mzn: number | null
+          tier_level: number
         }
         Insert: {
           billing_type?: string | null
@@ -1962,6 +3610,7 @@ export type Database = {
           name: string
           price: string
           price_mzn?: number | null
+          tier_level?: number
         }
         Update: {
           billing_type?: string | null
@@ -1972,36 +3621,7 @@ export type Database = {
           name?: string
           price?: string
           price_mzn?: number | null
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          created_at: string
-          house_id: string
-          id: string
-          paid: boolean | null
-          payment_method: string | null
-          payment_proof_url: string | null
-          plan: string
-        }
-        Insert: {
-          created_at?: string
-          house_id: string
-          id?: string
-          paid?: boolean | null
-          payment_method?: string | null
-          payment_proof_url?: string | null
-          plan?: string
-        }
-        Update: {
-          created_at?: string
-          house_id?: string
-          id?: string
-          paid?: boolean | null
-          payment_method?: string | null
-          payment_proof_url?: string | null
-          plan?: string
+          tier_level?: number
         }
         Relationships: []
       }
@@ -2096,92 +3716,221 @@ export type Database = {
           },
         ]
       }
-    }
-    Views: {
-      v_daily_completion: {
+      user_items: {
         Row: {
-          couple_space_id: string
-          p1_user_id: string
-          p2_user_id: string
-          p1_interacted: boolean
-          p2_interacted: boolean
-          is_completed_p1: boolean
-          is_completed_p2: boolean
-          mission_title: string | null
-          mission_description: string | null
-          mission_emoji: string | null
-          mission_points: number | null
-          day_complete: boolean
+          loveshield_count: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          loveshield_count?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          loveshield_count?: number
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
     }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
+      activate_trial: {
+        Args: { p_couple_space_id: string }
+        Returns: undefined
+      }
+      admin_approve_payment: {
+        Args: {
+          p_payment_id: string
+          p_plan_id?: string
+          p_tier_level?: number
+        }
+        Returns: undefined
+      }
+      admin_assign_plan: {
+        Args: {
+          p_couple_space_id: string
+          p_plan_id: string
+          p_tier_level: number
+          p_trial_days?: number
+        }
+        Returns: undefined
+      }
+      admin_reject_payment: {
+        Args: { p_notes?: string; p_payment_id: string }
+        Returns: undefined
+      }
+      admin_remove_plan: {
+        Args: { p_couple_space_id: string }
+        Returns: undefined
+      }
+      admin_set_suspended: {
+        Args: { p_couple_space_id: string; p_suspended: boolean }
+        Returns: undefined
+      }
+      admin_set_verified: {
+        Args: { p_couple_space_id: string; p_verified: boolean }
+        Returns: undefined
+      }
       are_users_in_same_couple_space: {
         Args: { _other_user_id: string }
         Returns: boolean
       }
+      award_lovepoints: {
+        Args: {
+          p_amount: number
+          p_couple_space_id: string
+          p_description?: string
+          p_source: string
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
+      buy_guardian_item: {
+        Args: {
+          p_couple_space_id: string
+          p_item_key: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
+      checkdailyinteraction: { Args: { p_couple_id: string }; Returns: boolean }
+      checkmissioncompletion: {
+        Args: {
+          p_action_type?: string
+          p_couple_space_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      cleanup_notification_history: { Args: never; Returns: undefined }
       current_couple_space_id: { Args: never; Returns: string }
-      get_couple_member_ids: {
+      delete_chat_message: {
+        Args: { p_message_id: string }
+        Returns: undefined
+      }
+      delete_couple_space: {
         Args: { p_couple_space_id: string }
-        Returns: { user_id: string }[]
+        Returns: undefined
+      }
+      edit_chat_message: {
+        Args: { p_content: string; p_message_id: string }
+        Returns: undefined
       }
       fn_buy_loveshield: {
-        Args: { p_couple_space_id: string; p_cost?: number }
+        Args: { p_cost?: number; p_couple_space_id: string }
         Returns: Json
       }
       fn_count_active_members: {
-        Args: { p_couple_space_id: string }
+        Args: { p_couple_id: string }
         Returns: number
       }
       fn_get_or_create_daily_missions_v5: {
         Args: { p_couple_space_id: string }
         Returns: {
           cdm_id: string
-          mission_id: string
-          title: string
+          completed: boolean
           description: string
           emoji: string
+          mission_id: string
           mission_type: string
-          target_count: number
-          reward_points: number
           progress: number
-          completed: boolean
+          reward_points: number
+          target_count: number
+          title: string
         }[]
       }
-      fn_get_shields: {
+      fn_get_shields: { Args: { p_couple_id: string }; Returns: number }
+      fn_increment_book_views: {
+        Args: { p_book_id: string }
+        Returns: undefined
+      }
+      generate_referral_code: { Args: never; Returns: string }
+      generate_unique_referral_code: { Args: never; Returns: string }
+      get_book_stats: {
+        Args: { p_book_id: string }
+        Returns: {
+          avg_rating: number
+          favorites_count: number
+          ratings_count: number
+        }[]
+      }
+      get_couple_activity_summary: {
+        Args: { _couple_space_id: string }
+        Returns: Json
+      }
+      get_couple_member_ids: {
+        Args: { p_couple_space_id: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      get_lifetime_points: {
         Args: { p_couple_space_id: string }
         Returns: number
       }
-      get_partner_cycle_summary: {
-        Args: { _partner_user_id: string }
-        Returns: Json
+      get_my_couple_space_id: { Args: never; Returns: string }
+      get_ranking: { Args: { p_type?: string }; Returns: Json }
+      get_reading_stats: {
+        Args: { p_couple_space_id: string; p_user_id: string }
+        Returns: {
+          avg_completion: number
+          books_completed: number
+          books_started: number
+          chapters_completed: number
+          reading_days: number
+          total_minutes: number
+        }[]
       }
-      get_streak: {
-        Args: { p_couple_space_id: string }
-        Returns: Json
-      }
-      get_total_points: {
-        Args: { p_couple_space_id: string }
-        Returns: number
-      }
+      get_streak: { Args: { p_couple_space_id: string }; Returns: Json }
+      get_total_points: { Args: { p_couple_space_id: string }; Returns: number }
       get_user_couple_space_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_member_of_couple_space: {
         Args: { _couple_space_id: string }
         Returns: boolean
       }
+      is_member_of_space: {
+        Args: { _couple_space_id: string; _user_id: string }
+        Returns: boolean
+      }
       log_daily_activity: {
         Args: { p_couple_space_id: string; p_type?: string }
         Returns: Json
       }
-      sync_streak_v3: {
-        Args: { p_couple_space_id: string }
-        Returns: Json
+      pin_chat_message: {
+        Args: { p_is_pinned: boolean; p_message_id: string }
+        Returns: undefined
       }
-      update_streak: {
+      record_perfect_day: {
         Args: { p_couple_space_id: string }
         Returns: undefined
+      }
+      safe_checkin: {
+        Args: { p_couple_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      set_guardian_appearance: {
+        Args: {
+          p_couple_space_id: string
+          p_glow_color?: string
+          p_ring_enabled?: boolean
+        }
+        Returns: Json
+      }
+      update_streak: { Args: { p_couple_space_id: string }; Returns: undefined }
+      upsert_feature_flag: {
+        Args: {
+          p_enabled: boolean
+          p_key: string
+          p_scope: string
+          p_target_id?: string
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -2201,12 +3950,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2230,11 +3979,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2255,11 +4004,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2280,11 +4029,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2297,11 +4046,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -35,7 +35,6 @@ const History = lazy(() => import("./pages/History"));
 const Cycle = lazy(() => import("./pages/Cycle"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Landing      = lazy(() => import("./pages/Landing"));
