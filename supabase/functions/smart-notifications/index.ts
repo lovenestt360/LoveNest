@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 // ══════════════════════════════════════════════════════════════════════
 // LoveNest — Emotional Notification System V2 (FCM HTTP v1)
 //
-// 7 notification rules + fasting + ciclo
+// 6 notification rules + fasting + ciclo
 // Max 2 notifications/user/day · Per-rule cooldowns · 8h–22h local only
 // ══════════════════════════════════════════════════════════════════════
 
@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 5: Flame Risk ────────────────────────────────────────
+        // ── RULE 4: Flame Risk ────────────────────────────────────────
         const flameRisk = isSolo
           ? (streak > 0 && localHour >= 19 && !myActiveToday)
           : (streak > 0 && localHour >= 19 && (!myActiveToday || !partnerActive));
@@ -461,7 +461,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 6: Partner Presence ──────────────────────────────────
+        // ── RULE 5: Partner Presence ──────────────────────────────────
         if (!rule && !isSolo && partnerUserId && partnerActive && !myActiveToday && categoryEnabled("partner")) {
           if (!(await recentlySent("partner_active"))) {
             rule = "partner_active";
@@ -469,7 +469,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 7: Silent Day ────────────────────────────────────────
+        // ── RULE 6: Silent Day ────────────────────────────────────────
         const silentCondition = isSolo
           ? (!myActiveToday && localHour >= 19 && localHour < 21)
           : (!myActiveToday && !partnerActive && localHour >= 19 && localHour < 21);
