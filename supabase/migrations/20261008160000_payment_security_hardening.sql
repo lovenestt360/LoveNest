@@ -126,6 +126,120 @@ CREATE TRIGGER normalize_client_payment_insert
 BEFORE INSERT ON public.payments
 FOR EACH ROW EXECUTE FUNCTION public.normalize_client_payment_insert();
 
+
+-- ── Book purchase normalization ────────────────────────────────────────────
+-- A paid book request is also browser-created. Members may request/re-submit,
+-- but the database decides the price, requester, pending status and receipt.
+CREATE OR REPLACE FUNCTION public.normalize_client_book_purchase()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, storage
+AS $
+DECLARE
+  v_book RECORD;
+  v_path TEXT;
+BEGIN
+  IF auth.uid() IS NULL OR public.is_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT public.is_member_of_couple_space(NEW.couple_space_id) THEN
+    RAISE EXCEPTION 'not a member of this couple space';
+  END IF;
+
+  SELECT id, is_free, price, currency, status
+  INTO v_book
+  FROM public.books
+  WHERE id = NEW.book_id
+  LIMIT 1;
+
+  IF v_book.id IS NULL OR v_book.status <> 'published' THEN
+    RAISE EXCEPTION 'book unavailable';
+  END IF;
+
+  IF v_book.is_free THEN
+    RAISE EXCEPTION 'free books do not require a purchase';
+  END IF;
+
+  IF NEW.method IS NULL OR NEW.method NOT IN ('M-Pesa', 'e-Mola', 'mKesh') THEN
+    RAISE EXCEPTION 'invalid manual payment method';
+  END IF;
+
+  IF NEW.proof_url IS NULL OR btrim(NEW.proof_url) = '' THEN
+    RAISE EXCEPTION 'payment receipt is required';
+  END IF;
+
+  v_path := btrim(NEW.proof_url);
+  IF position('/storage/v1/object/public/receipts/' in v_path) > 0 THEN
+    v_path := split_part(v_path, '/storage/v1/object/public/receipts/', 2);
+  ELSIF position('/storage/v1/object/sign/receipts/' in v_path) > 0 THEN
+    v_path := split_part(v_path, '/storage/v1/object/sign/receipts/', 2);
+    v_path := split_part(v_path, '?', 1);
+  ELSIF v_path ~* '^https?://' THEN
+    RAISE EXCEPTION 'receipt must belong to LoveNest storage';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM storage.objects o
+    WHERE o.bucket_id = 'receipts'
+      AND o.name = v_path
+      AND o.owner = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'receipt not found or not owned by current user';
+  END IF;
+
+  NEW.amount       := to_char(COALESCE(v_book.price, 0), 'FM9999999990.00') || ' ' || COALESCE(v_book.currency, 'MZN');
+  NEW.status       := 'pending';
+  NEW.requested_by := auth.uid();
+  NEW.admin_notes  := NULL;
+  NEW.proof_url    := v_path;
+  NEW.provider     := 'manual';
+  NEW.external_id  := NULL;
+
+  RETURN NEW;
+END;
+$;
+
+DROP TRIGGER IF EXISTS normalize_client_book_purchase ON public.book_purchases;
+CREATE TRIGGER normalize_client_book_purchase
+BEFORE INSERT OR UPDATE ON public.book_purchases
+FOR EACH ROW EXECUTE FUNCTION public.normalize_client_book_purchase();
+
+-- ── Paid book file entitlement ─────────────────────────────────────────────
+-- A private bucket is not an entitlement boundary if every authenticated user
+-- has SELECT on storage.objects. Tie each file to books.file_path and require
+-- either a free published book or an approved purchase in the caller's space.
+DROP POLICY IF EXISTS "Authenticated can read book files via signed url" ON storage.objects;
+DROP POLICY IF EXISTS "Entitled users can read book files" ON storage.objects;
+
+CREATE POLICY "Entitled users can read book files"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'book-files'
+  AND (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1
+      FROM public.books b
+      WHERE b.file_path = storage.objects.name
+        AND b.status = 'published'
+        AND (
+          b.is_free = true
+          OR EXISTS (
+            SELECT 1
+            FROM public.book_purchases bp
+            WHERE bp.book_id = b.id
+              AND bp.status = 'approved'
+              AND public.is_member_of_couple_space(bp.couple_space_id)
+          )
+        )
+    )
+  )
+);
+
 -- ── Receipt storage privacy ────────────────────────────────────────────────
 UPDATE storage.buckets
 SET public = false
