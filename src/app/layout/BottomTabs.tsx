@@ -43,7 +43,7 @@ export function BottomTabs() {
       to: "/",
       label: "Hoje",
       icon: Home,
-      active: (pathname) => pathname === "/" || startsWithAny(pathname, ["/humor", "/jornada"]),
+      active: (pathname) => pathname === "/" || startsWithAny(pathname, ["/humor"]),
     },
     ...(!isSolo
       ? [{
@@ -68,6 +68,7 @@ export function BottomTabs() {
           "/conflitos",
           "/capsula",
           "/wrapped",
+          "/jornada",
         ]),
       badge: isSolo ? 0 : memoriesUnread + complaintsUnread + capsuleUnread,
     },
