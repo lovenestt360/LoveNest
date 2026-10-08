@@ -25,6 +25,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { getReceiptSignedUrl } from "@/lib/receiptStorage";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
@@ -350,6 +351,15 @@ export default function Admin() {
 
     const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
     const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
+
+    const handleOpenReceipt = async (ref: string) => {
+        try {
+            const signedUrl = await getReceiptSignedUrl(ref);
+            window.open(signedUrl, "_blank", "noopener,noreferrer");
+        } catch (error: any) {
+            toast({ title: "Erro ao abrir comprovativo", description: error.message, variant: "destructive" });
+        }
+    };
 
     const handleApprovePayment = async (paymentId: string, houseId: string, planName: string) => {
         setProcessingPaymentId(paymentId);
@@ -1105,7 +1115,7 @@ export default function Admin() {
                                         </div>
                                         <div className="flex w-full md:w-auto gap-2 shrink-0">
                                             {payment.proof_url ? (
-                                                <Button size="sm" variant="outline" onClick={() => setSelectedImage(payment.proof_url)}>
+                                                <Button size="sm" variant="outline" onClick={() => handleOpenReceipt(payment.proof_url)}>
                                                     <ImageIcon className="w-4 h-4 mr-2" /> Comprovativo
                                                 </Button>
                                             ) : (
