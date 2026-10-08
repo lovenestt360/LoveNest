@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import Paywall from "@/components/Paywall";
+import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
 // Tier levels — must match subscription_plans.tier_level in DB
 // 0 = Free, 1 = Plus, 2 = Pro, 3 = Max
@@ -50,7 +51,7 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
 
                 if (trialActive) {
                     userTier = 999; // trial = unrestricted
-                } else if (house.subscription_status === "active") {
+                } else if (hasActivePaidSubscription(house as any)) {
                     userTier = house.tier_level ?? 1;
                 }
 
