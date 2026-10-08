@@ -65,23 +65,41 @@ Deno.serve(async (req) => {
     }
 
     // Allow override via body
+    // - dry_run: calcula as estatísticas e devolve-as, sem escrever em
+    //   love_wrapped, sem push e sem notification_history. Serve para validar
+    //   a função sem esperar pelo cron do dia 1 nem notificar casais reais.
+    // - couple_space_id: limita a execução a uma única casa.
     let overwrite = false;
+    let dryRun = false;
+    let onlySpaceId: string | null = null;
     try {
       const body = await req.json();
-      if (body.month) month = body.month;
-      if (body.year) year = body.year;
-      if (body.overwrite) overwrite = body.overwrite;
+      if (body.month) month = Number(body.month);
+      if (body.year) year = Number(body.year);
+      if (body.overwrite) overwrite = body.overwrite === true;
+      if (body.dry_run) dryRun = body.dry_run === true;
+      if (typeof body.couple_space_id === "string") onlySpaceId = body.couple_space_id;
     } catch { /* no body */ }
+
+    if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(year) || year < 2020 || year > 2100) {
+      return new Response(JSON.stringify({ error: "month/year inválidos" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
     const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
 
-    console.log(`Generating LoveWrapped for ${month}/${year}`);
+    console.log(`Generating LoveWrapped for ${month}/${year}${dryRun ? " (dry run)" : ""}${onlySpaceId ? ` — space ${onlySpaceId}` : ""}`);
 
     // Get all couple spaces (streak_count comes from couple_spaces after V5 refactor)
-    const { data: spaces, error: fetchError } = await sb.from("couple_spaces").select("id, house_name, streak_count");
+    let spacesQuery = sb.from("couple_spaces").select("id, house_name, streak_count");
+    if (onlySpaceId) spacesQuery = spacesQuery.eq("id", onlySpaceId);
+    const { data: spaces, error: fetchError } = await spacesQuery;
+    const preview: Record<string, unknown>[] = [];
 
     if (fetchError) {
       console.error("Error fetching spaces:", fetchError.message);
@@ -105,7 +123,7 @@ Deno.serve(async (req) => {
 
     // Access token Google FCM obtido uma única vez para todo o batch
     let fcmAccessToken: string | null = null;
-    if (fcmClientEmail && fcmPrivateKey) {
+    if (!dryRun && fcmClientEmail && fcmPrivateKey) {
       try {
         fcmAccessToken = await getFcmAccessToken(fcmClientEmail, fcmPrivateKey);
       } catch (e: any) {
@@ -187,6 +205,22 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (checkError) throw new Error(`Check existing failed: ${checkError.message}`);
+
+        if (dryRun) {
+          preview.push({
+            couple_space_id: spaceId,
+            house_name: spaceName,
+            messages_count: messagesCount ?? 0,
+            memories_count: memoriesCount ?? 0,
+            challenges_completed: challengesCount ?? 0,
+            streak_days: streakDays,
+            mood_checkins: moodCount,
+            top_mood: topMood,
+            would: existing ? (overwrite ? "update" : "skip") : "insert",
+          });
+          processed++;
+          continue;
+        }
 
         let shouldNotify = true;
 
@@ -293,7 +327,9 @@ Deno.serve(async (req) => {
         success: true,
         total_spaces: spaces.length,
         processed,
-        generated: processed, // Backward compatibility
+        generated: dryRun ? 0 : processed, // Backward compatibility
+        dry_run: dryRun,
+        ...(dryRun ? { preview } : {}),
         failures,
         month,
         year
