@@ -69,7 +69,8 @@ export async function sendFcmMessage(
   fcmToken: string,
   title: string,
   body: string,
-  url: string
+  url: string,
+  type?: string
 ): Promise<{ ok: boolean; error?: string }> {
   const resp = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
@@ -85,6 +86,7 @@ export async function sendFcmMessage(
           notification: { title, body },
           data: {
             url: url || "/chat",
+            ...(type ? { type } : {}),
           },
           webpush: {
             notification: {

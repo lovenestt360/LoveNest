@@ -7,6 +7,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function preferenceCategoryForType(type: string | null | undefined): string | null {
+  switch (type) {
+    case "chat": return "chat";
+    case "humor": return "humor";
+    case "tarefas":
+    case "agenda":
+    case "routine":
+    case "plano": return "plano";
+    case "memorias": return "memorias";
+    case "oracao": return "oracao";
+    case "conflitos": return "conflitos";
+    case "ciclo_par": return "ciclo_par";
+    case "biblioteca": return "biblioteca";
+    case "location": return "location";
+    case "streak_alert": return "engagement";
+    default: return null;
+  }
+}
+
 // ── Edge Function ────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -159,13 +178,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: subs, error: subsError } = await query;
+    const { data: rawSubs, error: subsError } = await query;
     if (subsError) throw subsError;
 
-    await logInternal("SUBS_FOUND", { count: subs?.length ?? 0 });
+    let subs = rawSubs ?? [];
+    const preferenceCategory = preferenceCategoryForType(type);
 
-    if (!subs || subs.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No active recipients" }), {
+    // Immediate push preferences are server-authoritative. The client cache
+    // only controls in-app feedback; disabling a category here must stop the
+    // actual FCM delivery on every device.
+    if (!is_test && preferenceCategory && subs.length > 0) {
+      const recipientIds = [...new Set(subs.map((sub) => sub.user_id))];
+      const { data: settings, error: settingsError } = await adminClient
+        .from("notification_settings")
+        .select("user_id, enabled")
+        .eq("category", preferenceCategory)
+        .in("user_id", recipientIds);
+
+      if (settingsError) throw settingsError;
+
+      const disabledUsers = new Set(
+        (settings ?? [])
+          .filter((row) => row.enabled === false)
+          .map((row) => row.user_id)
+      );
+
+      subs = subs.filter((sub) => !disabledUsers.has(sub.user_id));
+
+      await logInternal("PREFERENCE_FILTER", {
+        category: preferenceCategory,
+        before: rawSubs?.length ?? 0,
+        after: subs.length,
+      });
+    }
+
+    await logInternal("SUBS_FOUND", { count: subs.length });
+
+    if (subs.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, message: "No enabled recipients" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -175,7 +225,7 @@ Deno.serve(async (req) => {
     const accessToken = await getFcmAccessToken(fcmClientEmail, fcmPrivateKey);
 
     let sentCount = 0;
-    const errors: { token: string; error: string }[] = [];
+    const errors: { subscription_id: string; error: string }[] = [];
 
     for (const sub of subs) {
       const result = await sendFcmMessage(
@@ -184,13 +234,14 @@ Deno.serve(async (req) => {
         sub.fcm_token!,
         finalTitle || "LoveNest",
         finalBody  || "",
-        url || "/chat"
+        url || "/chat",
+        type ? String(type) : undefined,
       );
 
       if (result.ok) {
         sentCount++;
       } else {
-        errors.push({ token: sub.fcm_token!.slice(0, 20), error: result.error! });
+        errors.push({ subscription_id: sub.id, error: result.error! });
         // Token inválido/expirado → remover do BD
         if (result.error === "UNREGISTERED" || result.error === "INVALID_ARGUMENT") {
           await adminClient.from("push_subscriptions").delete().eq("id", sub.id);
