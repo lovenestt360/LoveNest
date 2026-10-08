@@ -211,9 +211,7 @@ Deno.serve(async (req) => {
 
   const sb  = createClient(supabaseUrl, serviceKey);
   const now = new Date();
-  const todayISO     = now.toISOString().slice(0, 10);
-  const nowMs        = now.getTime();
-  const yesterdayISO = new Date(nowMs - 86400000).toISOString().slice(0, 10);
+  const nowMs = now.getTime();
 
   let totalSent = 0, scannedSpaces = 0;
 
@@ -237,24 +235,6 @@ Deno.serve(async (req) => {
 
       const isSolo = members.length === 1;
       scannedSpaces++;
-
-      const { data: todayActivity } = await sb
-        .from("daily_activity")
-        .select("user_id, type")
-        .eq("couple_space_id", spaceId)
-        .eq("activity_date", todayISO);
-
-      const activeUsersToday = new Set((todayActivity || []).map((r: any) => r.user_id));
-
-      const typeMap: Record<string, Set<string>> = {};
-      for (const row of (todayActivity || []) as any[]) {
-        if (!typeMap[row.type]) typeMap[row.type] = new Set();
-        typeMap[row.type].add(row.user_id);
-      }
-      const missionThreshold = isSolo ? 1 : 2;
-      const missionTypes = isSolo ? ["plano", "checkin", "mood"] : ["message", "checkin", "mood"];
-      const missionsDone = missionTypes.filter(t => (typeMap[t]?.size ?? 0) >= missionThreshold).length;
-      const isPerfectDay = missionsDone === missionTypes.length;
 
       const in5Days = new Date(nowMs + 5 * 86400000).toISOString();
       const { data: capsules } = await sb
