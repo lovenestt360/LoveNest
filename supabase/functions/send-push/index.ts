@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
         finalTitle || "LoveNest",
         finalBody  || "",
         url || "/chat",
-        type
+        type ? { type: String(type) } : {},
       );
 
       if (result.ok) {
