@@ -42,6 +42,11 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { generateInitials } from "@/utils/initials";
 import { cn } from "@/lib/utils";
 import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
+import {
+  cacheNotificationPrefs,
+  loadCachedNotificationPrefs,
+  mergeServerNotificationPrefs,
+} from "@/lib/notificationPreferences";
 
 interface Profile {
   display_name: string | null;
@@ -67,31 +72,6 @@ const PRIMARY_GOAL_OPTIONS = [
   { value: "growth", label: "Crescimento pessoal" },
   { value: "explore", label: "Explorar a aplicação" },
 ];
-
-const NOTIF_KEY = "lovenest_notif_prefs";
-const defaultPrefs = {
-  chat: true,
-  humor: true,
-  tarefas: true,
-  agenda: true,
-  memorias: true,
-  oracao: true,
-  conflitos: true,
-  ciclo_lembrete: false,
-  ciclo_menstruacao: false,
-  ciclo_fertil: false,
-  ciclo_par: false,
-};
-
-function loadPrefs(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(NOTIF_KEY);
-    return raw ? { ...defaultPrefs, ...JSON.parse(raw) } : { ...defaultPrefs };
-  } catch {
-    return { ...defaultPrefs };
-  }
-}
-
 
 // Sub-componente isolado — só montado quando a secção de notificações está visível.
 // Mantém o hook useLocationSharing fora do ciclo de vida da Settings completa.
@@ -144,7 +124,7 @@ export default function Settings() {
   const [referralCode, setReferralCode] = useState("");
   const [houseInviteCode, setHouseInviteCode] = useState("");
 
-  const [notifPrefs, setNotifPrefs] = useState(loadPrefs);
+  const [notifPrefs, setNotifPrefs] = useState(loadCachedNotificationPrefs);
 
   // Personalização (Onboarding V2)
   const [countryCode, setCountryCode] = useState<string | null>(null);
@@ -299,20 +279,30 @@ export default function Settings() {
         setUsageMode((data as any).usage_mode ?? null);
       }
       
-      // Load Smart Notif Settings
+      // Notification settings are shared across web and future native clients.
       const { data: sNotifs } = await supabase
         .from("notification_settings")
         .select("*")
         .eq("user_id", user.id);
-      
-      if (sNotifs && sNotifs.length > 0) {
-        setSmartSettings(sNotifs);
-        setPreferredHour(sNotifs[0].preferred_hour);
+
+      const smartCategories = new Set(["engagement", "emotion", "partner", "system"]);
+      const smartRows = (sNotifs ?? []).filter((row: any) => smartCategories.has(row.category));
+
+      if (smartRows.length > 0) {
+        setSmartSettings(smartRows);
+        const rowWithHour = smartRows.find((row: any) => row.preferred_hour != null);
+        if (rowWithHour) setPreferredHour(rowWithHour.preferred_hour);
       } else {
-        // Initialize default categories if none exist
-        const defaultCats = ['engagement', 'emotion', 'partner', 'system'];
-        setSmartSettings(defaultCats.map(c => ({ category: c, enabled: true })));
+        const defaultCats = ["engagement", "emotion", "partner", "system"];
+        setSmartSettings(defaultCats.map(category => ({ category, enabled: true })));
       }
+
+      const mergedPrefs = mergeServerNotificationPrefs(
+        loadCachedNotificationPrefs(),
+        sNotifs as any,
+      );
+      setNotifPrefs(mergedPrefs);
+      cacheNotificationPrefs(mergedPrefs);
 
       if (spaceId) {
         const { data: spaceData } = await supabase.from("couple_spaces").select("*").eq("id", spaceId).maybeSingle();
@@ -469,24 +459,30 @@ export default function Settings() {
     }
   };
 
-  const CICLO_NOTIF_KEYS = ["ciclo_lembrete", "ciclo_menstruacao", "ciclo_fertil"];
-
   const toggleNotif = (key: string) => {
     setNotifPrefs((prev) => {
       const newEnabled = !prev[key];
       const next = { ...prev, [key]: newEnabled };
-      localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
-      // Sincroniza prefs de ciclo com Supabase para o backend poder ler
-      if (CICLO_NOTIF_KEYS.includes(key) && user) {
+      cacheNotificationPrefs(next);
+
+      if (user) {
         supabase.from("notification_settings" as any).upsert({
           user_id: user.id,
           category: key,
           enabled: newEnabled,
           preferred_hour: preferredHour,
         }, { onConflict: "user_id,category" }).then(({ error }: any) => {
-          if (error) console.error("ciclo notif sync:", error);
+          if (error) {
+            console.error("notification preference sync:", error);
+            toast({
+              title: "Não foi possível guardar a preferência",
+              description: "Tenta novamente dentro de alguns instantes.",
+              variant: "destructive",
+            });
+          }
         });
       }
+
       return next;
     });
   };
@@ -943,10 +939,10 @@ export default function Settings() {
                   <p className="text-[11px] text-muted-foreground/80 mt-0.5 leading-relaxed">Enviados nos momentos certos, com base no vosso ritmo.</p>
                 </div>
                 {[
-                  { id: 'engagement', label: 'Presença e conexão',  desc: 'Quando o espaço está silencioso' },
-                  { id: 'emotion',    label: 'Cuidado emocional',   desc: 'Lembretes para partilhares como te sentes' },
-                  { id: 'partner',    label: 'Atividade do par',    desc: 'Quando o teu par aparece no espaço' },
-                  { id: 'system',     label: 'Agenda e tarefas',    desc: 'Alertas sobre tarefas e eventos' },
+                  { id: 'engagement', label: 'Presença e chama',    desc: 'Marcos, dias completos e chama em risco' },
+                  { id: 'emotion',    label: 'Cuidado emocional',   desc: 'Lembretes suaves quando o espaço fica silencioso' },
+                  { id: 'partner',    label: 'Presença do par',     desc: 'Quando o teu par aparece e tu ainda não' },
+                  { id: 'system',     label: 'Momentos importantes', desc: 'Cápsulas e resumos quando ficam disponíveis' },
                 ].map((cat, i, arr) => (
                   <div key={cat.id} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-border')}>
                     <div className="space-y-0.5">
@@ -957,7 +953,8 @@ export default function Settings() {
                   </div>
                 ))}
                 <div className="pt-4 border-t border-border">
-                  <p className="text-[11px] font-medium text-muted-foreground/80 mb-2">Horário preferido para lembretes</p>
+                  <p className="text-[11px] font-medium text-muted-foreground/80 mb-1">Horário preferido</p>
+                  <p className="text-[10px] text-muted-foreground/60 mb-2">Usado apenas para lembretes flexíveis. Alertas ligados a um momento específico podem chegar noutra hora.</p>
                   <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
                     <SelectTrigger className="h-11 bg-white dark:bg-white/5 border border-border rounded-xl text-[13px]">
                       <SelectValue placeholder="Escolhe uma hora..." />
@@ -980,8 +977,7 @@ export default function Settings() {
                 {([
                   { key: 'chat',      label: 'Mensagens',  desc: 'Nova mensagem do teu par' },
                   { key: 'humor',     label: 'Humor',      desc: 'Quando o par partilha como se sente' },
-                  { key: 'tarefas',   label: 'Tarefas',    desc: 'Tarefas atribuídas ou concluídas' },
-                  { key: 'agenda',    label: 'Agenda',      desc: 'Novos eventos e rotinas do casal' },
+                  { key: 'plano',     label: 'Plano',       desc: 'Novos planos e alterações da vida a dois' },
                   { key: 'memorias',  label: 'Memórias',   desc: 'Novas memórias adicionadas' },
                   { key: 'oracao',    label: 'Oração',     desc: 'Momento de oração em conjunto' },
                   { key: 'conflitos', label: 'Desabafos',  desc: 'Novos desabafos para resolver' },
