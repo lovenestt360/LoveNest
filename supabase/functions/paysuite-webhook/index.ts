@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, note: "amount mismatch, ignored" });
     }
 
-    let planQuery = adminClient.from("subscription_plans").select("id, tier_level");
+    let planQuery = adminClient.from("subscription_plans").select("id");
     if (payment.plan_id) {
       planQuery = planQuery.eq("id", payment.plan_id);
     } else {
@@ -162,18 +162,15 @@ Deno.serve(async (req) => {
       return json({ error: "Plano do pagamento não encontrado" }, 500);
     }
 
-    const { error: spaceError } = await adminClient
-      .from("couple_spaces")
-      .update({
-        subscription_status: "active",
-        plan_id: plan.id,
-        tier_level: plan.tier_level,
-      })
-      .eq("id", payment.couple_space_id);
+    const { error: spaceError } = await adminClient.rpc("activate_paid_subscription", {
+      p_couple_space_id: payment.couple_space_id,
+      p_plan_id: plan.id,
+      p_effective_at: new Date().toISOString(),
+    });
 
     if (spaceError) {
       await logInternal("SPACE_ACTIVATION_FAILED", { message: spaceError.message, paymentId: payment.id });
-      return json({ error: "Falha ao ativar espaço" }, 500);
+      return json({ error: "Falha ao ativar subscrição" }, 500);
     }
 
     const { error: approveError } = await adminClient
