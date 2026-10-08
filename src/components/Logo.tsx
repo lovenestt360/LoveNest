@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 /**
  * LoveNest Logo System
  * Brand colors: Pink #FF6B8F · Blue #4D7CFE · Navy #0B1324
@@ -10,6 +12,10 @@
 // ── Symbol mark — two crescents facing each other ─────────────────────────────
 
 export function LogoMark({ size = 40, className = "" }: { size?: number; className?: string }) {
+  const uid = useId().replace(/:/g, "");
+  const pinkMaskId = `ln-pink-mask-${uid}`;
+  const blueMaskId = `ln-blue-mask-${uid}`;
+
   return (
     <svg
       width={size}
@@ -22,13 +28,13 @@ export function LogoMark({ size = 40, className = "" }: { size?: number; classNa
     >
       <defs>
         {/* Pink crescent mask — outer ellipse minus right-offset inner ellipse */}
-        <mask id="ln-pink-mask">
+        <mask id={pinkMaskId}>
           <rect width="512" height="512" fill="black" />
           <ellipse cx="198" cy="265" rx="115" ry="195" fill="white" />
           <ellipse cx="256" cy="252" rx="97" ry="172" fill="black" />
         </mask>
         {/* Blue crescent mask — mirror of pink */}
-        <mask id="ln-blue-mask">
+        <mask id={blueMaskId}>
           <rect width="512" height="512" fill="black" />
           <ellipse cx="314" cy="265" rx="115" ry="195" fill="white" />
           <ellipse cx="256" cy="252" rx="97" ry="172" fill="black" />
@@ -36,9 +42,9 @@ export function LogoMark({ size = 40, className = "" }: { size?: number; classNa
       </defs>
 
       {/* Pink left crescent */}
-      <rect width="512" height="512" fill="#FF6B8F" mask="url(#ln-pink-mask)" />
+      <rect width="512" height="512" fill="#FF6B8F" mask={`url(#${pinkMaskId})`} />
       {/* Blue right crescent */}
-      <rect width="512" height="512" fill="#4D7CFE" mask="url(#ln-blue-mask)" />
+      <rect width="512" height="512" fill="#4D7CFE" mask={`url(#${blueMaskId})`} />
     </svg>
   );
 }
@@ -46,6 +52,10 @@ export function LogoMark({ size = 40, className = "" }: { size?: number; classNa
 // ── App icon — symbol on navy rounded square ──────────────────────────────────
 
 export function LogoIcon({ size = 48, className = "" }: { size?: number; className?: string }) {
+  const uid = useId().replace(/:/g, "");
+  const pinkMaskId = `li-pink-mask-${uid}`;
+  const blueMaskId = `li-blue-mask-${uid}`;
+
   return (
     <svg
       width={size}
@@ -58,19 +68,19 @@ export function LogoIcon({ size = 48, className = "" }: { size?: number; classNa
     >
       <rect width="512" height="512" rx="112" fill="#0B1324" />
       <defs>
-        <mask id="li-pink-mask">
+        <mask id={pinkMaskId}>
           <rect width="512" height="512" fill="black" />
           <ellipse cx="198" cy="265" rx="115" ry="195" fill="white" />
           <ellipse cx="256" cy="252" rx="97" ry="172" fill="black" />
         </mask>
-        <mask id="li-blue-mask">
+        <mask id={blueMaskId}>
           <rect width="512" height="512" fill="black" />
           <ellipse cx="314" cy="265" rx="115" ry="195" fill="white" />
           <ellipse cx="256" cy="252" rx="97" ry="172" fill="black" />
         </mask>
       </defs>
-      <rect width="512" height="512" fill="#FF6B8F" mask="url(#li-pink-mask)" />
-      <rect width="512" height="512" fill="#4D7CFE" mask="url(#li-blue-mask)" />
+      <rect width="512" height="512" fill="#FF6B8F" mask={`url(#${pinkMaskId})`} />
+      <rect width="512" height="512" fill="#4D7CFE" mask={`url(#${blueMaskId})`} />
     </svg>
   );
 }
