@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
       const { data: wrapped } = await sb
         .from("love_wrapped").select("id")
         .eq("couple_space_id", spaceId)
-        .eq("month", now.getMonth() + 1).eq("year", now.getFullYear())
+        .gte("generated_at", new Date(nowMs - 48 * 3600000).toISOString()).order("generated_at", { ascending: false }).limit(1)
         .maybeSingle();
 
       for (const member of members) {
