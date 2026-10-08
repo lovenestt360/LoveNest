@@ -3,12 +3,19 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowRight, ChevronLeft, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@vercel/analytics";
-import { LogoIcon } from "@/components/Logo";
+import { AuthScaffold } from "@/features/auth/AuthScaffold";
 
-const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 
 async function getPostLoginDestination(userId: string): Promise<string> {
   const { data } = await supabase
@@ -16,13 +23,13 @@ async function getPostLoginDestination(userId: string): Promise<string> {
     .select("onboarding_completed")
     .eq("user_id", userId)
     .maybeSingle();
+
   return data?.onboarding_completed ? "/casa" : "/inicio";
 }
 
-// Google "G" SVG icon — official brand colour
 function GoogleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -32,85 +39,106 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function Login() {
-  const [tab, setTab]             = useState<"password" | "magic">("password");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [loading, setLoading]     = useState(false);
+  const [tab, setTab] = useState<"password" | "magic">("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
   const [forgotView, setForgotView] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
 
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        const dest = await getPostLoginDestination(session.user.id);
-        navigate(dest, { replace: true });
+        const destination = await getPostLoginDestination(session.user.id);
+        navigate(destination, { replace: true });
         return;
       }
-      // First-time visitors see the landing page before onboarding.
-      // Exception: if the URL has ?returning=1 (set by shared links for existing users)
-      // we skip the landing and show login directly.
-      const isReturning = searchParams.get("returning") === "1"
-        || document.referrer.includes(window.location.hostname);
+
+      const isReturning =
+        searchParams.get("returning") === "1" ||
+        document.referrer.includes(window.location.hostname);
+
       if (!localStorage.getItem("onboarding_seen") && !isReturning) {
         navigate("/landing", { replace: true });
       }
     });
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   useEffect(() => {
-    if ((location.state as any)?.bounced) {
-      toast({ variant: "destructive", title: "Sessão Expirada", description: (location.state as any).bounced });
-      window.history.replaceState({}, document.title);
-    }
+    if (!(location.state as any)?.bounced) return;
+
+    toast({
+      variant: "destructive",
+      title: "Sessão expirada",
+      description: (location.state as any).bounced,
+    });
+    window.history.replaceState({}, document.title);
   }, [location.state, toast]);
 
-  const handlePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePassword = async (event: React.FormEvent) => {
+    event.preventDefault();
     const trimmed = email.trim().toLowerCase();
+
     if (!isValidEmail(trimmed)) {
-      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      toast({
+        variant: "destructive",
+        title: "Email inválido",
+        description: "Usa um email completo, por exemplo nome@gmail.com.",
+      });
       return;
     }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: trimmed, password,
+        email: trimmed,
+        password,
       });
       if (error) throw error;
+
       track("login_completed", { method: "password" });
       const { data: { user } } = await supabase.auth.getUser();
-      const dest = user ? await getPostLoginDestination(user.id) : "/casa";
-      navigate(dest);
-    } catch (err: any) {
-      if (err.message?.includes("Email not confirmed")) {
+      const destination = user ? await getPostLoginDestination(user.id) : "/casa";
+      navigate(destination);
+    } catch (error: any) {
+      if (error.message?.includes("Email not confirmed")) {
         localStorage.setItem("confirm_email", trimmed);
         navigate("/confirmar-email");
         return;
       }
-      const msg = err.message.includes("Invalid login credentials")
+
+      const message = error.message?.includes("Invalid login credentials")
         ? "Email ou senha incorretos."
-        : err.message;
-      toast({ variant: "destructive", title: "Erro ao entrar", description: msg });
+        : error.message;
+
+      toast({ variant: "destructive", title: "Não foi possível entrar", description: message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMagic = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMagic = async (event: React.FormEvent) => {
+    event.preventDefault();
     const trimmed = email.trim().toLowerCase();
+
     if (!isValidEmail(trimmed)) {
-      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      toast({
+        variant: "destructive",
+        title: "Email inválido",
+        description: "Usa um email completo, por exemplo nome@gmail.com.",
+      });
       return;
     }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
@@ -118,22 +146,29 @@ export default function Login() {
         options: { emailRedirectTo: window.location.origin + "/inicio" },
       });
       if (error) throw error;
+
       track("login_magic_link_sent");
       setMagicSent(true);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro ao enviar", description: err.message });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Não foi possível enviar", description: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgot = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleForgot = async (event: React.FormEvent) => {
+    event.preventDefault();
     const trimmed = forgotEmail.trim().toLowerCase();
+
     if (!isValidEmail(trimmed)) {
-      toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
+      toast({
+        variant: "destructive",
+        title: "Email inválido",
+        description: "Usa um email completo, por exemplo nome@gmail.com.",
+      });
       return;
     }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
@@ -141,8 +176,8 @@ export default function Login() {
       });
       if (error) throw error;
       setForgotSent(true);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro ao enviar", description: err.message });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Não foi possível enviar", description: error.message });
     } finally {
       setLoading(false);
     }
@@ -155,252 +190,279 @@ export default function Login() {
         provider: "google",
         options: {
           redirectTo: window.location.origin + "/inicio",
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
+          queryParams: { access_type: "offline", prompt: "consent" },
         },
       });
       if (error) throw error;
-      // Supabase redirects the browser — no manual navigation needed
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro com Google", description: err.message });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro com Google", description: error.message });
       setGoogleLoading(false);
     }
   };
 
+  const fieldClass =
+    "h-[52px] rounded-[1rem] border-slate-200/80 bg-white px-4 text-[14px] shadow-none focus-visible:border-rose-300 focus-visible:ring-2 focus-visible:ring-rose-200/50";
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-8">
+    <AuthScaffold
+      eyebrow={forgotView ? "Recuperar acesso" : "Bem-vindo de volta"}
+      title={forgotView ? "Vamos recuperar a tua conta." : "Entra no vosso espaço."}
+      subtitle={
+        forgotView
+          ? "Indica o email da tua conta e enviamos um link seguro para redefinires a senha."
+          : "Continua exatamente onde vocês deixaram a vossa história."
+      }
+    >
+      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/[0.08]0 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
+        {!forgotView && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={googleLoading || loading}
+              className="flex h-[52px] w-full items-center justify-center gap-3 rounded-[1rem] border border-slate-200/80 bg-white text-[13px] font-bold text-[#0B1324] transition hover:bg-slate-50 active:scale-[0.99] disabled:opacity-60"
+            >
+              {googleLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+              ) : (
+                <GoogleIcon className="h-5 w-5" />
+              )}
+              Continuar com Google
+            </button>
 
-        {/* Brand */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <LogoIcon size={72} />
-          </div>
-          <div>
-            <h1 className="text-[28px] font-bold text-foreground tracking-tight">Bem-vindo</h1>
-            <p className="text-[14px] text-muted-foreground mt-1">O teu espaço privado de casal</p>
-          </div>
-        </div>
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-200/70" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                ou por email
+              </span>
+              <div className="h-px flex-1 bg-slate-200/70" />
+            </div>
 
-        {/* Card */}
-        <div className="glass-card p-7 space-y-5">
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-[1rem] bg-slate-100/80 p-1">
+              {(["password", "magic"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setTab(option)}
+                  className={cn(
+                    "rounded-[0.8rem] py-2.5 text-[11px] font-bold transition",
+                    tab === option
+                      ? "bg-white text-[#0B1324] shadow-sm"
+                      : "text-slate-400 hover:text-slate-600",
+                  )}
+                >
+                  {option === "password" ? "Senha" : "Link por email"}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-          {/* Google button — CTA principal (hidden in forgot view) */}
-          {!forgotView && (
-            <>
+        {tab === "password" && !forgotView && (
+          <form onSubmit={handlePassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="login-email" className="text-[12px] font-bold text-slate-600">
+                Email
+              </label>
+              <Input
+                id="login-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="teu@email.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                className={fieldClass}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="login-password" className="text-[12px] font-bold text-slate-600">
+                  Senha
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setForgotView(true);
+                    setForgotSent(false);
+                  }}
+                  className="text-[11px] font-bold text-rose-500"
+                >
+                  Esqueci a senha
+                </button>
+              </div>
+
+              <div className="relative">
+                <Input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="A tua senha"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  className={cn(fieldClass, "pr-12")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 active:bg-slate-100"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || googleLoading}
+              className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] transition active:scale-[0.99] disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Entrar <ArrowRight className="h-4 w-4" /></>}
+            </button>
+          </form>
+        )}
+
+        {tab === "password" && forgotView && (
+          forgotSent ? (
+            <div className="py-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50">
+                <Mail className="h-5 w-5 text-rose-400" strokeWidth={1.7} />
+              </div>
+              <p className="mt-4 text-[16px] font-extrabold">Link enviado.</p>
+              <p className="mx-auto mt-2 max-w-xs text-[13px] leading-5 text-slate-500">
+                Verifica <span className="font-bold text-slate-700">{forgotEmail}</span> e segue o link para criares uma nova senha.
+              </p>
               <button
-                onClick={handleGoogle}
-                disabled={googleLoading || loading}
-                className="w-full h-12 rounded-2xl border border-border bg-card text-sm font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-60"
+                type="button"
+                onClick={() => {
+                  setForgotView(false);
+                  setForgotSent(false);
+                }}
+                className="mt-5 text-[12px] font-bold text-rose-500"
               >
-                {googleLoading
-                  ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  : <GoogleIcon className="w-5 h-5" />
-                }
-                Continuar com Google
+                Voltar ao login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgot} className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setForgotView(false)}
+                className="-ml-1 flex items-center gap-1 text-[11px] font-bold text-slate-400"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Voltar
               </button>
 
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-[11px] font-medium text-muted-foreground">ou</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-
-              {/* Tabs */}
-              <div className="flex bg-muted rounded-2xl p-1 gap-1">
-                {(["password", "magic"] as const).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={cn(
-                      "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                      tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                    )}
-                  >
-                    {t === "password" ? "Senha" : "Link Mágico"}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Password form / Forgot password */}
-          {tab === "password" && !forgotView && (
-            <form onSubmit={handlePassword} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">E-mail</label>
+                <label htmlFor="forgot-email" className="text-[12px] font-bold text-slate-600">
+                  Email da conta
+                </label>
                 <Input
-                  type="text"
+                  id="forgot-email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="teu@email.com"
+                  value={forgotEmail}
+                  onChange={(event) => setForgotEmail(event.target.value)}
+                  required
+                  className={fieldClass}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Enviar link <ArrowRight className="h-4 w-4" /></>}
+              </button>
+            </form>
+          )
+        )}
+
+        {tab === "magic" && !forgotView && (
+          magicSent ? (
+            <div className="py-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50">
+                <Mail className="h-5 w-5 text-indigo-400" strokeWidth={1.7} />
+              </div>
+              <p className="mt-4 text-[16px] font-extrabold">Vê o teu email.</p>
+              <p className="mx-auto mt-2 max-w-xs text-[13px] leading-5 text-slate-500">
+                Enviámos um link seguro para <span className="font-bold text-slate-700">{email}</span>.
+              </p>
+              <button
+                type="button"
+                onClick={() => setMagicSent(false)}
+                className="mt-5 text-[12px] font-bold text-rose-500"
+              >
+                Usar outro email
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleMagic} className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="magic-email" className="text-[12px] font-bold text-slate-600">
+                  Email
+                </label>
+                <Input
+                  id="magic-email"
+                  type="email"
                   inputMode="email"
                   autoComplete="email"
                   placeholder="teu@email.com"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
-                  className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
+                  className={fieldClass}
                 />
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">Senha</label>
-                  <button
-                    type="button"
-                    onClick={() => { setForgotEmail(email); setForgotView(true); setForgotSent(false); }}
-                    className="text-xs font-medium text-rose-500 hover:underline"
-                  >
-                    Esqueceste a senha?
-                  </button>
-                </div>
-                <Input
-                  type="password"
-                  placeholder="A tua senha"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                />
-              </div>
+
+              <p className="text-[11px] leading-5 text-slate-400">
+                Recebes um link de acesso. Não precisas introduzir a senha.
+              </p>
+
               <button
                 type="submit"
                 disabled={loading || googleLoading}
-                className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
               >
-                {loading
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <> Entrar <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
-                }
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Enviar link <ArrowRight className="h-4 w-4" /></>}
               </button>
             </form>
-          )}
+          )
+        )}
 
-          {/* Forgot password view */}
-          {tab === "password" && forgotView && (
-            forgotSent ? (
-              <div className="text-center space-y-4 py-4">
-                <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mx-auto">
-                  <Mail className="w-8 h-8 text-rose-400" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <p className="text-base font-semibold text-foreground">Link enviado!</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Verifica o teu e-mail em <span className="font-medium text-foreground">{forgotEmail}</span> e clica no link para definir uma nova senha.
-                  </p>
-                </div>
-                <button
-                  onClick={() => { setForgotView(false); setForgotSent(false); }}
-                  className="text-sm font-medium text-rose-500 hover:underline"
-                >
-                  Voltar ao login
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <button
-                  type="button"
-                  onClick={() => setForgotView(false)}
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Voltar
-                </button>
-                <div>
-                  <p className="text-base font-semibold text-foreground">Recuperar senha</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">Envia-mos um link para redefinires a tua senha.</p>
-                </div>
-                <form onSubmit={handleForgot} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">E-mail da conta</label>
-                    <Input
-                      type="text"
-                      inputMode="email"
-                      autoComplete="email"
-                      placeholder="teu@email.com"
-                      value={forgotEmail}
-                      onChange={e => setForgotEmail(e.target.value)}
-                      required
-                      className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                  >
-                    {loading
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <> Enviar link <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
-                    }
-                  </button>
-                </form>
-              </div>
-            )
-          )}
-
-          {/* Magic link form */}
-          {tab === "magic" && (
-            magicSent ? (
-              <div className="text-center space-y-4 py-4">
-                <div className="flex justify-center">
-                  <LogoIcon size={64} />
-                </div>
-                <div>
-                  <p className="text-base font-semibold text-foreground">Link enviado!</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Verifica o teu e-mail em <span className="font-medium text-foreground">{email}</span>
-                  </p>
-                </div>
-                <button
-                  onClick={() => setMagicSent(false)}
-                  className="text-sm font-medium text-rose-500 hover:underline"
-                >
-                  Tentar outro e-mail
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleMagic} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">E-mail</label>
-                  <Input
-                    type="text"
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="teu@email.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading || googleLoading}
-                  className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  {loading
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <> Enviar Link <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
-                  }
-                </button>
-              </form>
-            )
-          )}
-
-          {/* Sign up link */}
-          <div className="pt-4 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              Novo por aqui?{" "}
+        {!forgotView && (
+          <div className="mt-5 border-t border-slate-200/70 pt-5 text-center">
+            <p className="text-[12px] text-slate-400">
+              Ainda não têm LoveNest?{" "}
               <button
-                onClick={() => navigate("/criar-conta")}
-                className="font-semibold text-rose-500 hover:underline"
+                type="button"
+                onClick={() => navigate("/inicio")}
+                className="font-bold text-rose-500"
               >
-                Cria a tua conta
+                Criar o vosso espaço
               </button>
             </p>
           </div>
-        </div>
+        )}
       </div>
-    </div>
+
+      <button
+        type="button"
+        onClick={() => navigate("/landing")}
+        className="mx-auto mt-5 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 transition hover:text-slate-600"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Voltar
+      </button>
+    </AuthScaffold>
   );
 }
