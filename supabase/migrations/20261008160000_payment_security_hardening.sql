@@ -58,7 +58,7 @@ RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
 DECLARE
   v_plan RECORD;
   v_existing_end TIMESTAMPTZ;
@@ -113,7 +113,7 @@ BEGIN
       subscription_ends_at    = v_new_end
   WHERE id = p_couple_space_id;
 END;
-$;
+$$;
 
 REVOKE ALL ON FUNCTION public.activate_paid_subscription(UUID, UUID, TIMESTAMPTZ)
   FROM PUBLIC, anon, authenticated;
@@ -125,7 +125,7 @@ RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
 DECLARE
   v_count INTEGER;
 BEGIN
@@ -139,7 +139,7 @@ BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
-$;
+$$;
 
 REVOKE ALL ON FUNCTION public.expire_due_subscriptions() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.expire_due_subscriptions() TO service_role;
@@ -281,7 +281,7 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, storage
-AS $
+AS $$
 DECLARE
   v_book RECORD;
   v_path TEXT;
@@ -346,7 +346,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$;
+$$;
 
 DROP TRIGGER IF EXISTS normalize_client_book_purchase ON public.book_purchases;
 CREATE TRIGGER normalize_client_book_purchase
@@ -515,7 +515,7 @@ RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'not authorized';
@@ -531,7 +531,7 @@ BEGIN
     WHERE id = p_couple_space_id;
   END IF;
 END;
-$;
+$$;
 GRANT EXECUTE ON FUNCTION public.admin_assign_plan(UUID, UUID, INT, INT) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.admin_remove_plan(p_couple_space_id UUID)
@@ -539,7 +539,7 @@ RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'not authorized';
@@ -553,7 +553,7 @@ BEGIN
       subscription_ends_at = NULL
   WHERE id = p_couple_space_id;
 END;
-$;
+$$;
 GRANT EXECUTE ON FUNCTION public.admin_remove_plan(UUID) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
