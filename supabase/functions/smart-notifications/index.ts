@@ -148,6 +148,37 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function localCalendarParts(now: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+
+  const value = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  const year = Number(value("year"));
+  const month = Number(value("month"));
+  const day = Number(value("day"));
+  const hour = Number(value("hour"));
+  const minute = Number(value("minute"));
+  const localDate = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const previous = new Date(Date.UTC(year, month - 1, day) - 86400000);
+  const yesterday = [
+    previous.getUTCFullYear(),
+    String(previous.getUTCMonth() + 1).padStart(2, "0"),
+    String(previous.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+
+  return { localDate, yesterday, hour, minute };
+}
+
 const COOLDOWNS: Record<string, number> = {
   silent_day: 16, partner_active: 8, flame_risk: 8,
   perfect_day: 20, milestone: 168, capsule_soon: 48, wrapped_ready: 72,
