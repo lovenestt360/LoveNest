@@ -905,7 +905,7 @@ export default function Settings() {
                   { id: 'engagement', label: 'Presença e chama',    desc: 'Marcos, dias completos e chama em risco' },
                   { id: 'emotion',    label: 'Cuidado emocional',   desc: 'Lembretes suaves quando o espaço fica silencioso' },
                   { id: 'partner',    label: 'Presença do par',     desc: 'Quando o teu par aparece e tu ainda não' },
-                  { id: 'system',     label: 'Momentos importantes', desc: 'Cápsulas e resumos quando ficam disponíveis' },
+                  { id: 'system',     label: 'Momentos importantes', desc: 'Cápsulas e avisos importantes do sistema' },
                 ].map((cat, i, arr) => (
                   <div key={cat.id} className={cn('flex items-center justify-between py-3.5', i < arr.length - 1 && 'border-b border-border')}>
                     <div className="space-y-0.5">
