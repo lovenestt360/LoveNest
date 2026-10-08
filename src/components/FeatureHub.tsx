@@ -1,4 +1,5 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -7,7 +8,7 @@ export type HubItem = {
   to: string;
   title: string;
   description: string;
-  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   tone?: "rose" | "indigo" | "orange" | "emerald" | "slate";
   meta?: string;
 };
