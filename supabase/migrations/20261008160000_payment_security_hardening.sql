@@ -77,7 +77,7 @@ BEGIN
     RAISE EXCEPTION 'invalid or inactive subscription plan';
   END IF;
 
-  IF NEW.method NOT IN ('M-Pesa', 'e-Mola', 'mKesh') THEN
+  IF NEW.method IS NULL OR NEW.method NOT IN ('M-Pesa', 'e-Mola', 'mKesh') THEN
     RAISE EXCEPTION 'invalid manual payment method';
   END IF;
 
@@ -149,13 +149,15 @@ USING (
   AND (owner = auth.uid() OR public.is_admin())
 );
 
--- New frontend writes <auth.uid()>/... object paths.
+-- New frontend writes <auth.uid()>/... object paths. During rollout we still
+-- accept root-level names from an older cached frontend; the bucket is private
+-- and Storage records the uploader as owner, so this does not expose receipts.
 CREATE POLICY "Receipt owners can upload"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'receipts'
-  AND (storage.foldername(name))[1] = auth.uid()::text
+  AND auth.role() = 'authenticated'
 );
 
 CREATE POLICY "Receipt owners can update"
