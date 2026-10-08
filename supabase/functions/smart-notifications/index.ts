@@ -138,10 +138,6 @@ const MSGS = {
     { title: "A vossa cápsula", body: "Uma mensagem do passado está prestes a chegar." },
     { title: "O tempo passa", body: "A vossa cápsula do tempo abre nos próximos dias." },
   ],
-  wrapped_ready: [
-    { title: "O vosso mês", body: "O resumo do vosso mês está à vossa espera." },
-    { title: "Um mês em memórias", body: "Vejam juntos o que viveram este mês." },
-  ],
 };
 
 function pick<T>(arr: T[]): T {
@@ -181,7 +177,7 @@ function localCalendarParts(now: Date, timeZone: string) {
 
 const COOLDOWNS: Record<string, number> = {
   silent_day: 16, partner_active: 8, flame_risk: 8,
-  perfect_day: 20, milestone: 168, capsule_soon: 48, wrapped_ready: 72,
+  perfect_day: 20, milestone: 168, capsule_soon: 48,
   ciclo_lembrete: 20, ciclo_menstruacao: 12, ciclo_fertil: 22,
   fasting_registar_dia: 22, fasting_oracao: 22, fasting_motivacao_dia: 22,
   fasting_hora_terminar: 23, fasting_reflexao_noturna: 22,
@@ -190,7 +186,7 @@ const COOLDOWNS: Record<string, number> = {
 const RULE_URLS: Record<string, string> = {
   silent_day: "/", partner_active: "/", flame_risk: "/jornada",
   perfect_day: "/jornada", milestone: "/jornada",
-  capsule_soon: "/capsula", wrapped_ready: "/wrapped",
+  capsule_soon: "/capsula",
   ciclo_lembrete: "/ciclo", ciclo_menstruacao: "/ciclo", ciclo_fertil: "/ciclo",
   fasting_registar_dia: "/jornada-espiritual?tab=jejum",
   fasting_oracao: "/jornada-espiritual?tab=oracao",
@@ -241,12 +237,6 @@ Deno.serve(async (req) => {
         .from("time_capsule_messages").select("id")
         .eq("couple_space_id", spaceId)
         .gt("unlock_date", now.toISOString()).lte("unlock_date", in5Days);
-
-      const { data: wrapped } = await sb
-        .from("love_wrapped").select("id")
-        .eq("couple_space_id", spaceId)
-        .gte("generated_at", new Date(nowMs - 48 * 3600000).toISOString()).order("generated_at", { ascending: false }).limit(1)
-        .maybeSingle();
 
       for (const member of members) {
         const userId  = member.user_id;
@@ -457,14 +447,6 @@ Deno.serve(async (req) => {
           if (!(await recentlySent("capsule_soon"))) {
             rule = "capsule_soon";
             msg  = pick(MSGS.capsule_soon);
-          }
-        }
-
-        // ── RULE 4: Wrapped ready ─────────────────────────────────────
-        if (!rule && wrapped && categoryEnabled("system")) {
-          if (!(await recentlySent("wrapped_ready"))) {
-            rule = "wrapped_ready";
-            msg  = pick(MSGS.wrapped_ready);
           }
         }
 
