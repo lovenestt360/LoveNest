@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 // ══════════════════════════════════════════════════════════════════════
 // LoveNest — Emotional Notification System V2 (FCM HTTP v1)
 //
-// 7 notification rules + fasting + ciclo
+// 6 notification rules + fasting + ciclo
 // Max 2 notifications/user/day · Per-rule cooldowns · 8h–22h local only
 // ══════════════════════════════════════════════════════════════════════
 
@@ -138,19 +138,46 @@ const MSGS = {
     { title: "A vossa cápsula", body: "Uma mensagem do passado está prestes a chegar." },
     { title: "O tempo passa", body: "A vossa cápsula do tempo abre nos próximos dias." },
   ],
-  wrapped_ready: [
-    { title: "O vosso mês", body: "O resumo do vosso mês está à vossa espera." },
-    { title: "Um mês em memórias", body: "Vejam juntos o que viveram este mês." },
-  ],
 };
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function localCalendarParts(now: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+
+  const value = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  const year = Number(value("year"));
+  const month = Number(value("month"));
+  const day = Number(value("day"));
+  const hour = Number(value("hour"));
+  const minute = Number(value("minute"));
+  const localDate = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const previous = new Date(Date.UTC(year, month - 1, day) - 86400000);
+  const yesterday = [
+    previous.getUTCFullYear(),
+    String(previous.getUTCMonth() + 1).padStart(2, "0"),
+    String(previous.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+
+  return { localDate, yesterday, hour, minute };
+}
+
 const COOLDOWNS: Record<string, number> = {
   silent_day: 16, partner_active: 8, flame_risk: 8,
-  perfect_day: 20, milestone: 168, capsule_soon: 48, wrapped_ready: 72,
+  perfect_day: 20, milestone: 168, capsule_soon: 48,
   ciclo_lembrete: 20, ciclo_menstruacao: 12, ciclo_fertil: 22,
   fasting_registar_dia: 22, fasting_oracao: 22, fasting_motivacao_dia: 22,
   fasting_hora_terminar: 23, fasting_reflexao_noturna: 22,
@@ -159,7 +186,7 @@ const COOLDOWNS: Record<string, number> = {
 const RULE_URLS: Record<string, string> = {
   silent_day: "/", partner_active: "/", flame_risk: "/jornada",
   perfect_day: "/jornada", milestone: "/jornada",
-  capsule_soon: "/capsula", wrapped_ready: "/wrapped",
+  capsule_soon: "/capsula",
   ciclo_lembrete: "/ciclo", ciclo_menstruacao: "/ciclo", ciclo_fertil: "/ciclo",
   fasting_registar_dia: "/jornada-espiritual?tab=jejum",
   fasting_oracao: "/jornada-espiritual?tab=oracao",
@@ -180,9 +207,7 @@ Deno.serve(async (req) => {
 
   const sb  = createClient(supabaseUrl, serviceKey);
   const now = new Date();
-  const todayISO     = now.toISOString().slice(0, 10);
-  const nowMs        = now.getTime();
-  const yesterdayISO = new Date(nowMs - 86400000).toISOString().slice(0, 10);
+  const nowMs = now.getTime();
 
   let totalSent = 0, scannedSpaces = 0;
 
@@ -207,35 +232,11 @@ Deno.serve(async (req) => {
       const isSolo = members.length === 1;
       scannedSpaces++;
 
-      const { data: todayActivity } = await sb
-        .from("daily_activity")
-        .select("user_id, type")
-        .eq("couple_space_id", spaceId)
-        .eq("activity_date", todayISO);
-
-      const activeUsersToday = new Set((todayActivity || []).map((r: any) => r.user_id));
-
-      const typeMap: Record<string, Set<string>> = {};
-      for (const row of (todayActivity || []) as any[]) {
-        if (!typeMap[row.type]) typeMap[row.type] = new Set();
-        typeMap[row.type].add(row.user_id);
-      }
-      const missionThreshold = isSolo ? 1 : 2;
-      const missionTypes = isSolo ? ["plano", "checkin", "mood"] : ["message", "checkin", "mood"];
-      const missionsDone = missionTypes.filter(t => (typeMap[t]?.size ?? 0) >= missionThreshold).length;
-      const isPerfectDay = missionsDone === missionTypes.length;
-
       const in5Days = new Date(nowMs + 5 * 86400000).toISOString();
       const { data: capsules } = await sb
         .from("time_capsule_messages").select("id")
         .eq("couple_space_id", spaceId)
         .gt("unlock_date", now.toISOString()).lte("unlock_date", in5Days);
-
-      const { data: wrapped } = await sb
-        .from("love_wrapped").select("id")
-        .eq("couple_space_id", spaceId)
-        .eq("month", now.getMonth() + 1).eq("year", now.getFullYear())
-        .maybeSingle();
 
       for (const member of members) {
         const userId  = member.user_id;
@@ -246,14 +247,34 @@ Deno.serve(async (req) => {
           .eq("user_id", userId).maybeSingle();
 
         const tz = (profileData as any)?.timezone || "UTC";
-        const localHour = parseInt(
-          new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hour12: false }).format(now)
-        );
+        const calendar = localCalendarParts(now, tz);
+        const localHour = calendar.hour;
+        const localMinute = calendar.minute;
+        const todayISO = calendar.localDate;
+        const yesterdayISO = calendar.yesterday;
 
         if (localHour < 8 || localHour >= 22) continue;
 
+        const { data: localActivity } = await sb
+          .from("daily_activity")
+          .select("user_id, type")
+          .eq("couple_space_id", spaceId)
+          .eq("activity_date", todayISO);
+
+        const activeUsersToday = new Set((localActivity || []).map((row: any) => row.user_id));
+        const typeMap: Record<string, Set<string>> = {};
+        for (const row of (localActivity || []) as any[]) {
+          if (!typeMap[row.type]) typeMap[row.type] = new Set();
+          typeMap[row.type].add(row.user_id);
+        }
+
+        const missionThreshold = isSolo ? 1 : 2;
+        const missionTypes = isSolo ? ["plano", "checkin", "mood"] : ["message", "checkin", "mood"];
+        const missionsDone = missionTypes.filter((type) => (typeMap[type]?.size ?? 0) >= missionThreshold).length;
+        const isPerfectDay = missionsDone === missionTypes.length;
+
         const { data: userSettings } = await sb
-          .from("notification_settings").select("category, enabled, preferred_hour")
+          .from("notification_settings").select("category, enabled")
           .eq("user_id", userId);
 
         const categoryEnabled = (cat: string): boolean => {
@@ -265,21 +286,12 @@ Deno.serve(async (req) => {
           return s?.enabled === true;
         };
 
-        const preferredHour: number | null = (() => {
-          const s = (userSettings || []).find((r: any) => r.preferred_hour != null);
-          return s?.preferred_hour ?? null;
-        })();
-
-        if (preferredHour !== null) {
-          const diff = Math.abs(localHour - preferredHour);
-          if (Math.min(diff, 24 - diff) > 2) continue;
-        }
-
-        const todayStart = new Date(now);
-        todayStart.setUTCHours(0, 0, 0, 0);
+        const dailyWindow = new Date(nowMs - 24 * 3600000).toISOString();
         const { count: dailyCount } = await sb
-          .from("notification_history").select("id", { count: "exact", head: true })
-          .eq("user_id", userId).gte("sent_at", todayStart.toISOString());
+          .from("notification_history")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("sent_at", dailyWindow);
         if ((dailyCount ?? 0) >= 2) continue;
 
         const recentlySent = async (ruleKey: string): Promise<boolean> => {
@@ -341,7 +353,7 @@ Deno.serve(async (req) => {
               if (!rule && fReminders.hora_terminar && fProfile.until_hour) {
                 const [fhStr, fmStr] = (fProfile.until_hour as string).split(":");
                 const fastEndMin = parseInt(fhStr) * 60 + parseInt(fmStr || "0");
-                const nowMin     = localHour * 60 + now.getMinutes();
+                const nowMin     = localHour * 60 + localMinute;
                 const remaining  = fastEndMin - nowMin;
                 if (remaining >= 25 && remaining <= 35 && !(await recentlySent("fasting_hora_terminar"))) {
                   rule = "fasting_hora_terminar";
@@ -438,15 +450,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 4: Wrapped ready ─────────────────────────────────────
-        if (!rule && wrapped && categoryEnabled("system")) {
-          if (!(await recentlySent("wrapped_ready"))) {
-            rule = "wrapped_ready";
-            msg  = pick(MSGS.wrapped_ready);
-          }
-        }
-
-        // ── RULE 5: Flame Risk ────────────────────────────────────────
+        // ── RULE 4: Flame Risk ────────────────────────────────────────
         const flameRisk = isSolo
           ? (streak > 0 && localHour >= 19 && !myActiveToday)
           : (streak > 0 && localHour >= 19 && (!myActiveToday || !partnerActive));
@@ -457,7 +461,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 6: Partner Presence ──────────────────────────────────
+        // ── RULE 5: Partner Presence ──────────────────────────────────
         if (!rule && !isSolo && partnerUserId && partnerActive && !myActiveToday && categoryEnabled("partner")) {
           if (!(await recentlySent("partner_active"))) {
             rule = "partner_active";
@@ -465,7 +469,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── RULE 7: Silent Day ────────────────────────────────────────
+        // ── RULE 6: Silent Day ────────────────────────────────────────
         const silentCondition = isSolo
           ? (!myActiveToday && localHour >= 19 && localHour < 21)
           : (!myActiveToday && !partnerActive && localHour >= 19 && localHour < 21);
