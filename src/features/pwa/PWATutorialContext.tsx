@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
+import { isNativeRuntime, isStandaloneWebApp } from "@/lib/appRuntime";
 
 interface PWASettings {
   android_video_url: string;
@@ -28,15 +29,19 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const nativeRuntime = isNativeRuntime();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/.test(navigator.userAgent);
-  
-  // Detect if we're running as an installed PWA (standalone mode)
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches 
-    || (window.navigator as any).standalone === true
-    || document.referrer.includes("android-app://");
+  const isStandalone = isStandaloneWebApp();
 
   const fetchSettings = useCallback(async () => {
+    if (nativeRuntime) {
+      setSettings(null);
+      setLoading(false);
+      setShowModal(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("pwa_tutorial_settings")
@@ -58,14 +63,19 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [isStandalone]);
+  }, [isStandalone, nativeRuntime, user]);
 
   useEffect(() => {
     fetchSettings();
 
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setInstallPrompt(e);
+    if (nativeRuntime) {
+      setInstallPrompt(null);
+      return;
+    }
+
+    const handleBeforeInstallPrompt = (event: any) => {
+      event.preventDefault();
+      setInstallPrompt(event);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -73,7 +83,7 @@ export function PWATutorialProvider({ children }: { children: React.ReactNode })
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, [fetchSettings]);
+  }, [fetchSettings, nativeRuntime]);
 
   const markAsSeen = () => {
     localStorage.setItem("pwa_tutorial_seen", "true");

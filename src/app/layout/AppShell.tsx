@@ -72,7 +72,7 @@ export function AppShell() {
       <div className="bg-mesh" aria-hidden="true" />
 
       {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-destructive text-destructive-foreground px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 backdrop-blur-md">
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-destructive text-destructive-foreground px-4 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 backdrop-blur-md">
           <WifiOff className="w-3 h-3" />
           Modo Offline — Algumas funções podem estar limitadas
         </div>
@@ -80,7 +80,7 @@ export function AppShell() {
 
       <main className={cn(
         "mx-auto w-full max-w-md relative z-10",
-        isFullscreen ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-6"
+        isFullscreen ? "px-0 pb-0 pt-0 h-[100dvh]" : "px-4 pb-32 pt-[calc(env(safe-area-inset-top)+1.5rem)]"
       )}>
         {/*
           ── KEEP-ALIVE DA HOME ───────────────────────────────────────────

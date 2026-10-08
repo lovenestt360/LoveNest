@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, X } from "lucide-react";
 import { usePWATutorial } from "./PWATutorialContext";
+import { shouldShowPwaInstallUi } from "@/lib/appRuntime";
 
 // Banner fixo acima da barra de navegação inferior.
 // Android/Desktop → botão "Instalar" usa o prompt nativo (1 clique).
@@ -11,11 +12,7 @@ export function InstallBanner() {
   const { installPrompt, isIOS, setShowModal } = usePWATutorial();
   const [dismissed, setDismissed] = useState(false);
 
-  const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true;
-
-  if (isStandalone || dismissed) return null;
+  if (!shouldShowPwaInstallUi() || dismissed) return null;
   // Mostrar só se há prompt nativo (Android/Desktop) ou é iOS
   if (!installPrompt && !isIOS) return null;
 
