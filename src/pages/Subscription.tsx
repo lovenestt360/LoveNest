@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import { useReceiptUpload } from "@/hooks/useReceiptUpload";
+import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
 const PAYSUITE_METHODS: { id: "mpesa" | "emola" | "credit_card"; label: string; icon: typeof Smartphone }[] = [
     { id: "mpesa", label: "M-Pesa", icon: Smartphone },
@@ -262,7 +263,7 @@ export default function Subscription() {
             </header>
 
             <main className="max-w-md mx-auto">
-                {house?.subscription_status === 'active' ? (
+                {hasActivePaidSubscription(house) ? (
                     <div className="p-4 animate-in zoom-in-95">
                         <div className="glass-card p-8 text-center">
                             <CheckCircle className="w-12 h-12 text-primary mx-auto mb-5" strokeWidth={1.5} />
