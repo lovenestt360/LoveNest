@@ -269,7 +269,7 @@ function ImagePickerButton({ onPick }: { onPick: (f: File) => void }) {
       <input ref={ref} type="file" accept="image/*" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) { onPick(f); e.target.value = ""; } }} />
       <button type="button" onClick={() => ref.current?.click()}
-        className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 transition-colors">
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition active:bg-muted/70">
         <ImageIcon className="h-5 w-5" />
       </button>
     </>
@@ -290,8 +290,8 @@ function DateSeparator({ date }: { date: string }) {
   else label = format(d, "d 'de' MMMM", { locale: pt });
 
   return (
-    <div className="flex justify-center py-3">
-      <span className="text-[11px] font-medium text-muted-foreground bg-card/85 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+    <div className="flex justify-center py-4">
+      <span className="rounded-full border border-border/60 bg-card/75 px-3 py-1 text-[10px] font-semibold text-muted-foreground shadow-[0_6px_20px_rgba(15,23,42,0.04)] backdrop-blur-xl">
         {label}
       </span>
     </div>
@@ -328,8 +328,8 @@ function ActionSheet({
 }) {
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/25" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
+      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[2rem] border-t border-white/40 bg-card/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_rgba(15,23,42,0.18)] backdrop-blur-2xl animate-in slide-in-from-bottom duration-200">
         <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
         <p className="text-xs text-muted-foreground/65 mb-3 line-clamp-2 px-1">
           {msg.content || (msg.image_url ? "Foto" : msg.audio_url ? "Áudio" : "")}
@@ -385,10 +385,10 @@ function MessageBubble({
         <div
           {...lp}
           className={cn(
-            "px-3 py-[7px] text-[15px] select-none shadow-sm",
+            "px-3.5 py-2 text-[14px] leading-5 select-none",
             isMine
-              ? "bg-rose-500 text-white rounded-[18px] rounded-br-[4px]"
-              : "bg-card text-foreground rounded-[18px] rounded-bl-[4px]",
+              ? "bg-[#0B1324] text-white rounded-[1.25rem] rounded-br-[0.4rem] shadow-[0_8px_24px_rgba(11,19,36,0.14)] dark:bg-slate-100 dark:text-slate-950"
+              : "rounded-[1.25rem] rounded-bl-[0.4rem] border border-border/60 bg-card/[0.92] text-foreground shadow-[0_6px_18px_rgba(15,23,42,0.045)] backdrop-blur",
             isDeleted && "opacity-60",
             msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
           )}
@@ -400,7 +400,7 @@ function MessageBubble({
               onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
               className={cn(
                 "flex items-start gap-1 rounded-lg px-2 py-1.5 mb-1.5 text-[11px] border-l-2 w-full text-left",
-                isMine ? "bg-white/20 border-white/50 text-white/80" : "bg-muted border-rose-300 dark:border-rose-800 text-muted-foreground"
+                isMine ? "bg-white/[0.08] border-white/35 text-white/75 dark:bg-black/[0.08] dark:border-black/20 dark:text-slate-700" : "bg-muted/70 border-rose-300/70 dark:border-rose-800 text-muted-foreground"
               )}
             >
               <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
@@ -432,7 +432,7 @@ function MessageBubble({
 
           {/* Time + status */}
           <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
-            isMine ? "text-white/55" : "text-muted-foreground/65")}>
+            isMine ? "text-white/50 dark:text-slate-500" : "text-muted-foreground/60")}>
             {msg.is_edited && !isDeleted && <span className="text-[10px]">{msg.audio_url ? "legenda ·" : "editada ·"}</span>}
             <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
             {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
@@ -476,7 +476,7 @@ export default function Chat() {
 
   const audio      = useAudioRecorder();
   const bottomRef  = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLInputElement>(null);
+  const inputRef   = useRef<HTMLTextAreaElement>(null);
   const msgRefs    = useRef<Record<string, HTMLDivElement | null>>({});
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const checkMissionRef = useRef<() => Promise<void>>(async () => {});
@@ -630,6 +630,7 @@ export default function Chat() {
     if (!text && !currentImage && !activeBlob) return;
 
     setInput(""); setReplyTo(null); setImageFile(null); audio.clear(); setSending(true);
+    if (inputRef.current) inputRef.current.style.height = "40px";
 
     const tempId = `temp-${Date.now()}`;
     setMessages(prev => [...prev, {
@@ -793,7 +794,7 @@ export default function Chat() {
   const partnerInitial = partner?.display_name?.[0]?.toUpperCase() ?? "?";
 
   return (
-    <section className="relative flex flex-col overflow-hidden h-[100dvh]">
+    <section className="relative flex h-[100dvh] flex-col overflow-hidden bg-[#F8F5F4] dark:bg-background overscroll-none">
 
       {/* Wallpaper */}
       {wallpaperUrl && (
@@ -803,16 +804,16 @@ export default function Chat() {
       )}
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 bg-card border-b border-border">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      <header className="relative z-20 shrink-0 border-b border-border/60 bg-card/[0.88] pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5">
           {/* Back */}
           <button onClick={() => navigate("/")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition active:bg-muted/70">
             <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
           </button>
 
           {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center shrink-0 overflow-hidden border border-rose-200 dark:border-rose-900/40">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-gradient-to-br from-rose-100 to-indigo-100 shadow-sm dark:border-white/10 dark:from-rose-950/30 dark:to-indigo-950/30">
             {partner?.avatar_url
               ? <img src={partner.avatar_url} alt="" className="w-full h-full object-cover" />
               : <span className="text-sm font-semibold text-rose-500">{partnerInitial}</span>
@@ -822,20 +823,21 @@ export default function Chat() {
           {/* Name + subtitle */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <span className="text-[15px] font-semibold text-foreground truncate">
+              <span className="truncate text-[14px] font-extrabold tracking-[-0.02em] text-foreground">
                 {partner?.display_name || "Amor"}
               </span>
               {partner?.verification_status === "verified" && (
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.5} />
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground">Chat privado</p>
+            <p className="text-[10px] font-medium text-muted-foreground/75">Só vocês dois</p>
           </div>
 
           {/* Palette */}
           <button onClick={() => navigate("/configuracoes#customization")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
-            <Palette className="h-4.5 w-4.5 text-muted-foreground" strokeWidth={1.5} />
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition active:bg-muted/70"
+            aria-label="Personalizar chat">
+            <Palette className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
         </div>
       </header>
@@ -847,10 +849,10 @@ export default function Chat() {
 
       {/* ── Messages ── */}
       <div
-        className={cn("flex-1 relative z-10 overflow-y-auto", !wallpaperUrl && "bg-[#ece5dd] dark:bg-background")}
+        className={cn("relative z-10 flex-1 overflow-y-auto overscroll-contain", !wallpaperUrl && "bg-gradient-to-b from-[#F7F3F1] via-[#FAF8F6] to-[#F4F1EF] dark:from-background dark:via-background dark:to-background")}
         style={{ scrollbarWidth: "none" }}
       >
-        <div className="flex flex-col gap-0 py-3 pb-4 min-h-full justify-end">
+        <div className="flex min-h-full flex-col justify-end gap-0 px-1 pb-5 pt-3">
           {hasMore && (
             <div className="flex justify-center py-2">
               <button onClick={loadMore} disabled={loadingMore}
@@ -866,9 +868,14 @@ export default function Chat() {
             </div>
           )}
           {!loading && messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <Heart className="h-10 w-10 text-rose-300" strokeWidth={1} />
-              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Diz olá!</p>
+            <div className="mx-auto flex max-w-[250px] flex-col items-center justify-center gap-3 py-20 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-white/70 bg-white/70 shadow-[0_12px_35px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-card">
+                <Heart className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-foreground">Comecem por uma coisa pequena.</p>
+                <p className="mt-1 text-[11px] leading-5 text-muted-foreground">Uma mensagem já é presença.</p>
+              </div>
             </div>
           )}
 
@@ -908,11 +915,11 @@ export default function Chat() {
       )}
 
       {/* ── Bottom Input Bar (WhatsApp style) ── */}
-      <div className="relative z-50 shrink-0 bg-muted px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="relative z-50 shrink-0 border-t border-border/60 bg-background/[0.88] px-2.5 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
 
         {/* Edit mode banner */}
         {editingMsg && (
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2 mb-1.5 border border-border">
+          <div className="flex items-center gap-2 mb-2 rounded-[1.15rem] border border-border/70 bg-card/95 px-3 py-2 shadow-sm">
             <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={editText}
@@ -932,7 +939,7 @@ export default function Chat() {
 
         {/* Reply banner */}
         {replyTo && !editingMsg && (
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2 mb-1.5 border-l-2 border-rose-400">
+          <div className="mb-2 flex items-center gap-2 rounded-[1.15rem] border border-border/70 border-l-2 border-l-rose-400 bg-card/95 px-3 py-2 shadow-sm">
             <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground line-clamp-1">
               {replyTo.content || (replyTo.image_url ? "Foto" : replyTo.audio_url ? "Audio" : "")}
@@ -945,7 +952,7 @@ export default function Chat() {
 
         {/* Image preview */}
         {imagePreview && !editingMsg && (
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-2 py-1.5 mb-1.5">
+          <div className="mb-2 flex items-center gap-2 rounded-[1.15rem] border border-border/70 bg-card/95 px-2.5 py-2 shadow-sm">
             <img src={imagePreview} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground truncate">{imageFile?.name}</p>
             <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted">
@@ -962,7 +969,7 @@ export default function Chat() {
             <div className="flex-1 relative">
               {/* Recording / Preview overlay inside the pill */}
               {inRecMode ? (
-                <div className="flex items-center gap-2 bg-card rounded-[24px] min-h-[48px] px-3 py-2">
+                <div className="flex min-h-[52px] items-center gap-2 rounded-[1.45rem] border border-border/70 bg-card/95 px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
 
                   {/* Delete */}
                   <button onClick={audio.cancel}
@@ -1012,15 +1019,21 @@ export default function Chat() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-end bg-card rounded-[24px] min-h-[44px] px-2 py-1">
+                <div className="flex min-h-[52px] items-end rounded-[1.45rem] border border-border/70 bg-card/95 px-2 py-1.5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
                   <ImagePickerButton onPick={setImageFile} />
-                  <input
+                  <textarea
                     ref={inputRef}
+                    rows={1}
                     value={input}
                     onChange={e => setInput(e.target.value)}
+                    onInput={e => {
+                      const el = e.currentTarget;
+                      el.style.height = "40px";
+                      el.style.height = Math.min(el.scrollHeight, 112) + "px";
+                    }}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                    placeholder="Mensagem"
-                    className="flex-1 min-h-[36px] bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/65 px-1 py-1.5 resize-none"
+                    placeholder="Escreve uma mensagem"
+                    className="max-h-28 min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-[14px] leading-5 text-foreground outline-none placeholder:text-muted-foreground/55"
                     autoComplete="off"
                   />
                   {/* Carinho heart — only when no text */}
@@ -1053,8 +1066,8 @@ export default function Chat() {
                 }
               }}
               className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95",
-                "bg-rose-500 text-white",
+                "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full shadow-[0_10px_28px_rgba(11,19,36,0.16)] transition-transform active:scale-95",
+                "bg-[#0B1324] text-white dark:bg-slate-100 dark:text-slate-950",
                 (!isReady || sending) && "opacity-60"
               )}
             >
