@@ -16,6 +16,7 @@ import {
   QuietLink,
   Reveal,
 } from "@/features/auth/AuthKit";
+import { NestMark } from "@/features/auth/Nest";
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 
@@ -192,8 +193,21 @@ export default function Login() {
 
   const busy = loading || googleLoading;
 
+  // Os dois lados aproximam-se à medida que se preenche, e encontram-se ao entrar.
+  const activeEmail = forgotView ? forgotEmail : email;
+  const filled =
+    (isValidEmail(activeEmail.trim()) ? 0.5 : activeEmail ? 0.2 : 0) +
+    (forgotView || tab === "magic" ? 0.3 : password ? 0.3 : 0);
+  const gap = busy ? 0 : Math.max(0.12, 1 - filled);
+
   return (
     <AuthScaffold
+      motif={
+        <div className="flex items-center gap-3">
+          <NestMark size={30} gap={gap} initialGap={1} />
+          <span className="text-[12px] font-semibold text-slate-400">Cada um entra pelo seu lado.</span>
+        </div>
+      }
       title={forgotView ? "Recuperar o acesso." : "Bem-vindos de volta."}
       subtitle={
         forgotView

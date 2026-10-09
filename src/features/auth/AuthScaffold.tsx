@@ -15,6 +15,7 @@ export function AuthScaffold({
   subtitle,
   headerRight,
   footer,
+  motif,
 }: {
   children: ReactNode;
   eyebrow?: string;
@@ -22,6 +23,8 @@ export function AuthScaffold({
   subtitle?: ReactNode;
   headerRight?: ReactNode;
   footer?: ReactNode;
+  /** O sinal do ninho por cima do título — reage ao estado da página. */
+  motif?: ReactNode;
 }) {
   return (
     <main className="min-h-[100dvh] text-[#0B1324]" style={{ background: PAPER }}>
@@ -51,6 +54,7 @@ export function AuthScaffold({
             {headerRight && <div className="hidden justify-end lg:flex">{headerRight}</div>}
 
             <Reveal className="mt-8 lg:mt-6">
+              {motif && <div className="mb-6">{motif}</div>}
               <PageTitle eyebrow={eyebrow} title={title} subtitle={subtitle} />
             </Reveal>
 

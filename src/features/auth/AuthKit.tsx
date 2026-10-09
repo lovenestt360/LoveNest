@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, Flame, Loader2 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { cn } from "@/lib/utils";
+import { NestMark, NestPair } from "@/features/auth/Nest";
 
 /**
  * Peças partilhadas do fluxo público (Welcome, registo, login, onboarding).
@@ -23,10 +24,17 @@ export const EASE = [0.22, 1, 0.36, 1] as const;
 
 // ── Cabeçalho ────────────────────────────────────────────────────────────────
 
-export function AuthHeader({ right, onBrandClick }: { right?: ReactNode; onBrandClick?: () => void }) {
+export function AuthHeader({ right, onBrandClick, meet = false }: { right?: ReactNode; onBrandClick?: () => void; meet?: boolean }) {
   const brand = (
     <span className="flex items-center gap-2">
-      <LogoMark size={24} />
+      {meet ? (
+        // Os dois lados do logo encontram-se quando a página abre.
+        <span style={{ margin: `0 ${-24 * (150 / 512)}px` }} className="flex">
+          <NestMark size={24 * (440 / 512)} initialGap={0.7} />
+        </span>
+      ) : (
+        <LogoMark size={24} />
+      )}
       <span className="text-[15px] font-extrabold tracking-[-0.02em] text-[#0B1324]">LoveNest</span>
     </span>
   );
@@ -222,48 +230,25 @@ export function GoogleIcon({ className }: { className?: string }) {
 
 // ── O casal ──────────────────────────────────────────────────────────────────
 
-/** Duas iniciais com o anel da cor de cada pessoa, ligeiramente sobrepostas. */
-export function CouplePair({ a = "A", b = "M", size = 34, dark = false }: { a?: string; b?: string; size?: number; dark?: boolean }) {
-  const ring = dark ? "#0B1324" : "#FFFFFF";
-  const fill = dark ? "#1A2438" : "#F1ECE6";
-  const text = dark ? "#FFFFFF" : "#0B1324";
-  const dot = (letter: string, color: string, offset: boolean) => (
-    <span
-      className="flex items-center justify-center rounded-full text-[12px] font-bold"
-      style={{
-        width: size,
-        height: size,
-        marginLeft: offset ? -size * 0.28 : 0,
-        background: fill,
-        color: text,
-        boxShadow: `0 0 0 2px ${ring}, 0 0 0 3.5px ${color}`,
-      }}
-    >
-      {letter}
-    </span>
-  );
-  return (
-    <span className="flex items-center" aria-hidden="true">
-      {dot(a, PERSON_A, false)}
-      {dot(b, PERSON_B, true)}
-    </span>
-  );
+/** ( A M ) — mantido com este nome para os ecrãs que já o usam. */
+export function CouplePair({ a = "A", b = "M", size = 30, dark = false }: { a?: string; b?: string; size?: number; dark?: boolean }) {
+  return <NestPair a={a} b={b} size={size} dark={dark} partner={a || b ? "present" : "pending"} />;
 }
 
 /**
  * Um momento real de uso — o "Hoje" de um casal — em vez de uma lista de
- * funcionalidades. As mensagens entram uma a uma, como se estivessem a chegar.
- * Variante escura para o painel lateral em desktop.
+ * funcionalidades. Cada mensagem chega do lado de quem a escreveu: a do par
+ * vem da esquerda, a resposta da direita. Aproximação, não decoração.
  */
 export function CoupleMoment({ dark = false, className }: { dark?: boolean; className?: string }) {
   const reduce = useReducedMotion();
-  const enter = (i: number) =>
+  const enter = (i: number, fromX = 0) =>
     reduce
       ? {}
       : {
-          initial: { opacity: 0, y: 8 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.32, ease: EASE, delay: 0.15 + i * 0.22 },
+          initial: { opacity: 0, x: fromX, y: fromX ? 0 : 6 },
+          animate: { opacity: 1, x: 0, y: 0 },
+          transition: { duration: 0.34, ease: EASE, delay: 0.2 + i * 0.26 },
         };
 
   const muted = dark ? "text-white/45" : "text-slate-400";
@@ -275,7 +260,7 @@ export function CoupleMoment({ dark = false, className }: { dark?: boolean; clas
     <div className={cn("rounded-[22px] border p-4", surface, className)} aria-hidden="true">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <CouplePair dark={dark} size={30} />
+          <NestPair dark={dark} size={28} />
           <div>
             <p className={cn("text-[13px] font-bold", dark ? "text-white" : "text-[#0B1324]")}>Ana e Miguel</p>
             <p className={cn("text-[11px]", muted)}>Hoje, 22:41</p>
@@ -293,7 +278,7 @@ export function CoupleMoment({ dark = false, className }: { dark?: boolean; clas
       </div>
 
       <div className="mt-4 space-y-2">
-        <motion.div {...enter(0)} className="flex">
+        <motion.div {...enter(0, -14)} className="flex">
           <p
             className={cn(
               "max-w-[78%] rounded-[16px] rounded-bl-[5px] px-3.5 py-2 text-[14px] leading-snug",
@@ -303,7 +288,7 @@ export function CoupleMoment({ dark = false, className }: { dark?: boolean; clas
             Chegaste bem?
           </p>
         </motion.div>
-        <motion.div {...enter(1)} className="flex justify-end">
+        <motion.div {...enter(1, 14)} className="flex justify-end">
           <p className="max-w-[78%] rounded-[16px] rounded-br-[5px] bg-[#0B1324] px-3.5 py-2 text-[14px] leading-snug text-white">
             Cheguei. Guardei-te o último pastel.
           </p>
