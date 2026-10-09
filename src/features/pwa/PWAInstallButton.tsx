@@ -9,8 +9,22 @@ export function PWAInstallButton() {
   const location = useLocation();
   const { setShowModal, installPrompt } = usePWATutorial();
 
-  // Não mostrar na landing page — prejudica a experiência de marketing
-  if (location.pathname === "/landing") return null;
+  // A instalação é uma ação secundária e não deve competir com entrada,
+  // onboarding, recuperação de conta ou páginas administrativas.
+  const hiddenRoutes = new Set([
+    "/landing",
+    "/inicio",
+    "/onboarding",
+    "/criar-conta",
+    "/signup",
+    "/entrar",
+    "/confirmar-email",
+    "/redefinir-senha",
+    "/admin-login",
+    "/admin-setup-secret",
+  ]);
+
+  if (hiddenRoutes.has(location.pathname)) return null;
 
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||

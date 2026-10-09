@@ -210,10 +210,10 @@ export default function Login() {
       subtitle={
         forgotView
           ? "Indica o email da tua conta e enviamos um link seguro para redefinires a senha."
-          : "Continua exatamente onde vocês deixaram a vossa história."
+          : "Continua onde deixaram a vossa história."
       }
     >
-      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/[0.08]0 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
+      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
         {!forgotView && (
           <>
             <button
