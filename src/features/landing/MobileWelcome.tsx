@@ -5,7 +5,7 @@ import { LogoIcon, LogoMark } from "@/components/Logo";
 export function MobileWelcome({ onExplore }: { onExplore: () => void }) {
   const navigate = useNavigate();
 
-  const start = () => navigate("/inicio");
+  const start = () => navigate("/inicio?start=1");
   const login = () => navigate("/entrar?returning=1");
 
   return (
