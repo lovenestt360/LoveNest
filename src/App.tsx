@@ -16,7 +16,6 @@ import { SplashGate } from "@/features/splash/SplashScreen";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWATutorialProvider } from "@/features/pwa/PWATutorialContext";
 import { PWATutorialModal } from "@/features/pwa/PWATutorialModal";
-import { PWAInstallButton } from "@/features/pwa/PWAInstallButton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CeremonyOverlay } from "@/features/journey/CeremonyOverlay";
 import { CapsuleRealtimeWatcher } from "@/features/capsule/CapsuleRealtimeWatcher";
@@ -208,7 +207,6 @@ const App = () => (
                     </Suspense>
                   </ErrorBoundary>
                 </AppNotifProvider>
-                <PWAInstallButton />
                 <PWATutorialModal />
                 <CeremonyOverlay />
                 <CapsuleRealtimeWatcher />
