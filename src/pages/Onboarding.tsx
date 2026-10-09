@@ -12,7 +12,9 @@ import { getPasswordError } from "@/lib/passwordPolicy";
 import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
 
-const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);\n\n// ── Input shared style ────────────────────────────────────────────────────────
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+// ── Input shared style ────────────────────────────────────────────────────────
 
 const INPUT = "w-full h-[52px] rounded-[1rem] border border-slate-200/80 bg-white px-4 text-[14px] font-medium text-[#0B1324] placeholder:text-slate-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200/50 transition-all";
 
