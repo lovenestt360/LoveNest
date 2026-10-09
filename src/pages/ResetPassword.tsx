@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { getPasswordError } from "@/lib/passwordPolicy";
 import { AuthScaffold } from "@/features/auth/AuthScaffold";
-import { cn } from "@/lib/utils";
+import { FieldGroup, HeaderLink, PasswordField, PrimaryButton, Reveal } from "@/features/auth/AuthKit";
 
 export default function ResetPassword() {
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -63,123 +60,86 @@ export default function ResetPassword() {
     }
   };
 
-  const fieldClass =
-    "h-[52px] rounded-[1rem] border-slate-200/80 bg-white px-4 text-[14px] shadow-none focus-visible:border-rose-300 focus-visible:ring-2 focus-visible:ring-rose-200/50";
+  // Indicação discreta, à medida que se escreve — não substitui a validação.
+  const longEnough = password.length >= 8;
+  const matches = confirm.length > 0 && password === confirm;
 
   return (
     <AuthScaffold
-      eyebrow="Segurança da conta"
-      title={done ? "Senha alterada." : "Cria uma nova senha."}
+      title={done ? "Senha alterada." : "Uma nova senha."}
       subtitle={
         done
           ? "Está tudo pronto. Vamos levar-te de volta ao login."
-          : "Escolhe uma senha única para proteger o acesso ao vosso espaço."
+          : "Escolhe uma senha que só tu sabes. Protege o espaço que é vosso."
       }
+      headerRight={!done && <HeaderLink onClick={() => navigate("/entrar?returning=1")}>Cancelar</HeaderLink>}
     >
-      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
-        {done ? (
-          <div className="py-5 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
-              <ShieldCheck className="h-5 w-5" strokeWidth={1.8} />
-            </div>
-            <p className="mt-4 text-[14px] font-bold text-slate-700">A tua conta está pronta.</p>
-            <p className="mt-1 text-[11px] text-slate-400">A redirecionar para o login…</p>
+      {done ? (
+        <Reveal>
+          <div className="flex items-center gap-3 text-[15px] text-slate-600">
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+            A redirecionar para o login…
           </div>
-        ) : !ready ? (
-          <div className="py-8 text-center">
-            <Loader2 className="mx-auto h-6 w-6 animate-spin text-rose-400" />
-            <p className="mt-4 text-[12px] font-semibold text-slate-500">A verificar o link de recuperação…</p>
-            <button
-              type="button"
-              onClick={() => navigate("/entrar?returning=1")}
-              className="mt-4 text-[11px] font-bold text-rose-500"
-            >
-              Voltar ao login
-            </button>
+        </Reveal>
+      ) : !ready ? (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 text-[15px] text-slate-600">
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+            A verificar o link de recuperação…
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="new-password" className="text-[12px] font-bold text-slate-600">
-                Nova senha
-              </label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="Mínimo 8 caracteres"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  minLength={8}
-                  className={cn(fieldClass, "pr-12")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((value) => !value)}
-                  className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400"
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+          <p className="text-[14px] leading-[1.5] text-slate-500">
+            Se demorar, abre de novo o link do email neste dispositivo.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FieldGroup>
+            <PasswordField
+              id="new-password"
+              label="Nova senha"
+              autoComplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              minLength={8}
+            />
+            <PasswordField
+              id="confirm-password"
+              label="Repetir senha"
+              autoComplete="new-password"
+              placeholder="A mesma senha"
+              value={confirm}
+              onChange={(event) => setConfirm(event.target.value)}
+              required
+            />
+          </FieldGroup>
 
-            <div className="space-y-1.5">
-              <label htmlFor="confirm-password" className="text-[12px] font-bold text-slate-600">
-                Confirmar senha
-              </label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type={showConfirm ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="Repete a nova senha"
-                  value={confirm}
-                  onChange={(event) => setConfirm(event.target.value)}
-                  required
-                  className={cn(fieldClass, "pr-12")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm((value) => !value)}
-                  className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400"
-                  aria-label={showConfirm ? "Ocultar senha" : "Mostrar senha"}
-                >
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+          <ul className="flex gap-4 px-1 text-[13px]" aria-live="polite">
+            <Hint ok={longEnough}>8+ caracteres</Hint>
+            <Hint ok={matches}>Coincidem</Hint>
+          </ul>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] active:scale-[0.99] disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  Guardar nova senha
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-      </div>
-
-      {!done && (
-        <button
-          type="button"
-          onClick={() => navigate("/entrar?returning=1")}
-          className="mx-auto mt-5 flex items-center gap-1.5 text-[11px] font-bold text-slate-400"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Voltar ao login
-        </button>
+          <PrimaryButton type="submit" disabled={loading} loading={loading}>
+            Guardar nova senha
+          </PrimaryButton>
+        </form>
       )}
     </AuthScaffold>
+  );
+}
+
+function Hint({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <li className={`flex items-center gap-1.5 transition-colors duration-200 ${ok ? "text-[#0B1324]" : "text-slate-400"}`}>
+      <span
+        className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors duration-200 ${
+          ok ? "border-[#0B1324] bg-[#0B1324] text-white" : "border-slate-300"
+        }`}
+      >
+        {ok && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+      </span>
+      {children}
+    </li>
   );
 }

@@ -1,9 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LogoIcon, LogoMark } from "@/components/Logo";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AuthScaffold } from "@/features/auth/AuthScaffold";
+import {
+  AuthHeader,
+  AuthPage,
+  CouplePair,
+  EASE,
+  Field,
+  FieldGroup,
+  GoogleButton,
+  HeaderLink,
+  OrDivider,
+  PasswordField,
+  PERSON_A,
+  PrimaryButton,
+  QuietLink,
+  Reveal,
+} from "@/features/auth/AuthKit";
 import { WelcomeStep } from "@/components/onboarding/steps/WelcomeStep";
-import { ArrowRight, ChevronLeft, Eye, EyeOff, Loader2 } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
+import { BookOpen, Check, ChevronLeft, Compass, HeartHandshake, Leaf, Loader2, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,21 +30,6 @@ import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
-
-function GoogleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-    </svg>
-  );
-}
-
-// ── Input shared style ────────────────────────────────────────────────────────
-
-const INPUT = "w-full h-[52px] rounded-[1rem] border border-slate-200/80 bg-white px-4 text-[14px] font-medium text-[#0B1324] placeholder:text-slate-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200/50 transition-all";
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -53,17 +55,19 @@ const RELIGION_OPTIONS = [
 ];
 
 const MODE_OPTIONS = [
-  { value: "couple", label: "A dois",  desc: "Conectado ao teu par" },
-  { value: "solo",   label: "A solo",  desc: "O teu espaço pessoal" },
+  { value: "couple", label: "A dois",       desc: "Um espaço partilhado. O teu par entra com o código do vosso LoveNest." },
+  { value: "solo",   label: "Só para mim",  desc: "O teu espaço pessoal. Podes convidar alguém mais tarde." },
 ];
 
 const GOAL_OPTIONS = [
-  { value: "relationship", label: "Melhorar o meu relacionamento" },
-  { value: "books",        label: "Ler livros" },
-  { value: "wellbeing",    label: "Bem-estar emocional" },
-  { value: "growth",       label: "Crescimento pessoal" },
-  { value: "explore",      label: "Explorar a aplicação" },
+  { value: "relationship", label: "Cuidar da nossa relação", icon: HeartHandshake },
+  { value: "books",        label: "Ler mais",                  icon: BookOpen },
+  { value: "wellbeing",    label: "Sentir-me melhor por dentro", icon: Leaf },
+  { value: "growth",       label: "Crescer como pessoa",       icon: Sprout },
+  { value: "explore",      label: "Só quero explorar",         icon: Compass },
 ];
+
+const labelOf = (list: { value: string; label: string }[], v: string) => list.find((o) => o.value === v)?.label ?? "";
 
 export default function Onboarding() {
   const [phase, setPhase] = useState<Phase>(() =>
@@ -78,7 +82,6 @@ export default function Onboarding() {
   const [name, setName]           = useState(localStorage.getItem("onboarding_name") || "");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState(
     sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref") || ""
   );
@@ -102,6 +105,7 @@ export default function Onboarding() {
   const navigate  = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const reduceMotion = useReducedMotion();
 
   const markSeen = () => localStorage.setItem("onboarding_seen", "1");
 
@@ -259,9 +263,9 @@ export default function Onboarding() {
 
   if (phase === "intro" && !authResolved) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
-      </div>
+      <AuthPage className="items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+      </AuthPage>
     );
   }
 
@@ -269,405 +273,511 @@ export default function Onboarding() {
 
   if (phase === "intro") {
     return (
-      <main className="relative min-h-[100dvh] overflow-hidden bg-[#F8F5F4] text-[#0B1324]">
-        <div aria-hidden className="pointer-events-none absolute -right-24 -top-16 h-72 w-72 rounded-full bg-rose-200/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-indigo-100/65 blur-3xl" />
-
-        <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1.25rem)]">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <LogoMark size={28} />
-              <span className="text-[15px] font-extrabold tracking-[-0.02em]">LoveNest</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => { markSeen(); navigate("/entrar?returning=1"); }}
-              className="rounded-full px-3 py-2 text-xs font-semibold text-slate-500 active:bg-black/5"
-            >
+      <AuthPage>
+        <AuthHeader
+          right={
+            <HeaderLink onClick={() => { markSeen(); navigate("/entrar?returning=1"); }}>
               Já tenho conta
-            </button>
-          </header>
+            </HeaderLink>
+          }
+        />
 
-          <section className="flex flex-1 flex-col items-center justify-center text-center">
-            <div className="relative mb-8">
-              <div aria-hidden className="absolute inset-2 rounded-[2rem] bg-rose-300/25 blur-2xl" />
-              <LogoIcon size={96} className="relative drop-shadow-[0_18px_35px_rgba(11,19,36,0.16)]" />
-            </div>
-
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-500/80">
-              Criar o vosso espaço
-            </p>
-            <h1 className="mt-3 max-w-[330px] text-[35px] font-black leading-[1.03] tracking-[-0.045em]">
+        <section className="flex flex-1 flex-col justify-center py-10">
+          <Reveal>
+            <h1 className="max-w-[15ch] text-[31px] font-extrabold leading-[1.08] tracking-[-0.038em]">
               Comecem por uma coisa simples.
             </h1>
-            <p className="mt-4 max-w-[300px] text-[14px] leading-6 text-slate-500">
-              Uma conta, um espaço privado e depois o LoveNest cresce convosco.
+            <p className="mt-3 max-w-[32ch] text-[15px] leading-[1.55] text-slate-500">
+              Três passos, e o resto acontece no dia a dia.
             </p>
-          </section>
+          </Reveal>
 
-          <footer className="space-y-3">
-            <button
-              type="button"
-              onClick={() => setPhase("form")}
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#0B1324] text-[14px] font-bold text-white shadow-[0_14px_35px_rgba(11,19,36,0.16)] transition active:scale-[0.985]"
-            >
-              Criar o nosso LoveNest
-              <ArrowRight className="h-4 w-4" strokeWidth={2} />
-            </button>
-            <p className="text-center text-[10px] text-slate-400">
-              Privado por defeito. Sem feed público.
-            </p>
-          </footer>
-        </div>
-      </main>
+          {/* Uma sequência real — por isso numerada. */}
+          <Reveal delay={0.08} className="mt-9">
+            <ol className="border-y border-[#0B1324]/[0.08]">
+              {[
+                { t: "Crias a tua conta.", d: "Leva menos de um minuto." },
+                { t: "O teu par junta-se a ti.", d: "Com o código do vosso espaço." },
+                { t: "O espaço passa a ser vosso.", d: "Conversas, memórias e rituais, só entre os dois." },
+              ].map((s, i) => (
+                <li key={s.t} className="flex gap-4 border-b border-[#0B1324]/[0.06] py-4 last:border-b-0">
+                  <span className="pt-px text-[13px] font-bold tabular-nums text-slate-300">0{i + 1}</span>
+                  <div>
+                    <p className="text-[15px] font-bold">{s.t}</p>
+                    <p className="mt-0.5 text-[14px] text-slate-500">{s.d}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
+        </section>
+
+        <footer>
+          <PrimaryButton type="button" onClick={() => setPhase("form")}>
+            Criar o nosso espaço
+          </PrimaryButton>
+        </footer>
+      </AuthPage>
     );
   }
 
   // ── Personalization screens ───────────────────────────────────────────────
 
-  const stepIdx = PERS_STEPS.indexOf(phase);
-
-  const StepShell = ({ onBack, children }: { onBack: () => void; children: React.ReactNode }) => (
-    <main
-      className="relative min-h-[100dvh] overflow-hidden bg-[#F8F5F4] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+1rem)] text-[#0B1324]"
-      style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(12px)", transition: "opacity 160ms ease, transform 160ms ease" }}
-    >
-      <div aria-hidden className="pointer-events-none absolute -right-28 -top-20 h-72 w-72 rounded-full bg-rose-100/55 blur-3xl" />
-      <div className="relative mx-auto flex min-h-[calc(100dvh-2.25rem)] w-full max-w-md flex-col">
-        <header className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/70 bg-white/70 text-slate-500 active:scale-95"
-            aria-label="Voltar"
-          >
-            <ChevronLeft className="h-4 w-4" strokeWidth={1.7} />
-          </button>
-
-          {stepIdx >= 0 ? (
-            <div className="flex flex-1 items-center gap-1.5">
-              {PERS_STEPS.map((_, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "h-1 flex-1 rounded-full transition-colors",
-                    index <= stepIdx ? "bg-rose-400" : "bg-slate-200/80"
-                  )}
-                />
-              ))}
-            </div>
-          ) : <div className="flex-1" />}
-
-          <span className="w-10 text-right text-[10px] font-bold tabular-nums text-slate-400">
-            {stepIdx >= 0 ? `${stepIdx + 1}/${PERS_STEPS.length}` : ""}
-          </span>
-        </header>
-
-        <section className="flex flex-1 flex-col justify-center py-8">
-          {children}
-        </section>
-      </div>
-    </main>
-  );
-
-  const CtaBtn = ({ onClick, disabled, label }: { onClick: () => void; disabled?: boolean; label: string }) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#0B1324] text-[14px] font-bold text-white shadow-[0_14px_35px_rgba(11,19,36,0.14)] transition active:scale-[0.985] disabled:opacity-30"
-    >
-      {label} <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-    </button>
-  );
-
-  const SkipBtn = ({ onClick }: { onClick: () => void }) => (
-    <button onClick={onClick} className="w-full py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
-      Saltar
-    </button>
-  );
-
-  const OptionBtn = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full h-[52px] rounded-2xl border text-[14px] font-medium transition-all active:scale-[0.98]",
-        selected
-          ? "border-[#0B1324] bg-[#0B1324] text-white shadow-[0_8px_22px_rgba(11,19,36,0.10)]"
-          : "border-slate-200/80 bg-white/75 text-[#0B1324] shadow-sm"
-      )}
-    >
-      {children}
-    </button>
-  );
-
   if (phase === "welcome") {
-    return <WelcomeStep onContinue={() => goToStep("country")} />;
+    return <WelcomeStep name={name} onContinue={() => goToStep("country")} />;
   }
 
+  const stepIdx = PERS_STEPS.indexOf(phase);
+  const shell = (props: Omit<StepShellProps, "stepIdx" | "visible" | "reduceMotion">) => (
+    <StepShell {...props} stepIdx={stepIdx} visible={stepVisible} reduceMotion={!!reduceMotion} />
+  );
+
   if (phase === "country") {
-    return (
-      <StepShell onBack={() => goToStep("welcome")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Onde estás?</h2>
-            <p className="text-[13px] text-muted-foreground">Ajuda-nos a adaptar o conteúdo à tua região.</p>
-          </div>
-          <CountryPicker
-            value={countryCode || null}
-            onSelect={(code) => {
-              setCountryCode(code);
-              setCountry(COUNTRIES.find(c => c.code === code)?.name ?? "");
-              setTimeout(() => goToStep("gender"), 300);
-            }}
-          />
-          <SkipBtn onClick={() => goToStep("gender")} />
-        </div>
-      </StepShell>
-    );
+    return shell({
+      onBack: () => goToStep("welcome"),
+      onSkip: () => goToStep("gender"),
+      question: "Onde estás neste momento?",
+      hint: "Para datas, horários e conteúdos fazerem sentido onde vives.",
+      children: (
+        <CountryPicker
+          value={countryCode || null}
+          triggerClassName="h-[58px] rounded-2xl border-[#0B1324]/[0.08] bg-white text-[16px] font-semibold"
+          onSelect={(code) => {
+            setCountryCode(code);
+            setCountry(COUNTRIES.find(c => c.code === code)?.name ?? "");
+            setTimeout(() => goToStep("gender"), 300);
+          }}
+        />
+      ),
+    });
   }
 
   if (phase === "gender") {
-    return (
-      <StepShell onBack={() => goToStep("country")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Como te identificas?</h2>
-            <p className="text-[13px] text-muted-foreground">Opcional. Só para personalizar linguagem.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {GENDER_OPTIONS.map(o => (
-              <OptionBtn
-                key={o.value}
-                selected={gender === o.value}
-                onClick={() => { setGender(o.value); setTimeout(() => goToStep("spiritual"), 300); }}
-              >
-                {o.label}
-              </OptionBtn>
-            ))}
-          </div>
-          <SkipBtn onClick={() => goToStep("spiritual")} />
-        </div>
-      </StepShell>
-    );
+    return shell({
+      onBack: () => goToStep("country"),
+      onSkip: () => goToStep("spiritual"),
+      previousAnswer: country,
+      question: "Como preferes que falemos contigo?",
+      hint: "Opcional. Só muda a forma como o LoveNest se dirige a ti.",
+      children: (
+        <OptionList
+          options={GENDER_OPTIONS}
+          value={gender}
+          onSelect={(v) => { setGender(v); setTimeout(() => goToStep("spiritual"), 300); }}
+        />
+      ),
+    });
   }
 
   if (phase === "spiritual") {
-    return (
-      <StepShell onBack={() => goToStep("gender")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Tens fé?</h2>
-            <p className="text-[13px] text-muted-foreground">Ativamos recursos espirituais se quiseres.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {RELIGION_OPTIONS.map(o => (
-              <OptionBtn
-                key={o.value}
-                selected={religion === o.value}
-                onClick={() => { setReligion(o.value); setTimeout(() => goToStep("mode"), 300); }}
-              >
-                {o.label}
-              </OptionBtn>
-            ))}
-          </div>
-          <SkipBtn onClick={() => goToStep("mode")} />
-        </div>
-      </StepShell>
-    );
+    return shell({
+      onBack: () => goToStep("gender"),
+      onSkip: () => goToStep("mode"),
+      previousAnswer: labelOf(GENDER_OPTIONS, gender),
+      question: "A fé faz parte da tua vida?",
+      hint: "Se sim, mostramos oração e jejum. Se não, ficam fora do caminho.",
+      children: (
+        <ChipChoice
+          options={RELIGION_OPTIONS}
+          value={religion}
+          onSelect={(v) => { setReligion(v); setTimeout(() => goToStep("mode"), 300); }}
+        />
+      ),
+    });
   }
 
   if (phase === "mode") {
-    return (
-      <StepShell onBack={() => goToStep("spiritual")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Como vais usar o LoveNest?</h2>
-            <p className="text-[13px] text-muted-foreground">Podes mudar nas definições a qualquer momento.</p>
-          </div>
-          <div className="space-y-3">
-            {MODE_OPTIONS.map(o => (
+    const initial = name.trim().charAt(0).toUpperCase() || "T";
+    return shell({
+      onBack: () => goToStep("spiritual"),
+      onSkip: () => goToStep("goal"),
+      previousAnswer: labelOf(RELIGION_OPTIONS, religion),
+      question: "Para quem é este espaço?",
+      hint: "Podes mudar isto mais tarde nas definições.",
+      children: (
+        <div className="space-y-3">
+          {MODE_OPTIONS.map((o) => {
+            const selected = usageMode === o.value;
+            return (
               <button
                 key={o.value}
+                type="button"
                 onClick={() => { setUsageMode(o.value); setTimeout(() => goToStep("goal"), 300); }}
+                aria-pressed={selected}
                 className={cn(
-                  "w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]",
-                  usageMode === o.value
-                    ? "border-[#0B1324] bg-[#0B1324] text-white shadow-[0_8px_22px_rgba(11,19,36,0.10)]"
-                    : "border-slate-200/80 bg-white/75 text-[#0B1324] shadow-sm"
+                  "flex w-full items-center gap-4 rounded-2xl border bg-white p-4 text-left",
+                  "transition-[border-color,box-shadow,transform] duration-200 active:scale-[0.985]",
+                  selected
+                    ? "border-[#0B1324] shadow-[0_0_0_1px_#0B1324]"
+                    : "border-[#0B1324]/[0.08] hover:border-[#0B1324]/20",
                 )}
               >
-                <div className="text-[15px] font-semibold">{o.label}</div>
-                <div className={cn("text-[12px] mt-0.5", usageMode === o.value ? "text-white/80" : "text-muted-foreground")}>{o.desc}</div>
+                <span className="flex w-[58px] shrink-0 justify-center">
+                  {o.value === "couple" ? (
+                    <CouplePair a={initial} b="+" size={30} />
+                  ) : (
+                    <span
+                      className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#F1ECE6] text-[12px] font-bold"
+                      style={{ boxShadow: `0 0 0 2px #fff, 0 0 0 3.5px ${PERSON_A}` }}
+                      aria-hidden="true"
+                    >
+                      {initial}
+                    </span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[16px] font-bold">{o.label}</span>
+                  <span className="mt-0.5 block text-[14px] leading-[1.45] text-slate-500">{o.desc}</span>
+                </span>
+                <CheckDot on={selected} />
               </button>
-            ))}
-          </div>
-          <SkipBtn onClick={() => goToStep("goal")} />
+            );
+          })}
         </div>
-      </StepShell>
-    );
+      ),
+    });
   }
 
   if (phase === "goal") {
-    return (
-      <StepShell onBack={() => goToStep("mode")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Qual é o teu objetivo principal?</h2>
-          </div>
-          <div className="space-y-2">
-            {GOAL_OPTIONS.map(o => (
-              <OptionBtn
-                key={o.value}
-                selected={primaryGoal === o.value}
-                onClick={() => { setPrimaryGoal(o.value); setTimeout(handleSaveProfile, 400); }}
-              >
-                {o.label}
-              </OptionBtn>
-            ))}
-          </div>
-          <div className="pt-2">
-            <button onClick={handleSaveProfile} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors flex items-center justify-center gap-1.5">
-              {savingProfile && <Loader2 className="w-3 h-3 animate-spin" />}
-              Saltar
-            </button>
-          </div>
-        </div>
-      </StepShell>
-    );
+    return shell({
+      onBack: () => goToStep("mode"),
+      onSkip: handleSaveProfile,
+      skipBusy: savingProfile,
+      skipLabel: "Saltar e entrar",
+      previousAnswer: labelOf(MODE_OPTIONS, usageMode),
+      question: "O que te trouxe ao LoveNest?",
+      hint: "Escolhe o que pesa mais agora. Organizamos a tua Home à volta disso.",
+      children: (
+        <OptionList
+          options={GOAL_OPTIONS}
+          value={primaryGoal}
+          disabled={savingProfile}
+          onSelect={(v) => { setPrimaryGoal(v); setTimeout(handleSaveProfile, 400); }}
+        />
+      ),
+    });
   }
 
   // ── Signup form ───────────────────────────────────────────────────────────
 
   return (
     <AuthScaffold
-      eyebrow="Criar o vosso espaço"
       title="Começa por ti."
-      subtitle="Cria a tua conta. Depois podes convidar o teu par e construir o LoveNest juntos."
+      subtitle="Depois convidas o teu par — ou entras no espaço que ele já criou."
+      headerRight={<HeaderLink onClick={() => setPhase("intro")}>Voltar</HeaderLink>}
+      footer={
+        <p className="text-center text-[14px] text-slate-500">
+          Já tens conta?{" "}
+          <QuietLink onClick={() => { markSeen(); navigate("/entrar?returning=1"); }}>Entrar</QuietLink>
+        </p>
+      }
     >
-      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={googleLoading || loading}
-          className="flex h-[52px] w-full items-center justify-center gap-3 rounded-[1rem] border border-slate-200/80 bg-white text-[13px] font-bold text-[#0B1324] active:scale-[0.99] disabled:opacity-60"
-        >
-          {googleLoading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : <GoogleIcon className="h-5 w-5" />}
-          Continuar com Google
-        </button>
-
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200/70" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">ou por email</span>
-          <div className="h-px flex-1 bg-slate-200/70" />
-        </div>
+      <div className="space-y-5">
+        <GoogleButton onClick={handleGoogle} disabled={googleLoading || loading} loading={googleLoading} />
+        <OrDivider />
 
         <form onSubmit={handleSignup} className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="onboarding-name" className="text-[12px] font-bold text-slate-600">O teu nome</label>
-            <input
+          <FieldGroup>
+            <Field
               id="onboarding-name"
+              label="O teu nome"
               type="text"
-              autoComplete="name"
-              placeholder="Como queres aparecer?"
+              autoComplete="given-name"
+              autoCapitalize="words"
+              enterKeyHint="next"
+              placeholder="Como o teu par te chama"
               value={name}
               onChange={e => setName(e.target.value)}
               required
-              className={INPUT}
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="onboarding-email" className="text-[12px] font-bold text-slate-600">Email</label>
-            <input
+            <Field
               id="onboarding-email"
+              label="Email"
               type="email"
               inputMode="email"
               autoComplete="email"
+              enterKeyHint="next"
               placeholder="teu@email.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className={INPUT}
             />
-          </div>
+            <PasswordField
+              id="onboarding-password"
+              label="Senha"
+              autoComplete="new-password"
+              enterKeyHint="done"
+              placeholder="Mínimo 8 caracteres"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </FieldGroup>
 
-          <div className="space-y-1.5">
-            <label htmlFor="onboarding-password" className="text-[12px] font-bold text-slate-600">Senha</label>
-            <div className="relative">
-              <input
-                id="onboarding-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                placeholder="Mínimo 8 caracteres"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                className={cn(INPUT, "pr-12")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(value => !value)}
-                className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 active:bg-slate-100"
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+          <InviteOption
+            open={showInvite}
+            onOpen={() => setShowInvite(true)}
+            code={inviteCode}
+            onCode={(v) => setInviteCode(v.toUpperCase())}
+            reduceMotion={!!reduceMotion}
+          />
 
-          {!showInvite ? (
-            <button
-              type="button"
-              onClick={() => setShowInvite(true)}
-              className="w-full px-1 text-left text-[11px] font-semibold text-slate-400"
-            >
-              + Tenho um código de convite do meu par
-            </button>
-          ) : (
-            <div className="space-y-1.5">
-              <label htmlFor="onboarding-invite" className="text-[12px] font-bold text-slate-600">Código do par</label>
-              <input
-                id="onboarding-invite"
-                type="text"
-                placeholder="Ex: AMOR2024"
-                value={inviteCode}
-                onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                className={cn(INPUT, "text-center font-bold tracking-wider")}
-              />
+          <PrimaryButton type="submit" disabled={loading || googleLoading} loading={loading}>
+            Criar o nosso espaço
+          </PrimaryButton>
+        </form>
+      </div>
+    </AuthScaffold>
+  );
+}
+
+// ── Peças do onboarding ───────────────────────────────────────────────────────
+// Definidas fora do componente: assim não são recriadas a cada render, e o
+// estado selecionado anima em vez de o ecrã ser remontado.
+
+interface StepShellProps {
+  stepIdx: number;
+  visible: boolean;
+  reduceMotion: boolean;
+  onBack: () => void;
+  onSkip: () => void;
+  skipLabel?: string;
+  skipBusy?: boolean;
+  previousAnswer?: string;
+  question: string;
+  hint?: string;
+  children: ReactNode;
+}
+
+/** Cada passo é uma pequena troca: a tua última resposta, e a pergunta seguinte. */
+function StepShell({
+  stepIdx, visible, reduceMotion, onBack, onSkip, skipLabel = "Saltar", skipBusy,
+  previousAnswer, question, hint, children,
+}: StepShellProps) {
+  const total = PERS_STEPS.length;
+  return (
+    <AuthPage>
+      <header className="flex h-11 items-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-[#0B1324] active:bg-black/[0.04]"
+          aria-label="Voltar"
+        >
+          <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
+        </button>
+        <div
+          className="h-[3px] flex-1 overflow-hidden rounded-full bg-[#0B1324]/[0.08]"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={stepIdx + 1}
+          aria-label={`Passo ${stepIdx + 1} de ${total}`}
+        >
+          <div
+            className="h-full rounded-full bg-[#0B1324] transition-[width] duration-300 ease-out"
+            style={{ width: `${((stepIdx + 1) / total) * 100}%` }}
+          />
+        </div>
+        <span className="w-8 text-right text-[12px] font-semibold tabular-nums text-slate-400">
+          {stepIdx + 1}/{total}
+        </span>
+      </header>
+
+      <div
+        className="flex flex-1 flex-col"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible || reduceMotion ? "none" : "translateY(8px)",
+          transition: reduceMotion ? "opacity 120ms linear" : `opacity 200ms ease, transform 200ms cubic-bezier(${EASE.join(",")})`,
+        }}
+      >
+        <section className="flex flex-1 flex-col pt-8">
+          {/* A resposta anterior, como balão do lado de quem respondeu. */}
+          {previousAnswer && (
+            <div className="mb-6 flex justify-end">
+              <span className="rounded-[16px] rounded-br-[5px] bg-[#0B1324]/[0.06] px-3.5 py-2 text-[14px] text-slate-500">
+                {previousAnswer}
+              </span>
             </div>
           )}
 
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(11,19,36,0.08)]">
+              <LogoMark size={14} />
+            </span>
+            <span className="text-[12px] font-semibold text-slate-400">LoveNest</span>
+          </div>
+          <h2 className="mt-3 text-[26px] font-extrabold leading-[1.15] tracking-[-0.03em]">{question}</h2>
+          {hint && <p className="mt-2 max-w-[36ch] text-[15px] leading-[1.5] text-slate-500">{hint}</p>}
+
+          <div className="mt-7">{children}</div>
+        </section>
+
+        <footer className="pt-6">
           <button
-            type="submit"
-            disabled={loading || googleLoading}
-            className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] transition active:scale-[0.99] disabled:opacity-60"
+            type="button"
+            onClick={onSkip}
+            disabled={skipBusy}
+            className="flex h-11 w-full items-center justify-center gap-2 text-[14px] font-medium text-slate-400 transition-colors hover:text-[#0B1324] disabled:opacity-50"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Criar o nosso espaço <ArrowRight className="h-4 w-4" /></>}
+            {skipBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {skipLabel}
           </button>
-        </form>
-
-        <div className="mt-5 border-t border-slate-200/70 pt-5 text-center">
-          <p className="text-[12px] text-slate-400">
-            Já tens conta?{" "}
-            <button
-              type="button"
-              onClick={() => { markSeen(); navigate("/entrar?returning=1"); }}
-              className="font-bold text-rose-500"
-            >
-              Entrar
-            </button>
-          </p>
-        </div>
+        </footer>
       </div>
+    </AuthPage>
+  );
+}
 
-      <button
-        type="button"
-        onClick={() => setPhase("intro")}
-        className="mx-auto mt-5 flex items-center gap-1.5 text-[11px] font-bold text-slate-400"
-      >
-        <ChevronLeft className="h-3.5 w-3.5" />
-        Voltar
-      </button>
-    </AuthScaffold>
+function CheckDot({ on }: { on: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color] duration-200",
+        on ? "border-[#0B1324] bg-[#0B1324] text-white" : "border-[#0B1324]/15 bg-white",
+      )}
+      aria-hidden="true"
+    >
+      <Check className={cn("h-3 w-3 transition-transform duration-200", on ? "scale-100" : "scale-0")} strokeWidth={3} />
+    </span>
+  );
+}
+
+/** Lista de respostas numa só superfície — o mesmo padrão da lista "Hoje". */
+function OptionList({
+  options,
+  value,
+  onSelect,
+  disabled,
+}: {
+  options: { value: string; label: string; icon?: typeof Leaf }[];
+  value: string;
+  onSelect: (v: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#0B1324]/[0.08] bg-white" role="radiogroup">
+      {options.map((o) => {
+        const selected = value === o.value;
+        const Icon = o.icon;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            disabled={disabled}
+            onClick={() => onSelect(o.value)}
+            className={cn(
+              "flex w-full items-center gap-3.5 border-b border-[#0B1324]/[0.06] px-4 py-[15px] text-left last:border-b-0",
+              "transition-colors duration-200 active:bg-[#0B1324]/[0.04] disabled:opacity-60",
+              selected && "bg-[#0B1324]/[0.03]",
+            )}
+          >
+            {Icon && <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-colors", selected ? "text-[#0B1324]" : "text-slate-400")} strokeWidth={1.7} />}
+            <span className={cn("flex-1 text-[16px] transition-colors", selected ? "font-bold" : "font-medium text-slate-700")}>
+              {o.label}
+            </span>
+            <CheckDot on={selected} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Escolha curta em fichas — para listas longas de respostas de uma palavra. */
+function ChipChoice({
+  options,
+  value,
+  onSelect,
+}: {
+  options: { value: string; label: string }[];
+  value: string;
+  onSelect: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2" role="radiogroup">
+      {options.map((o) => {
+        const selected = value === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onSelect(o.value)}
+            className={cn(
+              "flex h-11 items-center gap-1.5 rounded-full border px-4 text-[15px]",
+              "transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.97]",
+              selected
+                ? "border-[#0B1324] bg-[#0B1324] font-semibold text-white"
+                : "border-[#0B1324]/[0.1] bg-white font-medium text-slate-700 hover:border-[#0B1324]/25",
+            )}
+          >
+            {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** O convite do par como uma opção com contexto, não uma linha de configuração. */
+function InviteOption({
+  open,
+  onOpen,
+  code,
+  onCode,
+  reduceMotion,
+}: {
+  open: boolean;
+  onOpen: () => void;
+  code: string;
+  onCode: (v: string) => void;
+  reduceMotion: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-[#0B1324]/[0.14]">
+      {!open ? (
+        <button type="button" onClick={onOpen} className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left active:bg-black/[0.02]">
+          <CouplePair a="" b="" size={22} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-bold">O teu par já criou o espaço?</span>
+            <span className="block text-[13px] text-slate-500">Usa o código dele para entrares no mesmo.</span>
+          </span>
+          <span className="text-[13px] font-semibold text-slate-500">Inserir</span>
+        </button>
+      ) : (
+        <AnimatePresence initial={false}>
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: EASE }}
+            className="px-4 py-3"
+          >
+            <label htmlFor="onboarding-invite" className="flex items-center gap-3">
+              <CouplePair a="" b="" size={22} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-semibold text-slate-400">Código do vosso espaço</span>
+                <input
+                  id="onboarding-invite"
+                  type="text"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="EX: AMOR2024"
+                  value={code}
+                  onChange={(e) => onCode(e.target.value)}
+                  className="mt-0.5 block w-full bg-transparent text-[16px] font-bold tracking-[0.12em] text-[#0B1324] outline-none placeholder:font-medium placeholder:tracking-normal placeholder:text-slate-300"
+                />
+              </span>
+            </label>
+          </motion.div>
+        </AnimatePresence>
+      )}
+    </div>
   );
 }

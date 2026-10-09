@@ -5,9 +5,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { COUNTRIES } from "@/data/countries";
 import { cn } from "@/lib/utils";
 
-export function CountryPicker({ value, onSelect }: {
+export function CountryPicker({ value, onSelect, triggerClassName }: {
     value: string | null;
     onSelect: (countryCode: string) => void;
+    triggerClassName?: string;
 }) {
     const [open, setOpen] = useState(false);
     const selected = COUNTRIES.find(c => c.code === value);
@@ -17,9 +18,12 @@ export function CountryPicker({ value, onSelect }: {
             <PopoverTrigger asChild>
                 <button
                     type="button"
-                    className="w-full h-14 rounded-2xl border border-border bg-card px-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+                    className={cn(
+                        "w-full h-14 rounded-2xl border border-border bg-card px-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform",
+                        triggerClassName,
+                    )}
                 >
-                    <Globe className="w-5 h-5 text-rose-400 shrink-0" strokeWidth={1.5} />
+                    <Globe className={cn("w-5 h-5 shrink-0", triggerClassName ? "text-slate-400" : "text-rose-400")} strokeWidth={1.5} />
                     <span className={cn("flex-1 text-[15px] font-semibold", !selected && "text-muted-foreground")}>
                         {selected ? selected.name : "Seleciona o teu país"}
                     </span>
