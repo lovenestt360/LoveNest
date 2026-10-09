@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { LogoIcon, LogoMark } from "@/components/Logo";
 import { AuthScaffold } from "@/features/auth/AuthScaffold";
@@ -12,89 +12,7 @@ import { getPasswordError } from "@/lib/passwordPolicy";
 import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
 
-// ── Brand ─────────────────────────────────────────────────────────────────────
-const PINK = "#FF6B8F";
-const BLUE = "#4D7CFE";
-
-const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
-
-// ── Hooks ─────────────────────────────────────────────────────────────────────
-
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const h = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
-  return reduced;
-}
-
-// ── Google icon ───────────────────────────────────────────────────────────────
-
-function GoogleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-    </svg>
-  );
-}
-
-// ── Intro visual — breathing circles ─────────────────────────────────────────
-
-function IntroVisual({ reduced }: { reduced: boolean }) {
-  return (
-    <div className="relative w-48 h-40 mx-auto">
-      {/* Diffuse glow behind the circles */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: "-40%",
-          background: `radial-gradient(ellipse at 45% 55%, ${PINK}1e 0%, transparent 62%)`,
-          filter: "blur(18px)",
-          pointerEvents: "none",
-        }}
-      />
-      {/* Circle A — large, warm rose */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: 80, height: 80,
-          top: 14, left: 18,
-          background: `linear-gradient(140deg, #FECDD3 0%, #FDA4AF 100%)`,
-          boxShadow: reduced
-            ? "none"
-            : `0 10px 40px rgba(255,107,143,0.24), 0 2px 8px rgba(255,107,143,0.12)`,
-          animation: reduced ? "none" : "ob-float-a 8s ease-in-out infinite",
-        }}
-      />
-      {/* Circle B — smaller, lighter, offset movement */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: 58, height: 58,
-          bottom: 12, right: 18,
-          background: `linear-gradient(140deg, #FFF1F2 0%, #FECDD3 100%)`,
-          border: `1.5px solid rgba(255,107,143,0.18)`,
-          boxShadow: reduced
-            ? "none"
-            : `0 6px 28px rgba(255,107,143,0.16)`,
-          animation: reduced ? "none" : "ob-float-b 10s ease-in-out infinite",
-          animationDelay: "-4s",
-        }}
-      />
-    </div>
-  );
-}
-
-// ── Input shared style ────────────────────────────────────────────────────────
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);\n\n// ── Input shared style ────────────────────────────────────────────────────────
 
 const INPUT = "w-full h-[52px] rounded-[1rem] border border-slate-200/80 bg-white px-4 text-[14px] font-medium text-[#0B1324] placeholder:text-slate-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200/50 transition-all";
 
@@ -168,11 +86,6 @@ export default function Onboarding() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [stepVisible, setStepVisible] = useState(true);
 
-  // Entry animation
-  const reduced = useReducedMotion();
-  const [ready, setReady] = useState(false);
-  const [hoverCta, setHoverCta] = useState(false);
-
   const navigate  = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -189,12 +102,6 @@ export default function Onboarding() {
       setShowInvite(true);
     }
   }, [searchParams]);
-
-  // Trigger entry sequence shortly after mount
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), 50);
-    return () => clearTimeout(t);
-  }, []);
 
   // Detect Google OAuth return: user already logged in, check onboarding status
   useEffect(() => {
@@ -235,24 +142,6 @@ export default function Onboarding() {
     return () => { clearTimeout(timer); subscription.unsubscribe(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Entrance helper
-  const enter = (
-    delay: number,
-    fromY = 20,
-    fromScale?: number
-  ): React.CSSProperties => ({
-    opacity: ready ? 1 : 0,
-    transform:
-      ready || reduced
-        ? "none"
-        : fromScale
-        ? `translateY(${fromY}px) scale(${fromScale})`
-        : `translateY(${fromY}px)`,
-    transition: reduced
-      ? "none"
-      : `opacity 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-  });
 
   const goToStep = (next: Phase) => {
     setStepVisible(false);
