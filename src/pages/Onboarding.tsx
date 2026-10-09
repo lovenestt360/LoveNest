@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LogoMark } from "@/components/Logo";
-import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
+import { LogoIcon, LogoMark } from "@/components/Logo";
+import { AuthScaffold } from "@/features/auth/AuthScaffold";
+import { WelcomeStep } from "@/components/onboarding/steps/WelcomeStep";
+import { ArrowRight, ChevronLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -94,7 +96,7 @@ function IntroVisual({ reduced }: { reduced: boolean }) {
 
 // ── Input shared style ────────────────────────────────────────────────────────
 
-const INPUT = "w-full h-12 rounded-2xl border border-border bg-card px-4 text-[15px] font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/30 transition-all";
+const INPUT = "w-full h-[52px] rounded-[1rem] border border-slate-200/80 bg-white px-4 text-[14px] font-medium text-[#0B1324] placeholder:text-slate-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200/50 transition-all";
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -133,7 +135,9 @@ const GOAL_OPTIONS = [
 ];
 
 export default function Onboarding() {
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>(() =>
+    new URLSearchParams(window.location.search).get("start") === "1" ? "form" : "intro"
+  );
 
   // If URL has ?code= we're in an OAuth callback — don't show intro until session resolves
   const [authResolved, setAuthResolved] = useState(
@@ -143,6 +147,7 @@ export default function Onboarding() {
   const [name, setName]           = useState(localStorage.getItem("onboarding_name") || "");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState(
     sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref") || ""
   );
@@ -362,119 +367,57 @@ export default function Onboarding() {
 
   if (phase === "intro") {
     return (
-      <div className="relative min-h-screen bg-background flex flex-col select-none overflow-hidden">
+      <main className="relative min-h-[100dvh] overflow-hidden bg-[#F8F5F4] text-[#0B1324]">
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-16 h-72 w-72 rounded-full bg-rose-200/40 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-indigo-100/65 blur-3xl" />
 
-        {/* ── Ambient background glows ── */}
-        {!reduced && (
-          <>
-            {/* Rosa — canto inferior esquerdo */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute", bottom: "-8%", left: "-18%",
-                width: 320, height: 320, borderRadius: "50%",
-                background: PINK, filter: "blur(140px)", opacity: 0.065,
-                animation: "ob-ambient-a 20s ease-in-out infinite",
-                pointerEvents: "none",
-              }}
-            />
-            {/* Azul — canto superior direito */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute", top: "-6%", right: "-14%",
-                width: 280, height: 280, borderRadius: "50%",
-                background: BLUE, filter: "blur(130px)", opacity: 0.055,
-                animation: "ob-ambient-b 24s ease-in-out infinite",
-                pointerEvents: "none",
-              }}
-            />
-            {/* Rosa eco — meio superior, imperceptível */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute", top: "25%", left: "30%",
-                width: 200, height: 200, borderRadius: "50%",
-                background: PINK, filter: "blur(100px)", opacity: 0.03,
-                animation: "ob-ambient-a 28s ease-in-out infinite",
-                animationDelay: "-12s",
-                pointerEvents: "none",
-              }}
-            />
-          </>
-        )}
+        <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LogoMark size={28} />
+              <span className="text-[15px] font-extrabold tracking-[-0.02em]">LoveNest</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { markSeen(); navigate("/entrar?returning=1"); }}
+              className="rounded-full px-3 py-2 text-xs font-semibold text-slate-500 active:bg-black/5"
+            >
+              Já tenho conta
+            </button>
+          </header>
 
-        {/* ── Nav ── */}
-        <div
-          className="flex items-center justify-between px-6 pt-12 shrink-0 relative z-10"
-          style={enter(0, -8)}
-        >
-          <div className="flex items-center gap-2">
-            <LogoMark size={26} />
-            <span className="text-[13px] font-bold tracking-tight text-foreground">LoveNest</span>
-          </div>
-          <button
-            onClick={() => { markSeen(); navigate("/entrar"); }}
-            className="text-[12px] font-medium text-muted-foreground/40 hover:text-muted-foreground transition-colors px-2 py-1"
-          >
-            Já tenho conta
-          </button>
+          <section className="flex flex-1 flex-col items-center justify-center text-center">
+            <div className="relative mb-8">
+              <div aria-hidden className="absolute inset-2 rounded-[2rem] bg-rose-300/25 blur-2xl" />
+              <LogoIcon size={96} className="relative drop-shadow-[0_18px_35px_rgba(11,19,36,0.16)]" />
+            </div>
+
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-500/80">
+              Criar o vosso espaço
+            </p>
+            <h1 className="mt-3 max-w-[330px] text-[35px] font-black leading-[1.03] tracking-[-0.045em]">
+              Comecem por uma coisa simples.
+            </h1>
+            <p className="mt-4 max-w-[300px] text-[14px] leading-6 text-slate-500">
+              Uma conta, um espaço privado e depois o LoveNest cresce convosco.
+            </p>
+          </section>
+
+          <footer className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setPhase("form")}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#0B1324] text-[14px] font-bold text-white shadow-[0_14px_35px_rgba(11,19,36,0.16)] transition active:scale-[0.985]"
+            >
+              Criar o nosso LoveNest
+              <ArrowRight className="h-4 w-4" strokeWidth={2} />
+            </button>
+            <p className="text-center text-[10px] text-slate-400">
+              Privado por defeito. Sem feed público.
+            </p>
+          </footer>
         </div>
-
-        {/* ── Central visual + copy ── */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 relative z-10">
-
-          {/* Circles */}
-          <div style={{ ...enter(150, 0, 0.94), marginBottom: 44 }}>
-            <IntroVisual reduced={reduced} />
-          </div>
-
-          {/* Headline */}
-          <h1
-            className="text-[28px] font-bold text-foreground leading-[1.2] tracking-tight text-center max-w-[272px]"
-            style={enter(300, 24)}
-          >
-            O amor também vive<br />nos dias comuns.
-          </h1>
-
-          {/* Sub */}
-          <p
-            className="text-[14px] text-muted-foreground leading-[1.7] text-center mt-4"
-            style={enter(450, 20)}
-          >
-            Cria o vosso espaço em menos de um minuto.
-          </p>
-
-        </div>
-
-        {/* ── Bottom CTA ── */}
-        <div
-          className="px-8 pb-14 pt-6 shrink-0 space-y-3 relative z-10"
-          style={enter(600, 20)}
-        >
-          <button
-            onClick={() => setPhase("form")}
-            onMouseEnter={() => setHoverCta(true)}
-            onMouseLeave={() => setHoverCta(false)}
-            className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{
-              background: PINK,
-              boxShadow: hoverCta
-                ? `0 12px 40px ${PINK}55, 0 4px 16px ${PINK}33`
-                : `0 6px 28px ${PINK}44, 0 2px 8px ${PINK}22`,
-              transform: hoverCta ? "translateY(-2px)" : "translateY(0)",
-              transition: "box-shadow 180ms ease, transform 180ms ease",
-            }}
-          >
-            Começar
-            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-          </button>
-          <p className="text-center text-[10px] tracking-[0.06em] text-muted-foreground/40 animate-ob-hint">
-            grátis · privado · sem publicidade
-          </p>
-        </div>
-
-      </div>
+      </main>
     );
   }
 
@@ -483,32 +426,53 @@ export default function Onboarding() {
   const stepIdx = PERS_STEPS.indexOf(phase);
 
   const StepShell = ({ onBack, children }: { onBack: () => void; children: React.ReactNode }) => (
-    <div
-      className="min-h-screen bg-background flex flex-col relative overflow-hidden"
-      style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(16px)", transition: "opacity 160ms ease, transform 160ms ease" }}
+    <main
+      className="relative min-h-[100dvh] overflow-hidden bg-[#F8F5F4] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+1rem)] text-[#0B1324]"
+      style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(12px)", transition: "opacity 160ms ease, transform 160ms ease" }}
     >
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-      <div className="flex items-center justify-between px-5 pt-12 shrink-0 relative z-10">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all">
-          <ChevronLeft className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-        </button>
-        {stepIdx >= 0 && (
-          <span className="text-[12px] text-muted-foreground font-medium">{stepIdx + 1} de {PERS_STEPS.length}</span>
-        )}
-        <div className="w-9" />
+      <div aria-hidden className="pointer-events-none absolute -right-28 -top-20 h-72 w-72 rounded-full bg-rose-100/55 blur-3xl" />
+      <div className="relative mx-auto flex min-h-[calc(100dvh-2.25rem)] w-full max-w-md flex-col">
+        <header className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/70 bg-white/70 text-slate-500 active:scale-95"
+            aria-label="Voltar"
+          >
+            <ChevronLeft className="h-4 w-4" strokeWidth={1.7} />
+          </button>
+
+          {stepIdx >= 0 ? (
+            <div className="flex flex-1 items-center gap-1.5">
+              {PERS_STEPS.map((_, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "h-1 flex-1 rounded-full transition-colors",
+                    index <= stepIdx ? "bg-rose-400" : "bg-slate-200/80"
+                  )}
+                />
+              ))}
+            </div>
+          ) : <div className="flex-1" />}
+
+          <span className="w-10 text-right text-[10px] font-bold tabular-nums text-slate-400">
+            {stepIdx >= 0 ? `${stepIdx + 1}/${PERS_STEPS.length}` : ""}
+          </span>
+        </header>
+
+        <section className="flex flex-1 flex-col justify-center py-8">
+          {children}
+        </section>
       </div>
-      <div className="flex-1 flex flex-col px-8 pt-10 pb-10 relative z-10">
-        {children}
-      </div>
-    </div>
+    </main>
   );
 
   const CtaBtn = ({ onClick, disabled, label }: { onClick: () => void; disabled?: boolean; label: string }) => (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-      style={{ background: PINK, boxShadow: `0 6px 28px ${PINK}44` }}
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#0B1324] text-[14px] font-bold text-white shadow-[0_14px_35px_rgba(11,19,36,0.14)] transition active:scale-[0.985] disabled:opacity-30"
     >
       {label} <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
     </button>
@@ -526,8 +490,8 @@ export default function Onboarding() {
       className={cn(
         "w-full h-[52px] rounded-2xl border text-[14px] font-medium transition-all active:scale-[0.98]",
         selected
-          ? "bg-rose-500 border-rose-500 text-white"
-          : "bg-card border-border text-foreground hover:border-rose-300 dark:hover:border-rose-700"
+          ? "border-[#0B1324] bg-[#0B1324] text-white shadow-[0_8px_22px_rgba(11,19,36,0.10)]"
+          : "border-slate-200/80 bg-white/75 text-[#0B1324] shadow-sm"
       )}
     >
       {children}
@@ -535,32 +499,7 @@ export default function Onboarding() {
   );
 
   if (phase === "welcome") {
-    return (
-      <div
-        className="min-h-screen bg-background flex flex-col relative overflow-hidden"
-        style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(16px)", transition: "opacity 160ms ease, transform 160ms ease" }}
-      >
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-        <div className="flex-1 flex flex-col justify-center px-8 relative z-10">
-          <div className="w-full max-w-[320px] mx-auto space-y-8">
-            <div className="space-y-3">
-              <p className="text-[13px] font-medium text-rose-500 uppercase tracking-widest">Bem-vindo</p>
-              <h1 className="text-[28px] font-bold text-foreground leading-tight tracking-tight">
-                {name ? `Olá, ${name.split(" ")[0]}.` : "Olá."}<br />
-                Falta pouco.
-              </h1>
-              <p className="text-[15px] text-muted-foreground leading-relaxed">
-                Algumas perguntas rápidas para personalizar a tua experiência.
-              </p>
-            </div>
-            <CtaBtn onClick={() => goToStep("country")} label="Vamos lá" />
-            <button onClick={() => navigate("/casa")} className="w-full py-2 text-[12px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-              Saltar personalização
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <WelcomeStep onContinue={() => goToStep("country")} />;
   }
 
   if (phase === "country") {
@@ -651,8 +590,8 @@ export default function Onboarding() {
                 className={cn(
                   "w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]",
                   usageMode === o.value
-                    ? "bg-rose-500 border-rose-500 text-white"
-                    : "bg-card border-border text-foreground hover:border-rose-300 dark:hover:border-rose-700"
+                    ? "border-[#0B1324] bg-[#0B1324] text-white shadow-[0_8px_22px_rgba(11,19,36,0.10)]"
+                    : "border-slate-200/80 bg-white/75 text-[#0B1324] shadow-sm"
                 )}
               >
                 <div className="text-[15px] font-semibold">{o.label}</div>
@@ -698,57 +637,48 @@ export default function Onboarding() {
   // ── Signup form ───────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
-      {/* Ambient warmth */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-
-      {/* Back */}
-      <div className="px-5 pt-12 shrink-0">
+    <AuthScaffold
+      eyebrow="Criar o vosso espaço"
+      title="Começa por ti."
+      subtitle="Cria a tua conta. Depois podes convidar o teu par e construir o LoveNest juntos."
+    >
+      <div className="rounded-[1.6rem] border border-slate-900/[0.06] bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
         <button
-          onClick={() => setPhase("intro")}
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all"
+          type="button"
+          onClick={handleGoogle}
+          disabled={googleLoading || loading}
+          className="flex h-[52px] w-full items-center justify-center gap-3 rounded-[1rem] border border-slate-200/80 bg-white text-[13px] font-bold text-[#0B1324] active:scale-[0.99] disabled:opacity-60"
         >
-          <ChevronLeft className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+          {googleLoading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : <GoogleIcon className="h-5 w-5" />}
+          Continuar com Google
         </button>
-      </div>
 
-      <div className="flex-1 flex flex-col justify-center px-8 py-6 relative z-10">
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200/70" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">ou por email</span>
+          <div className="h-px flex-1 bg-slate-200/70" />
+        </div>
 
-          <div className="space-y-1">
-            <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-              Criar o vosso espaço.
-            </h1>
-            <p className="text-[13px] text-muted-foreground">Começa em segundos.</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={googleLoading || loading}
-            className="w-full h-12 rounded-2xl border border-border bg-card text-[13px] font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-60"
-          >
-            {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <GoogleIcon className="w-4 h-4" />}
-            Continuar com Google
-          </button>
-
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-[11px] text-muted-foreground">ou</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <form onSubmit={handleSignup} className="space-y-3">
+        <form onSubmit={handleSignup} className="space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="onboarding-name" className="text-[12px] font-bold text-slate-600">O teu nome</label>
             <input
+              id="onboarding-name"
               type="text"
-              placeholder="O teu nome"
+              autoComplete="name"
+              placeholder="Como queres aparecer?"
               value={name}
               onChange={e => setName(e.target.value)}
               required
               className={INPUT}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="onboarding-email" className="text-[12px] font-bold text-slate-600">Email</label>
             <input
-              type="text"
+              id="onboarding-email"
+              type="email"
               inputMode="email"
               autoComplete="email"
               placeholder="teu@email.com"
@@ -757,54 +687,85 @@ export default function Onboarding() {
               required
               className={INPUT}
             />
-            <input
-              type="password"
-              placeholder="Senha (mín. 8 caracteres)"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className={INPUT}
-            />
+          </div>
 
-            {!showInvite ? (
+          <div className="space-y-1.5">
+            <label htmlFor="onboarding-password" className="text-[12px] font-bold text-slate-600">Senha</label>
+            <div className="relative">
+              <input
+                id="onboarding-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className={cn(INPUT, "pr-12")}
+              />
               <button
                 type="button"
-                onClick={() => setShowInvite(true)}
-                className="text-[12px] text-muted-foreground hover:text-foreground transition-colors w-full text-left px-1"
+                onClick={() => setShowPassword(value => !value)}
+                className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 active:bg-slate-100"
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
-                + Tenho um código de convite do meu par
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            ) : (
+            </div>
+          </div>
+
+          {!showInvite ? (
+            <button
+              type="button"
+              onClick={() => setShowInvite(true)}
+              className="w-full px-1 text-left text-[11px] font-semibold text-slate-400"
+            >
+              + Tenho um código de convite do meu par
+            </button>
+          ) : (
+            <div className="space-y-1.5">
+              <label htmlFor="onboarding-invite" className="text-[12px] font-bold text-slate-600">Código do par</label>
               <input
+                id="onboarding-invite"
                 type="text"
-                placeholder="Código de convite (ex: AMOR2024)"
+                placeholder="Ex: AMOR2024"
                 value={inviteCode}
                 onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                className={cn(INPUT, "tracking-wider font-bold text-center")}
+                className={cn(INPUT, "text-center font-bold tracking-wider")}
               />
-            )}
+            </div>
+          )}
 
-            <button
-              type="submit"
-              disabled={loading || googleLoading}
-              className="w-full h-12 rounded-2xl text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-1"
-              style={{
-                background: PINK,
-                boxShadow: `0 6px 28px ${PINK}44, 0 2px 8px ${PINK}22`,
-              }}
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Criar espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>}
-            </button>
-          </form>
+          <button
+            type="submit"
+            disabled={loading || googleLoading}
+            className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-[1rem] bg-[#0B1324] text-[13px] font-bold text-white shadow-[0_12px_30px_rgba(11,19,36,0.13)] transition active:scale-[0.99] disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Criar o nosso espaço <ArrowRight className="h-4 w-4" /></>}
+          </button>
+        </form>
 
-          <p className="text-center text-[11px] text-muted-foreground">
+        <div className="mt-5 border-t border-slate-200/70 pt-5 text-center">
+          <p className="text-[12px] text-slate-400">
             Já tens conta?{" "}
-            <button onClick={() => { markSeen(); navigate("/entrar"); }} className="text-rose-500 font-semibold hover:underline">
+            <button
+              type="button"
+              onClick={() => { markSeen(); navigate("/entrar?returning=1"); }}
+              className="font-bold text-rose-500"
+            >
               Entrar
             </button>
           </p>
         </div>
       </div>
-    </div>
+
+      <button
+        type="button"
+        onClick={() => setPhase("intro")}
+        className="mx-auto mt-5 flex items-center gap-1.5 text-[11px] font-bold text-slate-400"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Voltar
+      </button>
+    </AuthScaffold>
   );
 }
