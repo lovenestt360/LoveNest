@@ -48,6 +48,7 @@ import {
   type DailyShortcut,
 } from "@/features/home/components/HomeSections";
 import { LocationHomeCard } from "@/features/location/LocationHomeCard";
+import { CycleHomeCard } from "@/features/cycle/CycleHomeCard";
 import { LoveStreakCard } from "@/components/LoveStreakCard";
 import { cn } from "@/lib/utils";
 
@@ -577,13 +578,15 @@ const Index = () => {
 
       {!isSolo && avatars.partner && <LocationHomeCard />}
 
+      {!(isSolo && profile?.gender === "male") && <CycleHomeCard partnerName={avatars.partner?.displayName} />}
+
       <section className="pt-3">
-        <SectionLabel title={isSolo ? "O teu dia a dia" : "O vosso dia a dia"} action="Vida" onAction={() => navigate("/vida")} />
+        <SectionLabel title={isSolo ? "O teu dia a dia" : "O vosso dia a dia"} action="Ver tudo" onAction={() => navigate("/vida")} />
         <DailyDock items={dailyItems} />
       </section>
 
       <section className="pt-3">
-        <SectionLabel title="Memórias e aventuras" action={isSolo ? "Eu" : "Nós"} onAction={() => navigate("/nos")} />
+        <SectionLabel title="Memórias e aventuras" action="Ver tudo" onAction={() => navigate("/nos")} />
         <AdventuresBento featured={featuredAdventure} tiles={adventureTiles} />
       </section>
 

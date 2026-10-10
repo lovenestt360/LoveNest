@@ -1,11 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  CalendarHeart,
-  Heart,
+  Droplets,
   Home,
   MessageCircle,
-  UserRound,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
@@ -26,24 +25,21 @@ export function BottomTabs() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useProfile();
-  const {
-    chatUnread,
-    memoriesUnread,
-    tasksUnread,
-    scheduleUnread,
-    prayerUnread,
-    complaintsUnread,
-    capsuleUnread,
-  } = useAppNotifContext();
+  const { chatUnread } = useAppNotifContext();
 
   const isSolo = profile?.usage_mode === "solo";
+  // O ciclo só não faz sentido para um homem em modo solo; num casal,
+  // ele acompanha o ciclo da parceira.
+  const hideCycle = isSolo && profile?.gender === "male";
 
+  // Hoje · Chat · Ciclo · Definições — o resto abre-se a partir da Home.
   const tabs: Tab[] = [
     {
       to: "/",
       label: "Hoje",
       icon: Home,
-      active: (pathname) => pathname === "/" || startsWithAny(pathname, ["/humor"]),
+      active: (pathname) =>
+        !startsWithAny(pathname, ["/chat", "/ciclo", "/configuracoes", "/subscricao"]),
     },
     ...(!isSolo
       ? [{
@@ -54,44 +50,18 @@ export function BottomTabs() {
           badge: chatUnread,
         }]
       : []),
-    {
-      to: "/nos",
-      label: isSolo ? "Eu" : "Nós",
-      icon: Heart,
-      active: (pathname) =>
-        startsWithAny(pathname, [
-          "/nos",
-          "/momentos",
-          "/memorias",
-          "/historia",
-          "/desafios",
-          "/conflitos",
-          "/capsula",
-          "/wrapped",
-          "/jornada",
-        ]),
-      badge: isSolo ? 0 : memoriesUnread + complaintsUnread + capsuleUnread,
-    },
-    {
-      to: "/vida",
-      label: "Vida",
-      icon: CalendarHeart,
-      active: (pathname) =>
-        startsWithAny(pathname, [
-          "/vida",
-          "/plano",
-          "/rotina",
-          "/ciclo",
-          "/jornada-espiritual",
-          "/localizacao",
-          "/biblioteca",
-        ]),
-      badge: tasksUnread + scheduleUnread + prayerUnread,
-    },
+    ...(!hideCycle
+      ? [{
+          to: "/ciclo",
+          label: "Ciclo",
+          icon: Droplets,
+          active: (pathname: string) => startsWithAny(pathname, ["/ciclo"]),
+        }]
+      : []),
     {
       to: "/configuracoes",
-      label: "Perfil",
-      icon: UserRound,
+      label: "Definições",
+      icon: Settings,
       active: (pathname) => startsWithAny(pathname, ["/configuracoes", "/subscricao"]),
     },
   ];

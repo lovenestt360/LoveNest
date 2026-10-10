@@ -61,43 +61,46 @@ function nextEventText(engine: CycleEngineOutput, isMale: boolean): string {
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
-export function CycleHomeCard() {
+const CARD =
+  "w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform dark:border dark:border-border/60";
+
+// Fases desenhadas à escala do ciclo: menstruação · folicular · fértil · lútea
+function phaseSegments(engine: CycleEngineOutput) {
+  const len = engine.cycleLength;
+  const toLuteal = Math.round((engine.nextPeriod.getTime() - engine.ovulationDate.getTime()) / 86_400_000);
+  const ovDay = Math.max(engine.periodLength + 2, len - toLuteal);
+  const fertileFrom = Math.max(engine.periodLength + 1, ovDay - 5);
+  const fertileTo = Math.min(len, ovDay + 1);
+  return [
+    { key: "menstrual", days: engine.periodLength },
+    { key: "folicular", days: Math.max(0, fertileFrom - engine.periodLength - 1) },
+    { key: "ovulacao", days: fertileTo - fertileFrom + 1 },
+    { key: "luteal", days: Math.max(0, len - fertileTo) },
+  ].filter((s) => s.days > 0);
+}
+
+export function CycleHomeCard({ partnerName }: { partnerName?: string | null }) {
   const navigate = useNavigate();
   const { profile, lastPeriod, isMale, loading } = useCycleData();
 
   if (loading) return null;
 
-  // Sem ciclo configurado → card de descoberta (diferente para ela e para ele)
+  // Sem ciclo configurado → convite discreto (diferente para ela e para ele)
   if (!profile) {
     return (
-      <button
-        type="button"
-        onClick={() => navigate("/ciclo")}
-        className="glass-card glass-card-hover w-full text-left p-4 space-y-2 transition-all active:scale-[0.99]"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full shrink-0 bg-rose-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Ciclo Menstrual
-            </span>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
-          <p className="text-sm font-semibold text-foreground">
+      <button type="button" onClick={() => navigate("/ciclo")} className={cn(CARD, "flex items-center gap-3 p-3 pl-3.5")}>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-950/40 dark:text-rose-300">
+          <Droplets className="h-[17px] w-[17px]" strokeWidth={1.8} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] font-semibold text-foreground">
             {isMale ? "Ciclo da tua parceira" : "Acompanha o teu ciclo"}
-          </p>
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-snug">
-          {isMale
-            ? "Quando ela configurar o ciclo, vais acompanhar a fase dela aqui e estares mais presente."
-            : "Regista o teu ciclo e recebe lembretes personalizados para vocês dois."}
-        </p>
-        <p className="text-[11px] font-semibold text-rose-500 dark:text-rose-400">
-          {isMale ? "Ver mais" : "Configurar agora"}
-        </p>
+          </span>
+          <span className="block truncate text-[11px] text-muted-foreground">
+            {isMale ? "Quando ela o ativar, vês a fase dela aqui" : "Previsões e lembretes para os dois"}
+          </span>
+        </span>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" strokeWidth={1.5} />
       </button>
     );
   }
@@ -105,56 +108,58 @@ export function CycleHomeCard() {
   const engine = runCycleEngineFromProfile(profile, lastPeriod);
   if (!engine) return null;
 
-  const phaseKey  = getPhaseKey(engine);
-  const meta      = PHASE_META[phaseKey];
-  const progress  = Math.max(2, Math.min(98, engine.cycleProgress));
+  const basePhase = getPhaseKey(engine);
+  // Na janela fértil o motor ainda diz "folicular"; no cartão mostramos a janela.
+  const fertile   = engine.isInFertileWindow && basePhase !== "menstrual";
+  const phaseKey  = fertile ? "ovulacao" : basePhase;
+  const meta      = fertile ? { ...PHASE_META.ovulacao, label: basePhase === "ovulacao" ? "Ovulação" : "Janela fértil" } : PHASE_META[phaseKey];
   const eventText = nextEventText(engine, isMale);
-  const label     = isMale ? "Ciclo dela" : "O teu ciclo";
+  const herName   = partnerName?.split(" ")[0];
+  const label     = isMale ? (herName ? `Ciclo da ${herName}` : "Ciclo dela") : "O teu ciclo";
   const Icon      = meta.Icon;
+  const segments  = phaseSegments(engine);
+  const marker    = Math.max(1, Math.min(99, ((engine.cycleDay - 0.5) / engine.cycleLength) * 100));
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate("/ciclo")}
-      className="glass-card glass-card-hover w-full text-left p-4 space-y-2.5 transition-all active:scale-[0.99]"
-    >
-      {/* ── Cabeçalho ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {label}
-          </span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-      </div>
-
-      {/* ── Fase + dia ── */}
-      <div className="flex items-center gap-3">
-        <div className={cn("flex items-center gap-1.5 text-sm font-semibold", meta.textColor)}>
-          <Icon className="w-4 h-4" strokeWidth={1.5} />
+    <button type="button" onClick={() => navigate("/ciclo")} className={cn(CARD, "p-3 pl-3.5")}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+        <span className={cn("flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold", meta.textColor, "bg-muted/70")}>
+          <Icon className="h-3 w-3" strokeWidth={2} />
           {meta.label}
-        </div>
-        <span className="text-xs text-muted-foreground/60 font-medium">
-          Dia {engine.cycleDay}
-        </span>
-        <span className="ml-auto text-[10px] text-muted-foreground/50 font-medium tabular-nums">
-          {engine.cycleDay}/{engine.cycleLength} dias
         </span>
       </div>
 
-      {/* ── Barra de progresso ── */}
-      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-700", meta.bar)}
-          style={{ width: `${progress}%` }}
+      <div className="mt-1.5 flex items-baseline gap-1">
+        <span className="text-[11.5px] text-muted-foreground">Dia</span>
+        <span className="text-[26px] font-light leading-none tracking-[-0.04em] tabular-nums text-foreground">
+          {engine.cycleDay}
+        </span>
+        <span className="font-mono text-[10px] uppercase text-muted-foreground">/ {engine.cycleLength}</span>
+      </div>
+
+      {/* Fases à escala, com marcador no dia de hoje */}
+      <div className="relative mt-2.5">
+        <div className="flex h-1.5 gap-[3px]" aria-hidden="true">
+          {segments.map((seg) => (
+            <span
+              key={seg.key}
+              className={cn("h-full rounded-full", PHASE_META[seg.key].bar, seg.key !== phaseKey && "opacity-35")}
+              style={{ flexGrow: seg.days, flexBasis: 0 }}
+            />
+          ))}
+        </div>
+        <span
+          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-foreground shadow"
+          style={{ left: `${marker}%` }}
+          aria-hidden="true"
         />
       </div>
 
-      {/* ── Próximo evento ── */}
-      <p className="text-[11px] text-muted-foreground leading-snug">
-        {eventText}
-      </p>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="truncate text-[11px] text-muted-foreground">{eventText}</p>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" strokeWidth={1.5} />
+      </div>
     </button>
   );
 }
