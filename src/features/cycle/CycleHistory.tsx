@@ -176,10 +176,10 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
   };
 
   return (
-    <div className="space-y-5 pb-10">
+    <div className="space-y-3 pb-10">
 
       {data.isMale && profile?.share_level === "summary" && (
-        <div className="glass-card p-5 flex gap-3 items-start">
+        <div className="glass-card p-4 flex gap-3 items-start">
           <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
           <p className="text-sm text-muted-foreground leading-relaxed">
             A tua parceira partilhou apenas a fase e os eventos. Sintomas e médias diárias não estão disponíveis.
@@ -189,7 +189,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
 
       {/* Insights */}
       {insights.length > 0 && (
-        <div className="rounded-3xl border border-rose-200/60 dark:border-rose-800/30 bg-gradient-to-br from-rose-50 to-rose-100/40 dark:from-rose-950/50 dark:to-rose-900/20 p-5 space-y-3">
+        <div className="rounded-[1.4rem] border border-rose-200/60 dark:border-rose-800/30 bg-gradient-to-br from-rose-50 to-rose-100/40 dark:from-rose-950/50 dark:to-rose-900/20 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Flower2 className="h-4 w-4 text-rose-400" strokeWidth={1.5} />
             <p className="text-[11px] font-bold uppercase tracking-widest text-rose-500/70 dark:text-rose-400/70">O teu ciclo</p>
@@ -210,7 +210,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
         <div className="px-5 pt-5 pb-3 border-b border-border">
           <SectionLabel>Estatísticas</SectionLabel>
         </div>
-        <div className="p-5">
+        <div className="p-4">
           <div className="grid grid-cols-2 gap-x-6 gap-y-6">
             <Stat label="Ciclos"        value={periods.length}                                    color="rose" />
             <Stat label="Ciclo médio"   value={avg3 ? `${avg3}d` : "—"}                          color="violet" />
@@ -242,7 +242,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
         <div className="px-5 pt-5 pb-3 border-b border-border">
           <SectionLabel>Histórico</SectionLabel>
         </div>
-        <div className="p-5">
+        <div className="p-4">
           {cycles.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">Sem registos ainda.</p>
@@ -283,7 +283,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
           <div className="px-5 pt-5 pb-3 border-b border-border">
             <SectionLabel>Configurações</SectionLabel>
           </div>
-          <div className="p-5 space-y-5">
+          <div className="p-4 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <Stepper label="Ciclo"      value={avgCycle}  onChange={setAvgCycle}  min={18} max={45} suffix=" dias" />
               <Stepper label="Período"    value={avgPeriod} onChange={setAvgPeriod} min={1}  max={12} suffix=" dias" />

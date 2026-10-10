@@ -98,7 +98,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
   const monthName = new Date(year, month).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="glass-card overflow-hidden">
 
         {/* Month nav */}
@@ -187,7 +187,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
 
       {/* Day detail */}
       {selectedDay && (
-        <div className="glass-card p-5 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="glass-card p-4 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div>
             <p className="text-sm font-semibold text-foreground">
               {new Date(selectedDay + "T12:00:00").toLocaleDateString("pt-BR", {

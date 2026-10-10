@@ -108,7 +108,7 @@ function closest(val: number, opts: number[]) {
 // Header de secção — marcador colorido + título escuro
 function SectionHeader({ markerClass, children }: { markerClass: string; children: React.ReactNode }) {
   return (
-    <div className="px-5 pt-4 pb-3 border-b border-border/40 flex items-center gap-2">
+    <div className="px-4 pt-3.5 pb-2.5 border-b border-border/40 flex items-center gap-2">
       <div className={cn("w-[3px] h-4 rounded-full shrink-0", markerClass)} />
       <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{children}</p>
     </div>
@@ -180,12 +180,12 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
   const ringDotY  = 50 - 44 * Math.cos(ringAngle);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
 
       {/* ── Hero de fase — anel + badges, mesmo estilo que CycleToday ── */}
       <div className="glass-card relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 20% 50%, ${palette.heroGlow} 0%, transparent 70%)` }} />
-        <div className="relative p-6 space-y-4">
+        <div className="relative p-5 space-y-3.5">
           <div className="flex items-center gap-5">
             {/* Anel de progresso */}
             {engine ? (
@@ -272,7 +272,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
         return (
           <div className="glass-card overflow-hidden">
             <SectionHeader markerClass="bg-pink-400/80">Prevenção e risco</SectionHeader>
-            <div className="p-5 space-y-4">
+            <div className="p-4 space-y-4">
               <div className={cn("flex items-start gap-3 rounded-2xl border p-3.5", riskStyle.border, riskStyle.bg)}>
                 <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0", riskStyle.bg)}>
                   <RiskIcon className={cn("h-4 w-4", riskStyle.text)} strokeWidth={1.5} />
@@ -338,7 +338,7 @@ export function CyclePartnerView({ data }: { data: CycleData }) {
       {isSignalsShared && activeGroups.length > 0 && (
         <div className="glass-card overflow-hidden">
           <SectionHeader markerClass="bg-rose-400/80">Sintomas de hoje</SectionHeader>
-          <div className="p-5 space-y-5">
+          <div className="p-4 space-y-4">
             {activeGroups.map((group) => (
               <div key={group.key} className="space-y-2.5">
                 <p className={cn("text-[11px] font-bold uppercase tracking-widest", group.color)}>{group.label}</p>

@@ -2,20 +2,11 @@ import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ChevronRight, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TONE, type Tone } from "@/lib/tones";
 
-// Tons suaves por funcionalidade — dão vida sem perder a base neutra.
-export type Tone = "rose" | "blue" | "violet" | "orange" | "green" | "pink";
+export type { Tone };
 
-const TONE: Record<Tone, string> = {
-  rose: "bg-rose-50 text-rose-500 dark:bg-rose-950/40 dark:text-rose-300",
-  pink: "bg-pink-50 text-pink-500 dark:bg-pink-950/40 dark:text-pink-300",
-  blue: "bg-[#EDF2FF] text-[#3F68E6] dark:bg-blue-950/40 dark:text-blue-300",
-  violet: "bg-violet-50 text-violet-500 dark:bg-violet-950/40 dark:text-violet-300",
-  orange: "bg-orange-50 text-orange-500 dark:bg-orange-950/40 dark:text-orange-300",
-  green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300",
-};
-
-// ── Cabeçalho de secção — rótulo mono, como nos cards de dados ──────────────
+// ── Cabeçalho de secção ─────────────────────────────────────────────────────
 
 export function SectionLabel({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
