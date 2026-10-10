@@ -285,7 +285,7 @@ export function LoveStreakCard({
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[1.4rem] bg-card px-3.5 pt-3 pb-3 transition-shadow duration-500 dark:border dark:border-border/60",
+        "relative overflow-hidden rounded-[1.4rem] bg-card px-3.5 pt-3 pb-3 transition-shadow duration-500 ln-card",
         bothActiveToday
           ? "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_14px_30px_-14px_rgba(229,70,109,0.35)]"
           : "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)]",

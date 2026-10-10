@@ -30,7 +30,7 @@ const RING_R = 44;
 const RING_C = 2 * Math.PI * RING_R;
 
 const CARD =
-  "w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform dark:border dark:border-border/60";
+  "w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform ln-card";
 
 const CHIP = "rounded-full border px-2 py-0.5 text-[10px] font-medium";
 

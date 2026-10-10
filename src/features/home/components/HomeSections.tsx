@@ -52,7 +52,7 @@ export function DailyDock({ items }: { items: DailyShortcut[] }) {
   return (
     <div
       className={cn(
-        "grid gap-1 rounded-[1.6rem] bg-card px-2 py-3 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border dark:border-border/60",
+        "grid gap-1 rounded-[1.6rem] bg-card px-2 py-3 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] ln-card",
         items.length >= 5 ? "grid-cols-5" : "grid-cols-4",
       )}
     >
@@ -108,7 +108,7 @@ export function AdventuresBento({ featured, tiles }: { featured: AdventureTile; 
       <button
         type="button"
         onClick={() => navigate(featured.to)}
-        className="relative row-span-2 flex min-h-[208px] flex-col overflow-hidden rounded-[1.6rem] p-4 text-left text-white active:scale-[0.985] transition-transform"
+        className="ln-card relative row-span-2 flex min-h-[208px] flex-col overflow-hidden rounded-[1.6rem] p-4 text-left text-white active:scale-[0.985] transition-transform"
         style={{ background: "linear-gradient(165deg,#F7C9A8 0%,#E99A8E 38%,#A6728F 72%,#4B4766 100%)" }}
       >
         <span
@@ -141,7 +141,7 @@ export function AdventuresBento({ featured, tiles }: { featured: AdventureTile; 
           key={to}
           type="button"
           onClick={() => navigate(to)}
-          className="relative flex min-h-[98px] flex-col justify-between gap-2 rounded-[1.35rem] bg-card p-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] active:scale-[0.98] transition-transform dark:border dark:border-border/60"
+          className="relative flex min-h-[98px] flex-col justify-between gap-2 rounded-[1.35rem] bg-card p-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] active:scale-[0.98] transition-transform ln-card"
         >
           <span className={cn("flex h-8 w-8 items-center justify-center rounded-[10px]", TONE[tone])}>
             <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
@@ -164,7 +164,7 @@ export function ShareLoveRow({ onShare }: { onShare: () => void }) {
     <button
       type="button"
       onClick={onShare}
-      className="flex w-full items-center gap-3 rounded-[1.35rem] bg-card p-3 pr-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] active:scale-[0.99] transition-transform dark:border dark:border-border/60"
+      className="flex w-full items-center gap-3 rounded-[1.35rem] bg-card p-3 pr-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] active:scale-[0.99] transition-transform ln-card"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-950/30 dark:text-rose-300">
         <Share2 className="h-[18px] w-[18px]" strokeWidth={1.7} />

@@ -53,7 +53,7 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, hasDate, start
   const anniversary = startDate ? nextAnniversary(startDate) : null;
 
   return (
-    <section className="rounded-[1.25rem] bg-card px-3.5 py-2.5 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] dark:border dark:border-border/60">
+    <section className="rounded-[1.25rem] bg-card px-3.5 py-2.5 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] ln-card">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-1.5">
           <Heart className="h-3 w-3 shrink-0 self-center fill-rose-500 text-rose-500" strokeWidth={0} />
