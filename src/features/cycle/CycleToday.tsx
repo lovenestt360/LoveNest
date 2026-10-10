@@ -331,7 +331,7 @@ function SectionHeader({
 }) {
   return (
     <>
-      <div className="px-5 pt-4 pb-3 border-b border-border/50 flex items-center justify-between">
+      <div className="px-4 pt-3.5 pb-2.5 border-b border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn("w-1.5 h-4 rounded-full shrink-0", markerClass)} />
           <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{children}</p>
@@ -511,11 +511,11 @@ export function CycleToday({ data }: { data: CycleData }) {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-3">
 
         {/* ── Hero de fase ── */}
         {engine ? (
-          <div className="glass-card p-6 space-y-4">
+          <div className="glass-card p-5 space-y-3.5">
             <div className="flex items-center gap-5">
               <div className="relative h-24 w-24 shrink-0">
                 <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
@@ -607,7 +607,7 @@ export function CycleToday({ data }: { data: CycleData }) {
           <SectionHeader accentClass="from-rose-300/60 via-rose-200/30 dark:from-rose-700/40" markerClass="bg-rose-400/70">
             Menstruação
           </SectionHeader>
-          <div className="p-5 space-y-4">
+          <div className="p-4 space-y-4">
             {openPeriod ? (
               <>
                 <div className="rounded-2xl bg-gradient-to-br from-rose-100/80 to-rose-50/50 dark:from-rose-950/60 dark:to-rose-900/20 border border-rose-200/80 dark:border-rose-800/50 p-4 flex items-center gap-3">
@@ -727,7 +727,7 @@ export function CycleToday({ data }: { data: CycleData }) {
           <SectionHeader accentClass="from-violet-300/60 via-violet-200/20 dark:from-violet-700/40" markerClass="bg-violet-400/70">
             Como me sinto hoje
           </SectionHeader>
-          <div className="p-5 space-y-6">
+          <div className="p-4 space-y-5">
             <ChipSelector label="Dor" options={PAIN_OPTIONS} value={painLevel} onChange={setPainLevel} disabled={data.isMale || saving} color="rose" />
             <ChipSelector label="Energia" options={ENERGY_OPTIONS} value={energyLevel} onChange={setEnergyLevel} disabled={data.isMale || saving} color="orange" />
             <ChipSelector label="Stress" options={STRESS_OPTIONS} value={stress} onChange={setStress} disabled={data.isMale || saving} color="fuchsia" />
@@ -796,7 +796,7 @@ export function CycleToday({ data }: { data: CycleData }) {
           >
             Intimidade
           </SectionHeader>
-          <div className="p-5 space-y-4">
+          <div className="p-4 space-y-4">
             {showIntimacyDate && (
               <Input
                 type="date" value={intimacyDate} max={today}
@@ -859,7 +859,7 @@ export function CycleToday({ data }: { data: CycleData }) {
           >
             Sintomas
           </SectionHeader>
-          <div className="p-5 space-y-6">
+          <div className="p-4 space-y-5">
             {SYMPTOM_SECTIONS.map(section => {
               const style = SECTION_STYLES[section.title];
               const chipShadow = SECTION_CHIP_SHADOWS[section.title];

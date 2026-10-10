@@ -11,7 +11,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Flower2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/page/PageHeader";
+import { SegmentedTabs } from "@/components/page/SegmentedTabs";
 
 export default function Cycle() {
   const data = useCycleData();
@@ -20,13 +21,14 @@ export default function Cycle() {
   const { profile, loading: profileLoading } = useProfile();
   const isPartner = data.isMale;
 
-  const tabs = [
+  type TabId = "hoje" | "calendario" | "historico";
+  const tabs: { id: TabId; label: string }[] = [
     { id: "hoje", label: isPartner ? "Resumo" : "Hoje" },
     { id: "calendario", label: "Calendário" },
     { id: "historico", label: "Histórico" },
   ];
 
-  const [activeTab, setActiveTab] = useState("hoje");
+  const [activeTab, setActiveTab] = useState<TabId>("hoje");
 
   // Homem em modo solo: não tem ciclo próprio nem parceira para acompanhar.
   if (!profileLoading && profile?.usage_mode === "solo" && profile?.gender === "male") {
@@ -56,45 +58,21 @@ export default function Cycle() {
   }
 
   return (
-    <section className="space-y-5 pb-6">
+    <section className="space-y-3 pb-6">
 
-      {/* Header */}
-      <header>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
-            <Flower2 className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {isPartner ? "Ciclo da Parceira" : "Ciclo"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {isPartner ? "Acompanha o ciclo da tua parceira." : "O teu rastreio menstrual privado."}
-            </p>
-          </div>
-        </div>
-        {isPartner && (
-          <p className="text-[11px] font-medium text-rose-400 mt-2 px-1">
-            Modo observador — apenas leitura
-          </p>
-        )}
-      </header>
+      <PageHeader
+        title={isPartner ? "Ciclo da Parceira" : "Ciclo"}
+        subtitle={isPartner ? "Acompanha o ciclo da tua parceira." : "O teu rastreio menstrual privado."}
+        icon={Flower2}
+        tone="rose"
+      />
+      {isPartner && (
+        <p className="-mt-1 px-1 text-[11px] font-medium text-rose-400">
+          Modo observador — apenas leitura
+        </p>
+      )}
 
-      {/* Tabs */}
-      <div className="flex bg-muted rounded-2xl p-1 gap-1">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-              activeTab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs<TabId> tabs={tabs} value={activeTab} onChange={setActiveTab} />
 
       {/* Content */}
       <div key={activeTab + String(isPartner)}>
@@ -108,7 +86,7 @@ export default function Cycle() {
       </div>
 
       {/* Centro de Conhecimento — sempre no final da página */}
-      <div className="pt-2">
+      <div className="pt-1">
         <KnowledgeCenterCard />
       </div>
     </section>

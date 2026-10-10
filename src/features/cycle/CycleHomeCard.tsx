@@ -1,103 +1,64 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Droplets, Wind, Sun, Moon } from "lucide-react";
+import { ChevronRight, Droplet, Flower2, Moon, Sparkles, Sprout } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { runCycleEngineFromProfile } from "./engine";
+import { formatShortDate, runCycleEngineFromProfile } from "./engine";
 import { useCycleData } from "./useCycleData";
-import type { CycleEngineOutput } from "./engine";
+import { PHASE_INSIGHTS } from "./CyclePartnerView";
 
-// ── Metadados por fase ────────────────────────────────────────────────────────
+// Versão compacta do topo do ecrã do Ciclo (CycleToday / CyclePartnerView):
+// o mesmo anel com o ícone da fase e o dia, "Fase actual" com o nome a cor,
+// a frase da fase e os selos — para a Home dizer o mesmo que o Ciclo diz.
 
-type PhaseMeta = { label: string; dot: string; bar: string; textColor: string; Icon: typeof Droplets };
-
-const PHASE_META: Record<string, PhaseMeta> = {
-  menstrual: { label: "Menstruação", dot: "bg-rose-500",    bar: "bg-rose-400",    textColor: "text-rose-500 dark:text-rose-400",    Icon: Droplets },
-  folicular: { label: "Folicular",   dot: "bg-sky-400",     bar: "bg-sky-300",     textColor: "text-sky-500 dark:text-sky-400",      Icon: Wind     },
-  ovulacao:  { label: "Ovulação",    dot: "bg-emerald-400", bar: "bg-emerald-400", textColor: "text-emerald-600 dark:text-emerald-400", Icon: Sun    },
-  luteal:    { label: "Lútea",       dot: "bg-violet-400",  bar: "bg-violet-400",  textColor: "text-violet-500 dark:text-violet-400", Icon: Moon    },
-  sem_dados: { label: "Sem dados",   dot: "bg-muted-foreground/30", bar: "bg-muted-foreground/20", textColor: "text-muted-foreground", Icon: Moon },
+const PHASE_ACCENT: Record<string, string> = {
+  menstrual: "text-rose-500",
+  folicular: "text-sky-500",
+  ovulacao:  "text-emerald-500",
+  luteal:    "text-violet-500",
+  sem_dados: "text-muted-foreground",
 };
 
-function getPhaseKey(engine: CycleEngineOutput): string {
-  const p = engine.phase;
-  if (p === "menstrual") return "menstrual";
-  if (p === "folicular") return "folicular";
-  if (p === "ovulacao")  return "ovulacao";
-  if (p === "luteal")    return "luteal";
-  return "sem_dados";
-}
+const PHASE_ICONS: Record<string, LucideIcon> = {
+  menstrual: Droplet,
+  folicular: Sprout,
+  ovulacao:  Sparkles,
+  luteal:    Moon,
+  sem_dados: Flower2,
+};
 
-// ── Texto do próximo evento ───────────────────────────────────────────────────
+const RING_R = 44;
+const RING_C = 2 * Math.PI * RING_R;
 
-function nextEventText(engine: CycleEngineOutput, isMale: boolean): string {
-  const them = isMale ? "ela" : "tu";
-  const theirs = isMale ? "dela" : "tua";
+const CARD =
+  "w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform dark:border dark:border-border/60";
 
-  if (engine.isInPeriod) {
-    return `Menstruação · dia ${engine.cycleDay} do ciclo`;
-  }
-  if (engine.isInFertileWindow) {
-    const end = new Date(engine.fertileEndStr + "T12:00:00");
-    const endFmt = end.toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
-    return `Janela fértil até ${endFmt}`;
-  }
-  if (engine.isInPmsWindow) {
-    const n = engine.daysUntilNextPeriod;
-    return `Fase pré-menstrual · ${n > 0 ? `menstruação em ${n} dias` : "brevemente"}`;
-  }
-  // Fertile window upcoming (within 5 days)
-  const daysToFertile = Math.round(
-    (new Date(engine.fertileStartStr + "T12:00:00").getTime() - Date.now()) / 86400000
-  );
-  if (daysToFertile > 0 && daysToFertile <= 5) {
-    return `Janela fértil em ${daysToFertile} dia${daysToFertile === 1 ? "" : "s"}`;
-  }
+const CHIP = "rounded-full border px-2 py-0.5 text-[10px] font-medium";
 
-  const n = engine.daysUntilNextPeriod;
-  const nextDate = new Date(engine.nextPeriodStr + "T12:00:00")
-    .toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
-  if (n <= 0) return `Menstruação prevista para ${nextDate}`;
-  return `Próxima menstruação em ${n} dia${n === 1 ? "" : "s"} · ${nextDate}`;
-}
+// Primeira frase — o texto do parceiro é longo para a Home.
+const firstSentence = (text: string) => text.split(/(?<=\.)\s/)[0];
 
-// ── Componente ────────────────────────────────────────────────────────────────
-
-export function CycleHomeCard() {
+export function CycleHomeCard({ partnerName }: { partnerName?: string | null }) {
   const navigate = useNavigate();
   const { profile, lastPeriod, isMale, loading } = useCycleData();
 
   if (loading) return null;
 
-  // Sem ciclo configurado → card de descoberta (diferente para ela e para ele)
+  // Sem ciclo configurado → o mesmo convite do ecrã do Ciclo, em pequeno
   if (!profile) {
     return (
-      <button
-        type="button"
-        onClick={() => navigate("/ciclo")}
-        className="glass-card glass-card-hover w-full text-left p-4 space-y-2 transition-all active:scale-[0.99]"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full shrink-0 bg-rose-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Ciclo Menstrual
-            </span>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
-          <p className="text-sm font-semibold text-foreground">
-            {isMale ? "Ciclo da tua parceira" : "Acompanha o teu ciclo"}
-          </p>
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-snug">
-          {isMale
-            ? "Quando ela configurar o ciclo, vais acompanhar a fase dela aqui e estares mais presente."
-            : "Regista o teu ciclo e recebe lembretes personalizados para vocês dois."}
-        </p>
-        <p className="text-[11px] font-semibold text-rose-500 dark:text-rose-400">
-          {isMale ? "Ver mais" : "Configurar agora"}
-        </p>
+      <button type="button" onClick={() => navigate("/ciclo")} className={cn(CARD, "flex items-center gap-3 p-3 pl-3.5")}>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/40">
+          <Flower2 className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] font-semibold text-foreground">
+            {isMale ? "Ciclo da tua parceira" : "Começa a acompanhar o teu ciclo"}
+          </span>
+          <span className="block truncate text-[11px] text-muted-foreground">
+            {isMale ? "Quando ela o ativar, acompanhas a fase dela aqui" : "Regista a menstruação e recebe insights"}
+          </span>
+        </span>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" strokeWidth={1.5} />
       </button>
     );
   }
@@ -105,56 +66,76 @@ export function CycleHomeCard() {
   const engine = runCycleEngineFromProfile(profile, lastPeriod);
   if (!engine) return null;
 
-  const phaseKey  = getPhaseKey(engine);
-  const meta      = PHASE_META[phaseKey];
-  const progress  = Math.max(2, Math.min(98, engine.cycleProgress));
-  const eventText = nextEventText(engine, isMale);
-  const label     = isMale ? "Ciclo dela" : "O teu ciclo";
-  const Icon      = meta.Icon;
+  const phaseKey  = engine.phase ?? "sem_dados";
+  const accent    = PHASE_ACCENT[phaseKey] ?? PHASE_ACCENT.sem_dados;
+  const PhaseIcon = PHASE_ICONS[phaseKey] ?? Flower2;
+  const herName   = partnerName?.split(" ")[0];
+  const label     = isMale ? (herName ? `Ciclo da ${herName}` : "Ciclo dela") : "O teu ciclo";
+  const quote     = isMale
+    ? firstSentence(PHASE_INSIGHTS[phaseKey] ?? PHASE_INSIGHTS.sem_dados)
+    : engine.insights[0];
+
+  const angle = (engine.cycleProgress / 100) * 2 * Math.PI;
+  const dotX  = 50 + RING_R * Math.sin(angle);
+  const dotY  = 50 - RING_R * Math.cos(angle);
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate("/ciclo")}
-      className="glass-card glass-card-hover w-full text-left p-4 space-y-2.5 transition-all active:scale-[0.99]"
-    >
-      {/* ── Cabeçalho ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {label}
-          </span>
+    <button type="button" onClick={() => navigate("/ciclo")} className={cn(CARD, "p-3 pl-3.5")}>
+      <div className="flex items-center gap-3.5">
+        {/* Anel do ciclo — igual ao do ecrã do Ciclo, em pequeno */}
+        <div className="relative h-[60px] w-[60px] shrink-0">
+          <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
+            <circle cx="50" cy="50" r={RING_R} fill="none" strokeWidth="8" stroke="currentColor" className="text-muted/60 dark:text-muted/30" />
+            <circle
+              cx="50" cy="50" r={RING_R} fill="none" strokeWidth="8" stroke="currentColor" strokeLinecap="round"
+              strokeDasharray={RING_C}
+              strokeDashoffset={RING_C * (1 - engine.cycleProgress / 100)}
+              className={cn("transition-all duration-700", accent)}
+            />
+          </svg>
+          <span
+            className={cn("absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full", accent.replace("text-", "bg-"))}
+            style={{ left: `${dotX}%`, top: `${dotY}%` }}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <PhaseIcon className={cn("h-3 w-3", accent)} strokeWidth={1.8} />
+            <span className="text-[17px] font-bold leading-none tabular-nums text-foreground">{engine.cycleDay}</span>
+            <span className="text-[8.5px] leading-tight text-muted-foreground">de {engine.cycleLength}</span>
+          </div>
         </div>
-        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-      </div>
 
-      {/* ── Fase + dia ── */}
-      <div className="flex items-center gap-3">
-        <div className={cn("flex items-center gap-1.5 text-sm font-semibold", meta.textColor)}>
-          <Icon className="w-4 h-4" strokeWidth={1.5} />
-          {meta.label}
+        <div className="min-w-0 flex-1">
+          <p className="text-[9.5px] font-bold uppercase tracking-widest text-muted-foreground/70">{label}</p>
+          <p className={cn("text-[16px] font-bold leading-tight", accent)}>{engine.phaseLabel}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {engine.daysUntilNextPeriod > 0
+              ? `${engine.daysUntilNextPeriod}d até menstruação`
+              : engine.daysUntilNextPeriod === 0 ? "Menstruação chega hoje" : "Menstruação atrasada"}
+          </p>
         </div>
-        <span className="text-xs text-muted-foreground/60 font-medium">
-          Dia {engine.cycleDay}
-        </span>
-        <span className="ml-auto text-[10px] text-muted-foreground/50 font-medium tabular-nums">
-          {engine.cycleDay}/{engine.cycleLength} dias
-        </span>
+
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 self-start text-muted-foreground/50" strokeWidth={1.5} />
       </div>
 
-      {/* ── Barra de progresso ── */}
-      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-700", meta.bar)}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      {quote && (
+        <p className={cn("mt-2 line-clamp-2 text-[12px] font-medium italic leading-snug", accent)}>"{quote}"</p>
+      )}
 
-      {/* ── Próximo evento ── */}
-      <p className="text-[11px] text-muted-foreground leading-snug">
-        {eventText}
-      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {engine.isInPeriod && (
+          <span className={cn(CHIP, "border-rose-200/50 bg-rose-50 text-rose-500 dark:border-rose-800/50 dark:bg-rose-950/30")}>Em período</span>
+        )}
+        {engine.isInFertileWindow && (
+          <span className={cn(CHIP, "border-sky-200/50 bg-sky-50 text-sky-500 dark:border-sky-800/50 dark:bg-sky-950/30")}>Janela fértil</span>
+        )}
+        {engine.isInPmsWindow && !engine.isInPeriod && (
+          <span className={cn(CHIP, "border-violet-200/50 bg-violet-50 text-violet-500 dark:border-violet-800/50 dark:bg-violet-950/30")}>TPM</span>
+        )}
+        <span className={cn(CHIP, "border-border bg-muted text-muted-foreground")}>
+          Próx. {formatShortDate(engine.nextPeriodStr)}
+        </span>
+      </div>
     </button>
   );
 }

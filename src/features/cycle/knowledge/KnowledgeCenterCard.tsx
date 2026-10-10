@@ -9,14 +9,14 @@ export function KnowledgeCenterCard() {
     <button
       type="button"
       onClick={() => navigate("/ciclo/conhecimento")}
-      className="w-full text-left rounded-[28px] overflow-hidden shadow-sm border border-rose-100/60 dark:border-rose-900/30 active:scale-[0.99] transition-all duration-200"
+      className="w-full text-left rounded-[1.4rem] overflow-hidden shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] border border-rose-100/60 dark:border-rose-900/30 active:scale-[0.99] transition-all duration-200"
       style={{
         background: "linear-gradient(135deg, #ffffff 0%, #fff1f2 60%, #ffe4e6 100%)",
       }}
     >
-      <div className="dark:hidden flex items-center gap-0 min-h-[180px]">
+      <div className="dark:hidden flex items-center gap-0 min-h-[150px]">
         {/* Lado esquerdo */}
-        <div className="flex-1 p-6 space-y-3">
+        <div className="flex-1 p-5 space-y-2.5">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-400">
             Centro de Conhecimento
           </p>
@@ -39,10 +39,10 @@ export function KnowledgeCenterCard() {
 
       {/* Dark mode variant */}
       <div
-        className="hidden dark:flex items-center gap-0 min-h-[180px] rounded-[28px]"
+        className="hidden dark:flex items-center gap-0 min-h-[150px] rounded-[28px]"
         style={{ background: "linear-gradient(135deg, #1c1c1e 0%, #2a1520 60%, #3b1827 100%)" }}
       >
-        <div className="flex-1 p-6 space-y-3">
+        <div className="flex-1 p-5 space-y-2.5">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-400">
             Centro de Conhecimento
           </p>

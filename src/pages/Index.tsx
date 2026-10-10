@@ -4,14 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
-  ArrowRight,
+  BookHeart,
   CalendarDays,
   CalendarHeart,
-  Heart,
+  Clock3,
   HeartHandshake,
+  Images,
+  Library,
   MessageCircle,
   Smile,
   Sparkles,
+  Trophy,
+  Flame,
 } from "lucide-react";
 import { useTimeTogether } from "@/hooks/useTimeTogether";
 import { todayLocal } from "@/lib/timezone";
@@ -23,7 +27,6 @@ import { InstallBanner } from "@/features/pwa/InstallBanner";
 import { useCoupleAvatars } from "@/hooks/useCoupleAvatars";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
-import { PartnerPresenceCard } from "@/components/PartnerPresenceCard";
 import { useStreak } from "@/features/streak/useStreak";
 import { useMilestone } from "@/hooks/useMilestone";
 import {
@@ -35,6 +38,17 @@ import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
 import { capsuleSeenKey } from "@/features/capsule/CapsuleRealtimeWatcher";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
+import { TimeTogetherCard } from "@/features/home/components/TimeTogetherCard";
+import {
+  AdventuresBento,
+  DailyDock,
+  SectionLabel,
+  ShareLoveRow,
+  type AdventureTile,
+  type DailyShortcut,
+} from "@/features/home/components/HomeSections";
+import { LocationHomeCard } from "@/features/location/LocationHomeCard";
+import { CycleHomeCard } from "@/features/cycle/CycleHomeCard";
 import { LoveStreakCard } from "@/components/LoveStreakCard";
 import { cn } from "@/lib/utils";
 
@@ -164,6 +178,27 @@ function useGlobalAnnouncements() {
   return data ?? [];
 }
 
+function useReferralCode() {
+  const { user } = useAuth();
+
+  const { data } = useQuery({
+    queryKey: ["referral-code", user?.id],
+    enabled: !!user,
+    staleTime: 60 * 60_000,
+    queryFn: async () => {
+      const { data: row } = await supabase
+        .from("profiles")
+        .select("referral_code")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+
+      return row?.referral_code ?? null;
+    },
+  });
+
+  return data ?? null;
+}
+
 function useHouseInviteCode() {
   const spaceId = useCoupleSpaceId();
 
@@ -185,94 +220,6 @@ function useHouseInviteCode() {
   return data ?? null;
 }
 
-function DailyAction({
-  icon,
-  title,
-  description,
-  to,
-  badge = 0,
-  tone,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  to: string;
-  badge?: number;
-  tone: "rose" | "indigo" | "orange";
-}) {
-  const navigate = useNavigate();
-
-  const toneClass = {
-    rose: "bg-rose-50 text-rose-500 dark:bg-rose-950/25 dark:text-rose-300",
-    indigo: "bg-indigo-50 text-indigo-500 dark:bg-indigo-950/25 dark:text-indigo-300",
-    orange: "bg-orange-50 text-orange-500 dark:bg-orange-950/25 dark:text-orange-300",
-  }[tone];
-
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(to)}
-      className="flex w-full items-center gap-3.5 border-b border-border/55 px-4 py-4 text-left last:border-b-0 active:bg-muted/60"
-    >
-      <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl", toneClass)}>
-        {icon}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-[14px] font-bold text-foreground">{title}</p>
-          {badge > 0 && (
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white">
-              {badge > 9 ? "9+" : badge}
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{description}</p>
-      </div>
-
-      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40" strokeWidth={1.6} />
-    </button>
-  );
-}
-
-function ExperienceDoor({
-  title,
-  description,
-  to,
-  icon,
-  tone,
-}: {
-  title: string;
-  description: string;
-  to: string;
-  icon: React.ReactNode;
-  tone: "rose" | "indigo";
-}) {
-  const navigate = useNavigate();
-
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(to)}
-      className="group rounded-[1.45rem] border border-border/70 bg-card p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.035)] active:scale-[0.985]"
-    >
-      <div
-        className={cn(
-          "mb-5 flex h-10 w-10 items-center justify-center rounded-2xl",
-          tone === "rose"
-            ? "bg-rose-50 text-rose-500 dark:bg-rose-950/25 dark:text-rose-300"
-            : "bg-indigo-50 text-indigo-500 dark:bg-indigo-950/25 dark:text-indigo-300",
-        )}
-      >
-        {icon}
-      </div>
-      <p className="text-[14px] font-bold text-foreground">{title}</p>
-      <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{description}</p>
-      <ArrowRight className="mt-4 h-3.5 w-3.5 text-muted-foreground/40 transition-transform group-active:translate-x-1" />
-    </button>
-  );
-}
-
 const Index = () => {
   const navigate = useNavigate();
   const time = useTimeTogether();
@@ -283,16 +230,22 @@ const Index = () => {
   const chatPreview = useMessagePreview();
   const announcements = useGlobalAnnouncements();
   const houseInviteCode = useHouseInviteCode();
+  const referralCode = useReferralCode();
   const spaceId = useCoupleSpaceId();
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const isSolo = profile?.usage_mode === "solo";
   const profileReady = !profileLoading;
+  const hasSpiritual = profile?.religion !== "none";
   const {
     chatUnread,
     moodUnread,
     tasksUnread,
     scheduleUnread,
+    prayerUnread,
+    complaintsUnread,
+    memoriesUnread,
+    capsuleUnread,
   } = useAppNotifContext();
 
   const {
@@ -446,68 +399,175 @@ const Index = () => {
     }
   };
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? "Bom dia. Um pouco de presença já conta."
-      : hour < 19
-        ? "Boa tarde. Como estão vocês hoje?"
-        : "Boa noite. Ainda há tempo para um gesto pequeno.";
+  const handleShareReferral = () => {
+    if (!referralCode) return;
 
-  const moodDescription = mood.mine
-    ? mood.partner
-      ? `${mood.mine.emoji} ${mood.mine.label} · Par: ${mood.partner.emoji} ${mood.partner.label}`
-      : `${mood.mine.emoji} ${mood.mine.label} · O teu par ainda não partilhou`
-    : "Como está o teu coração hoje?";
+    const shareUrl = `${window.location.origin}/inicio?ref=${referralCode}`;
+    const message = `Estamos a usar o LoveNest, um espaço só nosso. Cria o vosso também.\n\nCódigo: ${referralCode}`;
 
-  const chatDescription =
-    chatUnread > 0
-      ? `${chatUnread} ${chatUnread === 1 ? "mensagem nova" : "mensagens novas"}`
-      : chatPreview.preview ?? "Deixa uma pequena mensagem.";
+    if (navigator.share) {
+      navigator.share({ title: "Convite LoveNest", text: message, url: shareUrl }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${message}\n${shareUrl}`);
+      toast.success("Convite copiado.");
+    }
+  };
 
-  const planDescription = plano.next
-    ? `${plano.next.time} · ${plano.next.title}`
-    : plano.pending > 0
-      ? `${plano.pending} ${plano.pending === 1 ? "coisa pendente" : "coisas pendentes"}`
-      : "Nada urgente por agora.";
+  const partnerPresent =
+    !isSolo && streakData.activeCount >= (streakData.myCheckedIn ? 2 : 1);
+
+  const spiritualShortcut: DailyShortcut = hasSpiritual
+    ? { to: "/jornada-espiritual", label: "Oração", hint: "Hoje", icon: BookHeart, tone: "violet", badge: prayerUnread }
+    : { to: "/biblioteca", label: "Leitura", hint: "Ler", icon: Library, tone: "violet" };
+
+  const dailyItems: DailyShortcut[] = isSolo
+    ? [
+        { to: "/humor", label: "Humor", hint: mood.mine?.label ?? "Registar", icon: Smile, tone: "rose", badge: moodUnread },
+        {
+          to: "/plano",
+          label: "Agenda",
+          hint: plano.next?.time ?? (plano.pending > 0 ? `${plano.pending} pend.` : "Livre"),
+          icon: CalendarDays,
+          tone: "blue",
+          badge: tasksUnread + scheduleUnread,
+        },
+        spiritualShortcut,
+        { to: "/momentos", label: "Momentos", hint: "Guardar", icon: Sparkles, tone: "orange" },
+      ]
+    : [
+        {
+          to: "/chat",
+          label: "Chat",
+          hint: chatUnread > 0 ? `${chatUnread} ${chatUnread === 1 ? "nova" : "novas"}` : chatPreview.preview ? "Responder" : "Escrever",
+          icon: MessageCircle,
+          tone: "green",
+          badge: chatUnread,
+        },
+        {
+          to: "/humor",
+          label: "Humor",
+          hint: mood.mine ? (mood.partner ? "Ambos" : "Tu ✓") : "Registar",
+          icon: Smile,
+          tone: "rose",
+          badge: moodUnread,
+        },
+        {
+          to: "/plano",
+          label: "Agenda",
+          hint: plano.next?.time ?? (plano.pending > 0 ? `${plano.pending} pend.` : "Livre"),
+          icon: CalendarDays,
+          tone: "blue",
+          badge: tasksUnread + scheduleUnread,
+        },
+        spiritualShortcut,
+        { to: "/conflitos", label: "Conflitos", hint: "Com calma", icon: HeartHandshake, tone: "pink", badge: complaintsUnread },
+      ];
+
+  const featuredAdventure: AdventureTile = isSolo
+    ? { to: "/momentos", title: "Momentos", caption: "O que não queres perder", icon: Sparkles }
+    : {
+        to: "/memorias",
+        title: "Memórias",
+        caption: memoriesUnread > 0 ? `${memoriesUnread} novas` : "Fotos que ficam",
+        icon: Images,
+      };
+
+  const adventureTiles: AdventureTile[] = isSolo
+    ? [
+        { to: "/jornada", title: "Jornada", caption: "O teu caminho", icon: Flame, tone: "orange" },
+        { to: "/capsula", title: "Cápsula", caption: "Para o futuro", icon: Clock3, tone: "violet" },
+      ]
+    : [
+        {
+          to: "/historia",
+          title: "Nossa História",
+          caption: nextSpecialDate
+            ? nextSpecialDate.daysUntil === 0
+              ? "Hoje é especial"
+              : `${nextSpecialDate.daysUntil}d p/ data`
+            : "Capítulos",
+          icon: CalendarHeart,
+          tone: "rose",
+        },
+        { to: "/desafios", title: "Desafios", caption: "Fora da rotina", icon: Trophy, tone: "green" },
+        { to: "/wrapped", title: "Wrapped", caption: "O vosso mês", icon: Sparkles, tone: "orange" },
+        {
+          to: "/capsula",
+          title: "Cápsula",
+          caption: capsuleUnread > 0 ? `${capsuleUnread} nova` : "Para o futuro",
+          icon: Clock3,
+          tone: "violet",
+        },
+      ];
+
+  const waitingForPartner = profileReady && !avatars.loading && !isSolo && !avatars.partner && !!houseInviteCode;
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 overflow-x-hidden pb-20 animate-fade-in">
+    <div className="mx-auto max-w-lg space-y-3 overflow-x-hidden pb-20 animate-fade-in">
       <HomeHeader
         me={avatars.me}
         partner={avatars.partner}
         today={today}
         loading={avatars.loading}
+        mePresent={streakData.myCheckedIn}
+        partnerPresent={partnerPresent}
       />
 
-      <section className="px-1 pt-1">
-        <p className="text-[17px] font-extrabold tracking-[-0.025em] text-foreground">
-          {greeting}
-        </p>
-        {!isSolo && time.startDate && (
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-            Juntos há {time.days.toLocaleString("pt-PT")} dias.
-          </p>
-        )}
-      </section>
+      <p className="pb-1 text-center text-[13.5px] font-medium text-rose-500">
+        {isSolo ? "O teu espaço é o teu lugar seguro" : "O vosso ninho é o vosso lugar seguro"}
+      </p>
 
       {announcements.map((announcement) => (
         <div
           key={announcement.id}
-          className="rounded-[1.4rem] border border-rose-200/60 bg-rose-50/70 px-4 py-3.5 dark:border-rose-900/30 dark:bg-rose-950/20"
+          className="rounded-[1.5rem] border border-border/70 bg-card px-4 py-3.5"
         >
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-rose-500/70">
+          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-rose-500">
             {announcement.title}
           </p>
-          <p className="mt-1 text-[12px] font-semibold leading-5 text-rose-800 dark:text-rose-200">
+          <p className="mt-1 text-[12px] font-medium leading-5 text-foreground">
             {announcement.content}
           </p>
         </div>
       ))}
 
+      {!isSolo && (
+        <TimeTogetherCard
+          days={time.days}
+          hours={time.hours}
+          minutes={time.minutes}
+          seconds={time.seconds}
+          hasDate={!!time.startDate}
+          startDate={time.startDate}
+          onSetDate={() => navigate("/configuracoes")}
+        />
+      )}
+
+      {waitingForPartner && (
+        <section className="rounded-[1.75rem] bg-foreground p-5 text-background">
+          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-background/60">Convite</p>
+          <p className="mt-1.5 text-[16px] font-semibold">Falta uma pessoa neste espaço.</p>
+          <p className="mt-1 text-[12px] leading-5 text-background/70">
+            Partilha o código com o teu par para começarem a usar o LoveNest juntos.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <div className="flex h-12 flex-1 items-center justify-center rounded-2xl bg-background/10 font-mono text-[16px] font-medium tracking-[0.24em]">
+              {houseInviteCode}
+            </div>
+            <button
+              type="button"
+              onClick={handleShareHouse}
+              className="h-12 rounded-2xl bg-background px-5 text-[12px] font-semibold text-foreground active:scale-[0.98]"
+            >
+              Partilhar
+            </button>
+          </div>
+        </section>
+      )}
+
       {profileReady && (
         <section>
-          <LoveStreakCard streak={streakData} loading={streakLoading} />
+          <LoveStreakCard streak={streakData} loading={streakLoading} partnerName={avatars.partner?.displayName} />
           {recentMilestone && (
             <p className="mt-1.5 px-3 text-center text-[10px] font-medium text-muted-foreground/65">
               {getMilestoneMicroMemory(recentMilestone)}
@@ -516,132 +576,21 @@ const Index = () => {
         </section>
       )}
 
-      {profileReady && !avatars.loading && !isSolo && !avatars.partner && houseInviteCode ? (
-        <section className="rounded-[1.6rem] border border-rose-200/70 bg-gradient-to-br from-rose-50 to-white p-5 shadow-[0_12px_35px_rgba(244,63,94,0.06)] dark:border-rose-900/30 dark:from-rose-950/20 dark:to-card">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-500 dark:bg-rose-950/40">
-              <HeartHandshake className="h-5 w-5" strokeWidth={1.7} />
-            </div>
-            <div>
-              <p className="text-[14px] font-bold text-foreground">Falta uma pessoa neste espaço.</p>
-              <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                Partilha o código com o teu par para começarem a usar o LoveNest juntos.
-              </p>
-            </div>
-          </div>
+      {!isSolo && avatars.partner && <LocationHomeCard />}
 
-          <div className="mt-4 flex gap-2">
-            <div className="flex h-12 flex-1 items-center justify-center rounded-2xl border border-rose-200/70 bg-white/80 text-[16px] font-black tracking-[0.2em] text-rose-500 dark:bg-card">
-              {houseInviteCode}
-            </div>
-            <button
-              type="button"
-              onClick={handleShareHouse}
-              className="h-12 rounded-2xl bg-[#0B1324] px-4 text-[11px] font-bold text-white active:scale-[0.98]"
-            >
-              Partilhar
-            </button>
-          </div>
-        </section>
-      ) : (
-        avatars.partner && <PartnerPresenceCard />
-      )}
+      {!(isSolo && profile?.gender === "male") && <CycleHomeCard partnerName={avatars.partner?.displayName} />}
 
-      <section>
-        <div className="mb-3 flex items-center justify-between px-1">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Hoje
-            </p>
-            <p className="mt-0.5 text-[12px] text-muted-foreground/70">
-              Só o que pode fazer sentido agora.
-            </p>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-[1.6rem] border border-border/70 bg-card shadow-[0_12px_35px_rgba(15,23,42,0.035)]">
-          <DailyAction
-            icon={<Smile className="h-5 w-5" strokeWidth={1.6} />}
-            title="Humor"
-            description={moodDescription}
-            to="/humor"
-            badge={moodUnread}
-            tone="rose"
-          />
-
-          {!isSolo && (
-            <DailyAction
-              icon={<MessageCircle className="h-5 w-5" strokeWidth={1.6} />}
-              title="Chat"
-              description={chatDescription}
-              to="/chat"
-              badge={chatUnread}
-              tone="indigo"
-            />
-          )}
-
-          <DailyAction
-            icon={<CalendarDays className="h-5 w-5" strokeWidth={1.6} />}
-            title="Plano"
-            description={planDescription}
-            to="/plano"
-            badge={tasksUnread + scheduleUnread}
-            tone="orange"
-          />
-        </div>
+      <section className="pt-3">
+        <SectionLabel title={isSolo ? "O teu dia a dia" : "O vosso dia a dia"} action="Ver tudo" onAction={() => navigate("/vida")} />
+        <DailyDock items={dailyItems} />
       </section>
 
-      {nextSpecialDate && !isSolo && (
-        <button
-          type="button"
-          onClick={() => navigate("/historia")}
-          className="flex w-full items-center gap-3 rounded-[1.45rem] border border-border/70 bg-card p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.03)] active:scale-[0.99]"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-950/25">
-            <CalendarHeart className="h-[18px] w-[18px]" strokeWidth={1.7} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-              Próximo momento
-            </p>
-            <p className="mt-0.5 truncate text-[13px] font-bold text-foreground">
-              {nextSpecialDate.title}
-            </p>
-          </div>
-          <span className="shrink-0 text-[11px] font-bold text-muted-foreground">
-            {nextSpecialDate.daysUntil === 0
-              ? "Hoje"
-              : nextSpecialDate.daysUntil === 1
-                ? "Amanhã"
-                : `${nextSpecialDate.daysUntil} dias`}
-          </span>
-        </button>
-      )}
-
-      <section>
-        <div className="mb-3 px-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            Continuar
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <ExperienceDoor
-            title={isSolo ? "Eu" : "Nós"}
-            description={isSolo ? "Momentos e jornada." : "História, memórias e crescimento."}
-            to="/nos"
-            icon={<Heart className="h-5 w-5" strokeWidth={1.6} />}
-            tone="rose"
-          />
-          <ExperienceDoor
-            title="Vida"
-            description="Planos, contexto e ferramentas práticas."
-            to="/vida"
-            icon={<Sparkles className="h-5 w-5" strokeWidth={1.6} />}
-            tone="indigo"
-          />
-        </div>
+      <section className="pt-3">
+        <SectionLabel title="Memórias e aventuras" action="Ver tudo" onAction={() => navigate("/nos")} />
+        <AdventuresBento featured={featuredAdventure} tiles={adventureTiles} />
       </section>
+
+      {referralCode && <ShareLoveRow onShare={handleShareReferral} />}
 
       <InstallBanner />
     </div>
