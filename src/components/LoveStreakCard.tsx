@@ -285,10 +285,10 @@ export function LoveStreakCard({
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[1.6rem] bg-card px-4 pt-3.5 pb-3.5 transition-shadow duration-500 dark:border dark:border-border/60",
+        "relative overflow-hidden rounded-[1.4rem] bg-card px-3.5 pt-3 pb-3 transition-shadow duration-500 dark:border dark:border-border/60",
         bothActiveToday
-          ? "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_16px_36px_-14px_rgba(229,70,109,0.35)]"
-          : "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)]",
+          ? "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_14px_30px_-14px_rgba(229,70,109,0.35)]"
+          : "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)]",
       )}
     >
       {/* Brilho quente quando os dois já apareceram */}
@@ -301,75 +301,70 @@ export function LoveStreakCard({
       )}
 
       <button type="button" onClick={() => navigate("/jornada")} className="relative block w-full text-left">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 pt-0.5">
-            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground/80">
-              <Flame className={cn("h-[15px] w-[15px] text-rose-500", bothActiveToday && "animate-flame-breathe")} strokeWidth={2.2} />
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1 text-[11.5px] font-semibold text-foreground/75">
+              <Flame className={cn("h-3.5 w-3.5 text-rose-500", bothActiveToday && "animate-flame-breathe")} strokeWidth={2.2} />
               {isSolo ? "A tua chama" : "A vossa chama"}
               {perfectDay && (
-                <span className="ml-1 flex items-center gap-1 rounded-full bg-rose-500 px-2 py-0.5 text-[9.5px] font-semibold text-white animate-in fade-in duration-300">
-                  <Sparkles className="h-2.5 w-2.5" strokeWidth={2} />
+                <span className="ml-1 flex items-center gap-0.5 rounded-full bg-rose-500 px-1.5 py-px text-[9px] font-semibold text-white animate-in fade-in duration-300">
+                  <Sparkles className="h-2 w-2" strokeWidth={2} />
                   Dia completo
                 </span>
               )}
             </p>
-
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-[38px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-foreground">
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="text-[26px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-foreground">
                 {currentStreak}
               </span>
-              <span className="text-[12.5px] leading-tight text-muted-foreground">
+              <span className="text-[11.5px] text-muted-foreground">
                 {currentStreak === 1 ? "dia" : "dias"} de presença
               </span>
             </div>
-            <p className="mt-1 truncate text-[12px] text-muted-foreground">{phrase}</p>
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{phrase}</p>
           </div>
 
-          <div className="relative -mr-1 -mt-1 h-[68px] w-[68px] shrink-0 rounded-full bg-[radial-gradient(circle_at_50%_60%,rgba(253,206,220,0.9)_0%,rgba(255,240,244,0.7)_55%,transparent_72%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(244,63,94,0.22)_0%,rgba(244,63,94,0.06)_55%,transparent_72%)]">
+          <div className="relative h-12 w-12 shrink-0 rounded-full bg-[radial-gradient(circle_at_50%_60%,rgba(253,206,220,0.9)_0%,rgba(255,240,244,0.7)_55%,transparent_72%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(244,63,94,0.22)_0%,rgba(244,63,94,0.06)_55%,transparent_72%)]">
             <FlamePet stage={phase.stage} mood="alegre" environment="suave" compact />
           </div>
         </div>
 
-        {/* Presença de hoje — tu em rosa, o par em azul */}
-        <div className={cn("mt-3 grid overflow-hidden rounded-2xl bg-muted/70", isSolo ? "grid-cols-1" : "grid-cols-2")}>
-          <PresenceCell name="Tu" present={myCheckedIn} tone="me" doneText="já apareceste" />
-          {!isSolo && (
-            <PresenceCell name={partnerLabel} present={partnerCheckedIn} tone="partner" doneText="já apareceu" divider />
-          )}
+        {/* Presença de hoje — tu em rosa, o par em azul, numa linha */}
+        <div className="mt-2.5 flex items-center gap-3 rounded-xl bg-muted/70 px-2.5 py-1.5 text-[11px]">
+          <PresenceDot name="Tu" present={myCheckedIn} tone="me" />
+          {!isSolo && <PresenceDot name={partnerLabel} present={partnerCheckedIn} tone="partner" />}
+          <span className="ml-auto flex items-center gap-0.5" aria-label={`${shieldsRemaining} de 3 escudos`}>
+            {[0, 1, 2].map((i) => (
+              <Shield
+                key={i}
+                className={cn("h-3 w-3", i < shieldsRemaining ? "fill-foreground text-foreground" : "fill-transparent text-muted-foreground/40")}
+                strokeWidth={1.6}
+              />
+            ))}
+          </span>
         </div>
 
-        {/* Próxima fase do Guardião + escudos */}
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-[12px] text-muted-foreground">
-            <span>
-              {phase.nextLevelName ? (
-                <>Próximo: <b className="font-semibold text-foreground/80">{phase.nextLevelName}</b>{phase.daysToNext !== null && ` · faltam ${phase.daysToNext} ${phase.daysToNext === 1 ? "dia" : "dias"}`}</>
-              ) : (
-                <b className="font-semibold text-foreground/80">{phase.name} · fase máxima</b>
-              )}
-            </span>
-            <span className="flex items-center gap-0.5" aria-label={`${shieldsRemaining} de 3 escudos`}>
-              {[0, 1, 2].map((i) => (
-                <Shield
-                  key={i}
-                  className={cn("h-3.5 w-3.5", i < shieldsRemaining ? "fill-foreground text-foreground" : "fill-muted text-muted-foreground/30")}
-                  strokeWidth={1.5}
-                />
-              ))}
-            </span>
-          </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+        {/* Próxima fase do Guardião */}
+        <div className="mt-2 flex items-center gap-2 text-[10.5px] text-muted-foreground">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-gradient-to-r from-rose-500 to-rose-300 transition-[width] duration-700"
               style={{ width: `${Math.max(phase.progressPct, 4)}%` }}
             />
           </div>
+          <span className="shrink-0">
+            {phase.nextLevelName ? (
+              <><b className="font-semibold text-foreground/75">{phase.nextLevelName}</b>{phase.daysToNext !== null && ` em ${phase.daysToNext}d`}</>
+            ) : (
+              <b className="font-semibold text-foreground/75">{phase.name}</b>
+            )}
+          </span>
         </div>
       </button>
 
       {/* Gestos de hoje — feito fica escuro, com um visto verde */}
-      <div className="relative mt-3 flex items-center justify-between border-t border-border/60 pt-3">
-        <div className="flex items-center gap-2">
+      <div className="relative mt-2.5 flex items-center justify-between border-t border-border/60 pt-2.5">
+        <div className="flex items-center gap-1.5">
           {activeMissions.map(({ id, title, Icon, points: pts }) => {
             const done = missions[id];
             return (
@@ -380,29 +375,26 @@ export function LoveStreakCard({
                 title={title}
                 aria-label={`${title}${done ? " — feito" : ` — +${pts} pts`}`}
                 className={cn(
-                  "relative flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-90",
+                  "relative flex h-7 w-7 items-center justify-center rounded-full transition-all active:scale-90",
                   done ? "bg-foreground text-background" : "bg-muted/80 text-muted-foreground",
                 )}
               >
-                <Icon className="h-[17px] w-[17px]" strokeWidth={1.8} />
+                <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
                 {done && (
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-card bg-emerald-500">
-                    <Check className="h-2 w-2 text-white" strokeWidth={4} />
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full border-[1.5px] border-card bg-emerald-500">
+                    <Check className="h-1.5 w-1.5 text-white" strokeWidth={5} />
                   </span>
                 )}
               </button>
             );
           })}
-          <span className="ml-1 text-[11.5px] text-muted-foreground">
-            {gesturesDone}/{activeMissions.length} gestos
+          <span className="ml-0.5 text-[10.5px] text-muted-foreground">
+            {gesturesDone}/{activeMissions.length}
           </span>
         </div>
-        <div className="text-right">
-          <span className="block text-[17px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-foreground">
-            {displayPoints.toLocaleString("pt-PT")}
-          </span>
-          <span className="text-[10.5px] text-muted-foreground">pontos</span>
-        </div>
+        <span className="text-[10.5px] text-muted-foreground">
+          <b className="text-[13px] font-semibold tabular-nums text-foreground">{displayPoints.toLocaleString("pt-PT")}</b> pts
+        </span>
       </div>
     </section>
   );
@@ -417,22 +409,18 @@ const MISSION_ROUTES: Record<MissionId, string> = {
   leitura: "/biblioteca",
 };
 
-function PresenceCell({
-  name, present, tone, doneText, divider,
-}: { name: string; present: boolean; tone: "me" | "partner"; doneText: string; divider?: boolean }) {
+function PresenceDot({ name, present, tone }: { name: string; present: boolean; tone: "me" | "partner" }) {
   const color = tone === "me" ? "text-rose-500" : "text-[#4D7CFE]";
   return (
-    <div className={cn("flex min-w-0 items-center gap-2.5 px-3 py-2", divider && "border-l border-border/70")}>
-      <span className={cn("relative flex h-2.5 w-2.5 shrink-0", color)}>
+    <span className="flex min-w-0 items-center gap-1.5">
+      <span className={cn("relative flex h-2 w-2 shrink-0", color)}>
         {present && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-40" />}
-        <span className={cn("relative h-2.5 w-2.5 rounded-full border-2 border-current", present && "bg-current")} />
+        <span className={cn("relative h-2 w-2 rounded-full border-[1.5px] border-current", present && "bg-current")} />
       </span>
-      <span className="min-w-0">
-        <b className="block truncate text-[13px] font-semibold leading-tight text-foreground">{name}</b>
-        <span className="block truncate text-[11.5px] leading-tight text-muted-foreground">
-          {present ? doneText : "ainda não hoje"}
-        </span>
+      <span className="truncate">
+        <b className="font-semibold text-foreground/85">{name}</b>
+        <span className="text-muted-foreground">{present ? " ✓" : " · ainda não"}</span>
       </span>
-    </div>
+    </span>
   );
 }

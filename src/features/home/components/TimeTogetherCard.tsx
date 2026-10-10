@@ -53,53 +53,46 @@ export function TimeTogetherCard({ days, hours, minutes, seconds, hasDate, start
   const anniversary = startDate ? nextAnniversary(startDate) : null;
 
   return (
-    <section className="rounded-[1.6rem] bg-card px-4 pt-3.5 pb-3 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border dark:border-border/60">
-      <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground/80">
-        <Heart className="h-[15px] w-[15px] text-rose-500" strokeWidth={2.2} />
-        Tempo juntos
-      </p>
-
-      <div className="mt-1.5 flex items-end justify-between">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[52px] font-light leading-[0.95] tracking-[-0.045em] tabular-nums text-rose-500">
+    <section className="rounded-[1.25rem] bg-card px-3.5 py-2.5 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] dark:border dark:border-border/60">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-baseline gap-1.5">
+          <Heart className="h-3 w-3 shrink-0 self-center fill-rose-500 text-rose-500" strokeWidth={0} />
+          <span className="text-[24px] font-light leading-none tracking-[-0.04em] tabular-nums text-rose-500">
             {days.toLocaleString("pt-PT")}
           </span>
-          <span className="text-[14px] font-medium text-foreground/70">{days === 1 ? "dia" : "dias"}</span>
+          <span className="truncate text-[11.5px] text-muted-foreground">{days === 1 ? "dia juntos" : "dias juntos"}</span>
         </div>
 
-        <div className="flex gap-3 pb-0.5" aria-label={`${hours} horas, ${minutes} minutos e ${seconds} segundos`}>
-          {[
-            { v: hours, k: "horas" },
-            { v: minutes, k: "min" },
-            { v: seconds, k: "seg", faint: true },
-          ].map(({ v, k, faint }) => (
-            <div key={k} className="min-w-[30px] text-center">
-              <span className={`block text-[22px] font-normal leading-none tracking-[-0.02em] tabular-nums ${faint ? "text-muted-foreground/60" : "text-foreground"}`}>
-                {pad(v)}
-              </span>
-              <span className="mt-1 block text-[10.5px] text-muted-foreground">{k}</span>
-            </div>
-          ))}
+        <div
+          className="flex shrink-0 items-baseline gap-0.5 text-[13px] tabular-nums text-foreground/80"
+          aria-label={`${hours} horas, ${minutes} minutos e ${seconds} segundos`}
+        >
+          <span>{pad(hours)}</span>
+          <span className="text-[9.5px] text-muted-foreground">h</span>
+          <span className="ml-1">{pad(minutes)}</span>
+          <span className="text-[9.5px] text-muted-foreground">m</span>
+          <span className="ml-1 text-muted-foreground/60">{pad(seconds)}</span>
+          <span className="text-[9.5px] text-muted-foreground">s</span>
         </div>
       </div>
 
       {anniversary && (
-        <div className="mt-3 flex items-center gap-3 border-t border-border/60 pt-2.5 text-[12.5px] text-foreground/75">
-          <span className="shrink-0">
-            {anniversary.daysLeft === 0 ? (
-              <b className="font-semibold text-rose-500">Hoje fazem {anniversary.years} {anniversary.years === 1 ? "ano" : "anos"}!</b>
-            ) : (
-              <>
-                {anniversary.years} {anniversary.years === 1 ? "ano" : "anos"} juntos em{" "}
-                <b className="font-semibold text-foreground">{anniversary.daysLeft}</b> {anniversary.daysLeft === 1 ? "dia" : "dias"}
-              </>
-            )}
-          </span>
-          <span className="h-1 flex-1 overflow-hidden rounded-full bg-rose-100 dark:bg-rose-950/50">
+        <div className="mt-2 flex items-center gap-2.5 text-[10.5px] text-muted-foreground">
+          <span className="h-[3px] flex-1 overflow-hidden rounded-full bg-rose-100 dark:bg-rose-950/50">
             <span
               className="block h-full rounded-full bg-gradient-to-r from-rose-500 to-rose-400 transition-[width] duration-700"
               style={{ width: `${anniversary.pct}%` }}
             />
+          </span>
+          <span className="shrink-0">
+            {anniversary.daysLeft === 0 ? (
+              <b className="font-semibold text-rose-500">Hoje fazem {anniversary.years} {anniversary.years === 1 ? "ano" : "anos"}</b>
+            ) : (
+              <>
+                {anniversary.years} {anniversary.years === 1 ? "ano" : "anos"} em{" "}
+                <b className="font-semibold text-foreground/80">{anniversary.daysLeft}</b> {anniversary.daysLeft === 1 ? "dia" : "dias"}
+              </>
+            )}
           </span>
         </div>
       )}

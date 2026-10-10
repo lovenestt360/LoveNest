@@ -52,12 +52,12 @@ export function LocationHomeCard() {
     <button
       type="button"
       onClick={() => navigate("/localizacao")}
-      className="w-full overflow-hidden rounded-[1.6rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] active:scale-[0.99] transition-transform dark:border dark:border-border/60"
+      className="w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform dark:border dark:border-border/60"
     >
-      <div className="flex items-stretch gap-4 p-3.5 pl-4">
+      <div className="flex items-stretch gap-3 p-3 pl-3.5">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Onde estamos</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Onde estamos</p>
             <span
               className={cn(
                 "flex items-center gap-1 font-mono text-[8px] uppercase tracking-[0.14em]",
@@ -70,27 +70,27 @@ export function LocationHomeCard() {
           </div>
 
           {loading ? (
-            <div className="mt-3 h-9 w-24 animate-pulse rounded-lg bg-muted" />
+            <div className="mt-2 h-6 w-20 animate-pulse rounded-lg bg-muted" />
           ) : distance ? (
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-[40px] font-light leading-none tracking-[-0.04em] tabular-nums text-foreground">
+            <div className="mt-1.5 flex items-baseline gap-1">
+              <span className="text-[26px] font-light leading-none tracking-[-0.04em] tabular-nums text-foreground">
                 {distance.value}
               </span>
-              <span className="font-mono text-[11px] uppercase text-muted-foreground">{distance.unit}</span>
+              <span className="font-mono text-[10px] uppercase text-muted-foreground">{distance.unit}</span>
             </div>
           ) : (
-            <p className="mt-2 text-[15px] font-semibold leading-snug text-foreground">
+            <p className="mt-1.5 text-[13px] font-semibold leading-snug text-foreground">
               {live ? place ?? partnerName : `${partnerName} não está a partilhar`}
             </p>
           )}
-          <p className="mt-1 truncate text-[11px] text-muted-foreground">
+          <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
             {distance ? `entre vocês · ${place ?? partnerName}` : live ? "Toca para ver no mapa" : "Pede-lhe para ativar a partilha"}
           </p>
         </div>
 
         {/* Mini-mapa — grelha pontilhada com o par no centro */}
         <div
-          className="relative w-[112px] shrink-0 overflow-hidden rounded-2xl bg-muted/70"
+          className="relative w-[84px] shrink-0 overflow-hidden rounded-xl bg-muted/70"
           style={{
             backgroundImage: "radial-gradient(hsl(var(--muted-foreground) / 0.22) 1px, transparent 1px)",
             backgroundSize: "9px 9px",
@@ -102,10 +102,10 @@ export function LocationHomeCard() {
             <path d="M38 -4 C 44 30, 70 50, 64 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            {live && <span className="absolute h-12 w-12 animate-ping rounded-full bg-[#4D7CFE]/25" />}
+            {live && <span className="absolute h-9 w-9 animate-ping rounded-full bg-[#4D7CFE]/25" />}
             <span
               className={cn(
-                "relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-card text-[12px] font-bold shadow-md",
+                "relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-card text-[11px] font-bold shadow-md",
                 live ? "bg-gradient-to-br from-[#7D9DFF] to-[#3F68E6] text-white" : "bg-muted-foreground/30 text-background",
               )}
             >
@@ -120,33 +120,33 @@ export function LocationHomeCard() {
       </div>
 
       <div className="grid grid-cols-[1fr_1fr_auto] items-center divide-x divide-border/70 border-t border-border/70">
-        <div className="px-5 py-2.5">
-          <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground/70">Atualizado</p>
-          <p className="mt-0.5 truncate font-mono text-[11px] text-foreground">
+        <div className="px-3.5 py-1.5">
+          <p className="font-mono text-[7.5px] uppercase tracking-[0.16em] text-muted-foreground/70">Atualizado</p>
+          <p className="truncate font-mono text-[10px] text-foreground">
             {live ? timeAgo(partnerLocation!.updated_at) : "—"}
           </p>
         </div>
-        <div className="px-4 py-2.5">
-          <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground/70">Bateria</p>
-          <div className="mt-1 flex items-center gap-1.5">
+        <div className="px-3 py-1.5">
+          <p className="font-mono text-[7.5px] uppercase tracking-[0.16em] text-muted-foreground/70">Bateria</p>
+          <div className="mt-0.5 flex items-center gap-1.5">
             <div className="flex gap-[3px]" aria-hidden="true">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span
                   key={i}
                   className={cn(
-                    "h-2.5 w-1 rounded-[2px]",
+                    "h-2 w-[3px] rounded-[1px]",
                     i < batteryBars ? (batteryBars <= 1 ? "bg-rose-500" : "bg-foreground") : "bg-muted",
                   )}
                 />
               ))}
             </div>
-            <span className="font-mono text-[11px] tabular-nums text-foreground">
+            <span className="font-mono text-[10px] tabular-nums text-foreground">
               {battery !== null ? `${battery}%` : "—"}
             </span>
           </div>
         </div>
-        <div className="px-4">
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50" strokeWidth={1.5} />
+        <div className="px-3">
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" strokeWidth={1.5} />
         </div>
       </div>
     </button>
