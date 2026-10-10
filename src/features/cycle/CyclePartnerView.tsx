@@ -58,7 +58,7 @@ const PHASE_ICONS: Record<string, LucideIcon> = {
 };
 
 // Insights escritos na perspectiva do parceiro
-const PHASE_INSIGHTS: Record<string, string> = {
+export const PHASE_INSIGHTS: Record<string, string> = {
   menstrual: "Ela está em período menstrual. Fadiga e sensibilidade emocional são comuns nesta fase — um gesto de carinho faz toda a diferença.",
   folicular: "A energia está a recuperar. É um bom momento para atividades a dois e conversas positivas.",
   ovulacao:  "Fase de ovulação: pico de energia e mood elevado. Ela tende a sentir-se mais comunicativa e conectada nestes dias.",
