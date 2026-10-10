@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-09T13:38:21.465Z",
+        "reason": "user confirmed: direção artística da Landing V4 aprovada usa Inter como voz do produto (igual à app e ao Auth V3); Newsreader é a voz dos títulos"
+      }
+    ]
+  }
+}
