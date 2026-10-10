@@ -72,7 +72,7 @@ export function BottomTabs() {
       aria-label="Navegação principal"
     >
       <div className="pointer-events-auto mx-auto max-w-md">
-        <div className="flex h-[64px] items-center justify-between gap-1 ln-card rounded-full bg-card/95 px-2 shadow-[0_2px_6px_rgba(15,23,42,0.05),0_18px_40px_-10px_rgba(15,23,42,0.22)] backdrop-blur-xl">
+        <div className="flex h-[64px] items-center justify-between gap-1 rounded-full border border-border/60 bg-card/95 px-2 shadow-[0_2px_6px_rgba(15,23,42,0.05),0_18px_40px_-10px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10">
           {tabs.map((tab) => (
             <TabButton
               key={tab.to}

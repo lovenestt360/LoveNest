@@ -52,7 +52,7 @@ export function LocationHomeCard() {
     <button
       type="button"
       onClick={() => navigate("/localizacao")}
-      className="w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform ln-card"
+      className="w-full overflow-hidden rounded-[1.4rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_8px_22px_-14px_rgba(11,19,36,0.14)] active:scale-[0.99] transition-transform dark:border dark:border-border/60"
     >
       <div className="flex items-stretch gap-3 p-3 pl-3.5">
         <div className="flex min-w-0 flex-1 flex-col">

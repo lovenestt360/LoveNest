@@ -520,7 +520,7 @@ const Index = () => {
       {announcements.map((announcement) => (
         <div
           key={announcement.id}
-          className="ln-card rounded-[1.4rem] bg-card px-4 py-3.5"
+          className="rounded-[1.5rem] border border-border/70 bg-card px-4 py-3.5"
         >
           <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-rose-500">
             {announcement.title}
