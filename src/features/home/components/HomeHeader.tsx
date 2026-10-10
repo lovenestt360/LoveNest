@@ -29,7 +29,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
           className="relative active:opacity-70 transition-opacity"
         >
           <Avatar className={cn(
-            "h-11 w-11 ring-2 ring-background shadow-sm",
+            "h-12 w-12 ring-2 ring-card shadow-[0_4px_14px_rgba(15,23,42,0.12)]",
             loading && "animate-pulse"
           )}>
             {me?.avatarUrl && <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />}
@@ -46,8 +46,8 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
 
         {/* Brand */}
         <div className="flex flex-col items-center">
-          <span className="text-[22px] font-bold tracking-tight text-foreground">LoveNest</span>
-          <span className="text-[11px] text-muted-foreground capitalize">{today}</span>
+          <span className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">LoveNest</span>
+          <span className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{today}</span>
         </div>
 
         {/* Partner avatar — espaço reservado para manter a marca centrada;
@@ -58,7 +58,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
             className="relative active:opacity-70 transition-opacity"
           >
             <Avatar className={cn(
-              "h-11 w-11 ring-2 ring-background shadow-sm",
+              "h-12 w-12 ring-2 ring-card shadow-[0_4px_14px_rgba(15,23,42,0.12)]",
               loading && "animate-pulse"
             )}>
               {partner?.avatarUrl && <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />}
@@ -73,7 +73,7 @@ export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
             )}
           </button>
         ) : (
-          <div className="h-11 w-11" aria-hidden="true" />
+          <div className="h-12 w-12" aria-hidden="true" />
         )}
 
       </div>

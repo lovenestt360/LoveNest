@@ -1,86 +1,153 @@
 import { useNavigate } from "react-router-dom";
-import { MapPin, Navigation } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { ChevronRight } from "lucide-react";
+import { formatDistanceToNowStrict } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useLocationSharing } from "@/hooks/useLocationSharing";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useTierAccess } from "@/hooks/useTierAccess";
+import { cn } from "@/lib/utils";
 
 function timeAgo(iso: string): string {
   try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: pt });
+    return formatDistanceToNowStrict(new Date(iso), { addSuffix: true, locale: pt });
   } catch {
     return "";
   }
 }
 
+function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+function formatDistance(km: number): { value: string; unit: string } {
+  if (km < 1) return { value: String(Math.max(10, Math.round((km * 1000) / 10) * 10)), unit: "m" };
+  if (km < 10) return { value: km.toFixed(1).replace(".", ","), unit: "km" };
+  return { value: Math.round(km).toLocaleString("pt-PT"), unit: "km" };
+}
+
 export function LocationHomeCard() {
   const navigate = useNavigate();
   const { allowed, loading: tierLoading } = useTierAccess("location_sharing");
-  const { partnerLocation, partnerSharing, mySharing, loading } = useLocationSharing();
+  const { myLocation, partnerLocation, partnerSharing, mySharing, loading } = useLocationSharing();
   const { partner } = usePartnerProfile();
 
-  // Não mostra nada se não tiver acesso premium
   if (tierLoading || !allowed) return null;
 
-  const partnerName = partner?.display_name ?? "O teu par";
+  const partnerName = partner?.display_name?.split(" ")[0] ?? "O teu par";
   const partnerInitial = partnerName.charAt(0).toUpperCase();
+  const live = partnerSharing && !!partnerLocation;
+  const distance =
+    live && myLocation && mySharing ? formatDistance(distanceKm(myLocation, partnerLocation!)) : null;
+  const battery = live ? partnerLocation!.battery_level : null;
+  const batteryBars = battery !== null ? Math.ceil(battery / 20) : 0;
+  const place = partnerLocation?.address?.split(",").pop()?.trim() || partnerLocation?.address;
 
   return (
     <button
+      type="button"
       onClick={() => navigate("/localizacao")}
-      className="glass-card glass-card-hover w-full text-left p-4 flex items-center gap-3 active:scale-[0.98] transition-all"
+      className="w-full overflow-hidden rounded-[1.75rem] border border-border/70 bg-card text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-12px_rgba(15,23,42,0.10)] active:scale-[0.99] transition-transform"
     >
-      {/* Ícone */}
-      <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
-        <MapPin className="w-5 h-5 text-rose-400" strokeWidth={1.5} />
-      </div>
+      <div className="flex items-stretch gap-4 p-4 pl-5">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Onde estamos</p>
+            <span
+              className={cn(
+                "flex items-center gap-1 font-mono text-[8px] uppercase tracking-[0.14em]",
+                live ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60",
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", live ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/30")} />
+              {live ? "Ativo" : "Pausado"}
+            </span>
+          </div>
 
-      {/* Conteúdo */}
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 mb-0.5">
-          Onde Estamos
-        </p>
-
-        {loading ? (
-          <div className="h-3.5 w-32 bg-muted/60 rounded animate-pulse" />
-        ) : partnerSharing && partnerLocation ? (
-          <div className="flex items-center gap-1">
-            <Navigation className="w-3 h-3 text-rose-400 shrink-0" strokeWidth={2} />
-            <p className="text-[13px] font-semibold text-foreground truncate">
-              {partnerLocation.address
-                ? partnerLocation.address
-                : partnerName
-              }
+          {loading ? (
+            <div className="mt-3 h-9 w-24 animate-pulse rounded-lg bg-muted" />
+          ) : distance ? (
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-[40px] font-light leading-none tracking-[-0.04em] tabular-nums text-foreground">
+                {distance.value}
+              </span>
+              <span className="font-mono text-[11px] uppercase text-muted-foreground">{distance.unit}</span>
+            </div>
+          ) : (
+            <p className="mt-2 text-[15px] font-semibold leading-snug text-foreground">
+              {live ? place ?? partnerName : `${partnerName} não está a partilhar`}
             </p>
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted-foreground/60">
-            {partnerName} não está a partilhar
+          )}
+          <p className="mt-1 truncate text-[11px] text-muted-foreground">
+            {distance ? `entre vocês · ${place ?? partnerName}` : live ? "Toca para ver no mapa" : "Pede-lhe para ativar a partilha"}
           </p>
-        )}
+        </div>
 
-        {partnerSharing && partnerLocation && (
-          <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-            {timeAgo(partnerLocation.updated_at)}
-          </p>
-        )}
+        {/* Mini-mapa — grelha pontilhada com o par no centro */}
+        <div
+          className="relative w-[112px] shrink-0 overflow-hidden rounded-2xl bg-muted/70"
+          style={{
+            backgroundImage: "radial-gradient(hsl(var(--muted-foreground) / 0.22) 1px, transparent 1px)",
+            backgroundSize: "9px 9px",
+          }}
+          aria-hidden="true"
+        >
+          <svg className="absolute inset-0 h-full w-full text-border" viewBox="0 0 112 96" preserveAspectRatio="none">
+            <path d="M-4 70 C 30 58, 46 82, 116 40" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+            <path d="M38 -4 C 44 30, 70 50, 64 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            {live && <span className="absolute h-12 w-12 animate-ping rounded-full bg-rose-400/25" />}
+            <span
+              className={cn(
+                "relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-card text-[12px] font-bold shadow-md",
+                live ? "bg-foreground text-background" : "bg-muted-foreground/30 text-background",
+              )}
+            >
+              {partner?.avatar_url ? (
+                <img src={partner.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                partnerInitial
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Avatar do par + indicador ao vivo */}
-      <div className="flex flex-col items-center gap-1 shrink-0">
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
-          style={{ background: partnerSharing ? "#C4788C" : "#D1D5DB" }}
-        >
-          {partnerInitial}
+      <div className="grid grid-cols-[1fr_1fr_auto] items-center divide-x divide-border/70 border-t border-border/70">
+        <div className="px-5 py-2.5">
+          <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground/70">Atualizado</p>
+          <p className="mt-0.5 truncate font-mono text-[11px] text-foreground">
+            {live ? timeAgo(partnerLocation!.updated_at) : "—"}
+          </p>
         </div>
-        {(mySharing || partnerSharing) && (
-          <div className="flex items-center gap-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[9px] font-semibold text-emerald-500">Ativo</span>
+        <div className="px-4 py-2.5">
+          <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground/70">Bateria</p>
+          <div className="mt-1 flex items-center gap-1.5">
+            <div className="flex gap-[3px]" aria-hidden="true">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "h-2.5 w-1 rounded-[2px]",
+                    i < batteryBars ? (batteryBars <= 1 ? "bg-rose-500" : "bg-foreground") : "bg-muted",
+                  )}
+                />
+              ))}
+            </div>
+            <span className="font-mono text-[11px] tabular-nums text-foreground">
+              {battery !== null ? `${battery}%` : "—"}
+            </span>
           </div>
-        )}
+        </div>
+        <div className="px-4">
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50" strokeWidth={1.5} />
+        </div>
       </div>
     </button>
   );
