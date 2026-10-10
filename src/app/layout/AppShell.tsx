@@ -66,7 +66,7 @@ export function AppShell() {
   return (
     <div className={cn(
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
-      isFullscreen ? "bg-transparent" : "bg-background"
+      isFullscreen ? "bg-transparent" : isHome ? "bg-[#F6F4F1] dark:bg-background" : "bg-background"
     )}>
       <ChatWallpaper />
       <div className="bg-mesh" aria-hidden="true" />

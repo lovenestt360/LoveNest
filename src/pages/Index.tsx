@@ -412,26 +412,26 @@ const Index = () => {
     }
   };
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 19 ? "Boa tarde" : "Boa noite";
-  const firstName = avatars.me?.displayName?.split(" ")[0];
+  const partnerPresent =
+    !isSolo && streakData.activeCount >= (streakData.myCheckedIn ? 2 : 1);
 
   const spiritualShortcut: DailyShortcut = hasSpiritual
-    ? { to: "/jornada-espiritual", label: "Oração", hint: "Hoje", icon: BookHeart, badge: prayerUnread }
-    : { to: "/biblioteca", label: "Leitura", hint: "Ler", icon: Library };
+    ? { to: "/jornada-espiritual", label: "Oração", hint: "Hoje", icon: BookHeart, tone: "violet", badge: prayerUnread }
+    : { to: "/biblioteca", label: "Leitura", hint: "Ler", icon: Library, tone: "violet" };
 
   const dailyItems: DailyShortcut[] = isSolo
     ? [
-        { to: "/humor", label: "Humor", hint: mood.mine?.label ?? "Registar", icon: Smile, badge: moodUnread },
+        { to: "/humor", label: "Humor", hint: mood.mine?.label ?? "Registar", icon: Smile, tone: "rose", badge: moodUnread },
         {
           to: "/plano",
           label: "Agenda",
           hint: plano.next?.time ?? (plano.pending > 0 ? `${plano.pending} pend.` : "Livre"),
           icon: CalendarDays,
+          tone: "blue",
           badge: tasksUnread + scheduleUnread,
         },
         spiritualShortcut,
-        { to: "/momentos", label: "Momentos", hint: "Guardar", icon: Sparkles },
+        { to: "/momentos", label: "Momentos", hint: "Guardar", icon: Sparkles, tone: "orange" },
       ]
     : [
         {
@@ -439,6 +439,7 @@ const Index = () => {
           label: "Chat",
           hint: chatUnread > 0 ? `${chatUnread} ${chatUnread === 1 ? "nova" : "novas"}` : chatPreview.preview ? "Responder" : "Escrever",
           icon: MessageCircle,
+          tone: "green",
           badge: chatUnread,
         },
         {
@@ -446,6 +447,7 @@ const Index = () => {
           label: "Humor",
           hint: mood.mine ? (mood.partner ? "Ambos" : "Tu ✓") : "Registar",
           icon: Smile,
+          tone: "rose",
           badge: moodUnread,
         },
         {
@@ -453,10 +455,11 @@ const Index = () => {
           label: "Agenda",
           hint: plano.next?.time ?? (plano.pending > 0 ? `${plano.pending} pend.` : "Livre"),
           icon: CalendarDays,
+          tone: "blue",
           badge: tasksUnread + scheduleUnread,
         },
         spiritualShortcut,
-        { to: "/conflitos", label: "Conflitos", hint: "Com calma", icon: HeartHandshake, badge: complaintsUnread },
+        { to: "/conflitos", label: "Conflitos", hint: "Com calma", icon: HeartHandshake, tone: "pink", badge: complaintsUnread },
       ];
 
   const featuredAdventure: AdventureTile = isSolo
@@ -470,8 +473,8 @@ const Index = () => {
 
   const adventureTiles: AdventureTile[] = isSolo
     ? [
-        { to: "/jornada", title: "Jornada", caption: "O teu caminho", icon: Flame },
-        { to: "/capsula", title: "Cápsula", caption: "Para o futuro", icon: Clock3 },
+        { to: "/jornada", title: "Jornada", caption: "O teu caminho", icon: Flame, tone: "orange" },
+        { to: "/capsula", title: "Cápsula", caption: "Para o futuro", icon: Clock3, tone: "violet" },
       ]
     : [
         {
@@ -483,36 +486,35 @@ const Index = () => {
               : `${nextSpecialDate.daysUntil}d p/ data`
             : "Capítulos",
           icon: CalendarHeart,
+          tone: "rose",
         },
-        { to: "/desafios", title: "Desafios", caption: "Fora da rotina", icon: Trophy },
-        { to: "/wrapped", title: "Wrapped", caption: "O vosso mês", icon: Sparkles },
+        { to: "/desafios", title: "Desafios", caption: "Fora da rotina", icon: Trophy, tone: "green" },
+        { to: "/wrapped", title: "Wrapped", caption: "O vosso mês", icon: Sparkles, tone: "orange" },
         {
           to: "/capsula",
           title: "Cápsula",
           caption: capsuleUnread > 0 ? `${capsuleUnread} nova` : "Para o futuro",
           icon: Clock3,
+          tone: "violet",
         },
       ];
 
   const waitingForPartner = profileReady && !avatars.loading && !isSolo && !avatars.partner && !!houseInviteCode;
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 overflow-x-hidden pb-20 animate-fade-in">
+    <div className="mx-auto max-w-lg space-y-3 overflow-x-hidden pb-20 animate-fade-in">
       <HomeHeader
         me={avatars.me}
         partner={avatars.partner}
         today={today}
         loading={avatars.loading}
+        mePresent={streakData.myCheckedIn}
+        partnerPresent={partnerPresent}
       />
 
-      <section className="px-1 pt-1">
-        <p className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-foreground">
-          {greeting}{firstName ? `, ${firstName}` : ""}.
-        </p>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">
-          {isSolo ? "O teu espaço está à tua espera." : "O vosso ninho é o vosso lugar seguro."}
-        </p>
-      </section>
+      <p className="pb-1 text-center text-[13.5px] font-medium text-rose-500">
+        {isSolo ? "O teu espaço é o teu lugar seguro" : "O vosso ninho é o vosso lugar seguro"}
+      </p>
 
       {announcements.map((announcement) => (
         <div
@@ -536,9 +538,7 @@ const Index = () => {
           seconds={time.seconds}
           hasDate={!!time.startDate}
           startDate={time.startDate}
-          nextSpecialDate={nextSpecialDate}
           onSetDate={() => navigate("/configuracoes")}
-          onViewHistory={() => navigate("/historia")}
         />
       )}
 
@@ -566,7 +566,7 @@ const Index = () => {
 
       {profileReady && (
         <section>
-          <LoveStreakCard streak={streakData} loading={streakLoading} />
+          <LoveStreakCard streak={streakData} loading={streakLoading} partnerName={avatars.partner?.displayName} />
           {recentMilestone && (
             <p className="mt-1.5 px-3 text-center text-[10px] font-medium text-muted-foreground/65">
               {getMilestoneMicroMemory(recentMilestone)}
@@ -577,13 +577,13 @@ const Index = () => {
 
       {!isSolo && avatars.partner && <LocationHomeCard />}
 
-      <section className="pt-2">
+      <section className="pt-3">
         <SectionLabel title={isSolo ? "O teu dia a dia" : "O vosso dia a dia"} action="Vida" onAction={() => navigate("/vida")} />
         <DailyDock items={dailyItems} />
       </section>
 
-      <section className="pt-2">
-        <SectionLabel title="Memórias & aventuras" action={isSolo ? "Eu" : "Nós"} onAction={() => navigate("/nos")} />
+      <section className="pt-3">
+        <SectionLabel title="Memórias e aventuras" action={isSolo ? "Eu" : "Nós"} onAction={() => navigate("/nos")} />
         <AdventuresBento featured={featuredAdventure} tiles={adventureTiles} />
       </section>
 

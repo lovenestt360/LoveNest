@@ -52,9 +52,9 @@ export function LocationHomeCard() {
     <button
       type="button"
       onClick={() => navigate("/localizacao")}
-      className="w-full overflow-hidden rounded-[1.75rem] border border-border/70 bg-card text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-12px_rgba(15,23,42,0.10)] active:scale-[0.99] transition-transform"
+      className="w-full overflow-hidden rounded-[1.6rem] bg-card text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] active:scale-[0.99] transition-transform dark:border dark:border-border/60"
     >
-      <div className="flex items-stretch gap-4 p-4 pl-5">
+      <div className="flex items-stretch gap-4 p-3.5 pl-4">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Onde estamos</p>
@@ -102,11 +102,11 @@ export function LocationHomeCard() {
             <path d="M38 -4 C 44 30, 70 50, 64 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            {live && <span className="absolute h-12 w-12 animate-ping rounded-full bg-rose-400/25" />}
+            {live && <span className="absolute h-12 w-12 animate-ping rounded-full bg-[#4D7CFE]/25" />}
             <span
               className={cn(
                 "relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-card text-[12px] font-bold shadow-md",
-                live ? "bg-foreground text-background" : "bg-muted-foreground/30 text-background",
+                live ? "bg-gradient-to-br from-[#7D9DFF] to-[#3F68E6] text-white" : "bg-muted-foreground/30 text-background",
               )}
             >
               {partner?.avatar_url ? (

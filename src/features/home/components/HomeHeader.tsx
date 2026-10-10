@@ -1,4 +1,4 @@
-import { ShieldCheck, Settings } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -14,68 +14,103 @@ interface HomeHeaderProps {
   partner: UserInfo | null;
   today: string;
   loading?: boolean;
+  /** Presença de hoje — anel contínuo + ponto verde quando já apareceu */
+  mePresent?: boolean;
+  partnerPresent?: boolean;
 }
 
-export function HomeHeader({ me, partner, today, loading }: HomeHeaderProps) {
+// Tu em rosa, o par em azul — as mesmas cores na presença da Chama e no mapa.
+const TONES = {
+  me: { ring: "text-rose-400", fill: "bg-gradient-to-br from-[#F27A97] to-[#D9466B]" },
+  partner: { ring: "text-[#4D7CFE]", fill: "bg-gradient-to-br from-[#7D9DFF] to-[#3F68E6]" },
+} as const;
+
+function CoupleAvatar({
+  user,
+  tone,
+  present,
+  loading,
+  fallback,
+  onClick,
+}: {
+  user: UserInfo | null;
+  tone: keyof typeof TONES;
+  present: boolean;
+  loading?: boolean;
+  fallback: string;
+  onClick: () => void;
+}) {
+  const t = TONES[tone];
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${user?.displayName ?? fallback}${present ? ", já apareceu hoje" : ", ainda não apareceu hoje"}`}
+      className={cn("relative h-12 w-12 active:opacity-70 transition-opacity", t.ring)}
+    >
+      <span
+        className={cn(
+          "absolute -inset-[4px] rounded-full border-2 border-current transition-opacity",
+          present ? "opacity-100" : "border-dashed opacity-50",
+        )}
+      />
+      <Avatar className={cn("h-12 w-12", loading && "animate-pulse")}>
+        {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" className="object-cover" />}
+        <AvatarFallback className={cn("text-[17px] font-semibold text-white", loading ? "bg-muted" : t.fill)}>
+          {loading ? "" : (user?.displayName?.charAt(0)?.toUpperCase() ?? fallback)}
+        </AvatarFallback>
+      </Avatar>
+      <span
+        className={cn(
+          "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-[2.5px] border-background transition-colors",
+          present ? "bg-emerald-500" : "bg-muted-foreground/30",
+        )}
+      />
+      {user?.verificationStatus === "verified" && (
+        <span className="absolute -left-1 -top-1 rounded-full bg-background p-px">
+          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+export function HomeHeader({ me, partner, today, loading, mePresent = false, partnerPresent = false }: HomeHeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="w-full pt-2 pb-1">
-      <div className="flex items-center justify-between">
-
-        {/* Me avatar */}
-        <button
+    <header className="w-full pt-2">
+      <div className="grid grid-cols-[52px_1fr_52px] items-center px-0.5">
+        <CoupleAvatar
+          user={me}
+          tone="me"
+          present={mePresent}
+          loading={loading}
+          fallback="U"
           onClick={() => navigate("/configuracoes")}
-          className="relative active:opacity-70 transition-opacity"
-        >
-          <Avatar className={cn(
-            "h-12 w-12 ring-2 ring-card shadow-[0_4px_14px_rgba(15,23,42,0.12)]",
-            loading && "animate-pulse"
-          )}>
-            {me?.avatarUrl && <AvatarImage src={me.avatarUrl} alt="Eu" className="object-cover" />}
-            <AvatarFallback className="bg-muted text-foreground font-semibold text-sm">
-              {loading ? "" : (me?.displayName?.charAt(0)?.toUpperCase() ?? "U")}
-            </AvatarFallback>
-          </Avatar>
-          {me?.verificationStatus === "verified" && (
-            <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-px shadow-sm">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-            </div>
-          )}
-        </button>
+        />
 
-        {/* Brand */}
-        <div className="flex flex-col items-center">
-          <span className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">LoveNest</span>
-          <span className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{today}</span>
+        <div className="text-center">
+          <span className="block text-[21px] font-semibold leading-tight tracking-[-0.025em] text-foreground">LoveNest</span>
+          <span className="mt-0.5 block text-[12.5px] text-muted-foreground">{today}</span>
         </div>
 
-        {/* Partner avatar — espaço reservado para manter a marca centrada;
-            escondido (mas o espaço fica) em modo solo, sem parceiro */}
-        {(loading || partner) ? (
-          <button
-            onClick={() => navigate("/configuracoes")}
-            className="relative active:opacity-70 transition-opacity"
-          >
-            <Avatar className={cn(
-              "h-12 w-12 ring-2 ring-card shadow-[0_4px_14px_rgba(15,23,42,0.12)]",
-              loading && "animate-pulse"
-            )}>
-              {partner?.avatarUrl && <AvatarImage src={partner.avatarUrl} alt="Par" className="object-cover" />}
-              <AvatarFallback className="bg-muted text-foreground font-semibold text-sm">
-                {loading ? "" : (partner?.displayName?.charAt(0)?.toUpperCase() ?? "P")}
-              </AvatarFallback>
-            </Avatar>
-            {partner?.verificationStatus === "verified" && (
-              <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-px shadow-sm">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-              </div>
-            )}
-          </button>
+        {/* Espaço reservado para manter a marca centrada em modo solo */}
+        {loading || partner ? (
+          <div className="justify-self-end">
+            <CoupleAvatar
+              user={partner}
+              tone="partner"
+              present={partnerPresent}
+              loading={loading}
+              fallback="P"
+              onClick={() => navigate("/configuracoes")}
+            />
+          </div>
         ) : (
           <div className="h-12 w-12" aria-hidden="true" />
         )}
-
       </div>
     </header>
   );

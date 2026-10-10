@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 import { todayLocal } from "@/lib/timezone";
 import { type StreakState } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
-import { STREAK_LEVELS, getStreakLevel } from "@/features/streak/journeyLevels";
+import { getStreakLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
-import { Shield, ChevronRight, Heart, Sparkles } from "lucide-react";
+import { Check, Flame, Shield, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -85,15 +85,6 @@ function getContextualPhrase(
 // divergirem como antes).
 
 type MissionStatus = Record<MissionId, boolean>;
-
-// ── Card status ───────────────────────────────────────────────────────────────
-
-function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToday: boolean, isSolo: boolean) {
-  if (bothActive)      return { label: isSolo ? "Presente hoje" : "Juntos hoje", color: "text-muted-foreground", dot: "bg-rose-400" };
-  if (shieldUsedToday) return { label: "Chama protegida",   color: "text-muted-foreground/65",    dot: "bg-sky-300"  };
-  if (myCheckedIn && !isSolo) return { label: "A aguardar o par",  color: "text-muted-foreground/65",    dot: "bg-muted-foreground/30"   };
-  return               { label: "Aguardando presença",      color: "text-muted-foreground/65",    dot: "bg-muted-foreground/20"   };
-}
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
 
@@ -231,7 +222,9 @@ function useCardData(threshold: number) {
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-export function LoveStreakCard({ streak, loading }: { streak: StreakState; loading: boolean }) {
+export function LoveStreakCard({
+  streak, loading, partnerName,
+}: { streak: StreakState; loading: boolean; partnerName?: string | null }) {
   const { profile }         = useProfile();
 
   const isSolo          = profile?.usage_mode === "solo";
@@ -272,153 +265,111 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
 
   if (loading) {
     return (
-      <div className="rounded-[1.75rem] border border-border/70 bg-card p-5 animate-pulse space-y-4">
+      <div className="rounded-[1.6rem] bg-card p-4 animate-pulse space-y-3 shadow-[0_1px_2px_rgba(11,19,36,0.04)]">
         <div className="h-3 w-28 rounded-full bg-muted" />
-        <div className="h-14 w-24 rounded-xl bg-muted" />
-        <div className="h-1.5 w-full rounded-full bg-muted" />
-        <div className="grid grid-cols-4 gap-2">
-          {[0, 1, 2, 3].map((i) => <div key={i} className="h-14 rounded-2xl bg-muted" />)}
-        </div>
+        <div className="h-10 w-20 rounded-xl bg-muted" />
+        <div className="h-12 w-full rounded-2xl bg-muted" />
+        <div className="h-9 w-2/3 rounded-full bg-muted" />
       </div>
     );
   }
 
-  const { currentStreak, shieldsRemaining, shieldUsedToday, myCheckedIn, activeCount, streakAtRisk } = streak;
+  const { currentStreak, shieldsRemaining, myCheckedIn, activeCount, streakAtRisk } = streak;
 
   const phase            = getStreakLevel(currentStreak);
   const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
-  const cardStatus       = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday, isSolo);
   const displayPoints    = points ?? 0;
   const phrase           = getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk, perfectDay, isSolo);
+  const partnerLabel     = partnerName?.split(" ")[0] || "Par";
 
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[1.75rem] border bg-card transition-shadow duration-500",
+        "relative overflow-hidden rounded-[1.6rem] bg-card px-4 pt-3.5 pb-3.5 transition-shadow duration-500 dark:border dark:border-border/60",
         bothActiveToday
-          ? "border-rose-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_40px_-14px_rgba(244,63,94,0.28)] dark:border-rose-900/40"
-          : "border-border/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-12px_rgba(15,23,42,0.10)]",
+          ? "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_16px_36px_-14px_rgba(229,70,109,0.35)]"
+          : "shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)]",
       )}
     >
-      {/* ── Topo: chama, número e guardião — toca para abrir a Jornada ── */}
-      <button
-        type="button"
-        onClick={() => navigate("/jornada")}
-        className="block w-full px-5 pt-5 pb-4 text-left active:bg-muted/40 transition-colors"
-      >
+      {/* Brilho quente quando os dois já apareceram */}
+      {bothActiveToday && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(120% 70% at 85% 0%, rgba(244,63,94,0.08), transparent 60%)" }}
+          aria-hidden="true"
+        />
+      )}
+
+      <button type="button" onClick={() => navigate("/jornada")} className="relative block w-full text-left">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                {isSolo ? "A tua chama" : "A vossa chama"}
-              </p>
+          <div className="min-w-0 pt-0.5">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground/80">
+              <Flame className={cn("h-[15px] w-[15px] text-rose-500", bothActiveToday && "animate-flame-breathe")} strokeWidth={2.2} />
+              {isSolo ? "A tua chama" : "A vossa chama"}
               {perfectDay && (
-                <span className="flex items-center gap-1 rounded-full bg-foreground px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.12em] text-background animate-in fade-in duration-300">
-                  <Sparkles className="h-2.5 w-2.5" strokeWidth={1.8} />
+                <span className="ml-1 flex items-center gap-1 rounded-full bg-rose-500 px-2 py-0.5 text-[9.5px] font-semibold text-white animate-in fade-in duration-300">
+                  <Sparkles className="h-2.5 w-2.5" strokeWidth={2} />
                   Dia completo
                 </span>
               )}
+            </p>
+
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-[38px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-foreground">
+                {currentStreak}
+              </span>
+              <span className="text-[12.5px] leading-tight text-muted-foreground">
+                {currentStreak === 1 ? "dia" : "dias"} de presença
+              </span>
             </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", cardStatus.dot)} />
-              <span className="text-[11px] font-medium text-muted-foreground">{cardStatus.label}</span>
-            </div>
+            <p className="mt-1 truncate text-[12px] text-muted-foreground">{phrase}</p>
           </div>
 
-          <div className="flex items-center gap-1">
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-muted/70">
-              <FlamePet stage={phase.stage} mood="alegre" environment="suave" compact />
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground/50" strokeWidth={1.5} />
+          <div className="relative -mr-1 -mt-1 h-[68px] w-[68px] shrink-0 rounded-full bg-[radial-gradient(circle_at_50%_60%,rgba(253,206,220,0.9)_0%,rgba(255,240,244,0.7)_55%,transparent_72%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(244,63,94,0.22)_0%,rgba(244,63,94,0.06)_55%,transparent_72%)]">
+            <FlamePet stage={phase.stage} mood="alegre" environment="suave" compact />
           </div>
         </div>
 
-        <div className="mt-2 flex items-baseline gap-2">
-          <span
-            className={cn(
-              "text-[72px] font-light leading-[0.9] tracking-[-0.045em] tabular-nums transition-colors duration-700",
-              bothActiveToday ? "text-rose-500" : "text-foreground",
-            )}
-          >
-            {currentStreak}
-          </span>
-          <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
-            {currentStreak === 1 ? "dia" : "dias"}
-          </span>
+        {/* Presença de hoje — tu em rosa, o par em azul */}
+        <div className={cn("mt-3 grid overflow-hidden rounded-2xl bg-muted/70", isSolo ? "grid-cols-1" : "grid-cols-2")}>
+          <PresenceCell name="Tu" present={myCheckedIn} tone="me" doneText="já apareceste" />
+          {!isSolo && (
+            <PresenceCell name={partnerLabel} present={partnerCheckedIn} tone="partner" doneText="já apareceu" divider />
+          )}
         </div>
-        <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{phrase}</p>
 
-        {/* Fases do Guardião — um segmento por fase */}
-        <div className="mt-4 flex items-center gap-1" aria-hidden="true">
-          {STREAK_LEVELS.map((lvl) => {
-            const reached = lvl.level < phase.level;
-            const current = lvl.level === phase.level;
-            return (
-              <span
-                key={lvl.stage}
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-700",
-                  current ? "flex-[2.2] bg-rose-500" : "flex-1",
-                  reached ? "bg-foreground" : !current && "bg-muted",
-                )}
-              />
-            );
-          })}
-        </div>
-        <div className="mt-1.5 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.14em]">
-          <span className="text-foreground">{phase.name}</span>
-          <span className="text-muted-foreground/70">
-            {phase.nextLevelName && phase.daysToNext !== null
-              ? `${phase.daysToNext} ${phase.daysToNext === 1 ? "dia" : "dias"} → ${phase.nextLevelName}`
-              : "Fase máxima"}
-          </span>
+        {/* Próxima fase do Guardião + escudos */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+            <span>
+              {phase.nextLevelName ? (
+                <>Próximo: <b className="font-semibold text-foreground/80">{phase.nextLevelName}</b>{phase.daysToNext !== null && ` · faltam ${phase.daysToNext} ${phase.daysToNext === 1 ? "dia" : "dias"}`}</>
+              ) : (
+                <b className="font-semibold text-foreground/80">{phase.name} · fase máxima</b>
+              )}
+            </span>
+            <span className="flex items-center gap-0.5" aria-label={`${shieldsRemaining} de 3 escudos`}>
+              {[0, 1, 2].map((i) => (
+                <Shield
+                  key={i}
+                  className={cn("h-3.5 w-3.5", i < shieldsRemaining ? "fill-foreground text-foreground" : "fill-muted text-muted-foreground/30")}
+                  strokeWidth={1.5}
+                />
+              ))}
+            </span>
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-rose-500 to-rose-300 transition-[width] duration-700"
+              style={{ width: `${Math.max(phase.progressPct, 4)}%` }}
+            />
+          </div>
         </div>
       </button>
 
-      {/* ── Métricas: presença · proteção · pontos ── */}
-      <div className={cn("grid divide-x divide-border/70 border-t border-border/70", "grid-cols-3")}>
-        <div className="px-4 py-3">
-          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">Presença</p>
-          <div className="mt-1.5 flex items-center gap-2.5">
-            <PresenceHeart label="Tu" on={myCheckedIn} warm={bothActiveToday} />
-            {!isSolo && <PresenceHeart label="Par" on={partnerCheckedIn} warm={bothActiveToday} />}
-          </div>
-        </div>
-        <div className="px-4 py-3">
-          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">Proteção</p>
-          <div className="mt-1.5 flex items-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <Shield
-                key={i}
-                className={cn(
-                  "h-4 w-4",
-                  i < shieldsRemaining ? "fill-foreground text-foreground" : "text-muted-foreground/30",
-                )}
-                strokeWidth={1.5}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="px-4 py-3">
-          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">Pontos</p>
-          <p className="mt-0.5 flex items-baseline gap-1">
-            <span className="text-[20px] font-light leading-none tabular-nums text-foreground">
-              {displayPoints.toLocaleString("pt-PT")}
-            </span>
-            <span className="font-mono text-[9px] uppercase text-muted-foreground">pts</span>
-          </p>
-        </div>
-      </div>
-
-      {/* ── Gestos de hoje — cumprido fica escuro, como um interruptor ligado ── */}
-      <div className="border-t border-border/70 px-4 pt-3 pb-4">
-        <div className="mb-2.5 flex items-center justify-between px-1">
-          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">Gestos de hoje</p>
-          <p className="font-mono text-[10px] tabular-nums text-foreground">
-            {gesturesDone}/{activeMissions.length}
-          </p>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
+      {/* Gestos de hoje — feito fica escuro, com um visto verde */}
+      <div className="relative mt-3 flex items-center justify-between border-t border-border/60 pt-3">
+        <div className="flex items-center gap-2">
           {activeMissions.map(({ id, title, Icon, points: pts }) => {
             const done = missions[id];
             return (
@@ -426,20 +377,31 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
                 key={id}
                 type="button"
                 onClick={() => navigate(MISSION_ROUTES[id])}
+                title={title}
                 aria-label={`${title}${done ? " — feito" : ` — +${pts} pts`}`}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2.5 transition-all active:scale-95",
-                  done ? "bg-foreground text-background" : "bg-muted/70 text-foreground",
+                  "relative flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-90",
+                  done ? "bg-foreground text-background" : "bg-muted/80 text-muted-foreground",
                 )}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
-                <span className="text-[10px] font-semibold leading-none">{title}</span>
-                <span className={cn("font-mono text-[8px] leading-none", done ? "text-background/60" : "text-muted-foreground")}>
-                  {done ? "feito" : `+${pts}`}
-                </span>
+                <Icon className="h-[17px] w-[17px]" strokeWidth={1.8} />
+                {done && (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-card bg-emerald-500">
+                    <Check className="h-2 w-2 text-white" strokeWidth={4} />
+                  </span>
+                )}
               </button>
             );
           })}
+          <span className="ml-1 text-[11.5px] text-muted-foreground">
+            {gesturesDone}/{activeMissions.length} gestos
+          </span>
+        </div>
+        <div className="text-right">
+          <span className="block text-[17px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-foreground">
+            {displayPoints.toLocaleString("pt-PT")}
+          </span>
+          <span className="text-[10.5px] text-muted-foreground">pontos</span>
         </div>
       </div>
     </section>
@@ -455,19 +417,22 @@ const MISSION_ROUTES: Record<MissionId, string> = {
   leitura: "/biblioteca",
 };
 
-function PresenceHeart({ label, on, warm }: { label: string; on: boolean; warm: boolean }) {
+function PresenceCell({
+  name, present, tone, doneText, divider,
+}: { name: string; present: boolean; tone: "me" | "partner"; doneText: string; divider?: boolean }) {
+  const color = tone === "me" ? "text-rose-500" : "text-[#4D7CFE]";
   return (
-    <span className="flex items-center gap-1">
-      <Heart
-        className={cn(
-          "h-4 w-4 transition-all duration-500",
-          on
-            ? cn("fill-rose-500 text-rose-500", warm ? "animate-hearts-warm-pulse" : "animate-heart-throb")
-            : "text-muted-foreground/30",
-        )}
-        strokeWidth={on ? 0 : 1.5}
-      />
-      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
-    </span>
+    <div className={cn("flex min-w-0 items-center gap-2.5 px-3 py-2", divider && "border-l border-border/70")}>
+      <span className={cn("relative flex h-2.5 w-2.5 shrink-0", color)}>
+        {present && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-40" />}
+        <span className={cn("relative h-2.5 w-2.5 rounded-full border-2 border-current", present && "bg-current")} />
+      </span>
+      <span className="min-w-0">
+        <b className="block truncate text-[13px] font-semibold leading-tight text-foreground">{name}</b>
+        <span className="block truncate text-[11.5px] leading-tight text-muted-foreground">
+          {present ? doneText : "ainda não hoje"}
+        </span>
+      </span>
+    </div>
   );
 }
