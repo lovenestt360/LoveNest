@@ -254,7 +254,9 @@ export default function Onboarding() {
     setTimeout(() => { setPhase(next); setStepVisible(true); }, 160);
   };
 
-  const handleSaveProfile = async () => {
+  // `goal` chega por parâmetro: chamado logo após setPrimaryGoal, o estado
+  // desta render ainda teria o valor anterior.
+  const handleSaveProfile = async (goal: string = primaryGoal) => {
     setSavingProfile(true);
     try {
       const uid = signedInUserId ?? (await supabase.auth.getUser()).data.user?.id;
@@ -265,12 +267,12 @@ export default function Onboarding() {
           gender:                   gender || null,
           religion:                 religion || null,
           usage_mode:               usageMode || "couple",
-          primary_goal:             primaryGoal || null,
+          primary_goal:             goal || null,
           onboarding_completed:     true,
           onboarding_completed_at:  new Date().toISOString(),
           timezone:                 Intl.DateTimeFormat().resolvedOptions().timeZone,
         }).eq("user_id", uid);
-        track("onboarding_v2_completed", { usage_mode: usageMode, religion, primary_goal: primaryGoal });
+        track("onboarding_v2_completed", { usage_mode: usageMode, religion, primary_goal: goal });
       }
     } catch { /* silent */ }
     setSavingProfile(false);
@@ -678,14 +680,14 @@ export default function Onboarding() {
               <OptionBtn
                 key={o.value}
                 selected={primaryGoal === o.value}
-                onClick={() => { setPrimaryGoal(o.value); setTimeout(handleSaveProfile, 400); }}
+                onClick={() => { setPrimaryGoal(o.value); setTimeout(() => handleSaveProfile(o.value), 400); }}
               >
                 {o.label}
               </OptionBtn>
             ))}
           </div>
           <div className="pt-2">
-            <button onClick={handleSaveProfile} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors flex items-center justify-center gap-1.5">
+            <button onClick={() => handleSaveProfile()} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors flex items-center justify-center gap-1.5">
               {savingProfile && <Loader2 className="w-3 h-3 animate-spin" />}
               Saltar
             </button>
