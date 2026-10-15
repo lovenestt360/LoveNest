@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    ArrowLeft, BookText, BookOpenText, CheckCircle2, Lock, Clock,
+    BookText, BookOpenText, CheckCircle2, Lock, Clock,
     Bookmark, BookmarkCheck, Share2, Eye, Hash, ChevronDown, ChevronUp, HeartHandshake, ChevronRight,
 } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
@@ -9,7 +9,8 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useBookStats } from "@/hooks/useBookStats";
-import { Button } from "@/components/ui/button";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { SURFACE, SectionTitle } from "@/features/home/components/HomeSections";
 import { PurchaseSection } from "@/features/biblioteca/PurchaseSection";
 import { BookRow } from "@/features/biblioteca/BookRow";
 import { StarRating } from "@/features/biblioteca/StarRating";
@@ -78,125 +79,129 @@ export default function BookDetail() {
 
     if (!book) {
         return (
-            <section className="pb-24 max-w-lg mx-auto">
-                <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-40 border-b border-border flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    <h1 className="text-xl font-bold tracking-tight">Livro</h1>
-                </header>
-                <div className="mx-4 mt-6 bg-card border border-border rounded-2xl p-10 text-center shadow-sm space-y-2">
-                    <BookText className="w-8 h-8 mx-auto text-muted-foreground/40" strokeWidth={1.5} />
-                    <p className="text-sm font-semibold text-foreground">Livro não encontrado</p>
+            <section className="animate-fade-in">
+                <ScreenHeader title="Livro" />
+                <div className={cn(SURFACE, "mt-6 space-y-2 rounded-[20px] p-10 text-center")}>
+                    <BookText className="mx-auto h-8 w-8 text-[#C9C4BD]" strokeWidth={1.6} />
+                    <p className="text-[15px] font-semibold text-foreground">Livro não encontrado</p>
                 </div>
             </section>
         );
     }
 
     return (
-        <section className="pb-24 max-w-lg mx-auto animate-fade-in">
-            <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-40 border-b border-border flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-xl font-bold tracking-tight line-clamp-1">{book.title}</h1>
-            </header>
+        <section className="animate-fade-in">
+            <ScreenHeader title={category?.name ?? "Livro"} subtitle="Biblioteca" />
 
-            <div className="px-4 pt-6 flex flex-col items-center text-center">
+            <div className="flex flex-col items-center pt-6 text-center">
                 <div
-                    className="w-40 aspect-[2/3] rounded-2xl overflow-hidden bg-muted border border-border shadow-lg mb-4"
+                    className="mb-5 aspect-[2/3] w-[148px] overflow-hidden rounded-[18px] border border-[#ECE8E3] bg-[#F4F2EF] shadow-[0_22px_40px_-20px_rgba(11,19,36,0.45)] dark:border-border dark:bg-muted"
                     style={{ transform: `translateY(${coverParallax}px)` }}
                 >
                     {book.cover_url ? (
                         <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+                        <div className="flex h-full w-full items-center justify-center text-[#C9C4BD]">
                             <BookText className="w-10 h-10" strokeWidth={1.5} />
                         </div>
                     )}
                 </div>
 
-                <h2 className="text-lg font-bold leading-tight">{book.title}</h2>
-                {book.author && <p className="text-sm text-muted-foreground mt-0.5">{book.author}</p>}
+                <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-foreground">{book.title}</h2>
+                {book.author && <p className="mt-1 text-[14px] text-muted-foreground">{book.author}</p>}
 
-                <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                     {category && (
-                        <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-muted text-muted-foreground">{category.name}</span>
+                        <span className="rounded-full border border-[#ECE8E3] bg-white px-3 py-1 text-[12px] font-semibold text-[#3A4150] dark:border-border dark:bg-card dark:text-muted-foreground">{category.name}</span>
                     )}
                     {book.is_free ? (
-                        <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-500 text-white">Grátis</span>
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-bold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">Grátis</span>
+                    ) : owned ? (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1 text-[12px] font-bold text-white">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Comprado
+                        </span>
                     ) : (
-                        <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-rose-500 text-white">
+                        <span className="rounded-full bg-[#0B1324] px-3 py-1 text-[12px] font-bold text-white dark:bg-foreground dark:text-background">
                             {Number(book.price).toFixed(2)} {book.currency}
                         </span>
                     )}
                 </div>
 
                 {book.tags.length > 0 && (
-                    <div className="flex items-center gap-1.5 mt-3 flex-wrap justify-center">
+                    <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
                         {book.tags.map(tag => (
-                            <span key={tag} className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-border text-muted-foreground">
-                                #{tag}
-                            </span>
+                            <span key={tag} className="text-[11.5px] font-medium text-[#9A9DA6]">#{tag}</span>
                         ))}
                     </div>
                 )}
 
-                <div className="flex items-center gap-6 mt-4">
-                    <button type="button" onClick={toggleFavorite} className="flex flex-col items-center gap-1 text-muted-foreground active:scale-95 transition-all">
-                        {isFavorite ? (
-                            <BookmarkCheck key="filled" className="w-5 h-5 text-rose-500 animate-scale-in" />
-                        ) : (
-                            <Bookmark key="empty" className="w-5 h-5" strokeWidth={1.5} />
+                <div className="mt-4 flex items-center gap-2.5">
+                    <button
+                        type="button"
+                        onClick={toggleFavorite}
+                        className={cn(
+                            "flex h-10 items-center gap-1.5 rounded-full border px-4 text-[13px] font-semibold transition-colors active:scale-95",
+                            isFavorite
+                                ? "border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/30"
+                                : "border-[#ECE8E3] bg-white text-[#3A4150] dark:border-border dark:bg-card dark:text-foreground",
                         )}
-                        <span className="text-[11px] font-semibold">Guardar</span>
+                    >
+                        {isFavorite ? (
+                            <BookmarkCheck key="filled" className="h-4 w-4 animate-scale-in" />
+                        ) : (
+                            <Bookmark key="empty" className="h-4 w-4" strokeWidth={1.8} />
+                        )}
+                        {isFavorite ? "Guardado" : "Guardar"}
                     </button>
-                    <button type="button" onClick={handleShare} className="flex flex-col items-center gap-1 text-muted-foreground active:scale-95 transition-all">
-                        <Share2 className="w-5 h-5" strokeWidth={1.5} />
-                        <span className="text-[11px] font-semibold">Partilhar</span>
+                    <button
+                        type="button"
+                        onClick={handleShare}
+                        className="flex h-10 items-center gap-1.5 rounded-full border border-[#ECE8E3] bg-white px-4 text-[13px] font-semibold text-[#3A4150] transition-colors active:scale-95 dark:border-border dark:bg-card dark:text-foreground"
+                    >
+                        <Share2 className="h-4 w-4" strokeWidth={1.8} /> Partilhar
                     </button>
                 </div>
             </div>
 
-            <div className="px-4 pt-6 flex items-center justify-center gap-4 flex-wrap text-[12px] text-muted-foreground">
+            <div className={cn(SURFACE, "mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-[18px] px-4 py-3 text-[12.5px] text-[#3A4150] dark:text-muted-foreground")}>
                 <div className="flex items-center gap-1.5">
                     <StarRating value={stats?.avgRating ?? 0} />
                     <span>{stats && stats.ratingsCount > 0 ? `${stats.avgRating.toFixed(1)} (${stats.ratingsCount})` : "Sem avaliações"}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5" /> {book.views_count}
+                    <Eye className="h-3.5 w-3.5 text-[#9A9DA6]" /> {book.views_count}
                 </div>
                 <div className="flex items-center gap-1">
-                    <Bookmark className="w-3.5 h-3.5" /> {stats?.favoritesCount ?? 0}
+                    <Bookmark className="h-3.5 w-3.5 text-[#9A9DA6]" /> {stats?.favoritesCount ?? 0}
                 </div>
                 {book.estimated_minutes != null && (
                     <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> {book.estimated_minutes} min
+                        <Clock className="h-3.5 w-3.5 text-[#9A9DA6]" /> {book.estimated_minutes} min
                     </div>
                 )}
                 {book.file_type === "pdf" && book.page_count != null && (
                     <div className="flex items-center gap-1">
-                        <Hash className="w-3.5 h-3.5" /> {book.page_count} págs.
+                        <Hash className="h-3.5 w-3.5 text-[#9A9DA6]" /> {book.page_count} págs.
                     </div>
                 )}
                 {(book.file_type === "epub" || book.file_type === "lovenest") && book.chapter_count != null && (
                     <div className="flex items-center gap-1">
-                        <Hash className="w-3.5 h-3.5" /> {book.chapter_count} caps.
+                        <Hash className="h-3.5 w-3.5 text-[#9A9DA6]" /> {book.chapter_count} caps.
                     </div>
                 )}
             </div>
 
             {book.description && (
-                <div className="px-4 pt-6">
-                    <h3 className="text-sm font-bold text-foreground mb-2">Sobre este livro</h3>
-                    <p className={cn("text-[13px] leading-relaxed text-muted-foreground whitespace-pre-line", !descExpanded && "line-clamp-3")}>
+                <div>
+                    <SectionTitle title="Sobre este livro" />
+                    <p className={cn("px-1 text-[14px] leading-relaxed text-[#3A4150] whitespace-pre-line dark:text-muted-foreground", !descExpanded && "line-clamp-3")}>
                         {book.description}
                     </p>
                     {book.description.length > 140 && (
                         <button
                             type="button"
                             onClick={() => setDescExpanded(v => !v)}
-                            className="flex items-center gap-1 text-[12px] font-bold text-rose-500 mt-1"
+                            className="mt-1.5 flex items-center gap-1 px-1 text-[13px] font-semibold text-rose-500"
                         >
                             {descExpanded ? "Ler menos" : "Ler mais"}
                             {descExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -206,29 +211,34 @@ export default function BookDetail() {
             )}
 
             {canRead && (myPercent > 0 || (partnerProgress?.progress_percent ?? 0) > 0) && (
-                <div className="px-4 pt-6 space-y-3">
+                <div className={cn(SURFACE, "mt-5 space-y-3.5 rounded-[20px] p-4")}>
                     {myPercent > 0 && (
                         <div>
-                            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground mb-1">
-                                <span className="flex items-center gap-1">
-                                    {myPercent >= 100 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                            <div className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-foreground">
+                                <span className="flex items-center gap-1.5">
+                                    {myPercent >= 100
+                                        ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                        : <span className="h-2 w-2 rounded-full bg-rose-500" />}
                                     A tua leitura
                                 </span>
-                                <span>{myPercent}%</span>
+                                <span className="tabular-nums text-muted-foreground">{myPercent}%</span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-[#F1EEEA] dark:bg-muted">
                                 <div className="h-full bg-rose-500 transition-all" style={{ width: `${myPercent}%` }} />
                             </div>
                         </div>
                     )}
                     {(partnerProgress?.progress_percent ?? 0) > 0 && (
                         <div>
-                            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground mb-1">
-                                <span>Leitura de {partner?.display_name || "o teu par"}</span>
-                                <span>{partnerProgress?.progress_percent}%</span>
+                            <div className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-foreground">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="h-2 w-2 rounded-full bg-[#4D7CFE]" />
+                                    Leitura de {partner?.display_name || "o teu par"}
+                                </span>
+                                <span className="tabular-nums text-muted-foreground">{partnerProgress?.progress_percent}%</span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full bg-foreground/40 transition-all" style={{ width: `${partnerProgress?.progress_percent}%` }} />
+                            <div className="h-1.5 overflow-hidden rounded-full bg-[#F1EEEA] dark:bg-muted">
+                                <div className="h-full bg-[#4D7CFE] transition-all" style={{ width: `${partnerProgress?.progress_percent}%` }} />
                             </div>
                         </div>
                     )}
@@ -236,38 +246,40 @@ export default function BookDetail() {
             )}
 
             {canRead && (book.file_type === "pdf" || book.file_type === "epub" || book.file_type === "lovenest") && (
-                <div className="px-4 pt-4">
-                    <button
-                        type="button"
-                        onClick={() => navigate(`/biblioteca/${bookId}/reflexoes`)}
-                        className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 shadow-sm active:scale-[0.98] transition-all"
-                    >
-                        <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
-                            <HeartHandshake className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />
-                        </div>
-                        <div className="flex-1 text-left">
-                            <p className="text-[13px] font-bold text-foreground">Reflexões do Casal</p>
-                            <p className="text-[11px] text-muted-foreground">Partilhem o que aprenderam com este livro</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => navigate(`/biblioteca/${bookId}/reflexoes`)}
+                    className={cn(SURFACE, "mt-3 flex w-full items-center gap-3 rounded-[20px] px-3.5 py-3 text-left active:scale-[0.99] transition-transform")}
+                >
+                    <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-rose-50 text-rose-500 dark:bg-rose-950/30">
+                        <HeartHandshake className="h-[18px] w-[18px]" strokeWidth={1.9} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                        <b className="block text-[14px] font-semibold text-foreground">Reflexões do Casal</b>
+                        <small className="block truncate text-[12.5px] text-muted-foreground">Partilhem o que aprenderam com este livro</small>
+                    </span>
+                    <ChevronRight className="h-[18px] w-[18px] shrink-0 text-muted-foreground/60" />
+                </button>
             )}
 
-            <div className="px-4 pt-8">
+            <div className="mt-6">
                 {canRead ? (
-                    <Button onClick={handleRead} className="w-full h-12 rounded-2xl font-bold text-[15px] gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg">
-                        <BookOpenText className="w-[18px] h-[18px]" /> {readLabel}
-                    </Button>
+                    <button
+                        type="button"
+                        onClick={handleRead}
+                        className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] bg-[#0B1324] text-[15px] font-semibold text-white shadow-[0_14px_28px_-14px_rgba(11,19,36,0.6)] transition-transform active:scale-[0.99] dark:bg-foreground dark:text-background"
+                    >
+                        <BookOpenText className="h-[18px] w-[18px]" /> {readLabel}
+                    </button>
                 ) : pending ? (
-                    <div className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-muted text-muted-foreground font-semibold text-[14px]">
-                        <Clock className="w-4 h-4" /> Pedido em análise
+                    <div className="flex h-[52px] items-center justify-center gap-2 rounded-[18px] bg-[#F4F2EF] text-[14px] font-semibold text-[#3A4150] dark:bg-muted dark:text-muted-foreground">
+                        <Clock className="h-4 w-4" /> Pedido em análise
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Lock className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />
-                            <p className="text-sm font-bold text-foreground">
+                        <div className="flex items-center gap-2 px-1">
+                            <Lock className="h-[18px] w-[18px] text-rose-500" strokeWidth={1.8} />
+                            <p className="text-[15px] font-semibold text-foreground">
                                 Comprar — {Number(book.price).toFixed(2)} {book.currency}
                             </p>
                         </div>
@@ -285,22 +297,20 @@ export default function BookDetail() {
             </div>
 
             {canRead && (
-                <div className="px-4 pt-8 flex flex-col items-center text-center gap-2">
-                    <p className="text-[13px] font-bold text-foreground">A tua avaliação</p>
+                <div className={cn(SURFACE, "mt-5 flex flex-col items-center gap-2 rounded-[20px] p-4 text-center")}>
+                    <p className="text-[14px] font-semibold text-foreground">A tua avaliação</p>
                     <StarRating value={myRating ?? 0} onRate={rate} size="md" />
                 </div>
             )}
 
             {similarBooks.length > 0 && (
-                <div className="px-4 pt-2">
-                    <BookRow
-                        title="Livros semelhantes"
-                        books={similarBooks}
-                        ownedBookIds={ownedBookIds}
-                        pendingBookIds={pendingBookIds}
-                        myProgressByBook={myProgressByBook}
-                    />
-                </div>
+                <BookRow
+                    title="Livros semelhantes"
+                    books={similarBooks}
+                    ownedBookIds={ownedBookIds}
+                    pendingBookIds={pendingBookIds}
+                    myProgressByBook={myProgressByBook}
+                />
             )}
         </section>
     );
