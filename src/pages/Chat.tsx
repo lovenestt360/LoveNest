@@ -17,6 +17,7 @@ import {
   Heart, ChevronLeft, Play, Pause,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DEFAULT_CHAT_WALLPAPER } from "@/features/chat/components/defaultWallpaper";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 
@@ -173,8 +174,8 @@ function WaveformBars({ progress, isMine }: { progress: number; isMine: boolean 
           key={i}
           className={cn("w-[2px] rounded-full transition-colors",
             i / WH.length <= progress
-              ? isMine ? "bg-white" : "bg-rose-500"
-              : isMine ? "bg-white/35" : "bg-muted-foreground/30"
+              ? "bg-[#00A884]"
+              : "bg-[#111B21]/20 dark:bg-white/25"
           )}
           style={{ height: `${h}px` }}
         />
@@ -241,7 +242,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
         onClick={toggle}
         className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90",
-          isMine ? "bg-white/25 text-white" : "bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+          "bg-[#00A884] text-white"
         )}
       >
         {playing
@@ -252,7 +253,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
       <div className="flex flex-col gap-1">
         <WaveformBars progress={progress} isMine={isMine} />
         <span className={cn("text-[10px] font-mono tabular-nums",
-          isMine ? "text-white/65" : "text-muted-foreground")}>
+          "text-[#667781] dark:text-[#8696A0]")}>
           {fmt(playing ? currentTime : dur)}
         </span>
       </div>
@@ -291,7 +292,7 @@ function DateSeparator({ date }: { date: string }) {
 
   return (
     <div className="flex justify-center py-3">
-      <span className="rounded-full border border-[#ECE8E3] bg-white/90 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#7A7F8C] backdrop-blur-sm dark:border-border dark:bg-card/85 dark:text-muted-foreground">
+      <span className="rounded-lg bg-white px-3 py-1 text-[11.5px] font-medium uppercase tracking-[0.04em] text-[#54656F] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] dark:bg-[#182229] dark:text-[#8696A0]">
         {label}
       </span>
     </div>
@@ -412,8 +413,8 @@ function MessageBubble({
           className={cn(
             "px-3 py-[7px] text-[15px] select-none",
             isMine
-              ? "bg-[#E5466D] text-white rounded-[18px] rounded-br-[5px] shadow-[0_6px_16px_-10px_rgba(229,70,109,0.7)]"
-              : "bg-white text-[#0B1324] border border-[#ECE8E3] rounded-[18px] rounded-bl-[5px] dark:bg-card dark:text-foreground dark:border-border",
+              ? "bg-[#D9FDD3] text-[#111B21] rounded-[16px] rounded-br-[4px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] dark:bg-[#005C4B] dark:text-[#E9EDEF]"
+              : "bg-white text-[#111B21] rounded-[16px] rounded-bl-[4px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] dark:bg-[#202C33] dark:text-[#E9EDEF]",
             isDeleted && "opacity-60",
             msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
           )}
@@ -425,7 +426,7 @@ function MessageBubble({
               onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
               className={cn(
                 "flex items-start gap-1 rounded-lg px-2 py-1.5 mb-1.5 text-[11px] border-l-2 w-full text-left",
-                isMine ? "bg-white/20 border-white/60 text-white/85" : "bg-[#F7F5F2] border-[#4D7CFE] text-[#3A4150] dark:bg-muted dark:text-muted-foreground"
+                isMine ? "bg-[#CFE9C7] border-[#06CF9C] text-[#3B4A54] dark:bg-[#025144] dark:text-[#D1D7DB]" : "bg-[#F5F6F6] border-[#53BDEB] text-[#3B4A54] dark:bg-[#1D282F] dark:text-[#D1D7DB]"
               )}
             >
               <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
@@ -457,7 +458,7 @@ function MessageBubble({
 
           {/* Time + status */}
           <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
-            isMine ? "text-white/65" : "text-[#9A9DA6]")}>
+            "text-[#667781] dark:text-[#8696A0]")}>
             {msg.is_edited && !isDeleted && <span className="text-[10px]">{msg.audio_url ? "legenda ·" : "editada ·"}</span>}
             <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
             {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
@@ -873,9 +874,19 @@ export default function Chat() {
         <PinnedBar messages={messages} onJump={jumpToMsg} />
       </div>
 
+      {/* Fundo por defeito (estilo WhatsApp) quando não há papel de parede próprio */}
+      {!wallpaperUrl && (
+        <div className="absolute inset-0 z-0 pointer-events-none bg-[#EFEAE2] dark:bg-[#0B141A]" aria-hidden="true">
+          <div
+            className="absolute inset-0 dark:opacity-[0.07]"
+            style={{ backgroundImage: DEFAULT_CHAT_WALLPAPER, backgroundSize: "300px 300px" }}
+          />
+        </div>
+      )}
+
       {/* ── Messages ── */}
       <div
-        className={cn("flex-1 relative z-10 overflow-y-auto", !wallpaperUrl && "bg-[#F7F5F2] dark:bg-background")}
+        className="flex-1 relative z-10 overflow-y-auto"
         style={{ scrollbarWidth: "none" }}
       >
         <div className="flex flex-col gap-0 py-3 pb-4 min-h-full justify-end">
@@ -941,11 +952,11 @@ export default function Chat() {
       )}
 
       {/* ── Bottom Input Bar (WhatsApp style) ── */}
-      <div className="relative z-50 shrink-0 border-t border-[#ECE8E3] bg-white px-2.5 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] dark:border-border dark:bg-card">
+      <div className="relative z-50 shrink-0 bg-[#F0F2F5] px-2.5 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] dark:bg-[#202C33]">
 
         {/* Edit mode banner */}
         {editingMsg && (
-          <div className="flex items-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-[#F7F5F2] px-3 py-2 mb-2 dark:border-border dark:bg-muted">
+          <div className="flex items-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-white px-3 py-2 mb-2 dark:border-border dark:bg-[#2A3942]">
             <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={editText}
@@ -965,7 +976,7 @@ export default function Chat() {
 
         {/* Reply banner */}
         {replyTo && !editingMsg && (
-          <div className="flex items-center gap-2 rounded-[14px] border-l-[3px] border-rose-500 bg-[#F7F5F2] px-3 py-2 mb-2 dark:bg-muted">
+          <div className="flex items-center gap-2 rounded-[14px] border-l-[3px] border-[#06CF9C] bg-white px-3 py-2 mb-2 dark:bg-[#2A3942]">
             <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground line-clamp-1">
               {replyTo.content || (replyTo.image_url ? "Foto" : replyTo.audio_url ? "Audio" : "")}
@@ -978,7 +989,7 @@ export default function Chat() {
 
         {/* Image preview */}
         {imagePreview && !editingMsg && (
-          <div className="flex items-center gap-2 rounded-[18px] bg-[#F7F5F2] px-2 py-1.5 mb-2 dark:bg-muted">
+          <div className="flex items-center gap-2 rounded-[18px] bg-white px-2 py-1.5 mb-2 dark:bg-[#2A3942]">
             <img src={imagePreview} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground truncate">{imageFile?.name}</p>
             <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted">
@@ -995,7 +1006,7 @@ export default function Chat() {
             <div className="flex-1 relative">
               {/* Recording / Preview overlay inside the pill */}
               {inRecMode ? (
-                <div className="flex items-center gap-2 rounded-[24px] bg-[#F4F2EF] min-h-[48px] px-3 py-2 dark:bg-muted">
+                <div className="flex items-center gap-2 rounded-[24px] bg-white min-h-[48px] px-3 py-2 dark:bg-[#2A3942]">
 
                   {/* Delete */}
                   <button onClick={audio.cancel}
@@ -1045,7 +1056,7 @@ export default function Chat() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-end rounded-[24px] bg-[#F4F2EF] min-h-[46px] px-2 py-1 dark:bg-muted">
+                <div className="flex items-end rounded-[24px] bg-white min-h-[46px] px-2 py-1 dark:bg-[#2A3942]">
                   <ImagePickerButton onPick={setImageFile} />
                   <input
                     ref={inputRef}
@@ -1087,7 +1098,7 @@ export default function Chat() {
               }}
               className={cn(
                 "w-[46px] h-[46px] rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95",
-                "bg-[#0B1324] text-white dark:bg-foreground dark:text-background",
+                "bg-[#00A884] text-white",
                 (!isReady || sending) && "opacity-60"
               )}
             >
