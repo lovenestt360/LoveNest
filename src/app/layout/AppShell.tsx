@@ -22,6 +22,8 @@ export function AppShell() {
   const isLocation = location.pathname.startsWith("/localizacao");
   const isFullscreen = isChat || isLocation;
   const isHome = location.pathname === "/";
+  // Ecrãs já migrados para a temática refinada (fundo branco, sem mesh).
+  const isRefined = isHome || location.pathname === "/biblioteca";
 
   // Quando o utilizador navega de volta para a Home (keep-alive esconde/mostra),
   // nenhum useEffect remonta — notifica os hooks via evento para que
@@ -66,11 +68,11 @@ export function AppShell() {
   return (
     <div className={cn(
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
-      // A Home refinada usa fundo branco; as outras superfícies migram depois.
-      isFullscreen ? "bg-transparent" : isHome ? "bg-white dark:bg-background" : "bg-background"
+      // A temática refinada usa fundo branco; as outras superfícies migram depois.
+      isFullscreen ? "bg-transparent" : isRefined ? "bg-white dark:bg-background" : "bg-background"
     )}>
       <ChatWallpaper />
-      {!isHome && <div className="bg-mesh" aria-hidden="true" />}
+      {!isRefined && <div className="bg-mesh" aria-hidden="true" />}
 
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-destructive text-destructive-foreground px-4 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 backdrop-blur-md">

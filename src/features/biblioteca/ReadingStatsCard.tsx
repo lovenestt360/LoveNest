@@ -2,6 +2,8 @@ import { Clock, BookCheck, Flame } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useReadingStats, type ReadingStats } from "@/hooks/useReadingStats";
+import { SURFACE } from "@/features/home/components/HomeSections";
+import { cn } from "@/lib/utils";
 
 function formatMinutes(minutes: number): string {
     if (minutes < 60) return `${minutes} min`;
@@ -10,25 +12,29 @@ function formatMinutes(minutes: number): string {
     return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
-function PersonStats({ label, stats, loading }: { label: string; stats: ReadingStats | null; loading: boolean }) {
+function PersonStats({ label, tone, stats, loading }: { label: string; tone: "rose" | "blue"; stats: ReadingStats | null; loading: boolean }) {
+    const icon = tone === "rose" ? "text-rose-500" : "text-[#4D7CFE]";
     return (
-        <div className="flex-1 bg-card border border-border rounded-2xl p-3.5 space-y-2.5">
-            <p className="text-[12px] font-bold text-foreground line-clamp-1">{label}</p>
+        <div className="min-w-0 flex-1 space-y-2.5 px-3.5 py-3 [&+&]:border-l [&+&]:border-[#ECE8E3] dark:[&+&]:border-border">
+            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
+                <span className={cn("h-2 w-2 shrink-0 rounded-full", tone === "rose" ? "bg-rose-500" : "bg-[#4D7CFE]")} />
+                <span className="line-clamp-1">{label}</span>
+            </p>
             {loading || !stats ? (
                 <div className="h-[68px] flex items-center justify-center">
-                    <div className="w-5 h-5 rounded-full border-2 border-muted border-t-rose-400 animate-spin" />
+                    <div className="w-5 h-5 rounded-full border-2 border-[#F1EEEA] border-t-rose-400 animate-spin" />
                 </div>
             ) : (
-                <div className="space-y-1.5 text-[11px] text-muted-foreground">
+                <div className="space-y-1.5 text-[12px] text-[#3A4150] dark:text-muted-foreground">
                     <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-rose-400 shrink-0" /> {formatMinutes(stats.totalMinutes)} lidos
+                        <Clock className={cn("w-3.5 h-3.5 shrink-0", icon)} /> {formatMinutes(stats.totalMinutes)} lidos
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <BookCheck className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                        <BookCheck className={cn("w-3.5 h-3.5 shrink-0", icon)} />
                         {stats.booksCompleted} livro{stats.booksCompleted !== 1 ? "s" : ""} terminado{stats.booksCompleted !== 1 ? "s" : ""}
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0" /> {stats.readingDays} dia{stats.readingDays !== 1 ? "s" : ""} de leitura
+                        <Flame className={cn("w-3.5 h-3.5 shrink-0", icon)} /> {stats.readingDays} dia{stats.readingDays !== 1 ? "s" : ""} de leitura
                     </div>
                 </div>
             )}
@@ -46,10 +52,10 @@ export function ReadingStatsCard() {
     if (!myLoading && !partnerLoading && !hasAnyActivity) return null;
 
     return (
-        <div className="px-4 flex gap-3 animate-fade-in">
-            <PersonStats label="A tua leitura" stats={myStats} loading={myLoading} />
+        <div className={cn(SURFACE, "mt-4 flex overflow-hidden rounded-[20px] animate-fade-in")}>
+            <PersonStats label="A tua leitura" tone="rose" stats={myStats} loading={myLoading} />
             {partner && (
-                <PersonStats label={partner.display_name || "O teu par"} stats={partnerStats} loading={partnerLoading} />
+                <PersonStats label={partner.display_name || "O teu par"} tone="blue" stats={partnerStats} loading={partnerLoading} />
             )}
         </div>
     );

@@ -292,7 +292,7 @@ export default function BookDetail() {
             )}
 
             {similarBooks.length > 0 && (
-                <div className="pt-8">
+                <div className="px-4 pt-2">
                     <BookRow
                         title="Livros semelhantes"
                         books={similarBooks}

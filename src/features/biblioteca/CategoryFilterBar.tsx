@@ -7,7 +7,7 @@ export function CategoryFilterBar({ categories, active, onChange }: {
     onChange: (categoryId: string | null) => void;
 }) {
     return (
-        <div className="flex gap-2 px-4 overflow-x-auto pb-1">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden">
             <Chip label="Todos" isActive={active === null} onClick={() => onChange(null)} />
             {categories.map(cat => (
                 <Chip key={cat.id} label={cat.name} isActive={active === cat.id} onClick={() => onChange(cat.id)} />
@@ -22,10 +22,10 @@ function Chip({ label, isActive, onClick }: { label: string; isActive: boolean; 
             type="button"
             onClick={onClick}
             className={cn(
-                "shrink-0 px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-colors whitespace-nowrap active:scale-95",
+                "shrink-0 h-9 px-4 rounded-full text-[13px] font-semibold border transition-colors whitespace-nowrap active:scale-95",
                 isActive
-                    ? "bg-rose-500 text-white border-rose-500"
-                    : "bg-card text-muted-foreground border-border hover:border-rose-200 dark:hover:border-rose-900/40"
+                    ? "bg-[#0B1324] text-white border-[#0B1324] dark:bg-foreground dark:text-background dark:border-foreground"
+                    : "bg-white text-[#3A4150] border-[#ECE8E3] dark:bg-card dark:text-muted-foreground dark:border-border"
             )}
         >
             {label}
