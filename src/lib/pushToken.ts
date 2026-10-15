@@ -9,8 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
  * autenticado. Enquanto a função não existir na base de dados, usa o upsert
  * antigo para não piorar o comportamento atual.
  */
+// A função ainda não está nos tipos gerados do Supabase.
+type ClaimRpc = {
+  rpc: (
+    fn: "claim_push_token",
+    args: { p_fcm_token: string; p_couple_space_id: string; p_user_agent: string },
+  ) => Promise<{ error: { code?: string; message: string } | null }>;
+};
+
 export async function savePushToken(fcmToken: string, userId: string, spaceId: string): Promise<{ error: string | null }> {
-  const { error } = await (supabase as any).rpc("claim_push_token", {
+  const { error } = await (supabase as unknown as ClaimRpc).rpc("claim_push_token", {
     p_fcm_token: fcmToken,
     p_couple_space_id: spaceId,
     p_user_agent: navigator.userAgent,
