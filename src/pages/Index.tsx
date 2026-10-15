@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { format, isToday, isTomorrow } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
   ArrowRight,
@@ -71,22 +71,23 @@ function usePlanoStats() {
     queryFn: async () => {
       const { data: rows } = await (supabase
         .from("plano_items" as any)
-        .select("title,plan_at,completed")
+        .select("title,plan_at,completed,created_at")
         .eq("couple_space_id", spaceId) as any);
 
       if (!rows) return { pending: 0, next: null };
 
       const pending = (rows as any[]).filter((item) => !item.completed).length;
-      const upcoming = (rows as any[])
-        .filter((item) => !item.completed && item.plan_at)
-        .sort((a, b) => a.plan_at.localeCompare(b.plan_at))[0];
+      // Só o que ainda está para vir; entre esses, o último a ser agendado.
+      const now = Date.now();
+      const latest = (rows as any[])
+        .filter((item) => !item.completed && item.plan_at && new Date(item.plan_at).getTime() >= now)
+        .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))[0];
 
-      return {
-        pending,
-        next: upcoming
-          ? { title: upcoming.title, time: format(new Date(upcoming.plan_at), "HH:mm") }
-          : null,
-      };
+      if (!latest) return { pending, next: null };
+
+      const at = new Date(latest.plan_at);
+      const day = isToday(at) ? "Hoje" : isTomorrow(at) ? "Amanhã" : format(at, "d MMM", { locale: pt });
+      return { pending, next: { title: latest.title, time: format(at, "HH:mm"), day } };
     },
   });
 
@@ -490,7 +491,7 @@ const Index = () => {
     : null;
 
   return (
-    <div className="mx-auto max-w-lg overflow-x-hidden pb-20 animate-fade-in">
+    <div className="mx-auto max-w-lg overflow-x-hidden animate-fade-in">
       <HomeHeader
         me={avatars.me}
         partner={avatars.partner}
@@ -582,9 +583,7 @@ const Index = () => {
         capsuleBadge={capsuleUnread}
       />
 
-      <div className="mt-4">
-        <InstallBanner />
-      </div>
+      <InstallBanner />
     </div>
   );
 };

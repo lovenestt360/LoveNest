@@ -168,7 +168,7 @@ export function NextUp({
   pending,
   isSolo,
 }: {
-  next: { time: string; title: string } | null;
+  next: { time: string; title: string; day?: string } | null;
   pending: number;
   isSolo: boolean;
 }) {
@@ -185,7 +185,7 @@ export function NextUp({
       <span className="min-w-0 flex-1">
         <b className="block truncate text-[14.5px] font-semibold text-foreground">{next.title}</b>
         <small className="text-[12.5px] text-muted-foreground">
-          Agenda{isSolo ? "" : " · os dois"}
+          {next.day ? `${next.day} · ` : ""}Agenda{isSolo ? "" : " · os dois"}
           {pending > 0 ? ` · ${pending} por fazer` : ""}
         </small>
       </span>
@@ -397,6 +397,13 @@ export function MemoriesSection({
       </div>
 
       <div className={cn(SURFACE, "mt-2.5 overflow-hidden rounded-[20px]")}>
+        <RowLink
+          onClick={() => navigate("/desafios")}
+          icon={<Trophy className="h-[18px] w-[18px]" strokeWidth={1.9} />}
+          tint="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30"
+          title="Desafios"
+          text={extras.challenge ? `“${extras.challenge}” · em curso` : isSolo ? "Escolhe um desafio" : "Escolham um desafio juntos"}
+        />
         {extras.wrapped && wrappedIsNew && (
           <RowLink
             onClick={() => navigate("/wrapped")}
@@ -407,13 +414,6 @@ export function MemoriesSection({
             trailing={<span className="rounded-md bg-rose-50 px-[7px] py-[3px] text-[11px] font-bold text-rose-500 dark:bg-rose-950/30">Novo</span>}
           />
         )}
-        <RowLink
-          onClick={() => navigate("/desafios")}
-          icon={<Trophy className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-          tint="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30"
-          title="Desafios"
-          text={extras.challenge ? `“${extras.challenge}” · em curso` : isSolo ? "Escolhe um desafio" : "Escolham um desafio juntos"}
-        />
       </div>
     </>
   );
