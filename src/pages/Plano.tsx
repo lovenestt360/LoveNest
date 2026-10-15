@@ -27,14 +27,16 @@ import {
 } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { ScreenHeader, ROUND_BUTTON } from "@/components/ScreenHeader";
+import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 const TABS = [
-  { id: "rotina", label: "ROTINA", icon: Activity },
-  { id: "agenda", label: "AGENDA", icon: CalendarIcon },
+  { id: "rotina", label: "Rotina", icon: Activity },
+  { id: "agenda", label: "Agenda", icon: CalendarIcon },
 ] as const;
 
 export default function Plano() {
@@ -106,71 +108,33 @@ export default function Plano() {
   }, [items]);
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-4 space-y-5 max-w-2xl mx-auto overflow-x-hidden">
+    <div className="space-y-5 overflow-x-hidden animate-fade-in">
 
-      {/* Header */}
-      <header>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Plano do Dia</h1>
-          <button
-            onClick={() => navigate("/rotina/gerir")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
-          >
-            <Settings2 className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+      <ScreenHeader
+        title="Agenda"
+        subtitle={`Hoje · ${format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}`}
+        action={
+          <button type="button" aria-label="Gerir rotina" onClick={() => navigate("/rotina/gerir")} className={ROUND_BUTTON}>
+            <Settings2 className="h-[18px] w-[18px] text-[#3A4150] dark:text-muted-foreground" strokeWidth={1.8} />
           </button>
-        </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-sm text-muted-foreground capitalize">
-            {format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}
-          </span>
-          <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">Hoje</span>
-        </div>
-      </header>
+        }
+      />
 
-      {/* Tabs */}
-      <div className="flex bg-muted rounded-2xl p-1 gap-1">
-        {TABS.map(t => {
-          const isActive = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setSearchParams({ tab: t.id })}
-              className={cn(
-                "flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                isActive ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              )}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedTabs tabs={TABS} value={activeTab as (typeof TABS)[number]["id"]} onChange={id => setSearchParams({ tab: id })} />
 
       {/* Renderização de Conteúdo */}
       <main className="space-y-6">
         {activeTab === "rotina" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
-            <div className="flex bg-muted rounded-2xl p-1 gap-1">
-              {([
+            <SegmentedTabs<"mine" | "partner">
+              size="sm"
+              tabs={([
                 { id: "mine",    label: "Minha",         icon: User },
                 { id: "partner", label: partnerFirstName, icon: Users },
-              ] as const).filter(sub => !isSolo || sub.id !== "partner").map(sub => {
-                const Icon = sub.icon;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => setRoutineSubTab(sub.id)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-                      routineSubTab === sub.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    {sub.label}
-                  </button>
-                );
-              })}
-            </div>
+              ] as const).filter(sub => !isSolo || sub.id !== "partner")}
+              value={routineSubTab}
+              onChange={setRoutineSubTab}
+            />
 
             {routineSubTab === "mine" ? (
                 itemsLoading || logsLoading ? (
@@ -197,8 +161,8 @@ export default function Plano() {
 
                     <div className="space-y-3 pt-2">
                       <div className="flex items-center justify-between px-1">
-                        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">O Teu Checklist</p>
-                        <span className="text-[11px] font-semibold text-muted-foreground">{todayDone}/{activeItems.length}</span>
+                        <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">O teu checklist</p>
+                        <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">{todayDone}/{activeItems.length}</span>
                       </div>
                       <RoutineChecklist 
                         items={activeItems} 
@@ -241,7 +205,7 @@ export default function Plano() {
                   }}
                   disabled={isAdding && (!newTitle.trim() || !isReady)}
                   className={cn(
-                    "h-11 rounded-xl shrink-0 active:scale-95 transition-all font-semibold text-sm text-white bg-rose-500 hover:bg-rose-600",
+                    "h-11 rounded-[14px] shrink-0 active:scale-95 transition-all font-semibold text-sm text-white [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 dark:[background:hsl(var(--foreground))] dark:text-background",
                     isAdding ? "w-24 px-3" : "w-11"
                   )}
                 >
@@ -310,22 +274,23 @@ export default function Plano() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {isSameDay(parseISO(selectedDate), new Date()) ? "Planos Hoje" : `Planos em ${format(parseISO(selectedDate), "d/MM")}`}
+                <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+                  {isSameDay(parseISO(selectedDate), new Date()) ? "Planos de hoje" : `Planos em ${format(parseISO(selectedDate), "d/MM")}`}
                 </p>
               </div>
 
               {planoLoading ? (
                 <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" /></div>
               ) : items.filter(i => i.plan_at && i.plan_at.startsWith(selectedDate)).length === 0 ? (
-                <div className="glass-card py-14 text-center space-y-3 opacity-50">
-                  <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                  <p className="font-bold text-muted-foreground">Nenhum plano marcado</p>
+                <div className="glass-card py-12 text-center space-y-2">
+                  <CalendarIcon className="mx-auto h-9 w-9 text-[#C9C4BD]" strokeWidth={1.6} />
+                  <p className="text-[15px] font-semibold text-foreground">Nenhum plano marcado</p>
+                  <p className="text-[13px] text-muted-foreground">Escreve em cima o que querem fazer.</p>
                 </div>
               ) : (
-                <div className="rounded-2xl border bg-card divide-y overflow-hidden shadow-sm">
+                <div className="glass-card divide-y divide-[#ECE8E3] overflow-hidden dark:divide-border">
                   {items.filter(i => i.plan_at && i.plan_at.startsWith(selectedDate)).map(item => (
-                    <div key={item.id} className="flex items-center gap-3 w-full px-4 py-4 transition-colors hover:bg-muted/50">
+                    <div key={item.id} className="flex items-center gap-3 w-full px-4 py-3.5 transition-colors hover:bg-[#F7F5F2] dark:hover:bg-muted/50">
                       {/* Custom Checkbox as in RoutineChecklist */}
                       <button
                         type="button"
@@ -334,8 +299,8 @@ export default function Plano() {
                         className={cn(
                             "flex items-center justify-center h-6 w-6 rounded-lg border-2 transition-all shrink-0",
                             item.completed
-                                ? "bg-green-500 border-green-500 text-white"
-                                : "border-border",
+                                ? "bg-emerald-500 border-emerald-500 text-white"
+                                : "border-[#D5D1CB] dark:border-border",
                         )}
                       >
                         {item.completed && (
@@ -346,7 +311,7 @@ export default function Plano() {
                       </button>
 
                       <div className="flex-1 min-w-0">
-                        <p className={cn("font-medium text-sm", item.completed ? "line-through text-muted-foreground/50" : "text-foreground")}>{item.title}</p>
+                        <p className={cn("font-semibold text-[14px]", item.completed ? "line-through text-muted-foreground/50" : "text-foreground")}>{item.title}</p>
                         <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
                            <div className="flex items-center gap-1 opacity-60">
                              <Clock className="h-2.5 w-2.5" />

@@ -36,8 +36,8 @@ export function MoodHistory({ history, userId, isSolo = false }: MoodHistoryProp
     return (
         <div className="space-y-4">
             {grouped.map(({ day, mine, partner }) => (
-                <Card key={day} className="overflow-hidden">
-                    <div className="bg-muted/30 px-4 py-2 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <Card key={day} className="overflow-hidden rounded-[20px] border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border">
+                    <div className="border-b border-[#ECE8E3] bg-[#F7F5F2] px-4 py-2.5 text-[12.5px] font-semibold text-[#3A4150] first-letter:uppercase dark:border-border dark:bg-muted/30 dark:text-muted-foreground">
                         {format(parseISO(day), "EEEE, d 'de' MMMM", { locale: ptBR })}
                     </div>
                     <CardContent className="p-0 divide-y">
