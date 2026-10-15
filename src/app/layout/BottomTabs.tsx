@@ -1,12 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  CalendarHeart,
-  Heart,
-  Home,
-  MessageCircle,
-  UserRound,
-} from "lucide-react";
+import { Flower2, Home, Library, MessageCircle, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -22,28 +16,46 @@ type Tab = {
 const startsWithAny = (pathname: string, paths: string[]) =>
   paths.some((path) => pathname === path || pathname.startsWith(path + "/"));
 
+// Ecrãs que antes viviam em "Nós" e "Vida" e agora abrem a partir da Home.
+const HOME_DESTINATIONS = [
+  "/humor",
+  "/nos",
+  "/vida",
+  "/momentos",
+  "/memorias",
+  "/historia",
+  "/desafios",
+  "/conflitos",
+  "/capsula",
+  "/wrapped",
+  "/jornada",
+  "/plano",
+  "/rotina",
+  "/jornada-espiritual",
+  "/oracao",
+  "/jejum",
+  "/localizacao",
+];
+
+/**
+ * Barra inferior flutuante: Hoje · Chat · Biblioteca · Ciclo · Perfil.
+ * Chat sai no modo solo; Ciclo sai para homens no modo solo.
+ */
 export function BottomTabs() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useProfile();
-  const {
-    chatUnread,
-    memoriesUnread,
-    tasksUnread,
-    scheduleUnread,
-    prayerUnread,
-    complaintsUnread,
-    capsuleUnread,
-  } = useAppNotifContext();
+  const { chatUnread } = useAppNotifContext();
 
   const isSolo = profile?.usage_mode === "solo";
+  const hideCycle = isSolo && profile?.gender === "male";
 
   const tabs: Tab[] = [
     {
       to: "/",
       label: "Hoje",
       icon: Home,
-      active: (pathname) => pathname === "/" || startsWithAny(pathname, ["/humor"]),
+      active: (pathname) => pathname === "/" || startsWithAny(pathname, HOME_DESTINATIONS),
     },
     ...(!isSolo
       ? [{
@@ -55,39 +67,19 @@ export function BottomTabs() {
         }]
       : []),
     {
-      to: "/nos",
-      label: isSolo ? "Eu" : "Nós",
-      icon: Heart,
-      active: (pathname) =>
-        startsWithAny(pathname, [
-          "/nos",
-          "/momentos",
-          "/memorias",
-          "/historia",
-          "/desafios",
-          "/conflitos",
-          "/capsula",
-          "/wrapped",
-          "/jornada",
-        ]),
-      badge: isSolo ? 0 : memoriesUnread + complaintsUnread + capsuleUnread,
+      to: "/biblioteca",
+      label: "Biblioteca",
+      icon: Library,
+      active: (pathname) => startsWithAny(pathname, ["/biblioteca"]),
     },
-    {
-      to: "/vida",
-      label: "Vida",
-      icon: CalendarHeart,
-      active: (pathname) =>
-        startsWithAny(pathname, [
-          "/vida",
-          "/plano",
-          "/rotina",
-          "/ciclo",
-          "/jornada-espiritual",
-          "/localizacao",
-          "/biblioteca",
-        ]),
-      badge: tasksUnread + scheduleUnread + prayerUnread,
-    },
+    ...(!hideCycle
+      ? [{
+          to: "/ciclo",
+          label: "Ciclo",
+          icon: Flower2,
+          active: (pathname: string) => startsWithAny(pathname, ["/ciclo"]),
+        }]
+      : []),
     {
       to: "/configuracoes",
       label: "Perfil",
@@ -98,28 +90,22 @@ export function BottomTabs() {
 
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.7rem)]"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
       aria-label="Navegação principal"
     >
       <div className="pointer-events-auto mx-auto max-w-md">
-        <div className="relative overflow-hidden rounded-[1.65rem] border border-white/60 bg-card/88 shadow-[0_16px_45px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:border-white/10 dark:bg-card/90">
-          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/35 dark:ring-white/[0.05]" />
-
-          <div
-            className={cn(
-              "relative grid h-[66px]",
-              tabs.length === 5 ? "grid-cols-5" : "grid-cols-4",
-            )}
-          >
-            {tabs.map((tab) => (
-              <TabButton
-                key={tab.to}
-                tab={tab}
-                isActive={tab.active(location.pathname)}
-                onClick={() => navigate(tab.to)}
-              />
-            ))}
-          </div>
+        <div
+          className="grid rounded-[26px] bg-white/[0.92] p-1.5 shadow-[0_0_0_1px_rgba(11,19,36,0.05),0_16px_40px_-12px_rgba(11,19,36,0.22)] backdrop-blur-xl dark:bg-card/[0.92] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_16px_40px_-12px_rgba(0,0,0,0.5)]"
+          style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+        >
+          {tabs.map((tab) => (
+            <TabButton
+              key={tab.to}
+              tab={tab}
+              isActive={tab.active(location.pathname)}
+              onClick={() => navigate(tab.to)}
+            />
+          ))}
         </div>
       </div>
     </nav>
@@ -144,26 +130,20 @@ function TabButton({
       onClick={onClick}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-1 text-[9px] font-semibold transition-colors active:opacity-60",
-        isActive ? "text-rose-500" : "text-muted-foreground",
+        "relative flex min-h-[54px] flex-col items-center justify-center gap-1 text-[11px] leading-none transition-colors active:opacity-60",
+        isActive ? "font-semibold text-[#0B1324] dark:text-foreground" : "font-medium text-[#9A9DA6]",
       )}
     >
       <span className="relative">
-        <Icon className="h-[21px] w-[21px]" strokeWidth={isActive ? 2 : 1.5} />
-        {badge > 0 && <Badge count={badge} />}
+        <Icon className="h-[23px] w-[23px]" strokeWidth={isActive ? 2.1 : 1.7} />
+        {badge > 0 && (
+          <span className="absolute -right-2.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10.5px] font-bold leading-none text-white">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
       </span>
-      <span className="leading-none">{tab.label}</span>
-      {isActive && (
-        <span className="absolute bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-rose-500" />
-      )}
+      <span>{tab.label}</span>
+      {isActive && <span className="absolute bottom-[3px] h-1 w-1 rounded-full bg-rose-500" aria-hidden="true" />}
     </button>
-  );
-}
-
-function Badge({ count }: { count: number }) {
-  return (
-    <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black leading-none text-white ring-2 ring-card">
-      {count > 9 ? "9+" : count}
-    </span>
   );
 }

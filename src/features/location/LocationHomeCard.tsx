@@ -1,10 +1,52 @@
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Navigation } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
-import { useLocationSharing } from "@/hooks/useLocationSharing";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/features/auth/AuthContext";
+import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useTierAccess } from "@/hooks/useTierAccess";
+import { useProfile } from "@/hooks/useProfile";
+
+type LocationRow = { user_id: string; address: string | null; sharing_enabled: boolean; updated_at: string };
+
+/**
+ * Leitura simples das últimas posições, só para a Home. Ao contrário de
+ * useLocationSharing, não liga o GPS nem abre um canal realtime — a Home fica
+ * sempre montada e não deve seguir a localização em segundo plano.
+ */
+function useLocationSnapshot() {
+  const { user } = useAuth();
+  const spaceId = useCoupleSpaceId();
+  const [rows, setRows] = useState<LocationRow[] | null>(null);
+
+  const load = useCallback(async () => {
+    if (!spaceId || !user?.id) return;
+    const { data } = await (supabase as any)
+      .from("member_locations")
+      .select("user_id,address,sharing_enabled,updated_at")
+      .eq("couple_space_id", spaceId);
+    setRows((data as LocationRow[]) ?? []);
+  }, [spaceId, user?.id]);
+
+  useEffect(() => {
+    load();
+    window.addEventListener("home-visible", load);
+    return () => window.removeEventListener("home-visible", load);
+  }, [load]);
+
+  const mine = rows?.find((r) => r.user_id === user?.id) ?? null;
+  const partner = rows?.find((r) => r.user_id !== user?.id) ?? null;
+  return {
+    loading: rows === null,
+    myLocation: mine,
+    partnerLocation: partner,
+    mySharing: mine?.sharing_enabled ?? false,
+    partnerSharing: partner?.sharing_enabled ?? false,
+  };
+}
 
 function timeAgo(iso: string): string {
   try {
@@ -14,73 +56,72 @@ function timeAgo(iso: string): string {
   }
 }
 
+/**
+ * "Onde estamos" na Home. Só aparece quando há partilha ativa.
+ * O mapa é ilustrativo (as posições reais vivem em /localizacao); o texto
+ * mostra a morada conhecida de cada um e quando foi atualizada.
+ */
 export function LocationHomeCard() {
   const navigate = useNavigate();
   const { allowed, loading: tierLoading } = useTierAccess("location_sharing");
-  const { partnerLocation, partnerSharing, mySharing, loading } = useLocationSharing();
+  const { myLocation, partnerLocation, partnerSharing, mySharing, loading } = useLocationSnapshot();
   const { partner } = usePartnerProfile();
+  const { profile } = useProfile();
 
-  // Não mostra nada se não tiver acesso premium
-  if (tierLoading || !allowed) return null;
+  if (tierLoading || !allowed || loading) return null;
+  if (!mySharing && !partnerSharing) return null;
 
   const partnerName = partner?.display_name ?? "O teu par";
+  const myInitial = (profile?.display_name ?? "Eu").charAt(0).toUpperCase();
   const partnerInitial = partnerName.charAt(0).toUpperCase();
+
+  const parts: string[] = [];
+  if (partnerSharing && partnerLocation?.address) parts.push(`${partnerName} em ${partnerLocation.address}`);
+  else if (partnerSharing) parts.push(`${partnerName} está a partilhar`);
+  else parts.push(`${partnerName} não está a partilhar`);
+  if (mySharing && myLocation?.address) parts.push(`tu em ${myLocation.address}`);
+
+  const updatedAt = partnerSharing ? partnerLocation?.updated_at : myLocation?.updated_at;
 
   return (
     <button
+      type="button"
       onClick={() => navigate("/localizacao")}
-      className="glass-card glass-card-hover w-full text-left p-4 flex items-center gap-3 active:scale-[0.98] transition-all"
+      className="w-full overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
     >
-      {/* Ícone */}
-      <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
-        <MapPin className="w-5 h-5 text-rose-400" strokeWidth={1.5} />
-      </div>
-
-      {/* Conteúdo */}
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 mb-0.5">
-          Onde Estamos
-        </p>
-
-        {loading ? (
-          <div className="h-3.5 w-32 bg-muted/60 rounded animate-pulse" />
-        ) : partnerSharing && partnerLocation ? (
-          <div className="flex items-center gap-1">
-            <Navigation className="w-3 h-3 text-rose-400 shrink-0" strokeWidth={2} />
-            <p className="text-[13px] font-semibold text-foreground truncate">
-              {partnerLocation.address
-                ? partnerLocation.address
-                : partnerName
-              }
-            </p>
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted-foreground/60">
-            {partnerName} não está a partilhar
-          </p>
-        )}
-
-        {partnerSharing && partnerLocation && (
-          <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-            {timeAgo(partnerLocation.updated_at)}
-          </p>
-        )}
-      </div>
-
-      {/* Avatar do par + indicador ao vivo */}
-      <div className="flex flex-col items-center gap-1 shrink-0">
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
-          style={{ background: partnerSharing ? "#C4788C" : "#D1D5DB" }}
-        >
+      <div className="relative h-[92px] bg-[#EEEAE4] dark:bg-muted" aria-hidden="true">
+        <svg viewBox="0 0 358 92" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
+          <path d="M250 0c-10 28 20 48 108 60V0z" fill="#DCE6EF" />
+          <g stroke="#FFFFFF" strokeWidth="6" fill="none" strokeLinecap="round">
+            <path d="M-10 66c80-9 150 4 230-14s110-28 150-25" />
+            <path d="M60 100c10-36 0-64 30-108" />
+            <path d="M180 100c-6-28 10-50 0-108" />
+          </g>
+          <g stroke="#E4DED6" strokeWidth="2" fill="none">
+            <path d="M0 28h358M0 82h358M120 0v92M300 0v92" />
+          </g>
+          <path d="M92 68C150 50 200 40 262 30" stroke="#0B1324" strokeWidth="1.6" strokeDasharray="4 5" fill="none" opacity=".55" />
+        </svg>
+        <span className="absolute left-[19%] top-[52%] flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-white bg-rose-500 text-[13px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.5)]">
+          {myInitial}
+        </span>
+        <span className="absolute left-[71%] top-[14%] flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#4D7CFE] text-[13px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.5)]">
           {partnerInitial}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold text-foreground">Onde estamos</p>
+          <p className="truncate text-[12.5px] text-muted-foreground">{parts.join(" · ")}</p>
+          <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
+            <span className="h-[7px] w-[7px] rounded-full bg-emerald-600" />
+            Partilha ativa{updatedAt ? ` · ${timeAgo(updatedAt)}` : ""}
+          </span>
         </div>
-        {(mySharing || partnerSharing) && (
-          <div className="flex items-center gap-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[9px] font-semibold text-emerald-500">Ativo</span>
-          </div>
-        )}
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1EEEA] text-foreground dark:bg-muted">
+          <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2} />
+        </span>
       </div>
     </button>
   );

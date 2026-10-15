@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>LoveNest Home Refinada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap">
+<style>
+/* Layout: à esquerda o telemóvel (390×844, scroll interno); à direita, em ecrãs largos, notas de decisão por secção. Em telemóvel, só o ecrã. */
+:root{
+  /* viewer */
+  --v-bg:#E9E7E4; --v-ink:#1C1D22; --v-muted:#64666E; --v-rule:#D6D3CE; --v-panel:#FFFFFF;
+  /* LoveNest refinado */
+  --canvas:#FFFFFF; --card:#FFFFFF; --edge:#ECE8E3; --ink:#0B1324; --ink2:#3A4150; --mute:#6E7280; --faint:#9A9DA6; --hair:#ECE8E3; --tile:#F1EEEA;
+  --rose:#E5466D; --rose-soft:#FDEEF2; --blue:#4D7CFE; --blue-soft:#EDF2FF; --ok:#1E9E6A;
+  --heart:#F43F5E; --shield:#60A5FA; --sky:#38BDF8;
+  --sh: 0 1px 2px rgba(11,19,36,.04), 0 10px 28px -14px rgba(11,19,36,.16);
+  --e: cubic-bezier(.2,0,0,1);
+  --f: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--v-bg:#141518;--v-ink:#ECEDEF;--v-muted:#A1A4AC;--v-rule:#2C2E33;--v-panel:#1C1E22;color-scheme:dark}}
+:root[data-theme="dark"]{--v-bg:#141518;--v-ink:#ECEDEF;--v-muted:#A1A4AC;--v-rule:#2C2E33;--v-panel:#1C1E22;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--v-bg);color:var(--v-ink);font:14px/1.5 var(--f)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:28px;justify-items:center}
+@media (min-width:900px){.wrap{grid-template-columns:auto minmax(0,1fr);justify-items:start;align-items:start}}
+.head{grid-column:1/-1;justify-self:stretch}
+.head h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.head p{margin:4px 0 0;color:var(--v-muted);max-width:80ch}
+.pwrap{width:100%;max-width:390px}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;background:var(--canvas);color:var(--ink);box-shadow:0 0 0 10px #101114,0 0 0 11px #2a2b30,0 30px 60px -20px rgba(0,0,0,.45);transform-origin:top left;font-family:var(--f);letter-spacing:-.006em}
+.sb{position:absolute;inset:0 0 auto 0;height:42px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font:600 14px/1 var(--f);z-index:40;background:linear-gradient(var(--canvas) 70%,transparent);pointer-events:none}
+.scr{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:46px 16px 124px;scrollbar-width:none}
+.scr::-webkit-scrollbar{display:none}
+.hi{position:absolute;left:50%;bottom:8px;width:128px;height:5px;border-radius:3px;background:var(--ink);transform:translateX(-50%);z-index:50;opacity:.9}
+
+/* header */
+.hdr{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:2px 4px 0}
+.av{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:600 14px/1 var(--f);color:#fff;border:0;padding:0;cursor:pointer}
+.av .ring{position:absolute;inset:-3px;border-radius:50%;border:2px solid currentColor}
+.av.y{background:linear-gradient(140deg,#F27A97,#D9466B);color:var(--rose)} .av.y span{color:#fff}
+.av.p{background:linear-gradient(140deg,#7D9DFF,#3F68E6);color:var(--blue);justify-self:end} .av.p span{color:#fff}
+.av.y .ring{border-style:dashed;opacity:.55}
+.av.y.on .ring{border-style:solid;opacity:1}
+.av .st{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2px solid var(--canvas)}
+.brand{text-align:center}
+.brand b{display:block;font:650 18px/1.1 var(--f);font-weight:650;letter-spacing:-.025em}
+.brand small{display:block;font-size:11.5px;color:var(--mute);margin-top:2px}
+.phrase{margin:7px 0 11px;text-align:center;font:500 13px/1.35 var(--f);color:var(--rose)}
+
+/* Fundo branco: os cartões ganham contraste com uma borda fina e sombra suave. */
+.card{background:var(--card);border-radius:26px;border:1px solid var(--edge);box-shadow:var(--sh);padding:18px 18px 16px}
+.stack{display:grid;gap:9px}
+.lbl{display:flex;align-items:center;gap:7px;font:600 13px/1 var(--f);color:var(--ink2)}
+.lbl svg{color:var(--rose)}
+.rule{height:1px;background:var(--hair);margin:12px -18px 10px}
+
+/* tempo juntos — frases em cima, contador por baixo */
+.tj{padding:8px 14px 7px;border-radius:18px;text-align:center}
+.tj .info{min-width:0}
+.tj .row{margin-top:5px;justify-content:center}
+.tj .cap{font:600 9px/1 var(--f);text-transform:uppercase;letter-spacing:.14em;color:var(--faint);margin:0}
+.tj .meta{margin-top:3px;font:500 9.5px/1.2 var(--f);color:var(--faint);white-space:nowrap}
+.tj .row{display:flex;align-items:center;gap:4px;flex:none}
+.tj .u{display:flex;flex-direction:column;align-items:center;min-width:20px}
+.tj .u b{font:700 14px/1 var(--f);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--ink)}
+.tj .u.days b{font-size:17px;color:var(--heart)}
+.tj .u.u-s b{color:rgba(11,19,36,.6)}
+.tj .u small{font:500 7.5px/1 var(--f);text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-top:2px}
+.tj .sep{font:300 11px/1 var(--f);color:#C9C6C1;margin-bottom:9px}
+
+/* chama — compacta: corações, escudos, pontinhos e gestos como na app */
+.ch{padding:12px 16px 11px}
+.ch .rule{margin:9px -16px 8px}
+.ch-top{display:flex;justify-content:space-between;align-items:center}
+.ch-lvl{font-size:12px;color:var(--mute);margin-top:4px}
+.guard{width:40px;height:40px;display:grid;place-items:center;transition:transform .4s var(--e)}
+.guard img{width:40px;height:40px;object-fit:contain}
+.guard.pop{transform:scale(1.1)}
+.ch-mid{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:4px}
+.ch-n{display:flex;flex-direction:column}
+.ch-n .n{font:800 34px/.95 var(--f);letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.ch-n .u{font-size:11px;color:var(--mute);margin-top:3px}
+.ch-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-bottom:2px}
+.hearts{display:flex;gap:12px}
+.hearts span{display:flex;align-items:center;gap:4px;font:600 10px/1 var(--f);color:var(--mute)}
+.hearts svg{width:16px;height:16px;transition:transform .3s var(--e)}
+.hearts .on svg{fill:var(--heart);stroke:var(--heart)}
+.hearts .off svg{fill:none;stroke:#CFCBC5}
+.shields{display:flex;align-items:center;gap:2px}
+.shields svg{width:14px;height:14px;fill:none;stroke:var(--shield);stroke-width:1.6}
+.shields .off{stroke:#D5D1CB}
+.shields span{font:600 9.5px/1 var(--f);text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin-left:4px}
+.track{display:flex;align-items:center;margin-top:11px}
+.track .dot{flex:none;width:7px;height:7px;border-radius:50%;background:#E3DFD9}
+.track .dot.on{background:#F87171}
+.track .dot.cur{width:14px;height:14px;background:#F87171;box-shadow:0 0 10px rgba(244,63,94,.28)}
+.track .ln{flex:1;height:1px;background:#E3DFD9}
+.track .ln.on{background:rgba(248,113,113,.35)}
+.track-cap{display:flex;justify-content:space-between;margin-top:7px;font-size:12px;color:var(--mute)}
+.track-cap .cur{font-weight:600;color:#F87171}
+.track-cap b{color:var(--ink2);font-weight:600}
+.foot{display:flex;align-items:center;justify-content:space-between}
+.foot .pts{font-size:11.5px;color:var(--faint)}
+.foot .pts b{font-weight:700;font-variant-numeric:tabular-nums}
+.foot .pts .p{color:var(--rose)} .foot .pts .g{color:var(--sky)}
+.miss{display:flex;gap:7px}
+.miss svg{width:15px;height:15px;color:#CFCBC5;transition:color .3s var(--e)}
+.miss .done.mi-pres{color:var(--ink)} .miss .done.mi-mood{color:var(--heart)} .miss .done.mi-chat{color:var(--blue)} .miss .done.mi-pray{color:#8B5CF6}
+/* ciclo — só aparece quando a opção Ciclo está ativa */
+.cy{padding:11px 14px 10px;border-radius:20px}
+.cy-top{display:flex;align-items:center;justify-content:space-between}
+.cy-cap{display:flex;align-items:center;gap:7px;font:600 13px/1 var(--f);color:var(--ink2)}
+.cy-cap i{width:8px;height:8px;border-radius:50%;background:#A78BFA}
+.cy-mid{display:flex;align-items:center;gap:10px;margin-top:8px}
+.cy-ph{display:flex;align-items:center;gap:6px;font:600 15px/1 var(--f);color:#8B5CF6}
+.cy-day{font-size:12.5px;color:var(--mute)}
+.cy-of{margin-left:auto;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.cy-bar{height:4px;border-radius:2px;background:var(--tile);margin-top:8px;overflow:hidden}
+.cy-bar i{display:block;height:100%;border-radius:2px;background:#A78BFA}
+.cy-next{margin:7px 0 0;font-size:12px;color:var(--mute)}
+
+/* onde estamos */
+.loc{padding:0;overflow:hidden}
+.map{position:relative;height:104px;background:#EEEAE4}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;color:#fff;font:600 13px/1 var(--f);border:3px solid #fff;box-shadow:0 6px 14px -6px rgba(11,19,36,.5)}
+.loc-b{display:flex;align-items:center;gap:12px;padding:12px 16px 13px}
+.loc-b .tx{flex:1;min-width:0}
+.loc-b b{display:block;font-size:15px;font-weight:600}
+.loc-b small{display:block;font-size:12.5px;color:var(--mute)}
+.live{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ok)}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.go{width:40px;height:40px;border-radius:50%;background:var(--tile);display:grid;place-items:center;flex:none;border:0;color:var(--ink);cursor:pointer}
+
+/* dia a dia */
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:26px 4px 12px}
+.sec h2{margin:0;font:650 17px/1.2 var(--f);font-weight:650;letter-spacing:-.02em}
+.sec a{font-size:13px;color:var(--mute);text-decoration:none}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:0;padding:0;cursor:pointer}
+.tool .ic{position:relative;width:56px;height:56px;border-radius:19px;background:var(--card);border:1px solid var(--edge);box-shadow:var(--sh);display:grid;place-items:center}
+.tool.hot .ic{background:var(--ink);border-color:var(--ink);color:#fff}
+.tool .ic .bd{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--rose);color:#fff;font:700 11px/20px var(--f);text-align:center;border:2px solid var(--canvas)}
+.tool span{font-size:11.5px;font-weight:500;color:var(--ink2)}
+.next{margin-top:14px;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--edge);border-radius:18px;padding:12px 14px;box-shadow:var(--sh)}
+.next .t{font:600 15px/1 var(--f);font-variant-numeric:tabular-nums;width:48px}
+.next .tx{flex:1;min-width:0}
+.next .tx b{display:block;font-size:14.5px;font-weight:600}
+.next .tx small{font-size:12.5px;color:var(--mute)}
+.mood{display:flex;align-items:center;gap:10px;margin-top:10px;padding:0 4px;font-size:13px;color:var(--ink2)}
+.mood .e{font-size:17px}
+
+/* memórias */
+.bento{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:auto auto;gap:10px}
+.photo{grid-row:1/3;position:relative;border-radius:22px;overflow:hidden;min-height:232px;background:linear-gradient(165deg,#F7C9A8 0%,#E99A8E 38%,#A6728F 72%,#4B4766 100%);color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:14px}
+.photo::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 60% at 70% 22%,rgba(255,240,215,.55),transparent 60%),linear-gradient(transparent 45%,rgba(11,19,36,.55))}
+.photo > *{position:relative}
+.photo small{font-size:12px;opacity:.85}
+.photo b{font:600 17px/1.2 var(--f);font-weight:600;letter-spacing:-.015em}
+.mini{background:var(--card);border:1px solid var(--edge) !important;border-radius:20px;box-shadow:var(--sh);padding:13px 14px;display:flex;flex-direction:column;gap:6px;min-height:111px}
+.mini .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center}
+.mini b{font-size:14px;font-weight:600;line-height:1.2}
+.mini small{font-size:12px;color:var(--mute);line-height:1.3}
+.rows{margin-top:10px;background:var(--card);border:1px solid var(--edge);border-radius:20px;box-shadow:var(--sh);overflow:hidden}
+.rows button{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:0 14px;background:none;border:0;text-align:left;cursor:pointer}
+.rows button + button{box-shadow:inset 0 1px 0 var(--hair)}
+.rows .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
+.rows .tx{flex:1;min-width:0}
+.rows b{display:block;font-size:14px;font-weight:600}
+.rows small{font-size:12.5px;color:var(--mute)}
+.new{font-size:11px;font-weight:700;color:var(--rose);background:var(--rose-soft);padding:3px 7px;border-radius:6px}
+
+/* nav — flutuante, cantos arredondados */
+.nav{position:absolute;left:12px;right:12px;bottom:22px;z-index:45;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border-radius:26px;box-shadow:0 0 0 1px rgba(11,19,36,.05),0 16px 40px -12px rgba(11,19,36,.22);display:grid;grid-template-columns:repeat(5,1fr);padding:6px}
+.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:54px;justify-content:center;color:var(--faint);font:500 11px/1 var(--f);cursor:pointer;position:relative}
+.nav button[aria-current]{color:var(--ink);font-weight:600}
+.nav button[aria-current]::after{content:"";position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--rose)}
+.nav .bd{position:absolute;top:4px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--rose);color:#fff;font:700 10.5px/17px var(--f);text-align:center}
+
+/* notes */
+.notes{min-width:0;max-width:640px}
+.notes h2{font-size:16px;margin:0 0 4px;font-weight:600}
+.notes ol{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+.notes li{background:var(--v-panel);border-radius:12px;padding:13px 15px;border:1px solid var(--v-rule)}
+.notes li b{display:block;font-size:14px}
+.notes li p{margin:4px 0 0;font-size:13.5px;color:var(--v-muted)}
+.notes .ref{display:inline-block;font-size:11.5px;font-weight:600;color:var(--v-ink);background:var(--v-bg);padding:1px 6px;border-radius:4px;margin-top:6px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation-duration:1ms!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="head">
+    <h1>Home refinada · proposta 3</h1>
+    <p>Mockup interativo, ainda não está na app. Conteúdo de exemplo: Ana a usar a app, com o Miguel. O contador corre ao vivo e para quando a página não está visível.</p>
+  </header>
+
+  <div class="pwrap" id="pwrap"><div class="phone" id="phone" role="img" aria-label="Mockup da Home do LoveNest">
+    <div class="sb"><span>21:14</span><span>●●● 99</span></div>
+    <div class="scr">
+
+      <div class="hdr">
+        <button class="av y" id="avY" aria-label="Ana, ainda não apareceu hoje"><span>A</span><i class="ring"></i><i class="st" style="background:#D5D1CB" id="stY"></i></button>
+        <div class="brand"><b>LoveNest</b><small>sábado, 10 de outubro</small></div>
+        <button class="av p" aria-label="Miguel, apareceu às 7:40"><span>M</span><i class="ring"></i><i class="st" style="background:var(--ok)"></i></button>
+      </div>
+      <p class="phrase">O vosso ninho é o vosso lugar seguro</p>
+
+      <div class="stack">
+        <!-- Tempo juntos: compacto, como o cartão atual da app -->
+        <section class="card tj" aria-label="Tempo juntos">
+          <div class="info">
+            <p class="cap">Tempo juntos</p>
+            <p class="meta">Desde 17 jan 2026 · 1 ano em <span id="toYear">99</span> dias</p>
+          </div>
+          <div class="row">
+            <div class="u days"><b id="d">266</b><small>dias</small></div>
+            <span class="sep">:</span>
+            <div class="u"><b id="h">00</b><small>hrs</small></div>
+            <span class="sep">:</span>
+            <div class="u"><b id="mi">00</b><small>min</small></div>
+            <span class="sep">:</span>
+            <div class="u u-s"><b id="se">00</b><small>seg</small></div>
+          </div>
+        </section>
+
+        <!-- A vossa chama: compacta -->
+        <section class="card ch" aria-label="A vossa chama">
+          <div class="ch-top">
+            <div><span class="lbl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.6 3 4.8 5 4.8 9.6a4.8 4.8 0 0 1-9.6 0c0-2.2 1.2-3.6 2.3-4.8.2 1.5.9 2.4 1.9 2.8C11 8.6 11.2 5.8 12 3.5"/></svg>A vossa chama</span><div class="ch-lvl">Chama · nível 3</div></div>
+            <div class="guard" id="guard"><img alt="Guardião da Chama" src="/src/assets/flame/flame_03_chama_thumb.png"></div>
+          </div>
+          <div class="ch-mid">
+            <div class="ch-n"><span class="n" id="streak">12</span><span class="u">dias de presença</span></div>
+            <div class="ch-right">
+              <div class="hearts" aria-label="Presença de hoje">
+                <span class="off" id="hY"><svg viewBox="0 0 24 24" stroke-width="1.6"><path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4c0 5.2-7 9.6-7 9.6z"/></svg>Tu</span>
+                <span class="on"><svg viewBox="0 0 24 24" stroke-width="1.6"><path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4c0 5.2-7 9.6-7 9.6z"/></svg>Par</span>
+              </div>
+              <div class="shields" aria-label="2 de 3 escudos">
+                <svg viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/></svg>
+                <svg class="off" viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/></svg>
+                <span>Proteção</span>
+              </div>
+            </div>
+          </div>
+          <!-- Pontinhos da jornada, como na app: Faísca → Brasa → Chama → Chama Viva → Farol → Eternidade -->
+          <div class="track" aria-label="Jornada: nível Chama">
+            <i class="dot on"></i><i class="ln on"></i><i class="dot on"></i><i class="ln on"></i><i class="dot cur"></i><i class="ln"></i><i class="dot"></i><i class="ln"></i><i class="dot"></i><i class="ln"></i><i class="dot"></i>
+          </div>
+          <div class="track-cap"><span class="cur">Chama</span><span>Próximo: <b>Guardião</b> · faltam 2 dias</span></div>
+          <div class="rule"></div>
+          <!-- Gestos, como na app: pontos · gestos e ícones das missões -->
+          <div class="foot">
+            <span class="pts"><b class="p" id="pts">120</b> pts · <b class="g" id="gst">2</b> gestos</span>
+            <span class="miss" aria-label="Gestos de hoje">
+              <svg class="mi-pres" id="mP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 20c1.2-3.4 3.6-5 6.5-5s5.3 1.6 6.5 5"/></svg>
+              <svg class="mi-mood done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9.3 9.8h.01M14.7 9.8h.01"/></svg>
+              <svg class="mi-chat done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 5.5h14a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9.5L5 20.5V6.5a1 1 0 0 1 1-1"/></svg>
+              <svg class="mi-pray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c2.8-1 5.5-1 8 .8 2.5-1.8 5.2-1.8 8-.8V19c-2.8-1-5.5-1-8 .8-2.5-1.8-5.2-1.8-8-.8zM12 6.3v13.5"/></svg>
+            </span>
+          </div>
+        </section>
+
+        <!-- Ciclo: só aparece quando a opção Ciclo está ativa (conteúdo do CycleHomeCard da app) -->
+        <section class="card cy" aria-label="O teu ciclo">
+          <div class="cy-top">
+            <span class="cy-cap"><i></i>O teu ciclo</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A9DA6" stroke-width="2" stroke-linecap="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </div>
+          <div class="cy-mid">
+            <span class="cy-ph"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Lútea</span>
+            <span class="cy-day">Dia 21</span>
+            <span class="cy-of">21/28 dias</span>
+          </div>
+          <div class="cy-bar"><i style="width:75%"></i></div>
+          <p class="cy-next">Próxima menstruação em 7 dias · 17 out</p>
+        </section>
+
+        <!-- Onde estamos -->
+        <section class="card loc" aria-label="Onde estamos">
+          <div class="map" aria-hidden="true">
+            <svg viewBox="0 0 358 104" preserveAspectRatio="xMidYMid slice"><rect width="358" height="104" fill="#EEEAE4"/><path d="M250 0c-10 32 20 55 108 68V0z" fill="#DCE6EF"/><g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round"><path d="M-10 74c80-10 150 5 230-16s110-32 150-28"/><path d="M60 112c10-40 0-72 30-120"/><path d="M180 112c-6-32 10-56 0-120"/></g><g stroke="#E4DED6" stroke-width="2" fill="none"><path d="M0 32h358M0 92h358M120 0v104M300 0v104"/></g><path d="M92 76C150 56 200 46 262 34" stroke="#0B1324" stroke-width="1.6" stroke-dasharray="4 5" fill="none" opacity=".55"/></svg>
+            <span class="pin" style="left:72px;top:60px;background:var(--rose)">A</span>
+            <span class="pin" style="left:246px;top:16px;background:var(--blue)">M</span>
+          </div>
+          <div class="loc-b">
+            <div class="tx"><b>Onde estamos</b><small>Miguel em Cidade de Inhambane · tu em Maputo</small><span class="live"><i></i>Partilha ativa · há 28 min</span></div>
+            <button class="go" aria-label="Abrir localização"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9.5 6 6 6-6 6"/></svg></button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Dia a dia -->
+      <div class="sec"><h2>O vosso dia a dia</h2></div>
+      <div class="tools">
+        <button class="tool hot"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 5.5h14a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9.5L5 20.5V6.5a1 1 0 0 1 1-1"/></svg><i class="bd">2</i></span><span>Chat</span></button>
+        <button class="tool"><span class="ic" style="color:#E5466D"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9.3 9.8h.01M14.7 9.8h.01"/></svg></span><span>Humor</span></button>
+        <button class="tool"><span class="ic" style="color:#3F68E6"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M9 14.5l2 2 4-4"/></svg></span><span>Agenda</span></button>
+        <button class="tool"><span class="ic" style="color:#8B5CF6"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c2.8-1 5.5-1 8 .8 2.5-1.8 5.2-1.8 8-.8V19c-2.8-1-5.5-1-8 .8-2.5-1.8-5.2-1.8-8-.8zM12 6.3v13.5"/></svg></span><span>Espiritual</span></button>
+        <button class="tool"><span class="ic" style="color:#D9466B"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 7.6a3.9 3.9 0 0 1 7 2.3c0 5.2-7 9.6-7 9.6z"/><path d="m10 11 2 2 2-2"/></svg></span><span>Conflitos</span></button>
+      </div>
+      <div class="next">
+        <span class="t">23:00</span>
+        <div class="tx"><b>Jantar à luz de velas</b><small>Agenda · os dois · 1 por fazer</small></div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A9DA6" stroke-width="2" stroke-linecap="round"><path d="m9.5 6 6 6-6 6"/></svg>
+      </div>
+      <div class="mood"><span class="e">😌</span><span><b style="font-weight:600">Miguel</b> está tranquilo · tu ainda não partilhaste</span></div>
+
+      <!-- Memórias & Aventuras -->
+      <div class="sec"><h2>Memórias e aventuras</h2><a href="#">Ver tudo</a></div>
+      <div class="bento">
+        <!-- Na app, este cartão mostra a fotografia real da última memória. -->
+        <button class="photo" style="border:0;text-align:left;cursor:pointer"><small>Última memória · 3 out</small><b>Praia do Tofo, ao fim da tarde</b></button>
+        <button class="mini" style="border:0;text-align:left;cursor:pointer"><span class="ic" style="background:#FDEEF2;color:#D9466B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg></span><b>Nossa História</b><small>4 capítulos · 1 ano em 99 dias</small></button>
+        <button class="mini" style="border:0;text-align:left;cursor:pointer"><span class="ic" style="background:#F1EDFE;color:#7C5CE6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="7.5"/><path d="M12 8.5v4l2.5 2"/></svg></span><b>Cápsula</b><small>Abre daqui a 12 dias</small></button>
+      </div>
+      <div class="rows">
+        <button><span class="ic" style="background:#FFF3E8;color:#E07A1F"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.2 9l5.8.4-4.4 3.7 1.4 5.6L12 15.8l-5 2.9 1.4-5.6L4 9.4 9.8 9z"/></svg></span><span class="tx"><b>LoveWrapped de setembro</b><small>O vosso mês, em resumo</small></span><span class="new">Novo</span></button>
+        <button><span class="ic" style="background:#EAF6F0;color:#1E9E6A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v4a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 12v4M8.5 20h7M10 16h4v4h-4z"/></svg></span><span class="tx"><b>Desafios</b><small>“Cozinhar uma receita nova” · em curso</small></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A9DA6" stroke-width="2" stroke-linecap="round"><path d="m9.5 6 6 6-6 6"/></svg></button>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+
+    <!-- Barra flutuante: Hoje · Chat · Biblioteca · Ciclo · Perfil -->
+    <nav class="nav" aria-label="Navegação principal">
+      <button aria-current="page"><svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10.4 12 4l8 6.4V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></svg>Hoje</button>
+      <button><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 5.5h14a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9.5L5 20.5V6.5a1 1 0 0 1 1-1"/></svg>Chat<i class="bd">2</i></button>
+      <button><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a1.5 1.5 0 0 1 1.5-1.5H8V21H5.5A1.5 1.5 0 0 1 4 19.5zM8 3.5h5.5V21H8M13.5 6l3.4-1.2 4 13.2-3.4 1.2z"/></svg>Biblioteca</button>
+      <button><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 9.4C10 6.2 10.6 3.8 12 3c1.4.8 2 3.2 0 6.4M14.6 12c3.2-2 5.6-1.4 6.4 0-.8 1.4-3.2 2-6.4 0M12 14.6c2 3.2 1.4 5.6 0 6.4-1.4-.8-2-3.2 0-6.4M9.4 12C6.2 14 3.8 13.4 3 12c.8-1.4 3.2-2 6.4 0"/></svg>Ciclo</button>
+      <button><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M5 20c1.3-3.6 3.9-5.4 7-5.4s5.7 1.8 7 5.4"/></svg>Perfil</button>
+    </nav>
+    <div class="hi"></div>
+  </div></div>
+
+  <aside class="notes">
+    <h2>O que mudou nesta versão</h2>
+    <ol>
+      <li><b>Cabeçalho: os dois avatares</b><p>Sem mudanças. Ana à esquerda, Miguel à direita; o anel mostra a presença.</p></li>
+      <li><b>Tempo juntos, compacto</b><p>“Tempo juntos”, a data e o próximo marco em cima; o contador (dias em rosa, horas, minutos, segundos) por baixo das frases.</p><span class="ref">como na app hoje</span></li>
+      <li><b>A vossa chama, mais pequena</b><p>Corações Tu/Par e escudos de proteção como na app. O avanço volta aos pontinhos da jornada (Faísca → Eternidade), com “Próximo: Guardião · faltam 2 dias” ao lado. Os gestos voltam à linha da app: pontos · gestos e os ícones das missões. Saíram o retângulo Tu/Miguel e o botão “Estou aqui”.</p><span class="ref">como na app hoje</span></li>
+      <li><b>Fundo branco</b><p>O fundo da app passa a branco. Cartões e botões ganham uma borda fina e sombra suave para manterem o contraste com o fundo.</p></li>
+      <li><b>Ciclo na Home</b><p>Quando a opção Ciclo está ativa, aparece um cartão compacto a seguir à chama: fase (aqui, Lútea), dia do ciclo, barra de progresso e o próximo evento. É o conteúdo do cartão de ciclo que a app já tem. Para o par, o título passa a “Ciclo dela”.</p></li>
+      <li><b>Onde estamos</b><p>O mesmo cartão, com o mapa mais baixo para ocupar menos espaço.</p></li>
+      <li><b>O vosso dia a dia</b><p>Sem mudanças: Chat, Humor, Agenda, Espiritual e Conflitos, o próximo item da agenda e o humor do par.</p></li>
+      <li><b>Memórias e aventuras</b><p>Saiu a etiqueta “foto provisória”. Na app, o cartão grande mostra a fotografia real da última memória. Nossa História, Cápsula, LoveWrapped e Desafios ficam como estavam.</p></li>
+      <li><b>Barra inferior flutuante</b><p>Barra com cantos arredondados, a flutuar sobre o conteúdo. Separadores: Hoje · Chat · Biblioteca · Ciclo · Perfil. “Nós” sai e a Biblioteca entra no lugar. “Vida” passa a chamar-se “Ciclo”.</p></li>
+    </ol>
+  </aside>
+</div>
+
+<script>
+(() => {
+  // Tempo juntos: desde 17 jan 2026 00:00 (hora local). Só corre com a página visível.
+  const start = new Date(2026, 0, 17, 0, 0, 0);
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, "0");
+  let timer = null;
+  const tick = () => {
+    const now = new Date();
+    let s = Math.max(0, Math.floor((now - start) / 1000));
+    const d = Math.floor(s / 86400); s -= d * 86400;
+    const h = Math.floor(s / 3600); s -= h * 3600;
+    const m = Math.floor(s / 60); s -= m * 60;
+    $("d").textContent = d; $("h").textContent = pad(h); $("mi").textContent = pad(m); $("se").textContent = pad(s);
+    const year = new Date(2027, 0, 17);
+    $("toYear").textContent = Math.max(0, Math.ceil((year - now) / 86400000));
+  };
+  const run = () => { if (timer) return; tick(); timer = setInterval(tick, 1000); };
+  const stop = () => { clearInterval(timer); timer = null; };
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" ? run() : stop());
+  run();
+
+  // escala do telemóvel em ecrãs estreitos
+  const fit = () => { const w = $("pwrap").clientWidth; const sc = Math.min(1, (w - 2) / 412); const p = $("phone"); p.style.transform = `scale(${sc})`; p.style.marginLeft = (sc < 1 ? 11*sc : 11) + "px"; $("pwrap").style.height = (844 * sc + 24) + "px"; p.style.marginTop = (11*sc) + "px"; };
+  addEventListener("resize", fit); fit();
+})();
+</script>
+
+</body>
+</html>

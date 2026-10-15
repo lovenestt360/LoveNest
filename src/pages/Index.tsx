@@ -35,7 +35,20 @@ import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
 import { capsuleSeenKey } from "@/features/capsule/CapsuleRealtimeWatcher";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
+import {
+  DailyTools,
+  MemoriesSection,
+  NextUp,
+  PartnerMoodLine,
+  SectionTitle,
+  SURFACE,
+  TimeTogetherStrip,
+  TOOL_ICONS,
+  type DailyTool,
+} from "@/features/home/components/HomeSections";
 import { LoveStreakCard } from "@/components/LoveStreakCard";
+import { CycleHomeCard } from "@/features/cycle/CycleHomeCard";
+import { LocationHomeCard } from "@/features/location/LocationHomeCard";
 import { cn } from "@/lib/utils";
 
 const MOOD_MAP: Record<string, [string, string]> = {
@@ -293,6 +306,10 @@ const Index = () => {
     moodUnread,
     tasksUnread,
     scheduleUnread,
+    prayerUnread,
+    complaintsUnread,
+    memoriesUnread,
+    capsuleUnread,
   } = useAppNotifContext();
 
   const {
@@ -446,204 +463,128 @@ const Index = () => {
     }
   };
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? "Bom dia. Um pouco de presença já conta."
-      : hour < 19
-        ? "Boa tarde. Como estão vocês hoje?"
-        : "Boa noite. Ainda há tempo para um gesto pequeno.";
+  const hasSpiritual = profile?.religion !== "none";
+  const hideCycle = isSolo && profile?.gender === "male";
+  const partnerName = avatars.partner?.displayName?.split(" ")[0] ?? "O teu par";
+  const meHere = !!streakData?.myCheckedIn;
+  const partnerHere = !isSolo && (streakData?.activeCount ?? 0) >= (meHere ? 2 : 1);
 
-  const moodDescription = mood.mine
-    ? mood.partner
-      ? `${mood.mine.emoji} ${mood.mine.label} · Par: ${mood.partner.emoji} ${mood.partner.label}`
-      : `${mood.mine.emoji} ${mood.mine.label} · O teu par ainda não partilhou`
-    : "Como está o teu coração hoje?";
+  const tools: DailyTool[] = [
+    ...(!isSolo
+      ? [{ to: "/chat", label: "Chat", icon: TOOL_ICONS.chat, tint: "text-[#0B1324] dark:text-foreground", badge: chatUnread }]
+      : []),
+    { to: "/humor", label: "Humor", icon: TOOL_ICONS.mood, tint: "text-rose-500", badge: moodUnread },
+    { to: "/plano", label: "Agenda", icon: TOOL_ICONS.agenda, tint: "text-[#3F68E6]", badge: tasksUnread + scheduleUnread },
+    ...(hasSpiritual
+      ? [{ to: "/jornada-espiritual", label: "Espiritual", icon: TOOL_ICONS.spiritual, tint: "text-violet-500", badge: prayerUnread }]
+      : []),
+    ...(!isSolo
+      ? [{ to: "/conflitos", label: "Conflitos", icon: TOOL_ICONS.conflicts, tint: "text-rose-600", badge: complaintsUnread }]
+      : []),
+  ];
 
-  const chatDescription =
-    chatUnread > 0
-      ? `${chatUnread} ${chatUnread === 1 ? "mensagem nova" : "mensagens novas"}`
-      : chatPreview.preview ?? "Deixa uma pequena mensagem.";
-
-  const planDescription = plano.next
-    ? `${plano.next.time} · ${plano.next.title}`
-    : plano.pending > 0
-      ? `${plano.pending} ${plano.pending === 1 ? "coisa pendente" : "coisas pendentes"}`
-      : "Nada urgente por agora.";
+  const historyHint = nextSpecialDate
+    ? nextSpecialDate.daysUntil === 0
+      ? `${nextSpecialDate.title} hoje`
+      : `${nextSpecialDate.title} em ${nextSpecialDate.daysUntil} ${nextSpecialDate.daysUntil === 1 ? "dia" : "dias"}`
+    : null;
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 overflow-x-hidden pb-20 animate-fade-in">
+    <div className="mx-auto max-w-lg overflow-x-hidden pb-20 animate-fade-in">
       <HomeHeader
         me={avatars.me}
         partner={avatars.partner}
         today={today}
         loading={avatars.loading}
+        meHere={meHere}
+        partnerHere={partnerHere}
       />
 
-      <section className="px-1 pt-1">
-        <p className="text-[17px] font-extrabold tracking-[-0.025em] text-foreground">
-          {greeting}
-        </p>
-        {!isSolo && time.startDate && (
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-            Juntos há {time.days.toLocaleString("pt-PT")} dias.
-          </p>
+      <p className="mb-[11px] mt-[7px] text-center text-[13px] font-medium leading-snug text-rose-500">
+        {isSolo ? "O teu ninho é o teu lugar seguro" : "O vosso ninho é o vosso lugar seguro"}
+      </p>
+
+      <div className="space-y-[9px]">
+        {announcements.map((announcement) => (
+          <div
+            key={announcement.id}
+            className="rounded-[18px] border border-rose-200/60 bg-rose-50/70 px-4 py-3 dark:border-rose-900/30 dark:bg-rose-950/20"
+          >
+            <p className="text-[12px] font-semibold text-rose-600">{announcement.title}</p>
+            <p className="mt-0.5 text-[12px] leading-5 text-rose-800 dark:text-rose-200">{announcement.content}</p>
+          </div>
+        ))}
+
+        {!isSolo && (
+          <TimeTogetherStrip
+            days={time.days}
+            hours={time.hours}
+            minutes={time.minutes}
+            seconds={time.seconds}
+            startDate={time.startDate}
+          />
         )}
-      </section>
 
-      {announcements.map((announcement) => (
-        <div
-          key={announcement.id}
-          className="rounded-[1.4rem] border border-rose-200/60 bg-rose-50/70 px-4 py-3.5 dark:border-rose-900/30 dark:bg-rose-950/20"
-        >
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-rose-500/70">
-            {announcement.title}
-          </p>
-          <p className="mt-1 text-[12px] font-semibold leading-5 text-rose-800 dark:text-rose-200">
-            {announcement.content}
-          </p>
-        </div>
-      ))}
-
-      {profileReady && (
-        <section>
-          <LoveStreakCard streak={streakData} loading={streakLoading} />
-          {recentMilestone && (
-            <p className="mt-1.5 px-3 text-center text-[10px] font-medium text-muted-foreground/65">
-              {getMilestoneMicroMemory(recentMilestone)}
-            </p>
-          )}
-        </section>
-      )}
-
-      {profileReady && !avatars.loading && !isSolo && !avatars.partner && houseInviteCode ? (
-        <section className="rounded-[1.6rem] border border-rose-200/70 bg-gradient-to-br from-rose-50 to-white p-5 shadow-[0_12px_35px_rgba(244,63,94,0.06)] dark:border-rose-900/30 dark:from-rose-950/20 dark:to-card">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-500 dark:bg-rose-950/40">
-              <HeartHandshake className="h-5 w-5" strokeWidth={1.7} />
-            </div>
-            <div>
-              <p className="text-[14px] font-bold text-foreground">Falta uma pessoa neste espaço.</p>
-              <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                Partilha o código com o teu par para começarem a usar o LoveNest juntos.
+        {profileReady && (
+          <section>
+            <LoveStreakCard streak={streakData} loading={streakLoading} />
+            {recentMilestone && (
+              <p className="mt-1.5 px-3 text-center text-[10px] font-medium text-muted-foreground/65">
+                {getMilestoneMicroMemory(recentMilestone)}
               </p>
+            )}
+          </section>
+        )}
+
+        {profileReady && !hideCycle && <CycleHomeCard />}
+
+        {profileReady && !avatars.loading && !isSolo && !avatars.partner && houseInviteCode && (
+          <section className={cn(SURFACE, "rounded-[24px] p-4")}>
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-950/40">
+                <HeartHandshake className="h-5 w-5" strokeWidth={1.7} />
+              </div>
+              <div>
+                <p className="text-[14px] font-semibold text-foreground">Falta uma pessoa neste espaço.</p>
+                <p className="mt-0.5 text-[12px] leading-5 text-muted-foreground">
+                  Partilha o código com o teu par para começarem a usar o LoveNest juntos.
+                </p>
+              </div>
             </div>
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <div className="flex h-12 flex-1 items-center justify-center rounded-2xl border border-rose-200/70 bg-white/80 text-[16px] font-black tracking-[0.2em] text-rose-500 dark:bg-card">
-              {houseInviteCode}
+            <div className="mt-3 flex gap-2">
+              <div className="flex h-11 flex-1 items-center justify-center rounded-2xl border border-[#ECE8E3] text-[16px] font-bold tracking-[0.2em] text-rose-500 dark:border-border">
+                {houseInviteCode}
+              </div>
+              <button
+                type="button"
+                onClick={handleShareHouse}
+                className="h-11 rounded-2xl bg-[#0B1324] px-4 text-[13px] font-semibold text-white active:scale-[0.98]"
+              >
+                Partilhar
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleShareHouse}
-              className="h-12 rounded-2xl bg-[#0B1324] px-4 text-[11px] font-bold text-white active:scale-[0.98]"
-            >
-              Partilhar
-            </button>
-          </div>
-        </section>
-      ) : (
-        avatars.partner && <PartnerPresenceCard />
-      )}
+          </section>
+        )}
 
-      <section>
-        <div className="mb-3 flex items-center justify-between px-1">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Hoje
-            </p>
-            <p className="mt-0.5 text-[12px] text-muted-foreground/70">
-              Só o que pode fazer sentido agora.
-            </p>
-          </div>
-        </div>
+        {!isSolo && <LocationHomeCard />}
+      </div>
 
-        <div className="overflow-hidden rounded-[1.6rem] border border-border/70 bg-card shadow-[0_12px_35px_rgba(15,23,42,0.035)]">
-          <DailyAction
-            icon={<Smile className="h-5 w-5" strokeWidth={1.6} />}
-            title="Humor"
-            description={moodDescription}
-            to="/humor"
-            badge={moodUnread}
-            tone="rose"
-          />
+      <SectionTitle title={isSolo ? "O teu dia a dia" : "O vosso dia a dia"} />
+      <DailyTools tools={tools} />
+      <NextUp next={plano.next} pending={plano.pending} isSolo={isSolo} />
+      {!isSolo && <PartnerMoodLine partnerName={partnerName} partnerMood={mood.partner} mineShared={!!mood.mine} />}
 
-          {!isSolo && (
-            <DailyAction
-              icon={<MessageCircle className="h-5 w-5" strokeWidth={1.6} />}
-              title="Chat"
-              description={chatDescription}
-              to="/chat"
-              badge={chatUnread}
-              tone="indigo"
-            />
-          )}
+      <SectionTitle title="Memórias e aventuras" action={{ label: "Ver tudo", onClick: () => navigate("/memorias") }} />
+      <MemoriesSection
+        isSolo={isSolo}
+        historyHint={historyHint}
+        memoriesBadge={memoriesUnread}
+        capsuleBadge={capsuleUnread}
+      />
 
-          <DailyAction
-            icon={<CalendarDays className="h-5 w-5" strokeWidth={1.6} />}
-            title="Plano"
-            description={planDescription}
-            to="/plano"
-            badge={tasksUnread + scheduleUnread}
-            tone="orange"
-          />
-        </div>
-      </section>
-
-      {nextSpecialDate && !isSolo && (
-        <button
-          type="button"
-          onClick={() => navigate("/historia")}
-          className="flex w-full items-center gap-3 rounded-[1.45rem] border border-border/70 bg-card p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.03)] active:scale-[0.99]"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-950/25">
-            <CalendarHeart className="h-[18px] w-[18px]" strokeWidth={1.7} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-              Próximo momento
-            </p>
-            <p className="mt-0.5 truncate text-[13px] font-bold text-foreground">
-              {nextSpecialDate.title}
-            </p>
-          </div>
-          <span className="shrink-0 text-[11px] font-bold text-muted-foreground">
-            {nextSpecialDate.daysUntil === 0
-              ? "Hoje"
-              : nextSpecialDate.daysUntil === 1
-                ? "Amanhã"
-                : `${nextSpecialDate.daysUntil} dias`}
-          </span>
-        </button>
-      )}
-
-      <section>
-        <div className="mb-3 px-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            Continuar
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <ExperienceDoor
-            title={isSolo ? "Eu" : "Nós"}
-            description={isSolo ? "Momentos e jornada." : "História, memórias e crescimento."}
-            to="/nos"
-            icon={<Heart className="h-5 w-5" strokeWidth={1.6} />}
-            tone="rose"
-          />
-          <ExperienceDoor
-            title="Vida"
-            description="Planos, contexto e ferramentas práticas."
-            to="/vida"
-            icon={<Sparkles className="h-5 w-5" strokeWidth={1.6} />}
-            tone="indigo"
-          />
-        </div>
-      </section>
-
-      <InstallBanner />
+      <div className="mt-4">
+        <InstallBanner />
+      </div>
     </div>
   );
 };
