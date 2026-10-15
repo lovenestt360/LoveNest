@@ -1,6 +1,6 @@
 /**
- * Papel de parede por defeito do Chat, ao estilo do WhatsApp: fundo bege claro
- * com pequenos desenhos de linha (corações, estrelas, cartas…). Só é usado
+ * Papel de parede por defeito do Chat: papel claro com pequenos desenhos de
+ * linha muito suaves (corações, estrelas, cartas…). Só é usado
  * quando a pessoa não escolheu um fundo próprio em Personalização.
  */
 
@@ -38,7 +38,7 @@ const LAYOUT: [string, number, number, number, number][] = [
   ["heart", 132, 120, 22, 0.55],
 ];
 
-const tile = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><g fill="none" stroke="#D3C8B6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${LAYOUT.map(
+const tile = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><g fill="none" stroke="#E2DACD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${LAYOUT.map(
   ([name, x, y, rotate, scale]) =>
     `<g transform="translate(${x} ${y}) rotate(${rotate} 12 12) scale(${scale})">${ICONS[name]}</g>`,
 ).join("")}</g></svg>`;
