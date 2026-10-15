@@ -59,10 +59,10 @@ export function VerificationSection({ userId }: Props) {
     unverified: {
       title: "Verificação de Identidade",
       description: "Aumenta a tua segurança e confiança na plataforma.",
-      icon: <Shield className="h-8 w-8 text-rose-500" />,
-      color: "border-rose-500/10 bg-rose-500/[0.02]",
-      badge: "Indisponível",
-      badgeColor: "bg-rose-500/10 text-rose-600"
+      icon: <Shield className="h-7 w-7 text-[#0B1324] dark:text-foreground" strokeWidth={1.8} />,
+      color: "",
+      badge: "Por verificar",
+      badgeColor: "bg-[#F1EEEA] text-[#3A4150] dark:bg-muted dark:text-muted-foreground"
     },
     pending: {
       title: "Em Análise ⏳",
@@ -95,36 +95,36 @@ export function VerificationSection({ userId }: Props) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className={cn("glass-card p-6 flex items-center gap-4 border transition-all duration-500", current.color)}>
-        <div className="h-14 w-14 rounded-2xl bg-white/50 dark:bg-white/5 flex items-center justify-center shadow-inner">
+        <div className="h-14 w-14 shrink-0 rounded-2xl bg-[#F4F2EF] dark:bg-white/5 flex items-center justify-center">
           {current.icon}
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-black text-sm uppercase tracking-tight">{current.title}</h3>
-            <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider", current.badgeColor)}>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{current.title}</h3>
+            <span className={cn("shrink-0 whitespace-nowrap text-[11px] font-semibold px-2 py-0.5 rounded-full", current.badgeColor)}>
               {current.badge}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground font-medium mt-0.5">{current.description}</p>
+          <p className="text-[12.5px] text-muted-foreground mt-0.5">{current.description}</p>
         </div>
       </div>
 
       <div className="glass-card p-6 space-y-4">
         <header className="flex items-center gap-2 pb-2 border-b border-border/50">
-          <Info className="h-4 w-4 text-primary" />
-          <h4 className="font-bold text-sm">Porquê verificar?</h4>
+          <Info className="h-4 w-4 text-[#0B1324] dark:text-foreground" />
+          <h4 className="text-[15px] font-semibold">Porquê verificar?</h4>
         </header>
         <div className="grid gap-3 pt-2">
           <div className="flex gap-3">
-            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">1</div>
+            <div className="h-5 w-5 shrink-0 rounded-full bg-[#F1EEEA] dark:bg-muted flex items-center justify-center text-[10px] font-bold text-[#0B1324] dark:text-foreground">1</div>
             <p className="text-xs text-muted-foreground">Evita fraudes e perfis falsos na comunidade.</p>
           </div>
           <div className="flex gap-3">
-            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">2</div>
+            <div className="h-5 w-5 shrink-0 rounded-full bg-[#F1EEEA] dark:bg-muted flex items-center justify-center text-[10px] font-bold text-[#0B1324] dark:text-foreground">2</div>
             <p className="text-xs text-muted-foreground">Garante que o LoveNest seja um ambiente seguro para casais.</p>
           </div>
           <div className="flex gap-3">
-            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">3</div>
+            <div className="h-5 w-5 shrink-0 rounded-full bg-[#F1EEEA] dark:bg-muted flex items-center justify-center text-[10px] font-bold text-[#0B1324] dark:text-foreground">3</div>
             <p className="text-xs text-muted-foreground">Desbloqueia selos de confiança para ambos no casal.</p>
           </div>
         </div>

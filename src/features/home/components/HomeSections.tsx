@@ -404,16 +404,23 @@ export function MemoriesSection({
           title="Desafios"
           text={extras.challenge ? `“${extras.challenge}” · em curso` : isSolo ? "Escolhe um desafio" : "Escolham um desafio juntos"}
         />
-        {extras.wrapped && wrappedIsNew && (
-          <RowLink
-            onClick={() => navigate("/wrapped")}
-            icon={<Star className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-            tint="bg-rose-50 text-rose-500 dark:bg-rose-950/30"
-            title={`LoveWrapped de ${MONTHS_LONG[extras.wrapped.month - 1] ?? ""}`}
-            text={isSolo ? "O teu mês, em resumo" : "O vosso mês, em resumo"}
-            trailing={<span className="rounded-md bg-rose-50 px-[7px] py-[3px] text-[11px] font-bold text-rose-500 dark:bg-rose-950/30">Novo</span>}
-          />
-        )}
+        {/* LoveWrapped fica sempre à vista; "Novo" nos 10 dias a seguir a ser gerado. */}
+        <RowLink
+          onClick={() => navigate("/wrapped")}
+          icon={<Star className="h-[18px] w-[18px]" strokeWidth={1.9} />}
+          tint="bg-amber-50 text-amber-500 dark:bg-amber-950/30"
+          title={extras.wrapped ? `LoveWrapped de ${MONTHS_LONG[extras.wrapped.month - 1] ?? ""}` : "LoveWrapped"}
+          text={
+            extras.wrapped
+              ? isSolo ? "O teu mês, em resumo" : "O vosso mês, em resumo"
+              : "O primeiro resumo chega no fim do mês"
+          }
+          trailing={
+            extras.wrapped && wrappedIsNew ? (
+              <span className="rounded-md bg-[#0B1324] px-[7px] py-[3px] text-[11px] font-bold text-white dark:bg-foreground dark:text-background">Novo</span>
+            ) : undefined
+          }
+        />
       </div>
     </>
   );

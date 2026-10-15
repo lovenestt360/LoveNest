@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App.tsx";
+import { watchForNewVersion } from "./lib/appUpdate";
 import "./index.css";
 
 Sentry.init({
@@ -23,6 +24,9 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   });
 }
+
+// A app instalada recarrega sozinha quando há uma versão nova publicada.
+watchForNewVersion();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
