@@ -8,6 +8,7 @@ import { Plus, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { MemoryGallery } from "@/features/memories/MemoryGallery";
 import { MemoryDetail } from "@/features/memories/MemoryDetail";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { UploadMemorySheet } from "@/features/memories/UploadMemorySheet";
 
 export interface Photo {
@@ -114,26 +115,17 @@ export default function Memories() {
   }
 
   return (
-    <section className="pb-24 min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3.5 bg-background/90 backdrop-blur-sm border-b border-border/50">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Memórias</h1>
-          {photos.length > 0 && (
-            <p className="text-[11px] text-muted-foreground">
-              {photos.length} momento{photos.length !== 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => setUploadOpen(true)}
-          className="w-9 h-9 rounded-full bg-rose-500 hover:bg-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/30 active:scale-90 transition-all duration-200"
-          aria-label="Nova memória"
-        >
-          <Plus className="w-[18px] h-[18px]" />
-        </button>
-      </header>
+    <section className="animate-fade-in">
+      <ScreenHeader
+        title="Memórias"
+        subtitle={photos.length > 0 ? `${photos.length} momento${photos.length !== 1 ? "s" : ""}` : "As vossas fotos juntos"}
+        action={
+          <button type="button" onClick={() => setUploadOpen(true)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0B1324] text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.7)] transition-transform active:scale-90 dark:bg-foreground dark:text-background" aria-label="Nova memória">
+            <Plus className="h-[18px] w-[18px]" strokeWidth={2.2} />
+          </button>
+        }
+        className="mb-4"
+      />
 
       {/* Content */}
       {loading ? (
@@ -141,16 +133,16 @@ export default function Memories() {
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
         </div>
       ) : photos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center mb-4">
-            <ImagePlus className="w-7 h-7 text-rose-300" />
+        <div className="flex flex-col items-center justify-center rounded-[22px] px-8 py-14 text-center bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border">
+          <div className="w-14 h-14 rounded-[18px] bg-rose-50 dark:bg-rose-950/20 flex items-center justify-center mb-4">
+            <ImagePlus className="w-6 h-6 text-rose-500" strokeWidth={1.8} />
           </div>
           <p className="text-base font-semibold text-foreground mb-1">Sem memórias ainda</p>
           <p className="text-sm text-muted-foreground mb-6">Adiciona a primeira foto do casal</p>
           <button
             type="button"
             onClick={() => setUploadOpen(true)}
-            className="px-6 py-2.5 rounded-full bg-rose-500 text-white text-sm font-semibold shadow-sm"
+            className="rounded-full bg-[#0B1324] px-6 py-2.5 text-sm font-semibold text-white transition-transform active:scale-95 dark:bg-foreground dark:text-background"
           >
             Adicionar foto
           </button>
@@ -168,7 +160,7 @@ export default function Memories() {
                 type="button"
                 onClick={() => { setLoadingMore(true); fetchPhotos(true); }}
                 disabled={loadingMore}
-                className="px-5 py-2 rounded-full text-sm font-medium text-muted-foreground bg-muted disabled:opacity-50"
+                className="rounded-full border border-[#ECE8E3] bg-white px-5 py-2 text-sm font-medium text-[#3A4150] disabled:opacity-50 dark:border-border dark:bg-card dark:text-muted-foreground"
               >
                 {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : "Carregar mais"}
               </button>
@@ -201,10 +193,10 @@ export default function Memories() {
       {deleteTarget && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setDeleteTarget(null)}>
           <div
-            className="w-full bg-card rounded-t-[2rem] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200 space-y-3"
+            className="w-full max-w-md mx-auto bg-white dark:bg-card rounded-t-[26px] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200 space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
+            <div className="w-10 h-1 rounded-full bg-[#E2DED8] dark:bg-border mx-auto mb-4" />
             {deleteTarget.caption && (
               <p className="text-center text-sm text-muted-foreground line-clamp-1 mb-1">
                 "{deleteTarget.caption}"
@@ -216,7 +208,7 @@ export default function Memories() {
               type="button"
               onClick={handleDeleteTarget}
               disabled={deleting}
-              className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full h-12 rounded-[16px] bg-rose-600 text-white font-semibold text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-60"
             >
               <Trash2 className="w-4 h-4" />
               {deleting ? "A eliminar..." : "Eliminar"}
@@ -225,7 +217,7 @@ export default function Memories() {
               type="button"
               onClick={() => setDeleteTarget(null)}
               disabled={deleting}
-              className="w-full h-12 rounded-2xl bg-muted text-foreground font-semibold text-sm disabled:opacity-60"
+              className="w-full h-12 rounded-[16px] bg-[#F4F2EF] text-[#3A4150] font-semibold text-sm disabled:opacity-60 dark:bg-muted dark:text-foreground"
             >
               Cancelar
             </button>

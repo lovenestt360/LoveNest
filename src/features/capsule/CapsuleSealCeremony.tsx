@@ -192,7 +192,7 @@ export function CapsuleSealCeremony({ imageUrl, unlockDate, capsuleId, onClose }
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold leading-none mb-0.5">
                     Será revelada
                   </p>
-                  <p className="text-[13px] text-foreground capitalize leading-tight">
+                  <p className="text-[13px] text-foreground first-letter:uppercase leading-tight">
                     {dateStr} · <span className="text-violet-400 font-semibold">{waitStr}</span>
                   </p>
                 </div>

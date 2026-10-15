@@ -196,7 +196,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
           <p className="text-base font-bold text-foreground leading-snug mb-0.5 line-clamp-2">
             {photo.caption || "Sem legenda"}
           </p>
-          <p className="text-xs text-muted-foreground capitalize mb-0.5">
+          <p className="text-xs text-muted-foreground first-letter:uppercase mb-0.5">
             {dayOfWeek}, {dateFormatted}
           </p>
           <p className="text-[11px] font-semibold text-rose-400 mb-4">{relativeStr}</p>
