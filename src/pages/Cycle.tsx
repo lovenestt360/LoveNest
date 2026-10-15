@@ -60,35 +60,37 @@ export default function Cycle() {
 
       {/* Header */}
       <header>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
-            <Flower2 className="h-5 w-5 text-rose-400" strokeWidth={1.5} />
-          </div>
+        <div className="flex items-end justify-between px-1 pt-0.5">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em] text-foreground">
               {isPartner ? "Ciclo da Parceira" : "Ciclo"}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-0.5 text-[13px] text-muted-foreground">
               {isPartner ? "Acompanha o ciclo da tua parceira." : "O teu rastreio menstrual privado."}
             </p>
           </div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ECE8E3] bg-white dark:border-border dark:bg-card">
+            <Flower2 className="h-[18px] w-[18px] text-rose-500" strokeWidth={1.9} />
+          </span>
         </div>
         {isPartner && (
-          <p className="text-[11px] font-medium text-rose-400 mt-2 px-1">
+          <p className="mt-2 inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-[11.5px] font-semibold text-rose-600 dark:bg-rose-950/30">
             Modo observador — apenas leitura
           </p>
         )}
       </header>
 
       {/* Tabs */}
-      <div className="flex bg-muted rounded-2xl p-1 gap-1">
+      <div className="flex gap-1 rounded-[16px] bg-[#F4F2EF] p-1 dark:bg-muted">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
             className={cn(
-              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-              activeTab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              "flex-1 h-10 rounded-[12px] text-[13px] font-semibold transition-colors duration-150",
+              activeTab === t.id
+                ? "bg-white text-[#0B1324] shadow-[0_1px_2px_rgba(11,19,36,0.06),0_4px_12px_-6px_rgba(11,19,36,0.2)] dark:bg-card dark:text-foreground"
+                : "text-[#7A7F8C] dark:text-muted-foreground"
             )}
           >
             {t.label}
