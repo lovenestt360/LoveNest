@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,8 +57,8 @@ function timeAgo(iso: string): string {
 }
 
 /**
- * "Onde estamos" na Home. Com partilha ativa mostra o mapa e as moradas; sem
- * ela fica uma linha que leva a /localizacao para a ativar.
+ * "Onde estamos" na Home, sempre com o mesmo cartão de mapa. Com partilha ativa
+ * mostra as moradas; sem ela convida a ativar e leva a /localizacao.
  * O mapa é ilustrativo (as posições reais vivem em /localizacao); o texto
  * mostra a morada conhecida de cada um e quando foi atualizada.
  */
@@ -71,38 +71,22 @@ export function LocationHomeCard() {
 
   if (tierLoading || loading) return null;
 
-  // Sem partilha (ou sem acesso no plano) o cartão continua a ser a entrada
-  // para /localizacao, onde se ativa a partilha ou se vê o que é preciso.
-  if (!allowed || (!mySharing && !partnerSharing)) {
-    return (
-      <button
-        type="button"
-        onClick={() => navigate("/localizacao")}
-        className="flex w-full items-center gap-3 rounded-[24px] border border-[#ECE8E3] bg-white px-4 py-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
-      >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30">
-          <MapPin className="h-5 w-5" strokeWidth={1.9} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-semibold text-foreground">Onde estamos</span>
-          <span className="block truncate text-[12.5px] text-muted-foreground">
-            {allowed ? "Ativem a partilha para se verem no mapa" : "Partilha de localização entre os dois"}
-          </span>
-        </span>
-        <ChevronRight className="h-[18px] w-[18px] shrink-0 text-muted-foreground/60" strokeWidth={2} />
-      </button>
-    );
-  }
-
   const partnerName = partner?.display_name ?? "O teu par";
   const myInitial = (profile?.display_name ?? "Eu").charAt(0).toUpperCase();
   const partnerInitial = partnerName.charAt(0).toUpperCase();
 
+  // Sem partilha (ou sem acesso no plano) o cartão mantém o mesmo aspeto e
+  // continua a ser a entrada para /localizacao, onde se ativa a partilha.
+  const active = allowed && (mySharing || partnerSharing);
+
   const parts: string[] = [];
-  if (partnerSharing && partnerLocation?.address) parts.push(`${partnerName} em ${partnerLocation.address}`);
-  else if (partnerSharing) parts.push(`${partnerName} está a partilhar`);
-  else parts.push(`${partnerName} não está a partilhar`);
-  if (mySharing && myLocation?.address) parts.push(`tu em ${myLocation.address}`);
+  if (!active) parts.push(allowed ? "Ativem a partilha para se verem no mapa" : "Partilha de localização entre os dois");
+  else {
+    if (partnerSharing && partnerLocation?.address) parts.push(`${partnerName} em ${partnerLocation.address}`);
+    else if (partnerSharing) parts.push(`${partnerName} está a partilhar`);
+    else parts.push(`${partnerName} não está a partilhar`);
+    if (mySharing && myLocation?.address) parts.push(`tu em ${myLocation.address}`);
+  }
 
   const updatedAt = partnerSharing ? partnerLocation?.updated_at : myLocation?.updated_at;
 
@@ -137,10 +121,17 @@ export function LocationHomeCard() {
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold text-foreground">Onde estamos</p>
           <p className="truncate text-[12.5px] text-muted-foreground">{parts.join(" · ")}</p>
-          <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
-            <span className="h-[7px] w-[7px] rounded-full bg-emerald-600" />
-            Partilha ativa{updatedAt ? ` · ${timeAgo(updatedAt)}` : ""}
-          </span>
+          {active ? (
+            <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
+              <span className="h-[7px] w-[7px] rounded-full bg-emerald-600" />
+              Partilha ativa{updatedAt ? ` · ${timeAgo(updatedAt)}` : ""}
+            </span>
+          ) : (
+            <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
+              <span className="h-[7px] w-[7px] rounded-full bg-[#D5D1CB]" />
+              Partilha desligada
+            </span>
+          )}
         </div>
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1EEEA] text-foreground dark:bg-muted">
           <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2} />
