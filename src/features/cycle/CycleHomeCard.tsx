@@ -65,42 +65,9 @@ export function CycleHomeCard() {
   const navigate = useNavigate();
   const { profile, lastPeriod, isMale, loading } = useCycleData();
 
-  if (loading) return null;
-
-  // Sem ciclo configurado → card de descoberta (diferente para ela e para ele)
-  if (!profile) {
-    return (
-      <button
-        type="button"
-        onClick={() => navigate("/ciclo")}
-        className="glass-card glass-card-hover w-full text-left p-4 space-y-2 transition-all active:scale-[0.99]"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full shrink-0 bg-rose-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Ciclo Menstrual
-            </span>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
-          <p className="text-sm font-semibold text-foreground">
-            {isMale ? "Ciclo da tua parceira" : "Acompanha o teu ciclo"}
-          </p>
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-snug">
-          {isMale
-            ? "Quando ela configurar o ciclo, vais acompanhar a fase dela aqui e estares mais presente."
-            : "Regista o teu ciclo e recebe lembretes personalizados para vocês dois."}
-        </p>
-        <p className="text-[11px] font-semibold text-rose-500 dark:text-rose-400">
-          {isMale ? "Ver mais" : "Configurar agora"}
-        </p>
-      </button>
-    );
-  }
+  // Na Home o cartão só aparece com o ciclo configurado; a descoberta e a
+  // configuração vivem no separador Ciclo.
+  if (loading || !profile) return null;
 
   const engine = runCycleEngineFromProfile(profile, lastPeriod);
   if (!engine) return null;
@@ -116,45 +83,36 @@ export function CycleHomeCard() {
     <button
       type="button"
       onClick={() => navigate("/ciclo")}
-      className="glass-card glass-card-hover w-full text-left p-4 space-y-2.5 transition-all active:scale-[0.99]"
+      className="w-full rounded-[20px] border border-[#ECE8E3] bg-white px-3.5 pb-2.5 pt-[11px] text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
     >
       {/* ── Cabeçalho ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {label}
-          </span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" strokeWidth={1.5} />
+        <span className="flex items-center gap-[7px] text-[13px] font-semibold text-[#3A4150] dark:text-foreground/80">
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", meta.dot)} />
+          {label}
+        </span>
+        <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={2} />
       </div>
 
       {/* ── Fase + dia ── */}
-      <div className="flex items-center gap-3">
-        <div className={cn("flex items-center gap-1.5 text-sm font-semibold", meta.textColor)}>
-          <Icon className="w-4 h-4" strokeWidth={1.5} />
+      <div className="mt-2 flex items-center gap-2.5">
+        <span className={cn("flex items-center gap-1.5 text-[15px] font-semibold", meta.textColor)}>
+          <Icon className="h-4 w-4" strokeWidth={1.8} />
           {meta.label}
-        </div>
-        <span className="text-xs text-muted-foreground/60 font-medium">
-          Dia {engine.cycleDay}
         </span>
-        <span className="ml-auto text-[10px] text-muted-foreground/50 font-medium tabular-nums">
+        <span className="text-[12.5px] text-muted-foreground">Dia {engine.cycleDay}</span>
+        <span className="ml-auto text-[11.5px] tabular-nums text-muted-foreground/70">
           {engine.cycleDay}/{engine.cycleLength} dias
         </span>
       </div>
 
       {/* ── Barra de progresso ── */}
-      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-700", meta.bar)}
-          style={{ width: `${progress}%` }}
-        />
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-[#F1EEEA] dark:bg-muted">
+        <div className={cn("h-full rounded-full transition-all duration-700", meta.bar)} style={{ width: `${progress}%` }} />
       </div>
 
       {/* ── Próximo evento ── */}
-      <p className="text-[11px] text-muted-foreground leading-snug">
-        {eventText}
-      </p>
+      <p className="mt-[7px] text-[12px] leading-snug text-muted-foreground">{eventText}</p>
     </button>
   );
 }

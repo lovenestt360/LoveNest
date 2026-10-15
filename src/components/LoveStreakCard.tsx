@@ -354,10 +354,10 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
 
   if (loading) {
     return (
-      <div className="glass-card p-5 animate-pulse space-y-3">
-        <div className="h-3 w-24 bg-muted rounded-full" />
-        <div className="h-10 w-16 bg-muted rounded-lg" />
-        <div className="h-3 w-32 bg-muted rounded-full" />
+      <div className="animate-pulse space-y-3 rounded-[24px] border border-[#ECE8E3] bg-white p-4 dark:border-border dark:bg-card">
+        <div className="h-3 w-24 rounded-full bg-muted" />
+        <div className="h-8 w-14 rounded-lg bg-muted" />
+        <div className="h-3 w-32 rounded-full bg-muted" />
       </div>
     );
   }
@@ -370,285 +370,161 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
   const streakPhase = getStreakLevel(currentStreak);
 
   const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
-  const cardStatus       = getCardStatus(bothActiveToday, myCheckedIn, shieldUsedToday, isSolo);
-  const relState         = getRelationshipState(currentStreak);
-  const RelIcon          = getRelationshipIcon(relState.name);
   const displayPoints    = points ?? 0;
-
-  const daysLabel = isSolo
-    ? (bothActiveToday ? "dias a aparecer por ti" : streakAtRisk ? "dias · a chama espera por ti" : currentStreak === 0 ? "dias" : "dias de cuidado")
-    : (bothActiveToday ? "dias a aparecer um pelo outro" : streakAtRisk ? "dias · a chama espera por vocês" : currentStreak === 0 ? "dias" : "dias juntos");
-
-  // Visual system
-  const cardBg    = getCardTemperature(currentStreak, bothActiveToday, perfectDay);
-  const dotColor  = bothActiveToday ? "#F87171" : "hsl(var(--border))";
-  const lineColor = bothActiveToday ? "rgba(248,113,113,0.18)" : "hsl(var(--border) / 0.8)";
-  const daysLeft  = getJourneyDaysLeft(currentStreak);
-  const nextName  = getJourneyNext(currentStreak);
-  const borderColor = "hsl(var(--border))";
+  const currentLevel     = getCurrentJourneyLevel(currentStreak);
+  const dotColor  = "#F87171";
+  const lineColor = "rgba(248,113,113,0.35)";
+  const idle      = "#E3DFD9";
 
   return (
-    <div className="relative">
-      {/* ── Halo — soft atmospheric glow, half intensity ── */}
-      <div
-        className="absolute -inset-4 pointer-events-none"
-        style={{
-          opacity: bothActiveToday ? 1 : 0,
-          transition: "opacity 1800ms ease-in-out",
-          zIndex: 0,
-        }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "radial-gradient(ellipse at 50% 55%, rgba(255,107,143,0.13) 0%, transparent 100%)",
-            filter: "blur(52px)",
-            borderRadius: "2.5rem",
-            animation: "chama-breathe 7s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute inset-3"
-          style={{
-            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,143,0.20) 0%, transparent 66%)",
-            filter: "blur(26px)",
-            borderRadius: "2rem",
-            animation: "chama-breathe-inner 4.5s ease-in-out infinite",
-          }}
-        />
-      </div>
-
-      <div className="relative space-y-1.5" style={{ zIndex: 1 }}>
+    <div className="space-y-1.5">
       <button
+        type="button"
         onClick={() => navigate("/jornada")}
-        className={cn(
-          "glass-card glass-card-hover w-full p-5 text-left",
-          "transition-[box-shadow,border-color,transform] duration-[400ms] ease-in-out"
-        )}
-        style={{
-          background:  cardBg,
-          borderColor,
-          boxShadow: bothActiveToday
-            ? "0 2px 4px rgba(0,0,0,0.04),0 12px 32px -4px rgba(0,0,0,0.09),inset 0 1px 0 hsl(var(--foreground) / 0.05),inset 0 -1px 20px rgba(255,107,143,0.05)"
-            : "0 2px 4px rgba(0,0,0,0.04),0 8px 24px -2px rgba(0,0,0,0.07),inset 0 1px 0 hsl(var(--foreground) / 0.04)",
-        }}
+        className="w-full rounded-[24px] border border-[#ECE8E3] bg-white px-4 pb-3 pt-3 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
       >
-
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1.5">
-            <Flame
-              className={cn("w-4 h-4 transition-colors",
-                bothActiveToday ? "text-rose-500 animate-flame-breathe" : "text-muted-foreground/50")}
-              strokeWidth={1.5}
-            />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {isSolo ? "A tua Chama" : "A vossa Chama"}
+        {/* ── Cabeçalho: chama, nível e Guardião ── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#3A4150] dark:text-foreground/80">
+              <Flame
+                className={cn("h-4 w-4 text-rose-500", bothActiveToday && "animate-flame-breathe")}
+                strokeWidth={2}
+              />
+              {isSolo ? "A tua chama" : "A vossa chama"}
             </span>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              {streakPhase.name} · nível {streakPhase.level}
+            </p>
           </div>
-          <div className="flex items-center gap-1.5">
-            {perfectDay && (() => {
-              const gc = GUARDIAN_COLORS[streakPhase.stage] ?? GUARDIAN_COLORS.faisca;
-              return (
-                <span
-                  className="flex items-center gap-1 text-[9px] font-semibold rounded-full px-2 py-0.5 animate-in fade-in duration-300"
-                  style={{ background: gc.bg, border: `1px solid ${gc.border}`, color: gc.text }}
-                >
-                  <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
-                  Dia Completo
-                </span>
-              );
-            })()}
-            <div style={{ width: 48, height: 48 }} className="shrink-0 bg-card">
-              <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
+          <div className="h-10 w-10 shrink-0">
+            <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
           </div>
         </div>
 
-        {/* ── Contextual phrase ── */}
-        <p className="text-[11px] text-muted-foreground/65 mb-1.5 leading-snug">
-          {getContextualPhrase(currentStreak, bothActiveToday, myCheckedIn, partnerCheckedIn, streakAtRisk, perfectDay, isSolo)}
-        </p>
-
-        {/* ── Status badge ── */}
-        <div className="flex items-center gap-1.5 mb-3">
-          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", cardStatus.dot)} />
-          <span className={cn("text-[10px] font-semibold", cardStatus.color)}>
-            {cardStatus.label}
-          </span>
-        </div>
-
-        {/* ── Streak number + presence ── */}
-        <div className="flex items-start justify-between">
-
-          {/* Number */}
-          <div className="flex flex-col items-start gap-0.5">
-            <div className="relative flex items-baseline gap-1.5">
-              <span className={cn(
-                "font-extrabold tabular-nums tracking-tight relative transition-all duration-700",
-                getStreakNumberSize(currentStreak),
-                bothActiveToday ? "text-rose-500" : "text-foreground"
-              )}>
-                {currentStreak}
-              </span>
-            </div>
-            <span className={cn("text-[10px] leading-snug max-w-[130px]",
-              bothActiveToday ? "text-rose-400 font-medium" : "text-muted-foreground/65")}>
-              {daysLabel}
-            </span>
-          </div>
-
-          {/* Presence — Tu + Par */}
-          <div className="flex flex-col items-end gap-2 pt-0.5">
-            <div className="relative flex items-center gap-3">
-              <div className="relative flex items-center gap-1">
-                <Heart
-                  className={cn("w-4 h-4 transition-all duration-500",
-                    myCheckedIn
-                      ? bothActiveToday
-                        ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
-                        : "fill-rose-500 text-rose-500 animate-heart-throb"
-                      : "text-muted-foreground/30"
-                  )}
-                  strokeWidth={myCheckedIn ? 0 : 1.5}
-                />
-                <span className="text-[9px] text-muted-foreground/65 font-semibold">Tu</span>
-              </div>
-              {!isSolo && (
-                <div className="relative flex items-center gap-1">
-                  <Heart
-                    className={cn("w-4 h-4 transition-all duration-500",
-                      partnerCheckedIn
-                        ? bothActiveToday
-                          ? "fill-rose-500 text-rose-500 animate-hearts-warm-pulse"
-                          : "fill-rose-500 text-rose-500 animate-heart-throb"
-                        : "text-muted-foreground/30"
-                    )}
-                    strokeWidth={partnerCheckedIn ? 0 : 1.5}
-                  />
-                  <span className="text-[9px] text-muted-foreground/65 font-semibold">Par</span>
-                </div>
+        {/* ── Dias de presença · corações · escudos ── */}
+        <div className="mt-1 flex items-end justify-between gap-3">
+          <div className="flex flex-col">
+            <span
+              className={cn(
+                "text-[34px] font-extrabold leading-[0.95] tracking-[-0.035em] tabular-nums",
+                bothActiveToday ? "text-rose-500" : "text-foreground",
               )}
+            >
+              {currentStreak}
+            </span>
+            <span className="mt-1 text-[11px] text-muted-foreground">
+              {streakAtRisk ? "dias · a chama espera" : isSolo ? "dias de cuidado" : "dias de presença"}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-end gap-2 pb-0.5">
+            <div className="flex items-center gap-3">
+              <PresenceHeart on={myCheckedIn} warm={bothActiveToday} label="Tu" />
+              {!isSolo && <PresenceHeart on={partnerCheckedIn} warm={bothActiveToday} label="Par" />}
             </div>
-            <div className="flex items-center gap-0.5">
-              {[0, 1, 2].map(i => (
-                <Shield key={i}
-                  className={cn("w-3.5 h-3.5", i < shieldsRemaining ? "text-blue-400" : "text-muted-foreground/30")}
-                  strokeWidth={1.5}
+            <div className="flex items-center gap-0.5" aria-label={`${shieldsRemaining} de 3 escudos`}>
+              {[0, 1, 2].map((i) => (
+                <Shield
+                  key={i}
+                  className={cn("h-3.5 w-3.5", i < shieldsRemaining ? "text-blue-400" : "text-muted-foreground/30")}
+                  strokeWidth={1.6}
                 />
               ))}
-              <span className="text-[9px] text-muted-foreground/65 font-semibold uppercase tracking-wide ml-1">
+              <span className="ml-1 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Proteção
               </span>
             </div>
           </div>
         </div>
 
-        {/* ── Journey level track: Faísca → Brasa → Chama → Chama Viva → Farol → Eternidade ── */}
-        <div className="mt-4 mb-1">
-          <div className="flex items-center">
-            {Array.from(JOURNEY_LEVELS).map((level, idx) => {
-              const reached   = currentStreak >= level.min;
-              const isCurrent = reached && (
-                idx === JOURNEY_LEVELS.length - 1 ||
-                currentStreak < JOURNEY_LEVELS[idx + 1].min
-              );
-              return (
-                <Fragment key={level.name}>
-                  {idx > 0 && (
-                    <div
-                      className="flex-1 h-px transition-all duration-700"
-                      style={{ background: reached ? lineColor : "hsl(var(--border))" }}
-                    />
-                  )}
-                  <div
-                    className={cn(
-                      "shrink-0 rounded-full transition-all duration-700",
-                      isCurrent && "animate-journey-dot-pulse"
-                    )}
-                    style={{
-                      width:  isCurrent ? 14 : 7,
-                      height: isCurrent ? 14 : 7,
-                      background: reached ? dotColor : "hsl(var(--border))",
-                      boxShadow: isCurrent
-                        ? `0 0 ${bothActiveToday ? 12 : 8}px rgba(244,63,94,${bothActiveToday ? 0.30 : 0.20})`
-                        : "none",
-                    }}
-                  />
-                </Fragment>
-              );
-            })}
-          </div>
-          <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[11px] font-semibold tracking-wide"
-              style={{ color: currentStreak >= 1 ? (bothActiveToday ? "#F87171" : "hsl(var(--muted-foreground))") : "hsl(var(--muted-foreground) / 0.4)" }}>
-              {getCurrentJourneyLevel(currentStreak)?.name ?? "Início"}
-            </span>
-            {nextName ? (
-              <span className="text-[9px]" style={{ color: "hsl(var(--muted-foreground) / 0.5)" }}>
-                {daysLeft} {daysLeft === 1 ? "dia" : "dias"} para {nextName}
-              </span>
-            ) : currentStreak >= 90 ? (
-              <span className="text-[9px] font-medium text-muted-foreground/65">
-                Chegaram à Eternidade
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-border">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1">
-              <RelIcon
-                className={cn("w-3 h-3 shrink-0", relState.color)}
-                strokeWidth={1.5}
-              />
-              <span className={cn("text-[11px] font-semibold", relState.color)}>
-                {relState.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-[10px]">
-              <span className={cn("font-semibold tabular-nums",
-                displayPoints > 0 ? "text-rose-400" : "text-muted-foreground/50")}>
-                {displayPoints}
-              </span>
-              <span className="text-muted-foreground/50">pts</span>
-              <span className="text-[#ddd]">·</span>
-              <span className={cn("font-semibold tabular-nums",
-                gesturesDone > 0 ? "text-sky-400" : "text-muted-foreground/50")}>
-                {gesturesDone}
-              </span>
-              <span className="text-muted-foreground/50">gestos</span>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-1.5">
-              {activeMissions.map(({ id, Icon, doneColor }) => (
-                <Icon key={id}
-                  className={cn("w-3.5 h-3.5 transition-colors",
-                    missions[id] ? doneColor : "text-muted-foreground/30")}
-                  strokeWidth={1.5}
+        {/* ── Pontinhos da jornada: Faísca → Brasa → Chama → Chama Viva → Farol → Eternidade ── */}
+        <div className="mt-3 flex items-center" aria-label={`Jornada: ${currentLevel?.name ?? "Início"}`}>
+          {Array.from(JOURNEY_LEVELS).map((level, idx) => {
+            const reached = currentStreak >= level.min;
+            const isCurrent =
+              reached && (idx === JOURNEY_LEVELS.length - 1 || currentStreak < JOURNEY_LEVELS[idx + 1].min);
+            return (
+              <Fragment key={level.name}>
+                {idx > 0 && (
+                  <div className="h-px flex-1" style={{ background: reached ? lineColor : idle }} />
+                )}
+                <div
+                  className={cn("shrink-0 rounded-full transition-all duration-700", isCurrent && "animate-journey-dot-pulse")}
+                  style={{
+                    width: isCurrent ? 14 : 7,
+                    height: isCurrent ? 14 : 7,
+                    background: reached ? dotColor : idle,
+                    boxShadow: isCurrent ? "0 0 10px rgba(244,63,94,0.28)" : "none",
+                  }}
                 />
-              ))}
-            </div>
-            {allMissionsDone && (
-              <span className="text-[9px] font-semibold text-muted-foreground/65 tracking-wide">
-                Missão cumprida
-              </span>
-            )}
-          </div>
+              </Fragment>
+            );
+          })}
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted-foreground">
+          <span className={cn("font-semibold", currentStreak >= 1 ? "text-[#F87171]" : "text-muted-foreground/50")}>
+            {currentLevel?.name ?? "Início"}
+          </span>
+          {streakPhase.nextLevelName ? (
+            <span>
+              Próximo: <b className="font-semibold text-[#3A4150] dark:text-foreground/80">{streakPhase.nextLevelName}</b>
+              {" · "}faltam {streakPhase.daysToNext} {streakPhase.daysToNext === 1 ? "dia" : "dias"}
+            </span>
+          ) : (
+            <span>{isSolo ? "Chegaste ao fim da jornada" : "Chegaram ao fim da jornada"}</span>
+          )}
         </div>
 
+        {/* ── Gestos de hoje: pontos · gestos e as missões ── */}
+        <div className="-mx-4 mb-2 mt-2.5 h-px bg-[#ECE8E3] dark:bg-border" />
+        <div className="flex items-center justify-between">
+          <span className="text-[11.5px] text-muted-foreground/80">
+            <b className={cn("font-bold tabular-nums", displayPoints > 0 ? "text-rose-500" : "text-muted-foreground/60")}>
+              {displayPoints}
+            </b>{" "}
+            pts ·{" "}
+            <b className={cn("font-bold tabular-nums", gesturesDone > 0 ? "text-sky-400" : "text-muted-foreground/60")}>
+              {gesturesDone}
+            </b>{" "}
+            {gesturesDone === 1 ? "gesto" : "gestos"}
+            {shieldUsedToday && <span className="ml-1.5 text-sky-500">· chama protegida</span>}
+          </span>
+          <span className="flex items-center gap-[7px]" aria-label="Gestos de hoje">
+            {activeMissions.map(({ id, Icon, doneColor, title }) => (
+              <Icon
+                key={id}
+                aria-label={`${title}${missions[id] ? " feito" : ""}`}
+                className={cn("h-[15px] w-[15px] transition-colors", missions[id] ? doneColor : "text-muted-foreground/30")}
+                strokeWidth={1.7}
+              />
+            ))}
+          </span>
+        </div>
       </button>
 
       {perfectDay && (
-        <p className="text-center text-[10px] text-muted-foreground/65 font-medium px-2 animate-in fade-in duration-500">
+        <p className="animate-in fade-in px-2 text-center text-[10px] font-medium text-muted-foreground/65 duration-500">
           {isSolo ? "Hoje o teu espaço esteve completo." : "Hoje o vosso espaço esteve completo."}
         </p>
       )}
-      </div>
     </div>
+  );
+}
+
+function PresenceHeart({ on, warm, label }: { on: boolean; warm: boolean; label: string }) {
+  return (
+    <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+      <Heart
+        className={cn(
+          "h-4 w-4 transition-all duration-500",
+          on
+            ? cn("fill-rose-500 text-rose-500", warm ? "animate-hearts-warm-pulse" : "animate-heart-throb")
+            : "text-muted-foreground/30",
+        )}
+        strokeWidth={on ? 0 : 1.6}
+      />
+      {label}
+    </span>
   );
 }
