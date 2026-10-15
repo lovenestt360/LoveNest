@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ArrowLeft, HeartHandshake, Send, Loader2 } from "lucide-react";
+import { HeartHandshake, Send, Loader2 } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useBookReflections } from "@/hooks/useBookReflections";
 import { useAuth } from "@/features/auth/AuthContext";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { GENERAL_CHAPTER_ID } from "@/features/biblioteca/reader/ChapterReflectionPrompt";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { SURFACE } from "@/features/home/components/HomeSections";
+import { cn } from "@/lib/utils";
 
 export default function BookReflections() {
     const { bookId } = useParams<{ bookId: string }>();
-    const navigate = useNavigate();
     const { books } = useBiblioteca();
     const { user } = useAuth();
     const { partner } = usePartnerProfile();
@@ -30,45 +32,39 @@ export default function BookReflections() {
     };
 
     return (
-        <section className="pb-24 max-w-lg mx-auto animate-fade-in">
-            <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-40 border-b border-border flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <div className="min-w-0">
-                    <h1 className="text-lg font-bold tracking-tight">Reflexões do Casal</h1>
-                    {book && <p className="text-[12px] text-muted-foreground line-clamp-1">{book.title}</p>}
-                </div>
-            </header>
+        <section className="animate-fade-in">
+            <ScreenHeader title="Reflexões do Casal" subtitle={book?.title} />
 
-            <div className="px-4 pt-5 space-y-3">
+            <div className={cn(SURFACE, "mt-5 rounded-[20px] p-3")}>
                 <textarea
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Partilha um pensamento sobre este livro com o teu par..."
-                    className="w-full min-h-20 rounded-2xl border border-border bg-card p-3 text-[13px] text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="min-h-20 w-full resize-none rounded-[14px] bg-[#F7F5F2] p-3 text-[14px] text-foreground placeholder:text-[#9A9DA6] focus:outline-none focus:ring-2 focus:ring-rose-200 dark:bg-muted"
                 />
                 <button
                     type="button"
                     disabled={!text.trim() || sending}
                     onClick={handleSend}
-                    className="w-full h-11 rounded-2xl font-bold text-[13px] gap-2 flex items-center justify-center text-white bg-rose-500 active:scale-95 transition-all disabled:opacity-50"
+                    className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[#0B1324] text-[14px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-40 dark:bg-foreground dark:text-background"
                 >
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Partilhar reflexão
                 </button>
             </div>
 
-            <div className="px-4 pt-6 space-y-3">
+            <div className="space-y-2.5 pt-5">
                 {loading ? (
                     <div className="flex justify-center py-12">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
                     </div>
                 ) : reflections.length === 0 ? (
-                    <div className="bg-card border border-border rounded-2xl p-8 text-center shadow-sm space-y-2">
-                        <HeartHandshake className="w-8 h-8 mx-auto text-muted-foreground/40" strokeWidth={1.5} />
-                        <p className="text-sm font-semibold text-foreground">Ainda sem reflexões</p>
-                        <p className="text-[12px] text-muted-foreground">
+                    <div className={cn(SURFACE, "space-y-2 rounded-[20px] p-8 text-center")}>
+                        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-rose-50 text-rose-500 dark:bg-rose-950/30">
+                            <HeartHandshake className="h-6 w-6" strokeWidth={1.8} />
+                        </span>
+                        <p className="text-[15px] font-semibold text-foreground">Ainda sem reflexões</p>
+                        <p className="text-[13px] text-muted-foreground">
                             As reflexões surgem também automaticamente quando terminas um capítulo na leitura.
                         </p>
                     </div>
@@ -76,16 +72,17 @@ export default function BookReflections() {
                     reflections.map(r => {
                         const isMine = r.user_id === user?.id;
                         return (
-                            <div key={r.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1.5">
+                            <div key={r.id} className={cn(SURFACE, "space-y-1.5 rounded-[18px] p-4")}>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[12px] font-bold text-rose-500">
+                                    <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
+                                        <span className={cn("h-2 w-2 rounded-full", isMine ? "bg-rose-500" : "bg-[#4D7CFE]")} />
                                         {isMine ? "Tu" : (partner?.display_name || "O teu par")}
                                     </span>
-                                    <span className="text-[11px] text-muted-foreground">
+                                    <span className="text-[12px] text-muted-foreground">
                                         {formatDistanceToNow(new Date(r.created_at), { locale: pt, addSuffix: true })}
                                     </span>
                                 </div>
-                                <p className="text-[13px] leading-relaxed text-foreground whitespace-pre-line">{r.content}</p>
+                                <p className="text-[14px] leading-relaxed text-[#3A4150] whitespace-pre-line dark:text-foreground">{r.content}</p>
                             </div>
                         );
                     })

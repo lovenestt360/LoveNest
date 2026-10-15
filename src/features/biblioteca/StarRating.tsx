@@ -19,7 +19,7 @@ export function StarRating({ value, onRate, size = "sm" }: {
                     className={cn(onRate ? "active:scale-90 transition-transform" : "cursor-default")}
                 >
                     <Star
-                        className={cn(sizeClass, i <= Math.round(value) ? "fill-rose-400 text-rose-400" : "text-muted-foreground/30")}
+                        className={cn(sizeClass, i <= Math.round(value) ? "fill-rose-500 text-rose-500" : "text-[#D5D1CB] dark:text-muted-foreground/30")}
                         strokeWidth={1.5}
                     />
                 </button>
