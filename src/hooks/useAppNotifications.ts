@@ -5,17 +5,10 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
 import { getFirebaseMessaging, getToken, onMessage } from "@/lib/firebase";
+import { savePushToken } from "@/lib/pushToken";
 
 async function upsertFcmToken(fcmToken: string, userId: string, spaceId: string) {
-  await supabase.from("push_subscriptions").upsert(
-    {
-      couple_space_id: spaceId,
-      user_id: userId,
-      fcm_token: fcmToken,
-      user_agent: navigator.userAgent,
-    },
-    { onConflict: "fcm_token" }
-  );
+  await savePushToken(fcmToken, userId, spaceId);
 }
 
 const NOTIF_KEY = "lovenest_notif_prefs";

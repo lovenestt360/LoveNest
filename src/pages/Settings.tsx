@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SURFACE, SectionTitle } from "@/features/home/components/HomeSections";
 import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
+import { savePushToken } from "@/lib/pushToken";
 
 interface Profile {
   display_name: string | null;
@@ -517,16 +518,11 @@ export default function Settings() {
           serviceWorkerRegistration: reg,
         });
 
-        const { error: upsertErr } = await supabase.from("push_subscriptions").upsert(
-          {
-            couple_space_id: spaceId,
-            user_id: user.id,
-            fcm_token: fcmToken,
-            user_agent: navigator.userAgent,
-          },
-          { onConflict: "fcm_token" }
-        );
-        if (upsertErr) throw new Error("Token não guardado: " + upsertErr.message);
+        const { error: saveErr } = await savePushToken(fcmToken, user.id, spaceId);
+        if (saveErr) {
+          console.error("Push token não guardado:", saveErr);
+          throw new Error("Não foi possível guardar este telemóvel para notificações. Tenta de novo.");
+        }
         setPushSubscribed(true);
         toast({ title: "Notificações ativadas" });
         window.dispatchEvent(new CustomEvent("onboarding-refresh"));
