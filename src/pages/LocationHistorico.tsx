@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Heart, Clock, Users,
+  Heart, Clock, Users,
   ArrowUpRight, ArrowDownLeft, MapPin,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -11,6 +10,7 @@ import { useCoupleSpaceId } from '@/hooks/useCoupleSpaceId';
 import { usePartnerProfile } from '@/hooks/usePartnerProfile';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from '@/lib/utils';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -171,7 +171,6 @@ function buildDiary(meetings: MeetingMoment[], events: LocationEvent[]): DiaryEn
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LocationHistorico() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
@@ -197,21 +196,16 @@ export default function LocationHistorico() {
     stats.encounterCount > 0 || stats.leftHomeAt !== null || stats.timeAwayMs !== null;
 
   return (
-    <div className="flex flex-col bg-background min-h-[100dvh]">
+    <div className="flex flex-col bg-white dark:bg-background min-h-[100dvh]">
 
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border/30 bg-background/80 backdrop-blur-sm">
-        <button
-          onClick={() => navigate(-1)}
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted active:scale-95 transition-all"
-        >
-          <ArrowLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-        </button>
-        <h1 className="text-base font-semibold text-foreground">Histórico de Presença</h1>
-      </div>
+      <ScreenHeader
+        title="Histórico de Presença"
+        subtitle="Encontros e chegadas"
+        className="shrink-0 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1rem)]"
+      />
 
       {/* Date selector */}
-      <div className="shrink-0 flex gap-2 overflow-x-auto px-4 py-3 border-b border-border/20 scrollbar-none">
+      <div className="shrink-0 flex gap-2 overflow-x-auto px-4 py-3 border-b border-[#ECE8E3] dark:border-border/20 scrollbar-none">
         {dates.map((d, i) => {
           const sel = i === selectedIdx;
           return (
@@ -219,10 +213,10 @@ export default function LocationHistorico() {
               key={i}
               onClick={() => setSelectedIdx(i)}
               className={cn(
-                'shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all active:scale-95',
+                'shrink-0 h-9 px-4 rounded-full text-[13px] font-semibold border transition-colors active:scale-95',
                 sel
-                  ? 'bg-rose-500 text-white shadow-sm'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted',
+                  ? 'bg-[#0B1324] text-white border-[#0B1324] dark:bg-foreground dark:text-background dark:border-foreground'
+                  : 'bg-white text-[#3A4150] border-[#ECE8E3] dark:bg-card dark:text-muted-foreground dark:border-border',
               )}
             >
               {dateLabel(d)}
@@ -236,7 +230,7 @@ export default function LocationHistorico() {
         {loading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-14 bg-muted/30 rounded-2xl animate-pulse" />
+              <div key={i} className="h-14 bg-[#F1EEEA] dark:bg-muted/30 rounded-[18px] animate-pulse" />
             ))}
           </div>
         ) : (
@@ -248,11 +242,11 @@ export default function LocationHistorico() {
                 <div className="grid grid-cols-3 gap-2">
 
                   <div className="glass-card px-2 py-3 flex flex-col items-center gap-1 text-center">
-                    <Users className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
+                    <Users className="w-4 h-4 text-rose-500" strokeWidth={1.8} />
                     <p className="text-[17px] font-bold text-foreground tabular-nums">
                       {stats.encounterCount}
                     </p>
-                    <p className="text-[9px] text-muted-foreground/55 uppercase tracking-wide leading-snug">
+                    <p className="text-[11px] text-muted-foreground leading-snug">
                       {stats.encounterCount === 1 ? 'Encontro' : 'Encontros'}
                     </p>
                   </div>
@@ -262,7 +256,7 @@ export default function LocationHistorico() {
                     <p className="text-[14px] font-bold text-foreground tabular-nums">
                       {stats.leftHomeAt ? fmtTime(stats.leftHomeAt) : '—'}
                     </p>
-                    <p className="text-[9px] text-muted-foreground/55 uppercase tracking-wide leading-snug">
+                    <p className="text-[11px] text-muted-foreground leading-snug">
                       Saiu de casa
                     </p>
                   </div>
@@ -272,7 +266,7 @@ export default function LocationHistorico() {
                     <p className="text-[14px] font-bold text-foreground tabular-nums">
                       {stats.timeAwayMs !== null ? fmtDuration(stats.timeAwayMs) : '—'}
                     </p>
-                    <p className="text-[9px] text-muted-foreground/55 uppercase tracking-wide leading-snug">
+                    <p className="text-[11px] text-muted-foreground leading-snug">
                       Fora de casa
                     </p>
                   </div>
@@ -287,16 +281,16 @@ export default function LocationHistorico() {
                 <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
                   <MapPin className="w-5 h-5 text-muted-foreground/30" strokeWidth={1.5} />
                 </div>
-                <p className="text-[13px] font-medium text-muted-foreground/60">
-                  Sem actividade registada
+                <p className="text-[15px] font-semibold text-foreground">
+                  Sem atividade registada
                 </p>
-                <p className="text-[11px] text-muted-foreground/40 mt-1 leading-relaxed">
+                <p className="text-[13px] text-muted-foreground mt-1 leading-relaxed">
                   Os encontros e chegadas a locais favoritos aparecem aqui
                 </p>
               </div>
             ) : (
               <div className="px-4 pt-3 space-y-1">
-                <p className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-0.5 mb-2">
+                <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground px-0.5 mb-2 first-letter:uppercase">
                   {dateLabel(selectedDate)} · {format(selectedDate, "d 'de' MMMM", { locale: pt })}
                 </p>
 

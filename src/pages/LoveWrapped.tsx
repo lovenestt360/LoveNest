@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Share2, MessageCircle, Gift, Flame, Camera, 
-  Trophy, ChevronLeft, ChevronRight, Sparkles, 
+  Trophy, ChevronRight, Sparkles, 
   X, Heart, CalendarDays
 } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
 
 const MONTH_NAMES = [
@@ -74,7 +74,6 @@ export default function LoveWrapped() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const [wrappedList, setWrappedList] = useState<WrappedData[]>([]);
   const [selectedWrappedIndex, setSelectedWrappedIndex] = useState(0);
@@ -487,23 +486,13 @@ export default function LoveWrapped() {
   }
 
   return (
-    <section className="animate-fade-in pb-10">
-      <header className="flex items-center gap-3 px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm border-b border-border">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-muted-foreground">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-rose-500" /> LoveWrapped
-          </h1>
-          <p className="text-[12px] text-muted-foreground">Resumo mensal do vosso amor</p>
-        </div>
-      </header>
+    <section className="animate-fade-in">
+      <ScreenHeader title="LoveWrapped" subtitle="Resumo mensal do vosso amor" className="mb-5" />
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-3">
 
       {wrappedList.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-10 text-center shadow-sm space-y-3">
+        <div className="bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border rounded-[22px] p-10 text-center space-y-3">
           <div className="bg-rose-50 dark:bg-rose-950/30 h-14 w-14 rounded-2xl flex items-center justify-center mx-auto text-rose-400">
             <Sparkles className="w-7 h-7" />
           </div>
@@ -516,10 +505,10 @@ export default function LoveWrapped() {
             <button
               key={item.id}
               onClick={() => handleStartStory(idx)}
-              className="w-full bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
+              className="w-full bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border rounded-[20px] p-4 flex items-center justify-between active:scale-[0.99] transition-transform"
             >
               <div className="flex items-center gap-3">
-                <div className="bg-rose-50 dark:bg-rose-950/30 h-11 w-11 rounded-xl flex items-center justify-center text-rose-400">
+                <div className="bg-rose-50 dark:bg-rose-950/30 h-11 w-11 rounded-[13px] flex items-center justify-center text-rose-500">
                   <Heart className="w-5 h-5" />
                 </div>
                 <div className="text-left">
@@ -535,7 +524,7 @@ export default function LoveWrapped() {
 
       {/* Referral */}
       <button
-        className="w-full bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
+        className="w-full bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border rounded-[20px] p-4 flex items-center justify-between active:scale-[0.99] transition-transform"
         onClick={() => {
           const text = `A usar o LoveNest para construir uma relação mais forte! Junta-te a nós: ${window.location.origin}`;
           if (navigator.share) navigator.share({ title: "LoveNest", text, url: window.location.origin });
@@ -547,8 +536,8 @@ export default function LoveWrapped() {
             <Gift className="w-5 h-5" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-[13px]">Convidar Amigos</p>
-            <p className="text-[11px] text-muted-foreground">Partilha o percurso e ganha bónus</p>
+            <p className="font-semibold text-[14px]">Convidar amigos</p>
+            <p className="text-[12.5px] text-muted-foreground">Partilha o percurso e ganha bónus</p>
           </div>
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
