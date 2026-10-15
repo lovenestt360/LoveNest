@@ -23,7 +23,7 @@ export function AppShell() {
   const isFullscreen = isChat || isLocation;
   const isHome = location.pathname === "/";
   // Ecrãs já migrados para a temática refinada (fundo branco, sem mesh).
-  const isRefined = isHome || ["/biblioteca", "/ciclo", "/configuracoes", "/humor", "/plano", "/rotina", "/memorias", "/capsula"].some(p => location.pathname.startsWith(p));
+  const isRefined = isHome || ["/biblioteca", "/ciclo", "/configuracoes", "/humor", "/plano", "/rotina", "/memorias", "/capsula", "/desafios", "/conflitos", "/jornada-espiritual"].some(p => location.pathname.startsWith(p));
 
   // Quando o utilizador navega de volta para a Home (keep-alive esconde/mostra),
   // nenhum useEffect remonta — notifica os hooks via evento para que

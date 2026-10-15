@@ -321,7 +321,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
                 <Input id="verse-ref" value={verseRef} onChange={e => setVerseRef(e.target.value)} placeholder="Ex: Salmo 23:1" />
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={savePrayer} disabled={!prayerText.trim()}>
+                <Button size="sm" onClick={savePrayer} disabled={!prayerText.trim()} className="rounded-[12px] [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 text-white dark:[background:hsl(var(--foreground))] dark:text-background">
                   <Save className="mr-1 h-3 w-3" /> Guardar
                 </Button>
                 {prayer && (
@@ -379,7 +379,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
             <Textarea id="reflection" value={reflection} onChange={e => { setReflection(e.target.value); setLogDirty(true); }} rows={2} placeholder="O que aprendi hoje..." />
           </div>
           {logDirty && (
-            <Button size="sm" onClick={saveLog}>
+            <Button size="sm" onClick={saveLog} className="rounded-[12px] [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 text-white dark:[background:hsl(var(--foreground))] dark:text-background">
               <Save className="mr-1 h-3 w-3" /> Guardar
             </Button>
           )}
@@ -447,7 +447,7 @@ export default function Prayer({ hideHeader = false }: { hideHeader?: boolean })
           return (
             <Card key={dk} className="border-dashed">
               <CardContent className="pt-4 space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground capitalize">
+                <p className="text-xs font-semibold text-muted-foreground first-letter:uppercase">
                   {format(d, "EEEE, d MMM", { locale: pt })}
                 </p>
                 {dayPrayer && (
