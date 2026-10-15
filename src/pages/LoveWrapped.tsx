@@ -444,7 +444,7 @@ export default function LoveWrapped() {
                 <div className="bg-primary/10 h-24 w-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-glow">
                   <Sparkles className="w-12 h-12 text-primary animate-pulse-soft" />
                 </div>
-                <h3 className="text-5xl font-black italic tracking-tighter gradient-text drop-shadow-glow">{houseName}</h3>
+                <h3 className="text-5xl font-black italic tracking-tighter text-white drop-shadow-glow">{houseName}</h3>
                 <p className="text-sm font-black uppercase tracking-[0.4em] text-white/30">O vosso refúgio</p>
               </div>
               
