@@ -1,4 +1,5 @@
 import { BookCard } from "./BookCard";
+import { SectionTitle } from "@/features/home/components/HomeSections";
 import type { Book } from "@/hooks/useBiblioteca";
 
 export function BookRow({ title, books, ownedBookIds, pendingBookIds, myProgressByBook }: {
@@ -11,11 +12,11 @@ export function BookRow({ title, books, ownedBookIds, pendingBookIds, myProgress
     if (books.length === 0) return null;
 
     return (
-        <div className="space-y-3 animate-fade-in">
-            <h2 className="px-4 text-[15px] font-bold tracking-tight text-foreground">{title}</h2>
-            <div className="flex gap-3 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden">
+        <div className="animate-fade-in">
+            <SectionTitle title={title} />
+            <div className="-mx-4 -mb-4 flex gap-3 overflow-x-auto px-4 pb-5 [&::-webkit-scrollbar]:hidden">
                 {books.map(book => (
-                    <div key={book.id} className="w-[120px] shrink-0">
+                    <div key={book.id} className="w-[118px] shrink-0">
                         <BookCard
                             book={book}
                             owned={ownedBookIds.has(book.id)}

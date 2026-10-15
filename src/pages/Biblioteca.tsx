@@ -8,6 +8,8 @@ import { CategoryFilterBar } from "@/features/biblioteca/CategoryFilterBar";
 import { BookGrid } from "@/features/biblioteca/BookGrid";
 import { BibliotecaSkeleton } from "@/features/biblioteca/BibliotecaSkeleton";
 import { ReadingStatsCard } from "@/features/biblioteca/ReadingStatsCard";
+import { SURFACE, SectionTitle } from "@/features/home/components/HomeSections";
+import { cn } from "@/lib/utils";
 
 const TRENDING_LIMIT = 10;
 
@@ -45,37 +47,39 @@ export default function Biblioteca() {
     const rowProps = { ownedBookIds, pendingBookIds, myProgressByBook };
 
     return (
-        <section className="space-y-6 pb-24 animate-fade-in max-w-lg mx-auto">
-            <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-40 border-b border-border">
+        <section className="animate-fade-in">
+            <header className="flex items-end justify-between px-1 pt-0.5">
                 <div>
-                    <h1 className="text-xl font-semibold tracking-tight">Biblioteca</h1>
-                    <p className="text-[12px] text-muted-foreground">
+                    <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em] text-foreground">Biblioteca</h1>
+                    <p className="mt-0.5 text-[13px] text-muted-foreground">
                         {books.length} livro{books.length !== 1 ? "s" : ""} disponíve{books.length !== 1 ? "is" : "l"}
                     </p>
                 </div>
-                <div className="w-9 h-9 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
-                    <Library className="w-[18px] h-[18px] text-rose-400" strokeWidth={1.5} />
-                </div>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ECE8E3] bg-white dark:border-border dark:bg-card">
+                    <Library className="h-[18px] w-[18px] text-rose-500" strokeWidth={1.9} />
+                </span>
             </header>
 
             {loading ? (
-                <BibliotecaSkeleton />
+                <div className="mt-5"><BibliotecaSkeleton /></div>
             ) : books.length === 0 ? (
-                <div className="mx-4 bg-card border border-border rounded-2xl p-10 text-center shadow-sm space-y-2">
-                    <Library className="w-8 h-8 mx-auto text-muted-foreground/40" strokeWidth={1.5} />
-                    <p className="text-sm font-semibold text-foreground">Ainda sem livros</p>
-                    <p className="text-[12px] text-muted-foreground">Em breve teremos novidades por aqui</p>
+                <div className={cn(SURFACE, "mt-5 space-y-2 rounded-[20px] p-10 text-center")}>
+                    <Library className="mx-auto h-8 w-8 text-[#C9C4BD]" strokeWidth={1.6} />
+                    <p className="text-[15px] font-semibold text-foreground">Ainda sem livros</p>
+                    <p className="text-[13px] text-muted-foreground">Em breve teremos novidades por aqui</p>
                 </div>
             ) : (
                 <>
-                    <HeroCarousel settings={settings} books={books} banners={banners} />
+                    <div className="mt-5">
+                        <HeroCarousel settings={settings} books={books} banners={banners} />
+                    </div>
 
                     <ReadingStatsCard />
 
                     {continueReading.length > 0 && (
-                        <div className="space-y-3 animate-fade-in">
-                            <h2 className="px-4 text-[15px] font-bold tracking-tight text-foreground">Continua de onde paraste</h2>
-                            <div className="flex gap-3 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden">
+                        <div className="animate-fade-in">
+                            <SectionTitle title="Continua de onde paraste" />
+                            <div className="-mx-4 -mb-4 flex gap-3 overflow-x-auto px-4 pb-5 [&::-webkit-scrollbar]:hidden">
                                 {continueReading.map(({ book, progress }) => (
                                     <ContinueReadingCard key={book.id} book={book} progress={progress} />
                                 ))}
@@ -91,23 +95,23 @@ export default function Biblioteca() {
                     <BookRow title="Recomendados" books={recommended} {...rowProps} />
                     <BookRow title="Tendências" books={trending} {...rowProps} />
 
-                    <div className="space-y-3 pt-2">
-                        <h2 className="px-4 text-[15px] font-bold tracking-tight text-foreground">Todos os livros</h2>
+                    <SectionTitle title="Todos os livros" />
 
-                        {categories.length > 0 && (
-                            <CategoryFilterBar
-                                categories={categories}
-                                active={activeCategory}
-                                onChange={setActiveCategory}
-                            />
-                        )}
+                    {categories.length > 0 && (
+                        <CategoryFilterBar
+                            categories={categories}
+                            active={activeCategory}
+                            onChange={setActiveCategory}
+                        />
+                    )}
 
-                        {filteredBooks.length === 0 ? (
-                            <div className="mx-4 bg-card border border-border rounded-2xl p-10 text-center shadow-sm space-y-2">
-                                <p className="text-sm font-semibold text-foreground">Nenhum livro nesta categoria</p>
-                                <p className="text-[12px] text-muted-foreground">Experimenta outra categoria</p>
-                            </div>
-                        ) : (
+                    {filteredBooks.length === 0 ? (
+                        <div className={cn(SURFACE, "mt-3 space-y-1 rounded-[20px] p-10 text-center")}>
+                            <p className="text-[15px] font-semibold text-foreground">Nenhum livro nesta categoria</p>
+                            <p className="text-[13px] text-muted-foreground">Experimenta outra categoria</p>
+                        </div>
+                    ) : (
+                        <div className="mt-4">
                             <BookGrid
                                 books={filteredBooks}
                                 columns={settings?.grid_columns ?? 2}
@@ -115,8 +119,8 @@ export default function Biblioteca() {
                                 pendingBookIds={pendingBookIds}
                                 myProgressByBook={myProgressByBook}
                             />
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </>
             )}
         </section>

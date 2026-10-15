@@ -19,7 +19,7 @@ export function BookGrid({ books, columns, ownedBookIds, pendingBookIds, myProgr
     const cols = GRID_COLS[columns] ?? GRID_COLS[2];
 
     return (
-        <div className={cn("grid gap-x-4 gap-y-6 px-4", cols)}>
+        <div className={cn("grid gap-x-3.5 gap-y-5", cols)}>
             {books.map(book => (
                 <BookCard
                     key={book.id}

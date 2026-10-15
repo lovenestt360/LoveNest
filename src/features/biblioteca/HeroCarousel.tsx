@@ -84,13 +84,13 @@ export function HeroCarousel({ settings, books, banners = [] }: { settings: Libr
     const slide = slides[index] ?? slides[0];
 
     return (
-        <div className="px-4">
+        <div>
             <button
                 type="button"
                 onClick={slide.onClick}
                 disabled={!slide.onClick}
                 className={cn(
-                    "block w-full relative aspect-[16/7] rounded-3xl overflow-hidden shadow-sm active:scale-[0.99] transition-transform bg-muted",
+                    "block w-full relative aspect-[16/7] rounded-[24px] overflow-hidden border border-[#ECE8E3] bg-[#F4F2EF] shadow-[0_10px_28px_-14px_rgba(11,19,36,0.3)] active:scale-[0.99] transition-transform dark:border-border dark:bg-muted",
                     !slide.onClick && "cursor-default"
                 )}
             >
@@ -98,20 +98,21 @@ export function HeroCarousel({ settings, books, banners = [] }: { settings: Libr
                     <img key={`img-${slide.key}`} src={slide.image} alt={slide.title} className="w-full h-full object-cover animate-fade-in" />
                 )}
                 <div key={`overlay-${slide.key}`} className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent flex flex-col items-start justify-end p-4 text-left animate-fade-in">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-rose-300 mb-1">{slide.label}</span>
-                    {slide.title && <p className="text-white font-bold text-lg leading-tight line-clamp-1">{slide.title}</p>}
+                    <span className="mb-1.5 rounded-full bg-white/95 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.1em] text-rose-600">{slide.label}</span>
+                    {slide.title && <p className="text-white font-semibold text-[18px] leading-tight tracking-[-0.01em] line-clamp-1">{slide.title}</p>}
                     {slide.subtitle && <p className="text-white/80 text-[12px] mt-0.5 line-clamp-1">{slide.subtitle}</p>}
                 </div>
             </button>
 
             {slides.length > 1 && (
-                <div className="flex items-center justify-center gap-1.5 mt-2">
+                <div className="mt-2.5 flex items-center justify-center gap-1.5">
                     {slides.map((s, i) => (
                         <button
                             key={s.key}
                             type="button"
                             onClick={() => setIndex(i)}
-                            className={cn("h-1.5 rounded-full transition-all", i === index ? "w-6 bg-rose-500" : "w-1.5 bg-muted")}
+                            aria-label={`Destaque ${i + 1}`}
+                            className={cn("h-1.5 rounded-full transition-[width,background-color]", i === index ? "w-5 bg-[#0B1324] dark:bg-foreground" : "w-1.5 bg-[#E2DED8] dark:bg-muted")}
                         />
                     ))}
                 </div>
