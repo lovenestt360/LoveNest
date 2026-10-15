@@ -278,11 +278,9 @@ input, textarea, [contenteditable="true"] {
     box-shadow: var(--gradient-glow);
   }
 
+  /* Títulos de destaque: cor sólida (antes era texto em gradiente rosa). */
   .gradient-text {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: hsl(var(--foreground));
     @apply font-black;
   }
 
