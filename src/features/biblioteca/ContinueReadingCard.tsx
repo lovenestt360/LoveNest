@@ -27,9 +27,9 @@ export function ContinueReadingCard({ book, progress }: { book: Book; progress: 
                     </div>
                     <div className="space-y-1.5">
                         <div className="h-1.5 rounded-full bg-[#F1EEEA] overflow-hidden dark:bg-muted">
-                            <div className="h-full bg-rose-500" style={{ width: `${progress}%` }} />
+                            <div className="h-full bg-[#1C1F24] dark:bg-foreground" style={{ width: `${progress}%` }} />
                         </div>
-                        <div className="flex items-center gap-1 text-[12px] font-semibold text-rose-500">
+                        <div className="flex items-center gap-1 text-[12px] font-semibold text-[#0B1324] dark:text-foreground">
                             <BookOpenText className="w-3 h-3" /> Continuar
                         </div>
                     </div>

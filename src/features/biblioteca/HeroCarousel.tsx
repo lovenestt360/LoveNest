@@ -98,7 +98,7 @@ export function HeroCarousel({ settings, books, banners = [] }: { settings: Libr
                     <img key={`img-${slide.key}`} src={slide.image} alt={slide.title} className="w-full h-full object-cover animate-fade-in" />
                 )}
                 <div key={`overlay-${slide.key}`} className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent flex flex-col items-start justify-end p-4 text-left animate-fade-in">
-                    <span className="mb-1.5 rounded-full bg-white/95 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.1em] text-rose-600">{slide.label}</span>
+                    <span className="mb-1.5 rounded-full bg-white/95 px-2 py-[3px] font-mono text-[10.5px] font-medium uppercase tracking-[0.06em] text-[#0B1324]">{slide.label}</span>
                     {slide.title && <p className="text-white font-semibold text-[18px] leading-tight tracking-[-0.01em] line-clamp-1">{slide.title}</p>}
                     {slide.subtitle && <p className="text-white/80 text-[12px] mt-0.5 line-clamp-1">{slide.subtitle}</p>}
                 </div>

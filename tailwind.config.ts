@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ["'Nunito'", "ui-rounded", "system-ui", "sans-serif"],
         serif: ["'Merriweather'", "Georgia", "serif"],
+        mono: ["'DM Mono'", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",

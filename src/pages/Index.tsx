@@ -474,13 +474,13 @@ const Index = () => {
     ...(!isSolo
       ? [{ to: "/chat", label: "Chat", icon: TOOL_ICONS.chat, tint: "text-[#0B1324] dark:text-foreground", badge: chatUnread }]
       : []),
-    { to: "/humor", label: "Humor", icon: TOOL_ICONS.mood, tint: "text-rose-500", badge: moodUnread },
+    { to: "/humor", label: "Humor", icon: TOOL_ICONS.mood, tint: "text-amber-500", badge: moodUnread },
     { to: "/plano", label: "Agenda", icon: TOOL_ICONS.agenda, tint: "text-[#3F68E6]", badge: tasksUnread + scheduleUnread },
     ...(hasSpiritual
       ? [{ to: "/jornada-espiritual", label: "Espiritual", icon: TOOL_ICONS.spiritual, tint: "text-violet-500", badge: prayerUnread }]
       : []),
     ...(!isSolo
-      ? [{ to: "/conflitos", label: "Conflitos", icon: TOOL_ICONS.conflicts, tint: "text-rose-600", badge: complaintsUnread }]
+      ? [{ to: "/conflitos", label: "Conflitos", icon: TOOL_ICONS.conflicts, tint: "text-[#E5484D]", badge: complaintsUnread }]
       : []),
   ];
 
@@ -501,7 +501,7 @@ const Index = () => {
         partnerHere={partnerHere}
       />
 
-      <p className="mb-[11px] mt-[7px] text-center text-[13px] font-medium leading-snug text-rose-500">
+      <p className="mb-[11px] mt-[7px] text-center text-[13px] font-medium leading-snug text-[#7E838C] dark:text-muted-foreground">
         {isSolo ? "O teu ninho é o teu lugar seguro" : "O vosso ninho é o vosso lugar seguro"}
       </p>
 
@@ -509,10 +509,10 @@ const Index = () => {
         {announcements.map((announcement) => (
           <div
             key={announcement.id}
-            className="rounded-[18px] border border-rose-200/60 bg-rose-50/70 px-4 py-3 dark:border-rose-900/30 dark:bg-rose-950/20"
+            className={cn(SURFACE, "rounded-[20px] px-4 py-3")}
           >
-            <p className="text-[12px] font-semibold text-rose-600">{announcement.title}</p>
-            <p className="mt-0.5 text-[12px] leading-5 text-rose-800 dark:text-rose-200">{announcement.content}</p>
+            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground"><span className="h-1.5 w-1.5 rounded-full bg-[#E5484D]" />{announcement.title}</p>
+            <p className="mt-0.5 text-[12.5px] leading-5 text-[#3A4150] dark:text-muted-foreground">{announcement.content}</p>
           </div>
         ))}
 
@@ -542,7 +542,7 @@ const Index = () => {
         {profileReady && !avatars.loading && !isSolo && !avatars.partner && houseInviteCode && (
           <section className={cn(SURFACE, "rounded-[24px] p-4")}>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-950/40">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F1EEEA] text-[#0B1324] dark:bg-muted dark:text-foreground">
                 <HeartHandshake className="h-5 w-5" strokeWidth={1.7} />
               </div>
               <div>
@@ -553,7 +553,7 @@ const Index = () => {
               </div>
             </div>
             <div className="mt-3 flex gap-2">
-              <div className="flex h-11 flex-1 items-center justify-center rounded-2xl border border-[#ECE8E3] text-[16px] font-bold tracking-[0.2em] text-rose-500 dark:border-border">
+              <div className="flex h-11 flex-1 items-center justify-center rounded-2xl border border-[#ECE8E3] font-mono text-[16px] font-medium tracking-[0.2em] text-[#0B1324] dark:border-border dark:text-foreground">
                 {houseInviteCode}
               </div>
               <button

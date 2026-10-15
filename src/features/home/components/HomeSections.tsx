@@ -16,10 +16,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { cn } from "@/lib/utils";
+import { WIDGET, MonoLabel, BigNumber, SegmentBar } from "@/components/Widget";
 
 /** Superfície comum da Home refinada: branco, borda fina e sombra suave. */
 export const SURFACE =
-  "border border-[#ECE8E3] bg-white shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border dark:bg-card";
+  "border border-black/[0.04] bg-white shadow-[0_1px_2px_rgba(11,19,36,0.05),0_18px_40px_-24px_rgba(11,19,36,0.34)] dark:border-border dark:bg-card";
 
 const MONTHS_SHORT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const MONTHS_LONG = [
@@ -64,9 +65,13 @@ export function TimeTogetherStrip({
       <button
         type="button"
         onClick={() => navigate("/configuracoes")}
-        className={cn(SURFACE, "w-full rounded-[18px] px-3.5 py-2.5 text-center text-[13px] font-medium text-rose-500 active:scale-[0.99]")}
+        className={cn(WIDGET, "flex w-full items-center justify-between px-5 py-4 text-left active:scale-[0.99]")}
       >
-        Definir a data em que começaram
+        <span>
+          <MonoLabel>Tempo juntos</MonoLabel>
+          <span className="mt-2 block text-[15px] font-semibold text-foreground">Definir a data em que começaram</span>
+        </span>
+        <ChevronRight className="h-[18px] w-[18px] text-muted-foreground/60" strokeWidth={2} />
       </button>
     );
   }
@@ -79,29 +84,29 @@ export function TimeTogetherStrip({
       ? `Hoje fazem ${anniversary.years} ${anniversary.years === 1 ? "ano" : "anos"}`
       : `${anniversary.years} ${anniversary.years === 1 ? "ano" : "anos"} em ${anniversary.daysUntil} ${anniversary.daysUntil === 1 ? "dia" : "dias"}`;
 
-  const unit = (value: string, label: string, className?: string) => (
-    <span className="flex min-w-[20px] flex-col items-center">
-      <b className={cn("text-[14px] font-bold leading-none tracking-[-0.02em] tabular-nums text-foreground", className)}>{value}</b>
-      <small className="mt-0.5 text-[7.5px] font-medium uppercase leading-none tracking-[0.1em] text-muted-foreground/70">{label}</small>
-    </span>
-  );
-  const sep = <span className="mb-[9px] text-[11px] font-light leading-none text-muted-foreground/40">:</span>;
+  // Os 12 meses até ao próximo aniversário: passados a tinta, o atual em destaque.
+  const monthsLeft = Math.min(11, Math.floor(anniversary.daysUntil / 30.44));
+  const current = 11 - monthsLeft;
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    tone: (i < current ? "ink" : i === current ? "accent" : "idle") as "ink" | "accent" | "idle",
+  }));
 
   return (
-    <section aria-label="Tempo juntos" className={cn(SURFACE, "rounded-[18px] px-3.5 pb-[7px] pt-2 text-center")}>
-      <p className="text-[9px] font-semibold uppercase leading-none tracking-[0.14em] text-muted-foreground/70">Tempo juntos</p>
-      <p className="mt-[3px] whitespace-nowrap text-[9.5px] font-medium leading-tight text-muted-foreground/70">
-        {since} · {mark}
-      </p>
-      <div className="mt-[5px] flex items-center justify-center gap-1">
-        {unit(String(days), "dias", "text-[17px] text-rose-500")}
-        {sep}
-        {unit(pad(hours), "hrs")}
-        {sep}
-        {unit(pad(minutes), "min")}
-        {sep}
-        {unit(pad(seconds), "seg", "text-foreground/60")}
+    <section aria-label="Tempo juntos" className={cn(WIDGET, "px-5 pb-4 pt-4")}>
+      <div className="flex items-center justify-between">
+        <MonoLabel>Tempo juntos</MonoLabel>
+        <span className="font-mono text-[12px] tabular-nums tracking-[0.04em] text-[#3A4150] dark:text-foreground/80">
+          {pad(hours)}:{pad(minutes)}:<span className="text-[#E5484D]">{pad(seconds)}</span>
+        </span>
       </div>
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <BigNumber value={days} unit="dias" size="md" />
+        <div className="pb-0.5 text-right">
+          <MonoLabel className="block">{since}</MonoLabel>
+          <span className="mt-1.5 block text-[13px] font-medium text-[#3A4150] dark:text-foreground/80">{mark}</span>
+        </div>
+      </div>
+      <SegmentBar className="mt-3.5" segments={months} />
     </section>
   );
 }
@@ -142,7 +147,7 @@ export function DailyTools({ tools }: { tools: DailyTool[] }) {
             >
               {tool.icon}
               {(tool.badge ?? 0) > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-rose-500 px-1 text-[11px] font-bold leading-none text-white dark:border-background">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#E5484D] px-1 text-[11px] font-bold leading-none text-white dark:border-background">
                   {tool.badge! > 9 ? "9+" : tool.badge}
                 </span>
               )}
@@ -350,13 +355,13 @@ export function MemoriesSection({
           style={
             photo
               ? undefined
-              : { background: "linear-gradient(165deg,#F7C9A8 0%,#E99A8E 38%,#A6728F 72%,#4B4766 100%)" }
+              : { background: "linear-gradient(165deg,#D8D3CB 0%,#A9A39A 45%,#4A4A4F 80%,#1C1F24 100%)" }
           }
         >
           {photo && <img src={photo.url} alt="" className="absolute inset-0 h-full w-full object-cover" />}
           <span className="absolute inset-0 bg-gradient-to-b from-transparent from-40% to-[#0B1324]/60" aria-hidden="true" />
           {memoriesBadge > 0 && (
-            <span className="absolute right-3 top-3 rounded-md bg-rose-500 px-1.5 py-0.5 text-[10.5px] font-bold">
+            <span className="absolute right-3 top-3 rounded-md bg-[#E5484D] px-1.5 py-0.5 text-[10.5px] font-bold">
               {memoriesBadge > 9 ? "9+" : memoriesBadge} {memoriesBadge === 1 ? "nova" : "novas"}
             </span>
           )}
@@ -404,16 +409,23 @@ export function MemoriesSection({
           title="Desafios"
           text={extras.challenge ? `“${extras.challenge}” · em curso` : isSolo ? "Escolhe um desafio" : "Escolham um desafio juntos"}
         />
-        {extras.wrapped && wrappedIsNew && (
-          <RowLink
-            onClick={() => navigate("/wrapped")}
-            icon={<Star className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-            tint="bg-rose-50 text-rose-500 dark:bg-rose-950/30"
-            title={`LoveWrapped de ${MONTHS_LONG[extras.wrapped.month - 1] ?? ""}`}
-            text={isSolo ? "O teu mês, em resumo" : "O vosso mês, em resumo"}
-            trailing={<span className="rounded-md bg-rose-50 px-[7px] py-[3px] text-[11px] font-bold text-rose-500 dark:bg-rose-950/30">Novo</span>}
-          />
-        )}
+        {/* LoveWrapped fica sempre à vista; "Novo" nos 10 dias a seguir a ser gerado. */}
+        <RowLink
+          onClick={() => navigate("/wrapped")}
+          icon={<Star className="h-[18px] w-[18px]" strokeWidth={1.9} />}
+          tint="bg-[#F1EEEA] text-[#0B1324] dark:bg-muted dark:text-foreground"
+          title={extras.wrapped ? `LoveWrapped de ${MONTHS_LONG[extras.wrapped.month - 1] ?? ""}` : "LoveWrapped"}
+          text={
+            extras.wrapped
+              ? isSolo ? "O teu mês, em resumo" : "O vosso mês, em resumo"
+              : "O primeiro resumo chega no fim do mês"
+          }
+          trailing={
+            extras.wrapped && wrappedIsNew ? (
+              <span className="rounded-md bg-[#0B1324] px-[7px] py-[3px] font-mono text-[10.5px] uppercase tracking-[0.08em] text-white dark:bg-foreground dark:text-background">Novo</span>
+            ) : undefined
+          }
+        />
       </div>
     </>
   );

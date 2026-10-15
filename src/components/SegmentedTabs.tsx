@@ -18,7 +18,7 @@ export function SegmentedTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div role="tablist" className={cn("flex gap-1 rounded-[16px] bg-[#F4F2EF] p-1 dark:bg-muted", className)}>
+    <div role="tablist" className={cn("flex gap-1 rounded-[16px] bg-black/[0.055] p-1 dark:bg-muted", className)}>
       {tabs.map(tab => {
         const active = tab.id === value;
         const Icon = tab.icon;

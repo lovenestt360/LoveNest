@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { WIDGET, MonoLabel, WidgetFoot } from "@/components/Widget";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +59,8 @@ function timeAgo(iso: string): string {
 }
 
 /**
- * "Onde estamos" na Home. Só aparece quando há partilha ativa.
+ * "Onde estamos" na Home. Aparece sempre no modo casal: com partilha ativa
+ * mostra onde cada um está; sem ela, convida a ativar (é a entrada para /localizacao).
  * O mapa é ilustrativo (as posições reais vivem em /localizacao); o texto
  * mostra a morada conhecida de cada um e quando foi atualizada.
  */
@@ -68,61 +71,99 @@ export function LocationHomeCard() {
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
 
-  if (tierLoading || !allowed || loading) return null;
-  if (!mySharing && !partnerSharing) return null;
+  if (tierLoading || loading) return null;
 
   const partnerName = partner?.display_name ?? "O teu par";
   const myInitial = (profile?.display_name ?? "Eu").charAt(0).toUpperCase();
   const partnerInitial = partnerName.charAt(0).toUpperCase();
-
-  const parts: string[] = [];
-  if (partnerSharing && partnerLocation?.address) parts.push(`${partnerName} em ${partnerLocation.address}`);
-  else if (partnerSharing) parts.push(`${partnerName} está a partilhar`);
-  else parts.push(`${partnerName} não está a partilhar`);
-  if (mySharing && myLocation?.address) parts.push(`tu em ${myLocation.address}`);
-
+  const active = allowed && (mySharing || partnerSharing);
   const updatedAt = partnerSharing ? partnerLocation?.updated_at : myLocation?.updated_at;
 
   return (
     <button
       type="button"
       onClick={() => navigate("/localizacao")}
-      className="w-full overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
+      className={cn(WIDGET, "w-full text-left transition-transform active:scale-[0.99]")}
     >
-      <div className="relative h-[92px] bg-[#EEEAE4] dark:bg-muted" aria-hidden="true">
-        <svg viewBox="0 0 358 92" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
-          <path d="M250 0c-10 28 20 48 108 60V0z" fill="#DCE6EF" />
-          <g stroke="#FFFFFF" strokeWidth="6" fill="none" strokeLinecap="round">
-            <path d="M-10 66c80-9 150 4 230-14s110-28 150-25" />
-            <path d="M60 100c10-36 0-64 30-108" />
-            <path d="M180 100c-6-28 10-50 0-108" />
-          </g>
-          <g stroke="#E4DED6" strokeWidth="2" fill="none">
-            <path d="M0 28h358M0 82h358M120 0v92M300 0v92" />
-          </g>
-          <path d="M92 68C150 50 200 40 262 30" stroke="#0B1324" strokeWidth="1.6" strokeDasharray="4 5" fill="none" opacity=".55" />
-        </svg>
-        <span className="absolute left-[19%] top-[52%] flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-white bg-rose-500 text-[13px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.5)]">
-          {myInitial}
-        </span>
-        <span className="absolute left-[71%] top-[14%] flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#4D7CFE] text-[13px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.5)]">
-          {partnerInitial}
-        </span>
+      <div className="flex items-center justify-between px-5 pt-4">
+        <MonoLabel>Onde estamos</MonoLabel>
+        {active ? (
+          <MonoLabel className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+            <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
+            {updatedAt ? timeAgo(updatedAt) : "Ativa"}
+          </MonoLabel>
+        ) : (
+          <MonoLabel className="text-[#B4B1AB]">Desligada</MonoLabel>
+        )}
       </div>
 
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold text-foreground">Onde estamos</p>
-          <p className="truncate text-[12.5px] text-muted-foreground">{parts.join(" · ")}</p>
-          <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
-            <span className="h-[7px] w-[7px] rounded-full bg-emerald-600" />
-            Partilha ativa{updatedAt ? ` · ${timeAgo(updatedAt)}` : ""}
+      <div className="relative mx-4 mt-3 h-[96px] overflow-hidden rounded-[18px] bg-[#F1F0ED] dark:bg-muted" aria-hidden="true">
+        <svg viewBox="0 0 326 96" preserveAspectRatio="xMidYMid slice" className={cn("absolute inset-0 h-full w-full", !active && "opacity-60")}>
+          <defs>
+            <linearGradient id="ln-route" x1="0" x2="1">
+              <stop offset="0" stopColor="#1C1F24" stopOpacity="0" />
+              <stop offset=".35" stopColor="#1C1F24" />
+            </linearGradient>
+          </defs>
+          <path d="M226 0c-10 30 20 50 100 62V0z" fill="#E4E9EE" />
+          <g stroke="#FFFFFF" strokeWidth="7" fill="none" strokeLinecap="round">
+            <path d="M-10 70c80-9 150 4 230-14s100-28 120-25" />
+            <path d="M58 104c10-36 0-64 30-110" />
+            <path d="M170 104c-6-28 10-50 0-110" />
+          </g>
+          <g stroke="#E6E4E0" strokeWidth="1.5" fill="none">
+            <path d="M0 30h326M0 86h326M118 0v96M282 0v96" />
+          </g>
+          {active && (
+            <path d="M40 74C100 70 150 52 232 34" stroke="url(#ln-route)" strokeWidth="5" strokeLinecap="round" fill="none" />
+          )}
+        </svg>
+        {active ? (
+          <>
+            <span className="absolute left-[16%] top-[58%] flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-rose-500 text-[12px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.55)]">
+              {myInitial}
+            </span>
+            <span className="absolute left-[72%] top-[34%] flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#4D7CFE] text-[12px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.55)]">
+              {partnerInitial}
+            </span>
+          </>
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0B1324] shadow-[0_8px_18px_-10px_rgba(11,19,36,0.5)] dark:bg-card dark:text-foreground">
+              <MapPin className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            </span>
           </span>
-        </div>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1EEEA] text-foreground dark:bg-muted">
-          <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2} />
-        </span>
+        )}
       </div>
+
+      {active ? (
+        <WidgetFoot>
+          <div className="min-w-0 px-5 py-3.5">
+            <MonoLabel className="block truncate">{partnerName}</MonoLabel>
+            <p className="mt-1.5 truncate text-[14px] font-medium text-foreground">
+              {partnerSharing ? partnerLocation?.address ?? "A partilhar" : "Não está a partilhar"}
+            </p>
+          </div>
+          <div className="min-w-0 border-l border-black/[0.06] px-5 py-3.5 dark:border-border">
+            <MonoLabel className="block">Tu</MonoLabel>
+            <p className="mt-1.5 truncate text-[14px] font-medium text-foreground">
+              {mySharing ? myLocation?.address ?? "A partilhar" : "Não estás a partilhar"}
+            </p>
+          </div>
+        </WidgetFoot>
+      ) : (
+        <div className="mt-3 flex items-center gap-3 border-t border-black/[0.06] bg-[#FAFAF8] px-5 py-3.5 dark:border-border dark:bg-muted/20">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold text-foreground">
+              {allowed ? "Ativem a partilha de localização" : "Partilha de localização"}
+            </span>
+            <span className="block text-[12.5px] text-muted-foreground">
+              {allowed ? "Para se verem no mapa e saberem quando chegam." : "Vejam onde cada um está, com privacidade."}
+            </span>
+          </span>
+          <ChevronRight className="h-[18px] w-[18px] shrink-0 text-muted-foreground/60" strokeWidth={2} />
+        </div>
+      )}
     </button>
   );
 }

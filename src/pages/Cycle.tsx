@@ -81,7 +81,7 @@ export default function Cycle() {
       </header>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-[16px] bg-[#F4F2EF] p-1 dark:bg-muted">
+      <div className="flex gap-1 rounded-[16px] bg-black/[0.055] p-1 dark:bg-muted">
         {tabs.map(t => (
           <button
             key={t.id}

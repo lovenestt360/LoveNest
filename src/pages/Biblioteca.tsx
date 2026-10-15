@@ -56,7 +56,7 @@ export default function Biblioteca() {
                     </p>
                 </div>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ECE8E3] bg-white dark:border-border dark:bg-card">
-                    <Library className="h-[18px] w-[18px] text-rose-500" strokeWidth={1.9} />
+                    <Library className="h-[18px] w-[18px] text-[#0B1324] dark:text-foreground" strokeWidth={1.9} />
                 </span>
             </header>
 

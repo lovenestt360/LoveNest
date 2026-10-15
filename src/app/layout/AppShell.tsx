@@ -69,8 +69,8 @@ export function AppShell() {
     <div className={cn(
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
       isRefined && "refined",
-      // A temática refinada usa fundo branco; as outras superfícies migram depois.
-      isFullscreen ? "bg-transparent" : isRefined ? "bg-white dark:bg-background" : "bg-background"
+      // A temática refinada usa fundo cinzento claro para os cartões brancos terem presença.
+      isFullscreen ? "bg-transparent" : isRefined ? "bg-[#F2F1EE] dark:bg-background" : "bg-background"
     )}>
       <ChatWallpaper />
       {!isRefined && <div className="bg-mesh" aria-hidden="true" />}

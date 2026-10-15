@@ -42,7 +42,7 @@ export function BookCard({ book, owned, pending, progress }: { book: Book; owned
 
                 {owned && progress !== undefined && progress > 0 && progress < 100 && (
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-                        <div className="h-full bg-rose-500" style={{ width: `${progress}%` }} />
+                        <div className="h-full bg-white" style={{ width: `${progress}%` }} />
                     </div>
                 )}
             </div>

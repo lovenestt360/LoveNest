@@ -685,8 +685,8 @@ export default function Settings() {
   const initials = (displayName || user?.email || "U").slice(0, 2).toUpperCase();
 
   const menuItems = [
-    { id: 'profile',       label: 'Meu Perfil',           sub: 'Dados e foto de perfil',       tint: "bg-rose-50 text-rose-500 dark:bg-rose-950/30",       icon: <User className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
-    { id: 'house',         label: 'Nossa Casa',            sub: 'Dados do parceiro e namoro',   tint: "bg-rose-50 text-rose-600 dark:bg-rose-950/30",       icon: <Heart className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'profile',       label: 'Meu Perfil',           sub: 'Dados e foto de perfil',       tint: "bg-[#F1EEEA] text-[#0B1324] dark:bg-muted dark:text-foreground", icon: <User className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'house',         label: 'Nossa Casa',            sub: 'Dados do parceiro e namoro',   tint: "bg-[#FDECEC] text-[#E5484D] dark:bg-red-950/30",     icon: <Heart className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
     { id: 'personalization', label: 'Sobre Ti',            sub: 'País, espiritualidade e objetivo', tint: "bg-[#EEF2FF] text-[#3F68E6] dark:bg-blue-950/30", icon: <Globe className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
     { id: 'notifications', label: 'Notificações',          sub: 'Alertas e avisos do app',      tint: "bg-amber-50 text-amber-600 dark:bg-amber-950/30",    icon: <Bell className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
     { id: 'verification',  label: 'Verificar Identidade',  sub: 'Segurança e confiança',        tint: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30", icon: <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
@@ -730,7 +730,7 @@ export default function Settings() {
             onClick={() => navigate("/subscricao")}
             className="mt-3 flex w-full items-center gap-3 rounded-[20px] bg-[#0B1324] px-4 py-3.5 text-left text-white shadow-[0_14px_28px_-16px_rgba(11,19,36,0.7)] transition-transform active:scale-[0.99] dark:bg-card dark:shadow-none"
           >
-            <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-white/10 text-rose-300">
+            <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-white/10 text-white">
               <CreditCard className="h-[18px] w-[18px]" strokeWidth={1.9} />
             </span>
             <span className="min-w-0 flex-1">
@@ -764,7 +764,7 @@ export default function Settings() {
 
           <button
             onClick={() => signOut()}
-            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-white text-[14px] font-semibold text-rose-600 transition-colors active:bg-rose-50 dark:border-border dark:bg-card dark:active:bg-rose-950/20"
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-white text-[14px] font-semibold text-[#E5484D] transition-colors active:bg-[#FDECEC] dark:border-border dark:bg-card dark:active:bg-rose-950/20"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.9} /> Terminar sessão
           </button>

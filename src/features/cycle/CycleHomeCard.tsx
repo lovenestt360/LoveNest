@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Droplets, Wind, Sun, Moon } from "lucide-react";
+import { Droplets, Wind, Sun, Moon } from "lucide-react";
+import { WIDGET, MonoLabel, BigNumber, SegmentBar, WidgetFoot, FootStat, Unit } from "@/components/Widget";
 import { cn } from "@/lib/utils";
 import { runCycleEngineFromProfile } from "./engine";
 import { useCycleData } from "./useCycleData";
@@ -74,45 +75,55 @@ export function CycleHomeCard() {
 
   const phaseKey  = getPhaseKey(engine);
   const meta      = PHASE_META[phaseKey];
-  const progress  = Math.max(2, Math.min(98, engine.cycleProgress));
   const eventText = nextEventText(engine, isMale);
   const label     = isMale ? "Ciclo dela" : "O teu ciclo";
   const Icon      = meta.Icon;
+
+  // Um segmento por fase do ciclo; os dias já vividos ficam com a cor da fase.
+  const len = engine.cycleLength;
+  const ovulationDay = Math.max(engine.periodLength + 1, len - (profile.luteal_length ?? 14));
+  const phaseOf = (day: number): "rose" | "blue" | "green" | "violet" =>
+    day <= engine.periodLength ? "rose" : day < ovulationDay - 4 ? "blue" : day <= ovulationDay ? "green" : "violet";
+  const segments: { weight: number; tone: "rose" | "blue" | "green" | "violet" | "idle" }[] = [];
+  for (let day = 1; day <= len; day++) {
+    const tone = day <= engine.cycleDay ? phaseOf(day) : "idle";
+    const last = segments[segments.length - 1];
+    if (last && last.tone === tone) last.weight += 1;
+    else segments.push({ weight: 1, tone });
+  }
+  const daysToPeriod = Math.max(0, engine.daysUntilNextPeriod);
 
   return (
     <button
       type="button"
       onClick={() => navigate("/ciclo")}
-      className="w-full rounded-[20px] border border-[#ECE8E3] bg-white px-3.5 pb-2.5 pt-[11px] text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
+      className={cn(WIDGET, "w-full text-left transition-transform active:scale-[0.99]")}
     >
-      {/* ── Cabeçalho ── */}
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-[7px] text-[13px] font-semibold text-[#3A4150] dark:text-foreground/80">
-          <span className={cn("h-2 w-2 shrink-0 rounded-full", meta.dot)} />
-          {label}
-        </span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={2} />
+      <div className="px-5 pb-4 pt-4">
+        <div className="flex items-center justify-between">
+          <MonoLabel className="flex items-center gap-1.5">
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", meta.dot)} />
+            {label}
+          </MonoLabel>
+          <span className={cn("flex items-center gap-1.5 text-[13px] font-semibold", meta.textColor)}>
+            <Icon className="h-4 w-4" strokeWidth={1.8} />
+            {meta.label}
+          </span>
+        </div>
+        <BigNumber className="mt-3" size="md" value={engine.cycleDay} unit={`de ${engine.cycleLength} dias`} />
+        <SegmentBar className="mt-3.5" segments={segments} />
+        <p className="mt-2.5 text-[12.5px] leading-snug text-[#3A4150] dark:text-muted-foreground">{eventText}</p>
       </div>
-
-      {/* ── Fase + dia ── */}
-      <div className="mt-2 flex items-center gap-2.5">
-        <span className={cn("flex items-center gap-1.5 text-[15px] font-semibold", meta.textColor)}>
-          <Icon className="h-4 w-4" strokeWidth={1.8} />
-          {meta.label}
-        </span>
-        <span className="text-[12.5px] text-muted-foreground">Dia {engine.cycleDay}</span>
-        <span className="ml-auto text-[11.5px] tabular-nums text-muted-foreground/70">
-          {engine.cycleDay}/{engine.cycleLength} dias
-        </span>
-      </div>
-
-      {/* ── Barra de progresso ── */}
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-[#F1EEEA] dark:bg-muted">
-        <div className={cn("h-full rounded-full transition-all duration-700", meta.bar)} style={{ width: `${progress}%` }} />
-      </div>
-
-      {/* ── Próximo evento ── */}
-      <p className="mt-[7px] text-[12px] leading-snug text-muted-foreground">{eventText}</p>
+      <WidgetFoot>
+        <FootStat label="Menstruação">
+          {daysToPeriod}
+          <Unit>{daysToPeriod === 1 ? "dia" : "dias"}</Unit>
+        </FootStat>
+        <FootStat label="Ciclo">
+          {engine.cycleLength}
+          <Unit>dias</Unit>
+        </FootStat>
+      </WidgetFoot>
     </button>
   );
 }

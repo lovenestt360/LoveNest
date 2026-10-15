@@ -137,13 +137,13 @@ function TabButton({
       <span className="relative">
         <Icon className="h-[23px] w-[23px]" strokeWidth={isActive ? 2.1 : 1.7} />
         {badge > 0 && (
-          <span className="absolute -right-2.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10.5px] font-bold leading-none text-white">
+          <span className="absolute -right-2.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#E5484D] px-1 text-[10.5px] font-bold leading-none text-white">
             {badge > 9 ? "9+" : badge}
           </span>
         )}
       </span>
       <span>{tab.label}</span>
-      {isActive && <span className="absolute bottom-[3px] h-1 w-1 rounded-full bg-rose-500" aria-hidden="true" />}
+      {isActive && <span className="absolute bottom-[3px] h-1 w-1 rounded-full bg-[#E5484D]" aria-hidden="true" />}
     </button>
   );
 }
