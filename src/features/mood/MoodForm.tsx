@@ -25,7 +25,7 @@ interface MoodFormProps {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+    <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground mb-3">
       {children}
     </p>
   );
@@ -171,7 +171,7 @@ export function MoodForm({
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="Alguma nota sobre o dia de hoje?"
-          className="min-h-[80px] resize-none border-border text-sm focus-visible:ring-rose-400/30"
+          className="min-h-[80px] resize-none rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] text-sm focus-visible:ring-rose-400/30 dark:border-border dark:bg-muted"
           maxLength={500}
         />
       </div>
@@ -180,7 +180,7 @@ export function MoodForm({
       <button
         onClick={onSave}
         disabled={!isReady || saving}
-        className="w-full py-3.5 rounded-2xl bg-rose-500 text-white font-semibold text-base disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        className="w-full h-[52px] rounded-[18px] bg-[#0B1324] text-white font-semibold text-[15px] shadow-[0_14px_28px_-14px_rgba(11,19,36,0.6)] disabled:opacity-40 active:scale-[0.99] transition-transform flex items-center justify-center gap-2 dark:bg-foreground dark:text-background"
       >
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
         {isUpdate ? "Actualizar Registo" : "Guardar Humor"}

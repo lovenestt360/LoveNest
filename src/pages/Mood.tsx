@@ -8,7 +8,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { logActivity, fireMissionIfNotFired } from "@/lib/logActivity";
-import { cn } from "@/lib/utils";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { SegmentedTabs } from "@/components/SegmentedTabs";
 
 import { CheckCircle2 } from "lucide-react";
 import { MoodCheckin } from "@/features/mood/types";
@@ -236,33 +237,17 @@ export default function Mood() {
   const [activeTab, setActiveTab] = useState<"hoje" | "historico">("hoje");
 
   return (
-    <section className="space-y-5 pb-8">
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Humor do dia</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Regista as tuas emoções, atividades e sono.</p>
-      </header>
+    <section className="space-y-5 animate-fade-in">
+      <ScreenHeader title="Humor do dia" subtitle="As tuas emoções, atividades e sono." />
 
-      {/* Tabs */}
-      <div className="flex bg-muted rounded-2xl p-1 gap-1">
-        {([
-          { id: "hoje",      label: "Hoje" },
+      <SegmentedTabs<"hoje" | "historico">
+        tabs={[
+          { id: "hoje", label: "Hoje" },
           { id: "historico", label: isSolo ? "Histórico" : "Histórico e Par" },
-        ] as const).map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-              activeTab === tab.id
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        ] as const}
+        value={activeTab}
+        onChange={setActiveTab}
+      />
 
       {activeTab === "hoje" && (
         <MoodForm

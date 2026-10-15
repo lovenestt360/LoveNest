@@ -66,7 +66,7 @@ export function RoutineCalendar({
         >
           <ChevronLeft className="h-4 w-4 text-foreground" strokeWidth={1.5} />
         </button>
-        <span className="text-sm font-semibold text-foreground capitalize">{monthLabel}</span>
+        <span className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}</span>
         <button
           type="button"
           onClick={next}
