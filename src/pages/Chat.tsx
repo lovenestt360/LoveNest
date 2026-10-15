@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { todayLocal } from "@/lib/timezone";
 import { supabase } from "@/integrations/supabase/client";
@@ -269,8 +269,8 @@ function ImagePickerButton({ onPick }: { onPick: (f: File) => void }) {
       <input ref={ref} type="file" accept="image/*" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) { onPick(f); e.target.value = ""; } }} />
       <button type="button" onClick={() => ref.current?.click()}
-        className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 transition-colors">
-        <ImageIcon className="h-5 w-5" />
+        className="w-9 h-9 flex items-center justify-center text-[#9A9DA6] hover:text-foreground shrink-0 transition-colors">
+        <ImageIcon className="h-5 w-5" strokeWidth={1.8} />
       </button>
     </>
   );
@@ -291,7 +291,7 @@ function DateSeparator({ date }: { date: string }) {
 
   return (
     <div className="flex justify-center py-3">
-      <span className="text-[11px] font-medium text-muted-foreground bg-card/85 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+      <span className="rounded-full border border-[#ECE8E3] bg-white/90 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#7A7F8C] backdrop-blur-sm dark:border-border dark:bg-card/85 dark:text-muted-foreground">
         {label}
       </span>
     </div>
@@ -306,12 +306,14 @@ function PinnedBar({ messages, onJump }: { messages: Message[]; onJump: (id: str
   const last = pinned[pinned.length - 1];
   return (
     <button type="button" onClick={() => onJump(last.id)}
-      className="flex w-full items-center gap-2 px-4 py-2 bg-rose-50 dark:bg-rose-950/20 border-b border-rose-100/80 dark:border-rose-900/40 text-left">
-      <Pin className="h-3 w-3 text-rose-400 shrink-0" />
-      <p className="flex-1 text-xs text-rose-600 dark:text-rose-300 font-medium line-clamp-1">
+      className="flex w-full items-center gap-2.5 border-b border-[#ECE8E3] bg-white px-4 py-2 text-left dark:border-border dark:bg-card">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/30">
+        <Pin className="h-3 w-3 text-rose-500" />
+      </span>
+      <p className="flex-1 text-[12.5px] font-medium text-foreground line-clamp-1">
         {last.content || (last.image_url ? "Foto" : last.audio_url ? "Áudio" : "")}
       </p>
-      <span className="text-[10px] text-rose-400 shrink-0">
+      <span className="text-[11px] font-medium text-[#9A9DA6] shrink-0">
         {pinned.length > 1 ? `${pinned.length} fixadas` : "Fixada"}
       </span>
     </button>
@@ -328,38 +330,61 @@ function ActionSheet({
 }) {
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/25" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200">
-        <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
-        <p className="text-xs text-muted-foreground/65 mb-3 line-clamp-2 px-1">
+      <div className="fixed inset-0 z-[60] bg-[#0B1324]/25" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-[70] mx-auto max-w-md rounded-t-[26px] bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(11,19,36,0.25)] animate-in slide-in-from-bottom duration-200 dark:bg-card">
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#E2DED8] dark:bg-muted-foreground/30" />
+        <p className="mb-3 rounded-[14px] bg-[#F7F5F2] px-3 py-2 text-[13px] text-[#3A4150] line-clamp-2 dark:bg-muted dark:text-muted-foreground">
           {msg.content || (msg.image_url ? "Foto" : msg.audio_url ? "Áudio" : "")}
         </p>
-        <div className="grid gap-0.5">
-          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onReply}>
-            <Reply className="h-5 w-5 text-rose-500" /><span className="text-[15px]">Responder</span>
-          </button>
+        <div className="overflow-hidden rounded-[18px] border border-[#ECE8E3] dark:border-border">
+          <SheetRow onClick={onReply} icon={<Reply className="h-[18px] w-[18px]" />} tint="bg-rose-50 text-rose-500 dark:bg-rose-950/30">
+            Responder
+          </SheetRow>
           {isMine && (
-            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onEdit}>
-              <Pencil className="h-5 w-5 text-muted-foreground" />
-              <span className="text-[15px]">{msg.audio_url ? "Adicionar legenda" : "Editar"}</span>
-            </button>
+            <SheetRow onClick={onEdit} icon={<Pencil className="h-[18px] w-[18px]" />} tint="bg-[#F1EEEA] text-[#3A4150] dark:bg-muted dark:text-foreground">
+              {msg.audio_url ? "Adicionar legenda" : "Editar"}
+            </SheetRow>
           )}
-          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left transition-colors" onClick={onPin}>
-            {msg.is_pinned
-              ? <><PinOff className="h-5 w-5 text-muted-foreground" /><span className="text-[15px]">Desafixar</span></>
-              : <><Pin className="h-5 w-5 text-muted-foreground" /><span className="text-[15px]">Fixar</span></>}
-          </button>
+          <SheetRow
+            onClick={onPin}
+            icon={msg.is_pinned ? <PinOff className="h-[18px] w-[18px]" /> : <Pin className="h-[18px] w-[18px]" />}
+            tint="bg-[#EEF2FF] text-[#3F68E6] dark:bg-blue-950/30"
+          >
+            {msg.is_pinned ? "Desafixar" : "Fixar"}
+          </SheetRow>
           {isMine && (
-            <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left text-red-500 transition-colors" onClick={onDelete}>
-              <Trash2 className="h-5 w-5" /><span className="text-[15px]">Apagar</span>
-            </button>
+            <SheetRow onClick={onDelete} icon={<Trash2 className="h-[18px] w-[18px]" />} tint="bg-red-50 text-red-500 dark:bg-red-950/30" danger>
+              Apagar
+            </SheetRow>
           )}
-          <button className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-muted text-left text-muted-foreground/65 transition-colors" onClick={onClose}>
-            <X className="h-5 w-5" /><span className="text-[15px]">Cancelar</span>
-          </button>
         </div>
+        <button
+          className="mt-2.5 h-12 w-full rounded-[16px] bg-[#F4F2EF] text-[15px] font-semibold text-[#3A4150] transition-colors active:bg-[#ECE8E3] dark:bg-muted dark:text-foreground"
+          onClick={onClose}
+        >
+          Cancelar
+        </button>
       </div>
     </>
+  );
+}
+
+function SheetRow({
+  onClick, icon, tint, danger, children,
+}: {
+  onClick: () => void; icon: ReactNode; tint: string; danger?: boolean; children: ReactNode;
+}) {
+  return (
+    <button
+      className={cn(
+        "flex min-h-[54px] w-full items-center gap-3 px-3.5 text-left transition-colors active:bg-[#F7F5F2] dark:active:bg-muted [&+&]:border-t [&+&]:border-[#ECE8E3] dark:[&+&]:border-border",
+        danger ? "text-red-500" : "text-foreground",
+      )}
+      onClick={onClick}
+    >
+      <span className={cn("flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px]", tint)}>{icon}</span>
+      <span className="text-[15px] font-medium">{children}</span>
+    </button>
   );
 }
 
@@ -385,10 +410,10 @@ function MessageBubble({
         <div
           {...lp}
           className={cn(
-            "px-3 py-[7px] text-[15px] select-none shadow-sm",
+            "px-3 py-[7px] text-[15px] select-none",
             isMine
-              ? "bg-rose-500 text-white rounded-[18px] rounded-br-[4px]"
-              : "bg-card text-foreground rounded-[18px] rounded-bl-[4px]",
+              ? "bg-[#E5466D] text-white rounded-[18px] rounded-br-[5px] shadow-[0_6px_16px_-10px_rgba(229,70,109,0.7)]"
+              : "bg-white text-[#0B1324] border border-[#ECE8E3] rounded-[18px] rounded-bl-[5px] dark:bg-card dark:text-foreground dark:border-border",
             isDeleted && "opacity-60",
             msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
           )}
@@ -400,7 +425,7 @@ function MessageBubble({
               onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
               className={cn(
                 "flex items-start gap-1 rounded-lg px-2 py-1.5 mb-1.5 text-[11px] border-l-2 w-full text-left",
-                isMine ? "bg-white/20 border-white/50 text-white/80" : "bg-muted border-rose-300 dark:border-rose-800 text-muted-foreground"
+                isMine ? "bg-white/20 border-white/60 text-white/85" : "bg-[#F7F5F2] border-[#4D7CFE] text-[#3A4150] dark:bg-muted dark:text-muted-foreground"
               )}
             >
               <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
@@ -432,7 +457,7 @@ function MessageBubble({
 
           {/* Time + status */}
           <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
-            isMine ? "text-white/55" : "text-muted-foreground/65")}>
+            isMine ? "text-white/65" : "text-[#9A9DA6]")}>
             {msg.is_edited && !isDeleted && <span className="text-[10px]">{msg.audio_url ? "legenda ·" : "editada ·"}</span>}
             <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
             {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
@@ -803,39 +828,42 @@ export default function Chat() {
       )}
 
       {/* ── Header ── */}
-      <header className="relative z-20 shrink-0 bg-card border-b border-border">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      <header className="relative z-20 shrink-0 border-b border-[#ECE8E3] bg-white/[0.94] pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-border dark:bg-card/[0.94]">
+        <div className="flex items-center gap-2.5 px-3 py-2.5">
           {/* Back */}
-          <button onClick={() => navigate("/")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
-            <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+          <button onClick={() => navigate("/")} aria-label="Voltar"
+            className="h-10 w-10 flex items-center justify-center rounded-full border border-[#ECE8E3] bg-white transition-colors active:bg-[#F7F5F2] shrink-0 dark:border-border dark:bg-card">
+            <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={2} />
           </button>
 
-          {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center shrink-0 overflow-hidden border border-rose-200 dark:border-rose-900/40">
-            {partner?.avatar_url
-              ? <img src={partner.avatar_url} alt="" className="w-full h-full object-cover" />
-              : <span className="text-sm font-semibold text-rose-500">{partnerInitial}</span>
-            }
+          {/* Avatar: o par, em azul como na Home */}
+          <div className="relative ml-0.5 h-9 w-9 shrink-0">
+            <span aria-hidden="true" className="absolute -inset-[3px] rounded-full border-2 border-[#4D7CFE]" />
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7D9DFF] to-[#3F68E6]">
+              {partner?.avatar_url
+                ? <img src={partner.avatar_url} alt="" className="w-full h-full object-cover" />
+                : <span className="text-sm font-semibold text-white">{partnerInitial}</span>
+              }
+            </div>
           </div>
 
           {/* Name + subtitle */}
-          <div className="flex-1 min-w-0">
+          <div className="ml-1 flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <span className="text-[15px] font-semibold text-foreground truncate">
+              <span className="text-[16px] font-semibold tracking-[-0.01em] text-foreground truncate">
                 {partner?.display_name || "Amor"}
               </span>
               {partner?.verification_status === "verified" && (
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.5} />
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.8} />
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground">Chat privado</p>
+            <p className="text-[12px] text-[#7A7F8C] dark:text-muted-foreground">Só vocês os dois</p>
           </div>
 
           {/* Palette */}
-          <button onClick={() => navigate("/configuracoes#customization")}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
-            <Palette className="h-4.5 w-4.5 text-muted-foreground" strokeWidth={1.5} />
+          <button onClick={() => navigate("/configuracoes#customization")} aria-label="Personalizar o chat"
+            className="h-10 w-10 flex items-center justify-center rounded-full border border-[#ECE8E3] bg-white transition-colors active:bg-[#F7F5F2] shrink-0 dark:border-border dark:bg-card">
+            <Palette className="h-[18px] w-[18px] text-[#3A4150] dark:text-muted-foreground" strokeWidth={1.8} />
           </button>
         </div>
       </header>
@@ -847,14 +875,14 @@ export default function Chat() {
 
       {/* ── Messages ── */}
       <div
-        className={cn("flex-1 relative z-10 overflow-y-auto", !wallpaperUrl && "bg-[#ece5dd] dark:bg-background")}
+        className={cn("flex-1 relative z-10 overflow-y-auto", !wallpaperUrl && "bg-[#F7F5F2] dark:bg-background")}
         style={{ scrollbarWidth: "none" }}
       >
         <div className="flex flex-col gap-0 py-3 pb-4 min-h-full justify-end">
           {hasMore && (
             <div className="flex justify-center py-2">
               <button onClick={loadMore} disabled={loadingMore}
-                className="text-xs text-muted-foreground bg-card/80 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                className="flex items-center gap-1 rounded-full border border-[#ECE8E3] bg-white px-4 py-1.5 text-[12px] font-medium text-[#3A4150] dark:border-border dark:bg-card dark:text-muted-foreground">
                 {loadingMore && <Loader2 className="h-3 w-3 animate-spin" />}
                 Carregar mais
               </button>
@@ -866,9 +894,14 @@ export default function Chat() {
             </div>
           )}
           {!loading && messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <Heart className="h-10 w-10 text-rose-300" strokeWidth={1} />
-              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Diz olá!</p>
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[#ECE8E3] bg-white dark:border-border dark:bg-card">
+                <Heart className="h-6 w-6 text-rose-500" strokeWidth={1.8} />
+              </span>
+              <div>
+                <p className="text-[15px] font-semibold text-foreground">Ainda não há mensagens</p>
+                <p className="mt-0.5 text-[13px] text-[#7A7F8C] dark:text-muted-foreground">Diz olá, ou manda um carinho.</p>
+              </div>
             </div>
           )}
 
@@ -908,11 +941,11 @@ export default function Chat() {
       )}
 
       {/* ── Bottom Input Bar (WhatsApp style) ── */}
-      <div className="relative z-50 shrink-0 bg-muted px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="relative z-50 shrink-0 border-t border-[#ECE8E3] bg-white px-2.5 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] dark:border-border dark:bg-card">
 
         {/* Edit mode banner */}
         {editingMsg && (
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2 mb-1.5 border border-border">
+          <div className="flex items-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-[#F7F5F2] px-3 py-2 mb-2 dark:border-border dark:bg-muted">
             <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={editText}
@@ -932,7 +965,7 @@ export default function Chat() {
 
         {/* Reply banner */}
         {replyTo && !editingMsg && (
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2 mb-1.5 border-l-2 border-rose-400">
+          <div className="flex items-center gap-2 rounded-[14px] border-l-[3px] border-rose-500 bg-[#F7F5F2] px-3 py-2 mb-2 dark:bg-muted">
             <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground line-clamp-1">
               {replyTo.content || (replyTo.image_url ? "Foto" : replyTo.audio_url ? "Audio" : "")}
@@ -945,7 +978,7 @@ export default function Chat() {
 
         {/* Image preview */}
         {imagePreview && !editingMsg && (
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-2 py-1.5 mb-1.5">
+          <div className="flex items-center gap-2 rounded-[18px] bg-[#F7F5F2] px-2 py-1.5 mb-2 dark:bg-muted">
             <img src={imagePreview} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground truncate">{imageFile?.name}</p>
             <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted">
@@ -962,7 +995,7 @@ export default function Chat() {
             <div className="flex-1 relative">
               {/* Recording / Preview overlay inside the pill */}
               {inRecMode ? (
-                <div className="flex items-center gap-2 bg-card rounded-[24px] min-h-[48px] px-3 py-2">
+                <div className="flex items-center gap-2 rounded-[24px] bg-[#F4F2EF] min-h-[48px] px-3 py-2 dark:bg-muted">
 
                   {/* Delete */}
                   <button onClick={audio.cancel}
@@ -990,7 +1023,7 @@ export default function Chat() {
                           </button>
                         ) : (
                           <button onClick={audio.pause}
-                            className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground/90 transition-transform active:scale-90">
+                            className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#3A4150] transition-transform active:scale-90 dark:bg-card dark:text-muted-foreground">
                             <Pause className="h-3.5 w-3.5 fill-current" />
                           </button>
                         )}
@@ -1006,13 +1039,13 @@ export default function Chat() {
                   {/* Stop to preview (only during recording) */}
                   {audio.recording && (
                     <button onClick={() => audio.stop()}
-                      className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0 transition-transform active:scale-90">
+                      className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#3A4150] shrink-0 transition-transform active:scale-90 dark:bg-card dark:text-muted-foreground">
                       <div className="h-4 w-4 bg-current rounded-[3px]" />
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="flex items-end bg-card rounded-[24px] min-h-[44px] px-2 py-1">
+                <div className="flex items-end rounded-[24px] bg-[#F4F2EF] min-h-[46px] px-2 py-1 dark:bg-muted">
                   <ImagePickerButton onPick={setImageFile} />
                   <input
                     ref={inputRef}
@@ -1020,7 +1053,7 @@ export default function Chat() {
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                     placeholder="Mensagem"
-                    className="flex-1 min-h-[36px] bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/65 px-1 py-1.5 resize-none"
+                    className="flex-1 min-h-[36px] bg-transparent outline-none text-[15px] text-foreground placeholder:text-[#9A9DA6] px-1 py-1.5 resize-none"
                     autoComplete="off"
                   />
                   {/* Carinho heart — only when no text */}
@@ -1053,8 +1086,8 @@ export default function Chat() {
                 }
               }}
               className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95",
-                "bg-rose-500 text-white",
+                "w-[46px] h-[46px] rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95",
+                "bg-[#0B1324] text-white dark:bg-foreground dark:text-background",
                 (!isReady || sending) && "opacity-60"
               )}
             >
