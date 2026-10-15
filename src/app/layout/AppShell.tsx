@@ -23,7 +23,7 @@ export function AppShell() {
   const isFullscreen = isChat || isLocation;
   const isHome = location.pathname === "/";
   // Ecrãs já migrados para a temática refinada (fundo branco, sem mesh).
-  const isRefined = isHome || location.pathname.startsWith("/biblioteca");
+  const isRefined = isHome || ["/biblioteca", "/ciclo"].some(p => location.pathname.startsWith(p));
 
   // Quando o utilizador navega de volta para a Home (keep-alive esconde/mostra),
   // nenhum useEffect remonta — notifica os hooks via evento para que
@@ -68,6 +68,7 @@ export function AppShell() {
   return (
     <div className={cn(
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
+      isRefined && "refined",
       // A temática refinada usa fundo branco; as outras superfícies migram depois.
       isFullscreen ? "bg-transparent" : isRefined ? "bg-white dark:bg-background" : "bg-background"
     )}>

@@ -95,7 +95,8 @@ export function CycleCalendar({ data }: { data: CycleData }) {
       .then(({ data }) => setDaySymptoms(data as DailySymptom | null));
   }, [selectedDay, targetUserId]);
 
-  const monthName = new Date(year, month).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const monthLabel = new Date(year, month).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const monthName = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   return (
     <div className="space-y-4">
@@ -107,7 +108,7 @@ export function CycleCalendar({ data }: { data: CycleData }) {
             className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
             <ChevronLeft className="h-4 w-4 text-foreground" strokeWidth={1.5} />
           </button>
-          <h2 className="text-sm font-semibold text-foreground capitalize">{monthName}</h2>
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{monthName}</h2>
           <button onClick={nextMonth}
             className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
             <ChevronRight className="h-4 w-4 text-foreground" strokeWidth={1.5} />

@@ -24,7 +24,7 @@ const SYMPTOM_LABEL_MAP: Record<string, string> = {
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/80">{children}</p>;
+  return <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{children}</p>;
 }
 
 const STAT_COLORS: Record<string, { value: string; dot: string; icon: React.ReactNode }> = {
@@ -321,7 +321,7 @@ export function CycleHistory({ data, onReset }: { data: CycleData; onReset?: () 
 
             <button
               onClick={handleSave} disabled={saving}
-              className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="w-full h-12 rounded-2xl bg-[#0B1324] text-white font-semibold text-[15px] disabled:opacity-40 dark:bg-foreground dark:text-background active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} /> : null}
               {saved ? "Guardado" : "Guardar alterações"}

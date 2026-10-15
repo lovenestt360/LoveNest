@@ -108,9 +108,9 @@ function closest(val: number, opts: number[]) {
 // Header de secção — marcador colorido + título escuro
 function SectionHeader({ markerClass, children }: { markerClass: string; children: React.ReactNode }) {
   return (
-    <div className="px-5 pt-4 pb-3 border-b border-border/40 flex items-center gap-2">
-      <div className={cn("w-[3px] h-4 rounded-full shrink-0", markerClass)} />
-      <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{children}</p>
+    <div className="px-5 pt-4 pb-3 border-b border-[#ECE8E3] dark:border-border/40 flex items-center gap-2">
+      <div className={cn("h-2 w-2 rounded-full shrink-0", markerClass)} />
+      <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{children}</p>
     </div>
   );
 }

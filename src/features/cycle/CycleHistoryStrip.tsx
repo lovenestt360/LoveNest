@@ -46,7 +46,7 @@ export function CycleHistoryStrip({ data }: { data: CycleData }) {
   return (
     <div className="glass-card p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Histórico do ciclo</p>
+        <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Histórico do ciclo</p>
         <p className="text-xs text-muted-foreground">Dia {engine.cycleDay} de {engine.cycleLength}</p>
       </div>
 

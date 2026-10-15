@@ -220,7 +220,7 @@ function ChipSelector({
                 "flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-200 ease-out",
                 active
                   ? cn(style.border, style.bg, style.text, shadow, "scale-[1.04]")
-                  : "border-border/60 text-foreground/75 hover:bg-muted/60 hover:border-border active:scale-95",
+                  : "border-[#ECE8E3] bg-white text-[#3A4150] hover:bg-[#F7F5F2] active:scale-95 dark:border-border dark:bg-card dark:text-foreground/75",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -264,7 +264,7 @@ function StringChipSelector({
                 "flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-200 ease-out",
                 active
                   ? cn(style.border, style.bg, style.text, shadow, "scale-[1.04]")
-                  : "border-border/60 text-foreground/75 hover:bg-muted/60 hover:border-border active:scale-95",
+                  : "border-[#ECE8E3] bg-white text-[#3A4150] hover:bg-[#F7F5F2] active:scale-95 dark:border-border dark:bg-card dark:text-foreground/75",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -331,10 +331,10 @@ function SectionHeader({
 }) {
   return (
     <>
-      <div className="px-5 pt-4 pb-3 border-b border-border/50 flex items-center justify-between">
+      <div className="px-5 pt-4 pb-3 border-b border-[#ECE8E3] dark:border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={cn("w-1.5 h-4 rounded-full shrink-0", markerClass)} />
-          <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{children}</p>
+          <div className={cn("h-2 w-2 rounded-full shrink-0", markerClass)} />
+          <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{children}</p>
         </div>
         {right}
       </div>
@@ -628,7 +628,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                       onChange={e => setPeriodNotes(e.target.value)}
                       placeholder="Notas sobre este período (opcional)"
                       disabled={saving}
-                      className="rounded-xl border-border bg-card text-sm resize-none min-h-[60px]"
+                      className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted text-sm resize-none min-h-[60px]"
                     />
                     <div className="flex gap-2">
                       <button
@@ -656,7 +656,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                         <Input
                           type="date" value={endDate} max={today} min={openPeriod?.start_date}
                           onChange={(e) => setEndDate(e.target.value)} disabled={saving}
-                          className="rounded-xl border-border bg-card h-10 text-sm"
+                          className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted h-10 text-sm"
                         />
                         <button
                           onClick={handleEndPeriod} disabled={saving || !endDate}
@@ -678,12 +678,12 @@ export function CycleToday({ data }: { data: CycleData }) {
                   onChange={e => setPeriodNotes(e.target.value)}
                   placeholder="Notas sobre este período (opcional)"
                   disabled={saving}
-                  className="rounded-xl border-border bg-card text-sm resize-none min-h-[60px]"
+                  className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted text-sm resize-none min-h-[60px]"
                 />
                 <button
                   onClick={() => { setStartDate(today); setShowBackdate(false); handleStartPeriod(); }}
                   disabled={saving}
-                  className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  className="w-full h-12 rounded-2xl bg-[#0B1324] text-white font-semibold text-[15px] disabled:opacity-40 dark:bg-foreground dark:text-background active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} /> : <PlayCircle className="h-4 w-4" strokeWidth={1.5} />}
                   {saved ? "Ciclo registado" : "Começou hoje"}
@@ -706,11 +706,11 @@ export function CycleToday({ data }: { data: CycleData }) {
                     <Input
                       type="date" value={startDate} max={today}
                       onChange={(e) => setStartDate(e.target.value)} disabled={saving}
-                      className="rounded-xl border-border bg-card h-10 text-sm"
+                      className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted h-10 text-sm"
                     />
                     <button
                       onClick={handleStartPeriod} disabled={saving || !startDate}
-                      className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-2xl bg-[#0B1324] text-white font-semibold text-[15px] disabled:opacity-40 dark:bg-foreground dark:text-background active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" strokeWidth={1.5} />}
                       Confirmar início
@@ -739,7 +739,7 @@ export function CycleToday({ data }: { data: CycleData }) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
                   <p className="text-[10px] text-muted-foreground/70">Quantas horas dormiste?</p>
-                  <Input type="number" value={sleepHours} onChange={e => setSleepHours(e.target.value)} placeholder="ex: 7 ou 7.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
+                  <Input type="number" value={sleepHours} onChange={e => setSleepHours(e.target.value)} placeholder="ex: 7 ou 7.5" disabled={data.isMale || saving} className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted h-10 text-sm" />
                 </div>
                 <div className="space-y-1.5">
                   <p className="text-[10px] text-muted-foreground/70">Como foi o teu sono?</p>
@@ -771,7 +771,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                 <Thermometer className="h-3 w-3" strokeWidth={1.5} /> Temperatura basal (°C)
               </p>
               <p className="text-[10px] text-muted-foreground/70">Medida logo ao acordar, antes de te levantares</p>
-              <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-xl border-border bg-card h-10 text-sm" />
+              <Input type="number" step="0.1" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="ex: 36.5" disabled={data.isMale || saving} className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted h-10 text-sm" />
             </div>
           </div>
         </div>
@@ -802,7 +802,7 @@ export function CycleToday({ data }: { data: CycleData }) {
                 type="date" value={intimacyDate} max={today}
                 onChange={(e) => setIntimacyDate(e.target.value)}
                 disabled={data.isMale || savingIntimacy}
-                className="rounded-xl border-border bg-card h-10 text-sm"
+                className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted h-10 text-sm"
               />
             )}
 
@@ -896,19 +896,19 @@ export function CycleToday({ data }: { data: CycleData }) {
             })}
 
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Notas</p>
+              <p className="text-[13px] font-semibold text-foreground">Notas</p>
               <Textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Algo que queiras registar sobre hoje..."
                 disabled={data.isMale || saving}
-                className="rounded-xl border-border bg-card text-sm resize-none min-h-[80px]"
+                className="rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted text-sm resize-none min-h-[80px]"
               />
             </div>
 
             {!data.isMale && (
               <button onClick={handleSaveSymptoms} disabled={saving}
-                className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                className="w-full h-12 rounded-2xl bg-[#0B1324] text-white font-semibold text-[15px] disabled:opacity-40 dark:bg-foreground dark:text-background active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
                 {saved ? "Guardado" : todaySymptoms ? "Atualizar" : "Guardar hoje"}
               </button>
