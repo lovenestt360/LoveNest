@@ -41,6 +41,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { generateInitials } from "@/utils/initials";
 import { cn } from "@/lib/utils";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { SURFACE, SectionTitle } from "@/features/home/components/HomeSections";
 import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
 
 interface Profile {
@@ -683,96 +685,106 @@ export default function Settings() {
   const initials = (displayName || user?.email || "U").slice(0, 2).toUpperCase();
 
   const menuItems = [
-    { id: 'profile',       label: 'Meu Perfil',           sub: 'Dados e foto de perfil',       icon: <User className="h-5 w-5" strokeWidth={1.5} /> },
-    { id: 'house',         label: 'Nossa Casa',            sub: 'Dados do parceiro e namoro',   icon: <Heart className="h-5 w-5" strokeWidth={1.5} /> },
-    { id: 'personalization', label: 'Sobre Ti',            sub: 'País, espiritualidade e objetivo', icon: <Globe className="h-5 w-5" strokeWidth={1.5} /> },
-    { id: 'notifications', label: 'Notificações',          sub: 'Alertas e avisos do app',      icon: <Bell className="h-5 w-5" strokeWidth={1.5} /> },
-    { id: 'verification',  label: 'Verificar Identidade',  sub: 'Segurança e confiança',        icon: <ShieldCheck className="h-5 w-5" strokeWidth={1.5} /> },
-    { id: 'customization', label: 'Personalização',        sub: 'Fundo do chat e opacidade',    icon: <Palette className="h-5 w-5" strokeWidth={1.5} /> },
-    { id: 'data',          label: 'Segurança e Dados',     sub: 'Exportação e conta',           icon: <Shield className="h-5 w-5" strokeWidth={1.5} /> },
+    { id: 'profile',       label: 'Meu Perfil',           sub: 'Dados e foto de perfil',       tint: "bg-rose-50 text-rose-500 dark:bg-rose-950/30",       icon: <User className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'house',         label: 'Nossa Casa',            sub: 'Dados do parceiro e namoro',   tint: "bg-rose-50 text-rose-600 dark:bg-rose-950/30",       icon: <Heart className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'personalization', label: 'Sobre Ti',            sub: 'País, espiritualidade e objetivo', tint: "bg-[#EEF2FF] text-[#3F68E6] dark:bg-blue-950/30", icon: <Globe className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'notifications', label: 'Notificações',          sub: 'Alertas e avisos do app',      tint: "bg-amber-50 text-amber-600 dark:bg-amber-950/30",    icon: <Bell className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'verification',  label: 'Verificar Identidade',  sub: 'Segurança e confiança',        tint: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30", icon: <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'customization', label: 'Personalização',        sub: 'Fundo do chat e opacidade',    tint: "bg-violet-50 text-violet-600 dark:bg-violet-950/30",  icon: <Palette className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
+    { id: 'data',          label: 'Segurança e Dados',     sub: 'Exportação e conta',           tint: "bg-[#F1EEEA] text-[#3A4150] dark:bg-muted dark:text-foreground", icon: <Shield className="h-[18px] w-[18px]" strokeWidth={1.9} /> },
   ] as const;
 
   return (
-    <div className="pb-24 animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500">
       {currentCategory === 'menu' ? (
-        <section className="space-y-6">
-          <header className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Definições</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Personalizem o vosso espaço.</p>
+        <section>
+          <header className="flex items-end justify-between px-1 pt-0.5">
+            <div>
+              <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em] text-foreground">Perfil</h1>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">Personalizem o vosso espaço.</p>
+            </div>
           </header>
 
           {/* Profile summary */}
-          <div className="glass-card p-5 flex items-center gap-4 mb-6">
-            <Avatar className="h-16 w-16 ring-2 ring-card shadow-sm">
-              {avatarUrl ? <AvatarImage src={avatarUrl} /> : null}
-              <AvatarFallback className="text-lg bg-rose-50 dark:bg-rose-950/30 text-rose-400 font-semibold border border-rose-100 dark:border-rose-900/40">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-foreground truncate">{displayName || "Utilizador"}</h3>
-              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setCurrentCategory('profile')}
+            className={cn(SURFACE, "mt-5 flex w-full items-center gap-4 rounded-[22px] p-4 text-left active:scale-[0.99] transition-transform")}
+          >
+            <span className="relative h-14 w-14 shrink-0">
+              <span aria-hidden="true" className="absolute -inset-[3px] rounded-full border-2 border-rose-500" />
+              <Avatar className="h-14 w-14">
+                {avatarUrl ? <AvatarImage src={avatarUrl} className="object-cover" /> : null}
+                <AvatarFallback className="bg-gradient-to-br from-[#F27A97] to-[#D9466B] text-[18px] font-semibold text-white">{initials}</AvatarFallback>
+              </Avatar>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[17px] font-semibold tracking-[-0.01em] text-foreground">{displayName || "Utilizador"}</span>
+              <span className="block truncate text-[13px] text-muted-foreground">{user?.email}</span>
+            </span>
+            <ChevronLeft className="h-[18px] w-[18px] shrink-0 rotate-180 text-muted-foreground/60" strokeWidth={2} />
+          </button>
 
           <button
             type="button"
             onClick={() => navigate("/subscricao")}
-            className="mb-4 flex w-full items-center gap-4 rounded-[1.35rem] border border-rose-200/70 bg-rose-50/65 p-4 text-left transition active:scale-[0.99] dark:border-rose-900/30 dark:bg-rose-950/20"
+            className="mt-3 flex w-full items-center gap-3 rounded-[20px] bg-[#0B1324] px-4 py-3.5 text-left text-white shadow-[0_14px_28px_-16px_rgba(11,19,36,0.7)] transition-transform active:scale-[0.99] dark:bg-card dark:shadow-none"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-rose-500 shadow-sm dark:bg-card">
-              <CreditCard className="h-5 w-5" strokeWidth={1.5} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">Plano e subscrição</p>
-              <p className="text-[11px] text-muted-foreground">Ver plano atual, preços e renovação</p>
-            </div>
-            <ChevronLeft className="h-4 w-4 shrink-0 rotate-180 text-muted-foreground/60" strokeWidth={1.5} />
+            <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-white/10 text-rose-300">
+              <CreditCard className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-semibold">Plano e subscrição</span>
+              <span className="block text-[12.5px] text-white/65">Ver plano atual, preços e renovação</span>
+            </span>
+            <ChevronLeft className="h-[18px] w-[18px] shrink-0 rotate-180 text-white/50" strokeWidth={2} />
           </button>
 
+          <SectionTitle title="Definições" />
+
           {/* Menu items */}
-          <div className="space-y-2">
+          <div className={cn(SURFACE, "overflow-hidden rounded-[22px]")}>
             {menuItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setCurrentCategory(item.id)}
-                className="glass-card glass-card-hover w-full p-4 flex items-center gap-4 text-left active:scale-[0.98]"
+                className="flex min-h-[60px] w-full items-center gap-3 px-3.5 text-left transition-colors active:bg-[#F7F5F2] dark:active:bg-muted [&+&]:border-t [&+&]:border-[#ECE8E3] dark:[&+&]:border-border"
               >
-                <div className="h-10 w-10 rounded-2xl bg-muted border border-border flex items-center justify-center text-rose-400 shrink-0">
+                <span className={cn("flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px]", item.tint)}>
                   {item.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.sub}</p>
-                </div>
-                <ChevronLeft className="h-4 w-4 text-muted-foreground/60 rotate-180 shrink-0" strokeWidth={1.5} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-semibold text-foreground">{item.label}</span>
+                  <span className="block truncate text-[12.5px] text-muted-foreground">{item.sub}</span>
+                </span>
+                <ChevronLeft className="h-[18px] w-[18px] shrink-0 rotate-180 text-muted-foreground/60" strokeWidth={2} />
               </button>
             ))}
           </div>
 
           <button
             onClick={() => signOut()}
-            className="w-full mt-6 h-12 rounded-2xl border border-border text-sm font-medium text-rose-500 flex items-center justify-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors active:scale-[0.98]"
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-white text-[14px] font-semibold text-rose-600 transition-colors active:bg-rose-50 dark:border-border dark:bg-card dark:active:bg-rose-950/20"
           >
-            <LogOut className="h-4 w-4" strokeWidth={1.5} /> Terminar Sessão
+            <LogOut className="h-4 w-4" strokeWidth={1.9} /> Terminar sessão
           </button>
         </section>
       ) : (
         <section className="animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => setCurrentCategory('menu')}
-              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
-            >
-              <ChevronLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
-            </button>
-            <h2 className="text-xl font-bold text-foreground">{menuItems.find(m => m.id === currentCategory)?.label}</h2>
-          </div>
+          <ScreenHeader
+            title={menuItems.find(m => m.id === currentCategory)?.label ?? "Perfil"}
+            subtitle="Perfil"
+            onBack={() => setCurrentCategory('menu')}
+            className="mb-6"
+          />
 
           {currentCategory === 'profile' && (
             <div className="space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
-                  <Avatar className="h-24 w-24 ring-4 ring-primary/10 shadow-lg">{avatarUrl && <AvatarImage src={avatarUrl} />}<AvatarFallback className="text-2xl">{initials}</AvatarFallback></Avatar>
-                  <label htmlFor="av-up" className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}</label>
+                  <span aria-hidden="true" className="absolute -inset-1 rounded-full border-2 border-rose-500" />
+                  <Avatar className="h-24 w-24">{avatarUrl && <AvatarImage src={avatarUrl} className="object-cover" />}<AvatarFallback className="bg-gradient-to-br from-[#F27A97] to-[#D9466B] text-2xl font-semibold text-white">{initials}</AvatarFallback></Avatar>
+                  <label htmlFor="av-up" aria-label="Mudar foto" className="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#0B1324] text-white shadow-lg transition-transform hover:scale-105 dark:border-background">{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}</label>
                   <input id="av-up" type="file" hidden accept="image/*" onChange={handleAvatarChange} />
                 </div>
                 {avatarUrl && (
@@ -780,16 +792,16 @@ export default function Settings() {
                 )}
               </div>
               <div className="space-y-4 glass-card p-6">
-                <div className="space-y-2"><Label className="font-bold text-sm">Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
-                <div className="space-y-2"><Label className="font-bold text-sm">Aniversário</Label><Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                <div className="space-y-2"><Label className="text-[13px] font-semibold">Teu Nome</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
+                <div className="space-y-2"><Label className="text-[13px] font-semibold">Aniversário</Label><Input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
                 <div className="space-y-2">
-                  <Label className="ml-1 font-bold text-sm">Género</Label>
+                  <Label className="text-[13px] font-semibold">Género</Label>
                   <Select value={gender || "none"} onValueChange={(v: any) => setGender(v === "none" ? null : v)}>
-                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl"><SelectItem value="none">Preferir não dizer</SelectItem><SelectItem value="female">Mulher</SelectItem><SelectItem value="male">Homem</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-[52px] rounded-[18px] border-0 text-[15px] font-semibold text-white [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 dark:[background:hsl(var(--foreground))] dark:text-background">
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
                 </Button>
 
@@ -812,13 +824,13 @@ export default function Settings() {
           {currentCategory === 'house' && (
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
-                <div className="space-y-2"><Label className="font-bold text-sm">Apelido da Casa</Label><Input value={houseName} onChange={e => setHouseName(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                <div className="space-y-2"><Label className="text-[13px] font-semibold">Apelido da Casa</Label><Input value={houseName} onChange={e => setHouseName(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label className="font-bold text-sm">Tu (Iniciais)</Label><Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
-                  <div className="space-y-2"><Label className="font-bold text-sm">Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
+                  <div className="space-y-2"><Label className="text-[13px] font-semibold">Tu (Iniciais)</Label><Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
+                  <div className="space-y-2"><Label className="text-[13px] font-semibold">Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
                 </div>
-                <div className="space-y-2"><Label className="font-bold text-sm">Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl" /></div>
-                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">Guardar Dados</Button>
+                <div className="space-y-2"><Label className="text-[13px] font-semibold">Início do Namoro</Label><Input type="date" value={relationshipDate} onChange={e => setRelationshipDate(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
+                <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-[52px] rounded-[18px] border-0 text-[15px] font-semibold text-white [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 dark:[background:hsl(var(--foreground))] dark:text-background">Guardar Dados</Button>
 
                 {houseInviteCode && (
                   <div className="pt-4 border-t border-border space-y-2">
@@ -840,13 +852,13 @@ export default function Settings() {
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
                 <div className="space-y-2">
-                  <Label className="ml-1 font-bold text-sm">País</Label>
+                  <Label className="text-[13px] font-semibold">País</Label>
                   <CountryPicker value={countryCode} onSelect={setCountryCode} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="ml-1 font-bold text-sm">Espiritualidade</Label>
+                  <Label className="text-[13px] font-semibold">Espiritualidade</Label>
                   <Select value={religion || "unspecified"} onValueChange={(v) => setReligion(v)}>
-                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl">
                       {RELIGION_OPTIONS.map(opt => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -855,9 +867,9 @@ export default function Settings() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="ml-1 font-bold text-sm">O que te trouxe ao LoveNest</Label>
+                  <Label className="text-[13px] font-semibold">O que te trouxe ao LoveNest</Label>
                   <Select value={primaryGoal || ""} onValueChange={(v) => setPrimaryGoal(v)}>
-                    <SelectTrigger className="h-12 bg-white dark:bg-white/5 border border-border rounded-xl"><SelectValue placeholder="Escolhe um objetivo" /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted"><SelectValue placeholder="Escolhe um objetivo" /></SelectTrigger>
                     <SelectContent className="rounded-2xl">
                       {PRIMARY_GOAL_OPTIONS.map(opt => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -865,7 +877,7 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleSavePersonalization} disabled={savingPersonalization} className="w-full h-12 font-semibold rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0">
+                <Button onClick={handleSavePersonalization} disabled={savingPersonalization} className="w-full h-[52px] rounded-[18px] border-0 text-[15px] font-semibold text-white [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 dark:[background:hsl(var(--foreground))] dark:text-background">
                   {savingPersonalization && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
                 </Button>
               </div>
@@ -930,7 +942,7 @@ export default function Settings() {
                   <button
                     onClick={() => setShowPrePermission(true)}
                     disabled={pushLoading}
-                    className="w-full h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_2px_12px_rgba(244,63,94,0.15)]"
+                    className="w-full h-12 rounded-[16px] bg-[#0B1324] text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_14px_28px_-16px_rgba(11,19,36,0.7)] dark:bg-foreground dark:text-background"
                   >
                     {pushLoading ? "A ativar..." : "Ativar notificações"}
                   </button>
@@ -959,7 +971,7 @@ export default function Settings() {
                 <div className="pt-4 border-t border-border">
                   <p className="text-[11px] font-medium text-muted-foreground/80 mb-2">Horário preferido para lembretes</p>
                   <Select value={preferredHour.toString()} onValueChange={updatePreferredHour} disabled={savingSmart}>
-                    <SelectTrigger className="h-11 bg-white dark:bg-white/5 border border-border rounded-xl text-[13px]">
+                    <SelectTrigger className="h-11 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] text-[13px] dark:border-border dark:bg-muted">
                       <SelectValue placeholder="Escolhe uma hora..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1168,7 +1180,7 @@ export default function Settings() {
 
           {currentCategory === 'data' && (
             <div className="space-y-4">
-              <div className="glass-card p-4 flex items-center justify-between"><div><p className="text-sm font-bold">Exportar Dados</p><p className="text-[10px] text-muted-foreground">JSON format.</p></div><Button variant="ghost" onClick={handleExport} disabled={exporting}>Exportar</Button></div>
+              <div className="glass-card p-4 flex items-center justify-between"><div><p className="text-[14px] font-semibold">Exportar dados</p><p className="text-[12px] text-muted-foreground">Um ficheiro JSON com os vossos dados.</p></div><Button variant="ghost" onClick={handleExport} disabled={exporting}>Exportar</Button></div>
               {!leaveConfirming ? (
                 <button
                   onClick={() => setLeaveConfirming(true)}
@@ -1211,7 +1223,7 @@ export default function Settings() {
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setLeaveConfirming(false)}
-                      className="flex-1 h-11 rounded-xl bg-muted text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                      className="flex-1 h-11 rounded-[14px] bg-[#F4F2EF] text-[13px] font-semibold text-foreground active:scale-95 transition-all dark:bg-muted"
                     >
                       Cancelar
                     </button>
@@ -1269,7 +1281,7 @@ export default function Settings() {
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={() => setDeleteSpaceConfirming(false)}
-                          className="flex-1 h-11 rounded-xl bg-muted text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                          className="flex-1 h-11 rounded-[14px] bg-[#F4F2EF] text-[13px] font-semibold text-foreground active:scale-95 transition-all dark:bg-muted"
                         >
                           Cancelar
                         </button>
@@ -1334,7 +1346,7 @@ export default function Settings() {
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => setDeleteConfirming(false)}
-                        className="flex-1 h-11 rounded-xl bg-muted text-[13px] font-semibold text-foreground active:scale-95 transition-all"
+                        className="flex-1 h-11 rounded-[14px] bg-[#F4F2EF] text-[13px] font-semibold text-foreground active:scale-95 transition-all dark:bg-muted"
                       >
                         Cancelar
                       </button>
