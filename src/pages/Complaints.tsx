@@ -13,9 +13,18 @@ import { pt } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/hooks/useProfile";
+import { ScreenHeader, ROUND_BUTTON } from "@/components/ScreenHeader";
 import { Navigate } from "react-router-dom";
 
 const FEELINGS = ["magoado", "frustrado", "triste", "ansioso", "zangado", "confuso", "ignorado", "sozinho", "outro"];
+
+// Os estados são femininos ("Aberta"), mas "conflito" é masculino: frase própria para o vazio.
+const EMPTY_LABEL: Record<string, string> = {
+  open: "Nenhum conflito aberto",
+  talking: "Nenhum conflito em conversa",
+  resolved: "Nenhum conflito resolvido",
+  archived: "Nenhum conflito arquivado",
+};
 
 const STATUS_MAP: Record<string, { label: string; dot: string; text: string }> = {
   open:     { label: "Aberta",      dot: "bg-rose-500",   text: "text-rose-500" },
@@ -104,22 +113,21 @@ export default function Complaints() {
   const filtered = complaints.filter(c => c.status === filter).slice(0, PAGE_SIZE);
 
   return (
-    <section className="space-y-5 pb-6">
+    <section className="space-y-5 animate-fade-in">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Conflitos</h1>
-          <p className="text-sm text-muted-foreground">Resolve com calma e amor</p>
-        </div>
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-1.5 h-9 px-4 rounded-2xl bg-rose-500 text-white text-sm font-semibold active:scale-[0.98] transition-all"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2} />
-          Nova
-        </button>
-      </div>
+      <ScreenHeader
+        title="Conflitos"
+        subtitle="Resolve com calma e amor"
+        action={
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex h-10 items-center gap-1.5 rounded-full bg-[#0B1324] px-4 text-[13px] font-semibold text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.7)] transition-transform active:scale-95 dark:bg-foreground dark:text-background"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.2} />
+            Nova
+          </button>
+        }
+      />
 
       {/* Filter tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -153,7 +161,7 @@ export default function Complaints() {
       ) : filtered.length === 0 ? (
         <div className="glass-card py-12 text-center space-y-2">
           <Heart className="mx-auto h-7 w-7 text-muted-foreground/50" strokeWidth={1.5} />
-          <p className="text-sm text-muted-foreground">Nenhum conflito {STATUS_MAP[filter]?.label.toLowerCase()}</p>
+          <p className="text-sm text-muted-foreground">{EMPTY_LABEL[filter] ?? "Nenhum conflito aqui"}</p>
         </div>
       ) : (
         <div className="glass-card divide-y divide-border">
@@ -346,7 +354,7 @@ function CreateComplaintForm({
         <button
           onClick={submit}
           disabled={saving || !title.trim() || !description.trim()}
-          className="flex-1 h-12 rounded-2xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className="flex-1 h-12 rounded-2xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
         </button>
@@ -480,12 +488,13 @@ function ComplaintDetail({
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
+          aria-label="Voltar"
+          className={ROUND_BUTTON}
         >
-          <ArrowLeft className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+          <ArrowLeft className="h-5 w-5 text-foreground" strokeWidth={2} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-base font-bold text-foreground truncate">{complaint.title}</h1>
+          <h1 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground truncate">{complaint.title}</h1>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className={cn("h-1.5 w-1.5 rounded-full", s?.dot)} />
             <span>{s?.label}</span>
@@ -582,7 +591,7 @@ function ComplaintDetail({
 
       {/* Messages */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Conversa</p>
+        <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Conversa</p>
         <div className="glass-card p-3 space-y-2 max-h-64 overflow-y-auto">
           {messages.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-4">Sem mensagens ainda. Inicia o diálogo.</p>
@@ -622,7 +631,7 @@ function ComplaintDetail({
           <button
             onClick={sendMessage}
             disabled={sending || !newMsg.trim()}
-            className="h-12 w-12 shrink-0 rounded-2xl bg-rose-500 text-white flex items-center justify-center disabled:opacity-50 active:scale-[0.96] transition-all"
+            className="h-12 w-12 shrink-0 rounded-2xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background flex items-center justify-center disabled:opacity-50 active:scale-[0.96] transition-all"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" strokeWidth={1.5} />}
           </button>

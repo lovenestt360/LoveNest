@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Navigate } from "react-router-dom";
 import { Flame, BookOpen } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAppNotifContext } from "@/features/notifications/AppNotifContext";
 import { useProfile } from "@/hooks/useProfile";
 import Prayer from "./Prayer";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { SegmentedTabs } from "@/components/SegmentedTabs";
 import Fasting from "./Fasting";
 
 type Tab = "oracao" | "jejum";
@@ -33,39 +34,17 @@ export default function JornadaEspiritual() {
   }
 
   return (
-    <section className="space-y-4 pb-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Jornada Espiritual</h1>
-        <p className="text-sm text-muted-foreground">Oração e disciplina, juntos.</p>
-      </header>
+    <section className="space-y-4 animate-fade-in">
+      <ScreenHeader title="Jornada Espiritual" subtitle="Oração e disciplina, juntos." />
 
-      {/* Tab switcher */}
-      <div className="flex gap-1 bg-muted rounded-xl p-1">
-        <button
-          onClick={() => switchTab("oracao")}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.97]",
-            tab === "oracao"
-              ? "bg-card shadow-sm text-purple-600 dark:text-purple-400"
-              : "text-muted-foreground"
-          )}
-        >
-          <BookOpen className="h-3.5 w-3.5" strokeWidth={1.5} />
-          Oração
-        </button>
-        <button
-          onClick={() => switchTab("jejum")}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.97]",
-            tab === "jejum"
-              ? "bg-card shadow-sm text-orange-500"
-              : "text-muted-foreground"
-          )}
-        >
-          <Flame className="h-3.5 w-3.5" strokeWidth={1.5} />
-          Jejum
-        </button>
-      </div>
+      <SegmentedTabs<"oracao" | "jejum">
+        tabs={[
+          { id: "oracao", label: "Oração", icon: BookOpen },
+          { id: "jejum", label: "Jejum", icon: Flame },
+        ]}
+        value={tab}
+        onChange={switchTab}
+      />
 
       {/* Content */}
       {tab === "oracao" ? <Prayer hideHeader /> : <Fasting hideHeader />}

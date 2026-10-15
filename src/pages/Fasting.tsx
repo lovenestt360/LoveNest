@@ -144,7 +144,7 @@ function CreatePlanWizard({
                 <Textarea placeholder="Ex: Domingos, viagens, saúde…" value={exceptions} onChange={e => setExceptions(e.target.value)} rows={2} />
             </div>
 
-            <Button className="w-full" onClick={handleSubmit} disabled={saving || !planName.trim()}>
+            <Button className="w-full h-12 rounded-[16px] font-semibold [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 text-white dark:[background:hsl(var(--foreground))] dark:text-background" onClick={handleSubmit} disabled={saving || !planName.trim()}>
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Começar Jejum
             </Button>

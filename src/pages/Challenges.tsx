@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
-  ArrowLeft, CheckCircle2, Plus, Trophy, Sparkles, Loader2, Trash2,
+  CheckCircle2, Plus, Trophy, Sparkles, Loader2, Trash2,
   Heart, Compass, MessageCircle, Gamepad2, Sprout, BookOpen,
   Star, X, Flame, Target,
 } from "lucide-react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useBiblioteca, type Book } from "@/hooks/useBiblioteca";
@@ -14,6 +14,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
 
 // ─── Category definitions ─────────────────────────────────────────────────
@@ -72,7 +73,6 @@ function generateBookSuggestions(
 // ─── Main component ───────────────────────────────────────────────────────
 export default function Challenges() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { books, ownedBookIds, myProgressByBook } = useBiblioteca();
   const { profile, loading: profileLoading } = useProfile();
@@ -292,26 +292,17 @@ export default function Challenges() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="px-4 py-4 sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b border-border flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full active:scale-95 transition-all text-muted-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Desafios</h1>
-      </header>
+    <div className="animate-fade-in">
+      <ScreenHeader title="Desafios" subtitle="Pequenas aventuras a dois" className="mb-5" />
 
-      <main className="p-4 space-y-5 max-w-md mx-auto">
+      <main className="space-y-5">
         {/* ── Tab switcher ─────────────────────────────────────── */}
-        <div className="flex bg-muted rounded-2xl p-1 gap-1">
+        <div className="flex gap-1 rounded-[16px] bg-[#F4F2EF] p-1 dark:bg-muted">
           <button
             onClick={() => setActiveTab("desafios")}
             className={cn(
-              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150",
-              activeTab === "desafios" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              "flex-1 h-10 rounded-[12px] text-[13px] font-semibold transition-colors duration-150",
+              activeTab === "desafios" ? "bg-white text-[#0B1324] shadow-[0_1px_2px_rgba(11,19,36,0.06),0_4px_12px_-6px_rgba(11,19,36,0.2)] dark:bg-card dark:text-foreground" : "text-[#7A7F8C] dark:text-muted-foreground"
             )}
           >
             Desafios
@@ -319,8 +310,8 @@ export default function Challenges() {
           <button
             onClick={() => setActiveTab("historico")}
             className={cn(
-              "flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 flex items-center justify-center gap-1.5",
-              activeTab === "historico" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              "flex-1 h-10 rounded-[12px] text-[13px] font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5",
+              activeTab === "historico" ? "bg-white text-[#0B1324] shadow-[0_1px_2px_rgba(11,19,36,0.06),0_4px_12px_-6px_rgba(11,19,36,0.2)] dark:bg-card dark:text-foreground" : "text-[#7A7F8C] dark:text-muted-foreground"
             )}
           >
             Histórico
@@ -352,7 +343,7 @@ export default function Challenges() {
               <div className="flex gap-2 animate-in fade-in duration-200">
                 <button
                   onClick={() => setShowGenerator(true)}
-                  className="flex-1 h-11 rounded-2xl bg-rose-500 text-white text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-all shadow-sm"
+                  className="flex-1 h-11 rounded-2xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-all shadow-sm"
                 >
                   <Sparkles className="w-4 h-4" /> Gerar com IA
                 </button>
@@ -414,7 +405,7 @@ export default function Challenges() {
                   <button
                     onClick={handleGenerateChallenges}
                     disabled={generating}
-                    className="w-full h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-all"
+                    className="w-full h-11 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-all"
                   >
                     {generating ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> A gerar sugestões...</>
@@ -458,7 +449,7 @@ export default function Challenges() {
                             </div>
                             <button
                               onClick={() => handleAddAiChallenge(s)}
-                              className="shrink-0 w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center active:scale-95 transition-all shadow-sm mt-0.5"
+                              className="shrink-0 w-9 h-9 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background flex items-center justify-center active:scale-95 transition-all shadow-sm mt-0.5"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -523,7 +514,7 @@ export default function Challenges() {
                     <button
                       type="submit"
                       disabled={!newTitle.trim()}
-                      className="flex-1 h-11 rounded-xl bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all"
+                      className="flex-1 h-11 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all"
                     >
                       Criar desafio
                     </button>
@@ -594,7 +585,7 @@ export default function Challenges() {
             {/* ── Restantes em progresso ────────────────────────── */}
             {remainingProgress.length > 0 && (
               <section className="space-y-2.5 animate-in fade-in duration-300">
-                <h3 className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest px-0.5">
+                <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground px-1">
                   Em progresso
                 </h3>
                 {remainingProgress.map(c => (
@@ -619,7 +610,7 @@ export default function Challenges() {
                         </button>
                         <button
                           onClick={() => setPendingComplete(c)}
-                          className="px-4 h-8 rounded-xl bg-rose-500 text-white text-[12px] font-semibold active:scale-[0.97] transition-all"
+                          className="px-4 h-8 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-[12px] font-semibold active:scale-[0.97] transition-all"
                         >
                           Concluir
                         </button>
@@ -788,7 +779,7 @@ export default function Challenges() {
                   setPendingComplete(null);
                   await handleComplete(c);
                 }}
-                className="w-full h-13 rounded-2xl bg-rose-500 text-white font-bold text-[15px] active:scale-[0.98] transition-all py-3.5"
+                className="w-full h-13 rounded-2xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background font-bold text-[15px] active:scale-[0.98] transition-all py-3.5"
               >
                 Sim, vivemos esta memória
               </button>
