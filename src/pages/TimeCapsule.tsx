@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
-  ArrowLeft, Lock, Unlock, Plus, Loader2, Trash2,
+  Lock, Unlock, Plus, Loader2, Trash2,
   Clock, Sparkles, X, ImageIcon, CheckCircle2, ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
 
 function hasSeenReveal(userId: string, capsuleId: string): boolean {
@@ -32,7 +33,6 @@ function markRevealSeen(userId: string, capsuleId: string): void {
 
 export default function TimeCapsule() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { profile, loading: profileLoading } = useProfile();
 
@@ -224,28 +224,15 @@ export default function TimeCapsule() {
   return (
     <div className="flex flex-col">
 
-      {/* Header */}
-      <header className="flex items-center justify-between py-3 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)}
-            className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-all">
-            <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+      <ScreenHeader
+        title="Cápsula do Tempo"
+        subtitle={capsules.length > 0 ? `${capsules.length} cápsula${capsules.length !== 1 ? "s" : ""}` : "Mensagens para o vosso futuro"}
+        action={
+          <button onClick={() => setIsAdding(true)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0B1324] text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.7)] transition-transform active:scale-90 dark:bg-foreground dark:text-background" aria-label="Nova cápsula">
+            <Plus className="h-[18px] w-[18px]" strokeWidth={2.2} />
           </button>
-          <div>
-            <h1 className="text-[17px] font-bold tracking-tight text-foreground leading-tight">Cápsula do Tempo</h1>
-            {capsules.length > 0 && (
-              <p className="text-[10px] text-muted-foreground leading-none">
-                {capsules.length} cápsula{capsules.length !== 1 ? "s" : ""}
-              </p>
-            )}
-          </div>
-        </div>
-        <button onClick={() => setIsAdding(true)}
-          className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white shadow-md shadow-violet-500/30 active:scale-90 transition-all"
-          aria-label="Nova cápsula">
-          <Plus className="w-[18px] h-[18px]" />
-        </button>
-      </header>
+        }
+      />
 
       {/* Compact list — scroll natural via body */}
       <div>
@@ -256,7 +243,7 @@ export default function TimeCapsule() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
             </div>
           ) : capsules.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+            <div className="flex flex-col items-center justify-center rounded-[22px] py-12 px-6 text-center bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border">
               <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-violet-50 to-rose-50 dark:from-violet-950/30 dark:to-rose-950/20 border border-violet-100 dark:border-violet-900/30 flex items-center justify-center mb-4 shadow-sm">
                 <Clock className="w-7 h-7 text-violet-300 dark:text-violet-400" strokeWidth={1} />
               </div>
@@ -265,7 +252,7 @@ export default function TimeCapsule() {
                 Guarda uma mensagem hoje para ser lida num momento especial do futuro
               </p>
               <button onClick={() => setIsAdding(true)}
-                className="px-6 py-2.5 rounded-full bg-violet-500 text-white text-sm font-semibold shadow-md shadow-violet-500/20 active:scale-95 transition-all">
+                className="rounded-full bg-[#0B1324] px-6 py-2.5 text-sm font-semibold text-white transition-transform active:scale-95 dark:bg-foreground dark:text-background">
                 Criar primeira cápsula
               </button>
             </div>
@@ -330,26 +317,26 @@ export default function TimeCapsule() {
       {isAdding && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end"
           onClick={() => !uploading && setIsAdding(false)}>
-          <div className="w-full bg-card rounded-t-[2rem] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200"
+          <div className="w-full max-w-md mx-auto bg-white dark:bg-card rounded-t-[26px] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200"
             onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
+            <div className="w-10 h-1 rounded-full bg-[#E2DED8] dark:bg-border mx-auto mb-4" />
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Nova Cápsula</h2>
+              <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-foreground">Nova cápsula</h2>
               {!uploading && (
                 <button onClick={() => setIsAdding(false)}
-                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  className="w-8 h-8 rounded-full bg-[#F4F2EF] dark:bg-muted flex items-center justify-center" aria-label="Fechar">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
             </div>
             <form onSubmit={handleCreate} className="space-y-3">
-              <div className="bg-muted rounded-2xl divide-y divide-border/50">
+              <div className="bg-[#F7F5F2] border border-[#ECE8E3] rounded-[18px] divide-y divide-[#ECE8E3] dark:bg-muted dark:border-border dark:divide-border/50">
                 <div className="px-4 py-3 flex items-start gap-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground shrink-0 mt-[3px]">Data</p>
+                  <p className="text-[13px] font-semibold text-foreground shrink-0 mt-[5px]">Abre em</p>
                   <div className="flex-1 flex items-center justify-end gap-1.5">
                     {/* Dia */}
                     <select value={unlockDay} onChange={e => setUnlockDay(e.target.value)}
-                      className="appearance-none bg-muted rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[44px]">
+                      className="appearance-none bg-white dark:bg-card border border-[#ECE8E3] dark:border-border rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[44px]">
                       <option value="" disabled>Dia</option>
                       {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                         <option key={d} value={String(d)}>{d}</option>
@@ -357,7 +344,7 @@ export default function TimeCapsule() {
                     </select>
                     {/* Mês */}
                     <select value={unlockMonth} onChange={e => setUnlockMonth(e.target.value)}
-                      className="appearance-none bg-muted rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center">
+                      className="appearance-none bg-white dark:bg-card border border-[#ECE8E3] dark:border-border rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center">
                       <option value="" disabled>Mês</option>
                       {["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].map((m, i) => (
                         <option key={i + 1} value={String(i + 1)}>{m}</option>
@@ -365,7 +352,7 @@ export default function TimeCapsule() {
                     </select>
                     {/* Ano */}
                     <select value={unlockYear} onChange={e => setUnlockYear(e.target.value)}
-                      className="appearance-none bg-muted rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[60px]">
+                      className="appearance-none bg-white dark:bg-card border border-[#ECE8E3] dark:border-border rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[60px]">
                       <option value="" disabled>Ano</option>
                       {Array.from({ length: 21 }, (_, i) => new Date().getFullYear() + i).map(y => (
                         <option key={y} value={String(y)}>{y}</option>
@@ -374,7 +361,7 @@ export default function TimeCapsule() {
                   </div>
                 </div>
                 <div className="px-4 py-3 space-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Mensagem</p>
+                  <p className="text-[13px] font-semibold text-foreground">Mensagem</p>
                   <Textarea
                     placeholder="Escreve para o vosso eu do futuro..."
                     value={newMessage} onChange={e => setNewMessage(e.target.value)}
@@ -400,7 +387,7 @@ export default function TimeCapsule() {
               </div>
               <button type="submit"
                 disabled={uploading || !newMessage.trim() || !unlockDate}
-                className="w-full h-12 rounded-2xl bg-violet-500 text-white font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-500/20">
+                className="w-full h-[52px] rounded-[18px] bg-[#0B1324] text-white font-semibold text-[15px] disabled:opacity-40 active:scale-[0.99] transition-transform flex items-center justify-center gap-2 shadow-[0_14px_28px_-14px_rgba(11,19,36,0.6)] dark:bg-foreground dark:text-background">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" strokeWidth={1.5} />}
                 {uploading ? "A selar..." : "Selar cápsula"}
               </button>
@@ -413,18 +400,18 @@ export default function TimeCapsule() {
       {confirmDeleteId && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-end"
           onClick={() => !deleting && setConfirmDeleteId(null)}>
-          <div className="w-full bg-card rounded-t-[2rem] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200 space-y-3"
+          <div className="w-full max-w-md mx-auto bg-white dark:bg-card rounded-t-[26px] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200 space-y-3"
             onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
+            <div className="w-10 h-1 rounded-full bg-[#E2DED8] dark:bg-border mx-auto mb-4" />
             <p className="text-center text-base font-bold text-foreground">Apagar esta cápsula?</p>
             <p className="text-center text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
             <button onClick={handleDelete} disabled={deleting}
-              className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-60">
+              className="w-full h-12 rounded-[16px] bg-rose-600 text-white font-semibold text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-60">
               <Trash2 className="w-4 h-4" />
               {deleting ? "A apagar..." : "Apagar"}
             </button>
             <button onClick={() => setConfirmDeleteId(null)} disabled={deleting}
-              className="w-full h-12 rounded-2xl bg-muted text-foreground font-semibold text-sm disabled:opacity-60">
+              className="w-full h-12 rounded-[16px] bg-[#F4F2EF] text-[#3A4150] font-semibold text-sm disabled:opacity-60 dark:bg-muted dark:text-foreground">
               Cancelar
             </button>
           </div>
@@ -438,10 +425,9 @@ export default function TimeCapsule() {
 
 function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 px-1">
+    <div className="flex items-center gap-2 px-1 pt-2">
       {icon}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{children}</p>
-      <div className="flex-1 h-px bg-border/40" />
+      <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{children}</p>
     </div>
   );
 }
@@ -470,13 +456,13 @@ function CapsuleRow({ c, type, userId, onTap, onDelete }: {
 
   if (type === "ready") return (
     <div onClick={onTap}
-      className="flex items-center gap-3 px-4 py-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 rounded-2xl active:opacity-75 transition-opacity cursor-pointer">
+      className="flex items-center gap-3 px-4 py-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/40 rounded-[18px] active:opacity-75 transition-opacity cursor-pointer">
       <div className="w-9 h-9 rounded-full bg-white dark:bg-card border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shrink-0 shadow-sm">
         <Unlock className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-rose-500 leading-tight">O momento chegou</p>
-        <p className="text-[10px] text-muted-foreground capitalize leading-tight mt-0.5 truncate">
+        <p className="text-[12px] text-muted-foreground leading-tight mt-0.5 truncate">
           {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
         </p>
       </div>
@@ -491,12 +477,12 @@ function CapsuleRow({ c, type, userId, onTap, onDelete }: {
     const label = daysDiff === 0 ? "Hoje" : daysDiff === 1 ? "1 dia" : `${daysDiff} dias`;
     return (
       <div onClick={onTap}
-        className="flex items-center gap-3 px-4 py-3 bg-card border border-border/60 rounded-2xl active:opacity-75 transition-opacity cursor-pointer">
+        className="flex items-center gap-3 px-4 py-3 rounded-[18px] bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border active:opacity-75 transition-opacity cursor-pointer">
         <div className="w-9 h-9 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/40 flex items-center justify-center shrink-0">
           <Lock className="w-4 h-4 text-violet-400" strokeWidth={1.5} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground capitalize truncate">
+          <p className="text-[13px] text-foreground truncate">
             {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
           </p>
         </div>
@@ -512,7 +498,7 @@ function CapsuleRow({ c, type, userId, onTap, onDelete }: {
   const isImg = c.image_url && !/\.(mp4|webm|mov)(\?|$)/i.test(c.image_url);
   return (
     <div onClick={onTap}
-      className="flex items-center gap-3 px-4 py-3 bg-card border border-border/60 rounded-2xl active:opacity-75 transition-opacity cursor-pointer">
+      className="flex items-center gap-3 px-4 py-3 rounded-[18px] bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border active:opacity-75 transition-opacity cursor-pointer">
       {isImg ? (
         <img src={c.image_url} alt="" className="w-9 h-9 rounded-xl object-cover shrink-0 border border-border/40" />
       ) : (
@@ -644,8 +630,7 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
           <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.5,
             marginBottom: 16, whiteSpace: "pre-line",
             animation: "capsule-fade-up 600ms 200ms both ease" }}>{quote}</p>
-          <p style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "capitalize",
-            color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>{date}</p>
+          <p style={{ fontSize: 11, letterSpacing: "0.12em",             color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>{date}</p>
         </div>
 
         {/* Botões */}
@@ -785,7 +770,7 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
             </p>
 
             {/* Data + relativo */}
-            <p className="text-xs text-muted-foreground capitalize mb-0.5"
+            <p className="text-xs text-muted-foreground first-letter:uppercase mb-0.5"
               style={{ animation: "capsule-fade-up 400ms 720ms both ease" }}>
               {dayOfWeek}, {date}
             </p>
@@ -891,7 +876,7 @@ function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () =>
         </p>
 
         {/* Data + relativo (como MemoryDetail) */}
-        <p className="text-xs text-muted-foreground capitalize mb-0.5">
+        <p className="text-xs text-muted-foreground first-letter:uppercase mb-0.5">
           {dayOfWeek}, {date}
         </p>
         <p className="text-[11px] font-semibold text-rose-400 mb-4">{relativeStr}</p>
@@ -975,7 +960,7 @@ function LockedDetailView({ capsule, onClose }: { capsule: any; onClose: () => v
           animation: "capsule-fade-up 600ms 260ms both ease" }}>
           dia{daysDiff !== 1 ? "s" : ""} até poder ser aberta
         </p>
-        <p style={{ fontSize: 12, textTransform: "capitalize", color: "rgba(255,255,255,0.16)",
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.16)",
           animation: "capsule-fade-up 600ms 340ms both ease" }}>
           {date}
         </p>
