@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +57,8 @@ function timeAgo(iso: string): string {
 }
 
 /**
- * "Onde estamos" na Home. Só aparece quando há partilha ativa.
+ * "Onde estamos" na Home. Com partilha ativa mostra o mapa e as moradas; sem
+ * ela fica uma linha que leva a /localizacao para a ativar.
  * O mapa é ilustrativo (as posições reais vivem em /localizacao); o texto
  * mostra a morada conhecida de cada um e quando foi atualizada.
  */
@@ -68,8 +69,30 @@ export function LocationHomeCard() {
   const { partner } = usePartnerProfile();
   const { profile } = useProfile();
 
-  if (tierLoading || !allowed || loading) return null;
-  if (!mySharing && !partnerSharing) return null;
+  if (tierLoading || loading) return null;
+
+  // Sem partilha (ou sem acesso no plano) o cartão continua a ser a entrada
+  // para /localizacao, onde se ativa a partilha ou se vê o que é preciso.
+  if (!allowed || (!mySharing && !partnerSharing)) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate("/localizacao")}
+        className="flex w-full items-center gap-3 rounded-[24px] border border-[#ECE8E3] bg-white px-4 py-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30">
+          <MapPin className="h-5 w-5" strokeWidth={1.9} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold text-foreground">Onde estamos</span>
+          <span className="block truncate text-[12.5px] text-muted-foreground">
+            {allowed ? "Ativem a partilha para se verem no mapa" : "Partilha de localização entre os dois"}
+          </span>
+        </span>
+        <ChevronRight className="h-[18px] w-[18px] shrink-0 text-muted-foreground/60" strokeWidth={2} />
+      </button>
+    );
+  }
 
   const partnerName = partner?.display_name ?? "O teu par";
   const myInitial = (profile?.display_name ?? "Eu").charAt(0).toUpperCase();
