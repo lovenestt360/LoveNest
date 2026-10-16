@@ -46,6 +46,7 @@ import { SURFACE, SectionTitle } from "@/features/home/components/HomeSections";
 import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
 import { savePushToken } from "@/lib/pushToken";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface Profile {
   display_name: string | null;
@@ -303,7 +304,7 @@ export default function Settings() {
         setReligion((data as any).religion ?? null);
         setPrimaryGoal((data as any).primary_goal ?? null);
         setUsageMode((data as any).usage_mode ?? null);
-        setPartnerNickname((data as any).partner_nickname ?? "");
+        setPartnerNickname((data as { partner_nickname?: string | null }).partner_nickname ?? "");
       }
       
       // Load Smart Notif Settings
@@ -350,7 +351,7 @@ export default function Settings() {
     }).eq("user_id", user.id);
 
     if (spaceId) {
-      const houseUpdate: Record<string, unknown> = {
+      const houseUpdate: Partial<Tables<"couple_spaces">> = {
         relationship_start_date: relationshipDate || null,
         partner1_name: partner1Name,
         partner2_name: partner2Name,
@@ -359,7 +360,7 @@ export default function Settings() {
       // Sem nome não se grava por cima: fica o valor por defeito e a tarefa
       // continua a pedir o nome do casal.
       if (houseName.trim()) houseUpdate.house_name = houseName.trim();
-      await supabase.from("couple_spaces").update(houseUpdate as any).eq("id", spaceId);
+      await supabase.from("couple_spaces").update(houseUpdate).eq("id", spaceId);
     }
 
     // A alcunha do par vai num pedido à parte: se a coluna ainda não existir,
@@ -367,7 +368,8 @@ export default function Settings() {
     if (partnerInfo) {
       const { error: nickError } = await supabase
         .from("profiles")
-        .update({ partner_nickname: partnerNickname.trim() || null } as any)
+        // partner_nickname ainda não está nos tipos gerados do Supabase.
+        .update({ partner_nickname: partnerNickname.trim() || null } as Partial<Tables<"profiles">>)
         .eq("user_id", user.id);
       if (nickError) console.error("Alcunha do par não guardada:", nickError);
     }

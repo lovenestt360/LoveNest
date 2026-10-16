@@ -13,6 +13,15 @@ export interface PartnerProfile {
   verification_status: "unverified" | "pending" | "verified" | "rejected";
 }
 
+// Linha de profiles como é lida aqui (partner_nickname ainda não está nos tipos gerados).
+type ProfileRow = {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  verification_status?: PartnerProfile["verification_status"] | null;
+  partner_nickname?: string | null;
+};
+
 export function usePartnerProfile() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
@@ -41,13 +50,14 @@ export function usePartnerProfile() {
           const partnerId = members[0].user_id;
 
           // 2. Perfil do par + o meu (onde guardo a alcunha que lhe dei)
-          const { data: profiles, error: pError } = await (supabase
+          const { data, error: pError } = await supabase
             .from("profiles")
             .select("*")
-            .in("user_id", [partnerId, user.id]) as any);
+            .in("user_id", [partnerId, user.id]);
+          const profiles = (data ?? []) as unknown as ProfileRow[];
 
-          const profile = (profiles ?? []).find((p: any) => p.user_id === partnerId);
-          const mine = (profiles ?? []).find((p: any) => p.user_id === user.id);
+          const profile = profiles.find(p => p.user_id === partnerId);
+          const mine = profiles.find(p => p.user_id === user.id);
 
           if (pError || !profile) {
             setPartner(null);
