@@ -14,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Send, Loader2, Image as ImageIcon, Mic, Pin, PinOff, Reply,
   Pencil, Trash2, X, Check, CornerDownRight, Palette, ShieldCheck,
-  Heart, ChevronLeft, Play, Pause,
+  Heart, ChevronLeft, Play, Pause, Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DEFAULT_CHAT_WALLPAPER } from "@/features/chat/components/defaultWallpaper";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 
@@ -173,8 +174,8 @@ function WaveformBars({ progress, isMine }: { progress: number; isMine: boolean 
           key={i}
           className={cn("w-[2px] rounded-full transition-colors",
             i / WH.length <= progress
-              ? isMine ? "bg-white" : "bg-rose-500"
-              : isMine ? "bg-white/35" : "bg-muted-foreground/30"
+              ? "bg-[#1C2230] dark:bg-foreground"
+              : "bg-[#1C2230]/20 dark:bg-white/25"
           )}
           style={{ height: `${h}px` }}
         />
@@ -241,7 +242,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
         onClick={toggle}
         className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90",
-          isMine ? "bg-white/25 text-white" : "bg-rose-50 dark:bg-rose-950/30 text-rose-500"
+          "bg-[#1C2230] text-white dark:bg-foreground dark:text-background"
         )}
       >
         {playing
@@ -252,7 +253,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
       <div className="flex flex-col gap-1">
         <WaveformBars progress={progress} isMine={isMine} />
         <span className={cn("text-[10px] font-mono tabular-nums",
-          isMine ? "text-white/65" : "text-muted-foreground")}>
+          "text-[#8A8F98] dark:text-muted-foreground")}>
           {fmt(playing ? currentTime : dur)}
         </span>
       </div>
@@ -291,7 +292,7 @@ function DateSeparator({ date }: { date: string }) {
 
   return (
     <div className="flex justify-center py-3">
-      <span className="rounded-full border border-[#ECE8E3] bg-white/90 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#7A7F8C] backdrop-blur-sm dark:border-border dark:bg-card/85 dark:text-muted-foreground">
+      <span className="rounded-full bg-[#F4F2EF]/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A8F98] backdrop-blur-sm dark:bg-card/85 dark:text-muted-foreground">
         {label}
       </span>
     </div>
@@ -320,71 +321,68 @@ function PinnedBar({ messages, onJump }: { messages: Message[]; onJump: (id: str
   );
 }
 
-/* ── Action Sheet ───────────────────────────────────────────────────────────── */
+/* ── Floating message menu ───────────────────────────────────────────────── */
 
-function ActionSheet({
-  msg, isMine, onReply, onEdit, onDelete, onPin, onClose,
+const MENU_WIDTH = 220;
+
+function FloatingMenu({
+  msg, isMine, anchor, onReply, onCopy, onEdit, onDelete, onPin, onClose,
 }: {
-  msg: Message; isMine: boolean;
-  onReply: () => void; onEdit: () => void; onDelete: () => void; onPin: () => void; onClose: () => void;
+  msg: Message; isMine: boolean; anchor: DOMRect | null;
+  onReply: () => void; onCopy: () => void; onEdit: () => void; onDelete: () => void; onPin: () => void; onClose: () => void;
 }) {
+  const items: { key: string; label: string; icon: ReactNode; onClick: () => void; danger?: boolean }[] = [
+    { key: "reply", label: "Responder", icon: <Reply className="h-[17px] w-[17px]" />, onClick: onReply },
+    ...(msg.content ? [{ key: "copy", label: "Copiar", icon: <Copy className="h-[17px] w-[17px]" />, onClick: onCopy }] : []),
+    { key: "pin", label: msg.is_pinned ? "Desafixar" : "Fixar", icon: msg.is_pinned ? <PinOff className="h-[17px] w-[17px]" /> : <Pin className="h-[17px] w-[17px]" />, onClick: onPin },
+    ...(isMine ? [{ key: "edit", label: msg.audio_url ? "Adicionar legenda" : "Editar", icon: <Pencil className="h-[17px] w-[17px]" />, onClick: onEdit }] : []),
+    ...(isMine ? [{ key: "delete", label: "Apagar", icon: <Trash2 className="h-[17px] w-[17px]" />, onClick: onDelete, danger: true }] : []),
+  ];
+
+  // Junto da mensagem: por baixo se couber, senão por cima; alinhado ao lado dela.
+  const menuHeight = items.length * 46 + 12;
+  const vw = typeof window !== "undefined" ? window.innerWidth : 390;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 844;
+  let top = anchor ? anchor.bottom + 8 : vh / 2 - menuHeight / 2;
+  let placeAbove = false;
+  if (anchor && top + menuHeight > vh - 96) {
+    top = Math.max(76, anchor.top - menuHeight - 8);
+    placeAbove = true;
+  }
+  const side = anchor
+    ? isMine
+      ? { right: Math.max(8, vw - anchor.right) }
+      : { left: Math.max(8, Math.min(anchor.left, vw - MENU_WIDTH - 8)) }
+    : { left: (vw - MENU_WIDTH) / 2 };
+
   return (
     <>
-      <div className="fixed inset-0 z-[60] bg-[#0B1324]/25" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-[70] mx-auto max-w-md rounded-t-[26px] bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(11,19,36,0.25)] animate-in slide-in-from-bottom duration-200 dark:bg-card">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#E2DED8] dark:bg-muted-foreground/30" />
-        <p className="mb-3 rounded-[14px] bg-[#F7F5F2] px-3 py-2 text-[13px] text-[#3A4150] line-clamp-2 dark:bg-muted dark:text-muted-foreground">
-          {msg.content || (msg.image_url ? "Foto" : msg.audio_url ? "Áudio" : "")}
-        </p>
-        <div className="overflow-hidden rounded-[18px] border border-[#ECE8E3] dark:border-border">
-          <SheetRow onClick={onReply} icon={<Reply className="h-[18px] w-[18px]" />} tint="bg-rose-50 text-rose-500 dark:bg-rose-950/30">
-            Responder
-          </SheetRow>
-          {isMine && (
-            <SheetRow onClick={onEdit} icon={<Pencil className="h-[18px] w-[18px]" />} tint="bg-[#F1EEEA] text-[#3A4150] dark:bg-muted dark:text-foreground">
-              {msg.audio_url ? "Adicionar legenda" : "Editar"}
-            </SheetRow>
-          )}
-          <SheetRow
-            onClick={onPin}
-            icon={msg.is_pinned ? <PinOff className="h-[18px] w-[18px]" /> : <Pin className="h-[18px] w-[18px]" />}
-            tint="bg-[#EEF2FF] text-[#3F68E6] dark:bg-blue-950/30"
+      <div className="fixed inset-0 z-[60] bg-[#0B1324]/[0.08] animate-in fade-in duration-150" onClick={onClose} />
+      <div
+        role="menu"
+        className={cn(
+          "fixed z-[70] overflow-hidden rounded-[18px] bg-white/95 p-1.5 shadow-[0_18px_44px_-14px_rgba(11,19,36,0.35),0_0_0_1px_rgba(11,19,36,0.05)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 dark:bg-card/95",
+          placeAbove ? "slide-in-from-bottom-1" : "slide-in-from-top-1",
+          isMine ? "origin-top-right" : "origin-top-left",
+        )}
+        style={{ top, width: MENU_WIDTH, ...side }}
+      >
+        {items.map(item => (
+          <button
+            key={item.key}
+            role="menuitem"
+            onClick={item.onClick}
+            className={cn(
+              "flex h-[46px] w-full items-center justify-between rounded-[12px] px-3 text-left text-[15px] transition-colors active:bg-[#F4F2EF] dark:active:bg-muted",
+              item.danger ? "text-red-500" : "text-[#1C2230] dark:text-foreground",
+            )}
           >
-            {msg.is_pinned ? "Desafixar" : "Fixar"}
-          </SheetRow>
-          {isMine && (
-            <SheetRow onClick={onDelete} icon={<Trash2 className="h-[18px] w-[18px]" />} tint="bg-red-50 text-red-500 dark:bg-red-950/30" danger>
-              Apagar
-            </SheetRow>
-          )}
-        </div>
-        <button
-          className="mt-2.5 h-12 w-full rounded-[16px] bg-[#F4F2EF] text-[15px] font-semibold text-[#3A4150] transition-colors active:bg-[#ECE8E3] dark:bg-muted dark:text-foreground"
-          onClick={onClose}
-        >
-          Cancelar
-        </button>
+            {item.label}
+            <span className={item.danger ? "text-red-500" : "text-[#8A8F98]"}>{item.icon}</span>
+          </button>
+        ))}
       </div>
     </>
-  );
-}
-
-function SheetRow({
-  onClick, icon, tint, danger, children,
-}: {
-  onClick: () => void; icon: ReactNode; tint: string; danger?: boolean; children: ReactNode;
-}) {
-  return (
-    <button
-      className={cn(
-        "flex min-h-[54px] w-full items-center gap-3 px-3.5 text-left transition-colors active:bg-[#F7F5F2] dark:active:bg-muted [&+&]:border-t [&+&]:border-[#ECE8E3] dark:[&+&]:border-border",
-        danger ? "text-red-500" : "text-foreground",
-      )}
-      onClick={onClick}
-    >
-      <span className={cn("flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px]", tint)}>{icon}</span>
-      <span className="text-[15px] font-medium">{children}</span>
-    </button>
   );
 }
 
@@ -392,16 +390,32 @@ function SheetRow({
 
 function MessageBubble({
   msg, isMine, isDeleted, replyPreview, formatTime, jumpToMsg, onLongPress, refCallback,
+  lastInGroup, selected, animateIn,
 }: {
   msg: Message; isMine: boolean; isDeleted: boolean; replyPreview: string | null;
   formatTime: (iso: string) => string; jumpToMsg: (id: string) => void;
   onLongPress: () => void; refCallback: (el: HTMLDivElement | null) => void;
+  lastInGroup: boolean; selected: boolean; animateIn: boolean;
 }) {
   const lp = useLongPress(onLongPress, 450);
 
   return (
-    <div ref={refCallback} className={cn("flex px-2 mb-[3px]", isMine ? "justify-end" : "justify-start")}>
-      <div className="relative max-w-[78%]">
+    <div
+      ref={refCallback}
+      className={cn(
+        "flex px-3",
+        lastInGroup ? "mb-2.5" : "mb-[3px]",
+        isMine ? "justify-end" : "justify-start",
+        animateIn && "animate-in fade-in slide-in-from-bottom-2 duration-300",
+      )}
+    >
+      <div
+        data-bubble
+        className={cn(
+          "relative max-w-[78%] transition-transform duration-200 ease-out",
+          selected && "z-[65] scale-[1.03]",
+        )}
+      >
         {msg.is_pinned && !isDeleted && (
           <div className="absolute -top-1.5 right-2 z-10">
             <Pin className="h-2.5 w-2.5 text-rose-400 fill-rose-400" />
@@ -410,10 +424,13 @@ function MessageBubble({
         <div
           {...lp}
           className={cn(
-            "px-3 py-[7px] text-[15px] select-none",
+            "px-3.5 py-2 text-[15px] leading-[1.35] select-none transition-shadow duration-200 active:brightness-[0.98]",
             isMine
-              ? "bg-[#E5466D] text-white rounded-[18px] rounded-br-[5px] shadow-[0_6px_16px_-10px_rgba(229,70,109,0.7)]"
-              : "bg-white text-[#0B1324] border border-[#ECE8E3] rounded-[18px] rounded-bl-[5px] dark:bg-card dark:text-foreground dark:border-border",
+              ? cn("bg-[#F1EBE3] text-[#1C2230] rounded-[20px] dark:bg-[#2A2F3A] dark:text-foreground", lastInGroup && "rounded-br-[6px]")
+              : cn("bg-white text-[#1C2230] rounded-[20px] border border-[#ECE8E3] dark:bg-card dark:text-foreground dark:border-border", lastInGroup && "rounded-bl-[6px]"),
+            selected
+              ? "shadow-[0_14px_30px_-12px_rgba(11,19,36,0.35)]"
+              : "shadow-[0_1px_2px_rgba(11,19,36,0.05)]",
             isDeleted && "opacity-60",
             msg.id.startsWith("temp-") && "opacity-70 animate-pulse"
           )}
@@ -425,7 +442,7 @@ function MessageBubble({
               onClick={() => msg.reply_to_id && jumpToMsg(msg.reply_to_id)}
               className={cn(
                 "flex items-start gap-1 rounded-lg px-2 py-1.5 mb-1.5 text-[11px] border-l-2 w-full text-left",
-                isMine ? "bg-white/20 border-white/60 text-white/85" : "bg-[#F7F5F2] border-[#4D7CFE] text-[#3A4150] dark:bg-muted dark:text-muted-foreground"
+                isMine ? "bg-white/60 border-[#B9AC99] text-[#5A5F6A] dark:bg-black/20 dark:text-muted-foreground" : "bg-[#F6F3EF] border-[#C9C4BD] text-[#5A5F6A] dark:bg-muted dark:text-muted-foreground"
               )}
             >
               <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
@@ -457,7 +474,7 @@ function MessageBubble({
 
           {/* Time + status */}
           <div className={cn("flex items-center justify-end gap-1 mt-[3px]",
-            isMine ? "text-white/65" : "text-[#9A9DA6]")}>
+            "text-[#8A8F98] dark:text-muted-foreground")}>
             {msg.is_edited && !isDeleted && <span className="text-[10px]">{msg.audio_url ? "legenda ·" : "editada ·"}</span>}
             <span className="text-[10px] tabular-nums">{formatTime(msg.created_at)}</span>
             {isMine && !msg.id.startsWith("temp-") && <Check className="h-[11px] w-[11px]" />}
@@ -494,6 +511,7 @@ export default function Chat() {
   const [imageFile, setImageFile]   = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [sheetMsg, setSheetMsg]     = useState<Message | null>(null);
+  const [sheetAnchor, setSheetAnchor] = useState<DOMRect | null>(null);
   const [showCarinhoAnim, setShowCarinhoAnim] = useState(false);
 
   const [myMessageToday, setMyMessageToday]         = useState(false);
@@ -503,6 +521,8 @@ export default function Chat() {
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
   const msgRefs    = useRef<Record<string, HTMLDivElement | null>>({});
+  // Ids presentes quando a conversa abriu: só o que chega depois entra animado.
+  const initialIdsRef = useRef<Set<string> | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const checkMissionRef = useRef<() => Promise<void>>(async () => {});
 
@@ -530,8 +550,16 @@ export default function Chat() {
           .order("created_at", { ascending: false })
           .limit(PAGE_SIZE);
         if (error) toast({ title: "Erro ao carregar mensagens", description: error.message, variant: "destructive" });
-        else if (data) { setMessages((data as Message[]).reverse()); setHasMore(data.length === PAGE_SIZE); }
-      } finally { setLoading(false); }
+        else if (data) {
+          initialIdsRef.current = new Set((data as Message[]).map(m => m.id));
+          setMessages((data as Message[]).reverse());
+          setHasMore(data.length === PAGE_SIZE);
+        }
+      } finally {
+        // Sem mensagens (ou erro) também conta como "já abriu".
+        if (!initialIdsRef.current) initialIdsRef.current = new Set();
+        setLoading(false);
+      }
     })();
   }, [spaceId, resetChatUnread, toast]);
 
@@ -569,7 +597,12 @@ export default function Chat() {
     const { data } = await supabase.from("messages").select("*")
       .eq("couple_space_id", spaceId).lt("created_at", oldest.created_at)
       .order("created_at", { ascending: false }).limit(PAGE_SIZE);
-    if (data) { setMessages(prev => [...(data as Message[]).reverse(), ...prev]); setHasMore(data.length === PAGE_SIZE); }
+    if (data) {
+      // Mensagens antigas não entram animadas.
+      for (const m of data as Message[]) initialIdsRef.current?.add(m.id);
+      setMessages(prev => [...(data as Message[]).reverse(), ...prev]);
+      setHasMore(data.length === PAGE_SIZE);
+    }
     setLoadingMore(false);
   }, [spaceId, loadingMore, messages]);
 
@@ -873,9 +906,19 @@ export default function Chat() {
         <PinnedBar messages={messages} onJump={jumpToMsg} />
       </div>
 
+      {/* Fundo por defeito: branco como a Home, com desenhos de linha quase invisíveis */}
+      {!wallpaperUrl && (
+        <div className="absolute inset-0 z-0 pointer-events-none bg-white dark:bg-background" aria-hidden="true">
+          <div
+            className="absolute inset-0 opacity-[0.45] dark:opacity-[0.05]"
+            style={{ backgroundImage: DEFAULT_CHAT_WALLPAPER, backgroundSize: "300px 300px" }}
+          />
+        </div>
+      )}
+
       {/* ── Messages ── */}
       <div
-        className={cn("flex-1 relative z-10 overflow-y-auto", !wallpaperUrl && "bg-[#F7F5F2] dark:bg-background")}
+        className="flex-1 relative z-10 overflow-y-auto"
         style={{ scrollbarWidth: "none" }}
       >
         <div className="flex flex-col gap-0 py-3 pb-4 min-h-full justify-end">
@@ -908,30 +951,56 @@ export default function Chat() {
           {groupedMessages.map(group => (
             <div key={group.date}>
               <DateSeparator date={group.date} />
-              {group.msgs.map(msg => (
-                <MessageBubble
-                  key={msg.id}
-                  msg={msg}
-                  isMine={msg.sender_user_id === user?.id}
-                  isDeleted={msg.is_deleted}
-                  replyPreview={getReplyPreview(msg.reply_to_id)}
-                  formatTime={formatTime}
-                  jumpToMsg={jumpToMsg}
-                  onLongPress={() => { if (!msg.is_deleted) setSheetMsg(msg); }}
-                  refCallback={el => { msgRefs.current[msg.id] = el; }}
-                />
-              ))}
+              {group.msgs.map((msg, i) => {
+                const isMine = msg.sender_user_id === user?.id;
+                const next = group.msgs[i + 1];
+                // Mensagens seguidas da mesma pessoa (até 3 min) ficam juntas.
+                const lastInGroup =
+                  !next ||
+                  next.sender_user_id !== msg.sender_user_id ||
+                  new Date(next.created_at).getTime() - new Date(msg.created_at).getTime() > 3 * 60_000;
+                // Só anima o que chega depois de a conversa abrir (e não a troca temp → real).
+                const animateIn =
+                  !!initialIdsRef.current && !initialIdsRef.current.has(msg.id) && (msg.id.startsWith("temp-") || !isMine);
+                return (
+                  <MessageBubble
+                    key={msg.id}
+                    msg={msg}
+                    isMine={isMine}
+                    isDeleted={msg.is_deleted}
+                    replyPreview={getReplyPreview(msg.reply_to_id)}
+                    formatTime={formatTime}
+                    jumpToMsg={jumpToMsg}
+                    lastInGroup={lastInGroup}
+                    selected={sheetMsg?.id === msg.id}
+                    animateIn={animateIn}
+                    onLongPress={() => {
+                      if (msg.is_deleted) return;
+                      const bubble = msgRefs.current[msg.id]?.querySelector("[data-bubble]");
+                      setSheetAnchor(bubble ? bubble.getBoundingClientRect() : null);
+                      try { navigator.vibrate?.(8); } catch { /* sem vibração */ }
+                      setSheetMsg(msg);
+                    }}
+                    refCallback={el => { msgRefs.current[msg.id] = el; }}
+                  />
+                );
+              })}
             </div>
           ))}
           <div ref={bottomRef} />
         </div>
       </div>
 
-      {/* ── Action Sheet ── */}
+      {/* ── Menu flutuante da mensagem ── */}
       {sheetMsg && (
-        <ActionSheet
+        <FloatingMenu
           msg={sheetMsg}
           isMine={sheetMsg.sender_user_id === user?.id}
+          anchor={sheetAnchor}
+          onCopy={() => {
+            navigator.clipboard?.writeText(sheetMsg.content).then(() => toast({ title: "Mensagem copiada" }), () => {});
+            setSheetMsg(null);
+          }}
           onReply={() => { setReplyTo(sheetMsg); setSheetMsg(null); inputRef.current?.focus(); }}
           onEdit={() => { setEditingMsg(sheetMsg); setEditText(sheetMsg.content); setSheetMsg(null); }}
           onDelete={() => handleDelete(sheetMsg)}
@@ -945,7 +1014,7 @@ export default function Chat() {
 
         {/* Edit mode banner */}
         {editingMsg && (
-          <div className="flex items-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-[#F7F5F2] px-3 py-2 mb-2 dark:border-border dark:bg-muted">
+          <div className="flex items-center gap-2 rounded-[18px] border border-[#ECE8E3] bg-[#F6F3EF] px-3 py-2 mb-2 dark:border-border dark:bg-muted">
             <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={editText}
@@ -965,7 +1034,7 @@ export default function Chat() {
 
         {/* Reply banner */}
         {replyTo && !editingMsg && (
-          <div className="flex items-center gap-2 rounded-[14px] border-l-[3px] border-rose-500 bg-[#F7F5F2] px-3 py-2 mb-2 dark:bg-muted">
+          <div className="flex items-center gap-2 rounded-[14px] border-l-[3px] border-[#B9AC99] bg-[#F6F3EF] px-3 py-2 mb-2 dark:bg-muted">
             <Reply className="h-3.5 w-3.5 text-rose-400 shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground line-clamp-1">
               {replyTo.content || (replyTo.image_url ? "Foto" : replyTo.audio_url ? "Audio" : "")}
@@ -978,7 +1047,7 @@ export default function Chat() {
 
         {/* Image preview */}
         {imagePreview && !editingMsg && (
-          <div className="flex items-center gap-2 rounded-[18px] bg-[#F7F5F2] px-2 py-1.5 mb-2 dark:bg-muted">
+          <div className="flex items-center gap-2 rounded-[18px] bg-[#F6F3EF] px-2 py-1.5 mb-2 dark:bg-muted">
             <img src={imagePreview} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
             <p className="flex-1 text-xs text-muted-foreground truncate">{imageFile?.name}</p>
             <button onClick={() => setImageFile(null)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted">
@@ -995,7 +1064,7 @@ export default function Chat() {
             <div className="flex-1 relative">
               {/* Recording / Preview overlay inside the pill */}
               {inRecMode ? (
-                <div className="flex items-center gap-2 rounded-[24px] bg-[#F4F2EF] min-h-[48px] px-3 py-2 dark:bg-muted">
+                <div className="flex items-center gap-2 rounded-[24px] bg-[#F4F1EC] min-h-[48px] px-3 py-2 dark:bg-muted">
 
                   {/* Delete */}
                   <button onClick={audio.cancel}
@@ -1045,7 +1114,7 @@ export default function Chat() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-end rounded-[24px] bg-[#F4F2EF] min-h-[46px] px-2 py-1 dark:bg-muted">
+                <div className="flex items-end rounded-[24px] bg-[#F4F1EC] min-h-[46px] px-2 py-1 dark:bg-muted">
                   <ImagePickerButton onPick={setImageFile} />
                   <input
                     ref={inputRef}
@@ -1087,7 +1156,7 @@ export default function Chat() {
               }}
               className={cn(
                 "w-[46px] h-[46px] rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95",
-                "bg-[#0B1324] text-white dark:bg-foreground dark:text-background",
+                "bg-[#1C2230] text-white dark:bg-foreground dark:text-background",
                 (!isReady || sending) && "opacity-60"
               )}
             >

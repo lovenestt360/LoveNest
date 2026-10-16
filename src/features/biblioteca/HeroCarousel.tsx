@@ -67,8 +67,20 @@ export function HeroCarousel({ settings, books, banners = [] }: { settings: Libr
             });
         }
 
+        // Nunca deixar o topo vazio: sem anúncios, novidades nem recomendados,
+        // mostra um livro em destaque (o marcado como destaque ou o mais visto).
+        if (list.length === 0 && books.length > 0) {
+            const featured =
+                books.find(b => b.is_featured) ??
+                [...books].sort((a, b) => b.views_count - a.views_count)[0];
+            list.push({
+                key: "featured", label: "Em destaque", title: featured.title, subtitle: featured.author ?? undefined,
+                image: featured.cover_url, onClick: () => navigate(`/biblioteca/${featured.id}`),
+            });
+        }
+
         return list;
-    }, [settings, books, navigate]);
+    }, [settings, books, banners, navigate]);
 
     useEffect(() => {
         if (index >= slides.length) setIndex(0);

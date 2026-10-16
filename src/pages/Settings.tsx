@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTierAccess } from "@/hooks/useTierAccess";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -193,18 +193,18 @@ export default function Settings() {
     }
   };
 
+  // Abre a secção pedida no endereço (#notifications, #profile…). A navegação
+  // interna (navigate) não dispara "hashchange", por isso segue-se a location
+  // do router — assim a checklist e outros atalhos funcionam mesmo com o
+  // Perfil já aberto. O key muda a cada navegação, mesmo para o mesmo #.
+  const routerLocation = useLocation();
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace("#", "");
-      if (["profile", "house", "personalization", "notifications", "customization", "verification", "data"].includes(hash)) {
-        setCurrentCategory(hash as any);
-      }
-    };
-
-    handleHashChange(); // Initial check
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
+    const hash = routerLocation.hash.replace("#", "");
+    if (["profile", "house", "personalization", "notifications", "customization", "verification", "data"].includes(hash)) {
+      setCurrentCategory(hash as any);
+      window.scrollTo({ top: 0 });
+    }
+  }, [routerLocation.hash, routerLocation.key]);
 
   useEffect(() => {
     const isNotificationSupported = typeof Notification !== "undefined";
