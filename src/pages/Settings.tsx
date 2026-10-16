@@ -45,6 +45,7 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { SURFACE, SectionTitle } from "@/features/home/components/HomeSections";
 import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
 import { savePushToken } from "@/lib/pushToken";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 
 interface Profile {
   display_name: string | null;
@@ -141,6 +142,8 @@ export default function Settings() {
   // House State
   const [houseId, setHouseId] = useState<string | null>(null);
   const [houseName, setHouseName] = useState("");
+  const [partnerNickname, setPartnerNickname] = useState("");
+  const { partner: partnerInfo } = usePartnerProfile();
   const [partner1Name, setPartner1Name] = useState("");
   const [partner2Name, setPartner2Name] = useState("");
   const [relationshipDate, setRelationshipDate] = useState("");
@@ -300,6 +303,7 @@ export default function Settings() {
         setReligion((data as any).religion ?? null);
         setPrimaryGoal((data as any).primary_goal ?? null);
         setUsageMode((data as any).usage_mode ?? null);
+        setPartnerNickname((data as any).partner_nickname ?? "");
       }
       
       // Load Smart Notif Settings
@@ -322,7 +326,9 @@ export default function Settings() {
         if (spaceData) {
           setRelationshipDate(spaceData.relationship_start_date ?? "");
           setHouseId(spaceData.id);
-          setHouseName(spaceData.house_name || "");
+          // "LoveNest" é só o valor por defeito: o campo fica vazio para o casal
+          // escrever o seu nome (senão a tarefa "Configurar a vossa casa" nunca fecha).
+          setHouseName(spaceData.house_name && spaceData.house_name !== "LoveNest" ? spaceData.house_name : "");
           setPartner1Name(spaceData.partner1_name || "");
           setPartner2Name(spaceData.partner2_name || "");
           setHouseInviteCode(spaceData.invite_code || "");
@@ -344,16 +350,34 @@ export default function Settings() {
     }).eq("user_id", user.id);
 
     if (spaceId) {
-      await supabase.from("couple_spaces").update({
+      const houseUpdate: Record<string, unknown> = {
         relationship_start_date: relationshipDate || null,
-        house_name: houseName,
         partner1_name: partner1Name,
         partner2_name: partner2Name,
-        initials: generateInitials(partner1Name, partner2Name)
-      } as any).eq("id", spaceId);
+        initials: generateInitials(partner1Name, partner2Name),
+      };
+      // Sem nome não se grava por cima: fica o valor por defeito e a tarefa
+      // continua a pedir o nome do casal.
+      if (houseName.trim()) houseUpdate.house_name = houseName.trim();
+      await supabase.from("couple_spaces").update(houseUpdate as any).eq("id", spaceId);
     }
+
+    // A alcunha do par vai num pedido à parte: se a coluna ainda não existir,
+    // o resto do perfil fica guardado na mesma.
+    if (partnerInfo) {
+      const { error: nickError } = await supabase
+        .from("profiles")
+        .update({ partner_nickname: partnerNickname.trim() || null } as any)
+        .eq("user_id", user.id);
+      if (nickError) console.error("Alcunha do par não guardada:", nickError);
+    }
+
     setSaving(false);
-    toast({ title: "Perfil atualizado! ✨" });
+    if (currentCategory === "house" && spaceId && !houseName.trim()) {
+      toast({ title: "Falta o nome do casal", description: "Escreve como se chama o vosso espaço para concluir este passo." });
+    } else {
+      toast({ title: "Perfil atualizado! ✨" });
+    }
     window.dispatchEvent(new CustomEvent("onboarding-refresh"));
   };
 
@@ -820,7 +844,30 @@ export default function Settings() {
           {currentCategory === 'house' && (
             <div className="space-y-6">
               <div className="glass-card p-6 space-y-4">
-                <div className="space-y-2"><Label className="text-[13px] font-semibold">Apelido da Casa</Label><Input value={houseName} onChange={e => setHouseName(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold">Nome do casal</Label>
+                  <Input
+                    value={houseName}
+                    onChange={e => setHouseName(e.target.value)}
+                    placeholder="Ex.: Ana & Miguel, O nosso ninho"
+                    className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] placeholder:text-[#A9A49C] dark:border-border dark:bg-muted"
+                  />
+                  <p className="px-1 text-[12px] text-muted-foreground">É o nome do vosso espaço. Aparece para os dois.</p>
+                </div>
+                {partnerInfo && (
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold">Como chamas ao teu par</Label>
+                    <Input
+                      value={partnerNickname}
+                      onChange={e => setPartnerNickname(e.target.value.slice(0, 30))}
+                      placeholder="Ex.: Amor, Mozão, Princesa"
+                      className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] placeholder:text-[#A9A49C] dark:border-border dark:bg-muted"
+                    />
+                    <p className="px-1 text-[12px] text-muted-foreground">
+                      Aparece no lugar de “{partnerInfo.real_name || "o nome do teu par"}” em toda a app. Deixa vazio para usar o nome.
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2"><Label className="text-[13px] font-semibold">Tu (Iniciais)</Label><Input value={partner1Name} onChange={e => setPartner1Name(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>
                   <div className="space-y-2"><Label className="text-[13px] font-semibold">Par (Iniciais)</Label><Input value={partner2Name} onChange={e => setPartner2Name(e.target.value)} className="h-12 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted" /></div>

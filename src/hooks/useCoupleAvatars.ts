@@ -33,8 +33,10 @@ export function useCoupleAvatars() {
         ? { displayName: myProfile.display_name, avatarUrl: myProfile.avatar_url, verificationStatus: myProfile.verification_status || "unverified" }
         : { displayName: user.email?.split("@")[0] || "Tu", avatarUrl: null, verificationStatus: "unverified" }
       );
+      // A alcunha que dei ao meu par (no meu perfil) substitui o nome dele.
+      const nickname = (myProfile?.partner_nickname ?? "").trim();
       setPartner(partnerProfile
-        ? { displayName: partnerProfile.display_name, avatarUrl: partnerProfile.avatar_url, verificationStatus: partnerProfile.verification_status || "unverified" }
+        ? { displayName: nickname || partnerProfile.display_name, avatarUrl: partnerProfile.avatar_url, verificationStatus: partnerProfile.verification_status || "unverified" }
         : null
       );
     } catch (err) {
