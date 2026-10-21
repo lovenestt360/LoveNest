@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LogoMark } from "@/components/Logo";
-import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,98 +8,16 @@ import { track } from "@vercel/analytics";
 import { getPasswordError } from "@/lib/passwordPolicy";
 import { CountryPicker } from "@/components/onboarding/CountryPicker";
 import { COUNTRIES } from "@/data/countries";
+import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
+import { BackButton, ChatScript, CountUp, EntryScreen, GoogleIcon, type ChatLine } from "@/features/entry/EntryKit";
+import { isValidEmail, prefersReducedMotion } from "@/features/entry/entryUtils";
 
-// ── Brand ─────────────────────────────────────────────────────────────────────
-const PINK = "#FF6B8F";
-const BLUE = "#4D7CFE";
+// ── Passos ────────────────────────────────────────────────────────────────────
 
-const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+type Phase = "intro" | "form" | "welcome" | "country" | "gender" | "spiritual" | "mode";
+type Step = "country" | "gender" | "spiritual" | "mode";
 
-// ── Hooks ─────────────────────────────────────────────────────────────────────
-
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const h = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
-  return reduced;
-}
-
-// ── Google icon ───────────────────────────────────────────────────────────────
-
-function GoogleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-    </svg>
-  );
-}
-
-// ── Intro visual — breathing circles ─────────────────────────────────────────
-
-function IntroVisual({ reduced }: { reduced: boolean }) {
-  return (
-    <div className="relative w-48 h-40 mx-auto">
-      {/* Diffuse glow behind the circles */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: "-40%",
-          background: `radial-gradient(ellipse at 45% 55%, ${PINK}1e 0%, transparent 62%)`,
-          filter: "blur(18px)",
-          pointerEvents: "none",
-        }}
-      />
-      {/* Circle A — large, warm rose */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: 80, height: 80,
-          top: 14, left: 18,
-          background: `linear-gradient(140deg, #FECDD3 0%, #FDA4AF 100%)`,
-          boxShadow: reduced
-            ? "none"
-            : `0 10px 40px rgba(255,107,143,0.24), 0 2px 8px rgba(255,107,143,0.12)`,
-          animation: reduced ? "none" : "ob-float-a 8s ease-in-out infinite",
-        }}
-      />
-      {/* Circle B — smaller, lighter, offset movement */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: 58, height: 58,
-          bottom: 12, right: 18,
-          background: `linear-gradient(140deg, #FFF1F2 0%, #FECDD3 100%)`,
-          border: `1.5px solid rgba(255,107,143,0.18)`,
-          boxShadow: reduced
-            ? "none"
-            : `0 6px 28px rgba(255,107,143,0.16)`,
-          animation: reduced ? "none" : "ob-float-b 10s ease-in-out infinite",
-          animationDelay: "-4s",
-        }}
-      />
-    </div>
-  );
-}
-
-// ── Input shared style ────────────────────────────────────────────────────────
-
-const INPUT = "w-full h-12 rounded-2xl border border-border bg-card px-4 text-[15px] font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/30 transition-all";
-
-// ── Main ──────────────────────────────────────────────────────────────────────
-
-type Phase = "intro" | "form" | "welcome" | "country" | "gender" | "spiritual" | "mode" | "goal";
-
-const PERS_STEPS: Phase[] = ["country", "gender", "spiritual", "mode", "goal"];
+const STEPS: Step[] = ["country", "gender", "spiritual", "mode"];
 
 const GENDER_OPTIONS = [
   { value: "male",        label: "Masculino" },
@@ -120,17 +37,20 @@ const RELIGION_OPTIONS = [
 ];
 
 const MODE_OPTIONS = [
-  { value: "couple", label: "A dois",  desc: "Conectado ao teu par" },
-  { value: "solo",   label: "A solo",  desc: "O teu espaço pessoal" },
+  { value: "couple", label: "A dois",  desc: "Ligado ao teu par, no mesmo espaço" },
+  { value: "solo",   label: "A solo",  desc: "Um espaço só teu" },
 ];
 
-const GOAL_OPTIONS = [
-  { value: "relationship", label: "Melhorar o meu relacionamento" },
-  { value: "books",        label: "Ler livros" },
-  { value: "wellbeing",    label: "Bem-estar emocional" },
-  { value: "growth",       label: "Crescimento pessoal" },
-  { value: "explore",      label: "Explorar a aplicação" },
-];
+const QUESTIONS: Record<Step, ChatLine[]> = {
+  country:   [["app", "Onde estás?"], ["app", "Ajuda-me a adaptar o conteúdo à tua região."]],
+  gender:    [["app", "Como te identificas?"], ["app", "É opcional. Só para eu falar contigo da forma certa."]],
+  spiritual: [["app", "Tens fé?"], ["app", "Se quiseres, ativo conteúdos espirituais para ti."]],
+  mode:      [["app", "Como vais usar o LoveNest?"], ["app", "Podes mudar depois nas definições."]],
+};
+
+const LAST_NAME_KEY = "lovenest_last_name";
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function Onboarding() {
   const [phase, setPhase] = useState<Phase>("intro");
@@ -143,6 +63,8 @@ export default function Onboarding() {
   const [name, setName]           = useState(localStorage.getItem("onboarding_name") || "");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passFocus, setPassFocus] = useState(false);
   const [inviteCode, setInviteCode] = useState(
     sessionStorage.getItem("lovenest_ref") || localStorage.getItem("lovenest_ref") || ""
   );
@@ -159,20 +81,22 @@ export default function Onboarding() {
   const [gender, setGender]         = useState("");
   const [religion, setReligion]     = useState("");
   const [usageMode, setUsageMode]   = useState("");
-  const [primaryGoal, setPrimaryGoal] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
-  const [stepVisible, setStepVisible] = useState(true);
 
-  // Entry animation
-  const reduced = useReducedMotion();
-  const [ready, setReady] = useState(false);
-  const [hoverCta, setHoverCta] = useState(false);
+  // O Guardião e a conversa de cada passo
+  const pet = useRef<GuardianHandle>(null);
+  const [talking, setTalking] = useState(false);
+  const [listShown, setListShown] = useState(false);
+  const [reply, setReply] = useState<ChatLine[] | null>(null);
+  const [finished, setFinished] = useState(false);
+  const advance = useRef<number>();
 
   const navigate  = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
   const markSeen = () => localStorage.setItem("onboarding_seen", "1");
+  const firstName = name.trim().split(" ")[0];
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -184,12 +108,6 @@ export default function Onboarding() {
       setShowInvite(true);
     }
   }, [searchParams]);
-
-  // Trigger entry sequence shortly after mount
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), 50);
-    return () => clearTimeout(t);
-  }, []);
 
   // Detect Google OAuth return: user already logged in, check onboarding status
   useEffect(() => {
@@ -207,14 +125,18 @@ export default function Onboarding() {
       setSignedInUserId(session.user.id);
       const { data: profile } = await supabase
         .from("profiles")
-        .select("onboarding_completed")
+        .select("onboarding_completed, display_name")
         .eq("user_id", session.user.id)
         .maybeSingle();
       if (profile?.onboarding_completed) {
         navigate("/casa", { replace: true });
       } else {
+        if (profile?.display_name) {
+          setName((n) => n || profile.display_name || "");
+          localStorage.setItem(LAST_NAME_KEY, profile.display_name.split(" ")[0]);
+        }
         markSeen();
-        goToStep("welcome");
+        goTo("welcome");
       }
     };
 
@@ -231,32 +153,33 @@ export default function Onboarding() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Entrance helper
-  const enter = (
-    delay: number,
-    fromY = 20,
-    fromScale?: number
-  ): React.CSSProperties => ({
-    opacity: ready ? 1 : 0,
-    transform:
-      ready || reduced
-        ? "none"
-        : fromScale
-        ? `translateY(${fromY}px) scale(${fromScale})`
-        : `translateY(${fromY}px)`,
-    transition: reduced
-      ? "none"
-      : `opacity 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 700ms cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-  });
+  // A introdução: a Faísca vai dizendo coisas de vez em quando.
+  useEffect(() => {
+    if (phase !== "intro" || !authResolved || prefersReducedMotion()) return;
+    const lines = ["Olá! 👋", "Sou a Faísca", "Cuido da vossa chama 🔥", "Toca-me 💕"];
+    let k = 0;
+    const first = window.setTimeout(() => pet.current?.say(lines[0]), 1800);
+    const idle = window.setInterval(() => {
+      k = (k + 1) % lines.length;
+      pet.current?.react("wiggle");
+      pet.current?.say(lines[k]);
+    }, 5200);
+    return () => { window.clearTimeout(first); window.clearInterval(idle); };
+  }, [phase, authResolved]);
 
-  const goToStep = (next: Phase) => {
-    setStepVisible(false);
-    setTimeout(() => { setPhase(next); setStepVisible(true); }, 160);
+  useEffect(() => () => window.clearTimeout(advance.current), []);
+
+  const goTo = (next: Phase) => {
+    window.clearTimeout(advance.current);
+    setReply(null);
+    setTalking(false);
+    setListShown(false);
+    setFinished(false);
+    setPhase(next);
+    window.scrollTo(0, 0);
   };
 
-  // `goal` chega por parâmetro: chamado logo após setPrimaryGoal, o estado
-  // desta render ainda teria o valor anterior.
-  const handleSaveProfile = async (goal: string = primaryGoal) => {
+  const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
       const uid = signedInUserId ?? (await supabase.auth.getUser()).data.user?.id;
@@ -267,12 +190,11 @@ export default function Onboarding() {
           gender:                   gender || null,
           religion:                 religion || null,
           usage_mode:               usageMode || "couple",
-          primary_goal:             goal || null,
           onboarding_completed:     true,
           onboarding_completed_at:  new Date().toISOString(),
           timezone:                 Intl.DateTimeFormat().resolvedOptions().timeZone,
         }).eq("user_id", uid);
-        track("onboarding_v2_completed", { usage_mode: usageMode, religion, primary_goal: goal });
+        track("onboarding_v2_completed", { usage_mode: usageMode, religion });
       }
     } catch { /* silent */ }
     setSavingProfile(false);
@@ -287,19 +209,28 @@ export default function Onboarding() {
     const trimmedName  = name.trim();
 
     if (trimmedName.length < 2) {
+      pet.current?.react("shake");
+      pet.current?.say("Como te chamas? 😊");
       toast({ variant: "destructive", title: "Nome inválido", description: "Insere pelo menos 2 caracteres." });
       return;
     }
     if (!isValidEmail(trimmedEmail)) {
+      pet.current?.react("shake");
+      pet.current?.say("Hmm, esse email não parece certo");
       toast({ variant: "destructive", title: "Email inválido", description: "Usa um email completo, ex: nome@gmail.com" });
       return;
     }
     const passwordError = getPasswordError(password);
     if (passwordError) {
+      pet.current?.react("shake");
+      pet.current?.say("A senha precisa de ser mais forte");
       toast({ variant: "destructive", title: "Senha fraca", description: passwordError });
       return;
     }
 
+    pet.current?.react("happy");
+    pet.current?.hearts();
+    pet.current?.say("Vamos lá! ✨", 0);
     setLoading(true);
     if (inviteCode) {
       localStorage.setItem("lovenest_ref", inviteCode);
@@ -319,18 +250,21 @@ export default function Onboarding() {
 
       markSeen();
       localStorage.removeItem("onboarding_name");
+      localStorage.setItem(LAST_NAME_KEY, trimmedName.split(" ")[0]);
 
       if (data.session) {
         track("signup_completed", { method: "email", has_invite: !!inviteCode });
         setSignedInUserId(data.session.user.id);
-        goToStep("welcome");
+        goTo("welcome");
       } else {
         track("signup_email_confirm", { has_invite: !!inviteCode });
         localStorage.setItem("confirm_email", trimmedEmail);
         navigate("/confirmar-email");
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro ao criar conta", description: err.message });
+    } catch (err) {
+      pet.current?.react("shake");
+      pet.current?.say("Ups, algo correu mal");
+      toast({ variant: "destructive", title: "Erro ao criar conta", description: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
@@ -354,459 +288,424 @@ export default function Onboarding() {
 
   if (phase === "intro" && !authResolved) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
-      </div>
+      <EntryScreen className="items-center justify-center">
+        <Loader2 className="h-7 w-7 animate-spin text-[#0B1324]/40" />
+      </EntryScreen>
     );
   }
 
-  // ── Intro screen ──────────────────────────────────────────────────────────
+  // ── Introdução ────────────────────────────────────────────────────────────
 
   if (phase === "intro") {
     return (
-      <div className="relative min-h-screen bg-background flex flex-col select-none overflow-hidden">
-
-        {/* ── Ambient background glows ── */}
-        {!reduced && (
-          <>
-            {/* Rosa — canto inferior esquerdo */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute", bottom: "-8%", left: "-18%",
-                width: 320, height: 320, borderRadius: "50%",
-                background: PINK, filter: "blur(140px)", opacity: 0.065,
-                animation: "ob-ambient-a 20s ease-in-out infinite",
-                pointerEvents: "none",
-              }}
-            />
-            {/* Azul — canto superior direito */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute", top: "-6%", right: "-14%",
-                width: 280, height: 280, borderRadius: "50%",
-                background: BLUE, filter: "blur(130px)", opacity: 0.055,
-                animation: "ob-ambient-b 24s ease-in-out infinite",
-                pointerEvents: "none",
-              }}
-            />
-            {/* Rosa eco — meio superior, imperceptível */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute", top: "25%", left: "30%",
-                width: 200, height: 200, borderRadius: "50%",
-                background: PINK, filter: "blur(100px)", opacity: 0.03,
-                animation: "ob-ambient-a 28s ease-in-out infinite",
-                animationDelay: "-12s",
-                pointerEvents: "none",
-              }}
-            />
-          </>
-        )}
-
-        {/* ── Nav ── */}
-        <div
-          className="flex items-center justify-between px-6 pt-12 shrink-0 relative z-10"
-          style={enter(0, -8)}
-        >
-          <div className="flex items-center gap-2">
-            <LogoMark size={26} />
-            <span className="text-[13px] font-bold tracking-tight text-foreground">LoveNest</span>
-          </div>
-          <button
-            onClick={() => { markSeen(); navigate("/entrar"); }}
-            className="text-[12px] font-medium text-muted-foreground/40 hover:text-muted-foreground transition-colors px-2 py-1"
-          >
-            Já tenho conta
+      <EntryScreen>
+        <div className="en-row en-in" style={{ ["--d" as string]: 0 }}>
+          <span className="en-word">Love<i>N</i>est</span>
+          <button type="button" className="en-link" onClick={() => { markSeen(); navigate("/entrar"); }}>
+            Entrar
           </button>
         </div>
 
-        {/* ── Central visual + copy ── */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 relative z-10">
-
-          {/* Circles */}
-          <div style={{ ...enter(150, 0, 0.94), marginBottom: 44 }}>
-            <IntroVisual reduced={reduced} />
+        <div className="en-preview" aria-hidden="true">
+          <div className="en-card" style={{ top: 0, left: 10, right: 150, ["--r" as string]: "-2.5deg", animationDelay: ".2s, 1s" }}>
+            <div className="en-k">Tempo juntos</div>
+            <div className="en-big"><CountUp to={271} /> <small>dias</small></div>
           </div>
-
-          {/* Headline */}
-          <h1
-            className="text-[28px] font-bold text-foreground leading-[1.2] tracking-tight text-center max-w-[272px]"
-            style={enter(300, 24)}
+          <Guardian
+            ref={pet}
+            kind="faisca"
+            width={170}
+            sayAt="top"
+            delay={3}
+            tapLines={["Olá! 💕", "Hehe 😊", "Vamos criar o vosso espaço?"]}
+            style={{ position: "absolute", left: "50%", marginLeft: -28, top: 24 }}
           >
-            O amor também vive<br />nos dias comuns.
-          </h1>
-
-          {/* Sub */}
-          <p
-            className="text-[14px] text-muted-foreground leading-[1.7] text-center mt-4"
-            style={enter(450, 20)}
-          >
-            Cria o vosso espaço em menos de um minuto.
-          </p>
-
+            <span className="en-float-heart" style={{ left: "46%", top: "2%", animationDelay: "2s" }}>♥</span>
+            <span className="en-float-heart" style={{ left: "60%", top: "6%", animationDelay: "3.4s" }}>♥</span>
+          </Guardian>
+          <div className="en-card" style={{ top: 196, left: 0, right: 70, ["--r" as string]: "1.8deg", animationDelay: ".45s, 1.6s" }}>
+            <div className="en-k">Hoje</div>
+            <ChatScript
+              style={{ marginTop: 8 }}
+              start={1400}
+              script={[["app", "Já saíste do trabalho?"], ["me", "Quase, 20 minutos"]]}
+            />
+          </div>
         </div>
 
-        {/* ── Bottom CTA ── */}
-        <div
-          className="px-8 pb-14 pt-6 shrink-0 space-y-3 relative z-10"
-          style={enter(600, 20)}
+        <div className="en-spacer" />
+        <h1 className="en-h1 en-in" style={{ ["--d" as string]: 6 }}>O amor também vive nos dias comuns.</h1>
+        <p className="en-sub en-in" style={{ ["--d" as string]: 7 }}>
+          Um espaço só para os dois. Cria o vosso em menos de um minuto.
+        </p>
+        <button
+          type="button"
+          className="en-btn en-in"
+          style={{ ["--d" as string]: 8, marginTop: 24 }}
+          onClick={() => goTo("form")}
         >
-          <button
-            onClick={() => setPhase("form")}
-            onMouseEnter={() => setHoverCta(true)}
-            onMouseLeave={() => setHoverCta(false)}
-            className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{
-              background: PINK,
-              boxShadow: hoverCta
-                ? `0 12px 40px ${PINK}55, 0 4px 16px ${PINK}33`
-                : `0 6px 28px ${PINK}44, 0 2px 8px ${PINK}22`,
-              transform: hoverCta ? "translateY(-2px)" : "translateY(0)",
-              transition: "box-shadow 180ms ease, transform 180ms ease",
-            }}
-          >
-            Começar
-            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-          </button>
-          <p className="text-center text-[10px] tracking-[0.06em] text-muted-foreground/40 animate-ob-hint">
-            grátis · privado · sem publicidade
-          </p>
-        </div>
-
-      </div>
+          Criar o nosso espaço <span className="en-arrow">→</span>
+        </button>
+        <p className="en-small en-in" style={{ ["--d" as string]: 9, marginTop: 14 }}>
+          Grátis · privado · sem publicidade
+        </p>
+      </EntryScreen>
     );
   }
 
-  // ── Personalization screens ───────────────────────────────────────────────
-
-  const stepIdx = PERS_STEPS.indexOf(phase);
-
-  const StepShell = ({ onBack, children }: { onBack: () => void; children: React.ReactNode }) => (
-    <div
-      className="min-h-screen bg-background flex flex-col relative overflow-hidden"
-      style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(16px)", transition: "opacity 160ms ease, transform 160ms ease" }}
-    >
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-      <div className="flex items-center justify-between px-5 pt-12 shrink-0 relative z-10">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all">
-          <ChevronLeft className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-        </button>
-        {stepIdx >= 0 && (
-          <span className="text-[12px] text-muted-foreground font-medium">{stepIdx + 1} de {PERS_STEPS.length}</span>
-        )}
-        <div className="w-9" />
-      </div>
-      <div className="flex-1 flex flex-col px-8 pt-10 pb-10 relative z-10">
-        {children}
-      </div>
-    </div>
-  );
-
-  const CtaBtn = ({ onClick, disabled, label }: { onClick: () => void; disabled?: boolean; label: string }) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full h-14 rounded-2xl text-white font-semibold text-[15px] disabled:opacity-30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-      style={{ background: PINK, boxShadow: `0 6px 28px ${PINK}44` }}
-    >
-      {label} <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-    </button>
-  );
-
-  const SkipBtn = ({ onClick }: { onClick: () => void }) => (
-    <button onClick={onClick} className="w-full py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
-      Saltar
-    </button>
-  );
-
-  const OptionBtn = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full h-[52px] rounded-2xl border text-[14px] font-medium transition-all active:scale-[0.98]",
-        selected
-          ? "bg-rose-500 border-rose-500 text-white"
-          : "bg-card border-border text-foreground hover:border-rose-300 dark:hover:border-rose-700"
-      )}
-    >
-      {children}
-    </button>
-  );
+  // ── Boas-vindas: o Guardião apresenta-se ──────────────────────────────────
 
   if (phase === "welcome") {
     return (
-      <div
-        className="min-h-screen bg-background flex flex-col relative overflow-hidden"
-        style={{ opacity: stepVisible ? 1 : 0, transform: stepVisible ? "none" : "translateY(16px)", transition: "opacity 160ms ease, transform 160ms ease" }}
-      >
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-        <div className="flex-1 flex flex-col justify-center px-8 relative z-10">
-          <div className="w-full max-w-[320px] mx-auto space-y-8">
-            <div className="space-y-3">
-              <p className="text-[13px] font-medium text-rose-500 uppercase tracking-widest">Bem-vindo</p>
-              <h1 className="text-[28px] font-bold text-foreground leading-tight tracking-tight">
-                {name ? `Olá, ${name.split(" ")[0]}.` : "Olá."}<br />
-                Falta pouco.
-              </h1>
-              <p className="text-[15px] text-muted-foreground leading-relaxed">
-                Algumas perguntas rápidas para personalizar a tua experiência.
-              </p>
-            </div>
-            <CtaBtn onClick={() => goToStep("country")} label="Vamos lá" />
-            <button onClick={() => navigate("/casa")} className="w-full py-2 text-[12px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-              Saltar personalização
-            </button>
+      <EntryScreen key="welcome" className="en-step">
+        <Guardian
+          ref={pet}
+          kind="guardiao"
+          width={150}
+          sayAt="right"
+          talking={talking}
+          style={{ margin: "6px auto 4px" }}
+        />
+        <p className="en-from en-in" style={{ ["--d" as string]: 1 }}>O teu Guardião</p>
+        <ChatScript
+          style={{ marginTop: 8 }}
+          start={500}
+          onTalking={setTalking}
+          onDone={() => setListShown(true)}
+          script={[
+            ["app", firstName ? `Olá, ${firstName} 👋` : "Olá 👋"],
+            ["app", "Que bom ter-te aqui. Falta pouco para o vosso espaço ficar pronto."],
+            ["app", "Vou fazer-te quatro perguntas rápidas, para me ajustar a vocês."],
+          ]}
+        />
+        {listShown && (
+          <div className="en-list">
+            {[
+              ["Onde estás", "país"],
+              ["Como te identificas", "opcional"],
+              ["A tua fé", "opcional"],
+              ["Como vais usar", "a dois ou solo"],
+            ].map(([label, hint], i) => (
+              <div key={label} className="en-li" style={{ animationDelay: `${i * 90}ms` }}>
+                <span className="en-n">{i + 1}</span>{label}<em>{hint}</em>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
+        )}
+        <div className="en-spacer" />
+        <button
+          type="button"
+          className="en-btn en-in"
+          style={{ ["--d" as string]: 4 }}
+          onClick={() => {
+            pet.current?.react("happy");
+            pet.current?.hearts(9);
+            pet.current?.say("Boa! Começamos 💙");
+            advance.current = window.setTimeout(() => goTo("country"), prefersReducedMotion() ? 0 : 750);
+          }}
+        >
+          Começar <span className="en-arrow">→</span>
+        </button>
+        <p className="en-small en-in" style={{ ["--d" as string]: 5, marginTop: 6 }}>
+          <button type="button" className="en-quiet py-2" onClick={() => navigate("/casa")}>Saltar por agora</button>
+        </p>
+      </EntryScreen>
     );
   }
 
-  if (phase === "country") {
+  // ── As quatro perguntas ───────────────────────────────────────────────────
+
+  if (STEPS.includes(phase as Step)) {
+    const step = phase as Step;
+    const idx = STEPS.indexOf(step);
+    const isLast = idx === STEPS.length - 1;
+    const answered = { country: countryCode, gender, spiritual: religion, mode: usageMode }[step];
+    const next = () => (isLast ? undefined : goTo(STEPS[idx + 1]));
+    const back = () => goTo(idx === 0 ? "welcome" : STEPS[idx - 1]);
+
+    // Responde: a resposta aparece como mensagem, o Guardião reage e,
+    // nos três primeiros passos, avança sozinho depois de falar.
+    const answer = (label: string, line: string, mood: "happy" | "nod", hearts = 0) => {
+      window.clearTimeout(advance.current);
+      pet.current?.react(mood);
+      if (hearts) pet.current?.hearts(hearts);
+      setReply([["me", label], ["app", line]]);
+    };
+
+    const finish = () => {
+      if (finished) return;
+      setFinished(true);
+      pet.current?.react("spin");
+      pet.current?.hearts(12);
+    };
+
     return (
-      <StepShell onBack={() => goToStep("welcome")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Onde estás?</h2>
-            <p className="text-[13px] text-muted-foreground">Ajuda-nos a adaptar o conteúdo à tua região.</p>
+      <EntryScreen key={step} className="en-step">
+        <div className="en-row en-in" style={{ ["--d" as string]: 0 }}>
+          <BackButton onClick={back} />
+          <div className="en-prog" aria-label={`Passo ${idx + 1} de ${STEPS.length}`}>
+            {STEPS.map((s, i) => <span key={s} className={cn((i < idx || (i === idx && answered)) && "on")} />)}
           </div>
-          <CountryPicker
-            value={countryCode || null}
-            onSelect={(code) => {
-              setCountryCode(code);
-              setCountry(COUNTRIES.find(c => c.code === code)?.name ?? "");
-              setTimeout(() => goToStep("gender"), 300);
+          <button type="button" className="en-skip" onClick={() => (isLast ? handleSaveProfile() : next())}>
+            Saltar
+          </button>
+        </div>
+
+        <p className="en-eyebrow en-in" style={{ ["--d" as string]: 1, marginTop: 30 }}>{idx + 1} de {STEPS.length}</p>
+        <div className="en-speaker" style={{ marginTop: 10 }}>
+          <Guardian ref={pet} kind="guardiao" width={64} sayAt="right" talking={talking} delay={1} />
+          <ChatScript script={QUESTIONS[step]} start={350} onTalking={setTalking} />
+        </div>
+
+        <div style={{ marginTop: 22 }}>
+          {step === "country" && (
+            <div className="en-in" style={{ ["--d" as string]: 14 }}>
+              <CountryPicker
+                value={countryCode || null}
+                onSelect={(code) => {
+                  const found = COUNTRIES.find((c) => c.code === code)?.name ?? "";
+                  setCountryCode(code);
+                  setCountry(found);
+                  answer(found || code, `Que bom, ${found || "anotado"} 🌍`, "happy", 6);
+                }}
+              />
+            </div>
+          )}
+
+          {step === "gender" && (
+            <div className="en-grid2">
+              {GENDER_OPTIONS.map((o, i) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  className={cn("en-opt", gender === o.value && "sel")}
+                  style={{ animationDelay: `${1.6 + i * 0.08}s` }}
+                  onClick={() => {
+                    setGender(o.value);
+                    answer(o.label, o.value === "unspecified" ? "Sem problema, fica entre nós." : "Obrigado por partilhares 💙", "nod");
+                  }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === "spiritual" && (
+            <div className="en-grid2">
+              {RELIGION_OPTIONS.map((o, i) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  className={cn("en-opt", religion === o.value && "sel", i === RELIGION_OPTIONS.length - 1 && "col-span-2")}
+                  style={{ animationDelay: `${1.6 + i * 0.06}s` }}
+                  onClick={() => {
+                    setReligion(o.value);
+                    const faith = o.value !== "none" && o.value !== "unspecified";
+                    answer(o.label, faith ? "Vou incluir conteúdos de fé para ti 🙏" : "Tudo bem, fica ao teu ritmo.", faith ? "happy" : "nod", faith ? 5 : 0);
+                  }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === "mode" && (
+            <div className="en-stack" style={{ gap: 10 }}>
+              {MODE_OPTIONS.map((o, i) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  className={cn("en-opt", usageMode === o.value && "sel")}
+                  style={{ animationDelay: `${1.8 + i * 0.12}s` }}
+                  onClick={() => {
+                    if (finished) return;
+                    setUsageMode(o.value);
+                    if (o.value === "solo") answer(o.label, "Perfeito, este espaço é só teu.", "nod");
+                    else answer(o.label, "Lindo. Depois convidas o teu par com um código.", "happy", 10);
+                  }}
+                >
+                  <div>{o.label}<small>{o.desc}</small></div>
+                  <span className="en-radio" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {reply && (
+          <ChatScript
+            script={reply}
+            start={100}
+            onTalking={setTalking}
+            style={{ marginTop: 14, paddingLeft: 74 }}
+            onDone={() => {
+              if (!isLast) advance.current = window.setTimeout(next, prefersReducedMotion() ? 400 : 900);
             }}
           />
-          <SkipBtn onClick={() => goToStep("gender")} />
-        </div>
-      </StepShell>
+        )}
+        {finished && (
+          <ChatScript
+            script={[["app", "Tudo pronto. Bem-vindos a casa 🏡"]]}
+            start={150}
+            onTalking={setTalking}
+            style={{ marginTop: 8, paddingLeft: 74 }}
+            onDone={() => { advance.current = window.setTimeout(handleSaveProfile, prefersReducedMotion() ? 0 : 900); }}
+          />
+        )}
+
+        <div className="en-spacer" />
+        <button
+          type="button"
+          className="en-btn en-in"
+          style={{ ["--d" as string]: 16 }}
+          disabled={!answered || savingProfile || (isLast && finished)}
+          onClick={() => (isLast ? finish() : next())}
+        >
+          {savingProfile
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <>{isLast ? "Concluir" : "Continuar"} <span className="en-arrow">→</span></>}
+        </button>
+      </EntryScreen>
     );
   }
 
-  if (phase === "gender") {
-    return (
-      <StepShell onBack={() => goToStep("country")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Como te identificas?</h2>
-            <p className="text-[13px] text-muted-foreground">Opcional. Só para personalizar linguagem.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {GENDER_OPTIONS.map(o => (
-              <OptionBtn
-                key={o.value}
-                selected={gender === o.value}
-                onClick={() => { setGender(o.value); setTimeout(() => goToStep("spiritual"), 300); }}
-              >
-                {o.label}
-              </OptionBtn>
-            ))}
-          </div>
-          <SkipBtn onClick={() => goToStep("spiritual")} />
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (phase === "spiritual") {
-    return (
-      <StepShell onBack={() => goToStep("gender")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Tens fé?</h2>
-            <p className="text-[13px] text-muted-foreground">Ativamos recursos espirituais se quiseres.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {RELIGION_OPTIONS.map(o => (
-              <OptionBtn
-                key={o.value}
-                selected={religion === o.value}
-                onClick={() => { setReligion(o.value); setTimeout(() => goToStep("mode"), 300); }}
-              >
-                {o.label}
-              </OptionBtn>
-            ))}
-          </div>
-          <SkipBtn onClick={() => goToStep("mode")} />
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (phase === "mode") {
-    return (
-      <StepShell onBack={() => goToStep("spiritual")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Como vais usar o LoveNest?</h2>
-            <p className="text-[13px] text-muted-foreground">Podes mudar nas definições a qualquer momento.</p>
-          </div>
-          <div className="space-y-3">
-            {MODE_OPTIONS.map(o => (
-              <button
-                key={o.value}
-                onClick={() => { setUsageMode(o.value); setTimeout(() => goToStep("goal"), 300); }}
-                className={cn(
-                  "w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]",
-                  usageMode === o.value
-                    ? "bg-rose-500 border-rose-500 text-white"
-                    : "bg-card border-border text-foreground hover:border-rose-300 dark:hover:border-rose-700"
-                )}
-              >
-                <div className="text-[15px] font-semibold">{o.label}</div>
-                <div className={cn("text-[12px] mt-0.5", usageMode === o.value ? "text-white/80" : "text-muted-foreground")}>{o.desc}</div>
-              </button>
-            ))}
-          </div>
-          <SkipBtn onClick={() => goToStep("goal")} />
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (phase === "goal") {
-    return (
-      <StepShell onBack={() => goToStep("mode")}>
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">Qual é o teu objetivo principal?</h2>
-          </div>
-          <div className="space-y-2">
-            {GOAL_OPTIONS.map(o => (
-              <OptionBtn
-                key={o.value}
-                selected={primaryGoal === o.value}
-                onClick={() => { setPrimaryGoal(o.value); setTimeout(() => handleSaveProfile(o.value), 400); }}
-              >
-                {o.label}
-              </OptionBtn>
-            ))}
-          </div>
-          <div className="pt-2">
-            <button onClick={() => handleSaveProfile()} disabled={savingProfile} className="w-full py-3 text-[13px] text-muted-foreground/50 hover:text-muted-foreground transition-colors flex items-center justify-center gap-1.5">
-              {savingProfile && <Loader2 className="w-3 h-3 animate-spin" />}
-              Saltar
-            </button>
-          </div>
-        </div>
-      </StepShell>
-    );
-  }
-
-  // ── Signup form ───────────────────────────────────────────────────────────
+  // ── Criar conta ───────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
-      {/* Ambient warmth */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
+    <EntryScreen key="form" className="en-step">
+      <form onSubmit={handleSignup} className="flex flex-1 flex-col" noValidate>
+        <BackButton onClick={() => goTo("intro")} className="en-in" />
+        <div className="en-row" style={{ marginTop: 14, alignItems: "flex-end" }}>
+          <h1 className="en-h1 en-in" style={{ ["--d" as string]: 1, maxWidth: 220 }}>Criar o vosso espaço</h1>
+          <Guardian ref={pet} kind="faisca" width={78} delay={2} shy={passFocus && !showPassword} style={{ marginRight: -4 }} />
+        </div>
+        <p className="en-sub en-in" style={{ ["--d" as string]: 2 }}>
+          Começa por ti. O teu par junta-se depois com um código.
+        </p>
 
-      {/* Back */}
-      <div className="px-5 pt-12 shrink-0">
-        <button
-          onClick={() => setPhase("intro")}
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all"
-        >
-          <ChevronLeft className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-        </button>
-      </div>
-
-      <div className="flex-1 flex flex-col justify-center px-8 py-6 relative z-10">
-        <div className="w-full max-w-[320px] mx-auto space-y-6">
-
-          <div className="space-y-1">
-            <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-              Criar o vosso espaço.
-            </h1>
-            <p className="text-[13px] text-muted-foreground">Começa em segundos.</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={googleLoading || loading}
-            className="w-full h-12 rounded-2xl border border-border bg-card text-[13px] font-semibold text-foreground flex items-center justify-center gap-3 hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-60"
-          >
-            {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <GoogleIcon className="w-4 h-4" />}
-            Continuar com Google
-          </button>
-
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-[11px] text-muted-foreground">ou</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <form onSubmit={handleSignup} className="space-y-3">
+        <div className="en-stack" style={{ marginTop: 18, gap: 12 }}>
+          <div className="en-in" style={{ ["--d" as string]: 3 }}>
+            <label className="en-label" htmlFor="su-name">Nome</label>
             <input
+              id="su-name"
+              className="en-field"
               type="text"
-              placeholder="O teu nome"
+              autoComplete="given-name"
+              placeholder="Como te chamas"
               value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              className={INPUT}
+              onFocus={() => { if (!name) pet.current?.say("Como te chamas? 😊"); }}
+              onChange={(e) => {
+                setName(e.target.value);
+                pet.current?.react("nod");
+                const v = e.target.value.trim().split(" ")[0];
+                pet.current?.say(v ? `Olá, ${v}! 👋` : "Como te chamas? 😊", 0);
+              }}
+              onBlur={() => { if (firstName) pet.current?.say(`Olá, ${firstName}! 👋`); }}
             />
+          </div>
+          <div className="en-in" style={{ ["--d" as string]: 4 }}>
+            <label className="en-label" htmlFor="su-email">Email</label>
             <input
-              type="text"
+              id="su-email"
+              className="en-field"
+              type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="teu@email.com"
+              placeholder="nome@email.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className={INPUT}
+              onChange={(e) => { setEmail(e.target.value); pet.current?.react("nod"); }}
+              onBlur={() => {
+                if (!email.trim()) return;
+                if (isValidEmail(email.trim())) { pet.current?.react("happy"); pet.current?.say("Perfeito ✓"); }
+                else { pet.current?.react("shake"); pet.current?.say(email.includes("@") ? "Hmm, falta alguma coisa?" : "Hmm, falta o @?"); }
+              }}
             />
-            <input
-              type="password"
-              placeholder="Senha (mín. 8 caracteres)"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className={INPUT}
-            />
-
-            {!showInvite ? (
+          </div>
+          <div className="en-in" style={{ ["--d" as string]: 5 }}>
+            <label className="en-label" htmlFor="su-pass">Senha</label>
+            <div className="en-field-wrap">
+              <input
+                id="su-pass"
+                className="en-field"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onFocus={() => { setPassFocus(true); if (!showPassword) pet.current?.say("Não estou a espreitar 🙈", 0); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (e.target.value.length === 8) pet.current?.say("Agora sim 🔒", 0);
+                }}
+                onBlur={() => {
+                  setPassFocus(false);
+                  if (!password) return;
+                  pet.current?.say(getPasswordError(password) ? "Mais umas letrinhas?" : "Senha segura 💪");
+                }}
+              />
               <button
                 type="button"
-                onClick={() => setShowInvite(true)}
-                className="text-[12px] text-muted-foreground hover:text-foreground transition-colors w-full text-left px-1"
+                className="en-eye"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setShowPassword((v) => !v);
+                  pet.current?.say(showPassword ? "Já não vejo 🙈" : "Ups, agora vejo 👀");
+                }}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
-                + Tenho um código de convite do meu par
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            ) : (
+            </div>
+          </div>
+          {showInvite && (
+            <div className="en-in">
+              <label className="en-label" htmlFor="su-code">Código do teu par</label>
               <input
+                id="su-code"
+                className="en-field"
                 type="text"
-                placeholder="Código de convite (ex: AMOR2024)"
+                autoCapitalize="characters"
+                placeholder="Ex: AMOR2024"
                 value={inviteCode}
-                onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                className={cn(INPUT, "tracking-wider font-bold text-center")}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                style={{ letterSpacing: ".08em", fontWeight: 600 }}
               />
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || googleLoading}
-              className="w-full h-12 rounded-2xl text-white font-semibold text-[14px] disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-1"
-              style={{
-                background: PINK,
-                boxShadow: `0 6px 28px ${PINK}44, 0 2px 8px ${PINK}22`,
-              }}
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Criar espaço <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>}
-            </button>
-          </form>
-
-          <p className="text-center text-[11px] text-muted-foreground">
-            Já tens conta?{" "}
-            <button onClick={() => { markSeen(); navigate("/entrar"); }} className="text-rose-500 font-semibold hover:underline">
-              Entrar
-            </button>
-          </p>
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+
+        {!showInvite && (
+          <button
+            type="button"
+            className="en-invite en-in"
+            style={{ ["--d" as string]: 6 }}
+            onClick={() => { setShowInvite(true); pet.current?.react("happy"); pet.current?.say("O teu par já cá está? 💕"); }}
+          >
+            <span>+</span> Tenho um código do meu par
+          </button>
+        )}
+
+        <div className="en-spacer" />
+        <button type="submit" className="en-btn en-in" style={{ ["--d" as string]: 7 }} disabled={loading || googleLoading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continuar <span className="en-arrow">→</span></>}
+        </button>
+        <div className="en-or en-in" style={{ ["--d" as string]: 8, margin: "16px 0" }}>ou</div>
+        <button
+          type="button"
+          className="en-btn en-ghost en-in"
+          style={{ ["--d" as string]: 9 }}
+          onClick={handleGoogle}
+          disabled={googleLoading || loading}
+        >
+          {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-[18px] w-[18px]" />}
+          Continuar com Google
+        </button>
+        <p className="en-small en-in" style={{ ["--d" as string]: 10, marginTop: 16 }}>
+          Já tens conta?{" "}
+          <button type="button" onClick={() => { markSeen(); navigate("/entrar"); }}>Entrar</button>
+        </p>
+      </form>
+    </EntryScreen>
   );
 }
