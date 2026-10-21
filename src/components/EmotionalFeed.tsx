@@ -48,7 +48,7 @@ function FeedRow({ item, isLast }: { item: FeedItem; isLast: boolean }) {
 function DayHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 px-1 pt-1 pb-0.5">
-      <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
+      <span className="text-[13px] font-semibold text-muted-foreground first-letter:uppercase">
         {label}
       </span>
       <span className="flex-1 h-px bg-border" />

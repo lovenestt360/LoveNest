@@ -6,9 +6,10 @@ import { useRoutineLogs } from "@/hooks/useRoutineLogs";
 import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { pt } from "date-fns/locale";
 
 export default function RoutineDay() {
@@ -73,20 +74,17 @@ export default function RoutineDay() {
     const dayLabel = format(new Date(day + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: pt });
 
     return (
-        <section className="space-y-4 pb-24">
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate("/rotina")}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex-1">
-                    <h1 className="text-lg font-semibold capitalize">{dayLabel}</h1>
-                    <p className="text-xs text-muted-foreground">{done}/{activeItems.length} completados</p>
-                </div>
-                <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving || !canWrite}>
-                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Guardar
-                </Button>
-            </div>
+        <section className="ink-primary space-y-4 animate-fade-in">
+            <ScreenHeader
+                title="Rotina do dia"
+                subtitle={`${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)} · ${done}/${activeItems.length}`}
+                onBack={() => navigate("/plano?tab=rotina")}
+                action={
+                    <Button size="icon" aria-label="Guardar" className="h-10 w-10 shrink-0 rounded-full [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 text-white dark:[background:hsl(var(--foreground))] dark:text-background" onClick={handleSave} disabled={saving || !canWrite}>
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </Button>
+                }
+            />
 
             {loading ? (
                 <div className="flex justify-center py-8">
@@ -102,7 +100,7 @@ export default function RoutineDay() {
                     />
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground px-1">Notas (só para ti)</label>
+                        <label className="px-1 text-[15px] font-semibold text-foreground">Notas <span className="font-normal text-muted-foreground">· só para ti</span></label>
                         <Textarea
                             value={notes}
                             disabled={!isReady}
@@ -111,7 +109,7 @@ export default function RoutineDay() {
                                 isReady && autoSave(checkedIds, e.target.value);
                             }}
                             placeholder="Observações do dia…"
-                            className="min-h-[80px]"
+                            className="min-h-[90px] rounded-[16px] border-[#ECE8E3] bg-white dark:border-border dark:bg-card"
                         />
                     </div>
                 </>

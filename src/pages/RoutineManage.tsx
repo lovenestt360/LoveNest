@@ -4,7 +4,8 @@ import { useRoutineItems, type RoutineItem } from "@/hooks/useRoutineItems";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, ArrowUp, ArrowDown, Trash2, Loader2 } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, Trash2, Loader2 } from "lucide-react";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
 
 export default function RoutineManage() {
@@ -35,33 +36,28 @@ export default function RoutineManage() {
     }, [items, swapPositions]);
 
     return (
-        <section className="space-y-4 pb-24">
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate("/rotina")}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h1 className="text-lg font-semibold">Gerir hábitos</h1>
-            </div>
+        <section className="ink-primary space-y-4 animate-fade-in">
+            <ScreenHeader title="Gerir hábitos" subtitle="A tua rotina diária" onBack={() => navigate("/plano?tab=rotina")} />
 
             {/* Add new */}
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-                <p className="text-sm font-medium">Adicionar hábito</p>
+            <div className="glass-card space-y-3 p-4">
+                <p className="text-[15px] font-semibold">Adicionar hábito</p>
                 <div className="flex gap-2">
                     <Input
                         value={newEmoji}
                         onChange={(e) => setNewEmoji(e.target.value)}
                         placeholder="😀"
-                        className="w-14 text-center text-lg"
+                        className="w-14 text-center text-lg h-11 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted"
                         maxLength={2}
                     />
                     <Input
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
                         placeholder="Ex: Beber 2L de água"
-                        className="flex-1"
+                        className="flex-1 h-11 rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] dark:border-border dark:bg-muted"
                         onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
                     />
-                    <Button size="icon" className="h-10 w-10 shrink-0" onClick={handleAdd} disabled={!newTitle.trim() || adding}>
+                    <Button size="icon" className="h-11 w-11 shrink-0 rounded-[14px] [background:#0B1324] hover:[background:#0B1324] hover:opacity-90 text-white dark:[background:hsl(var(--foreground))] dark:text-background" onClick={handleAdd} disabled={!newTitle.trim() || adding} aria-label="Adicionar">
                         {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     </Button>
                 </div>
@@ -73,16 +69,17 @@ export default function RoutineManage() {
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
             ) : items.length === 0 ? (
-                <div className="rounded-2xl border bg-card p-6 text-center">
-                    <p className="text-sm text-muted-foreground">Nenhum hábito ainda. Adiciona acima!</p>
+                <div className="glass-card p-8 text-center">
+                    <p className="text-[15px] font-semibold text-foreground">Ainda sem hábitos</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">Escreve o primeiro em cima.</p>
                 </div>
             ) : (
-                <div className="rounded-2xl border bg-card divide-y">
+                <div className="glass-card divide-y divide-[#ECE8E3] overflow-hidden dark:divide-border">
                     {items.map((item, idx) => (
                         <div
                             key={item.id}
                             className={cn(
-                                "flex items-center gap-2 px-4 py-3",
+                                "flex items-center gap-2 px-4 py-3.5",
                                 !item.active && "opacity-50"
                             )}
                         >
@@ -90,7 +87,7 @@ export default function RoutineManage() {
                             <span className="text-lg w-7 text-center shrink-0">{item.emoji || "📌"}</span>
 
                             {/* Title */}
-                            <span className="flex-1 text-sm font-medium">{item.title}</span>
+                            <span className="flex-1 text-[14px] font-semibold">{item.title}</span>
 
                             {/* Active toggle */}
                             <Switch
