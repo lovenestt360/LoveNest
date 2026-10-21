@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Zap, Smartphone, Loader2 } from "lucide-react";
+import { CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Zap, Smartphone, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import { useReceiptUpload } from "@/hooks/useReceiptUpload";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
 const PAYSUITE_METHODS: { id: "mpesa" | "emola" | "credit_card"; label: string; icon: typeof Smartphone }[] = [
@@ -229,24 +230,19 @@ export default function Subscription() {
     const { freeMode } = useFreeMode();
 
     if (loading) {
-        return <div className="flex justify-center items-center h-screen animate-pulse font-bold tracking-widest text-muted-foreground">A carregar planos...</div>;
+        return <div className="flex items-center justify-center py-24 text-[14px] font-medium text-muted-foreground animate-pulse">A carregar planos…</div>;
     }
 
     if (freeMode) {
         return (
-            <div className="min-h-screen bg-background pb-20">
-                <header className="px-4 py-4 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    <h1 className="text-xl font-bold tracking-tight">Subscrição LoveNest</h1>
-                </header>
-                <main className="p-4 max-w-md mx-auto">
+            <div className="ink-primary animate-fade-in">
+                <ScreenHeader title="Subscrição" subtitle="Plano LoveNest" className="mb-5" />
+                <main>
                     <div className="glass-card p-8 text-center animate-in zoom-in-95">
                         <CheckCircle className="w-12 h-12 text-primary mx-auto mb-5" strokeWidth={1.5} />
-                        <h2 className="text-2xl font-bold mb-2 tracking-tight">Modo Gratuito Ativo</h2>
+                        <h2 className="mb-2 text-[22px] font-semibold tracking-[-0.02em]">Modo gratuito ativo</h2>
                         <p className="text-[14px] text-muted-foreground leading-relaxed">O LoveNest está em modo de acesso total. Podes desfrutar de todas as funcionalidades premium sem qualquer custo.</p>
-                        <Button className="mt-6 w-full rounded-2xl font-semibold h-12" onClick={() => navigate("/")}>Voltar à Home</Button>
+                        <Button className="mt-6 h-12 w-full rounded-[16px] font-semibold" onClick={() => navigate("/")}>Voltar à Home</Button>
                     </div>
                 </main>
             </div>
@@ -254,20 +250,15 @@ export default function Subscription() {
     }
 
     return (
-        <div className="min-h-screen bg-background pb-24">
-            <header className="px-4 py-4 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all text-muted-foreground">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-xl font-bold tracking-tight">Subscrição LoveNest</h1>
-            </header>
+        <div className="ink-primary animate-fade-in">
+            <ScreenHeader title="Subscrição" subtitle="Plano LoveNest" className="mb-5" />
 
-            <main className="max-w-md mx-auto">
+            <main>
                 {hasActivePaidSubscription(house) ? (
-                    <div className="p-4 animate-in zoom-in-95">
+                    <div className="animate-in zoom-in-95">
                         <div className="glass-card p-8 text-center">
                             <CheckCircle className="w-12 h-12 text-primary mx-auto mb-5" strokeWidth={1.5} />
-                            <h2 className="text-2xl font-bold mb-2 tracking-tight">Estatuto Premium</h2>
+                            <h2 className="mb-2 text-[22px] font-semibold tracking-[-0.02em]">Estatuto Premium</h2>
                             <p className="text-[14px] text-muted-foreground leading-relaxed">
                                 A tua casa <strong className="text-foreground">{house.house_name}</strong> tem subscrição ativa. Explora todas as funcionalidades sem limites.
                             </p>
@@ -278,17 +269,17 @@ export default function Subscription() {
                         </div>
                     </div>
                 ) : pendingPayment ? (
-                    <div className="p-4 animate-in zoom-in-95">
+                    <div className="animate-in zoom-in-95">
                         <div className="glass-card p-8 text-center">
                             <Clock className="w-12 h-12 text-slate-400 mx-auto mb-5" strokeWidth={1.5} />
-                            <h2 className="text-2xl font-bold mb-2 tracking-tight">Em Análise</h2>
+                            <h2 className="mb-2 text-[22px] font-semibold tracking-[-0.02em]">Em análise</h2>
                             <p className="text-[14px] text-muted-foreground leading-relaxed">
                                 {pendingPayment.provider === "paysuite"
                                     ? "Estamos a confirmar o teu pagamento automaticamente. A subscrição ativa-se sozinha em poucos instantes."
                                     : "Recebemos o teu comprovativo. A nossa equipa está a verificar o pagamento."}
                             </p>
 
-                            <div className="mt-5 mb-6 bg-muted/60 rounded-2xl p-4 text-left space-y-2 border">
+                            <div className="mt-5 mb-6 space-y-2 rounded-[18px] border border-[#ECE8E3] bg-[#F7F5F2] p-4 text-left dark:border-border dark:bg-muted">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground font-medium">Plano</span>
                                     <span className="font-bold text-foreground">{pendingPayment.plan_name}</span>
@@ -312,16 +303,16 @@ export default function Subscription() {
                 ) : (
                     <div className="animate-in slide-in-from-bottom-4">
                         {/* Hero */}
-                        <div className="px-4 pt-6 pb-2 text-center">
+                        <div className="pb-2 pt-1 text-center">
                             <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full mb-4">
                                 <Sparkles className="w-3 h-3" strokeWidth={2} />
                                 Acesso ilimitado para dois
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight mb-2">Escolhe o teu Plano</h2>
+                            <h2 className="mb-2 text-[24px] font-semibold tracking-[-0.03em]">Escolhe o teu plano</h2>
                             <p className="text-[13px] text-muted-foreground leading-relaxed">Investe na vossa relação. Cancela quando quiseres.</p>
                         </div>
 
-                        <div className="p-4 space-y-6">
+                        <div className="space-y-6 pt-4">
                             {/* Plans */}
                             {plans.length === 0 ? (
                                 <div className="glass-card p-6 text-center">
@@ -336,24 +327,24 @@ export default function Subscription() {
                                             <div
                                                 key={p.id}
                                                 onClick={() => setSelectedPlan(p)}
-                                                className={`relative rounded-2xl p-5 cursor-pointer transition-all border-2 ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/30'}`}
+                                                className={`relative rounded-[22px] p-5 cursor-pointer transition-all border-2 ${isSelected ? 'border-[#0B1324] bg-white shadow-[0_14px_30px_-16px_rgba(11,19,36,0.4)] dark:border-foreground dark:bg-card' : 'border-[#ECE8E3] bg-white hover:border-[#D5D1CB] dark:border-border dark:bg-card'}`}
                                             >
                                                 {isPopular && (
                                                     <div className="absolute -top-2.5 left-5">
-                                                        <span className="bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                                                            Mais Popular
+                                                        <span className="bg-primary text-primary-foreground text-[11px] font-semibold px-3 py-1 rounded-full">
+                                                            Mais popular
                                                         </span>
                                                     </div>
                                                 )}
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex-1 pr-2">
                                                         <h4 className="font-bold text-base mb-0.5">{p.name}</h4>
-                                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                                                        <p className="text-[12.5px] font-medium text-muted-foreground">
                                                             {BILLING_LABELS[p.billing_type] || "Mensal"}
                                                         </p>
                                                     </div>
                                                     <div className="text-right shrink-0">
-                                                        <p className="text-xl font-black text-primary leading-none">{p.price}</p>
+                                                        <p className="text-[20px] font-semibold leading-none tracking-[-0.02em] text-foreground">{p.price}</p>
                                                     </div>
                                                 </div>
 
@@ -369,7 +360,7 @@ export default function Subscription() {
                                                 )}
 
                                                 {isSelected && (
-                                                    <div className="absolute top-4 right-4">
+                                                    <div className="absolute -right-2 -top-2 rounded-full ring-4 ring-white dark:ring-background">
                                                         <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                                                             <CheckCircle className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2.5} />
                                                         </div>
@@ -386,7 +377,7 @@ export default function Subscription() {
                                 <div className="space-y-3">
                                     <h3 className="font-bold text-base flex items-center gap-1.5">
                                         <Zap className="w-4 h-4 text-primary" strokeWidth={2} />
-                                        Pagamento Instantâneo
+                                        Pagamento instantâneo
                                     </h3>
                                     <div className="grid grid-cols-3 gap-2">
                                         {PAYSUITE_METHODS.map(({ id, label, icon: Icon }) => (
@@ -394,7 +385,7 @@ export default function Subscription() {
                                                 key={id}
                                                 onClick={() => handlePaySuite(id)}
                                                 disabled={!!payingMethod}
-                                                className="py-3 px-2 rounded-xl border-2 border-border bg-card hover:border-primary/40 text-center transition-all font-bold text-sm disabled:opacity-60 flex flex-col items-center gap-1.5"
+                                                className="py-3 px-2 rounded-[14px] border border-[#ECE8E3] bg-white hover:border-[#D5D1CB] text-center transition-colors font-semibold text-sm disabled:opacity-60 flex flex-col items-center gap-1.5 dark:border-border dark:bg-card"
                                             >
                                                 {payingMethod === id
                                                     ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -417,20 +408,20 @@ export default function Subscription() {
                             {/* Payment Method */}
                             {paymentMethods.length > 0 && (
                                 <div className="space-y-3">
-                                    <h3 className="font-bold text-base">Método de Pagamento</h3>
+                                    <h3 className="text-[15px] font-semibold">Método de pagamento</h3>
                                     <div className="grid grid-cols-3 gap-2">
                                         {paymentMethods.map((m) => (
                                             <button
                                                 key={m.id}
                                                 onClick={() => setSelectedMethod(m)}
-                                                className={`py-3 px-2 rounded-xl border-2 text-center transition-all font-bold text-sm ${selectedMethod?.id === m.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border hover:border-primary/40'}`}
+                                                className={`h-11 px-2 rounded-[14px] border text-center transition-colors font-semibold text-sm ${selectedMethod?.id === m.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-white border-[#ECE8E3] hover:border-[#D5D1CB] dark:bg-card dark:border-border'}`}
                                             >
                                                 {m.name}
                                             </button>
                                         ))}
                                     </div>
                                     {selectedMethod && (
-                                        <div className="bg-muted/60 border rounded-2xl p-4 flex items-start gap-3">
+                                        <div className="flex items-start gap-3 rounded-[18px] border border-[#ECE8E3] bg-[#F7F5F2] p-4 dark:border-border dark:bg-muted">
                                             <CreditCard className="w-4 h-4 text-primary shrink-0 mt-0.5" strokeWidth={1.5} />
                                             <p className="text-[13px] font-medium text-foreground leading-relaxed">{selectedMethod.instructions}</p>
                                         </div>
@@ -440,7 +431,7 @@ export default function Subscription() {
 
                             {/* Upload Proof */}
                             <div className="space-y-3">
-                                <h3 className="font-bold text-base">Comprovativo de Pagamento</h3>
+                                <h3 className="text-[15px] font-semibold">Comprovativo de pagamento</h3>
 
                                 {receipt.file ? (
                                     <div className="border-2 border-primary bg-primary/5 rounded-2xl overflow-hidden">
@@ -520,7 +511,7 @@ export default function Subscription() {
                                     { icon: CheckCircle, label: "Garantido" },
                                     { icon: Sparkles, label: "Acesso total" },
                                 ].map(({ icon: Icon, label }) => (
-                                    <div key={label} className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-muted/40">
+                                    <div key={label} className="flex flex-col items-center gap-1.5 rounded-[14px] border border-[#ECE8E3] bg-white px-2 py-3 dark:border-border dark:bg-card">
                                         <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
                                         <span className="text-[11px] font-semibold text-muted-foreground">{label}</span>
                                     </div>
@@ -529,7 +520,7 @@ export default function Subscription() {
 
                             {/* Submit */}
                             <Button
-                                className="w-full h-14 rounded-2xl font-bold text-[16px] shadow-lg active:scale-95 transition-transform"
+                                className="w-full h-[52px] rounded-[18px] font-semibold text-[15px] shadow-[0_14px_28px_-14px_rgba(11,19,36,0.6)] active:scale-[0.99] transition-transform"
                                 onClick={handleSubscribe}
                                 disabled={submitting || receipt.uploading || !plans.length || !receipt.proofRef}
                             >
