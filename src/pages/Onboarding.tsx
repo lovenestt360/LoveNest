@@ -407,7 +407,7 @@ export default function Onboarding() {
           Começar <span className="en-arrow">→</span>
         </button>
         <p className="en-small en-in" style={{ ["--d" as string]: 5, marginTop: 6 }}>
-          <button type="button" className="en-quiet py-2" onClick={() => navigate("/casa")}>Saltar por agora</button>
+          <button type="button" className="en-quiet py-2" onClick={() => handleSaveProfile()} disabled={savingProfile}>Saltar por agora</button>
         </p>
       </EntryScreen>
     );

@@ -1,26 +1,13 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { track } from "@vercel/analytics";
-import { Share2, Copy, Loader2, ArrowRight, ChevronLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Share2, Copy, Loader2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { COUNTRIES } from "@/data/countries";
-import { WelcomeStep } from "@/components/onboarding/steps/WelcomeStep";
-import { CountryStep } from "@/components/onboarding/steps/CountryStep";
-import { GenderStep } from "@/components/onboarding/steps/GenderStep";
-import { ReligionStep } from "@/components/onboarding/steps/ReligionStep";
-import { UsageModeStep } from "@/components/onboarding/steps/UsageModeStep";
-import { PrimaryGoalStep } from "@/components/onboarding/steps/PrimaryGoalStep";
-
-type OnboardingDraft = {
-  countryCode: string | null;
-  gender: string | null;
-  religion: string | null;
-  usageMode: "solo" | "couple" | null;
-  primaryGoal: string | null;
-};
+import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
+import { BackButton, ChatScript, EntryScreen } from "@/features/entry/EntryKit";
+import { prefersReducedMotion } from "@/features/entry/entryUtils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,39 +21,6 @@ type CoupleState =
   | { status: "loading" }
   | { status: "no_house" }
   | { status: "has_house"; coupleSpaceId: string; inviteCode: string | null; members: MemberProfile[] };
-
-// ── Minimal abstract visuals (consistent with onboarding language) ────────────
-
-function TwoApartVisual() {
-  return (
-    <div className="relative w-32 h-24 mx-auto">
-      <div className="absolute w-12 h-12 rounded-full bg-rose-100/80 top-2 left-4 animate-ob-float-a" />
-      <div className="absolute w-10 h-10 rounded-full bg-rose-50 border border-rose-100 bottom-2 right-4 animate-ob-float-b"
-        style={{ animationDelay: "-4s" }} />
-    </div>
-  );
-}
-
-function WaitingVisual() {
-  return (
-    <div className="relative w-32 h-24 mx-auto">
-      {/* Present partner — filled */}
-      <div className="absolute w-12 h-12 rounded-full bg-rose-200/80 top-2 left-8" />
-      {/* Waiting space — outline only */}
-      <div className="absolute w-10 h-10 rounded-full border-2 border-dashed border-rose-200 bottom-2 right-8 animate-ob-float-b"
-        style={{ animationDelay: "-2s" }} />
-    </div>
-  );
-}
-
-function TogetherVisual() {
-  return (
-    <div className="relative w-32 h-20 mx-auto flex items-center justify-center">
-      <div className="absolute w-12 h-12 rounded-full bg-rose-200/80 left-8" />
-      <div className="absolute w-12 h-12 rounded-full bg-rose-100 border border-rose-200 right-8" />
-    </div>
-  );
-}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -82,27 +36,17 @@ export default function CoupleSpace() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Onboarding V2 — questionário de personalização (país/género/espiritualidade/
-  // modo/objetivo). Vive aqui porque /casa já é o gate obrigatório existente
-  // para qualquer utilizador sem couple_space_id; respostas ficam em estado
-  // local e só são persistidas no fim, para evitar ambiguidade de retoma
-  // (gender=null tanto significa "ainda não respondido" como "prefiro não dizer").
-  const { profile, loading: profileLoading, update: updateProfile, completeOnboarding, refresh: refreshProfile } = useProfile();
-  const [onboardingStep, setOnboardingStep] = useState(0);
-  const [draft, setDraft] = useState<OnboardingDraft>({ countryCode: null, gender: null, religion: null, usageMode: null, primaryGoal: null });
+  // O questionário de personalização vive no onboarding (/inicio); aqui só
+  // se lê o perfil para saber se falta responder e se o modo é solo.
+  const { profile, loading: profileLoading, refresh: refreshProfile } = useProfile();
   const [creatingSolo, setCreatingSolo] = useState(false);
+  const pet = useRef<GuardianHandle>(null);
   const [soloCreateFailed, setSoloCreateFailed] = useState(false);
 
   const memberCount = useMemo(() => {
     if (state.status !== "has_house") return 0;
     return state.members.length;
   }, [state]);
-
-  const myName = useMemo(() => {
-    if (state.status !== "has_house") return null;
-    const me = state.members.find(m => m.user_id === currentUserId);
-    return me?.display_name?.split(" ")[0] ?? null;
-  }, [state, currentUserId]);
 
   const partnerName = useMemo(() => {
     if (state.status !== "has_house") return null;
@@ -132,9 +76,9 @@ export default function CoupleSpace() {
     const { data: profilesRows } = await supabase
       .from("profiles").select("user_id, display_name, avatar_url").in("user_id", ids);
 
-    const byId = new Map((profilesRows ?? []).map((p: any) => [p.user_id, p]));
+    const byId = new Map((profilesRows ?? []).map((p: MemberProfile) => [p.user_id, p]));
     const profiles: MemberProfile[] = ids.map((id: string) => {
-      const p = byId.get(id) as any;
+      const p = byId.get(id) as MemberProfile | undefined;
       return { user_id: id, display_name: p?.display_name ?? null, avatar_url: p?.avatar_url ?? null };
     });
 
@@ -147,7 +91,7 @@ export default function CoupleSpace() {
   useEffect(() => {
     if (state.status === "has_house" && memberCount >= 2) {
       // Small delay to let the "complete" state render first
-      const t = setTimeout(() => navigate("/", { replace: true }), 2200);
+      const t = setTimeout(() => navigate("/", { replace: true }), prefersReducedMotion() ? 2200 : 3600);
       return () => clearTimeout(t);
     }
   }, [state.status, memberCount, navigate]);
@@ -178,7 +122,7 @@ export default function CoupleSpace() {
       }
       track("space_created");
       await refresh();
-    } catch (error: any) {
+    } catch (error) {
       toast({ variant: "destructive", title: "Erro ao criar espaço", description: error.message });
     } finally {
       setLoadingAction(false);
@@ -211,7 +155,7 @@ export default function CoupleSpace() {
       }
 
       navigate("/", { replace: true });
-    } catch (error: any) {
+    } catch (error) {
       toast({ variant: "destructive", title: "Erro ao preparar o teu espaço", description: error.message });
       setCreatingSolo(false);
       setSoloCreateFailed(true);
@@ -228,23 +172,6 @@ export default function CoupleSpace() {
     }
   }, [profile?.onboarding_completed, profile?.usage_mode, state.status, creatingSolo, soloCreateFailed, handleCreateSoloSpace]);
 
-  const finishOnboarding = async (primaryGoal: string) => {
-    try {
-      const countryName = COUNTRIES.find(c => c.code === draft.countryCode)?.name ?? null;
-      await updateProfile({
-        country: countryName,
-        country_code: draft.countryCode,
-        gender: draft.gender,
-        religion: draft.religion,
-        usage_mode: draft.usageMode,
-        primary_goal: primaryGoal,
-      });
-      await completeOnboarding();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Erro ao guardar as tuas respostas", description: error.message });
-    }
-  };
-
   const handleJoinSpace = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setLoadingAction(true);
@@ -257,6 +184,8 @@ export default function CoupleSpace() {
         .from("couple_spaces").select("id").eq("invite_code", code).eq("status", "active").maybeSingle();
       if (spaceError) throw spaceError;
       if (!space) {
+        pet.current?.react("shake");
+        pet.current?.say("Hmm, este código não existe");
         toast({ variant: "destructive", title: "Código inválido", description: "Não encontrámos nenhum espaço com este código." });
         return;
       }
@@ -267,6 +196,7 @@ export default function CoupleSpace() {
         let msg = "Não foi possível entrar no espaço.";
         if (joinError.message.includes("couple_space_full")) msg = "Este espaço já tem dois membros.";
         else if (joinError.code === "23505") msg = "Já pertences a um espaço.";
+        pet.current?.react("shake");
         toast({ variant: "destructive", title: "Erro ao entrar", description: msg });
         return;
       }
@@ -276,11 +206,13 @@ export default function CoupleSpace() {
       localStorage.removeItem("lovenest_ref");
 
       track("space_joined");
+      pet.current?.react("happy");
+      pet.current?.hearts(10);
       // O trigger fn_auto_couple_mode_on_join actualiza usage_mode='couple'
       // server-side. Fazemos refresh do perfil para a UI reflectir imediatamente.
       await Promise.all([refresh(), refreshProfile()]);
       navigate("/", { replace: true });
-    } catch (error: any) {
+    } catch (error) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     } finally {
       setLoadingAction(false);
@@ -297,7 +229,7 @@ export default function CoupleSpace() {
       try {
         await navigator.share({ title: "LoveNest", text, url: window.location.origin });
         return; // success — share sheet opened
-      } catch (e: any) {
+      } catch (e) {
         // User cancelled (AbortError) or share failed — fall through to clipboard
         if (e?.name === "AbortError") return; // user cancelled intentionally
       }
@@ -306,9 +238,11 @@ export default function CoupleSpace() {
     // 2. Try clipboard API
     try {
       await navigator.clipboard.writeText(text);
+      pet.current?.react("happy");
+      pet.current?.say("Copiado! Envia ao teu par 💌");
       toast({ title: "Código copiado!", description: "Cola e envia ao teu par." });
       return;
-    } catch {}
+    } catch { /* segue para a cópia manual */ }
 
     // 3. Last resort — execCommand (works in most desktop browsers)
     try {
@@ -331,294 +265,175 @@ export default function CoupleSpace() {
   // ── Loading (perfil ou espaço) ───────────────────────────────────────────
   if (profileLoading || state.status === "loading" || creatingSolo) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-rose-300 animate-spin" />
-      </div>
+      <EntryScreen className="items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-[#0B1324]/40" />
+      </EntryScreen>
     );
   }
 
-  // ── Onboarding V2 — questionário de personalização (uma pergunta por ecrã) ─
+  // Ainda falta o questionário: é feito no onboarding.
   if (profile && !profile.onboarding_completed) {
-    const goBack = () => setOnboardingStep(s => Math.max(0, s - 1));
-
-    switch (onboardingStep) {
-      case 0:
-        return <WelcomeStep onContinue={() => setOnboardingStep(1)} />;
-      case 1:
-        return (
-          <CountryStep
-            initialValue={draft.countryCode}
-            onBack={goBack}
-            onSubmit={(countryCode) => { setDraft(d => ({ ...d, countryCode })); setOnboardingStep(2); }}
-          />
-        );
-      case 2:
-        return (
-          <GenderStep
-            initialValue={draft.gender}
-            onBack={goBack}
-            onSubmit={(gender) => { setDraft(d => ({ ...d, gender })); setOnboardingStep(3); }}
-          />
-        );
-      case 3:
-        return (
-          <ReligionStep
-            initialValue={draft.religion}
-            onBack={goBack}
-            onSubmit={(religion) => { setDraft(d => ({ ...d, religion })); setOnboardingStep(4); }}
-          />
-        );
-      case 4:
-        return (
-          <UsageModeStep
-            initialValue={draft.usageMode}
-            onBack={goBack}
-            onSubmit={(usageMode) => { setDraft(d => ({ ...d, usageMode })); setOnboardingStep(5); }}
-          />
-        );
-      default:
-        return (
-          <PrimaryGoalStep
-            initialValue={draft.primaryGoal}
-            onBack={goBack}
-            continueLabel={draft.usageMode === "solo" ? "Entrar no LoveNest" : "Continuar"}
-            onSubmit={(primaryGoal) => { setDraft(d => ({ ...d, primaryGoal })); finishOnboarding(primaryGoal); }}
-          />
-        );
-    }
+    return <Navigate to="/inicio" replace />;
   }
 
-  // ── No house — create or join ─────────────────────────────────────────────
+  // ── Sem espaço: criar ou entrar com o código do par ──────────────────────
   if (state.status === "no_house") {
     return (
-      <div className="min-h-screen bg-background flex flex-col select-none">
-        {/* Top bar */}
-        <div className="px-6 pt-12 shrink-0 h-16 flex items-center">
-          {view === "join" && (
+      <EntryScreen key={view} className="en-step">
+        <div style={{ height: 40 }}>
+          {view === "join" && <BackButton className="en-in" onClick={() => setView("create")} />}
+        </div>
+        <div className="en-duo" style={{ marginTop: 8 }}>
+          <Guardian
+            ref={pet}
+            kind="faisca"
+            width={128}
+            sayAt="right"
+            delay={1}
+            tapLines={["Olá! 💕", "Estou à espera do teu par", "Vamos criar o vosso espaço?"]}
+          />
+          <div className="en-spot en-in" style={{ ["--d" as string]: 2 }} aria-hidden="true">?</div>
+        </div>
+
+        {view === "create" ? (
+          <>
+            <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 3, marginTop: 14 }}>O teu par ainda não chegou</h1>
+            <p className="en-sub en-center en-in" style={{ ["--d" as string]: 4 }}>
+              Cria o vosso espaço e recebe um código para partilhares com o teu par.
+            </p>
+            <div className="en-spacer" />
             <button
-              onClick={() => setView("create")}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-all"
+              type="button"
+              className="en-btn en-in"
+              style={{ ["--d" as string]: 5 }}
+              disabled={loadingAction}
+              onClick={() => { pet.current?.react("spin"); handleCreateSpace(); }}
             >
-              <ChevronLeft className="w-5 h-5 text-muted-foreground/65" strokeWidth={1.5} />
+              {loadingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Criar o nosso espaço <span className="en-arrow">→</span></>}
             </button>
-          )}
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center px-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="w-full max-w-[320px] space-y-8">
-
-            {/* Visual */}
-            <div className="flex justify-center">
-              <TwoApartVisual />
+            <div className="en-or en-in" style={{ ["--d" as string]: 6, margin: "16px 0" }}>ou</div>
+            <button type="button" className="en-btn en-ghost en-in" style={{ ["--d" as string]: 7 }} onClick={() => setView("join")}>
+              Tenho um código do meu par
+            </button>
+          </>
+        ) : (
+          <form onSubmit={handleJoinSpace} className="flex flex-1 flex-col" noValidate>
+            <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 3, marginTop: 14 }}>Entrar no espaço do teu par</h1>
+            <p className="en-sub en-center en-in" style={{ ["--d" as string]: 4 }}>
+              Escreve o código que o teu par partilhou contigo.
+            </p>
+            <div className="en-in" style={{ ["--d" as string]: 5, marginTop: 22 }}>
+              <label className="en-label" htmlFor="join-code">Código do espaço</label>
+              <input
+                id="join-code"
+                className="en-field en-code-in"
+                type="text"
+                autoCapitalize="characters"
+                autoComplete="off"
+                placeholder="Ex: 3L2BRUL2"
+                value={inviteCodeInput}
+                maxLength={12}
+                autoFocus
+                onChange={(e) => {
+                  const v = e.target.value.toUpperCase();
+                  setInviteCodeInput(v);
+                  pet.current?.react("nod");
+                  if (v.trim().length === 8) pet.current?.say("Parece certo ✨");
+                }}
+              />
             </div>
-
-            {view === "create" ? (
-              <>
-                {/* Copy */}
-                <div className="text-center space-y-3">
-                  <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
-                    O teu par ainda não chegou.
-                  </h1>
-                  <p className="text-[14px] text-muted-foreground leading-relaxed">
-                    Cria o vosso espaço, recebe um código e partilha-o com o teu par para se juntarem.
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-3">
-                  {/* Primary */}
-                  <button
-                    onClick={handleCreateSpace}
-                    disabled={loadingAction}
-                    className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
-                  >
-                    {loadingAction
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <> Criar o nosso espaço <ArrowRight className="w-4 h-4" strokeWidth={2} /> </>
-                    }
-                  </button>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-3 py-1">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-[11px] text-muted-foreground/50 font-medium">ou</span>
-                    <div className="flex-1 h-px bg-border" />
-                  </div>
-
-                  {/* Secondary — visible, with border */}
-                  <button
-                    onClick={() => setView("join")}
-                    className="w-full h-13 rounded-2xl border border-border bg-card text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
-                  >
-                    Já tenho um código de convite
-                  </button>
-                </div>
-
-                {/* Explanation */}
-                <p className="text-center text-[11px] text-muted-foreground/50 leading-relaxed">
-                  O teu par vai entrar com o código que recebes após criar o espaço.
-                </p>
-              </>
-            ) : (
-              <>
-                {/* Copy */}
-                <div className="text-center space-y-3">
-                  <h1 className="text-[26px] font-bold text-foreground leading-tight tracking-tight">
-                    Entrar no espaço do teu par.
-                  </h1>
-                  <p className="text-[14px] text-muted-foreground leading-relaxed">
-                    O teu par criou um espaço e partilhou um código contigo. Insere-o abaixo.
-                  </p>
-                </div>
-
-                {/* Code input */}
-                <form onSubmit={handleJoinSpace} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-muted-foreground px-1">
-                      Código de convite
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: 3L2BRUL2"
-                      value={inviteCodeInput}
-                      onChange={e => setInviteCodeInput(e.target.value.toUpperCase())}
-                      maxLength={12}
-                      autoFocus
-                      className="w-full h-14 rounded-2xl border border-border bg-card text-center text-[18px] font-black text-foreground placeholder:text-muted-foreground/40 tracking-[0.2em] focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
-                    />
-                  </div>
-
-                  {/* Primary */}
-                  <button
-                    type="submit"
-                    disabled={loadingAction || inviteCodeInput.trim().length < 4}
-                    className="w-full h-14 rounded-2xl bg-rose-500 text-white font-bold text-[15px] disabled:opacity-40 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
-                  >
-                    {loadingAction
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <> Entrar no espaço <ArrowRight className="w-4 h-4" strokeWidth={2} /> </>
-                    }
-                  </button>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-3 py-1">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-[11px] text-muted-foreground/50 font-medium">ou</span>
-                    <div className="flex-1 h-px bg-border" />
-                  </div>
-
-                  {/* Secondary — create instead */}
-                  <button
-                    type="button"
-                    onClick={() => setView("create")}
-                    className="w-full h-13 rounded-2xl border border-border bg-card text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center py-3.5"
-                  >
-                    Quero criar um novo espaço
-                  </button>
-                </form>
-
-                <p className="text-center text-[11px] text-muted-foreground/50 leading-relaxed">
-                  Não tens código? Pede ao teu par que crie o espaço primeiro.
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="pb-12 shrink-0" />
-      </div>
+            <div className="en-spacer" />
+            <button type="submit" className="en-btn en-in" style={{ ["--d" as string]: 6 }} disabled={loadingAction || inviteCodeInput.trim().length < 4}>
+              {loadingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Entrar no espaço <span className="en-arrow">→</span></>}
+            </button>
+            <p className="en-small en-in" style={{ ["--d" as string]: 7, marginTop: 14 }}>
+              Não tens código? <button type="button" onClick={() => setView("create")}>Criar um espaço</button>
+            </p>
+          </form>
+        )}
+      </EntryScreen>
     );
   }
 
-  // ── Has house — waiting for partner ──────────────────────────────────────
+  // ── Espaço criado: à espera do par ───────────────────────────────────────
   if (state.status === "has_house" && memberCount < 2) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8 select-none">
-        {/* Subtle ambient */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 blur-[90px] pointer-events-none" />
-
-        <div className="relative z-10 w-full max-w-[280px] text-center space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-
-          <WaitingVisual />
-
-          <div className="space-y-3">
-            <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-              O vosso ninho está criado.
-            </h1>
-            <p className="text-[14px] text-muted-foreground leading-relaxed">
-              Partilha o código com o teu par. Podes entrar na app enquanto esperas.
-            </p>
-          </div>
-
-          {/* Invite code — prominent */}
-          <div className="space-y-3">
-            <p className="text-[11px] font-semibold text-muted-foreground/65 uppercase tracking-wider">
-              Código do vosso espaço
-            </p>
-            <div className="h-16 rounded-2xl border border-border bg-muted flex items-center justify-center">
-              <span className="text-[22px] font-black text-foreground tracking-[0.25em]">
-                {state.inviteCode ?? "—"}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleShare}
-                className="flex-1 h-12 rounded-2xl bg-rose-500 text-white font-semibold text-[14px] active:scale-[0.98] transition-all shadow-[0_4px_14px_rgba(244,63,94,0.25)] flex items-center justify-center gap-2"
-              >
-                <Share2 className="w-4 h-4" strokeWidth={1.5} />
-                Partilhar código
-              </button>
-              <button
-                onClick={() => state.inviteCode && navigator.clipboard.writeText(state.inviteCode).then(() =>
-                  toast({ title: "Código copiado" })
-                )}
-                className="h-12 w-12 rounded-2xl border border-border bg-card flex items-center justify-center active:scale-95 transition-all"
-              >
-                <Copy className="w-4 h-4 text-muted-foreground/65" strokeWidth={1.5} />
-              </button>
-            </div>
-          </div>
-
-          {/* Enter app — don't block user */}
-          <div className="space-y-2 pt-2">
-            <button
-              onClick={() => navigate("/", { replace: true })}
-              className="w-full h-13 rounded-2xl border border-border bg-card text-[14px] font-semibold text-foreground hover:border-rose-200 hover:bg-rose-50/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 py-3.5"
-            >
-              Entrar na app <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-            <p className="text-[11px] text-muted-foreground/50 text-center animate-ob-hint">
-              O teu par pode juntar-se depois com o código acima.
-            </p>
-          </div>
+      <EntryScreen className="en-step">
+        <div className="en-duo" style={{ marginTop: 24 }}>
+          <Guardian
+            ref={pet}
+            kind="faisca"
+            width={128}
+            sayAt="right"
+            delay={1}
+            tapLines={["Ainda não chegou 🥺", "Já enviaste o código?", "Estou à espera 💕"]}
+          />
+          <div className="en-spot en-in" style={{ ["--d" as string]: 2 }} aria-hidden="true">?</div>
         </div>
-      </div>
+        <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 3, marginTop: 14 }}>O vosso ninho está criado</h1>
+        <ChatScript
+          className="en-in"
+          style={{ ["--d" as string]: 4, marginTop: 14 } as React.CSSProperties}
+          start={700}
+          script={[["app", "Agora envia o código ao teu par. Quando entrar, o Guardião do teu par aparece aqui ao meu lado 💙"]]}
+        />
+        <p className="en-k en-center en-in" style={{ ["--d" as string]: 5, marginTop: 22 }}>Código do vosso espaço</p>
+        <div className="en-code en-in" style={{ ["--d" as string]: 5, marginTop: 8 }}>{state.inviteCode ?? "—"}</div>
+        <div className="en-spacer" />
+        <div className="en-row-btns en-in" style={{ ["--d" as string]: 6 }}>
+          <button type="button" className="en-btn" onClick={handleShare}>
+            <Share2 className="h-4 w-4" strokeWidth={1.75} /> Partilhar código
+          </button>
+          <button
+            type="button"
+            className="en-btn en-ghost en-square"
+            aria-label="Copiar código"
+            onClick={() => state.inviteCode && navigator.clipboard.writeText(state.inviteCode).then(() => {
+              pet.current?.react("happy");
+              pet.current?.say("Copiado ✓");
+              toast({ title: "Código copiado" });
+            })}
+          >
+            <Copy className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        </div>
+        <p className="en-small en-in" style={{ ["--d" as string]: 7, marginTop: 14 }}>
+          <button type="button" className="en-quiet py-2" onClick={() => navigate("/", { replace: true })}>Entrar na app enquanto espero</button>
+        </p>
+      </EntryScreen>
     );
   }
 
-  // ── Has house — both connected (auto-navigates after 2.2s) ───────────────
+  // ── Os dois juntos: os Guardiões encontram-se (segue sozinho para a app) ──
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8 select-none">
-      <div className="relative z-10 w-full max-w-[280px] text-center space-y-10 animate-in fade-in zoom-in-95 duration-500">
-        <TogetherVisual />
-        <div className="space-y-4">
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-            O vosso espaço está completo.
-          </h1>
-          <p className="text-[14px] text-muted-foreground leading-relaxed">
-            {partnerName
-              ? `Tu e ${partnerName} estão agora juntos no LoveNest.`
-              : "Já podem começar a construir a vossa história."
-            }
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/", { replace: true })}
-          className="w-full h-14 rounded-2xl bg-rose-500/90 text-white font-semibold text-[15px] active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
-        >
-          Entrar no LoveNest <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-        </button>
+    <EntryScreen className="en-step">
+      <div className="en-spacer" />
+      <div className="en-duo" style={{ height: 210 }}>
+        <div className="en-meet-l"><Guardian kind="faisca" width={130} delay={1} /></div>
+        <div className="en-meet-r"><Guardian ref={pet} kind="guardiao" width={146} delay={1} /></div>
       </div>
-    </div>
+      <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 6, marginTop: 18 }}>O vosso espaço está completo</h1>
+      <p className="en-sub en-center en-in" style={{ ["--d" as string]: 7 }}>
+        {partnerName ? `Tu e ${partnerName} estão agora juntos no LoveNest.` : "Já podem começar a construir a vossa história."}
+      </p>
+      <div className="en-spacer" />
+      <button type="button" className="en-btn en-in" style={{ ["--d" as string]: 9 }} onClick={() => navigate("/", { replace: true })}>
+        Entrar no LoveNest <span className="en-arrow">→</span>
+      </button>
+      <TogetherCheer target={pet} />
+    </EntryScreen>
   );
+}
+
+/** Quando os dois Guardiões se encontram: salto, corações e uma palavra. */
+function TogetherCheer({ target }: { target: React.RefObject<GuardianHandle> }) {
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      target.current?.react("happy");
+      target.current?.hearts(14);
+      target.current?.say("Finalmente juntos 💕", 2600);
+    }, prefersReducedMotion() ? 0 : 1300);
+    return () => window.clearTimeout(t);
+  }, [target]);
+  return null;
 }
