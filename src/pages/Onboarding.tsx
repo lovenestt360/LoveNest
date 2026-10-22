@@ -320,8 +320,8 @@ export default function Onboarding() {
             tapLines={["Olá! 💕", "Hehe 😊", "Vamos criar o vosso espaço?"]}
             style={{ position: "absolute", left: "50%", marginLeft: -28, top: 24 }}
           >
-            <span className="en-float-heart" style={{ left: "46%", top: "2%", animationDelay: "2s" }}>♥</span>
-            <span className="en-float-heart" style={{ left: "60%", top: "6%", animationDelay: "3.4s" }}>♥</span>
+            <span className="en-float-heart" style={{ left: "46%", top: "2%", animationDelay: "2s" }}><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path fill="currentColor" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg></span>
+            <span className="en-float-heart" style={{ left: "60%", top: "6%", animationDelay: "3.4s" }}><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path fill="currentColor" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg></span>
           </Guardian>
           <div className="en-card" style={{ top: 196, left: 0, right: 70, ["--r" as string]: "1.8deg", animationDelay: ".45s, 1.6s" }}>
             <div className="en-k">Hoje</div>

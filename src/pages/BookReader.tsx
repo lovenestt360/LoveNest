@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Navigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Type, NotebookPen } from "lucide-react";
+import { ChevronLeft, Loader2, Type, NotebookPen } from "lucide-react";
 import { useBiblioteca } from "@/hooks/useBiblioteca";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -18,6 +18,9 @@ import type { ChapterReaderHandle } from "@/features/biblioteca/reader/ChapterRe
 
 const PROGRESS_SAVE_DELAY_MS = 1500;
 const REFLECTION_ONBOARDING_KEY = "reflection-onboarding-done";
+
+// Botão redondo do leitor: a borda e o ícone seguem as cores do tema de leitura.
+const READER_BTN = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-opacity active:opacity-60";
 
 export default function BookReader() {
     const { bookId } = useParams<{ bookId: string }>();
@@ -64,6 +67,10 @@ export default function BookReader() {
         return () => clearInterval(interval);
     }, []);
 
+    // Barra fina de progresso por baixo do cabeçalho.
+    const [readPct, setReadPct] = useState<number | null>(null);
+    const shownPct = readPct ?? myProgress?.progress_percent ?? 0;
+
     const flushMinutes = () => {
         const delta = Math.floor(minutesAccumulatedRef.current);
         minutesAccumulatedRef.current -= delta;
@@ -71,6 +78,7 @@ export default function BookReader() {
     };
 
     const handleProgress = (percent: number, location: string) => {
+        setReadPct(percent);
         const wasCompleted = (myProgress?.progress_percent ?? 0) >= 100;
         if (percent >= 100 && !wasCompleted && spaceId && book) {
             notifyPartner({
@@ -146,36 +154,33 @@ export default function BookReader() {
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: colors.bg }}>
-            <header className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
-                <button
-                    type="button"
-                    onClick={() => navigate(-1)}
-                    className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all"
-                    style={{ color: colors.fg }}
-                >
-                    <ArrowLeft className="h-5 w-5" />
+            <header
+                className="flex items-center gap-2.5 px-4 pb-3 shrink-0 border-b"
+                style={{ paddingTop: "max(12px, env(safe-area-inset-top))", borderColor: colors.fg + "1f", color: colors.fg }}
+            >
+                <button type="button" onClick={() => navigate(-1)} className={READER_BTN} style={{ borderColor: colors.fg + "26" }} aria-label="Voltar">
+                    <ChevronLeft className="h-5 w-5" strokeWidth={2} />
                 </button>
-                <h1 className="text-[15px] font-bold tracking-tight line-clamp-1 flex-1" style={{ color: colors.fg }}>{book.title}</h1>
+                <h1 className="flex-1 truncate text-[15px] font-semibold tracking-[-0.01em]">{book.title}</h1>
                 {(book.file_type === "pdf" || book.file_type === "epub" || book.file_type === "lovenest") && (
                     <button
                         ref={noteButtonRef}
                         type="button"
                         onClick={() => readerRef.current?.openManualReflection()}
-                        className="p-2 rounded-full hover:bg-muted active:scale-95 transition-all"
-                        style={{ color: colors.fg }}
+                        className={READER_BTN}
+                        style={{ borderColor: colors.fg + "26" }}
+                        aria-label="Escrever uma reflexão"
                     >
-                        <NotebookPen className="h-5 w-5" />
+                        <NotebookPen className="h-[18px] w-[18px]" strokeWidth={1.9} />
                     </button>
                 )}
-                <button
-                    type="button"
-                    onClick={() => setSettingsOpen(true)}
-                    className="p-2 -mr-2 rounded-full hover:bg-muted active:scale-95 transition-all"
-                    style={{ color: colors.fg }}
-                >
-                    <Type className="h-5 w-5" />
+                <button type="button" onClick={() => setSettingsOpen(true)} className={READER_BTN} style={{ borderColor: colors.fg + "26" }} aria-label="Letra e tema">
+                    <Type className="h-[18px] w-[18px]" strokeWidth={1.9} />
                 </button>
             </header>
+            <div className="h-[3px] shrink-0" style={{ background: colors.fg + "1a" }} aria-hidden="true">
+                <div className="h-full transition-[width] duration-500" style={{ width: `${Math.min(100, Math.max(0, shownPct))}%`, background: colors.fg, opacity: 0.7 }} />
+            </div>
 
             <div className="flex-1 overflow-hidden relative">
                 {book.file_type === "lovenest" ? (

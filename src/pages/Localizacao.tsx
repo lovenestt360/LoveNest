@@ -3,12 +3,12 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl';
 import {
-  ArrowLeft, Heart, Navigation, Pause,
+  ArrowUpRight, BookOpen, ChevronLeft, Heart, Navigation, Pause,
   Clock, MapPin, MapPinOff, GraduationCap,
   Plane, Coffee, Car, Footprints,
   Home, Briefcase, ShoppingBag, Dumbbell, Church,
   Battery, BatteryLow, BatteryCharging, Wifi, Signal,
-  Moon, Camera, ChevronRight, Users, Layers, LogOut,
+  Moon, Camera, ChevronRight, Layers,
   type LucideIcon,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -28,6 +28,7 @@ import { useRelationshipEvents } from '@/features/relationship-events/useRelatio
 import { useAuth } from '@/features/auth/AuthContext';
 import { useCoupleSpaceId } from '@/hooks/useCoupleSpaceId';
 import { cn } from '@/lib/utils';
+import guardiaoThumb from '@/assets/flame/flame_04_guardiao_thumb.png';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -204,7 +205,23 @@ const PAUSE_OPTIONS = [
 // ── Sheet snap points ─────────────────────────────────────────────────────────
 
 const PEEK = 72;
-const DEFAULT_H = 200;
+const DEFAULT_H = 290;
+
+// Botão redondo branco por cima do mapa.
+const MAP_BTN = 'flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-[#ECE8E3] bg-white text-[#0B1324] shadow-[0_8px_18px_-10px_rgba(11,19,36,0.45)] transition-transform active:scale-95 dark:border-border dark:bg-card dark:text-foreground';
+const ROSE = '#E5466D';
+const BLUE = '#4D7CFE';
+
+function shortDistance(m: number): string {
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+}
+function bigDistance(m: number): { value: string; unit: string } {
+  if (m < 1000) return { value: String(Math.round(m)), unit: 'm de ti' };
+  const km = m / 1000;
+  const min = Math.round((km / (km > 5 ? 60 : 40)) * 60);
+  return { value: km.toFixed(1).replace('.', ','), unit: `km de ti · ~${min} min` };
+}
 function fullH() { return typeof window !== 'undefined' ? Math.min(Math.round(window.innerHeight * 0.78), 680) : 600; }
 function maxH() { return fullH() + 24; }
 
@@ -247,7 +264,7 @@ export default function Localizacao() {
   const [dragging, setDragging] = useState(false);
   const [activeMarker, setActiveMarker] = useState<'me' | 'partner' | null>(null);
   const [showActions, setShowActions] = useState(false);
-  const [mapStyleIdx, setMapStyleIdx] = useState(0);
+  const [mapStyleIdx, setMapStyleIdx] = useState(1);
 
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
   const toggleRef = useRef(toggleSharing);
@@ -434,10 +451,23 @@ export default function Localizacao() {
   const isFullSheet = sheetH >= fullH() - 40;
   const isPeekSheet = sheetH <= PEEK + 20;
 
+  const partnerName = partner?.display_name ?? 'O teu par';
+  const pauseLabel = !pauseUntil ? '' : pauseUntil.getFullYear() > 9000 ? 'indefinidamente'
+    : `até ${pauseUntil.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`;
+  const pill = permissionDenied
+    ? { tone: 'off' as const, tag: 'SEM ACESSO', text: 'Toca para tentar de novo' }
+    : isPaused
+    ? { tone: 'paused' as const, tag: 'EM PAUSA', text: `${pauseLabel} · toca para retomar` }
+    : together
+    ? { tone: 'together' as const, tag: 'JUNTOS', text: 'Estão juntos agora' }
+    : partnerReal
+    ? { tone: 'live' as const, tag: 'AO VIVO', text: `${partnerName} · ${partnerCtx.label || 'agora'}` }
+    : { tone: 'off' as const, tag: 'OFFLINE', text: `${partnerName} não está a partilhar` };
+
   // Subtext shown below partner name
   const partnerSubtext = together
     ? 'Juntos agora'
-    : partnerCtx.label || (partnerLocation ? shortTimeAgo(partnerLocation.updated_at) : '');
+    : [partnerCtx.label, partnerLocation ? shortTimeAgo(partnerLocation.updated_at) : ''].filter(Boolean).join(' · ');
 
   return (
     <div className="relative bg-black" style={{ width: '100%', height: '100dvh', overflow: 'hidden' }}>
@@ -471,15 +501,24 @@ export default function Localizacao() {
                 type: 'FeatureCollection',
                 features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: myPath.map(p => [p.lng, p.lat]) } }],
               }}>
-                <Layer id="my-route-l" type="line" paint={{ 'line-color': '#f43f5e', 'line-opacity': 0.55, 'line-width': 3 }} layout={{ 'line-join': 'round', 'line-cap': 'round' }} />
+                <Layer id="my-route-l" type="line" paint={{ 'line-color': '#E5466D', 'line-opacity': 0.55, 'line-width': 3 }} layout={{ 'line-join': 'round', 'line-cap': 'round' }} />
               </Source>
             )}
 
             {/* Linha de ligação */}
             {lineData && (
               <Source id="couple-line" type="geojson" data={lineData}>
-                <Layer id="couple-line-l" type="line" paint={{ 'line-color': '#C4788C', 'line-opacity': 0.25, 'line-width': 2, 'line-dasharray': [4, 3] }} />
+                <Layer id="couple-line-l" type="line" paint={{ 'line-color': '#0B1324', 'line-opacity': 0.7, 'line-width': 2.5, 'line-dasharray': [0.6, 2.4] }} layout={{ 'line-cap': 'round' }} />
               </Source>
+            )}
+
+            {/* Distância entre os dois */}
+            {myReal && partnerReal && myLocation && partnerLocation && distance !== null && distance >= 250 && (
+              <Marker longitude={(myLocation.lng + partnerLocation.lng) / 2} latitude={(myLocation.lat + partnerLocation.lat) / 2} anchor="center">
+                <span className="pointer-events-none rounded-full bg-[#0B1324] px-2.5 py-1 text-[12px] font-bold tabular-nums text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.7)]">
+                  {shortDistance(distance)}
+                </span>
+              </Marker>
             )}
 
             {/* Locais favoritos */}
@@ -488,8 +527,8 @@ export default function Localizacao() {
               return (
                 <Marker key={place.id} longitude={place.lng} latitude={place.lat} anchor="bottom">
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(196,120,140,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-                      <PlaceIc style={{ width: 12, height: 12, color: '#C4788C', strokeWidth: 1.5 }} />
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(8px)', border: '1px solid #ECE8E3', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                      <PlaceIc style={{ width: 13, height: 13, color: '#0B1324', strokeWidth: 1.9 }} />
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.94)', borderRadius: 4, padding: '1px 4px', fontSize: 8, fontWeight: 700, color: '#374151', whiteSpace: 'nowrap', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
                       {place.name}
@@ -506,7 +545,7 @@ export default function Localizacao() {
                   {activeMarker === 'me' && (
                     <MarkerCallout name={profile?.display_name ?? 'Eu'} sub="Agora" />
                   )}
-                  <AvatarMarker initial={myInitial} ring="#C4788C" size={44} />
+                  <AvatarMarker initial={myInitial} ring={ROSE} size={46} />
                 </div>
               </Marker>
             )}
@@ -521,7 +560,10 @@ export default function Localizacao() {
                       sub={partnerCtx.label ? `${partnerCtx.label} · ${shortTimeAgo(partnerLocation.updated_at)}` : shortTimeAgo(partnerLocation.updated_at)}
                     />
                   )}
-                  <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} ring={ring} size={52} />
+                  <span className="pointer-events-none absolute inset-[-6px] rounded-full border-2 border-[#4D7CFE] animate-[map-ping_2.2s_ease-out_infinite]" />
+                  <span className="pointer-events-none absolute inset-[-6px] rounded-full border-2 border-[#4D7CFE] animate-[map-ping_2.2s_ease-out_infinite_1.1s]" />
+                  {!together && <img src={guardiaoThumb} alt="" className="pointer-events-none absolute bottom-[44px] left-1/2 w-[40px] -translate-x-1/2 animate-[map-ride_1.4s_ease-in-out_infinite]" />}
+                  <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} ring={BLUE} size={54} />
                 </div>
               </Marker>
             )}
@@ -531,37 +573,40 @@ export default function Localizacao() {
         )}
       </div>
 
-      {/* Scrim no topo */}
-      <div
-        className="absolute top-0 left-0 right-0 pointer-events-none z-10"
-        style={{ height: 100, background: 'linear-gradient(to bottom, rgba(0,0,0,0.42) 0%, transparent 100%)' }}
-      />
-
-      {/* ── BOTÕES FLUTUANTES — TOPO ── */}
+      {/* ── TOPO: voltar · estado ao vivo · partilha ── */}
       <div
         className="absolute left-0 right-0 z-30 flex items-center gap-2 px-4"
         style={{ top: 'max(16px, env(safe-area-inset-top, 16px))' }}
       >
-        <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={{ background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}
-        >
-          <ArrowLeft className="w-5 h-5 text-white" strokeWidth={1.5} />
+        <button onClick={() => navigate(-1)} className={MAP_BTN} aria-label="Voltar">
+          <ChevronLeft className="h-5 w-5" strokeWidth={2} />
         </button>
 
-        <div className="flex-1" />
-
-        {isPaused && (
-          <button
-            onClick={handleResume}
-            className="flex items-center gap-1.5 h-10 px-3 rounded-full active:scale-95 transition-transform"
-            style={{ background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)' }}
-          >
-            <Pause className="w-3.5 h-3.5 text-white/70" strokeWidth={2} />
-            <span className="text-[11px] font-semibold text-white/70">Em pausa</span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => { if (isPaused) handleResume(); else if (permissionDenied) retryWatch(); }}
+          className={cn(
+            'flex h-[42px] min-w-0 flex-1 items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold shadow-[0_12px_24px_-12px_rgba(11,19,36,0.7)] transition-colors',
+            pill.tone === 'live' && 'bg-[#0B1324] text-white',
+            pill.tone === 'together' && 'bg-[#E5466D] text-white',
+            (pill.tone === 'paused' || pill.tone === 'off') && 'border border-[#ECE8E3] bg-white text-[#0B1324]',
+          )}
+        >
+          <span className={cn(
+            'h-2 w-2 shrink-0 rounded-full',
+            pill.tone === 'live' && 'bg-emerald-500 animate-[live-dot_1.6s_ease-out_infinite]',
+            pill.tone === 'together' && 'bg-white',
+            pill.tone === 'paused' && 'bg-amber-500',
+            pill.tone === 'off' && 'bg-[#D5D1CB]',
+          )} />
+          <b className={cn(
+            'shrink-0 text-[11px] font-extrabold tracking-[0.08em]',
+            pill.tone === 'live' && 'text-emerald-300',
+            pill.tone === 'paused' && 'text-amber-700',
+            pill.tone === 'off' && 'text-[#7A7F8C]',
+          )}>{pill.tag}</b>
+          <span className="truncate">{pill.text}</span>
+        </button>
 
         <button
           onClick={() => {
@@ -569,17 +614,12 @@ export default function Localizacao() {
             else if (mySharing) setShowPauseMenu(v => !v);
             else toggleSharing();
           }}
-          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={
-            mySharing && !isPaused
-              ? { background: '#C4788C', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 2px 12px rgba(196,120,140,0.5)' }
-              : { background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)' }
-          }
+          className={cn(MAP_BTN, mySharing && !isPaused && 'border-[#0B1324] bg-[#0B1324] text-white')}
+          aria-label={mySharing && !isPaused ? 'A partilhar a tua localização' : 'Partilha desligada'}
         >
-          {mySharing && !isPaused
-            ? <MapPin className="w-4 h-4 text-white" strokeWidth={2} fill="currentColor" />
-            : <MapPinOff className="w-4 h-4 text-white/75" strokeWidth={2} />
-          }
+          {isPaused ? <Pause className="h-4 w-4" strokeWidth={2} />
+            : mySharing ? <MapPin className="h-[18px] w-[18px]" strokeWidth={2} />
+            : <MapPinOff className="h-[18px] w-[18px]" strokeWidth={2} />}
         </button>
       </div>
 
@@ -588,20 +628,15 @@ export default function Localizacao() {
         <>
           <div className="fixed inset-0 z-30" onClick={() => setShowPauseMenu(false)} />
           <div
-            className="absolute right-4 z-40 rounded-2xl overflow-hidden w-44"
-            style={{
-              top: 'calc(max(16px, env(safe-area-inset-top, 16px)) + 52px)',
-              background: 'rgba(12,12,12,0.92)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            }}
+            className="absolute right-4 z-40 w-48 overflow-hidden rounded-[18px] border border-[#ECE8E3] bg-white shadow-[0_18px_36px_-18px_rgba(11,19,36,0.45)] dark:border-border dark:bg-card"
+            style={{ top: 'calc(max(16px, env(safe-area-inset-top, 16px)) + 52px)' }}
           >
+            <p className="px-3.5 pb-1 pt-2.5 text-[11px] font-semibold text-muted-foreground">Pausar a partilha</p>
             {PAUSE_OPTIONS.map((opt, i) => (
               <button
                 key={opt.label}
                 onClick={() => handlePause(opt)}
-                className={cn('w-full px-4 py-3.5 text-[13px] text-white/85 text-left hover:bg-white/10 active:bg-white/15 transition-colors', i < PAUSE_OPTIONS.length - 1 && 'border-b border-white/[0.07]')}
+                className={cn('w-full px-3.5 py-3 text-left text-[13.5px] text-foreground active:bg-[#F7F5F2] dark:active:bg-muted', i > 0 && 'border-t border-[#ECE8E3] dark:border-border')}
               >
                 {opt.label}
               </button>
@@ -610,327 +645,234 @@ export default function Localizacao() {
         </>
       )}
 
-      {/* Banner: permissão negada */}
+      {/* Aviso: permissão negada */}
       {permissionDenied && (
         <div
-          className="absolute left-4 right-4 z-30 rounded-2xl px-4 py-3"
-          style={{
-            top: 'calc(max(16px, env(safe-area-inset-top, 16px)) + 56px)',
-            background: 'rgba(0,0,0,0.80)',
-            backdropFilter: 'blur(14px)',
-            border: '1px solid rgba(196,120,140,0.25)',
-          }}
+          className="absolute left-4 right-4 z-30 rounded-[18px] border border-red-200 bg-white px-4 py-3 shadow-[0_14px_28px_-16px_rgba(11,19,36,0.4)] dark:bg-card"
+          style={{ top: 'calc(max(16px, env(safe-area-inset-top, 16px)) + 56px)' }}
         >
-          <p className="text-[12px] font-semibold text-rose-400">Acesso à localização bloqueado</p>
-          {geoErrorMsg && <p className="text-[10px] font-mono text-white/35 mt-0.5 break-all">{geoErrorMsg}</p>}
-          <button onClick={retryWatch} className="text-[11px] font-semibold text-rose-400 underline underline-offset-2 mt-1.5 active:opacity-60">
+          <p className="text-[13px] font-semibold text-red-700 dark:text-red-400">Acesso à localização bloqueado</p>
+          <p className="mt-0.5 text-[12px] text-muted-foreground">Permite a localização nas definições do telemóvel.</p>
+          {geoErrorMsg && <p className="mt-0.5 break-all font-mono text-[10px] text-muted-foreground/60">{geoErrorMsg}</p>}
+          <button onClick={retryWatch} className="mt-2 h-[34px] rounded-xl bg-[#0B1324] px-3.5 text-[12.5px] font-bold text-white active:opacity-80">
             Tentar novamente
           </button>
         </div>
       )}
 
-      {/* Botões flutuantes acima da sheet */}
+      {/* Botões ao lado da folha */}
       <div
         className="absolute right-4 z-30 flex flex-col gap-2"
-        style={{
-          bottom: sheetH + 12,
-          transition: dragging ? 'none' : 'bottom 0.35s cubic-bezier(0.32,0.72,0,1)',
-        }}
+        style={{ bottom: sheetH + 12, transition: dragging ? 'none' : 'bottom 0.35s cubic-bezier(0.32,0.72,0,1)' }}
       >
-        {/* Ciclar estilo do mapa */}
         <button
           onClick={() => setMapStyleIdx(i => (i + 1) % MAP_STYLES.length)}
-          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={{ background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}
-          title={MAP_STYLES[(mapStyleIdx + 1) % MAP_STYLES.length].label}
+          className={MAP_BTN}
+          aria-label={`Mudar para ${MAP_STYLES[(mapStyleIdx + 1) % MAP_STYLES.length].label}`}
         >
-          <Layers className="w-4 h-4 text-white/80" strokeWidth={1.5} />
+          <Layers className="h-[18px] w-[18px]" strokeWidth={1.9} />
         </button>
-
-        {/* Centrar câmara */}
-        <button
-          onClick={centerCamera}
-          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={{ background: 'rgba(0,0,0,0.46)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}
-        >
-          <Navigation className="w-4 h-4 text-white/80" strokeWidth={1.5} />
+        <button onClick={centerCamera} className={MAP_BTN} aria-label="Centrar o mapa">
+          <Navigation className="h-[17px] w-[17px]" strokeWidth={1.9} />
         </button>
       </div>
 
-      {/* ── BOTTOM SHEET ── */}
+      {/* ── FOLHA DE BAIXO ── */}
       <div
-        className="absolute left-0 right-0 bottom-0 z-20 bg-card"
+        className="absolute bottom-0 left-0 right-0 z-20 bg-white dark:bg-card"
         style={{
           height: SHEET_MAX,
           transform: `translateY(${SHEET_MAX - sheetH}px)`,
           transition: dragging ? 'none' : 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
-          borderRadius: '20px 20px 0 0',
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.22)',
+          borderRadius: '26px 26px 0 0',
+          boxShadow: '0 -16px 40px -18px rgba(11,19,36,0.35)',
         }}
       >
-        {/* Handle — drag zone */}
         <div
-          className="touch-none select-none cursor-grab active:cursor-grabbing flex flex-col items-center pt-2.5 pb-2"
+          className="flex cursor-grab touch-none select-none flex-col items-center pb-2 pt-2.5 active:cursor-grabbing"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
+          onClick={() => setSheetH(isPeekSheet ? DEFAULT_H : isFullSheet ? PEEK : fullH())}
         >
-          <div className="w-9 h-[3px] rounded-full bg-muted-foreground/25" />
+          <div className="h-1 w-[38px] rounded-full bg-[#DDD8D1] dark:bg-muted-foreground/30" />
         </div>
 
-        {/* Conteúdo scrollável */}
-        <div className="overflow-y-auto overscroll-contain" style={{ height: SHEET_MAX - 34 }}>
+        <div className="overflow-y-auto overscroll-contain px-4" style={{ height: SHEET_MAX - 34 }}>
 
-          {/* ── Estado compacto (peek) ── */}
+          {/* Fechada */}
           {isPeekSheet && (
-            <div className="px-4 h-10 flex items-center gap-3">
-              {partnerSharing && partnerLocation ? (
-                <>
-                  <div className="w-7 h-7 rounded-full overflow-hidden shrink-0" style={{ boxShadow: `0 0 0 2px ${ring}` }}>
-                    {partner?.avatar_url
-                      ? <img src={partner.avatar_url} className="w-full h-full object-cover" alt="" />
-                      : <div className="w-full h-full flex items-center justify-center text-white text-[11px] font-bold" style={{ background: ring }}>{partnerInitial}</div>
-                    }
-                  </div>
-                  <p className="text-[13px] font-semibold text-foreground flex-1 truncate">{partner?.display_name}</p>
-                  {distance !== null && <span className="text-[12px] font-semibold shrink-0" style={{ color: together ? '#C4788C' : '#6b7280' }}>{distanceLabel(distance)}</span>}
-                </>
-              ) : (
-                <p className="text-[12px] text-muted-foreground/60">{partner?.display_name ?? 'O teu par'} — localização inativa</p>
-              )}
+            <div className="flex h-10 items-center gap-2.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#4D7CFE] text-[11px] font-bold text-white" style={{ boxShadow: '0 0 0 2px #fff, 0 0 0 3.5px #4D7CFE' }}>
+                {partner?.avatar_url ? <img src={partner.avatar_url} className="h-full w-full object-cover" alt="" /> : partnerInitial}
+              </span>
+              <p className="flex-1 truncate text-[13.5px] font-semibold text-foreground">{partnerName}</p>
+              <span className="shrink-0 text-[12.5px] font-bold tabular-nums text-foreground">
+                {!partnerReal ? 'inativa' : together ? 'Juntos' : distance !== null ? shortDistance(distance) : ''}
+              </span>
             </div>
           )}
 
-          {/* ── Conteúdo principal (DEFAULT + FULL) ── */}
           {!isPeekSheet && (
             <>
               {loading ? (
-                <div className="px-4 space-y-3">
-                  <div className="h-16 bg-muted/30 rounded-2xl animate-pulse" />
-                </div>
+                <div className="h-16 animate-pulse rounded-2xl bg-[#F7F5F2] dark:bg-muted" />
               ) : partnerSharing && partnerLocation ? (
                 <>
-                  {/* Linha principal do parceiro */}
-                  <div className="px-4">
-                    <div className="flex items-center gap-3.5">
-
-                      {/* Avatar + ponto online */}
-                      <div className="relative shrink-0">
-                        <div className="w-[52px] h-[52px] rounded-full overflow-hidden" style={{ boxShadow: `0 0 0 2.5px white, 0 0 0 4px ${ring}` }}>
-                          {partner?.avatar_url
-                            ? <img src={partner.avatar_url} className="w-full h-full object-cover" alt="" />
-                            : <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg" style={{ background: ring }}>{partnerInitial}</div>
-                          }
-                        </div>
-                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-background" />
+                  {/* O par */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <div className="flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-full bg-[#4D7CFE] text-[19px] font-extrabold text-white" style={{ boxShadow: '0 0 0 3px #fff, 0 0 0 5px #4D7CFE' }}>
+                        {partner?.avatar_url ? <img src={partner.avatar_url} className="h-full w-full object-cover" alt="" /> : partnerInitial}
                       </div>
-
-                      {/* Nome + status */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[15px] font-bold text-foreground leading-tight truncate">
-                            {partner?.display_name ?? 'O teu par'}
-                          </p>
-                          {together && (
-                            <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: '#C4788C' }}>
-                              Juntos
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-muted-foreground/70 mt-0.5 truncate">
-                          {partnerSubtext}
-                        </p>
+                      <span className="absolute -bottom-px -right-px h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 dark:border-card" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-[16px] font-bold leading-tight text-foreground">{partnerName}</p>
+                        {together && <span className="shrink-0 rounded-full bg-[#E5466D] px-2 py-0.5 text-[10.5px] font-bold text-white">Juntos</span>}
                       </div>
+                      <p className="mt-0.5 flex items-center gap-1 truncate text-[12.5px] text-muted-foreground">
+                        <partnerCtx.Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.9} />
+                        {partnerSubtext}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5 text-[11px] text-muted-foreground">
+                      <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
+                      {networkLabel(partnerLocation.network_type) && (
+                        <span className="flex items-center gap-1">
+                          {isWifi(partnerLocation.network_type) ? <Wifi className="h-3 w-3" strokeWidth={1.9} /> : <Signal className="h-3 w-3" strokeWidth={1.9} />}
+                          {networkLabel(partnerLocation.network_type)}
+                        </span>
+                      )}
+                      <span>{shortTimeAgo(partnerLocation.updated_at)}</span>
+                    </div>
+                  </div>
 
-                      {/* Bateria + rede + tempo */}
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-                        {networkLabel(partnerLocation.network_type) && (
-                          <div className="flex items-center gap-0.5">
-                            {isWifi(partnerLocation.network_type)
-                              ? <Wifi className="w-2.5 h-2.5 text-muted-foreground/50" strokeWidth={1.5} />
-                              : <Signal className="w-2.5 h-2.5 text-muted-foreground/50" strokeWidth={1.5} />
-                            }
-                            <span className="text-[10px] text-muted-foreground/45">
-                              {networkLabel(partnerLocation.network_type)}
-                            </span>
-                          </div>
-                        )}
-                        <span className="text-[10px] text-muted-foreground/40">{shortTimeAgo(partnerLocation.updated_at)}</span>
+                  {/* Saídas de casa e tempo fora */}
+                  {(homeStats.timesLeft > 0 || homeStats.totalAwayMs > 60_000) && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {homeStats.timesLeft > 0 && (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-foreground dark:bg-muted">
+                          <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
+                          Saiu {homeStats.timesLeft === 1 ? '1 vez' : `${homeStats.timesLeft}×`} hoje
+                        </span>
+                      )}
+                      {homeStats.totalAwayMs > 60_000 && (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-foreground dark:bg-muted">
+                          <Clock className="h-3.5 w-3.5" strokeWidth={2} />
+                          {formatDuration(homeStats.totalAwayMs)} fora de casa
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Distância ao vivo */}
+                  {distance !== null && !together && (
+                    <div className="mt-3.5 flex items-baseline gap-1.5">
+                      <b className="text-[48px] font-black leading-[0.9] tracking-[-0.05em] tabular-nums text-foreground">{bigDistance(distance).value}</b>
+                      <span className="text-[14px] font-semibold text-muted-foreground">{bigDistance(distance).unit}</span>
+                      <span className="ml-auto inline-flex items-center gap-1.5 text-[10.5px] font-extrabold tracking-[0.1em] text-emerald-600">
+                        <span className="h-[7px] w-[7px] rounded-full bg-emerald-500 animate-[live-dot_1.6s_ease-out_infinite]" />
+                        AO VIVO
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Juntos */}
+                  {together && (
+                    <div className="mt-3 rounded-[18px] bg-[#FFF0F4] p-3 dark:bg-rose-950/20">
+                      <p className="flex items-center gap-2 text-[13.5px] font-bold text-[#9F1239] dark:text-rose-300">
+                        <Heart className="h-4 w-4" fill="currentColor" strokeWidth={2} />
+                        Estão juntos agora
+                      </p>
+                      <div className="mt-2.5 flex gap-2">
+                        <button onClick={() => navigate('/memorias')} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[#FBCFDA] bg-white text-[12.5px] font-bold text-foreground active:scale-95 dark:border-rose-900/40 dark:bg-card">
+                          <Camera className="h-[15px] w-[15px]" strokeWidth={1.9} /> Criar memória
+                        </button>
+                        <button onClick={() => setShowHistoriaSheet(true)} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[#FBCFDA] bg-white text-[12.5px] font-bold text-foreground active:scale-95 dark:border-rose-900/40 dark:bg-card">
+                          <BookOpen className="h-[15px] w-[15px]" strokeWidth={1.9} /> Nossa História
+                        </button>
                       </div>
                     </div>
-
-                    {/* Chips: saídas de casa + tempo fora */}
-                    {(homeStats.timesLeft > 0 || homeStats.totalAwayMs > 60_000) && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {homeStats.timesLeft > 0 && (
-                          <div className="flex items-center gap-1 bg-muted/60 rounded-full px-2 py-0.5">
-                            <LogOut className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={1.5} />
-                            <span className="text-[10px] text-muted-foreground/70">
-                              Saiu {homeStats.timesLeft === 1 ? '1 vez' : `${homeStats.timesLeft}×`} hoje
-                            </span>
-                          </div>
-                        )}
-                        {homeStats.totalAwayMs > 60_000 && (
-                          <div className="flex items-center gap-1 bg-muted/60 rounded-full px-2 py-0.5">
-                            <Clock className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={1.5} />
-                            <span className="text-[10px] text-muted-foreground/70">
-                              {formatDuration(homeStats.totalAwayMs)} fora de casa
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Linha de distância — só se não estiverem juntos */}
-                    {distance !== null && !together && (
-                      <div className="mt-2.5 flex items-center gap-2">
-                        <Heart className="w-3 h-3 text-rose-400 shrink-0" fill="currentColor" strokeWidth={2} />
-                        <span className="text-[12px] font-medium text-rose-500">{distanceLabel(distance)}</span>
-                        <div className="ml-auto flex items-center gap-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[10px] font-bold text-emerald-500 tracking-wider">AO VIVO</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Quando estão juntos: acções compactas */}
-                    {together && (
-                      <div className="mt-3">
-                        <button
-                          onClick={() => setShowActions(v => !v)}
-                          className="w-full flex items-center gap-2 py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 active:scale-[0.98] transition-all"
-                        >
-                          <Heart className="w-3.5 h-3.5 text-rose-400 shrink-0" fill="currentColor" strokeWidth={2} />
-                          <span className="text-[12px] font-semibold text-rose-600 dark:text-rose-300 flex-1 text-left">Estão juntos agora</span>
-                          <div className="flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-[10px] font-bold text-emerald-500 tracking-wider">AO VIVO</span>
-                          </div>
-                        </button>
-                        {showActions && (
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              onClick={() => navigate('/memorias')}
-                              className="flex-1 py-2.5 rounded-xl bg-muted/50 text-[12px] font-medium text-foreground active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                            >
-                              <Camera className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
-                              Criar Memória
-                            </button>
-                            <button
-                              onClick={() => setShowHistoriaSheet(true)}
-                              className="flex-1 py-2.5 rounded-xl bg-muted/50 text-[12px] font-medium text-foreground active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                            >
-                              <Users className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
-                              Nossa História
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Divider */}
-                  <div className="mx-4 mt-3 h-px bg-border/30" />
-
-                  {/* Histórico */}
-                  <div className="px-4 mt-2.5">
-                    <button
-                      onClick={() => navigate('/localizacao/historico')}
-                      className="w-full flex items-center gap-3 py-2.5 active:opacity-60 transition-opacity"
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                        <Clock className="w-4 h-4 text-muted-foreground/70" strokeWidth={1.5} />
-                      </div>
-                      <div className="flex-1 min-w-0 text-left">
-                        <p className="text-[13px] font-semibold text-foreground">Histórico</p>
-                        <p className="text-[11px] text-muted-foreground/55 mt-0.5">
-                          {diary.length > 0 ? `${diary.length} ${diary.length === 1 ? 'evento' : 'eventos'} hoje` : 'Encontros, chegadas e saídas'}
-                        </p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/30 shrink-0" strokeWidth={1.5} />
-                    </button>
-                  </div>
+                  )}
                 </>
               ) : (
-                /* Par não partilha */
-                <div className="px-4 pb-4 flex items-center gap-3.5">
-                  <div className="w-13 h-13 w-[52px] h-[52px] rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <span className="text-muted-foreground font-bold text-lg">{partnerInitial}</span>
-                  </div>
-                  <div>
-                    <p className="text-[15px] font-bold text-foreground">{partner?.display_name ?? 'O teu par'}</p>
-                    <p className="text-[12px] text-muted-foreground/55 mt-0.5">Localização inativa</p>
+                /* O par não partilha */
+                <div className="flex items-center gap-3 pb-1">
+                  <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-[#ECE8E3] text-lg font-bold text-[#7A7F8C] dark:bg-muted">{partnerInitial}</div>
+                  <div className="min-w-0">
+                    <p className="text-[16px] font-bold text-foreground">{partnerName}</p>
+                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">Localização inativa · quando ativar, vais ver onde está</p>
                   </div>
                 </div>
               )}
 
-              {/* ── CONFIGURAÇÕES (só no estado FULL) ── */}
+              {/* Histórico */}
+              <button
+                onClick={() => navigate('/localizacao/historico')}
+                className="mt-3.5 flex w-full items-center gap-3 border-t border-[#ECE8E3] py-3 text-left active:opacity-60 dark:border-border"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F7F5F2] text-foreground dark:bg-muted">
+                  <Clock className="h-4 w-4" strokeWidth={1.9} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-semibold text-foreground">Histórico</span>
+                  <span className="block text-[12px] text-muted-foreground">
+                    {diary.length > 0 ? `${diary.length} ${diary.length === 1 ? 'evento' : 'eventos'} hoje · encontros, chegadas e saídas` : 'Encontros, chegadas e saídas'}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#C9C4BC]" strokeWidth={2} />
+              </button>
+
+              {/* ── DEFINIÇÕES (folha aberta) ── */}
               {isFullSheet && (
                 <>
-                  <div className="mx-4 mt-4 mb-3 h-px bg-border/30" />
-
-                  {/* Partilha */}
-                  <div className="px-4 space-y-2 pb-2">
-                    <div className="flex items-center justify-between py-1">
+                  <div className="mt-1 border-t border-[#ECE8E3] pt-3.5 dark:border-border">
+                    <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.1em] text-muted-foreground">A tua partilha</p>
+                    <div className="flex items-center justify-between gap-3 py-1">
                       <div>
-                        <p className="text-[13px] font-semibold text-foreground">Partilhar a minha localização</p>
-                        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                          {isPaused ? 'Em pausa' : mySharing ? 'O teu par vê onde estás' : 'O teu par não te consegue ver'}
+                        <p className="text-[13.5px] font-semibold text-foreground">Partilhar a minha localização</p>
+                        <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                          {isPaused ? `Em pausa ${pauseLabel}` : mySharing ? 'O teu par vê onde estás' : 'O teu par não te consegue ver'}
                         </p>
                       </div>
                       <Switch
+                        className="data-[state=checked]:bg-[#0B1324]"
                         checked={mySharing && !isPaused}
                         onCheckedChange={() => { if (isPaused) handleResume(); else toggleSharing(); }}
                       />
                     </div>
-
                     {mySharing && !isPaused && (
-                      <div>
-                        <button
-                          onClick={() => setShowPauseMenu(v => !v)}
-                          className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Pause className="w-3.5 h-3.5" strokeWidth={1.5} />
-                          Pausar por...
-                        </button>
-                        {showPauseMenu && (
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                            {PAUSE_OPTIONS.map(opt => (
-                              <button
-                                key={opt.label}
-                                onClick={() => handlePause(opt)}
-                                className="py-2.5 px-3 rounded-xl bg-muted/50 text-[12px] text-muted-foreground active:scale-95 transition-all text-left"
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <>
+                        <p className="mt-1 text-[12px] text-muted-foreground">Pausar por…</p>
+                        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                          {PAUSE_OPTIONS.map(opt => (
+                            <button key={opt.label} onClick={() => handlePause(opt)} className="h-[38px] rounded-xl bg-[#F7F5F2] text-[12.5px] font-semibold text-foreground active:scale-95 dark:bg-muted">
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
                     )}
-
                     {isPaused && (
-                      <button
-                        onClick={handleResume}
-                        className="w-full py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-500 text-[12px] font-semibold active:scale-95 transition-all border border-rose-100 dark:border-rose-900/30"
-                      >
-                        Retomar
+                      <button onClick={handleResume} className="mt-2 h-10 w-full rounded-xl bg-[#0B1324] text-[13px] font-bold text-white active:scale-[0.98]">
+                        Retomar a partilha
                       </button>
                     )}
-
                     {!partnerSharing && !loading && (
-                      <p className="text-[11px] text-muted-foreground/45 pt-0.5">
-                        Quando o teu par ativar, vais ver onde está.
-                      </p>
+                      <p className="pt-2 text-[11.5px] text-muted-foreground">Quando o teu par ativar, vais ver onde está.</p>
                     )}
                   </div>
 
-                  <FavoritePlacesSection
-                    myLat={myReal && myLocation ? myLocation.lat : null}
-                    myLng={myReal && myLocation ? myLocation.lng : null}
-                  />
-                  <LocationNotifSettings prefs={notifPrefs} onUpdate={updatePref} />
+                  {/* Estes blocos trazem a sua própria margem lateral */}
+                  <div className="-mx-4">
+                    <FavoritePlacesSection
+                      myLat={myReal && myLocation ? myLocation.lat : null}
+                      myLng={myReal && myLocation ? myLocation.lng : null}
+                    />
+                    <LocationNotifSettings prefs={notifPrefs} onUpdate={updatePref} />
+                  </div>
                   <div className="h-10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }} />
                 </>
               )}

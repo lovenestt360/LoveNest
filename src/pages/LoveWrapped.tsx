@@ -1,23 +1,32 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
+import { useProfile } from "@/hooks/useProfile";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Share2, MessageCircle, Gift, Flame, Camera, 
-  Trophy, ChevronRight, Sparkles, 
-  X, Heart, CalendarDays
-} from "lucide-react";
+import { Gift, ChevronRight, Sparkles, Heart } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { cn } from "@/lib/utils";
+import { WrappedFilm } from "@/features/wrapped/WrappedFilm";
+import type { FilmData } from "@/features/wrapped/filmMarkup";
 
 const MONTH_NAMES = [
   "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
+// Humor mais frequente → como o casal se sentiu (plural).
+const MOOD_PLURAL: Record<string, string> = {
+  feliz: "Felizes", tranquilo: "Tranquilos", apaixonado: "Apaixonados", apaixonada: "Apaixonados",
+  grato: "Gratos", grata: "Gratos", ansioso: "Ansiosos", cansado: "Cansados", triste: "Tristes",
+  irritado: "Irritados", animado: "Animados", calmo: "Calmos",
+};
+const moodLabel = (m: string | null) => {
+  if (!m) return "Apaixonados";
+  const k = m.trim().toLowerCase();
+  return MOOD_PLURAL[k] ?? k.charAt(0).toUpperCase() + k.slice(1);
+};
 
 interface WrappedData {
   id: string;
@@ -33,90 +42,19 @@ interface WrappedData {
   generated_at: string;
 }
 
-function AnimatedCounter({ value, duration = 1000, delay = 0 }: { value: number; duration?: number; delay?: number }) {
-  const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(delay === 0);
-
-  useEffect(() => {
-    if (delay > 0) {
-      const t = setTimeout(() => setStarted(true), delay);
-      return () => clearTimeout(t);
-    }
-  }, [delay]);
-
-  useEffect(() => {
-    if (!started) return;
-    let start = 0;
-    const end = value;
-    if (end === 0) {
-      setCount(0);
-      return;
-    }
-
-    const increment = end / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
-
-    return () => clearInterval(timer);
-  }, [value, duration, started]);
-
-  return <span>{count}</span>;
-}
-
 export default function LoveWrapped() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
   const { toast } = useToast();
+  const { profile } = useProfile();
+  const { partner } = usePartnerProfile();
 
   const [wrappedList, setWrappedList] = useState<WrappedData[]>([]);
-  const [selectedWrappedIndex, setSelectedWrappedIndex] = useState(0);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<'list' | 'story'>('list');
-  const [isPaused, setIsPaused] = useState(false);
-  
-  // Cinematic States
-  const [stage, setStage] = useState(0); // 0: Hide, 1: Intro Text, 2: Data Reveal, 3: Conclusion
-  
-  const [houseName, setHouseName] = useState("LoveNest");
-  const [partner1Name, setPartner1Name] = useState("");
+  const [houseName, setHouseName] = useState("");
   const [relationshipStart, setRelationshipStart] = useState<string | null>(null);
-  const [lastPhoto, setLastPhoto] = useState<string | null>(null);
-  
-  const touchStartX = useRef<number | null>(null);
-  const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
-  const stageTimer = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (mode === 'story' && !isPaused) {
-      // Story duration is now longer to allow for cinematic stages
-      const slideDuration = 5500; 
-      
-      autoPlayTimer.current = setInterval(() => {
-        nextSlide();
-      }, slideDuration);
-
-      // Stage timing logic
-      setStage(1);
-      const t2 = setTimeout(() => setStage(2), 1500); // Reveal data after 1.5s
-      const t3 = setTimeout(() => setStage(3), 4000); // Climax/Final text
-      
-      return () => {
-        clearInterval(autoPlayTimer.current!);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else {
-      if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
-    }
-  }, [mode, isPaused, currentSlide]);
+  const [film, setFilm] = useState<FilmData | null>(null);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     if (!spaceId || !user) return;
@@ -127,15 +65,11 @@ export default function LoveWrapped() {
         .order("year", { ascending: false })
         .order("month", { ascending: false });
 
-      const { data: spaceData } = await supabase.from("couple_spaces").select("house_name, relationship_start_date, partner1_name").eq("id", spaceId).maybeSingle();
-      
-      if (wrappedData && wrappedData.length > 0) {
-        setWrappedList(wrappedData as WrappedData[]);
-        fetchLastPhoto(spaceId, wrappedData[0].month, wrappedData[0].year);
-      }
-      
-      setHouseName(spaceData?.house_name || "LoveNest");
-      setPartner1Name(spaceData?.partner1_name || "");
+      const { data: spaceData } = await supabase.from("couple_spaces").select("house_name, relationship_start_date").eq("id", spaceId).maybeSingle();
+
+      if (wrappedData && wrappedData.length > 0) setWrappedList(wrappedData as WrappedData[]);
+      const house = (spaceData?.house_name ?? "").trim();
+      setHouseName(house && house !== "LoveNest" ? house : "");
       setRelationshipStart(spaceData?.relationship_start_date || null);
       setLoading(false);
     };
@@ -143,7 +77,8 @@ export default function LoveWrapped() {
     fetchData();
   }, [spaceId, user]);
 
-  const fetchLastPhoto = async (sid: string, month: number, year: number) => {
+  // Fotos do mês (a mais recente é a capa; até 5 para a montagem).
+  const fetchMonthPhotos = async (sid: string, month: number, year: number): Promise<string[]> => {
     const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
@@ -156,334 +91,58 @@ export default function LoveWrapped() {
       .gte("created_at", monthStart)
       .lt("created_at", monthEnd)
       .order("created_at", { ascending: false })
-      .limit(1);
+      .limit(5);
 
-    if (data?.[0]) {
-      const { data: urlData } = supabase.storage.from("memories").getPublicUrl(data[0].file_path);
-      setLastPhoto(urlData.publicUrl);
-    } else {
-      setLastPhoto(null);
-    }
+    const paths = (data ?? []).map((p) => p.file_path);
+    if (!paths.length) return [];
+    const { data: signed } = await supabase.storage.from("memories").createSignedUrls(paths, 3600);
+    return (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
   };
 
-  const lastPointerDownTime = useRef<number>(0);
-
-  const nextSlide = () => {
-    if (Date.now() - lastPointerDownTime.current > 300) return; // Ignore if it was a hold
-    setCurrentSlide(s => {
-      if (s < 10) return s + 1;
-      setMode('list');
-      return 0;
+  const handleStartStory = async (index: number) => {
+    if (!spaceId || opening) return;
+    setOpening(true);
+    const current = wrappedList[index];
+    const photos = await fetchMonthPhotos(spaceId, current.month, current.year).catch(() => [] as string[]);
+    const me = profile?.display_name?.split(" ")[0] ?? "";
+    const them = partner?.display_name?.split(" ")[0] ?? "";
+    setFilm({
+      names: me && them ? `${me} & ${them}` : me || "Vocês",
+      month: MONTH_NAMES[current.month],
+      year: current.year,
+      cover: photos[0] ?? null,
+      photos,
+      days: relationshipStart ? Math.max(0, differenceInDays(new Date(), parseISO(relationshipStart))) : 0,
+      streak: current.streak_days ?? 0,
+      mood: moodLabel(current.top_mood),
+      moodCheckins: current.mood_checkins ?? 0,
+      messages: current.messages_count ?? 0,
+      challenges: current.challenges_completed ?? 0,
+      memories: current.memories_count ?? 0,
+      house: houseName || "O vosso ninho",
     });
+    setOpening(false);
   };
 
-  const prevSlide = () => {
-    if (Date.now() - lastPointerDownTime.current > 300) return;
-    setCurrentSlide(s => (s > 0 ? s - 1 : 0));
-  };
-
-  const handleStartStory = (index: number) => {
-    setSelectedWrappedIndex(index);
-    setCurrentSlide(0);
-    setMode('story');
-    setIsPaused(false);
-    lastPointerDownTime.current = 0;
-    fetchLastPhoto(spaceId!, wrappedList[index].month, wrappedList[index].year);
+  const shareFilm = () => {
+    if (!film) return;
+    const text = `O nosso ${film.month} no LoveNest\n\n${film.names}\n${film.streak} dias de chama\n${film.messages} mensagens trocadas\n${film.memories} memórias guardadas`;
+    if (navigator.share) {
+      navigator.share({ title: `LoveWrapped · ${film.month} ${film.year}`, text, url: window.location.origin }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => toast({ title: "Resumo copiado", description: "Já podes partilhar onde quiseres." }));
+    }
   };
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center space-y-4">
-        <Sparkles className="w-12 h-12 text-primary animate-pulse" />
-        <p className="text-white/40 font-mono text-[10px] uppercase tracking-widest">A preparar a vossa história...</p>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Sparkles className="h-6 w-6 animate-pulse text-[#0B1324]/40" />
       </div>
     );
   }
 
-  if (mode === 'story' && wrappedList[selectedWrappedIndex]) {
-    const current = wrappedList[selectedWrappedIndex];
-    const totalDays = relationshipStart 
-      ? differenceInDays(new Date(), parseISO(relationshipStart)) 
-      : 0;
-
-    return (
-      <div 
-        className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center justify-center overflow-hidden bg-wrapped-gradient"
-        onMouseDown={() => setIsPaused(true)}
-        onMouseUp={() => setIsPaused(false)}
-        onPointerDown={() => {
-          setIsPaused(true);
-          lastPointerDownTime.current = Date.now();
-        }}
-        onPointerUp={() => setIsPaused(false)}
-      >
-        {/* Cinematic Background Glows */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[80px] animate-glow-pulsate pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-rose-500/10 rounded-full blur-[100px] animate-glow-pulsate delay-1000 pointer-events-none" />
-        
-        {/* Cinematic Film Overlay */}
-        <div className="absolute inset-0 cinematic-overlay z-[101]" />
-
-        {/* Progress Bars */}
-        <div className="absolute top-4 left-4 right-4 flex gap-1 z-[110]">
-          {Array.from({ length: 11 }).map((_, i) => (
-            <div key={i} className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className={cn(
-                  "h-full bg-white transition-all duration-300",
-                  i < currentSlide ? "w-full" : i === currentSlide ? (isPaused ? "w-[50%]" : "animate-progress-4s") : "w-0"
-                )}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Close Button */}
-        <button 
-          onClick={() => setMode('list')}
-          className="absolute top-8 right-6 z-[120] h-10 w-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white active:scale-90 transition-transform"
-        >
-          <X className="h-6 w-6" />
-        </button>
-
-        {/* Interaction Areas */}
-        <div className="absolute inset-0 z-[105] flex">
-          <div className="flex-1" onClick={prevSlide} />
-          <div className="flex-1" onClick={nextSlide} />
-        </div>
-
-        {/* Content Area */}
-        <div className="relative z-[106] w-full h-full max-w-md mx-auto p-10 flex flex-col items-center justify-center text-center select-none pointer-events-none overflow-hidden">
-          
-          {/* SLIDE 0: CINEMATIC INTRO */}
-          {currentSlide === 0 && (
-            <div className="space-y-4">
-              <p className={cn(
-                "text-2xl font-medium text-white/60 transition-all duration-1000",
-                stage >= 1 ? "animate-text-reveal" : "opacity-0"
-              )}>
-                Este foi o vosso mês...
-              </p>
-              <h1 className={cn(
-                "text-4xl font-black italic tracking-tighter text-primary transition-all duration-1000",
-                stage >= 2 ? "animate-text-reveal" : "opacity-0 invisible"
-              )}>
-                no LoveNest
-              </h1>
-              <div className={cn(
-                "pt-10 transition-all duration-1000",
-                stage >= 3 ? "animate-fade-scale-in" : "opacity-0"
-              )}>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
-                  {MONTH_NAMES[current.month]} {current.year}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* SLIDE 1: DAYS TOGETHER */}
-          {currentSlide === 1 && (
-            <div className="space-y-8">
-              <div className={cn("transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                <p className="text-xl font-bold italic text-white/40">Vocês já somam...</p>
-              </div>
-              <div className={cn("space-y-4 transition-all duration-700", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
-                <p className="text-8xl font-black tracking-tighter drop-shadow-glow">
-                  <AnimatedCounter value={totalDays} delay={500} />
-                </p>
-                <p className="text-2xl font-black italic text-primary">Dias de pura história</p>
-              </div>
-            </div>
-          )}
-
-          {/* SLIDE 2: STREAK (EMOTIONAL) */}
-          {currentSlide === 2 && (
-            <div className="space-y-10">
-              <div className={cn("transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                <p className="text-2xl font-bold italic leading-tight text-white/60 px-6">
-                  "Nem sempre foi fácil..."
-                </p>
-              </div>
-              <div className={cn("space-y-6 transition-all duration-1000", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
-                <p className="text-2xl font-black italic text-primary px-4">
-                  ...mas vocês continuaram
-                </p>
-                <div className="relative inline-block mt-4">
-                   <Flame className="w-24 h-24 mx-auto text-orange-500 fill-orange-500 animate-pulse-glow" />
-                   <p className="text-6xl font-black tracking-tighter absolute inset-0 flex items-center justify-center pt-4 text-white drop-shadow-md">
-                     <AnimatedCounter value={current.streak_days} delay={200} />
-                   </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* SLIDE 3: MOOD (DRAMATIC) */}
-          {currentSlide === 3 && (
-            <div className="space-y-12">
-              <div className={cn("transition-base", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                <p className="text-xl font-bold italic text-white/50">Este mês vocês sentiram-se...</p>
-              </div>
-              <div className={cn("space-y-6", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
-                <Heart className="w-24 h-24 mx-auto text-primary fill-primary drop-shadow-glow animate-bounce-in" />
-                <h2 className="text-5xl font-black tracking-tighter text-primary uppercase drop-shadow-glow">
-                  {current.top_mood || "Apaixonados"}
-                </h2>
-              </div>
-            </div>
-          )}
-
-          {/* SLIDE 4: MESSAGES */}
-          {currentSlide === 4 && (
-            <div className="space-y-8">
-              <div className={cn("transition-base", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                <p className="text-xl font-bold italic text-white/60">Este mês...</p>
-                <p className="text-2xl font-black italic text-primary mt-2">vossas palavras aqueceram a casa</p>
-              </div>
-              <div className={cn("space-y-4", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
-                <p className="text-8xl font-black tracking-tighter">
-                  <AnimatedCounter value={current.messages_count} delay={300} />
-                </p>
-                <p className="text-xs font-black uppercase tracking-widest text-white/30">Mensagens enviadas com carinho.</p>
-              </div>
-            </div>
-          )}
-
-          {/* SLIDE 5: CHALLENGES */}
-          {currentSlide === 5 && (
-            <div className="space-y-10">
-              <Trophy className={cn("w-24 h-24 mx-auto transition-all duration-700", stage >= 2 ? "text-primary animate-bounce-in" : "text-white/10")} />
-              <div className={cn("space-y-4", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                <p className="text-2xl font-black italic px-4">
-                  Vocês cresceram juntos, <br/>
-                  desafio por desafio
-                </p>
-                {stage >= 2 && (
-                  <p className="text-7xl font-black tracking-tighter delay-300 animate-fade-scale-in">
-                    <AnimatedCounter value={current.challenges_completed} />
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* SLIDE 6: PHOTO (KEN BURNS) */}
-          {currentSlide === 6 && (
-            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center overflow-hidden">
-              {lastPhoto ? (
-                <>
-                  <img 
-                    src={lastPhoto} 
-                    className="absolute inset-0 w-full h-full object-cover animate-ken-burns opacity-60" 
-                    alt="Momento" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-[107]" />
-                  <div className="relative z-[108] p-10 space-y-4 scale-95">
-                    <p className={cn("text-3xl font-black italic leading-tight drop-shadow-2xl transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                      Momentos que ficam <br/>para sempre
-                    </p>
-                    <p className={cn("text-lg font-medium text-primary shadow-black drop-shadow-md transition-all duration-1000", stage >= 2 ? "animate-fade-slide-up" : "opacity-0")}>
-                      Vivido em equipa.
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="p-10 space-y-8">
-                  <div className={cn("transition-all duration-1500 px-6", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                    <p className="text-2xl font-bold italic leading-relaxed text-white/50">
-                      "Nem todos os momentos foram registados..."
-                    </p>
-                  </div>
-                  <div className={cn("transition-all duration-1000", stage >= 2 ? "animate-fade-scale-in" : "opacity-0 invisible")}>
-                    <p className="text-3xl font-black italic text-primary">
-                      mas foram vividos
-                    </p>
-                    <div className="mt-8 opacity-20"><Camera className="w-16 h-16 mx-auto" /></div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* SLIDE 7: CLIMAX 1 */}
-          {currentSlide === 7 && (
-            <div className="space-y-6">
-              <Heart className="w-20 h-20 mx-auto text-rose-500 fill-rose-500 animate-pulse-glow" />
-              <p className={cn("text-3xl font-black italic leading-tight transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                Vocês são mais do que números...
-              </p>
-            </div>
-          )}
-
-          {/* SLIDE 8: CLIMAX 2 */}
-          {currentSlide === 8 && (
-            <div className="space-y-6">
-              <Sparkles className="w-16 h-16 text-primary mx-auto animate-pulse-soft" />
-              <p className={cn("text-4xl font-black italic tracking-tighter transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                São história
-              </p>
-            </div>
-          )}
-
-          {/* SLIDE 9: CLIMAX 3 */}
-          {currentSlide === 9 && (
-            <div className="space-y-6">
-              <p className={cn("text-2xl font-medium text-white/60 transition-all duration-1000", stage >= 1 ? "animate-text-reveal" : "opacity-0")}>
-                E isto...
-              </p>
-              <h2 className={cn("text-5xl font-black italic text-primary animate-pulse transition-all duration-1000", stage >= 2 ? "animate-text-reveal" : "opacity-0 invisible")}>
-                é só o começo.
-              </h2>
-            </div>
-          )}
-
-          {/* SLIDE 10: FINAL BUTTONS */}
-          {currentSlide === 10 && (
-            <div className="space-y-12 animate-in fade-in zoom-in duration-1000">
-              <div className="space-y-6">
-                <div className="bg-primary/10 h-24 w-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-glow">
-                  <Sparkles className="w-12 h-12 text-primary animate-pulse-soft" />
-                </div>
-                <h3 className="text-5xl font-black italic tracking-tighter text-white drop-shadow-glow">{houseName}</h3>
-                <p className="text-sm font-black uppercase tracking-[0.4em] text-white/30">O vosso refúgio</p>
-              </div>
-              
-              <div className="space-y-4 pt-4 px-4 pointer-events-auto">
-                <Button 
-                   onClick={() => {
-                    const monthName = MONTH_NAMES[current.month];
-                    const shareText = `O nosso mês no LoveNest\n\n${houseName}\n${current.streak_days} dias de Streak\n${current.messages_count} mensagens trocadas\n\n${partner1Name && partner1Name + ' & '}Parceiro(a) estão a construir história!`;
-                    
-                    if (navigator.share) {
-                      navigator.share({ 
-                        title: `LoveWrapped: ${monthName} ${current.year}`, 
-                        text: shareText, 
-                        url: window.location.origin 
-                      }).catch(() => {});
-                    } else {
-                      navigator.clipboard.writeText(shareText);
-                      toast({ title: "Resumo copiado!", description: "Agora podes partilhar nas redes sociais!" });
-                    }
-                  }}
-                  className="w-full bg-primary text-white hover:bg-primary/90 font-black py-8 rounded-[2rem] shadow-glow text-lg active:scale-95 transition-all animate-bounce-in flex items-center justify-center group"
-                >
-                  <Share2 className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" /> Partilhar o mês
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setMode('list')}
-                  className="text-white/40 font-bold hover:text-white"
-                >
-                  Sair do Wrapped
-                </Button>
-              </div>
-            </div>
-          )}
-
-        </div>
-      </div>
-    );
-  }
+  if (film) return <WrappedFilm data={film} onClose={() => setFilm(null)} onShare={shareFilm} />;
 
   return (
     <section className="animate-fade-in">
