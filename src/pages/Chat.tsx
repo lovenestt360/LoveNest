@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_CHAT_WALLPAPER } from "@/features/chat/components/defaultWallpaper";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
+import { useOnlinePresence } from "@/features/presence/onlinePresence";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -491,6 +492,7 @@ export default function Chat() {
   const { user }                                   = useAuth();
   const spaceId                                    = useCoupleSpaceId();
   const navigate                                   = useNavigate();
+  const { partnerOnline }                          = useOnlinePresence();
   const { resetChatUnread }                        = useAppNotifContext();
   const { toast }                                  = useToast();
   const { wallpaperUrl, wallpaperOpacity }         = useUserSettings();
@@ -890,7 +892,10 @@ export default function Chat() {
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.8} />
               )}
             </div>
-            <p className="text-[12px] text-[#7A7F8C] dark:text-muted-foreground">Só vocês os dois</p>
+            <p className="flex items-center gap-1.5 text-[12px] text-[#7A7F8C] dark:text-muted-foreground">
+              {partnerOnline && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />}
+              {partnerOnline ? "Online agora" : "Só vocês os dois"}
+            </p>
           </div>
 
           {/* Palette */}

@@ -8,6 +8,7 @@ import { VerificationPrompt } from "@/features/verification/VerificationPrompt";
 import { cn } from "@/lib/utils";
 import { ChatWallpaper } from "@/features/chat/components/ChatWallpaper";
 import { toast } from "sonner";
+import { OnlinePresenceProvider } from "@/features/presence/OnlinePresenceProvider";
 
 // Import directo (não lazy) para que o keep-alive funcione —
 // AppShell mantém Index montado em memória e apenas o mostra/oculta via CSS.
@@ -66,6 +67,7 @@ export function AppShell() {
   }, []);
 
   return (
+    <OnlinePresenceProvider>
     <div className={cn(
       "min-h-[100dvh] text-foreground relative transition-colors duration-500",
       isRefined && "refined",
@@ -113,5 +115,6 @@ export function AppShell() {
       <FloatingSetupChecklist />
       <VerificationPrompt />
     </div>
+    </OnlinePresenceProvider>
   );
 }
