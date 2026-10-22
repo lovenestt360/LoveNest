@@ -1,0 +1,213 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,600;1,9..144,800&display=swap');
+/* Filme do LoveWrapped. Tudo dentro de .wf; animações com prefixo wf-. */
+.wf { --ink:#0B1324; --muted:#7A7F8C; --edge:#ECE8E3; --field:#F7F5F2; --rose:#E5466D; --blue:#4D7CFE; --stage:#E7E5E1; --ease: cubic-bezier(0.22,1,0.36,1); --serif: Fraunces, Georgia, serif;  }
+.wf .pet { position: relative; display: block; pointer-events: none; }
+.wf .pet img { width: 100%; height: auto; display: block; animation: wf-bob 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+.wf .pet::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,19,36,.16), transparent); animation: wf-shadow 3.6s ease-in-out infinite; z-index: -1; }
+.wf .pet.glow-rose::before, .wf .pet.glow-blue::before { content: ""; position: absolute; inset: 12% 14% 18%; border-radius: 50%; filter: blur(26px); z-index: -1; animation: wf-glow 3.6s ease-in-out infinite; }
+.wf .pet.glow-rose::before { background: rgba(244,114,182,.28); }
+.wf .pet.glow-blue::before { background: rgba(77,124,254,.26); }
+@keyframes wf-bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.01); } }
+@keyframes wf-shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(.82); opacity: .6; } }
+@keyframes wf-glow { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+.wf .pet-in { opacity: 0; transform: translateY(16px) scale(.92); animation: wf-petIn .9s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+@keyframes wf-petIn { to { opacity: 1; transform: none; } }
+.wf .pet.talking img { animation: wf-talk .5s ease-in-out infinite alternate; }
+@keyframes wf-talk { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-2px) scaleY(1.03); } }
+.wf .pet.happy img { animation: wf-hop .7s var(--ease) 1, wf-bob 3.6s ease-in-out infinite .7s; }
+@keyframes wf-hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-18px) scale(1.06, .96); } 60% { transform: translateY(0) scale(.97, 1.03); } 100% { transform: translateY(0) scale(1); } }
+.wf .speaker { display: flex; align-items: flex-end; gap: 10px; }
+.wf .speaker .pet { width: 64px; flex-shrink: 0; margin-bottom: -6px; }
+.wf .speaker .chat { flex: 1; min-width: 0; }
+.wf .speaker .bub { max-width: 100%; }
+.wf .speaker .bub:first-child { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.wf .float-heart { position: absolute; color: var(--rose); font-size: 14px; opacity: 0; animation: wf-heartUp 2.8s ease-out infinite; }
+@keyframes wf-heartUp { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+.wf .pet-body { display: block; position: relative; pointer-events: auto; cursor: pointer; transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)); transition: transform .45s var(--ease), filter .3s; }
+.wf .pet.shy .pet-body { transform: scaleX(-1) rotate(-4deg) translateY(4px); filter: saturate(.85); }
+.wf .pet.nod .pet-body img { animation: wf-nod .4s var(--ease) 1, wf-bob 3.6s ease-in-out infinite .4s; }
+@keyframes wf-nod { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(4deg); } }
+.wf .pet.wiggle .pet-body img { animation: wf-wiggle .6s ease-in-out 1, wf-bob 3.6s ease-in-out infinite .6s; }
+@keyframes wf-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+.wf .pet.shake .pet-body img { animation: wf-shake .5s ease-in-out 1, wf-bob 3.6s ease-in-out infinite .5s; }
+@keyframes wf-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px) rotate(-3deg); } 40%, 80% { transform: translateX(6px) rotate(3deg); } }
+.wf .pet.spin .pet-body img { animation: wf-spin .9s var(--ease) 1, wf-bob 3.6s ease-in-out infinite .9s; }
+@keyframes wf-spin { 0% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16px) rotate(180deg) scale(1.05); } 100% { transform: translateY(0) rotate(360deg); } }
+.wf .pet.happy .pet-body img { animation: wf-hop .7s var(--ease) 1, wf-bob 3.6s ease-in-out infinite .7s; }
+.wf .pet-say { position: absolute; bottom: 92%; right: 38%; white-space: nowrap; background: #fff; border: 1px solid var(--edge); border-radius: 14px; border-bottom-right-radius: 4px; padding: 7px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink); box-shadow: 0 10px 22px -14px rgba(11,19,36,.45); opacity: 0; transform: translateY(6px) scale(.9); transform-origin: bottom right; transition: opacity .25s, transform .35s var(--ease); pointer-events: none; z-index: 5; }
+.wf .pet-say.show { opacity: 1; transform: none; }
+.wf .pet.say-right .pet-say { right: auto; left: 38%; border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; transform-origin: bottom left; }
+.wf .pet.say-top .pet-say { bottom: auto; top: -18px; right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); transform-origin: bottom center; border-bottom-right-radius: 14px; }
+.wf .pet.say-top .pet-say.show { transform: translate(-50%, 0); }
+.wf .burst { position: absolute; left: 50%; top: 30%; color: var(--rose); font-size: 14px; pointer-events: none; animation: wf-burst 1.1s ease-out forwards; z-index: 4; }
+@keyframes wf-burst { 0% { opacity: 0; transform: translate(-50%, 0) scale(.4); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1) rotate(var(--r)); } }
+.wf .film { position: absolute; inset: 0; color: #fff; cursor: pointer; user-select: none; background: #000; }
+.wf .grain { position: absolute; inset: -50%; z-index: 30; pointer-events: none; opacity: .09; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); animation: wf-grain .8s steps(4) infinite; }
+@keyframes wf-grain { 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
+.wf .vignette { position: absolute; inset: 0; z-index: 29; pointer-events: none; box-shadow: inset 0 0 120px rgba(0,0,0,.55); }
+.wf .leak { position: absolute; inset: -30%; z-index: 28; pointer-events: none; background: radial-gradient(40% 30% at 20% 30%, rgba(255,170,120,.35), transparent 70%), radial-gradient(35% 25% at 85% 70%, rgba(255,90,140,.25), transparent 70%); mix-blend-mode: screen; opacity: 0; }
+.wf .film.leaking .leak { animation: wf-leak 2.6s ease-out; }
+@keyframes wf-leak { 0% { opacity: 0; transform: translateX(-20%); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(25%); } }
+.wf .lb { position: absolute; left: 0; right: 0; height: 50%; background: #000; z-index: 27; transition: transform 1.6s cubic-bezier(.7,0,.2,1); }
+.wf .lb.t { top: 0; }
+.wf .lb.b { bottom: 0; }
+.wf .film.open .lb.t { transform: translateY(-86%); }
+.wf .film.open .lb.b { transform: translateY(86%); }
+.wf .film.play .lb.t { transform: translateY(-100%); }
+.wf .film.play .lb.b { transform: translateY(100%); }
+.wf .bars { position: absolute; top: 46px; left: 14px; right: 14px; display: flex; gap: 3px; z-index: 40; }
+.wf .bars i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.22); overflow: hidden; }
+.wf .bars i b { display: block; height: 100%; width: 0; background: #fff; }
+.wf .bars i.done b { width: 100%; }
+.wf .bars i.now b { animation: wf-barfill var(--dur) linear forwards; }
+.wf .film.paused .bars i.now b { animation-play-state: paused; }
+@keyframes wf-barfill { to { width: 100%; } }
+.wf .fbtn { position: absolute; top: 60px; z-index: 41; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.14); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.22); color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.wf .fbtn.x { right: 14px; }
+.wf .fbtn.snd { right: 60px; }
+.wf .snd-hint { position: absolute; top: 106px; right: 14px; z-index: 41; font-size: 11px; color: rgba(255,255,255,.8); background: rgba(0,0,0,.35); padding: 5px 9px; border-radius: 999px; animation: wf-nudge 1.4s ease-in-out infinite; }
+@keyframes wf-nudge { 50% { transform: translateY(-3px); } }
+.wf .sc { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 28px; opacity: 0; visibility: hidden; transform: scale(1.08); filter: blur(10px); transition: opacity .9s var(--ease), transform 1.2s var(--ease), filter .9s var(--ease), visibility .9s; overflow: hidden; }
+.wf .sc.on { opacity: 1; visibility: visible; transform: none; filter: none; }
+.wf .sc.out { opacity: 0; transform: scale(.94); filter: blur(8px); }
+.wf .sc > * { position: relative; z-index: 2; }
+.wf .kick { font-size: 18px; font-weight: 600; color: rgba(255,255,255,.75); }
+.wf .serif { font-family: var(--serif); font-style: italic; font-weight: 800; letter-spacing: -0.02em; }
+.wf .mega { font-size: 112px; font-weight: 900; letter-spacing: -0.07em; line-height: .9; font-variant-numeric: tabular-nums; text-shadow: 0 10px 50px rgba(0,0,0,.35); }
+.wf .line { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-top: 10px; line-height: 1.2; }
+.wf .line em { font-style: normal; color: #FFB4C6; }
+.wf .note { font-size: 13px; color: rgba(255,255,255,.66); margin-top: 10px; }
+.wf .sc.on .r1 { animation: wf-reveal 1s var(--ease) both .25s; }
+.wf .sc.on .r2 { animation: wf-reveal 1s var(--ease) both .75s; }
+.wf .sc.on .r3 { animation: wf-reveal 1s var(--ease) both 1.25s; }
+.wf .sc.on .r4 { animation: wf-reveal 1s var(--ease) both 1.75s; }
+@keyframes wf-reveal { from { opacity: 0; transform: translateY(26px) scale(.96); filter: blur(10px); letter-spacing: .02em; } to { opacity: 1; transform: none; filter: none; } }
+.wf .chars .word { display: inline-block; white-space: nowrap; opacity: 1; transform: none; animation: none !important; }
+.wf .chars span { display: inline-block; opacity: 0; transform: translateY(.5em) rotate(6deg); }
+.wf .sc.on .chars span { animation: wf-ch .7s var(--ease) forwards; animation-delay: calc(.4s + var(--i) * 45ms); }
+@keyframes wf-ch { to { opacity: 1; transform: none; } }
+.wf .bgimg { position: absolute; inset: 0; background: center/cover; z-index: 0; }
+.wf .sc.on .bgimg.kb { animation: wf-kb 10s ease-out forwards; }
+@keyframes wf-kb { from { transform: scale(1.04); } to { transform: scale(1.2) translate(-3%, -2%); } }
+.wf .shade { position: absolute; inset: 0; z-index: 1; }
+.wf canvas.fx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+.wf .s-title { background: #000; }
+.wf .s-title .presents { font-size: 11px; letter-spacing: .5em; color: rgba(255,255,255,.6); font-weight: 600; }
+.wf .s0 { justify-content: flex-end; padding-bottom: 76px; }
+.wf .s0 .shade { background: linear-gradient(180deg, rgba(11,19,36,.35) 0%, rgba(11,19,36,0) 35%, rgba(11,19,36,.9) 100%); }
+.wf .s0 .month { font-size: 78px; line-height: .9; }
+.wf .s0 .pair, .wf .s10 .pair { display: flex; gap: 0; align-items: flex-end; }
+.wf .s0 .pair .pet { width: 64px; }
+.wf .s0 .pair .pet.f { width: 56px; }
+.wf .s1 { background: radial-gradient(120% 80% at 50% 45%, #7A1E3F 0%, #2A0B1C 55%, #0B1324 100%); }
+.wf .ring { position: absolute; left: 50%; top: 47%; width: 230px; height: 230px; margin: -115px 0 0 -115px; border-radius: 50%; border: 2px solid rgba(255,140,170,.55); z-index: 1; opacity: 0; }
+.wf .s1.on .ring { animation: wf-beat 1.6s ease-out infinite; }
+.wf .s1.on .ring:nth-child(2) { animation-delay: .53s; }
+.wf .s1.on .ring:nth-child(3) { animation-delay: 1.06s; }
+@keyframes wf-beat { 0% { transform: scale(.55); opacity: .95; } 100% { transform: scale(1.95); opacity: 0; } }
+.wf .s2 { background: radial-gradient(90% 70% at 50% 72%, #F97316 0%, #9A3412 38%, #2B0F06 75%, #120604 100%); }
+.wf .s2 .flame { width: 150px; transform: scale(.35); opacity: 0; }
+.wf .s2.on .flame { animation: wf-grow 1.6s var(--ease) forwards .9s; }
+@keyframes wf-grow { 60% { transform: scale(1.14); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.wf .s3 { background: radial-gradient(110% 80% at 50% 40%, #FFD27A 0%, #F59E0B 30%, #E5466D 70%, #5B1030 100%); }
+.wf .s3 .emo-old { margin: 16px 0 4px; font-size: 118px; line-height: 1; filter: drop-shadow(0 18px 30px rgba(0,0,0,.25)); opacity: 0; }
+.wf .s3.on .emo { animation: wf-boing 1.2s var(--ease) forwards .6s, wf-sway 3s ease-in-out infinite 1.8s; }
+@keyframes wf-boing { 0% { opacity: 0; transform: scale(0) rotate(-30deg); } 60% { opacity: 1; transform: scale(1.22) rotate(8deg); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes wf-sway { 0%, 100% { opacity: 1; } 50% { opacity: 1; transform: rotate(-6deg) scale(1.04); } }
+.wf .s4 { background: linear-gradient(170deg, #0A1A3F 0%, #1E3A8A 55%, #3B5BDB 100%); }
+.wf .fbub { position: absolute; bottom: -40px; padding: 8px 12px; border-radius: 16px; font-size: 13px; font-weight: 600; z-index: 1; white-space: nowrap; animation: wf-float-up linear forwards; }
+.wf .fbub.me { background: #F1EBE3; color: #0B1324; border-bottom-right-radius: 4px; }
+.wf .fbub.you { background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.25); border-bottom-left-radius: 4px; backdrop-filter: blur(6px); }
+@keyframes wf-float-up { to { transform: translateY(-880px); opacity: .1; } }
+.wf .s5 { background: radial-gradient(100% 75% at 50% 35%, #FDE68A 0%, #D97706 40%, #78350F 80%, #2A1205 100%); }
+.wf .trophy { font-size: 110px; line-height: 1; opacity: 0; filter: drop-shadow(0 20px 30px rgba(0,0,0,.35)); }
+.wf .s5.on .trophy { animation: wf-lift 1.4s var(--ease) forwards .5s; }
+@keyframes wf-lift { from { opacity: 0; transform: translateY(80px) scale(.6); } 70% { opacity: 1; transform: translateY(-10px) scale(1.08); } to { opacity: 1; transform: none; } }
+.wf .s6 { justify-content: flex-end; padding-bottom: 80px; }
+.wf .s6 .bgimg { opacity: 0; transition: opacity 1.2s; }
+.wf .s6 .bgimg.show { opacity: 1; animation: wf-kb 6s ease-out forwards; }
+.wf .s6 .shade { background: linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,0) 40%, rgba(0,0,0,.85)); z-index: 1; }
+.wf .strip { display: flex; gap: 6px; margin-top: 14px; }
+.wf .strip img { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; border: 2px solid rgba(255,255,255,.85); opacity: 0; transform: translateY(14px); }
+.wf .s6.on .strip img { animation: wf-reveal .6s var(--ease) forwards; animation-delay: calc(2s + var(--i) * 120ms); }
+.wf .s7 { background: radial-gradient(90% 60% at 50% 50%, #5B1030 0%, #1A0610 70%, #000 100%); }
+.wf .bigheart { font-size: 96px; line-height: 1; opacity: 0; }
+.wf .s7.on .bigheart { animation: wf-boing 1s var(--ease) forwards .3s, wf-pulse 1.1s ease-in-out infinite 1.4s; }
+@keyframes wf-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 15% { opacity: 1; transform: scale(1.18); } 30% { opacity: 1; transform: scale(1); } 45% { opacity: 1; transform: scale(1.1); } }
+.wf .s8 { background: radial-gradient(80% 60% at 50% 50%, #1E1B4B 0%, #0B1324 70%, #000 100%); }
+.wf .s9 { background: linear-gradient(180deg, #0B1324 0%, #3B1531 40%, #E5466D 75%, #FDBA74 100%); }
+.wf .sun { position: absolute; left: 50%; bottom: -160px; width: 360px; height: 360px; margin-left: -180px; border-radius: 50%; background: radial-gradient(circle, #FFE7B3 0%, #FDBA74 40%, rgba(253,186,116,0) 70%); z-index: 1; }
+.wf .s9.on .sun { animation: wf-rise-sun 5s ease-out forwards; }
+@keyframes wf-rise-sun { to { transform: translateY(-120px); } }
+.wf .s10 { background: radial-gradient(100% 70% at 50% 60%, #3B1531 0%, #0B1324 75%); }
+.wf .s10 .pair .pet { width: 118px; }
+.wf .s10 .pair .pet.f { width: 102px; }
+.wf .house { font-size: 52px; margin-top: 8px; }
+.wf .refuge { font-size: 11px; letter-spacing: .4em; color: rgba(255,255,255,.55); font-weight: 700; margin-top: 4px; }
+.wf .cta { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; width: 100%; max-width: 280px; pointer-events: auto; }
+.wf .cta button { height: 50px; border-radius: 18px; font-weight: 800; font-size: 15px; }
+.wf .cta .w { background: #fff; color: #0B1324; }
+.wf .cta .g { color: rgba(255,255,255,.6); height: 36px; font-weight: 600; }
+.wf .taphint { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; font-size: 11.5px; color: rgba(255,255,255,.5); z-index: 40; }
+.wf .ico { display: inline-block; vertical-align: -3px; flex-shrink: 0; }
+.wf .s-title { background: #0B1324; }
+.wf .aurora { position: absolute; inset: -20%; z-index: 0; filter: blur(40px); opacity: .9; }
+.wf .aurora i { position: absolute; width: 60%; height: 45%; border-radius: 50%; }
+.wf .aurora i:nth-child(1) { left: 0; top: 15%; background: #E5466D; animation: wf-drift 7s ease-in-out infinite alternate; }
+.wf .aurora i:nth-child(2) { right: 0; top: 45%; background: #4D7CFE; animation: wf-drift 8s ease-in-out infinite alternate-reverse; }
+.wf .aurora i:nth-child(3) { left: 25%; bottom: 0; width: 50%; background: #7A1E3F; animation: wf-drift 9s ease-in-out infinite alternate; }
+@keyframes wf-drift { to { transform: translate(14%, -10%) scale(1.15); } }
+.wf .countdown { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.wf .countdown svg { width: 150px; height: 150px; transform: rotate(-90deg); }
+.wf .countdown circle.sweep { stroke-dasharray: 440; stroke-dashoffset: 440; }
+.wf .s-title.on .countdown circle.sweep { animation: wf-sweep .55s linear 3; }
+@keyframes wf-sweep { to { stroke-dashoffset: 0; } }
+.wf .countdown b { position: absolute; font-size: 64px; font-weight: 900; letter-spacing: -0.05em; opacity: 0; }
+.wf .s-title.on .countdown b:nth-of-type(1) { animation: wf-num .55s steps(1) 0s; }
+.wf .s-title.on .countdown b:nth-of-type(2) { animation: wf-num .55s steps(1) .55s; }
+.wf .s-title.on .countdown b:nth-of-type(3) { animation: wf-num .55s steps(1) 1.1s; }
+@keyframes wf-num { 0% { opacity: 1; } 100% { opacity: 1; } }
+.wf .s-title.on .countdown { animation: wf-fadeout .3s ease forwards 1.65s; }
+@keyframes wf-fadeout { to { opacity: 0; } }
+.wf .meet { position: relative; height: 150px; width: 260px; }
+.wf .meet .pet { position: absolute; bottom: 0; width: 104px; opacity: 0; }
+.wf .meet .pet.f { left: 26px; width: 92px; }
+.wf .meet .pet.g { right: 22px; }
+.wf .s-title.on .meet .pet.f { animation: wf-inL 1.1s var(--ease) forwards 1.8s; }
+.wf .s-title.on .meet .pet.g { animation: wf-inR 1.1s var(--ease) forwards 1.8s; }
+@keyframes wf-inL { from { opacity: 0; transform: translateX(-140px); } to { opacity: 1; transform: none; } }
+@keyframes wf-inR { from { opacity: 0; transform: translateX(140px); } to { opacity: 1; transform: none; } }
+.wf .meet .love { position: absolute; left: 50%; top: 4px; width: 40px; margin-left: -20px; color: #FF8FAB; opacity: 0; filter: drop-shadow(0 0 12px rgba(255,143,171,.8)); }
+.wf .s-title.on .meet .love { animation: wf-lovepop .7s var(--ease) forwards 2.8s, wf-beatsoft 1.1s ease-in-out infinite 3.5s; }
+@keyframes wf-lovepop { from { opacity: 0; transform: scale(0) translateY(20px); } 70% { opacity: 1; transform: scale(1.3); } to { opacity: 1; transform: scale(1); } }
+@keyframes wf-beatsoft { 0%, 100% { opacity: 1; transform: scale(1); } 20% { opacity: 1; transform: scale(1.15); } }
+.wf .s-title .names { opacity: 0; }
+.wf .s-title.on .names { animation: wf-reveal 1s var(--ease) forwards 3s; }
+.wf .s-title.on .presents { animation: wf-reveal 1s var(--ease) forwards 3.3s; opacity: 0; }
+.wf .s3 { background: radial-gradient(110% 80% at 50% 38%, #FF9DB4 0%, #E5466D 45%, #7A1E3F 80%, #2A0B1C 100%) !important; }
+.wf .moodcircle { position: relative; width: 150px; height: 150px; border-radius: 50%; background: #fff; color: #E5466D; display: flex; align-items: center; justify-content: center; margin: 16px 0 8px; box-shadow: 0 24px 50px -20px rgba(42,11,28,.6); opacity: 0; }
+.wf .s3.on .moodcircle { animation: wf-boing 1.1s var(--ease) forwards .55s; }
+.wf .moodcircle::before, .wf .moodcircle::after { content: ""; position: absolute; inset: -14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); opacity: 0; }
+.wf .s3.on .moodcircle::before { animation: wf-beat 2s ease-out infinite 1.4s; }
+.wf .s3.on .moodcircle::after { animation: wf-beat 2s ease-out infinite 2.4s; }
+.wf .moodcircle { background: radial-gradient(circle at 50% 40%, #fff 0%, #FFE4EC 70%) !important; width: 170px !important; height: 170px !important; }
+.wf .moodcircle .pet { width: 128px; margin-top: 6px; }
+.wf .s3.on .moodcircle .pet img { animation: wf-en-hopjoy 1.1s var(--ease) infinite 1.4s; }
+@keyframes wf-en-hopjoy { 0%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-16px) scale(1.04, .97); } 55% { transform: translateY(0) scale(.97, 1.03); } }
+.wf .bokeh { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,0) 70%); filter: blur(4px); z-index: 1; animation: wf-floaty 7s ease-in-out infinite; }
+.wf .floaty { position: absolute; color: rgba(255,255,255,.75); z-index: 1; animation: wf-floaty 6s ease-in-out infinite; }
+@keyframes wf-floaty { 50% { transform: translateY(-16px) rotate(8deg); } }
+.wf .trophy { width: 128px; height: 128px; opacity: 0; filter: drop-shadow(0 22px 30px rgba(42,18,5,.45)); }
+.wf .drawheart { width: 120px; height: 120px; color: #FF8FAB; filter: drop-shadow(0 0 18px rgba(255,143,171,.65)); }
+.wf .drawheart path { stroke-dasharray: 90; stroke-dashoffset: 90; }
+.wf .s7.on .drawheart path { animation: wf-draw 1.6s var(--ease) forwards .3s; }
+@keyframes wf-draw { to { stroke-dashoffset: 0; } }
+.wf .s7.on .drawheart { animation: wf-beatsoft 1.1s ease-in-out infinite 2s; }
+.wf .s7 .pair2 { display: flex; align-items: flex-end; gap: 0; margin-top: 10px; }
+.wf .s7 .pair2 .pet { width: 84px; }
+.wf .s7 .pair2 .pet.f { width: 74px; }
+.wf .fbtn svg { width: 17px; height: 17px; }
+@media (prefers-reduced-motion: reduce) {
+.wf *, .wf *::before, .wf *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+.wf { position: fixed; inset: 0; z-index: 100; font-family: Inter, system-ui, sans-serif; background: #000; }
+.wf .film { border-radius: 0; }

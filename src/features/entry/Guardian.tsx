@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ENVELOPE_SVG, prefersReducedMotion } from "./entryUtils";
+import { ENVELOPE_SVG, HEART_SVG, prefersReducedMotion } from "./entryUtils";
 import faiscaImg from "./assets/faisca.webp";
 import guardiaoImg from "./assets/guardiao.webp";
 import "./entry.css";
@@ -77,7 +77,7 @@ export const Guardian = forwardRef<GuardianHandle, GuardianProps>(function Guard
     for (let i = 0; i < n; i++) {
       const h = document.createElement("span");
       h.className = "en-burst";
-      h.textContent = "♥";
+      h.innerHTML = HEART_SVG;
       h.setAttribute("aria-hidden", "true");
       const a = (Math.PI * 2 * i) / n + Math.random() * 0.6;
       h.style.setProperty("--dx", `${Math.cos(a) * (40 + Math.random() * 30)}px`);

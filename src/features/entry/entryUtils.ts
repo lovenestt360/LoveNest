@@ -27,3 +27,7 @@ export function passwordStrength(v: string) {
 
 export const ENVELOPE_SVG =
   '<svg viewBox="0 0 40 30" width="40" height="30" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="27" rx="5" fill="#fff" stroke="#0B1324" stroke-width="2"/><path d="M3 4.5 20 17 37 4.5" fill="none" stroke="#0B1324" stroke-width="2" stroke-linejoin="round"/><circle cx="31" cy="22" r="3.2" fill="#E5466D"/></svg>';
+
+/** Coração desenhado (igual em todos os telemóveis, ao contrário do símbolo de texto). */
+export const HEART_SVG =
+  '<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path fill="currentColor" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';

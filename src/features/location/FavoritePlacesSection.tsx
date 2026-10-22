@@ -50,7 +50,7 @@ export function FavoritePlacesSection({ myLat, myLng }: Props) {
         <button
           onClick={() => setShowAdd(v => !v)}
           disabled={!canAdd}
-          className="flex items-center gap-1 text-[11px] font-medium text-rose-400 hover:text-rose-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1 text-[11px] font-medium text-foreground hover:opacity-70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={2} />
           Adicionar
@@ -68,7 +68,7 @@ export function FavoritePlacesSection({ myLat, myLng }: Props) {
                 onClick={() => setIcon(p.key)}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
                   icon === p.key
-                    ? "bg-rose-100 dark:bg-rose-950/40 text-rose-500"
+                    ? "bg-[#0B1324] text-white dark:bg-foreground dark:text-background"
                     : "bg-muted text-muted-foreground hover:bg-muted/70"
                 }`}
                 title={p.label}
@@ -83,7 +83,7 @@ export function FavoritePlacesSection({ myLat, myLng }: Props) {
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Nome do local (ex: Casa, Trabalho...)"
-            className="w-full bg-muted/50 rounded-xl px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-rose-300 dark:focus:ring-rose-800"
+            className="w-full bg-muted/50 rounded-xl px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-[#0B1324]/15"
             onKeyDown={e => e.key === "Enter" && handleSave()}
           />
 
@@ -101,7 +101,7 @@ export function FavoritePlacesSection({ myLat, myLng }: Props) {
             <button
               onClick={handleSave}
               disabled={!name.trim() || saving}
-              className="flex-1 py-2 rounded-xl bg-rose-400 text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-all"
+              className="flex-1 py-2 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-all"
             >
               {saving ? "A guardar..." : "Guardar"}
             </button>
@@ -114,13 +114,13 @@ export function FavoritePlacesSection({ myLat, myLng }: Props) {
         <div className="glass-card divide-y divide-border/30">
           {places.map(place => (
             <div key={place.id} className="flex items-center gap-3 px-4 py-3">
-              <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0">
-                <PlaceIcon name={place.icon} className="w-3.5 h-3.5 text-rose-400" />
+              <div className="w-8 h-8 rounded-lg bg-[#F7F5F2] dark:bg-muted flex items-center justify-center shrink-0">
+                <PlaceIcon name={place.icon} className="w-3.5 h-3.5 text-foreground" />
               </div>
               <p className="flex-1 text-[13px] font-medium text-foreground">{place.name}</p>
               <button
                 onClick={() => removePlace(place.id)}
-                className="text-muted-foreground/30 hover:text-rose-400 transition-colors active:scale-95"
+                className="text-muted-foreground/30 hover:text-red-500 transition-colors active:scale-95"
               >
                 <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
               </button>

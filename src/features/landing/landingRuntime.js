@@ -56,7 +56,7 @@ export function mountLanding(root, { A, onStart, onLogin }) {
       if (!pet || reduced) return;
       for (let i = 0; i < n; i++) {
         const h = document.createElement("span");
-        h.className = "burst"; h.textContent = "♥";
+        h.className = "burst"; h.innerHTML = '<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path fill="currentColor" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
         const a = (Math.PI * 2 * i) / n + Math.random() * .6;
         h.style.setProperty("--dx", `${Math.cos(a) * (40 + Math.random() * 30)}px`);
         h.style.setProperty("--dy", `${-30 - Math.random() * 50}px`);
