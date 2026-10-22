@@ -2,6 +2,11 @@
    Branco e tinta como a Home; o rosa fica só nos Guardiões e nos corações.
    Tudo com o prefixo en- para não colidir com as classes da app. */
 
+/* Variáveis também no Guardião, para funcionar fora dos ecrãs de entrada (ex.: Jornada). */
+.en-pet {
+  --en-ink: #0B1324; --en-edge: #ECE8E3; --en-rose: #E5466D;
+  --en-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
 .en-screen {
   --en-ink: #0B1324; --en-text: #3A4150; --en-muted: #7A7F8C; --en-faint: #77736C;
   --en-edge: #ECE8E3; --en-field: #F7F5F2; --en-rose: #E5466D; --en-sand: #F1EBE3;
@@ -225,3 +230,10 @@
 .en-row-btns { display: flex; gap: 8px; }
 .en-row-btns .en-btn { flex: 1; }
 .en-square { width: 54px !important; flex: 0 0 54px !important; }
+
+.en-pet.custom::before { background: var(--en-glow); }
+
+/* Com "reduzir movimento", o que entra a animar aparece logo (o CSS global desliga as animações). */
+@media (prefers-reduced-motion: reduce) {
+  .en-pet-in, .en-in, .en-opt, .en-li, .en-bub, .en-card { opacity: 1 !important; transform: none !important; }
+}
