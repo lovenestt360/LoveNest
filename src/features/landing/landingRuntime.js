@@ -358,6 +358,55 @@ export function mountLanding(root, { A, onStart, onLogin }) {
       capIn.value = "";
     });
 
+    // ── Memórias: a foto vai para o espaço do casal ──
+    const memCh = doc.querySelector("#ch-memorias"), memG = memCh.querySelector(".ch-guide");
+    memCh.querySelector("[data-keep]").addEventListener("click", () => {
+      const left = [...memCh.querySelectorAll(".polaroid:not(.gone)")];
+      if (!left.length) { memCh.querySelectorAll(".polaroid").forEach(p => p.classList.remove("gone")); return; }
+      const top = left[left.length - 1];
+      const dev = memCh.querySelector(".device").getBoundingClientRect(), r = top.getBoundingClientRect();
+      if (!reduced) top.animate([{ transform: getComputedStyle(top).transform }, { transform: `translate(${dev.left + dev.width / 2 - (r.left + r.width / 2)}px, ${dev.top + dev.height * .3 - (r.top + r.height / 2)}px) scale(.3) rotate(12deg)`, opacity: .2 }], { duration: 700, easing: "cubic-bezier(.45,.05,.35,1)" });
+      setTimeout(() => {
+        top.classList.add("gone");
+        tapAt(memCh, 92, 6.5);
+        push(memCh, `Nova memória: ${top.dataset.photo} 📸`);
+        react(memG, "happy"); hearts(memG, 6); say(memG, "Guardada para sempre 💛", 2200);
+        if (left.length === 1) memCh.querySelector("[data-keep]").innerHTML = 'Ver outra vez <span class="arrow">↺</span>';
+      }, reduced ? 0 : 650);
+    });
+
+    // ── Desafios: concluir dá festa ──
+    const dsCh = doc.querySelector("#ch-desafios"), dsG = dsCh.querySelector(".ch-guide"), dsCard = dsCh.querySelector("[data-challenge]");
+    dsCh.querySelector("[data-done]").addEventListener("click", () => {
+      if (dsCard.classList.contains("ok")) return;
+      dsCard.classList.add("ok"); dsCh.querySelector("[data-done]").innerHTML = 'Concluído <span class="arrow">✓</span>';
+      tapAt(dsCh, 78.5, 44.2);
+      push(dsCh, "Desafio concluído: Cozinhar juntos um prato novo 🎉");
+      react(dsG, "spin"); hearts(dsG, 14); say(dsG, "Vocês conseguiram! 🎉", 2600);
+    });
+
+    // ── Wrapped: os slides avançam com o scroll; os números contam ──
+    const wrCh = doc.querySelector("#ch-wrapped"), slides = wrCh.querySelectorAll("[data-story]");
+    let slideNow = -1;
+    function onWrapped() {
+      const r = wrCh.getBoundingClientRect(), total = wrCh.offsetHeight - innerHeight;
+      const pr = reduced ? 1 : Math.max(0, Math.min(.999, -r.top / (total || 1)));
+      const k = pr * slides.length, idx = Math.floor(k);
+      if (idx !== slideNow) {
+        slideNow = idx; slides.forEach((sl, i) => sl.classList.toggle("on", i === idx));
+        if (r.top < innerHeight * .5 && r.bottom > innerHeight * .5) { const g = wrCh.querySelector(".ch-guide"); react(g, idx === slides.length - 1 ? "spin" : "nod"); if (idx === slides.length - 1) hearts(g, 10); }
+      }
+    }
+    on(window, "scroll", onWrapped, { passive: true }); onWrapped();
+    watch((es, o) => es.forEach(en => {
+      if (!en.isIntersecting) return; o.disconnect();
+      en.target.querySelectorAll("[data-to]").forEach(el => {
+        const to = Number(el.dataset.to), t0 = performance.now(), dur = reduced ? 0 : 1600;
+        const tick = (now) => { const q = dur ? Math.min(1, (now - t0) / dur) : 1; el.textContent = Math.round(to * (1 - Math.pow(1 - q, 3))).toLocaleString("pt-PT"); if (q < 1) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+      });
+    }), { threshold: .6 }).observe(wrCh.querySelector("[data-stats]"));
+
     // ── Companheiro ──
     const buddy = doc.querySelector("[data-buddy]"), buddyPet = $pet(doc, "buddy");
     function buddySay(text) {

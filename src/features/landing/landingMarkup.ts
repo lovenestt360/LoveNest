@@ -6,23 +6,32 @@ import chama_full from "./stages/chama.webp";
 import chama_thumb from "@/assets/flame/flame_03_chama_thumb.png";
 import chat from "./shots/chat.webp";
 import chat_msgs from "./shots/chat-msgs.webp";
+import desafios from "./shots/desafios.webp";
 import eterno_full from "./stages/eterno.webp";
 import eterno_thumb from "@/assets/flame/flame_06_eterno_thumb.png";
 import faisca from "@/features/entry/assets/faisca.webp";
 import faisca_full from "./stages/faisca.webp";
 import faisca_thumb from "@/assets/flame/flame_01_faisca_thumb.png";
+import foto_p1011 from "./shots/foto-p1011.webp";
+import foto_p1035 from "./shots/foto-p1035.webp";
+import foto_p360 from "./shots/foto-p360.webp";
 import guardiao from "@/features/entry/assets/guardiao.webp";
 import guardiao_full from "./stages/guardiao.webp";
 import guardiao_thumb from "@/assets/flame/flame_04_guardiao_thumb.png";
 import home_full from "./shots/home-full.webp";
 import humor from "./shots/humor.webp";
+import memorias_full from "./shots/memorias-full.webp";
 import plano from "./shots/plano.webp";
 import sentinela_full from "./stages/sentinela.webp";
 import sentinela_thumb from "@/assets/flame/flame_05_sentinela_thumb.png";
 import soberano_full from "./stages/soberano.webp";
 import soberano_thumb from "@/assets/flame/flame_07_soberano_thumb.png";
+import story1 from "./shots/story1.webp";
+import story2 from "./shots/story2.webp";
+import story3 from "./shots/story3.webp";
+import story4 from "./shots/story4.webp";
 
-export const LANDING_ASSETS = { brasa_full, brasa_thumb, capsula, chama_full, chama_thumb, chat, chat_msgs, eterno_full, eterno_thumb, faisca, faisca_full, faisca_thumb, guardiao, guardiao_full, guardiao_thumb, home_full, humor, plano, sentinela_full, sentinela_thumb, soberano_full, soberano_thumb };
+export const LANDING_ASSETS = { brasa_full, brasa_thumb, capsula, chama_full, chama_thumb, chat, chat_msgs, desafios, eterno_full, eterno_thumb, faisca, faisca_full, faisca_thumb, foto_p1011, foto_p1035, foto_p360, guardiao, guardiao_full, guardiao_thumb, home_full, humor, memorias_full, plano, sentinela_full, sentinela_thumb, soberano_full, soberano_thumb, story1, story2, story3, story4 };
 
 export const landingMarkup = (A: typeof LANDING_ASSETS) => `
 
@@ -83,7 +92,7 @@ export const landingMarkup = (A: typeof LANDING_ASSETS) => `
   </section>
 
   <!-- Capítulos: cada função sentida ao descer -->
-  <nav class="ch-dots" data-ch-dots aria-label="Funções"><a href="#ch-casa" data-dot="casa"><i></i><span>Casa</span></a><a href="#ch-chat" data-dot="chat"><i></i><span>Conversa</span></a><a href="#ch-humor" data-dot="humor"><i></i><span>Humor</span></a><a href="#ch-agenda" data-dot="agenda"><i></i><span>Agenda</span></a><a href="#ch-capsula" data-dot="capsula"><i></i><span>Cápsula do tempo</span></a></nav>
+  <nav class="ch-dots" data-ch-dots aria-label="Funções"><a href="#ch-casa" data-dot="casa"><i></i><span>Casa</span></a><a href="#ch-chat" data-dot="chat"><i></i><span>Conversa</span></a><a href="#ch-humor" data-dot="humor"><i></i><span>Humor</span></a><a href="#ch-agenda" data-dot="agenda"><i></i><span>Agenda</span></a><a href="#ch-capsula" data-dot="capsula"><i></i><span>Cápsula do tempo</span></a><a href="#ch-memorias" data-dot="memorias"><i></i><span>Memórias</span></a><a href="#ch-desafios" data-dot="desafios"><i></i><span>Desafios</span></a><a href="#ch-wrapped" data-dot="wrapped"><i></i><span>O vosso mês</span></a></nav>
   <section class="chapter " id="ch-casa" data-chapter="casa" data-say="Cada segundo conta 💙" style="height:230vh">
     <div class="ch-pin">
       <div class="wrap ch-grid">
@@ -165,6 +174,54 @@ export const landingMarkup = (A: typeof LANDING_ASSETS) => `
     </div>
   </section>
 
+  <section class="chapter flip" id="ch-memorias" data-chapter="memorias" data-say="Que fotos bonitas 📸" style="height:230vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>06</span>Memórias</p>
+          <h2 class="words">O que vivem não se perde.</h2>
+          <p class="sec-lead ch-text">Fotos e momentos guardados por mês, só para vocês os dois. Guarda uma:</p>
+          <div class="ch-widget"><div class="deck" data-deck><figure class="polaroid" data-photo="Lago ao fim da tarde" style="--i:0"><img src="${A.foto_p1011}" alt="" /><figcaption>Lago ao fim da tarde</figcaption></figure><figure class="polaroid" data-photo="A cascata" style="--i:1"><img src="${A.foto_p1035}" alt="" /><figcaption>A cascata</figcaption></figure><figure class="polaroid" data-photo="As tuas flores" style="--i:2"><img src="${A.foto_p360}" alt="" /><figcaption>As tuas flores</figcaption></figure></div><button class="btn deck-btn" data-keep>Guardar esta <span class="arrow">→</span></button></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-memorias"><img src="${A.guardiao_thumb}" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot pan" src="${A.memorias_full}" alt="Memórias do casal" data-pan /><div class="push" data-push><span class="push-ic"><img src="${A.faisca_thumb}" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter" id="ch-desafios" data-chapter="desafios" data-say="Bora fazer isto? 💪" style="height:170vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>07</span>Desafios</p>
+          <h2 class="words">Pequenas aventuras a dois.</h2>
+          <p class="sec-lead ch-text">Um desafio por dia para fazerem juntos. Hoje é este:</p>
+          <div class="ch-widget"><div class="challenge" data-challenge><span class="k">O desafio de hoje</span><b>Cozinhar juntos um prato novo</b><small>Escolham uma receita que nenhum dos dois fez.</small><button class="btn" data-done>Concluir <span class="arrow">✓</span></button></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-desafios"><img src="${A.guardiao_thumb}" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot" src="${A.desafios}" alt="Desafios do casal" /><div class="push" data-push><span class="push-ic"><img src="${A.faisca_thumb}" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter flip" id="ch-wrapped" data-chapter="wrapped" data-say="Que mês! 🎉" style="height:260vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>08</span>O vosso mês</p>
+          <h2 class="words">No fim do mês, a vossa história.</h2>
+          <p class="sec-lead ch-text">Um resumo bonito de tudo o que viveram. Desce e vê o de setembro:</p>
+          <div class="ch-widget"><div class="stats" data-stats><span><b data-to="1248">0</b>mensagens</span><span><b data-to="24">0</b>memórias</span><span><b data-to="21">0</b>dias de chama</span><span><b data-to="3">0</b>desafios</span></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-wrapped"><img src="${A.guardiao_thumb}" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot story" src="${A.story1}" alt="" data-story="0" /><img class="shot story" src="${A.story2}" alt="" data-story="1" /><img class="shot story" src="${A.story3}" alt="" data-story="2" /><img class="shot story" src="${A.story4}" alt="" data-story="3" /><div class="push" data-push><span class="push-ic"><img src="${A.faisca_thumb}" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
   <!-- A chama evolui com o scroll -->
   <section class="evolve" data-evolve data-comment="Desce devagar e vê-me crescer 🔥">
     <div class="evolve-pin">
