@@ -31,7 +31,7 @@ export default function Memories() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Photo | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -91,14 +91,6 @@ export default function Memories() {
     return () => { supabase.removeChannel(ch); };
   }, [spaceId, fetchPhotos]);
 
-  // Keep selectedPhoto in sync when photos list refreshes (e.g. after edit)
-  const selectedId = selectedPhoto?.id;
-  useEffect(() => {
-    if (!selectedId) return;
-    const updated = photos.find(p => p.id === selectedId);
-    if (updated) setSelectedPhoto(updated);
-  }, [photos, selectedId]);
-
   const handleDeleteTarget = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -151,7 +143,7 @@ export default function Memories() {
         <div className="pt-1">
           <MemoryGallery
             photos={photos}
-            onSelect={(photo) => setSelectedPhoto(photo)}
+            onSelect={(photo) => setSelectedId(photo.id)}
             onLongPress={setDeleteTarget}
           />
           {hasMore && (
@@ -179,13 +171,12 @@ export default function Memories() {
       />
 
       {/* Detail overlay */}
-      {selectedPhoto && (
+      {selectedId && photos.length > 0 && (
         <MemoryDetail
-          photo={selectedPhoto}
-          spaceId={spaceId ?? ""}
-          userId={user?.id ?? ""}
-          onClose={() => setSelectedPhoto(null)}
-          onDeleted={() => { setSelectedPhoto(null); fetchPhotos(); }}
+          photos={photos}
+          startId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onDeleted={() => { setSelectedId(null); fetchPhotos(); }}
         />
       )}
 

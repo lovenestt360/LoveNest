@@ -21,7 +21,6 @@ export const EpubReader = forwardRef<ChapterReaderHandle, {
     const [location, setLocation] = useState<string | number | null>(
         () => localStorage.getItem(`book-progress-${bookId}`)
     );
-    const [progress, setProgress] = useState(0);
     const renditionRef = useRef<Rendition | null>(null);
     const prevHrefRef = useRef<string | null>(null);
     const tocRef = useRef<NavItem[]>([]);
@@ -62,7 +61,6 @@ export const EpubReader = forwardRef<ChapterReaderHandle, {
         const book = renditionRef.current?.book;
         if (book?.locations.length()) {
             const percent = Math.round(book.locations.percentageFromCfi(epubcfi) * 100);
-            setProgress(percent);
             onProgress?.(percent, epubcfi);
         }
     };
@@ -108,7 +106,7 @@ export const EpubReader = forwardRef<ChapterReaderHandle, {
 
             ready.then(() => {
                 const cfi = rendition.location?.start?.cfi;
-                if (cfi) setProgress(Math.round(book.locations.percentageFromCfi(cfi) * 100));
+                if (cfi) onProgress?.(Math.round(book.locations.percentageFromCfi(cfi) * 100), cfi);
             });
         });
     };
@@ -144,9 +142,6 @@ export const EpubReader = forwardRef<ChapterReaderHandle, {
 
     return (
         <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
-            <div className="h-1 bg-muted shrink-0">
-                <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${progress}%` }} />
-            </div>
 
             <div className="flex-1 relative">
                 <ReactReader

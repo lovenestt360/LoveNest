@@ -1,93 +1,83 @@
-import { useEffect, useState, useCallback } from "react";
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { X, MoreHorizontal, Edit2, Trash2 } from "lucide-react";
+import { X, MoreHorizontal, Edit2, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import type { Photo } from "@/pages/Memories";
 
-interface Reaction {
-  id: string;
-  user_id: string;
-  reaction: string;
-}
-
-const REACTIONS = [
-  { key: "heart",   emoji: "❤️" },
-  { key: "teary",   emoji: "🥹" },
-  { key: "love",    emoji: "😍" },
-  { key: "sparkle", emoji: "✨" },
-  { key: "pray",    emoji: "🙏" },
-] as const;
-type ReactionKey = typeof REACTIONS[number]["key"];
-
 interface Props {
-  photo: Photo;
-  spaceId: string;
-  userId: string;
+  photos: Photo[];
+  startId: string;
   onClose: () => void;
   onDeleted: () => void;
 }
 
-export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDeleted }: Props) {
-  const [photo, setPhoto] = useState<Photo>(initial);
-  const [url, setUrl] = useState<string | null>(null);
-  const [reactions, setReactions] = useState<Reaction[]>([]);
+// Galeria em ecrã inteiro: só a foto, deslizar para o lado para as outras.
+// Um toque mostra ou esconde os botões.
+export function MemoryDetail({ photos, startId, onClose, onDeleted }: Props) {
+  const startIndex = Math.max(0, photos.findIndex(p => p.id === startId));
+  const [index, setIndex] = useState(startIndex);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [chrome, setChrome] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [editCaption, setEditCaption] = useState(initial.caption ?? "");
-  const [editDate, setEditDate] = useState(initial.taken_on ?? "");
+  const [editCaption, setEditCaption] = useState("");
+  const [editDate, setEditDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const requested = useRef(new Set<string>());
 
-  useEffect(() => { setPhoto(initial); }, [initial]);
+  const photo = photos[Math.min(index, photos.length - 1)];
+
+  // Abre já na foto tocada
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollLeft = startIndex * el.clientWidth;
+    // só na abertura
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Assina a foto visível e as vizinhas
+  useEffect(() => {
+    const wanted = photos.slice(Math.max(0, index - 1), index + 2).filter(p => !requested.current.has(p.id));
+    if (wanted.length === 0) return;
+    wanted.forEach(p => requested.current.add(p.id));
+    supabase.storage.from("memories")
+      .createSignedUrls(wanted.map(p => p.file_path), 3600)
+      .then(({ data }) => {
+        if (!data) return;
+        setUrls(prev => {
+          const next = { ...prev };
+          data.forEach((d, i) => { if (d.signedUrl) next[wanted[i].id] = d.signedUrl; });
+          return next;
+        });
+      });
+  }, [index, photos]);
+
+  const goTo = (i: number) => {
+    const el = scrollerRef.current;
+    if (!el || i < 0 || i >= photos.length) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
 
   useEffect(() => {
-    supabase.storage.from("memories").createSignedUrl(photo.file_path, 3600).then(({ data }) => {
-      if (data) setUrl(data.signedUrl);
-    });
-  }, [photo.file_path]);
+    const onKey = (e: KeyboardEvent) => {
+      if (menuOpen || deleteConfirm || editMode) return;
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goTo(index + 1);
+      if (e.key === "ArrowLeft") goTo(index - 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
-  const loadReactions = useCallback(async () => {
-    try {
-      const { data } = await (supabase as any)
-        .from("photo_reactions")
-        .select("id, user_id, reaction")
-        .eq("photo_id", photo.id);
-      if (data) setReactions(data as Reaction[]);
-    } catch { /* table may not exist yet */ }
-  }, [photo.id]);
-
-  useEffect(() => { loadReactions(); }, [loadReactions]);
-
-  useEffect(() => {
-    const ch = supabase
-      .channel(`mem-reactions-${photo.id}`)
-      .on("postgres_changes", {
-        event: "*", schema: "public", table: "photo_reactions" as any,
-        filter: `photo_id=eq.${photo.id}`,
-      }, () => loadReactions())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [photo.id, loadReactions]);
-
-  const handleClose = onClose;
-
-  const toggleReaction = async (key: ReactionKey) => {
-    const existing = reactions.find(r => r.user_id === userId && r.reaction === key);
-    if (existing) {
-      await (supabase as any).from("photo_reactions").delete().eq("id", existing.id);
-      setReactions(prev => prev.filter(r => r.id !== existing.id));
-    } else {
-      const { data } = await (supabase as any)
-        .from("photo_reactions")
-        .insert({ photo_id: photo.id, couple_space_id: spaceId, user_id: userId, reaction: key })
-        .select("id, user_id, reaction")
-        .single();
-      if (data) setReactions(prev => [...prev, data as Reaction]);
-    }
+  const handleScroll = () => {
+    const el = scrollerRef.current;
+    if (!el || !el.clientWidth) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== index) setIndex(i);
   };
 
   const handleDelete = async () => {
@@ -99,144 +89,84 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
 
   const handleSaveEdit = async () => {
     setSaving(true);
-    const { data } = await supabase
+    await supabase
       .from("photos")
       .update({ caption: editCaption.trim() || null, taken_on: editDate || null })
-      .eq("id", photo.id)
-      .select()
-      .single();
-    if (data) setPhoto(data as Photo);
+      .eq("id", photo.id);
     setSaving(false);
     setEditMode(false);
   };
 
-  // Date helpers
-  const photoDate = photo.taken_on
-    ? new Date(photo.taken_on + "T12:00:00")
-    : new Date(photo.created_at);
-
-  const dateFormatted = format(photoDate, "d 'de' MMMM 'de' yyyy", { locale: pt });
-  const dayOfWeek = format(photoDate, "EEEE", { locale: pt });
-
-  const diffDays = Math.floor((Date.now() - photoDate.getTime()) / 86_400_000);
-  const relativeStr = (() => {
-    if (diffDays === 0) return "Hoje";
-    if (diffDays === 1) return "Ontem";
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor(diffDays / 30);
-    const weeks = Math.floor(diffDays / 7);
-    if (years >= 1) return years === 1 ? "Há exatamente 1 ano" : `Há ${years} anos`;
-    if (months >= 1) return months === 1 ? "Há 1 mês" : `Há ${months} meses`;
-    if (weeks >= 1) return weeks === 1 ? "Há 1 semana" : `Há ${weeks} semanas`;
-    return `Há ${diffDays} dias`;
-  })();
-
-  const savedDays = Math.floor((Date.now() - new Date(photo.created_at).getTime()) / 86_400_000);
-  const savedStr = savedDays === 0 ? "Guardada hoje"
-    : savedDays === 1 ? "Guardada ontem"
-    : `Guardada há ${savedDays} dias`;
+  if (!photo) return null;
+  const url = urls[photo.id];
 
   return (
     <>
-      {/* ── Full-screen overlay ─────────────────────────────────── */}
       <div
-        className="fixed inset-0 z-50 flex flex-col bg-black animate-in fade-in duration-150"
+        className="fixed inset-0 z-[70] bg-black animate-in fade-in duration-150"
         role="dialog"
         aria-modal="true"
+        aria-label="Memória"
       >
-        {/* Top controls */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-[max(env(safe-area-inset-top,0px),1rem)]">
+        <div
+          ref={scrollerRef}
+          onScroll={handleScroll}
+          className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {photos.map((p, i) => (
+            <div
+              key={p.id}
+              className="flex h-full w-full shrink-0 snap-center snap-always items-center justify-center"
+              onClick={() => setChrome(c => !c)}
+            >
+              {urls[p.id] && Math.abs(i - index) <= 1 ? (
+                <img
+                  src={urls[p.id]}
+                  alt={p.caption ?? "Memória"}
+                  draggable={false}
+                  className="max-h-full max-w-full select-none object-contain"
+                />
+              ) : (
+                <Loader2 className="h-6 w-6 animate-spin text-white/40" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Botões por cima da foto */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent px-4 pb-8 pt-[max(env(safe-area-inset-top,0px),1rem)] transition-opacity duration-200",
+            chrome ? "opacity-100" : "opacity-0",
+          )}
+        >
           <button
             type="button"
-            onClick={handleClose}
-            className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            onClick={onClose}
+            className={cn("flex h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm", chrome && "pointer-events-auto")}
             aria-label="Fechar"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="h-5 w-5 text-white" />
           </button>
+          {photos.length > 1 && (
+            <span className="text-[13px] font-semibold tabular-nums text-white/85">
+              {index + 1} / {photos.length}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            className={cn("flex h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm", chrome && "pointer-events-auto")}
             aria-label="Mais opções"
           >
-            <MoreHorizontal className="w-4 h-4 text-white" />
+            <MoreHorizontal className="h-5 w-5 text-white" />
           </button>
-        </div>
-
-        {/* Image with blurred fill */}
-        <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
-          {url && (
-            <img
-              src={url}
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 pointer-events-none"
-            />
-          )}
-          {url ? (
-            <img
-              src={url}
-              alt={photo.caption ?? "Memória"}
-              style={{
-                maxWidth: "100%",
-                maxHeight: "100%",
-                width: "auto",
-                height: "auto",
-                filter: "drop-shadow(0 12px 40px rgba(0,0,0,0.55))",
-              }}
-              className="relative z-10 block"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-full bg-white/10 animate-pulse" />
-          )}
-        </div>
-
-        {/* Info panel */}
-        <div className="bg-card rounded-t-[2rem] px-5 pt-4 pb-[max(env(safe-area-inset-bottom,0px),1.25rem)] shrink-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
-          <p className="text-base font-bold text-foreground leading-snug mb-0.5 line-clamp-2">
-            {photo.caption || "Sem legenda"}
-          </p>
-          <p className="text-xs text-muted-foreground first-letter:uppercase mb-0.5">
-            {dayOfWeek}, {dateFormatted}
-          </p>
-          <p className="text-[11px] font-semibold text-rose-400 mb-4">{relativeStr}</p>
-
-          {/* Reactions */}
-          <div className="flex gap-1.5 flex-wrap">
-            {REACTIONS.map(({ key, emoji }) => {
-              const count = reactions.filter(r => r.reaction === key).length;
-              const mine = reactions.some(r => r.user_id === userId && r.reaction === key);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => toggleReaction(key)}
-                  className={cn(
-                    "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm transition-all duration-150 border",
-                    mine
-                      ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50"
-                      : "bg-muted border-border"
-                  )}
-                >
-                  <span className="text-sm leading-none">{emoji}</span>
-                  {count > 0 && (
-                    <span className="text-[10px] font-bold text-foreground leading-none">{count}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Emotional footnote */}
-          <p className="text-[10px] text-muted-foreground/45 mt-3 pt-3 border-t border-border/40 leading-relaxed">
-            {savedStr} · Este momento faz parte da vossa história
-          </p>
         </div>
       </div>
 
       {/* ── Action menu ─────────────────────────────────────────── */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[60]" onClick={() => setMenuOpen(false)}>
+        <div className="fixed inset-0 z-[80]" onClick={() => setMenuOpen(false)}>
           <div
             className="absolute bottom-0 left-0 right-0 bg-card rounded-t-[2rem] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
@@ -276,7 +206,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
 
       {/* ── Delete confirmation ──────────────────────────────────── */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-end">
+        <div className="fixed inset-0 z-[80] bg-black/50 flex items-end">
           <div className="w-full bg-card rounded-t-[2rem] px-5 pt-3 pb-[max(env(safe-area-inset-bottom,0px),1.5rem)] animate-in slide-in-from-bottom duration-200 space-y-3">
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
             <p className="text-center text-base font-bold text-foreground">Eliminar esta memória?</p>
@@ -284,7 +214,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
             <button
               type="button"
               onClick={handleDelete}
-              className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm mt-2"
+              className="w-full h-12 rounded-2xl bg-rose-600 text-white font-semibold text-sm mt-2"
             >
               Eliminar
             </button>
@@ -301,8 +231,8 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
 
       {/* ── Edit mode ───────────────────────────────────────────── */}
       {editMode && (
-        <div className="fixed inset-0 z-[60] bg-card flex flex-col animate-in slide-in-from-bottom duration-200">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <div className="fixed inset-0 z-[80] bg-card flex flex-col animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center justify-between px-5 py-4 pt-[max(env(safe-area-inset-top,0px),1rem)] border-b border-border shrink-0">
             <button
               type="button"
               className="text-sm font-medium text-muted-foreground"
@@ -313,7 +243,7 @@ export function MemoryDetail({ photo: initial, spaceId, userId, onClose, onDelet
             <h2 className="text-sm font-bold text-foreground">Editar memória</h2>
             <button
               type="button"
-              className="text-sm font-semibold text-rose-500 disabled:opacity-40"
+              className="text-sm font-semibold text-[#0B1324] disabled:opacity-40 dark:text-foreground"
               onClick={handleSaveEdit}
               disabled={saving}
             >
