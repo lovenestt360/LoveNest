@@ -26,8 +26,6 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
-const NosHub = lazy(() => import("./pages/NosHub"));
-const VidaHub = lazy(() => import("./pages/VidaHub"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Mood = lazy(() => import("./pages/Mood"));
 const Plano = lazy(() => import("./pages/Plano"));
@@ -107,8 +105,9 @@ const AppRoutes = () => (
         {/* Always free routes */}
         <Route index element={<Index />} />
         <Route path="chat" element={<Chat />} />
-        <Route path="nos" element={<NosHub />} />
-        <Route path="vida" element={<VidaHub />} />
+        {/* "Nós" e "Vida" foram para a Home */}
+        <Route path="nos" element={<Navigate to="/" replace />} />
+        <Route path="vida" element={<Navigate to="/" replace />} />
         <Route path="configuracoes" element={<Settings />} />
         <Route path="subscricao" element={<Subscription />} />
         <Route path="plano" element={<Plano />} />
