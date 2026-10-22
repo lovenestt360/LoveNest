@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
+import { EmailChip, EntryScreen, Envelope, ResendLink, WebmailButton } from "@/features/entry/EntryKit";
+import { prefersReducedMotion } from "@/features/entry/entryUtils";
 
 export default function ConfirmEmail() {
   const email   = localStorage.getItem("confirm_email") || "";
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [resending, setResending] = useState(false);
-  const [resent, setResent] = useState(false);
+  const pet = useRef<GuardianHandle>(null);
 
   // If user somehow already has a session (clicked the link), redirect to app
   useEffect(() => {
@@ -27,9 +28,17 @@ export default function ConfirmEmail() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // A Faísca fica à espera contigo.
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      pet.current?.react("wiggle");
+      pet.current?.say("Estou à espera de ti ✨", 2600);
+    }, prefersReducedMotion() ? 0 : 1000);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const handleResend = async () => {
-    if (!email) return;
-    setResending(true);
+    if (!email) return false;
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
@@ -37,69 +46,35 @@ export default function ConfirmEmail() {
         options: { emailRedirectTo: window.location.origin + "/casa" },
       });
       if (error) throw error;
-      setResent(true);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro", description: err.message });
-    } finally {
-      setResending(false);
+      pet.current?.react("happy");
+      pet.current?.mail();
+      pet.current?.say("Enviei outra vez 💌");
+      return true;
+    } catch (err) {
+      pet.current?.react("shake");
+      toast({ variant: "destructive", title: "Erro", description: err instanceof Error ? err.message : String(err) });
+      return false;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-      {/* Ambient glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-rose-50/50 dark:bg-rose-950/30 blur-[90px] pointer-events-none" />
-
-      <div className="relative z-10 w-full max-w-[300px] text-center space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-
-        {/* Icon */}
-        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900 flex items-center justify-center mx-auto">
-          <Mail className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
-        </div>
-
-        {/* Text */}
-        <div className="space-y-3">
-          <h1 className="text-[24px] font-bold text-foreground leading-tight tracking-tight">
-            Verifica o teu email.
-          </h1>
-          <p className="text-[14px] text-muted-foreground leading-relaxed">
-            Enviámos um link de confirmação para{" "}
-            {email && <span className="font-semibold text-foreground">{email}</span>}.
-            Clica no link para activares a tua conta.
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <button
-            onClick={() => navigate("/entrar")}
-            className="w-full h-12 rounded-2xl bg-rose-500/90 text-white font-semibold text-[14px] active:scale-[0.98] transition-all shadow-[0_2px_14px_rgba(244,63,94,0.18)] flex items-center justify-center gap-2"
-          >
-            Já confirmei — Entrar
-            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-          </button>
-
-          {!resent ? (
-            <button
-              onClick={handleResend}
-              disabled={resending}
-              className="w-full h-11 rounded-2xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
-            >
-              {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Reenviar email de confirmação
-            </button>
-          ) : (
-            <p className="text-[12px] text-rose-400 font-medium">
-              Email reenviado. Verifica a caixa de entrada.
-            </p>
-          )}
-        </div>
-
-        {/* Help text */}
-        <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
-          Não encontras o email? Verifica a pasta de spam ou tenta com outro endereço.
-        </p>
+    <EntryScreen>
+      <div className="en-stage" style={{ marginTop: 20 }}>
+        <Guardian ref={pet} kind="faisca" width={150} sayAt="right" delay={1} />
+        <Envelope mode="wait" style={{ left: "50%", top: 40, marginLeft: 44 }} />
       </div>
-    </div>
+      <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 3, marginTop: 10 }}>Só falta confirmar</h1>
+      <p className="en-sub en-center en-in" style={{ ["--d" as string]: 4 }}>
+        Enviei um email para confirmares a tua conta. Toca no link e o vosso espaço abre.
+      </p>
+      {email && <EmailChip email={email} />}
+      <p className="en-hint en-in" style={{ ["--d" as string]: 5 }}>Não está lá? Espreita o spam ou as promoções.</p>
+      <div className="en-spacer" />
+      <WebmailButton email={email} />
+      {email && <ResendLink seconds={45} onResend={handleResend} />}
+      <p className="en-small en-in" style={{ ["--d" as string]: 8, marginTop: 6 }}>
+        Já confirmaste? <button type="button" className="py-2" onClick={() => navigate("/entrar")}>Entrar</button>
+      </p>
+    </EntryScreen>
   );
 }

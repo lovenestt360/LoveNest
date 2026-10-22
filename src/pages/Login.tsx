@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
-import { BackButton, EntryScreen, GoogleIcon } from "@/features/entry/EntryKit";
+import { BackButton, EmailChip, EntryScreen, Envelope, GoogleIcon, ResendLink, WebmailButton } from "@/features/entry/EntryKit";
 import { isValidEmail, prefersReducedMotion } from "@/features/entry/entryUtils";
 
 const LAST_NAME_KEY = "lovenest_last_name";
@@ -138,50 +138,38 @@ export default function Login() {
     }
   };
 
-  const handleMagic = async (event: React.FormEvent) => {
-    event.preventDefault();
+  // Envia o link (entrar ou recuperar). Também serve para "Reenviar".
+  const sendLink = async (kind: "magic" | "forgot"): Promise<boolean> => {
     const trimmed = email.trim().toLowerCase();
-    if (!checkEmail(trimmed)) return;
-
-    setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: trimmed,
-        options: { emailRedirectTo: window.location.origin + "/inicio" },
-      });
+      const { error } = kind === "magic"
+        ? await supabase.auth.signInWithOtp({
+            email: trimmed,
+            options: { emailRedirectTo: window.location.origin + "/inicio" },
+          })
+        : await supabase.auth.resetPasswordForEmail(trimmed, {
+            redirectTo: window.location.origin + "/redefinir-senha",
+          });
       if (error) throw error;
-
-      track("login_magic_link_sent");
-      setSent(true);
-      pet.current?.react("happy");
-      pet.current?.hearts();
-      pet.current?.say("Vê o teu email 💌");
+      if (kind === "magic") track("login_magic_link_sent");
+      return true;
     } catch (error) {
+      pet.current?.react("shake");
       toast({ variant: "destructive", title: "Não foi possível enviar", description: errorMessage(error) });
-    } finally {
-      setLoading(false);
+      return false;
     }
   };
 
-  const handleForgot = async (event: React.FormEvent) => {
+  const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
-    const trimmed = email.trim().toLowerCase();
-    if (!checkEmail(trimmed)) return;
-
+    if (view === "password" || !checkEmail(email.trim().toLowerCase())) return;
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-        redirectTo: window.location.origin + "/redefinir-senha",
-      });
-      if (error) throw error;
-      setSent(true);
-      pet.current?.react("happy");
-      pet.current?.say("Enviado! Vê o teu email 💌");
-    } catch (error) {
-      toast({ variant: "destructive", title: "Não foi possível enviar", description: errorMessage(error) });
-    } finally {
-      setLoading(false);
-    }
+    pet.current?.react("spin");
+    pet.current?.mail();
+    pet.current?.say("A caminho! 💌", 0);
+    const ok = await sendLink(view);
+    setLoading(false);
+    if (ok) window.setTimeout(() => setSent(true), prefersReducedMotion() ? 0 : 700);
   };
 
   const handleGoogle = async () => {
@@ -201,11 +189,11 @@ export default function Login() {
     }
   };
 
-  const title = { password: "Bem-vindo de volta", magic: "Entrar sem senha", forgot: "Recuperar o acesso" }[view];
+  const title = { password: "Bem-vindo de volta", magic: "Entrar sem senha", forgot: "Esqueceste a senha?" }[view];
   const subtitle = {
     password: "O vosso espaço está à espera.",
-    magic: "Enviamos-te um link seguro para entrares.",
-    forgot: "Indica o email da tua conta e enviamos um link para criares uma nova senha.",
+    magic: "Escreve o teu email e eu levo-te um link para entrares com um toque.",
+    forgot: "Acontece a todos. Diz-me o email da conta e mando-te um link para criares uma nova.",
   }[view];
 
   const emailField = (id: string, label = "Email") => (
@@ -230,6 +218,72 @@ export default function Login() {
     </div>
   );
 
+  // ── Link enviado: o envelope voa e o Guardião confirma ──
+  if (sent && view === "magic") {
+    return (
+      <EntryScreen key="magic-sent" className="en-step">
+        <BackButton className="en-in" onClick={() => setSent(false)} label="Usar outro email" />
+        <div className="en-stage">
+          <Guardian ref={pet} kind="guardiao" width={160} sayAt="right" delay={1} />
+          {!prefersReducedMotion() && <Envelope mode="fly" style={{ animationDelay: ".9s" }} />}
+        </div>
+        <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 3, marginTop: 10 }}>Vê o teu email</h1>
+        <p className="en-sub en-center en-in" style={{ ["--d" as string]: 4 }}>
+          Deixei um link na tua caixa de entrada. Toca nele e entras logo.
+        </p>
+        <EmailChip email={email} />
+        <div className="en-spacer" />
+        <WebmailButton email={email} />
+        <ResendLink
+          seconds={30}
+          onResend={async () => {
+            const ok = await sendLink("magic");
+            if (ok) { pet.current?.react("happy"); pet.current?.mail(); pet.current?.say("Enviei outra vez 💌"); }
+            return ok;
+          }}
+        />
+        <p className="en-small en-in" style={{ ["--d" as string]: 8, marginTop: 6 }}>
+          <button type="button" className="en-quiet py-2" onClick={() => setSent(false)}>Usar outro email</button>
+        </p>
+      </EntryScreen>
+    );
+  }
+
+  // ── Recuperação enviada: os passos que faltam ──
+  if (sent && view === "forgot") {
+    return (
+      <EntryScreen key="forgot-sent" className="en-step">
+        <BackButton className="en-in" onClick={() => switchView("password")} label="Voltar ao login" />
+        <div className="en-row" style={{ marginTop: 14, alignItems: "flex-end" }}>
+          <h1 className="en-h1 en-in" style={{ ["--d" as string]: 1, maxWidth: 210 }}>Está a caminho</h1>
+          <Guardian ref={pet} kind="guardiao" width={100} delay={2} style={{ marginRight: -6 }} />
+        </div>
+        <p className="en-sub en-in" style={{ ["--d" as string]: 2 }}>
+          Enviei o link para <b className="font-semibold text-[#0B1324]">{email.trim()}</b>.
+        </p>
+        <div className="en-steps">
+          <div className="done" style={{ animationDelay: ".5s" }}><span className="en-n">✓</span>Link enviado</div>
+          <div style={{ animationDelay: ".65s" }}><span className="en-n">2</span>Abre o email e toca no link</div>
+          <div style={{ animationDelay: ".8s" }}><span className="en-n">3</span>Cria uma senha nova</div>
+        </div>
+        <p className="en-hint en-in" style={{ ["--d" as string]: 5 }}>Não está lá? Espreita o spam ou as promoções.</p>
+        <div className="en-spacer" />
+        <WebmailButton email={email} />
+        <ResendLink
+          seconds={30}
+          onResend={async () => {
+            const ok = await sendLink("forgot");
+            if (ok) { pet.current?.react("happy"); pet.current?.mail(); pet.current?.say("Enviei outra vez 💌"); }
+            return ok;
+          }}
+        />
+        <p className="en-small en-in" style={{ ["--d" as string]: 8, marginTop: 6 }}>
+          <button type="button" className="en-quiet py-2" onClick={() => switchView("password")}>Voltar ao login</button>
+        </p>
+      </EntryScreen>
+    );
+  }
+
   return (
     <EntryScreen key={view} className="en-step">
       <BackButton
@@ -250,17 +304,7 @@ export default function Login() {
       </div>
       <p className="en-sub en-in" style={{ ["--d" as string]: 2 }}>{subtitle}</p>
 
-      {sent ? (
-        <div className="en-note en-in" style={{ ["--d" as string]: 3, marginTop: 26 }}>
-          <p className="text-[16px] font-semibold">{view === "magic" ? "Vê o teu email." : "Link enviado."}</p>
-          <p className="text-[14px] leading-5 text-[#7A7F8C]">
-            Enviámos um link para <span className="font-semibold text-[#0B1324]">{email.trim()}</span>.
-          </p>
-          <button type="button" className="en-link mt-3" onClick={() => switchView("password")}>
-            Voltar ao login
-          </button>
-        </div>
-      ) : view === "password" ? (
+      {view === "password" ? (
         <form onSubmit={handlePassword} className="flex flex-1 flex-col" noValidate>
           <div className="en-stack" style={{ marginTop: 26 }}>
             {emailField("login-email")}
@@ -326,7 +370,7 @@ export default function Login() {
           </p>
         </form>
       ) : (
-        <form onSubmit={view === "magic" ? handleMagic : handleForgot} className="flex flex-1 flex-col" noValidate>
+        <form onSubmit={handleSend} className="flex flex-1 flex-col" noValidate>
           <div className="en-stack" style={{ marginTop: 26 }}>
             {emailField(view === "magic" ? "magic-email" : "forgot-email", view === "magic" ? "Email" : "Email da conta")}
           </div>
@@ -335,7 +379,9 @@ export default function Login() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Enviar link <span className="en-arrow">→</span></>}
           </button>
           <p className="en-small en-in" style={{ ["--d" as string]: 6, marginTop: 14 }}>
-            <button type="button" className="en-quiet py-1" onClick={() => switchView("password")}>Entrar com senha</button>
+            {view === "magic"
+              ? <button type="button" className="en-quiet py-1" onClick={() => switchView("password")}>Entrar com senha</button>
+              : <>Lembraste-te? <button type="button" onClick={() => switchView("password")}>Entrar</button></>}
           </p>
         </form>
       )}

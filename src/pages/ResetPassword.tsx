@@ -1,18 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getPasswordError } from "@/lib/passwordPolicy";
+import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
+import { EntryScreen } from "@/features/entry/EntryKit";
+import { passwordStrength, prefersReducedMotion } from "@/features/entry/entryUtils";
+
+const STRENGTH = ["", "Fraca", "Razoável", "Boa", "Forte"];
 
 export default function ResetPassword() {
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
+  const pet = useRef<GuardianHandle>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -27,14 +35,43 @@ export default function ResetPassword() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Senha guardada: o Guardião festeja e voltamos ao login.
+  useEffect(() => {
+    if (!done) return;
+    const a = window.setTimeout(() => {
+      pet.current?.react("spin");
+      pet.current?.hearts(12);
+      pet.current?.say("Tudo seguro 🔒", 2600);
+    }, prefersReducedMotion() ? 0 : 500);
+    const b = window.setTimeout(() => navigate("/entrar"), 3000);
+    return () => { window.clearTimeout(a); window.clearTimeout(b); };
+  }, [done, navigate]);
+
+  const strength = passwordStrength(password);
+  const matches = password.length > 0 && password === confirm && !getPasswordError(password);
+  const lastStrength = useRef(0);
+  const wasMatching = useRef(false);
+
+  useEffect(() => {
+    if (strength === 4 && lastStrength.current < 4) pet.current?.say("Essa é forte 💪", 0);
+    lastStrength.current = strength;
+  }, [strength]);
+
+  useEffect(() => {
+    if (matches && !wasMatching.current) { pet.current?.react("happy"); pet.current?.hearts(5); }
+    wasMatching.current = matches;
+  }, [matches]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const passwordError = getPasswordError(password);
     if (passwordError) {
+      pet.current?.react("shake");
       toast({ variant: "destructive", title: "Senha fraca", description: passwordError });
       return;
     }
     if (password !== confirm) {
+      pet.current?.react("shake");
       toast({ variant: "destructive", title: "As senhas não coincidem", description: "Confirma que escreveste a mesma senha nos dois campos." });
       return;
     }
@@ -43,85 +80,119 @@ export default function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setDone(true);
-      setTimeout(() => navigate("/entrar"), 2500);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro ao redefinir", description: err.message });
+    } catch (err) {
+      pet.current?.react("shake");
+      pet.current?.say("Hmm, não deu");
+      toast({ variant: "destructive", title: "Erro ao redefinir", description: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
   };
 
+  if (done) {
+    return (
+      <EntryScreen key="done" className="en-step">
+        <div className="en-stage" style={{ height: 270, marginTop: 40 }}>
+          <Guardian ref={pet} kind="guardiao" width={180} sayAt="right" />
+        </div>
+        <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 3, marginTop: 14 }}>Senha nova guardada</h1>
+        <p className="en-sub en-center en-in" style={{ ["--d" as string]: 4 }}>
+          A tua conta está segura. Vou levar-te de volta para entrares.
+        </p>
+        <div className="en-redirect"><span /></div>
+        <div className="en-spacer" />
+        <button type="button" className="en-btn en-in" style={{ ["--d" as string]: 6 }} onClick={() => navigate("/entrar")}>
+          Entrar agora <span className="en-arrow">→</span>
+        </button>
+      </EntryScreen>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <EntryScreen key="wait" className="en-step">
+        <div className="en-stage" style={{ marginTop: 40 }}>
+          <Guardian ref={pet} kind="guardiao" width={150} talking />
+        </div>
+        <h1 className="en-h1 en-center en-in" style={{ ["--d" as string]: 2, marginTop: 14 }}>A verificar o teu link</h1>
+        <p className="en-sub en-center en-in" style={{ ["--d" as string]: 3 }}>Só um instante…</p>
+        <Loader2 className="mx-auto mt-6 h-5 w-5 animate-spin text-[#0B1324]/40" />
+        <div className="en-spacer" />
+        <p className="en-small en-in" style={{ ["--d" as string]: 5 }}>
+          Chegaste aqui por engano? <button type="button" onClick={() => navigate("/entrar")}>Voltar ao login</button>
+        </p>
+      </EntryScreen>
+    );
+  }
+
+  const shy = focused && !show;
+  const onFocus = () => { setFocused(true); if (!show) pet.current?.say("Não estou a ver 🙈", 0); };
+  const onBlur = () => { setFocused(false); pet.current?.say(matches ? "Perfeito ✓" : "Pronto, já podes 😄"); };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-8">
-
-        {/* Brand */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900 mx-auto">
-            <Heart className="h-8 w-8 text-rose-400 fill-rose-400" strokeWidth={1.5} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Nova senha</h1>
-            <p className="text-sm text-muted-foreground mt-1">Define uma nova senha para a tua conta</p>
-          </div>
+    <EntryScreen key="form" className="en-step">
+      <form onSubmit={handleSubmit} className="flex flex-1 flex-col" noValidate>
+        <div className="en-row" style={{ marginTop: 6, alignItems: "flex-end" }}>
+          <h1 className="en-h1 en-in" style={{ ["--d" as string]: 1, maxWidth: 200 }}>Cria uma senha nova</h1>
+          <Guardian ref={pet} kind="guardiao" width={100} delay={2} shy={shy} style={{ marginRight: -6 }} />
         </div>
+        <p className="en-sub en-in" style={{ ["--d" as string]: 2 }}>Escolhe uma que só tu saibas. Eu prometo não ver.</p>
 
-        <div className="glass-card p-7">
-          {done ? (
-            <div className="text-center space-y-4 py-4">
-              <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mx-auto">
-                <ShieldCheck className="w-8 h-8 text-rose-400" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-base font-semibold text-foreground">Senha alterada!</p>
-                <p className="text-sm text-muted-foreground mt-1">A redirecionar para o login...</p>
-              </div>
-            </div>
-          ) : !ready ? (
-            <div className="text-center py-8 space-y-3">
-              <Loader2 className="w-8 h-8 animate-spin text-rose-400 mx-auto" />
-              <p className="text-sm text-muted-foreground">A verificar o link de recuperação...</p>
-              <p className="text-xs text-muted-foreground">Se chegaste aqui por engano, <button onClick={() => navigate("/entrar")} className="text-rose-500 hover:underline font-medium">volta ao login</button>.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Nova senha</label>
-                <Input
-                  type="password"
-                  placeholder="Mínimo 8 caracteres"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Confirmar senha</label>
-                <Input
-                  type="password"
-                  placeholder="Repete a nova senha"
-                  value={confirm}
-                  onChange={e => setConfirm(e.target.value)}
-                  required
-                  className="h-12 rounded-2xl border-border bg-card text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                />
-              </div>
+        <div className="en-stack" style={{ marginTop: 22 }}>
+          <div className="en-in" style={{ ["--d" as string]: 3 }}>
+            <label className="en-label" htmlFor="rp-pass">Nova senha</label>
+            <div className="en-field-wrap">
+              <input
+                id="rp-pass"
+                className="en-field"
+                type={show ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 rounded-2xl bg-rose-500 text-white font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2"
+                type="button"
+                className="en-eye"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { setShow((v) => !v); pet.current?.say(show ? "Já não vejo 🙈" : "Ups, agora vejo 👀"); }}
+                aria-label={show ? "Ocultar senha" : "Mostrar senha"}
               >
-                {loading
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <> Guardar nova senha <ArrowRight className="w-4 h-4" strokeWidth={1.5} /> </>
-                }
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </form>
-          )}
+            </div>
+            <div className="en-meter" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => <span key={i} className={cn(i < strength && "on")} />)}
+            </div>
+            <div className="en-meter-label" aria-live="polite">{STRENGTH[strength]}</div>
+          </div>
+          <div className="en-in" style={{ ["--d" as string]: 4 }}>
+            <label className="en-label" htmlFor="rp-confirm">Confirmar</label>
+            <input
+              id="rp-confirm"
+              className="en-field"
+              type={show ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Repete a senha"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              onFocus={onFocus}
+              onBlur={onBlur}
+            />
+            <div className={cn("en-match", matches && "ok")}>
+              <span className="en-tick">✓</span>
+              <span>{matches ? "As senhas coincidem" : "As duas senhas têm de ser iguais"}</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div className="en-spacer" />
+        <button type="submit" className="en-btn en-in" style={{ ["--d" as string]: 6 }} disabled={!matches || loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Guardar senha <span className="en-arrow">→</span></>}
+        </button>
+      </form>
+    </EntryScreen>
   );
 }
