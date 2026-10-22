@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
 import { todayLocal } from "@/lib/timezone";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { getJourneyLevel, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
@@ -7,21 +6,33 @@ import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { useProfile } from "@/hooks/useProfile";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useAuth } from "@/features/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useCountUp } from "@/hooks/useCountUp";
 import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
-import { FlamePet } from "@/components/FlamePet";
-import {
-  Flame, ArrowLeft, Heart, Sparkles, Loader2,
-  Coins, Target, CheckCircle2, Circle, Shield, ShoppingBag,
-} from "lucide-react";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
+import { prefersReducedMotion } from "@/features/entry/entryUtils";
+import { Check, Flame, Loader2, Shield } from "lucide-react";
+import faiscaFull from "@/features/landing/stages/faisca.webp";
+import brasaFull from "@/features/landing/stages/brasa.webp";
+import chamaFull from "@/features/landing/stages/chama.webp";
+import guardiaoFull from "@/features/landing/stages/guardiao.webp";
+import sentinelaFull from "@/features/landing/stages/sentinela.webp";
+import eternoFull from "@/features/landing/stages/eterno.webp";
+import soberanoFull from "@/features/landing/stages/soberano.webp";
+import faiscaThumb from "@/assets/flame/flame_01_faisca_thumb.png";
+import brasaThumb from "@/assets/flame/flame_02_brasa_thumb.png";
+import chamaThumb from "@/assets/flame/flame_03_chama_thumb.png";
+import guardiaoThumb from "@/assets/flame/flame_04_guardiao_thumb.png";
+import sentinelaThumb from "@/assets/flame/flame_05_sentinela_thumb.png";
+import eternoThumb from "@/assets/flame/flame_06_eterno_thumb.png";
+import soberanoThumb from "@/assets/flame/flame_07_soberano_thumb.png";
 
 // ─────────────────────────────────────────────
 // Hooks & helpers
@@ -41,143 +52,18 @@ function useHoursLeft() {
   return h;
 }
 
-type UrgencyLevel = "safe" | "notice" | "warning" | "critical";
-function getUrgency(hoursLeft: number): UrgencyLevel {
-  if (hoursLeft > 8) return "safe";
-  if (hoursLeft > 4) return "notice";
-  if (hoursLeft > 1) return "warning";
-  return "critical";
-}
+// Imagem, miniatura e cor do brilho de cada estágio (mesma ordem de STREAK_LEVELS).
+const STAGE_ART = [
+  { full: faiscaFull, thumb: faiscaThumb, glow: "rgba(251,113,133,.30)" },
+  { full: brasaFull, thumb: brasaThumb, glow: "rgba(251,146,60,.30)" },
+  { full: chamaFull, thumb: chamaThumb, glow: "rgba(45,212,191,.30)" },
+  { full: guardiaoFull, thumb: guardiaoThumb, glow: "rgba(77,124,254,.28)" },
+  { full: sentinelaFull, thumb: sentinelaThumb, glow: "rgba(139,92,246,.28)" },
+  { full: eternoFull, thumb: eternoThumb, glow: "rgba(250,204,21,.32)" },
+  { full: soberanoFull, thumb: soberanoThumb, glow: "rgba(236,72,153,.28)" },
+];
 
-interface StatusConfig {
-  label: string;
-  bg: string;
-  text: string;
-  dot: string;
-}
-
-function getCoupleStatus(
-  bothActive: boolean, myCheckedIn: boolean,
-  shieldUsedToday: boolean, isPerfectDay: boolean,
-  hoursLeft: number, isZero: boolean, isSolo: boolean
-): StatusConfig {
-  if (isPerfectDay)
-    return { label: "Ligados",          bg: "bg-rose-50 dark:bg-rose-950/30",  text: "text-rose-600 dark:text-rose-300", dot: "bg-rose-500" };
-  if (bothActive)
-    return { label: "Chama acesa",      bg: "bg-rose-50 dark:bg-rose-950/30",  text: "text-rose-500 dark:text-rose-300", dot: "bg-rose-400" };
-  if (shieldUsedToday)
-    return { label: "Chama protegida",  bg: "bg-blue-50 dark:bg-blue-950/30",  text: "text-blue-600 dark:text-blue-300", dot: "bg-blue-400" };
-  if (myCheckedIn && !isSolo)
-    return { label: "A aguardar o par", bg: "bg-slate-50 dark:bg-slate-900/40", text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
-  if (!isZero && hoursLeft <= 3)
-    return { label: "Última chance",    bg: "bg-red-50 dark:bg-red-950/30",    text: "text-red-600 dark:text-red-300",   dot: "bg-red-500"  };
-  if (isZero)
-    return { label: isSolo ? "Começa hoje" : "Comecem hoje", bg: "bg-slate-50 dark:bg-slate-900/40", text: "text-slate-600 dark:text-slate-300", dot: "bg-slate-400" };
-  return   { label: "Aguardando conexão", bg: "bg-slate-50 dark:bg-slate-900/40", text: "text-slate-500 dark:text-slate-400", dot: "bg-slate-300" };
-}
-
-// ─────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────
-
-function CoupleStatusBadge({ status }: { status: StatusConfig }) {
-  return (
-    <div className={cn(
-      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full animate-status-badge-in",
-      status.bg
-    )}>
-      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", status.dot)} />
-      <span className={cn("text-[11px] font-semibold", status.text)}>{status.label}</span>
-    </div>
-  );
-}
-
-function FlameAlertBar({
-  bothActive, myCheckedIn, shieldUsedToday, missionsDone, totalMissions,
-  hoursLeft, currentStreak, isSolo,
-}: {
-  bothActive: boolean; myCheckedIn: boolean; shieldUsedToday: boolean;
-  missionsDone: number; totalMissions: number; hoursLeft: number; currentStreak: number;
-  isSolo: boolean;
-}) {
-  if (bothActive) return null;
-  const urgency = getUrgency(hoursLeft);
-  const fillPct = totalMissions > 0 ? Math.round((missionsDone / totalMissions) * 100) : 0;
-
-  const barColor =
-    shieldUsedToday        ? "bg-blue-400" :
-    urgency === "critical" ? "bg-red-400" :
-    urgency === "warning"  ? "bg-orange-400" :
-    urgency === "notice"   ? "bg-orange-300" :
-    "bg-emerald-400";
-
-  const message = shieldUsedToday
-    ? "O escudo guardou a sequência hoje — boa proteção"
-    : urgency === "critical"
-    ? `Menos de 1h — ${myCheckedIn && !isSolo ? "o teu par ainda não apareceu" : isSolo ? "a chama precisa de ti agora" : "a chama precisa de vocês agora"}`
-    : urgency === "warning"
-    ? `Faltam ${hoursLeft}h — ainda dá tempo de proteger a chama`
-    : myCheckedIn && !isSolo
-    ? `O teu gesto está guardado · ${hoursLeft}h para o par aparecer`
-    : currentStreak > 0
-    ? `Faltam ${hoursLeft}h para proteger ${currentStreak} dias de amor`
-    : "Hoje é um bom dia para começar";
-
-  return (
-    <div className={cn(
-      "glass-card p-4 space-y-2.5",
-      urgency === "critical" && !shieldUsedToday && "border-red-200 dark:border-red-800/50 animate-flame-pulse-alert",
-      urgency === "warning"  && !shieldUsedToday && "border-orange-200 dark:border-orange-800/50",
-      urgency === "notice"   && !shieldUsedToday && "border-orange-100 dark:border-orange-900/40",
-    )}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Flame
-            className={cn(
-              "w-3.5 h-3.5",
-              shieldUsedToday ? "text-blue-500" :
-              urgency === "critical" ? "text-red-500 animate-flame-breathe" :
-              urgency === "warning"  ? "text-orange-500" :
-              "text-orange-400"
-            )}
-            strokeWidth={1.5}
-          />
-          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-            Chama de hoje
-          </span>
-        </div>
-        <span className={cn(
-          "text-[11px] font-semibold tabular-nums",
-          shieldUsedToday ? "text-blue-500" :
-          urgency === "critical" ? "text-red-500" :
-          urgency === "warning"  ? "text-orange-500" :
-          "text-muted-foreground/65"
-        )}>
-          {shieldUsedToday ? "Protegida" : `${hoursLeft}h restantes`}
-        </span>
-      </div>
-
-      {/* Emotional progress bar */}
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className={cn("h-full rounded-full animate-flame-bar-fill", barColor)}
-          style={{ width: `${shieldUsedToday ? 100 : Math.max(fillPct, 4)}%` }}
-        />
-      </div>
-
-      <p className={cn(
-        "text-[11px] leading-snug",
-        urgency === "critical" && !shieldUsedToday ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground"
-      )}>
-        {message}
-      </p>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
+const CARD = "rounded-[22px] border border-[#ECE8E3] bg-white p-4 shadow-[0_1px_2px_rgba(11,19,36,0.03),0_14px_30px_-26px_rgba(11,19,36,0.35)] dark:border-border dark:bg-card";
 
 // Definições das missões vêm de src/features/streak/missions.ts —
 // fonte única partilhada com o widget "Faísca" da Home, para os dois
@@ -187,30 +73,45 @@ interface Mission extends MissionDef {
   completedCount: number;
 }
 
-// ─────────────────────────────────────────────
-// SECTION HEADER
-// ─────────────────────────────────────────────
-function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+/** Avatar de quem está (ou não) presente hoje: anel contínuo quando já apareceu. */
+function Presence({ name, initial, here, tone, solo }: { name: string; initial: string; here: boolean; tone: "rose" | "blue"; solo?: boolean }) {
   return (
-    <div className="flex items-center gap-2 px-1 pt-2">
-      <span className="text-primary/70">{icon}</span>
-      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/50">{title}</span>
+    <div className={cn("flex items-center gap-2.5 rounded-2xl bg-[#F7F5F2] p-2.5 dark:bg-muted", solo && "col-span-2")}>
+      <span className="relative flex h-[34px] w-[34px] shrink-0 items-center justify-center">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute -inset-[4px] rounded-full border-2 transition-all duration-500",
+            tone === "rose" ? "border-[#E5466D]" : "border-[#4D7CFE]",
+            here ? "border-solid" : "border-dashed opacity-45",
+          )}
+        />
+        <span className={cn("flex h-full w-full items-center justify-center rounded-full text-[13px] font-semibold text-white", tone === "rose" ? "bg-[#E5466D]" : "bg-[#4D7CFE]")}>
+          {initial}
+        </span>
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[13px] font-semibold text-foreground">{name}</p>
+        <p className={cn("text-[11.5px]", here ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground")}>
+          {here ? "presente ✓" : "ainda não"}
+        </p>
+      </div>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────
-// MAIN PAGE — Jornada
-// Antes era "LoveStreak" com 3 separadores (Chama/Amor/Gestos). Agora é
-// uma única página de scroll contínuo: A Nossa Chama → LovePoints →
-// Gestos de hoje. Ver docs/LOVENEST_PROGRESS_SYSTEM.md, Fase 1.
+// Jornada: o vosso Guardião, o dia de hoje, os gestos, os LovePoints.
 // ─────────────────────────────────────────────
+
 export default function Jornada() {
   const navigate   = useNavigate();
   const spaceId    = useCoupleSpaceId();
   const { profile } = useProfile();
   const { user } = useAuth();
   const { streak, loading, error: streakError, checkIn, checkingIn, refresh, initialized: streakInitialized } = useStreak();
+  const { partner } = usePartnerProfile();
+  const pet = useRef<GuardianHandle>(null);
   const hoursLeft = useHoursLeft();
 
   const isSolo = profile?.usage_mode === "solo";
@@ -268,7 +169,6 @@ export default function Jornada() {
   const missionsInProgress   = missions.filter(m => !m.completed && m.completedCount > 0).length;
   const canBuyShield   = totalPoints >= 200;
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
-  const coupleStatus   = getCoupleStatus(bothActive, myCheckedIn, shieldUsedToday, isPerfectDay, hoursLeft, isZero, isSolo);
   const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
   // Fase do Guardião — streak puro. Pontos são moeda gastável, não contam.
   const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
@@ -313,6 +213,9 @@ export default function Jornada() {
     if (bothActive && !prevBothRef.current) {
       setCelebrating(true);
       hapticCelebrate();
+      pet.current?.react("spin");
+      pet.current?.hearts(14);
+      pet.current?.say(isSolo ? "Chama acesa 🔥" : "Os dois! Chama acesa 🔥", 2800);
       const t = setTimeout(() => setCelebrating(false), 1400);
       prevBothRef.current = true;
       return () => clearTimeout(t);
@@ -431,13 +334,16 @@ export default function Jornada() {
 
       const status = (data as any)?.status;
       if (status === "insufficient_points" || status === "error_insufficient_points") {
+        pet.current?.react("shake");
         toast.error("LovePoints insuficientes para comprar LoveShield.");
       } else if (status === "already_purchased_this_month") {
         toast.error(isSolo ? "Já compraste 1 escudo este mês — volta no próximo mês." : "Já compraram 1 escudo este mês — volta no próximo mês.");
       } else if (status === "limit_reached" || status === "error_limit_reached") {
         toast.error(isSolo ? "Já tens 3 escudos — o máximo mensal" : "Já têm 3 escudos — o máximo mensal");
       } else if (status === "ok" || !status) {
-        toast.success(isSolo ? "LoveShield comprado! 💎 A tua chama ganhou proteção extra." : "LoveShield comprado! 💎 A vossa chama ganhou proteção extra.");
+        toast.success(isSolo ? "LoveShield comprado! A tua chama ganhou proteção extra." : "LoveShield comprado! A vossa chama ganhou proteção extra.");
+        pet.current?.react("happy");
+        pet.current?.say("Chama protegida 🛡️", 2400);
         await Promise.all([fetchPoints(), refresh()]);
         window.dispatchEvent(new CustomEvent("streak-updated"));
       }
@@ -453,6 +359,8 @@ export default function Jornada() {
     const { ok, message } = await checkIn();
     if (ok) {
       hapticSuccess();
+      pet.current?.react("happy");
+      pet.current?.hearts(6);
       toast.success("O teu gesto foi guardado");
     } else {
       toast.error(message || (isSolo ? "Não foi possível registar a tua presença." : "Não foi possível registar a vossa presença."));
@@ -497,532 +405,267 @@ export default function Jornada() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalMembers, spaceId, fetchMissions]);
 
+  // O Guardião comenta o estado do dia quando a página abre.
+  const spokeRef = useRef(false);
+  useEffect(() => {
+    if (!streakInitialized || spokeRef.current) return;
+    spokeRef.current = true;
+    const partnerHere = activeCount - (myCheckedIn ? 1 : 0) > 0;
+    const line = bothActive ? (isSolo ? "Chama acesa hoje 🔥" : "Chama acesa hoje 🔥")
+      : myCheckedIn ? (isSolo ? "Obrigado por apareceres 💕" : "Agora falta o teu par 💙")
+      : partnerHere ? "Falta só tu hoje 🥺"
+      : isSolo ? "Vamos aparecer hoje? 🔥" : "Vamos aparecer hoje? 🔥";
+    const t = window.setTimeout(() => { pet.current?.react("wiggle"); pet.current?.say(line, 2800); }, prefersReducedMotion() ? 0 : 1200);
+    return () => window.clearTimeout(t);
+  }, [streakInitialized, bothActive, myCheckedIn, activeCount, isSolo]);
+
   // ── Loading guard ─────────────────────────
   if (loading && !streak) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background/50">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-[#0B1324]/40" />
       </div>
     );
   }
 
+  const art = STAGE_ART[streakPhase.level - 1] ?? STAGE_ART[0];
+  const nextArt = STAGE_ART[streakPhase.level] ?? null;
+  const partnerHere = !isSolo && activeCount - (myCheckedIn ? 1 : 0) > 0;
+  const myName = profile?.display_name?.split(" ")[0] || "Tu";
+  const partnerName = partner?.display_name?.split(" ")[0] || "O teu par";
+  const urgent = !bothActive && !shieldUsedToday && hoursLeft <= 3 && !isZero;
+
+  const todayNote = shieldUsedToday
+    ? "O escudo guardou a sequência hoje."
+    : bothActive
+    ? (isSolo ? "Apareceste hoje. A chama está acesa 🔥" : "Os dois apareceram. A chama de hoje está acesa 🔥")
+    : myCheckedIn
+    ? `O teu gesto está guardado. Faltam ${hoursLeft}h para ${partnerName} aparecer.`
+    : partnerHere
+    ? `${partnerName} já apareceu. Falta só tu para a chama contar hoje.`
+    : isZero
+    ? (isSolo ? "Hoje é um bom dia para começar." : "Hoje é um bom dia para começarem.")
+    : `Faltam ${hoursLeft}h para proteger ${currentStreak} ${currentStreak === 1 ? "dia" : "dias"} de amor.`;
+
+  const renewDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
+
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="space-y-3.5 pb-6">
+      <ScreenHeader
+        title="Jornada"
+        subtitle={`${isSolo ? "A tua chama" : "A vossa chama"} · nível ${streakPhase.level}`}
+        action={
+          <span className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#ECE8E3] px-3 text-[13px] font-semibold tabular-nums text-foreground dark:border-border">
+            <Flame className="h-3.5 w-3.5 text-[#E5466D]" strokeWidth={2} />
+            {currentStreak}
+          </span>
+        }
+      />
 
-      {/* ── HEADER ── */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-          </button>
-          <h1 className="text-lg font-semibold text-foreground flex-1">Jornada</h1>
-          <div className="flex items-center gap-1 text-rose-500">
-            <Flame className="w-4 h-4" strokeWidth={1.5} />
-            <span className="text-sm font-semibold tabular-nums">{currentStreak}</span>
+      {/* ── O vosso Guardião ── */}
+      <section className="relative pt-6 text-center">
+        {!streakInitialized ? (
+          <div className="mx-auto h-[190px] w-[190px] animate-pulse rounded-full bg-[#F7F5F2] dark:bg-muted" />
+        ) : (
+          <Guardian
+            ref={pet}
+            kind="guardiao"
+            src={art.full}
+            glow={art.glow}
+            width={190}
+            sayAt="right"
+            delay={1}
+            tapLines={["Olá! 💕", "Hehe 😊", streakPhase.nextLevelName ? `Quase ${streakPhase.nextLevelName} 💪` : "Somos eternos ♾️"]}
+            style={{ margin: "0 auto" }}
+          />
+        )}
+        <CelebrationBurst active={celebrating} />
+        <p className="mt-1.5 text-[12.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{streakPhase.name}</p>
+        <p key={streakPopKey} className={cn("mt-1 text-[44px] font-bold leading-none tracking-[-0.045em] tabular-nums text-foreground", streakPopKey > 0 && "animate-streak-pop")}>
+          {currentStreak}
+          <span className="ml-1.5 text-[15px] font-medium tracking-normal text-muted-foreground">{currentStreak === 1 ? "dia juntos" : "dias juntos"}</span>
+        </p>
+
+        <div className="mx-1.5 mt-[18px] flex items-center gap-2.5">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEEBE6] dark:bg-muted">
+            <div className="h-full rounded-full bg-[#0B1324] transition-[width] duration-1000 ease-out dark:bg-foreground" style={{ width: `${streakPhase.nextLevelName ? streakPhase.progressPct : 100}%` }} />
           </div>
+          {nextArt && <img src={nextArt.thumb} alt="" className="h-[30px] w-[30px] opacity-70 grayscale-[60%]" />}
         </div>
-      </div>
+        <p className="mt-2 text-[12.5px] text-muted-foreground">
+          {streakPhase.nextLevelName
+            ? <>{streakPhase.daysToNext === 1 ? "Falta" : "Faltam"} <b className="font-semibold text-foreground">{streakPhase.daysToNext} {streakPhase.daysToNext === 1 ? "dia" : "dias"}</b> para {streakPhase.nextLevelName === "Guardião" ? "o Guardião" : streakPhase.nextLevelName}</>
+            : "Forma suprema atingida"}
+        </p>
 
-      <div className="max-w-md mx-auto px-4 py-6 space-y-10">
-
-        {/* ══════════════════════════════════════════════ */}
-        {/* NÍVEL DA JORNADA                                */}
-        {/* ══════════════════════════════════════════════ */}
-        {(() => {
-          // Skeleton enquanto o fetch inicial ainda não terminou — impede o Guardião
-          // de aparecer no nível 1 (Faísca) antes de saber o nível real do utilizador.
-          if (!streakInitialized) {
+        <ol className="mt-[18px] grid grid-cols-7 gap-0.5">
+          {STREAK_LEVELS.map((lvl, i) => {
+            const state = i < streakPhase.level - 1 ? "done" : i === streakPhase.level - 1 ? "now" : i === streakPhase.level ? "next" : "lock";
             return (
-              <div className="glass-card p-5 text-center">
-                <div className="flex justify-center mb-2">
-                  <div className="w-full max-w-[314px] aspect-square rounded-3xl bg-muted animate-pulse" />
-                </div>
-                <div className="h-6 w-24 bg-muted rounded-full mx-auto mt-4 animate-pulse" />
-                <div className="h-4 w-36 bg-muted rounded mx-auto mt-3 animate-pulse" />
-                <div className="h-5 w-52 bg-muted rounded mx-auto mt-2 animate-pulse" />
-                <div className="h-2 bg-muted rounded-full mt-3 animate-pulse" />
-                <div className="h-3 w-40 bg-muted rounded mx-auto mt-2 animate-pulse" />
-              </div>
-            );
-          }
-
-          // Paleta cromática por nível — tudo no card segue a cor do Guardião
-          const PHASE_CORE = ["#fb7185","#fb923c","#2dd4bf","#3b82f6","#8b5cf6","#facc15","#ec4899"];
-          const PHASE_DARK = ["#be123c","#c2410c","#0f766e","#1e40af","#5b21b6","#a16207","#831843"];
-          const phaseColor = PHASE_CORE[streakPhase.level - 1] ?? "#fb7185";
-          const phaseDark  = PHASE_DARK[streakPhase.level - 1] ?? "#be123c";
-          const phaseGrad  = `linear-gradient(90deg, ${phaseDark} 0%, ${phaseColor} 100%)`;
-
-          return (
-            <div className="glass-card p-5 text-center animate-in fade-in duration-300">
-              <div className="flex justify-center mb-2">
-                <div style={{ width: 314, height: 314 }} className="mx-auto bg-card">
-                  <FlamePet stage={streakPhase.stage} mood="alegre" environment="suave" compact />
-                </div>
-              </div>
-
-              {/* Badge da fase — cor do Guardião */}
-              <div className="flex justify-center mb-2">
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border"
-                  style={{ color: phaseColor, borderColor: phaseColor + "44", background: phaseColor + "12" }}
-                >
-                  <Sparkles className="w-3 h-3" strokeWidth={2} />
-                  {streakPhase.name}
-                </span>
-              </div>
-
-              <p className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: phaseColor }}>
-                {currentStreak} {currentStreak === 1 ? "dia" : "dias"} juntos
-              </p>
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {lifetimePoints.toLocaleString("pt-PT")}
-                <span className="text-sm font-medium text-muted-foreground"> LovePoints conquistados</span>
-              </p>
-
-              {/* Barra de progresso — dias até ao próximo nível */}
-              <div className="relative h-2 bg-muted rounded-full overflow-hidden mt-1.5">
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ background: phaseGrad }}
-                  initial={{ width: "0%" }}
-                  animate={{ width: `${streakPhase.progressPct}%` }}
-                  transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1], delay: 0.3 }}
+              <li key={lvl.stage} className="flex flex-col items-center gap-0.5">
+                <img
+                  src={STAGE_ART[i].thumb}
+                  alt=""
+                  className={cn(
+                    "h-[34px] w-[34px] transition-transform",
+                    state === "now" && "scale-[1.18]",
+                    state === "next" && "opacity-60 grayscale-[70%]",
+                    state === "lock" && "opacity-30 grayscale",
+                  )}
                 />
-                {streakPhase.progressPct > 5 && streakPhase.progressPct < 100 && (
-                  <motion.div
-                    className="absolute top-0 h-full w-3 rounded-full pointer-events-none"
-                    style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
-                    animate={{ left: ["0%", `${streakPhase.progressPct - 3}%`, "0%"] }}
-                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-                  />
-                )}
-                {streakPhase.progressPct >= 100 && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full"
-                    style={{ background: `linear-gradient(90deg, ${phaseDark}, ${phaseColor}, white, ${phaseColor}, ${phaseDark})` }}
-                    animate={{ backgroundPosition: ["0% 0%", "200% 0%"] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  />
-                )}
-              </div>
+                <span className={cn("text-[9.5px]", state === "lock" ? "font-medium text-muted-foreground" : "font-semibold text-foreground")}>{lvl.name}</span>
+                <span className="text-[8.5px] text-muted-foreground">{lvl.minDays === 365 ? "1 ano" : `${lvl.minDays} ${lvl.minDays === 1 ? "dia" : "dias"}`}</span>
+                {state === "now" && <span className="h-1 w-1 rounded-full bg-[#0B1324] dark:bg-foreground" />}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
-              {/* Legenda — dias até próxima fase */}
-              <p className="text-[11px] mt-1.5 font-medium" style={{ color: phaseColor + "bb" }}>
-                {streakPhase.nextLevelName
-                  ? `${streakPhase.daysToNext} ${streakPhase.daysToNext === 1 ? "dia" : "dias"} até ${streakPhase.nextLevelName}`
-                  : "Forma suprema atingida — Eternidade"}
-              </p>
-            </div>
-          );
-        })()}
+      {/* ── Hoje ── */}
+      <section className={CARD}>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-foreground">Hoje</h2>
+          <span className={cn("text-[12.5px] tabular-nums", shieldUsedToday ? "text-[#4D7CFE]" : urgent ? "font-semibold text-red-600" : "text-muted-foreground")}>
+            {shieldUsedToday ? "Protegida" : `${hoursLeft}h restantes`}
+          </span>
+        </div>
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+          <Presence name={myName} initial={myName.charAt(0).toUpperCase()} here={myCheckedIn} tone="rose" solo={isSolo} />
+          {!isSolo && <Presence name={partnerName} initial={partnerName.charAt(0).toUpperCase()} here={partnerHere} tone="blue" />}
+        </div>
+        <p className={cn("mt-3 text-[13px] leading-snug", urgent ? "font-medium text-red-600" : "text-[#3A4150] dark:text-muted-foreground")}>{todayNote}</p>
+        {!myCheckedIn ? (
+          <button
+            type="button"
+            onClick={handleCheckIn}
+            disabled={checkingIn}
+            className="mt-3.5 flex h-[52px] w-full items-center justify-center gap-2 rounded-[17px] bg-[#0B1324] text-[15px] font-semibold text-white shadow-[0_14px_28px_-16px_rgba(11,19,36,0.65)] transition active:scale-[0.98] disabled:opacity-60 dark:bg-foreground dark:text-background"
+          >
+            {checkingIn
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> {isSolo ? "A guardar o teu momento…" : "A guardar…"}</>
+              : <><Flame className="h-4 w-4" strokeWidth={2} /> Estou presente hoje</>}
+          </button>
+        ) : (
+          <div className="mt-3.5 flex h-[52px] w-full items-center justify-center gap-2 rounded-[17px] border border-[#ECE8E3] text-[15px] font-semibold text-foreground dark:border-border">
+            <Check className="h-4 w-4" strokeWidth={2.4} /> Presente hoje
+          </div>
+        )}
+        <div className="mt-3 flex items-center justify-between text-[11.5px] text-muted-foreground">
+          <span>Jornada deste mês</span>
+          <span className="tabular-nums">{progress}%</span>
+        </div>
+      </section>
 
-        {/* ══════════════════════════════════════════════ */}
-        {/* A NOSSA CHAMA                                   */}
-        {/* ══════════════════════════════════════════════ */}
-        <div className="space-y-4">
+      {/* ── Gestos de hoje ── */}
+      <section className={CARD}>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-foreground">Gestos de hoje</h2>
+          <span className="text-[12.5px] tabular-nums text-muted-foreground">{missionsDone} de {missionDefs.length} · +{missionsPts} pts</span>
+        </div>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#EEEBE6] dark:bg-muted">
+          <div className="h-full rounded-full bg-[#0B1324] transition-[width] duration-700 dark:bg-foreground" style={{ width: `${missionDefs.length ? (missionsDone / missionDefs.length) * 100 : 0}%` }} />
+        </div>
+        {loadingMissions && missions.length === 0 ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-[#0B1324]/40" /></div>
+        ) : (
+          <ul className="mt-2">
+            {missions.map((m) => (
+              <li key={m.id} className="flex items-center gap-3 border-[#ECE8E3] py-[11px] [&+&]:border-t dark:border-border">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F7F5F2] text-foreground dark:bg-muted">
+                  <m.Icon className="h-4 w-4" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-foreground">{m.title}</p>
+                  <p className="truncate text-[12px] text-muted-foreground">
+                    {!m.completed && m.completedCount > 0 ? `${m.completedCount} de ${totalMembers} já deu este gesto` : m.description}
+                  </p>
+                </div>
+                <span className={cn("text-[12px] tabular-nums", m.completed ? "font-semibold text-foreground" : "text-muted-foreground")}>+{m.points}</span>
+                <span className={cn(
+                  "flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-all duration-300",
+                  m.completed ? "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background" : "border-[#D5D1CB] text-transparent",
+                )}>
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-          {/* Hero — número grande */}
-          <section className={cn(
-            "text-center py-8 relative rounded-3xl transition-all duration-700",
-            isPerfectDay && "animate-perfect-day-glow"
-          )}>
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Flame
-                className={cn(
-                  "w-4 h-4 transition-colors",
-                  bothActive ? "text-rose-500 animate-flame-breathe" : "text-muted-foreground"
-                )}
-                strokeWidth={1.5}
-              />
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                {isZero ? "O amor começa aqui" : (isSolo ? "A tua chama" : "A vossa chama")}
-              </p>
-            </div>
-
-            {/* Big streak number with pop on change + celebration burst */}
-            <div className="relative inline-flex items-baseline gap-2">
-              <CelebrationBurst active={celebrating} />
+      {/* ── LovePoints e LoveShield ── */}
+      <section className={CARD}>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-foreground">LovePoints</h2>
+          <span className="text-[12.5px] text-muted-foreground">trocam por proteção</span>
+        </div>
+        <div className="mt-2 flex items-baseline gap-2">
+          {loadingPoints && totalPoints === 0
+            ? <Loader2 className="h-6 w-6 animate-spin text-[#0B1324]/40" />
+            : <b className={cn("text-[34px] font-bold tracking-[-0.04em] tabular-nums text-foreground", pointsPopped && "animate-count-pop")}>{pointsDisplay.toLocaleString("pt-PT")}</b>}
+          <span className="text-[13px] text-muted-foreground">pts</span>
+          {missionsPts + pointsToday > 0 && <span className="ml-auto text-[12.5px] font-semibold text-emerald-700 dark:text-emerald-400">+{missionsPts + pointsToday} hoje</span>}
+        </div>
+        <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
+          {isSolo ? "+10 por cada dia que apareces." : "+10 por cada dia em que os dois aparecem."} Gastar pontos nunca faz descer o vosso nível.
+        </p>
+        <div className="mt-3.5 flex items-center gap-3 border-t border-[#ECE8E3] pt-3.5 dark:border-border">
+          <div className="flex gap-1.5" aria-label={`${shieldsRemaining} de 3 escudos`}>
+            {[0, 1, 2].map((i) => (
               <span
-                key={streakPopKey}
+                key={i}
                 className={cn(
-                  "text-8xl font-bold tabular-nums leading-none transition-colors",
-                  bothActive ? "text-rose-500 animate-streak-pop"
-                    : shieldUsedToday ? "text-blue-500"
-                    : "text-foreground",
-                  streakPopKey > 0 && !bothActive && "animate-streak-pop"
+                  "flex h-[30px] w-[26px] items-center justify-center rounded-[8px_8px_13px_13px] transition-all duration-500",
+                  i < shieldsRemaining ? "bg-[#4D7CFE] text-white" : "border-[1.5px] border-dashed border-[#D5D1CB]",
                 )}
               >
-                {currentStreak}
+                {i < shieldsRemaining && <Shield className="h-3.5 w-3.5" strokeWidth={2} />}
               </span>
-              <span className="text-3xl font-light text-muted-foreground/50">d</span>
-            </div>
-
-            <p className="text-sm text-muted-foreground mt-3 mb-4">
-              {isZero ? "Cada gesto conta — comecem hoje" : `${currentStreak} dias a cuidar um do outro`}
-            </p>
-
-            {/* Couple status badge */}
-            <CoupleStatusBadge key={coupleStatus.label} status={coupleStatus} />
-          </section>
-
-          {/* Flame Alert Bar — urgency + day progress */}
-          <FlameAlertBar
-            bothActive={bothActive}
-            myCheckedIn={myCheckedIn}
-            shieldUsedToday={shieldUsedToday}
-            missionsDone={missionsDone}
-            totalMissions={missionDefs.length}
-            hoursLeft={hoursLeft}
-            currentStreak={currentStreak}
-            isSolo={isSolo}
-          />
-
-          {/* Status card */}
-          <div className="glass-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  {bothActive ? (isSolo ? "A tua chama está acesa" : "A vossa chama está acesa")
-                    : myCheckedIn ? "O teu gesto foi registado"
-                    : isZero ? (isSolo ? "Faz o primeiro gesto hoje" : "Façam o primeiro gesto hoje")
-                    : (isSolo ? "A chama ainda espera pelo teu momento" : "A chama ainda espera pelo vosso momento")}
-                </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {totalMembers > 0
-                    ? `${activeCount} de ${totalMembers} presentes hoje`
-                    : "A preparar..."}
-                </p>
-                {myCheckedIn && !bothActive && totalMembers >= 2 && (
-                  <p className="text-[11px] text-rose-400 mt-1">
-                    O teu par ainda não apareceu hoje
-                  </p>
-                )}
-              </div>
-              <Heart
-                className={cn("w-5 h-5 shrink-0 transition-all duration-500",
-                  bothActive ? "fill-rose-500 text-rose-500" : "text-muted-foreground/30"
-                )}
-                strokeWidth={1.5}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
-                <span>Jornada deste mês</span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-1.5 bg-muted" />
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: "Melhor Sequência", value: longestStreak, unit: "dias juntos" },
-              { label: "Presença", value: totalMembers > 0 ? Math.round((activeCount / totalMembers) * 100) : 0, unit: "% hoje" },
-            ].map(s => (
-              <div key={s.label} className="glass-card p-4 text-center">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{s.label}</p>
-                <p className="text-3xl font-bold text-foreground tabular-nums">{s.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{s.unit}</p>
-              </div>
             ))}
           </div>
-        </div>
-
-        <div className="h-px bg-border" />
-
-        {/* ══════════════════════════════════════════════ */}
-        {/* LOVEPOINTS                                      */}
-        {/* ══════════════════════════════════════════════ */}
-        <div className="space-y-4">
-
-          {/* Hero LovePoints */}
-          <section className="text-center py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">LovePoints disponíveis</p>
-            {loadingPoints ? (
-              <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto" />
-            ) : (
-              <div className="flex items-baseline justify-center gap-2">
-                <span
-                  className={cn(
-                    "text-7xl font-bold tabular-nums text-foreground leading-none transition-all",
-                    pointsPopped && "animate-count-pop"
-                  )}
-                >
-                  {pointsDisplay.toLocaleString("pt-PT")}
-                </span>
-                <span className="text-2xl font-light text-muted-foreground/50">pts</span>
-              </div>
-            )}
-          </section>
-
-          {/* Stats LovePoints */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Hoje ganhámos</p>
-              <p className="text-3xl font-bold tabular-nums text-rose-500">+{pointsToday}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">LovePoints</p>
-            </div>
-            <div className="glass-card p-4 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{isSolo ? "Por dia ativo" : "Por dia juntos"}</p>
-              <p className="text-3xl font-bold tabular-nums text-foreground">10</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{isSolo ? "quando estás presente" : "quando ambos presentes"}</p>
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="glass-card p-4 flex items-start gap-3">
-            <Coins className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" strokeWidth={1.5} />
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {isSolo ? (
-                <>Ganhas <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidas de ti. Troca por proteção ou personalizações — gastar LovePoints nunca faz descer o teu Nível da Jornada.</>
-              ) : (
-                <>Ganham <span className="font-semibold text-foreground">+10 LovePoints</span> por cada dia que cuidam um do outro. Troquem por proteção ou personalizações — gastar LovePoints nunca faz descer o vosso Nível da Jornada.</>
-              )}
+          <div className="min-w-0">
+            <p className="text-[14px] font-semibold text-foreground">LoveShield</p>
+            <p className="text-[12px] text-muted-foreground">
+              {shieldUsedToday ? "Usado hoje para proteger a chama" : "Protege a chama num dia em falta"}
             </p>
-          </div>
-
-          {/* ── LOJA: LOVE SHIELD ─────────────────────── */}
-          <SectionHeader icon={<ShoppingBag className="w-4 h-4" />} title={isSolo ? "Protege a Chama" : "Protejam a Chama"} />
-
-          <div className="glass-card rounded-[20px] p-4 border-primary/10 flex flex-col gap-3">
-            <div className="flex items-center gap-4">
-              <div className={cn(
-                "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0",
-                shieldsPurchased > 0
-                  ? "bg-gradient-to-br from-rose-400/20 to-rose-500/10 text-rose-500"
-                  : "bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-blue-500"
-              )}>
-                <Shield className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-[15px] font-black text-foreground leading-none">LoveShield</h3>
-                  {shieldsPurchased > 0 && (
-                     <span className="text-[9px] font-black bg-rose-500/10 text-rose-600 dark:text-rose-300 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                       EXTRA
-                     </span>
-                  )}
-                </div>
-
-                <p className="text-[11px] font-medium text-muted-foreground/80 leading-snug">
-                  {shieldsRemaining > 1 && shieldsPurchased === 0 ? (
-                    `${shieldsRemaining} dias protegidos este mês`
-                  ) : shieldsRemaining === 1 && shieldsPurchased === 0 ? (
-                    `Última proteção do mês — renova em breve`
-                  ) : shieldsRemaining === 1 && shieldsPurchased > 0 ? (
-                    isSolo ? `Proteção extra ativa — a tua chama está segura` : `Proteção extra ativa — a vossa chama está segura`
-                  ) : shieldsRemaining === 0 && shieldsPurchased === 0 ? (
-                    isSolo ? `A tua chama precisa de proteção` : `A vossa chama precisa de proteção`
-                  ) : (
-                    `Chama totalmente protegida este mês 💙`
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Botão de compra: 3 estados */}
-            {shieldsRemaining >= 3 ? (
-              /* Estado 1: shields completos — não pode comprar */
-              <div className="flex justify-end pt-2 border-t border-border/30">
-                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
-                  Máximo de escudos atingido
-                </span>
-              </div>
-            ) : shieldsPurchased > 0 ? (
-              /* Estado 2: já compraram 1 escudo este mês — não pode comprar outra vez */
-              <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="text-[11px] text-muted-foreground leading-snug">
-                    {isSolo ? "Já compraste 1 escudo este mês" : "Já compraram 1 escudo este mês"}
-                  </span>
-                </div>
-                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest px-2 py-1 bg-black/5 dark:bg-white/5 rounded-lg border border-border/50">
-                  Renova em {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString("pt-PT", { day: "numeric", month: "short" })}
-                </span>
-              </div>
-            ) : (
-              /* Estado 3: perderam escudos e ainda não compraram este mês */
-              <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                <div className="flex items-center gap-1.5">
-                  <Coins className="w-3.5 h-3.5 text-rose-400" />
-                  <span className="text-sm font-black tabular-nums">200 pts</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    ({shieldsRemaining}/3 escudos)
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant={canBuyShield ? "default" : "outline"}
-                  className="h-8 px-4 rounded-[10px] text-xs font-black shadow-sm"
-                  onClick={buyShield}
-                  disabled={buyingShield || !canBuyShield}
-                >
-                  {buyingShield ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-                   canBuyShield ? "+1 Escudo" : "Saldo Insuficiente"}
-                </Button>
-              </div>
-            )}
           </div>
         </div>
+        {shieldsRemaining >= 3 ? (
+          <p className="mt-3 text-center text-[12.5px] text-muted-foreground">Máximo de escudos atingido</p>
+        ) : shieldsPurchased > 0 ? (
+          <p className="mt-3 text-center text-[12.5px] text-muted-foreground">
+            {isSolo ? "Já compraste 1 escudo este mês" : "Já compraram 1 escudo este mês"} · renova a {renewDate}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={buyShield}
+            disabled={buyingShield || !canBuyShield}
+            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-[15px] border border-[#ECE8E3] bg-white text-[14px] font-semibold text-foreground transition active:scale-[0.98] disabled:opacity-45 dark:border-border dark:bg-card"
+          >
+            {buyingShield ? <Loader2 className="h-4 w-4 animate-spin" /> : canBuyShield ? "Comprar escudo · 200 pts" : `Faltam ${200 - totalPoints} pts para um escudo`}
+          </button>
+        )}
+      </section>
 
-        <div className="h-px bg-border" />
-
-        {/* ══════════════════════════════════════════════ */}
-        {/* GESTOS DE HOJE                                  */}
-        {/* ══════════════════════════════════════════════ */}
-        <div className="space-y-4">
-
-          {/* Progress header */}
-          <div className="glass-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  {missionsDone === missionDefs.length && missionsDone > 0
-                    ? "Hoje foram extraordinários"
-                    : (missionsDone > 0 || missionsInProgress > 0)
-                    ? (isSolo ? "Continua — a chama agradece" : "Continuem — a chama agradece")
-                    : "Pequenos gestos fortalecem o amor"}
-                </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {missionsDone > 0
-                    ? `${missionsDone} de ${missionDefs.length} gestos dados · +${missionsPts} pts`
-                    : missionsInProgress > 0
-                    ? `${missionsInProgress} gesto${missionsInProgress > 1 ? "s" : ""} em progresso`
-                    : "Nenhum gesto ainda hoje"}
-                </p>
-              </div>
-              <Target className="w-5 h-5 text-rose-400 shrink-0" strokeWidth={1.5} />
-            </div>
-            <Progress
-              value={missionDefs.length > 0 ? (missionsDone / missionDefs.length) * 100 : 0}
-              className="h-1.5 bg-muted"
-            />
-            <p className="text-[11px] text-muted-foreground mt-3">
-              {isSolo ? "O amor conta quando apareces todos os dias" : "O amor conta quando ambos participam"}
-            </p>
-          </div>
-
-          {/* Missions list */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">{isSolo ? "Os teus gestos de hoje" : "Os vossos gestos de hoje"}</p>
-
-          {loadingMissions ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-5 h-5 text-rose-400 animate-spin" />
-            </div>
-          ) : (
-            <div className="glass-card divide-y divide-border overflow-hidden">
-              {missions.map(m => (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "relative flex items-center gap-4 p-4 overflow-hidden transition-colors duration-500",
-                    m.completed && "bg-rose-50/40 animate-mission-ripple"
-                  )}
-                >
-                  {/* Shimmer sweep on completion */}
-                  {m.completed && (
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0"
-                      style={{
-                        background: "linear-gradient(90deg, transparent 0%, rgba(244,63,94,0.08) 50%, transparent 100%)",
-                        animation: "shimmer-sweep 1s ease-out forwards",
-                      }}
-                    />
-                  )}
-
-                  <div className={cn(
-                    "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500",
-                    m.completed
-                      ? "bg-rose-100 dark:bg-rose-950/40 text-rose-500 shadow-sm shadow-rose-100 dark:shadow-none"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    <m.Icon className="w-4 h-4" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      "text-sm font-medium transition-all duration-300",
-                      m.completed ? "text-rose-400 line-through" : "text-foreground"
-                    )}>
-                      {m.title}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">{m.description}</p>
-                    {!m.completed && m.completedCount > 0 && (
-                      <p className="text-[11px] text-rose-400 mt-0.5">
-                        {m.completedCount} de {totalMembers} já deu este gesto
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className={cn(
-                      "text-[11px] font-medium transition-colors",
-                      m.completed ? "text-rose-400" : "text-muted-foreground/50"
-                    )}>+{m.points}</span>
-                    {m.completed
-                      ? <CheckCircle2 className="w-5 h-5 text-rose-500 animate-celebration-in" strokeWidth={1.5} />
-                      : <Circle className="w-5 h-5 text-muted-foreground/30" strokeWidth={1.5} />
-                    }
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Dica */}
-          <div className="glass-card p-4 flex items-start gap-3">
-            <Sparkles className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" strokeWidth={1.5} />
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Pequenos gestos diários são o segredo de um amor que dura para sempre
-            </p>
-          </div>
+      {/* ── Dois números ── */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="rounded-[20px] border border-[#ECE8E3] p-3.5 dark:border-border">
+          <p className="text-[11.5px] text-muted-foreground">Melhor sequência</p>
+          <p className="mt-0.5 text-[26px] font-bold tracking-[-0.03em] tabular-nums text-foreground">
+            {longestStreak}<span className="ml-1 text-[13px] font-medium tracking-normal text-muted-foreground">{longestStreak === 1 ? "dia" : "dias"}</span>
+          </p>
+        </div>
+        <div className="rounded-[20px] border border-[#ECE8E3] p-3.5 dark:border-border">
+          <p className="text-[11.5px] text-muted-foreground">Este mês</p>
+          <p className="mt-0.5 text-[26px] font-bold tracking-[-0.03em] tabular-nums text-foreground">
+            {progress}<span className="ml-0.5 text-[13px] font-medium tracking-normal text-muted-foreground">%</span>
+          </p>
         </div>
       </div>
 
-      {/* ── CTA fixo ── */}
-      {!bothActive && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-4 z-40">
-          <div className="max-w-md mx-auto">
-            {!myCheckedIn ? (
-              <button
-                onClick={handleCheckIn}
-                disabled={checkingIn}
-                className={cn(
-                  "w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-200",
-                  "bg-rose-500 text-white shadow-lg shadow-rose-200",
-                  "active:scale-[0.97] active:shadow-none",
-                  "disabled:opacity-60 disabled:scale-100",
-                  !checkingIn && "hover:bg-rose-600"
-                )}
-              >
-                {checkingIn ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {isSolo ? "A guardar o teu momento..." : "A guardar o vosso momento..."}
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <Flame className="w-4 h-4 animate-flame-breathe" strokeWidth={1.5} />
-                    Estou presente hoje
-                  </span>
-                )}
-              </button>
-            ) : (
-              <div className="w-full py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-rose-400 font-medium text-sm text-center border border-rose-100 dark:border-rose-900/40 flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" strokeWidth={1.5} />
-                O teu gesto foi guardado · A esperar pelo teu par
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Celebração de level-up ───────────────────────────────────────── */}
+      {/* ── Celebração de level-up ── */}
       <LevelUpCelebration
         show={!!levelUpData}
         newLevel={streakPhase.level}

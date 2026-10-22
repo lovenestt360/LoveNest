@@ -32,6 +32,9 @@ interface GuardianProps {
   style?: React.CSSProperties;
   /** Frases ao tocar no Guardião. */
   tapLines?: string[];
+  /** Outro estágio da chama (imagem) e a cor do brilho atrás dele. */
+  src?: string;
+  glow?: string;
   children?: React.ReactNode;
 }
 
@@ -39,7 +42,7 @@ const DEFAULT_TAP = ["Olá! 💕", "Aqui estou!", "Hehe 😊"];
 
 /** Mascote da app: flutua, fala por balões e reage ao que a pessoa faz. */
 export const Guardian = forwardRef<GuardianHandle, GuardianProps>(function Guardian(
-  { kind, width, sayAt = "left", shy, talking, delay = 0, className, style, tapLines = DEFAULT_TAP, children },
+  { kind, width, sayAt = "left", shy, talking, delay = 0, className, style, tapLines = DEFAULT_TAP, src, glow, children },
   ref,
 ) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -105,14 +108,14 @@ export const Guardian = forwardRef<GuardianHandle, GuardianProps>(function Guard
       ref={rootRef}
       className={cn(
         "en-pet en-pet-in",
-        kind === "faisca" ? "rose" : "blue",
+        glow ? "custom" : kind === "faisca" ? "rose" : "blue",
         sayAt === "right" && "say-right",
         sayAt === "top" && "say-top",
         shy && "shy",
         talking && "talking",
         className,
       )}
-      style={{ width, ["--d" as string]: delay, ...style }}
+      style={{ width, ["--d" as string]: delay, ...(glow ? { ["--en-glow" as string]: glow } : {}), ...style }}
     >
       <button
         type="button"
@@ -121,7 +124,7 @@ export const Guardian = forwardRef<GuardianHandle, GuardianProps>(function Guard
         onClick={() => { react("happy"); hearts(); say(tapLines[Math.floor(Math.random() * tapLines.length)]); }}
         onMouseEnter={() => { if (!shy) react("wiggle"); }}
       >
-        <img src={kind === "faisca" ? faiscaImg : guardiaoImg} alt="" draggable={false} />
+        <img src={src ?? (kind === "faisca" ? faiscaImg : guardiaoImg)} alt="" draggable={false} />
       </button>
       {bubble && (
         <div className={cn("en-say", bubbleOpen && "show")} role="status" aria-live="polite">
