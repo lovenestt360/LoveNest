@@ -22,11 +22,24 @@ type ProfileRow = {
   partner_nickname?: string | null;
 };
 
+// Guardado no aparelho para o nome (ou a alcunha) aparecer logo, sem "piscar".
+const cacheKey = (userId: string) => `ln_partner_${userId}`;
+function readCache(userId: string | undefined): PartnerProfile | null {
+  if (!userId) return null;
+  try { return JSON.parse(localStorage.getItem(cacheKey(userId)) ?? "null"); } catch { return null; }
+}
+function writeCache(userId: string, partner: PartnerProfile | null) {
+  try {
+    if (partner) localStorage.setItem(cacheKey(userId), JSON.stringify(partner));
+    else localStorage.removeItem(cacheKey(userId));
+  } catch { /* sem armazenamento: lê sempre da rede */ }
+}
+
 export function usePartnerProfile() {
   const { user } = useAuth();
   const spaceId = useCoupleSpaceId();
-  const [partner, setPartner] = useState<PartnerProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [partner, setPartner] = useState<PartnerProfile | null>(() => readCache(user?.id));
+  const [loading, setLoading] = useState(() => !readCache(user?.id));
 
   useEffect(() => {
     if (!user || !spaceId) {
@@ -35,7 +48,8 @@ export function usePartnerProfile() {
     }
 
     const fetchPartner = async () => {
-      setLoading(true);
+      // Com cache, atualiza em segundo plano sem voltar ao estado de "a carregar".
+      if (!readCache(user.id)) setLoading(true);
       try {
         // 1. Get the other member of the couple space
         const { data: members, error: mError } = await supabase
@@ -60,24 +74,30 @@ export function usePartnerProfile() {
           const mine = profiles.find(p => p.user_id === user.id);
 
           if (pError || !profile) {
+            if (pError) throw pError;
             setPartner(null);
+            writeCache(user.id, null);
             return;
           }
 
           const nickname = (mine?.partner_nickname ?? "").trim();
-          setPartner({
+          const next: PartnerProfile = {
             user_id: profile.user_id,
             display_name: nickname || profile.display_name,
             real_name: profile.display_name,
             avatar_url: profile.avatar_url,
             verification_status: profile.verification_status || "unverified"
-          });
+          };
+          setPartner(next);
+          writeCache(user.id, next);
         } else {
           setPartner(null);
+          writeCache(user.id, null);
         }
       } catch (err) {
+        // Sem rede: fica o que estava guardado.
         console.error("Error fetching partner profile:", err);
-        setPartner(null);
+        if (!readCache(user.id)) setPartner(null);
       } finally {
         setLoading(false);
       }
