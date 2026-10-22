@@ -496,7 +496,7 @@ export default function Chat() {
   const { resetChatUnread }                        = useAppNotifContext();
   const { toast }                                  = useToast();
   const { wallpaperUrl, wallpaperOpacity }         = useUserSettings();
-  const { partner }                                = usePartnerProfile();
+  const { partner, loading: partnerLoading }       = usePartnerProfile();
   const { profile: ownProfile }                    = useProfile();
 
   const [isReady, setIsReady]       = useState(false);
@@ -850,7 +850,7 @@ export default function Chat() {
   const inRecMode = audio.recording || !!audio.audioBlob;
 
   /* ── Partner initials fallback ── */
-  const partnerInitial = partner?.display_name?.[0]?.toUpperCase() ?? "?";
+  const partnerInitial = partner?.display_name?.[0]?.toUpperCase() ?? "";
 
   return (
     <section className="relative flex flex-col overflow-hidden h-[100dvh]">
@@ -886,8 +886,9 @@ export default function Chat() {
           <div className="ml-1 flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <span className="text-[16px] font-semibold tracking-[-0.01em] text-foreground truncate">
-                {partner?.display_name || "Amor"}
+                {partner?.display_name || (partnerLoading ? "" : "Amor")}
               </span>
+              {!partner && partnerLoading && <span className="h-3.5 w-24 animate-pulse rounded-full bg-[#ECE8E3] dark:bg-muted" aria-label="A carregar" />}
               {partner?.verification_status === "verified" && (
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" strokeWidth={1.8} />
               )}
