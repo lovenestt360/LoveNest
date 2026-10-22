@@ -17,13 +17,16 @@ interface HomeHeaderProps {
   /** Presença de hoje: anel contínuo quando a pessoa já apareceu, tracejado quando não. */
   meHere?: boolean;
   partnerHere?: boolean;
+  /** Online agora: com a app aberta neste momento (ponto verde). */
+  meOnline?: boolean;
+  partnerOnline?: boolean;
 }
 
 /**
  * Cabeçalho da Home: tu à esquerda (rosa), o par à direita (azul).
- * O anel mostra a presença de hoje.
+ * O anel mostra a presença de hoje; o ponto verde, quem está online agora.
  */
-export function HomeHeader({ me, partner, today, loading, meHere = false, partnerHere = false }: HomeHeaderProps) {
+export function HomeHeader({ me, partner, today, loading, meHere = false, partnerHere = false, meOnline = false, partnerOnline = false }: HomeHeaderProps) {
   const navigate = useNavigate();
 
   return (
@@ -33,6 +36,7 @@ export function HomeHeader({ me, partner, today, loading, meHere = false, partne
           user={me}
           loading={loading}
           here={meHere}
+          online={meOnline}
           tone="rose"
           fallback="U"
           label="Eu"
@@ -50,6 +54,7 @@ export function HomeHeader({ me, partner, today, loading, meHere = false, partne
             user={partner}
             loading={loading}
             here={partnerHere}
+            online={partnerOnline}
             tone="blue"
             fallback="P"
             label="Par"
@@ -68,6 +73,7 @@ function PresenceAvatar({
   user,
   loading,
   here,
+  online,
   tone,
   fallback,
   label,
@@ -77,6 +83,7 @@ function PresenceAvatar({
   user: UserInfo | null;
   loading?: boolean;
   here: boolean;
+  online: boolean;
   tone: "rose" | "blue";
   fallback: string;
   label: string;
@@ -93,7 +100,7 @@ function PresenceAvatar({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${label}, ${here ? "já apareceu hoje" : "ainda não apareceu hoje"}`}
+      aria-label={`${label}, ${online ? "online agora" : "offline"}, ${here ? "já apareceu hoje" : "ainda não apareceu hoje"}`}
       className={cn("relative h-[38px] w-[38px] transition-opacity active:opacity-70", className)}
     >
       <span
@@ -114,9 +121,12 @@ function PresenceAvatar({
         aria-hidden="true"
         className={cn(
           "absolute -bottom-0.5 -right-0.5 h-[11px] w-[11px] rounded-full border-2 border-white dark:border-background",
-          here ? "bg-emerald-600" : "bg-[#D5D1CB]",
+          online ? "bg-emerald-500" : "bg-[#D5D1CB]",
         )}
       />
+      {online && (
+        <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 h-[11px] w-[11px] animate-ping rounded-full bg-emerald-400 opacity-40 motion-reduce:hidden" style={{ animationDuration: "2.4s" }} />
+      )}
       {user?.verificationStatus === "verified" && (
         <span className="absolute -left-0.5 -top-0.5 rounded-full bg-white p-px dark:bg-background">
           <ShieldCheck className="h-3 w-3 text-emerald-500" />

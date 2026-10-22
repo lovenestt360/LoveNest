@@ -35,6 +35,7 @@ import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
 import { capsuleSeenKey } from "@/features/capsule/CapsuleRealtimeWatcher";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
+import { useOnlinePresence } from "@/features/presence/onlinePresence";
 import {
   DailyTools,
   MemoriesSection,
@@ -468,6 +469,7 @@ const Index = () => {
   const hideCycle = isSolo && profile?.gender === "male";
   const partnerName = avatars.partner?.displayName?.split(" ")[0] ?? "O teu par";
   const meHere = !!streakData?.myCheckedIn;
+  const { meOnline, partnerOnline } = useOnlinePresence();
   const partnerHere = !isSolo && (streakData?.activeCount ?? 0) >= (meHere ? 2 : 1);
 
   const tools: DailyTool[] = [
@@ -499,6 +501,8 @@ const Index = () => {
         loading={avatars.loading}
         meHere={meHere}
         partnerHere={partnerHere}
+        meOnline={meOnline}
+        partnerOnline={!isSolo && partnerOnline}
       />
 
       <p className="mb-[11px] mt-[7px] text-center text-[13px] font-medium leading-snug text-rose-500">
