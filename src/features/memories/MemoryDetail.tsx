@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { X, MoreHorizontal, Edit2, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -100,7 +101,8 @@ export function MemoryDetail({ photos, startId, onClose, onDeleted }: Props) {
   if (!photo) return null;
   const url = urls[photo.id];
 
-  return (
+  // No body, para não ficar presa dentro do conteúdo da página (animações com transform).
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-[70] bg-black animate-in fade-in duration-150"
@@ -282,6 +284,7 @@ export function MemoryDetail({ photos, startId, onClose, onDeleted }: Props) {
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 }
