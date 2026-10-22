@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { prefersReducedMotion } from "./entryUtils";
+import { ENVELOPE_SVG, prefersReducedMotion, webmailFor } from "./entryUtils";
 import "./entry.css";
 
 /**
@@ -167,3 +167,56 @@ export function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+
+/** Envelope desenhado a traço; "fly" voa uma vez, "wait" flutua. */
+export function Envelope({ mode, className, style }: { mode: "fly" | "wait"; className?: string; style?: React.CSSProperties }) {
+  return <span className={cn("en-env", mode, className)} style={style} dangerouslySetInnerHTML={{ __html: ENVELOPE_SVG }} />;
+}
+
+export function EmailChip({ email }: { email: string }) {
+  return (
+    <div className="en-chip en-in" style={{ ["--d" as string]: 5 }}>
+      <i>{email.trim().charAt(0) || "@"}</i><span>{email.trim()}</span>
+    </div>
+  );
+}
+
+/** Botão para abrir o email na web, só quando conhecemos o serviço. */
+export function WebmailButton({ email, delay = 6 }: { email: string; delay?: number }) {
+  const mail = webmailFor(email);
+  if (!mail) return null;
+  return (
+    <a className="en-btn en-in" style={{ ["--d" as string]: delay }} href={mail.url} target="_blank" rel="noreferrer">
+      {mail.label} <span className="en-arrow">→</span>
+    </a>
+  );
+}
+
+/** "Não chegou? Reenviar", bloqueado durante uns segundos depois de cada envio. */
+export function ResendLink({ seconds, onResend, delay = 7 }: { seconds: number; onResend: () => Promise<boolean>; delay?: number }) {
+  const [left, setLeft] = useState(seconds);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (left <= 0) return;
+    const t = window.setTimeout(() => setLeft((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [left]);
+  const fmt = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  return (
+    <p className="en-resend en-in" style={{ ["--d" as string]: delay }}>
+      Não chegou?{" "}
+      <button
+        type="button"
+        disabled={left > 0 || busy}
+        onClick={async () => {
+          setBusy(true);
+          const ok = await onResend();
+          setBusy(false);
+          if (ok) setLeft(seconds);
+        }}
+      >
+        {busy ? "A enviar…" : left > 0 ? `Reenviar em ${fmt}` : "Reenviar"}
+      </button>
+    </p>
+  );
+}

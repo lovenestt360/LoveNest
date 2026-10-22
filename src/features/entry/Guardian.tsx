@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { prefersReducedMotion } from "./entryUtils";
+import { ENVELOPE_SVG, prefersReducedMotion } from "./entryUtils";
 import faiscaImg from "./assets/faisca.webp";
 import guardiaoImg from "./assets/guardiao.webp";
 import "./entry.css";
@@ -13,7 +13,10 @@ export interface GuardianHandle {
   /** Mostra um balão; ms = 0 deixa-o aberto até à próxima fala. */
   say: (text: string, ms?: number) => void;
   hearts: (n?: number) => void;
+  /** Um envelope sai do Guardião a voar. */
+  mail: () => void;
 }
+
 
 interface GuardianProps {
   kind: "faisca" | "guardiao";
@@ -84,7 +87,17 @@ export const Guardian = forwardRef<GuardianHandle, GuardianProps>(function Guard
     }
   }, []);
 
-  useImperativeHandle(ref, () => ({ react, say, hearts }), [react, say, hearts]);
+  const mail = useCallback(() => {
+    const el = rootRef.current;
+    if (!el || prefersReducedMotion()) return;
+    const env = document.createElement("span");
+    env.className = "en-env fly mini";
+    env.innerHTML = ENVELOPE_SVG;
+    el.appendChild(env);
+    window.setTimeout(() => env.remove(), 1700);
+  }, []);
+
+  useImperativeHandle(ref, () => ({ react, say, hearts, mail }), [react, say, hearts, mail]);
   useEffect(() => () => { window.clearTimeout(timer.current); window.cancelAnimationFrame(frame.current); }, []);
 
   return (
