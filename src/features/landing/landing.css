@@ -366,6 +366,29 @@
   .lp .ch-dots a.on span, .lp .ch-dots a:hover span { opacity: 1; transform: none; color: var(--ink); }
   .lp .scene-top .card .push-like { display: flex; gap: 9px; align-items: flex-start; }
 
+  .lp /* Memórias: pilha de fotos */
+  .deck { position: relative; width: 210px; height: 230px; margin: 4px 0 6px 10px; }
+  .lp .polaroid { position: absolute; inset: 0; margin: 0; background: #fff; padding: 10px 10px 34px; border-radius: 14px; border: 1px solid var(--edge); box-shadow: 0 18px 34px -24px rgba(11,19,36,.5); transform: rotate(calc((var(--i) - 1) * 5deg)) translateY(calc(var(--i) * -3px)); transition: transform .5s var(--ease), opacity .4s; }
+  .lp .polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; }
+  .lp .polaroid figcaption { position: absolute; left: 12px; right: 12px; bottom: 9px; font-size: 13px; font-weight: 600; }
+  .lp .polaroid.gone { opacity: 0; pointer-events: none; }
+  .lp .deck-btn { margin-top: 10px; width: auto; display: inline-flex; }
+  .lp /* Desafios */
+  .challenge { max-width: 380px; border: 1px solid var(--edge); border-radius: 22px; padding: 16px 18px; box-shadow: 0 18px 36px -28px rgba(11,19,36,.4); display: grid; gap: 4px; }
+  .lp .challenge b { font-size: 18px; letter-spacing: -0.02em; margin-top: 4px; }
+  .lp .challenge small { font-size: 13.5px; color: var(--muted); }
+  .lp .challenge .btn { margin-top: 12px; height: 46px; width: auto; justify-self: start; }
+  .lp .challenge.ok .btn { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; }
+  .lp /* Wrapped: slides reais que avançam com o scroll */
+  .story { opacity: 0; transition: opacity .6s var(--ease), transform .8s var(--ease); transform: scale(1.03); }
+  .lp .story.on { opacity: 1; transform: none; }
+  .lp .story-bars { position: absolute; top: 2.2%; left: 4%; right: 4%; display: flex; gap: 4px; z-index: 3; }
+  .lp .story-bars i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.25); overflow: hidden; }
+  .lp .story-bars b { display: block; height: 100%; background: #fff; transform-origin: left; transform: scaleX(0); }
+  .lp .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 380px; }
+  .lp .stats span { border: 1px solid var(--edge); border-radius: 18px; padding: 12px 14px; font-size: 12.5px; color: var(--muted); }
+  .lp .stats b { display: block; font-size: 28px; letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
+
   .lp /* Conversa de boas-vindas */
   .reply-row:not(.show) { display: none; }
   .lp .reply-row.show { animation: lp-rise .4s var(--ease) both; }
@@ -492,6 +515,11 @@
     .lp .live { padding: 10px 14px; } .lp .live-n b { font-size: 20px; } .lp .live-n { gap: 12px; }
     .lp .days button { width: 54px; height: 58px; } .lp .days b { font-size: 18px; }
     .lp .try-chat input, .lp .try-chat button { height: 44px; } .lp .try-chat button { width: 44px; }
+    .lp .deck { width: 120px; height: 140px; margin: 0; display: inline-block; vertical-align: middle; }
+    .lp .polaroid { padding: 6px 6px 24px; } .lp .polaroid figcaption { font-size: 10px; bottom: 6px; left: 8px; }
+    .lp .deck-btn { margin: 0 0 0 18px; vertical-align: middle; height: 44px; padding: 0 16px; font-size: 14px; }
+    .lp .challenge { padding: 12px 14px; } .lp .challenge b { font-size: 15px; } .lp .challenge small { display: none; } .lp .challenge .btn { margin-top: 6px; height: 40px; }
+    .lp .stats { grid-template-columns: repeat(4, 1fr); gap: 6px; } .lp .stats span { padding: 8px; font-size: 10px; } .lp .stats b { font-size: 18px; }
   }
   @media (max-width: 719px) {
     .lp .journey-pin { align-items: flex-start; padding-top: 18px; }
