@@ -66,14 +66,10 @@ export const PdfReader = forwardRef<ChapterReaderHandle, {
         if (numPages) onProgress?.(Math.round((page / numPages) * 100), String(page));
     };
 
-    const progress = numPages ? (pageNumber / numPages) * 100 : 0;
     const colors = THEME_COLORS[settings.theme];
 
     return (
         <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
-            <div className="h-1 bg-muted shrink-0">
-                <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${progress}%` }} />
-            </div>
 
             <div ref={containerRef} className="flex-1 overflow-hidden relative" style={{ backgroundColor: colors.bg }}>
                 <Document

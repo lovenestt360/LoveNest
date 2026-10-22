@@ -39,13 +39,15 @@ export function ChapterReflectionPrompt({ prompt, onDismiss, onSubmit, showIntro
                     </p>
                 )}
                 <p className="text-[14px] font-bold text-foreground">
-                    O que aprendeste em "{prompt.title}"?
+                    {prompt.chapterId === GENERAL_CHAPTER_ID
+                        ? "O que estás a aprender com este livro?"
+                        : `O que aprendeste em "${prompt.title}"?`}
                 </p>
                 <textarea
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Escreve a tua reflexão para partilhar com o teu par..."
-                    className="w-full min-h-24 rounded-2xl border border-border bg-background p-3 text-[13px] text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full min-h-24 rounded-2xl border border-border bg-background p-3 text-[13px] text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-[#0B1324]/20"
                 />
                 <div className="flex gap-2">
                     <button
@@ -59,7 +61,7 @@ export function ChapterReflectionPrompt({ prompt, onDismiss, onSubmit, showIntro
                         type="button"
                         disabled={!text.trim() || saving}
                         onClick={handleSubmit}
-                        className="flex-1 h-11 rounded-2xl font-bold text-[13px] text-white bg-rose-500 active:scale-95 transition-all disabled:opacity-50"
+                        className="flex-1 h-11 rounded-2xl font-bold text-[13px] text-white bg-[#0B1324] active:scale-95 transition-all disabled:opacity-40 dark:bg-foreground dark:text-background"
                     >
                         {saving ? "A guardar..." : "Guardar"}
                     </button>

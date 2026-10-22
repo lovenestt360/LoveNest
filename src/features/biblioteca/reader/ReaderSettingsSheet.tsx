@@ -54,7 +54,7 @@ function OptionGroup<T extends string>({ label, options, value, onChange, disabl
                         onClick={() => onChange(opt.value)}
                         className={cn(
                             "px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors active:scale-95 disabled:opacity-30",
-                            value === opt.value ? "bg-rose-500 text-white border-rose-500" : "bg-card text-muted-foreground border-border"
+                            value === opt.value ? "bg-[#0B1324] text-white border-[#0B1324] dark:bg-foreground dark:text-background dark:border-foreground" : "bg-card text-[#3A4150] border-[#ECE8E3] dark:text-muted-foreground dark:border-border"
                         )}
                     >
                         {opt.label}
@@ -94,7 +94,7 @@ export function ReaderSettingsSheet({ open, onOpenChange, settings, onChange, mo
                                     style={{ fontSize: `${12 + i * 2}px` }}
                                     className={cn(
                                         "flex-1 h-10 rounded-xl font-bold border transition-colors active:scale-95 disabled:opacity-30",
-                                        settings.fontSizeIndex === i ? "bg-rose-500 text-white border-rose-500" : "bg-card text-muted-foreground border-border"
+                                        settings.fontSizeIndex === i ? "bg-[#0B1324] text-white border-[#0B1324] dark:bg-foreground dark:text-background dark:border-foreground" : "bg-card text-[#3A4150] border-[#ECE8E3] dark:text-muted-foreground dark:border-border"
                                     )}
                                 >
                                     Aa
