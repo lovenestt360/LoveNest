@@ -473,15 +473,15 @@ const Index = () => {
 
   const tools: DailyTool[] = [
     ...(!isSolo
-      ? [{ to: "/chat", label: "Chat", icon: TOOL_ICONS.chat, tint: "text-[#0B1324] dark:text-foreground", badge: chatUnread }]
+      ? [{ to: "/chat", label: "Chat", icon: TOOL_ICONS.chat, badge: chatUnread }]
       : []),
-    { to: "/humor", label: "Humor", icon: TOOL_ICONS.mood, tint: "text-rose-500", badge: moodUnread },
-    { to: "/plano", label: "Agenda", icon: TOOL_ICONS.agenda, tint: "text-[#3F68E6]", badge: tasksUnread + scheduleUnread },
+    { to: "/humor", label: "Humor", icon: TOOL_ICONS.mood(mood.mine?.key), badge: moodUnread },
+    { to: "/plano", label: "Agenda", icon: TOOL_ICONS.agenda, badge: tasksUnread + scheduleUnread },
     ...(hasSpiritual
-      ? [{ to: "/jornada-espiritual", label: "Espiritual", icon: TOOL_ICONS.spiritual, tint: "text-violet-500", badge: prayerUnread }]
+      ? [{ to: "/jornada-espiritual", label: "Espiritual", icon: TOOL_ICONS.spiritual, badge: prayerUnread }]
       : []),
     ...(!isSolo
-      ? [{ to: "/conflitos", label: "Conflitos", icon: TOOL_ICONS.conflicts, tint: "text-rose-600", badge: complaintsUnread }]
+      ? [{ to: "/conflitos", label: "Conflitos", icon: TOOL_ICONS.conflicts, badge: complaintsUnread }]
       : []),
   ];
 

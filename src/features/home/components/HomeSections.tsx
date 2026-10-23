@@ -1,22 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  BookHeart,
-  CalendarCheck,
-  CalendarDays,
-  ChevronRight,
-  Clock,
-  HeartCrack,
-  MessageCircle,
-  Smile,
-  Star,
-  Trophy,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { cn } from "@/lib/utils";
 import { MoodFace } from "@/features/mood/MoodArt";
+import { FeatureIcon } from "@/features/home/FeatureIcon";
 
 /** Superfície comum da Home refinada: branco, borda fina e sombra suave. */
 export const SURFACE =
@@ -113,34 +103,23 @@ export type DailyTool = {
   to: string;
   label: string;
   icon: ReactNode;
-  tint: string;
   badge?: number;
 };
 
 export function DailyTools({ tools }: { tools: DailyTool[] }) {
   const navigate = useNavigate();
-  // O que tem novidades fica em destaque (invertido em tinta).
-  const hot = tools.find((t) => (t.badge ?? 0) > 0)?.to;
 
   return (
     <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(tools.length, 4)}, minmax(0, 1fr))` }}>
       {tools.map((tool) => {
-        const isHot = tool.to === hot;
         return (
           <button
             key={tool.to}
             type="button"
             onClick={() => navigate(tool.to)}
-            className="flex flex-col items-center gap-[7px] active:opacity-70"
+            className="group flex flex-col items-center gap-[7px]"
           >
-            <span
-              className={cn(
-                "relative flex h-14 w-14 items-center justify-center rounded-[19px]",
-                isHot
-                  ? "border border-[#0B1324] bg-[#0B1324] text-white shadow-[0_10px_28px_-14px_rgba(11,19,36,0.45)] dark:border-foreground dark:bg-foreground dark:text-background"
-                  : cn(SURFACE, tool.tint),
-              )}
-            >
+            <span className="relative flex h-14 w-14 items-center justify-center transition-transform duration-200 group-active:scale-95">
               {tool.icon}
               {(tool.badge ?? 0) > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-rose-500 px-1 text-[11px] font-bold leading-none text-white dark:border-background">
@@ -157,11 +136,12 @@ export function DailyTools({ tools }: { tools: DailyTool[] }) {
 }
 
 export const TOOL_ICONS = {
-  chat: <MessageCircle className="h-[23px] w-[23px]" strokeWidth={1.8} />,
-  mood: <Smile className="h-[23px] w-[23px]" strokeWidth={1.8} />,
-  agenda: <CalendarCheck className="h-[23px] w-[23px]" strokeWidth={1.8} />,
-  spiritual: <BookHeart className="h-[23px] w-[23px]" strokeWidth={1.8} />,
-  conflicts: <HeartCrack className="h-[23px] w-[23px]" strokeWidth={1.8} />,
+  chat: <FeatureIcon kind="chat" />,
+  /** A Faísca do meu humor de hoje (apagada, com +, se ainda não registei). */
+  mood: (moodKey?: string | null) => <FeatureIcon kind="humor" mood={moodKey} />,
+  agenda: <FeatureIcon kind="agenda" />,
+  spiritual: <FeatureIcon kind="espiritual" />,
+  conflicts: <FeatureIcon kind="conflitos" />,
 };
 
 export function NextUp({
@@ -382,15 +362,13 @@ export function MemoriesSection({
 
         <MiniTile
           onClick={() => navigate("/historia")}
-          icon={<CalendarDays className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-          tint="bg-rose-50 text-rose-600 dark:bg-rose-950/30"
+          icon={<FeatureIcon kind="historia" size={40} />}
           title={isSolo ? "A minha história" : "Nossa História"}
           text={historyText}
         />
         <MiniTile
           onClick={() => navigate("/capsula")}
-          icon={<Clock className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-          tint="bg-violet-50 text-violet-600 dark:bg-violet-950/30"
+          icon={<FeatureIcon kind="capsula" size={40} />}
           title="Cápsula"
           text={capsuleText}
           badge={capsuleBadge}
@@ -400,16 +378,14 @@ export function MemoriesSection({
       <div className={cn(SURFACE, "mt-2.5 overflow-hidden rounded-[20px]")}>
         <RowLink
           onClick={() => navigate("/desafios")}
-          icon={<Trophy className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-          tint="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30"
+          icon={<FeatureIcon kind="desafios" size={40} />}
           title="Desafios"
           text={extras.challenge ? `“${extras.challenge}” · em curso` : isSolo ? "Escolhe um desafio" : "Escolham um desafio juntos"}
         />
         {/* LoveWrapped fica sempre à vista; "Novo" nos 10 dias a seguir a ser gerado. */}
         <RowLink
           onClick={() => navigate("/wrapped")}
-          icon={<Star className="h-[18px] w-[18px]" strokeWidth={1.9} />}
-          tint="bg-amber-50 text-amber-500 dark:bg-amber-950/30"
+          icon={<FeatureIcon kind="wrapped" size={40} />}
           title={extras.wrapped ? `LoveWrapped de ${MONTHS_LONG[extras.wrapped.month - 1] ?? ""}` : "LoveWrapped"}
           text={
             extras.wrapped
@@ -430,14 +406,12 @@ export function MemoriesSection({
 function MiniTile({
   onClick,
   icon,
-  tint,
   title,
   text,
   badge = 0,
 }: {
   onClick: () => void;
   icon: ReactNode;
-  tint: string;
   title: string;
   text: string;
   badge?: number;
@@ -448,7 +422,7 @@ function MiniTile({
       onClick={onClick}
       className={cn(SURFACE, "relative flex min-h-[111px] flex-col gap-1.5 rounded-[20px] px-3.5 py-[13px] text-left active:scale-[0.99]")}
     >
-      <span className={cn("flex h-[34px] w-[34px] items-center justify-center rounded-[11px]", tint)}>{icon}</span>
+      {icon}
       <b className="text-[14px] font-semibold leading-tight text-foreground">{title}</b>
       <small className="text-[12px] leading-snug text-muted-foreground">{text}</small>
       {badge > 0 && (
@@ -463,14 +437,12 @@ function MiniTile({
 function RowLink({
   onClick,
   icon,
-  tint,
   title,
   text,
   trailing,
 }: {
   onClick: () => void;
   icon: ReactNode;
-  tint: string;
   title: string;
   text: string;
   trailing?: ReactNode;
@@ -481,7 +453,7 @@ function RowLink({
       onClick={onClick}
       className="flex min-h-[58px] w-full items-center gap-3 px-3.5 text-left active:bg-muted/40 [&+&]:border-t [&+&]:border-[#ECE8E3] dark:[&+&]:border-border"
     >
-      <span className={cn("flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px]", tint)}>{icon}</span>
+      {icon}
       <span className="min-w-0 flex-1">
         <b className="block text-[14px] font-semibold text-foreground">{title}</b>
         <small className="block truncate text-[12.5px] text-muted-foreground">{text}</small>
