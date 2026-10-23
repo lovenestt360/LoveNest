@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MoodCheckin } from "./types";
-import { MOOD_OPTIONS, ACTIVITIES, SLEEP_QUALITY_OPTIONS } from "./constants";
+import { ACTIVITIES, SLEEP_QUALITY_OPTIONS } from "./constants";
+import { MoodFace, SleepMoon, ActivityTile } from "./MoodArt";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -11,13 +12,8 @@ interface MoodHistoryProps {
     isSolo?: boolean;
 }
 
-function getMoodEmoji(key: string) {
-    return MOOD_OPTIONS.find(m => m.key === key)?.emoji ?? "😶";
-}
-
-function getSleepEmoji(key: string | null) {
-    if (!key) return null;
-    return SLEEP_QUALITY_OPTIONS.find(s => s.key === key)?.emoji ?? null;
+function sleepLabel(key: string) {
+    return SLEEP_QUALITY_OPTIONS.find(s => s.key === key)?.label ?? key;
 }
 
 export function MoodHistory({ history, userId, isSolo = false }: MoodHistoryProps) {
@@ -68,16 +64,17 @@ function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
         <div className="p-4 space-y-3">
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="text-3xl" title={`${data.mood_percent}%`}>{getMoodEmoji(data.mood_key)}</div>
+                    <MoodFace mood={data.mood_key} size={42} />
                     <div>
                         <p className="text-sm font-semibold">{isMe ? "Eu" : "Parceiro"}</p>
                         <p className="text-xs text-muted-foreground">Intensidade: {data.mood_percent}%</p>
                     </div>
                 </div>
                 {data.sleep_quality && (
-                    <Badge variant="outline" className="text-xs font-normal" title="Qualidade de sono">
-                        {getSleepEmoji(data.sleep_quality)}
-                    </Badge>
+                    <span className="flex items-center gap-1.5 rounded-full border border-[#ECE8E3] py-0.5 pl-0.5 pr-2.5 text-[11px] font-medium text-[#3A4150] dark:border-border dark:text-muted-foreground" title="Qualidade do sono">
+                        <SleepMoon quality={data.sleep_quality} size={20} />
+                        Sono {sleepLabel(data.sleep_quality).toLowerCase()}
+                    </span>
                 )}
             </div>
 
@@ -89,9 +86,10 @@ function RecordRow({ data, isMe }: { data?: MoodCheckin; isMe: boolean }) {
                         </Badge>
                     ))}
                     {actDetails?.map(a => (
-                        <Badge key={a.key} variant="outline" className="text-[10px] font-medium opacity-80">
-                            {a.emoji} {a.label}
-                        </Badge>
+                        <span key={a.key} className="inline-flex items-center gap-1.5 rounded-full border border-[#ECE8E3] py-0.5 pl-0.5 pr-2.5 text-[10.5px] font-medium text-[#3A4150] dark:border-border dark:text-muted-foreground">
+                            <ActivityTile activity={a.key} size={18} />
+                            {a.label}
+                        </span>
                     ))}
                 </div>
             )}

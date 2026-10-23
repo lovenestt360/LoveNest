@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { BookOpen } from "lucide-react";
 
 export function PrayerHomeCard() {
   const { user } = useAuth();
@@ -60,7 +61,7 @@ export function PrayerHomeCard() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">🙏 Oração do dia</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-lg"><BookOpen className="h-5 w-5" strokeWidth={1.9} /> Oração do dia</CardTitle>
         <CardDescription>Rotina espiritual do casal.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

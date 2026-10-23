@@ -273,15 +273,15 @@ export default function Settings() {
       const { data, error } = await supabase.functions.invoke("send-push", {
         body: {
           couple_space_id: spaceId,
-          title: "🔔 Teste LoveNest",
-          body: "As tuas notificações estão a funcionar! ✨",
+          title: "Teste LoveNest",
+          body: "As tuas notificações estão a funcionar!",
           url: "/configuracoes",
           type: "chat",
           is_test: true
         }
       });
       if (error) throw error;
-      toast({ title: "Notificação enviada! 🚀" });
+      toast({ title: "Notificação enviada!" });
     } catch (err: any) {
       toast({ title: "Erro no push", description: err.message, variant: "destructive" });
     } finally {
@@ -378,7 +378,7 @@ export default function Settings() {
     if (currentCategory === "house" && spaceId && !houseName.trim()) {
       toast({ title: "Falta o nome do casal", description: "Escreve como se chama o vosso espaço para concluir este passo." });
     } else {
-      toast({ title: "Perfil atualizado! ✨" });
+      toast({ title: "Perfil atualizado" });
     }
     window.dispatchEvent(new CustomEvent("onboarding-refresh"));
   };
@@ -394,7 +394,7 @@ export default function Settings() {
       primary_goal: primaryGoal,
     } as any).eq("user_id", user.id);
     setSavingPersonalization(false);
-    toast({ title: "Personalização atualizada! ✨" });
+    toast({ title: "Personalização atualizada" });
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -423,7 +423,7 @@ export default function Settings() {
       const { error: profileError } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
       if (profileError) throw profileError;
 
-      toast({ title: "Avatar atualizado! ✨", description: "A tua nova foto de perfil já está visível." });
+      toast({ title: "Avatar atualizado", description: "A tua nova foto de perfil já está visível." });
     } catch (error: any) {
       console.error("Avatar upload error:", error);
       toast({ 
@@ -587,7 +587,7 @@ export default function Settings() {
       const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("user_id", user.id);
       if (error) throw error;
       setAvatarUrl(null);
-      toast({ title: "Foto de perfil removida! ✨" });
+      toast({ title: "Foto de perfil removida" });
     } catch (error: any) {
       toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
     } finally {
@@ -836,7 +836,7 @@ export default function Settings() {
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Ganha 50 pontos por cada amigo que entrar! 🎁</p>
+                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Ganha 50 pontos por cada amigo que entrar!</p>
                   </div>
                 )}
               </div>
@@ -886,7 +886,7 @@ export default function Settings() {
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Usa este código para convidar o teu par. 🏠</p>
+                    <p className="text-[9px] text-muted-foreground font-black italic px-1">Usa este código para convidar o teu par.</p>
                   </div>
                 )}
               </div>
@@ -1169,7 +1169,7 @@ export default function Settings() {
                               const url = await uploadWallpaper(file);
                               if (url) {
                                 await updateWallpaper({ url });
-                                toast({ title: "Wallpaper atualizado! ✨" });
+                                toast({ title: "Wallpaper atualizado" });
                               } else {
                                 toast({ title: "Erro ao fazer upload", variant: "destructive" });
                               }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Users, Lock, Share2, MessageCircle } from "lucide-react";
+import { Loader2, Users, Lock, Share2, MessageCircle, Flame, TrendingUp, CircleCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UseFastingReturn } from "./useFasting";
 import { ShareLevel } from "./types";
@@ -18,11 +18,11 @@ const LEVELS: { value: ShareLevel; label: string; desc: string; icon: React.Reac
 ];
 
 const SUPPORT_MESSAGES = [
-    "Força hoje, falta pouco 💛",
-    "Estou orgulhosa(o) de ti 🙏",
-    "Juntos somos mais fortes 💪",
-    "Cada dia é uma vitória 🌟",
-    "Mantém o foco, vale a pena! ✨",
+    "Força hoje, falta pouco",
+    "Estou orgulhosa(o) de ti",
+    "Juntos somos mais fortes",
+    "Cada dia é uma vitória",
+    "Mantém o foco, vale a pena!",
 ];
 
 export function FastingPartnerShare({ data }: Props) {
@@ -110,10 +110,10 @@ export function FastingPartnerShare({ data }: Props) {
                         Preview — o que o teu par verá
                     </p>
                     <div className="space-y-1 text-sm">
-                        <p>🔥 <strong>{stats.streak} dias seguidos</strong></p>
-                        <p>📈 <strong>{stats.completionRate}% de cumprimento</strong></p>
+                        <p className="flex items-center gap-1.5"><Flame className="h-4 w-4 text-[#E5466D]" /> <strong>{stats.streak} dias seguidos</strong></p>
+                        <p className="flex items-center gap-1.5"><TrendingUp className="h-4 w-4" /> <strong>{stats.completionRate}% de cumprimento</strong></p>
                         {level === "checklist" && (
-                            <p>✅ <strong>{stats.loggedDays} dias registados</strong> de {stats.totalDays}</p>
+                            <p className="flex items-center gap-1.5"><CircleCheck className="h-4 w-4" /> <strong>{stats.loggedDays} dias registados</strong> de {stats.totalDays}</p>
                         )}
                         {message && <p className="italic text-muted-foreground mt-2">"{message}"</p>}
                     </div>

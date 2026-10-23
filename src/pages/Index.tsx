@@ -52,15 +52,15 @@ import { CycleHomeCard } from "@/features/cycle/CycleHomeCard";
 import { LocationHomeCard } from "@/features/location/LocationHomeCard";
 import { cn } from "@/lib/utils";
 
-const MOOD_MAP: Record<string, [string, string]> = {
-  feliz: ["😊", "Feliz"],
-  tranquilo: ["😌", "Tranquilo"],
-  apaixonado: ["🥰", "Apaixonado"],
-  ansioso: ["😰", "Ansioso"],
-  triste: ["😢", "Triste"],
-  cansado: ["😴", "Cansado"],
-  irritado: ["😤", "Irritado"],
-  grato: ["🙏", "Grato"],
+const MOOD_LABEL: Record<string, string> = {
+  feliz: "Feliz",
+  tranquilo: "Tranquilo",
+  apaixonado: "Apaixonado",
+  ansioso: "Ansioso",
+  triste: "Triste",
+  cansado: "Cansado",
+  irritado: "Irritado",
+  grato: "Grato",
 };
 
 function usePlanoStats() {
@@ -116,8 +116,7 @@ function useMoodToday() {
       const mine = rows.find((row: any) => row.user_id === user!.id);
       const partner = rows.find((row: any) => row.user_id !== user!.id);
       const normalize = (row: any) => {
-        const [emoji, label] = MOOD_MAP[row.mood_key] ?? ["", row.mood_key];
-        return { emoji, label };
+        return { key: row.mood_key as string, label: MOOD_LABEL[row.mood_key] ?? row.mood_key };
       };
 
       return {

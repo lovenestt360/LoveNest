@@ -203,7 +203,7 @@ export default function Mood() {
       const moodInfo = MOOD_OPTIONS.find(m => m.key === moodKey);
       notifyPartner({
         couple_space_id: sp,
-        title: `${moodInfo?.emoji ?? "😶"} Novo Humor (${moodPercent}%)`,
+        title: `Novo humor: ${moodInfo?.label ?? moodKey} (${moodPercent}%)`,
         body: emotions.length > 0 ? `Sentindo-se: ${emotions.join(", ")}` : (note ? `Houve uma actualização no humor de hoje.` : (moodInfo?.label ?? moodKey)),
         url: "/humor",
         type: "humor",
@@ -215,16 +215,15 @@ export default function Mood() {
     setTimeout(() => setShowSuccessOverlay(false), 2500);
 
     // Emotional Feedback UI
-    toast.success("Obrigado por partilhares como te sentes 💛", {
+    toast.success("Obrigado por partilhares como te sentes", {
       description: isSolo ? "Continua a registar como te sentes todos os dias." : "O teu par vai sentir-se mais próximo de ti.",
       duration: 5000,
     });
 
     if (!isSolo && !partnerRespondedToday) {
       setTimeout(() => {
-        toast("O teu par ainda não respondeu... 💬", {
+        toast("O teu par ainda não respondeu...", {
           description: "Talvez precise de um empurrãozinho para partilhar também.",
-          icon: "✨",
           action: {
             label: "Dar empurrãozinho",
             onClick: () => navigate("/chat"),

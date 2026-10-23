@@ -3,6 +3,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { MOOD_OPTIONS, SUB_EMOTIONS, ACTIVITIES, SLEEP_QUALITY_OPTIONS } from "./constants";
 import { Loader2 } from "lucide-react";
+import { MoodFace, SleepMoon, ActivityTile } from "./MoodArt";
+import { MOOD_TINT } from "./moodArtSvg";
+
+// Escolhido: contorno a tinta; no humor, fundo com a cor da chama.
+const TILE_ON = "border-[#0B1324] text-[#0B1324] ring-1 ring-inset ring-[#0B1324] dark:border-foreground dark:text-foreground dark:ring-foreground";
+const TILE_OFF = "border-[#ECE8E3] text-muted-foreground hover:bg-[#F7F5F2] dark:border-border dark:hover:bg-muted";
+const CHIP_ON = "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background";
+const CHIP_OFF = "border-[#ECE8E3] text-[#3A4150] hover:bg-[#F7F5F2] dark:border-border dark:text-muted-foreground dark:hover:bg-muted";
 
 interface MoodFormProps {
   moodKey: string;
@@ -61,13 +69,12 @@ export function MoodForm({
               type="button"
               onClick={() => setMoodKey(m.key)}
               className={cn(
-                "flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-xs font-medium transition-all duration-150 active:scale-95",
-                moodKey === m.key
-                  ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                  : "border-border text-muted-foreground hover:bg-muted"
+                "flex flex-col items-center gap-1 rounded-2xl border px-1 pb-2.5 pt-2 text-xs font-semibold transition-all duration-150 active:scale-95",
+                moodKey === m.key ? TILE_ON : TILE_OFF
               )}
+              style={moodKey === m.key ? { background: `color-mix(in srgb, ${MOOD_TINT[m.key]} 16%, transparent)` } : undefined}
             >
-              <span className="text-2xl leading-none">{m.emoji}</span>
+              <MoodFace key={moodKey === m.key ? "on" : "off"} mood={m.key} size={46} className={moodKey === m.key ? "animate-mood-pop" : undefined} />
               <span>{m.label}</span>
             </button>
           ))}
@@ -100,9 +107,7 @@ export function MoodForm({
                 onClick={() => toggleEmotion(e)}
                 className={cn(
                   "px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-150 active:scale-95",
-                  active
-                    ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                    : "border-border text-muted-foreground hover:bg-muted"
+                  active ? CHIP_ON : CHIP_OFF
                 )}
               >
                 {e}
@@ -124,13 +129,11 @@ export function MoodForm({
                 type="button"
                 onClick={() => toggleActivity(act.key)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-150 active:scale-95",
-                  active
-                    ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                    : "border-border text-muted-foreground hover:bg-muted"
+                  "flex items-center gap-2 rounded-full border py-[5px] pl-[5px] pr-3 text-xs font-semibold transition-all duration-150 active:scale-95",
+                  active ? CHIP_ON : CHIP_OFF
                 )}
               >
-                <span>{act.emoji}</span>
+                <ActivityTile activity={act.key} />
                 <span>{act.label}</span>
               </button>
             );
@@ -150,13 +153,12 @@ export function MoodForm({
                 type="button"
                 onClick={() => setSleepQuality(active ? null : sq.key)}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-xs font-medium transition-all duration-150 active:scale-95",
-                  active
-                    ? "border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
-                    : "border-border text-muted-foreground hover:bg-muted"
+                  "flex flex-col items-center gap-1.5 rounded-2xl border px-1 pb-2.5 pt-2.5 text-xs font-semibold transition-all duration-150 active:scale-95",
+                  active ? TILE_ON : TILE_OFF
                 )}
+                style={active ? { background: "color-mix(in srgb, #6A5CFF 14%, transparent)" } : undefined}
               >
-                <span className="text-2xl leading-none">{sq.emoji}</span>
+                <SleepMoon key={active ? "on" : "off"} quality={sq.key} size={40} className={active ? "animate-mood-pop" : undefined} />
                 <span>{sq.label}</span>
               </button>
             );
@@ -171,7 +173,7 @@ export function MoodForm({
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="Alguma nota sobre o dia de hoje?"
-          className="min-h-[80px] resize-none rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] text-sm focus-visible:ring-rose-400/30 dark:border-border dark:bg-muted"
+          className="min-h-[80px] resize-none rounded-[14px] border-[#ECE8E3] bg-[#F7F5F2] text-sm focus-visible:ring-[#0B1324]/15 dark:border-border dark:bg-muted"
           maxLength={500}
         />
       </div>

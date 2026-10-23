@@ -1,12 +1,12 @@
 export const MOOD_OPTIONS = [
-    { key: "feliz", emoji: "😊", label: "Feliz" },
-    { key: "tranquilo", emoji: "😌", label: "Tranquilo" },
-    { key: "apaixonado", emoji: "🥰", label: "Apaixonado" },
-    { key: "ansioso", emoji: "😰", label: "Ansioso" },
-    { key: "triste", emoji: "😢", label: "Triste" },
-    { key: "cansado", emoji: "😴", label: "Cansado" },
-    { key: "irritado", emoji: "😤", label: "Irritado" },
-    { key: "grato", emoji: "🙏", label: "Grato" },
+    { key: "feliz", label: "Feliz" },
+    { key: "tranquilo", label: "Tranquilo" },
+    { key: "apaixonado", label: "Apaixonado" },
+    { key: "ansioso", label: "Ansioso" },
+    { key: "triste", label: "Triste" },
+    { key: "cansado", label: "Cansado" },
+    { key: "irritado", label: "Irritado" },
+    { key: "grato", label: "Grato" },
 ] as const;
 
 export const SUB_EMOTIONS = [
@@ -18,23 +18,23 @@ export const SUB_EMOTIONS = [
 ];
 
 export const ACTIVITIES = [
-    { key: "trabalho", emoji: "💼", label: "Trabalho" },
-    { key: "estudo", emoji: "📚", label: "Estudo" },
-    { key: "treino", emoji: "💪", label: "Treino" },
-    { key: "lazer", emoji: "🎮", label: "Lazer" },
-    { key: "namorar", emoji: "❤️", label: "Namorar" },
-    { key: "amigos", emoji: "🍻", label: "Amigos" },
-    { key: "familia", emoji: "👨‍👩‍👦", label: "Família" },
-    { key: "viagem", emoji: "✈️", label: "Viagem" },
-    { key: "saude", emoji: "🏥", label: "Saúde" },
-    { key: "compras", emoji: "🛒", label: "Compras" },
-    { key: "limpeza", emoji: "🧹", label: "Limpeza" },
-    { key: "relaxar", emoji: "🧘", label: "Relaxar" }
+    { key: "trabalho", label: "Trabalho" },
+    { key: "estudo", label: "Estudo" },
+    { key: "treino", label: "Treino" },
+    { key: "lazer", label: "Lazer" },
+    { key: "namorar", label: "Namorar" },
+    { key: "amigos", label: "Amigos" },
+    { key: "familia", label: "Família" },
+    { key: "viagem", label: "Viagem" },
+    { key: "saude", label: "Saúde" },
+    { key: "compras", label: "Compras" },
+    { key: "limpeza", label: "Limpeza" },
+    { key: "relaxar", label: "Relaxar" }
 ];
 
 export const SLEEP_QUALITY_OPTIONS = [
-    { key: "mau", emoji: "🥱", label: "Mau" },
-    { key: "ok", emoji: "😐", label: "Normal" },
-    { key: "bom", emoji: "😴", label: "Bom" },
-    { key: "excelente", emoji: "✨", label: "Excelente" }
+    { key: "mau", label: "Mau" },
+    { key: "ok", label: "Normal" },
+    { key: "bom", label: "Bom" },
+    { key: "excelente", label: "Excelente" }
 ];

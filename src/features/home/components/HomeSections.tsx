@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { cn } from "@/lib/utils";
+import { MoodFace } from "@/features/mood/MoodArt";
 
 /** Superfície comum da Home refinada: branco, borda fina e sombra suave. */
 export const SURFACE =
@@ -200,13 +201,13 @@ export function PartnerMoodLine({
   mineShared,
 }: {
   partnerName: string;
-  partnerMood: { emoji: string; label: string } | null;
+  partnerMood: { key: string; label: string } | null;
   mineShared: boolean;
 }) {
   if (!partnerMood) return null;
   return (
     <p className="mt-2.5 flex items-center gap-2.5 px-1 text-[13px] text-[#3A4150] dark:text-foreground/80">
-      {partnerMood.emoji && <span className="text-[17px]">{partnerMood.emoji}</span>}
+      <MoodFace mood={partnerMood.key} size={26} />
       <span>
         <b className="font-semibold">{partnerName}</b> está {partnerMood.label.toLowerCase()}
         {mineShared ? "" : " · tu ainda não partilhaste"}
