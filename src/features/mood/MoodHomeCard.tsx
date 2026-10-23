@@ -6,17 +6,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-
-const MOOD_OPTIONS: Record<string, { emoji: string; label: string }> = {
-  feliz: { emoji: "😊", label: "Feliz" },
-  tranquilo: { emoji: "😌", label: "Tranquilo" },
-  apaixonado: { emoji: "🥰", label: "Apaixonado" },
-  ansioso: { emoji: "😰", label: "Ansioso" },
-  triste: { emoji: "😢", label: "Triste" },
-  cansado: { emoji: "😴", label: "Cansado" },
-  irritado: { emoji: "😤", label: "Irritado" },
-  grato: { emoji: "🙏", label: "Grato" },
-};
+import { MoodFace } from "./MoodArt";
 
 interface MoodCheckin {
   user_id: string;
@@ -48,8 +38,6 @@ export function MoodHomeCard() {
       });
   }, [spaceId, user]);
 
-  const emoji = (key: string) => MOOD_OPTIONS[key]?.emoji ?? "😶";
-
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -58,15 +46,15 @@ export function MoodHomeCard() {
       </CardHeader>
       <CardContent className="space-y-2">
         {mine ? (
-          <p className="text-sm">
-            {emoji(mine.mood_key)} Eu: {mine.mood_percent}%
+          <p className="flex items-center gap-2 text-sm">
+            <MoodFace mood={mine.mood_key} size={24} /> Eu: {mine.mood_percent}%
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">Você ainda não registou.</p>
         )}
         {partner ? (
-          <p className="text-sm">
-            {emoji(partner.mood_key)} Par: {partner.mood_percent}%
+          <p className="flex items-center gap-2 text-sm">
+            <MoodFace mood={partner.mood_key} size={24} /> Par: {partner.mood_percent}%
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">Seu par ainda não registou.</p>

@@ -873,3 +873,8 @@ input, textarea, [contenteditable="true"] {
 @media (prefers-reduced-motion: reduce) {
   [class*="animate-[live-dot"], [class*="animate-[map-ping"], [class*="animate-[map-ride"] { animation: none !important; }
 }
+
+/* Humor: a Faísca dá um salto ao ser escolhida */
+@media (prefers-reduced-motion: reduce) {
+  .animate-mood-pop { animation: none !important; }
+}
