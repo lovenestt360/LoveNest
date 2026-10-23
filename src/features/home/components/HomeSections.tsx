@@ -85,7 +85,7 @@ export function TimeTogetherStrip({
         {since} · {mark}
       </p>
       <div className="mt-[5px] flex items-center justify-center gap-1">
-        {unit(String(days), "dias", "text-[17px] text-rose-500")}
+        {unit(String(days), "dias", "text-[17px]")}
         {sep}
         {unit(pad(hours), "hrs")}
         {sep}

@@ -5,9 +5,9 @@ import { type StreakState } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
 import { getJourneyLevel, getStreakLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
-import {
-  Flame, Shield, ChevronRight, Heart, Sparkles
-} from "lucide-react";
+import { Flame, Heart, Sparkles } from "lucide-react";
+import { FeatureGlyph, PresenceHeartIcon, ShieldIcon, type GlyphKind } from "@/features/home/FeatureIcon";
+import { MoodFace } from "@/features/mood/MoodArt";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -314,6 +314,15 @@ function useCardData(threshold: number) {
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
+// Cada gesto do dia com o desenho da sua funcionalidade (o humor é a Faísca).
+const MISSION_GLYPH: Partial<Record<MissionId, GlyphKind>> = {
+  plano: "calendario",
+  message: "chat",
+  prayer: "espiritual",
+  leitura: "historia",
+  checkin: "presenca",
+};
+
 export function LoveStreakCard({ streak, loading }: { streak: StreakState; loading: boolean }) {
   const { profile }         = useProfile();
 
@@ -372,8 +381,9 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
   const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
   const displayPoints    = points ?? 0;
   const currentLevel     = getCurrentJourneyLevel(currentStreak);
-  const dotColor  = "#F87171";
-  const lineColor = "rgba(248,113,113,0.35)";
+  // Jornada discreta: etapas passadas em cinza, a atual a tinta.
+  const dotColor  = "#9AA0AA";
+  const lineColor = "#C9CDD4";
   const idle      = "#E3DFD9";
 
   return (
@@ -387,10 +397,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
         <div className="flex items-center justify-between">
           <div>
             <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#3A4150] dark:text-foreground/80">
-              <Flame
-                className={cn("h-4 w-4 text-rose-500", bothActiveToday && "animate-flame-breathe")}
-                strokeWidth={2}
-              />
+              <FeatureGlyph kind="chama" size={17} className={cn(bothActiveToday && "animate-flame-breathe")} />
               {isSolo ? "A tua chama" : "A vossa chama"}
             </span>
             <p className="mt-1 text-[12px] text-muted-foreground">
@@ -408,7 +415,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
             <span
               className={cn(
                 "text-[34px] font-extrabold leading-[0.95] tracking-[-0.035em] tabular-nums",
-                bothActiveToday ? "text-rose-500" : "text-foreground",
+                "text-foreground",
               )}
             >
               {currentStreak}
@@ -425,11 +432,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
             </div>
             <div className="flex items-center gap-0.5" aria-label={`${shieldsRemaining} de 3 escudos`}>
               {[0, 1, 2].map((i) => (
-                <Shield
-                  key={i}
-                  className={cn("h-3.5 w-3.5", i < shieldsRemaining ? "text-blue-400" : "text-muted-foreground/30")}
-                  strokeWidth={1.6}
-                />
+                <ShieldIcon key={i} on={i < shieldsRemaining} size={15} />
               ))}
               <span className="ml-1 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Proteção
@@ -450,12 +453,12 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
                   <div className="h-px flex-1" style={{ background: reached ? lineColor : idle }} />
                 )}
                 <div
-                  className={cn("shrink-0 rounded-full transition-all duration-700", isCurrent && "animate-journey-dot-pulse")}
+                  className={cn("shrink-0 rounded-full transition-all duration-700", isCurrent && "bg-[#0B1324] dark:bg-foreground")}
                   style={{
-                    width: isCurrent ? 14 : 7,
-                    height: isCurrent ? 14 : 7,
-                    background: reached ? dotColor : idle,
-                    boxShadow: isCurrent ? "0 0 10px rgba(244,63,94,0.28)" : "none",
+                    width: isCurrent ? 12 : 7,
+                    height: isCurrent ? 12 : 7,
+                    background: isCurrent ? undefined : reached ? dotColor : idle,
+                    boxShadow: isCurrent ? "0 0 0 4px rgba(11,19,36,0.08)" : "none",
                   }}
                 />
               </Fragment>
@@ -463,7 +466,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
           })}
         </div>
         <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted-foreground">
-          <span className={cn("font-semibold", currentStreak >= 1 ? "text-[#F87171]" : "text-muted-foreground/50")}>
+          <span className={cn("font-semibold", currentStreak >= 1 ? "text-foreground" : "text-muted-foreground/50")}>
             {currentLevel?.name ?? "Início"}
           </span>
           {streakPhase.nextLevelName ? (
@@ -480,25 +483,29 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
         <div className="-mx-4 mb-2 mt-2.5 h-px bg-[#ECE8E3] dark:bg-border" />
         <div className="flex items-center justify-between">
           <span className="text-[11.5px] text-muted-foreground/80">
-            <b className={cn("font-bold tabular-nums", displayPoints > 0 ? "text-rose-500" : "text-muted-foreground/60")}>
+            <b className={cn("font-bold tabular-nums", displayPoints > 0 ? "text-foreground" : "text-muted-foreground/60")}>
               {displayPoints}
             </b>{" "}
             pts ·{" "}
-            <b className={cn("font-bold tabular-nums", gesturesDone > 0 ? "text-sky-400" : "text-muted-foreground/60")}>
+            <b className={cn("font-bold tabular-nums", gesturesDone > 0 ? "text-foreground" : "text-muted-foreground/60")}>
               {gesturesDone}
             </b>{" "}
             {gesturesDone === 1 ? "gesto" : "gestos"}
             {shieldUsedToday && <span className="ml-1.5 text-sky-500">· chama protegida</span>}
           </span>
-          <span className="flex items-center gap-[7px]" aria-label="Gestos de hoje">
-            {activeMissions.map(({ id, Icon, doneColor, title }) => (
-              <Icon
-                key={id}
-                aria-label={`${title}${missions[id] ? " feito" : ""}`}
-                className={cn("h-[15px] w-[15px] transition-colors", missions[id] ? doneColor : "text-muted-foreground/30")}
-                strokeWidth={1.7}
-              />
-            ))}
+          <span className="flex items-center gap-[9px]" aria-label="Gestos de hoje">
+            {activeMissions.map(({ id, title }) => {
+              const done = !!missions[id];
+              const label = `${title}${done ? " feito" : ""}`;
+              const glyph = MISSION_GLYPH[id];
+              return glyph ? (
+                <FeatureGlyph key={id} kind={glyph} size={17} dim={!done} label={label} />
+              ) : (
+                <span key={id} role="img" aria-label={label} className={cn("transition-opacity", !done && "opacity-30 grayscale")}>
+                  <MoodFace mood="tranquilo" size={18} />
+                </span>
+              );
+            })}
           </span>
         </div>
       </button>
@@ -515,15 +522,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
 function PresenceHeart({ on, warm, label }: { on: boolean; warm: boolean; label: string }) {
   return (
     <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-      <Heart
-        className={cn(
-          "h-4 w-4 transition-all duration-500",
-          on
-            ? cn("fill-rose-500 text-rose-500", warm ? "animate-hearts-warm-pulse" : "animate-heart-throb")
-            : "text-muted-foreground/30",
-        )}
-        strokeWidth={on ? 0 : 1.6}
-      />
+      <PresenceHeartIcon on={on} size={16} className={cn(on && (warm ? "animate-hearts-warm-pulse" : "animate-heart-throb"))} />
       {label}
     </span>
   );
