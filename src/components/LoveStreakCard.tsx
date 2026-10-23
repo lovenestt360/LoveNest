@@ -381,9 +381,6 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
   const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
   const displayPoints    = points ?? 0;
   const currentLevel     = getCurrentJourneyLevel(currentStreak);
-  // Jornada discreta: etapas passadas em cinza, a atual a tinta.
-  const dotColor  = "#9AA0AA";
-  const lineColor = "#C9CDD4";
   const idle      = "#E3DFD9";
 
   return (
@@ -447,20 +444,30 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
             const reached = currentStreak >= level.min;
             const isCurrent =
               reached && (idx === JOURNEY_LEVELS.length - 1 || currentStreak < JOURNEY_LEVELS[idx + 1].min);
+            // Quanto do troço até esta etapa já foi percorrido (o troço da etapa seguinte enche aos poucos).
+            const prev = JOURNEY_LEVELS[idx - 1];
+            const fill = idx === 0 || !prev ? 0
+              : reached ? 1
+              : currentStreak >= prev.min ? (currentStreak - prev.min) / (level.min - prev.min)
+              : 0;
             return (
               <Fragment key={level.name}>
                 {idx > 0 && (
-                  <div className="h-px flex-1" style={{ background: reached ? lineColor : idle }} />
+                  <div className="relative mx-[3px] h-[3px] flex-1 overflow-hidden rounded-full" style={{ background: idle }}>
+                    {fill > 0 && <div className="journey-bolt absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(fill * 100)}%` }} />}
+                  </div>
                 )}
-                <div
-                  className={cn("shrink-0 rounded-full transition-all duration-700", isCurrent && "bg-[#0B1324] dark:bg-foreground")}
-                  style={{
-                    width: isCurrent ? 12 : 7,
-                    height: isCurrent ? 12 : 7,
-                    background: isCurrent ? undefined : reached ? dotColor : idle,
-                    boxShadow: isCurrent ? "0 0 0 4px rgba(11,19,36,0.08)" : "none",
-                  }}
-                />
+                <div className="relative flex shrink-0 items-center justify-center">
+                  {isCurrent && <span className="journey-ring absolute h-[14px] w-[14px] rounded-full" aria-hidden="true" />}
+                  <div
+                    className={cn("relative rounded-full transition-all duration-700", reached && "journey-node")}
+                    style={{
+                      width: isCurrent ? 14 : 8,
+                      height: isCurrent ? 14 : 8,
+                      background: reached ? undefined : idle,
+                    }}
+                  />
+                </div>
               </Fragment>
             );
           })}
@@ -471,7 +478,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
           </span>
           {streakPhase.nextLevelName ? (
             <span>
-              Próximo: <b className="font-semibold text-[#3A4150] dark:text-foreground/80">{streakPhase.nextLevelName}</b>
+              Próximo: <b className="font-semibold text-[#2F6BFF]">{streakPhase.nextLevelName}</b>
               {" · "}faltam {streakPhase.daysToNext} {streakPhase.daysToNext === 1 ? "dia" : "dias"}
             </span>
           ) : (
