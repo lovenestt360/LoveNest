@@ -885,3 +885,7 @@ input, textarea, [contenteditable="true"] {
   --fi-line: hsl(var(--border));
   --fi-ink: hsl(var(--foreground));
 }
+.dark {
+  --fi-off: hsl(var(--muted));
+  --fi-off-line: hsl(var(--border));
+}

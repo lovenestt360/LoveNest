@@ -90,7 +90,8 @@ function PresenceAvatar({
   className?: string;
   onClick: () => void;
 }) {
-  const ring = tone === "rose" ? "border-rose-500" : "border-[#4D7CFE]";
+  // Anel suave: quem é quem sem gritar (cheio = já apareceu hoje).
+  const ring = tone === "rose" ? "border-[#F3B5C4]" : "border-[#B5C8FF]";
   const fill =
     tone === "rose"
       ? "bg-gradient-to-br from-[#F27A97] to-[#D9466B]"

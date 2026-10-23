@@ -504,7 +504,7 @@ const Index = () => {
         partnerOnline={!isSolo && partnerOnline}
       />
 
-      <p className="mb-[11px] mt-[7px] text-center text-[13px] font-medium leading-snug text-rose-500">
+      <p className="mb-[11px] mt-[7px] text-center text-[13px] font-medium leading-snug text-muted-foreground">
         {isSolo ? "O teu ninho é o teu lugar seguro" : "O vosso ninho é o vosso lugar seguro"}
       </p>
 

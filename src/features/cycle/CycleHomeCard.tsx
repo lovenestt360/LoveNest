@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Droplets, Wind, Sun, Moon } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { FeatureGlyph, type GlyphKind } from "@/features/home/FeatureIcon";
 import { cn } from "@/lib/utils";
 import { runCycleEngineFromProfile } from "./engine";
 import { useCycleData } from "./useCycleData";
@@ -7,14 +8,14 @@ import type { CycleEngineOutput } from "./engine";
 
 // ── Metadados por fase ────────────────────────────────────────────────────────
 
-type PhaseMeta = { label: string; dot: string; bar: string; textColor: string; Icon: typeof Droplets };
+type PhaseMeta = { label: string; bar: string; glyph: GlyphKind };
 
 const PHASE_META: Record<string, PhaseMeta> = {
-  menstrual: { label: "Menstruação", dot: "bg-rose-500",    bar: "bg-rose-400",    textColor: "text-rose-500 dark:text-rose-400",    Icon: Droplets },
-  folicular: { label: "Folicular",   dot: "bg-sky-400",     bar: "bg-sky-300",     textColor: "text-sky-500 dark:text-sky-400",      Icon: Wind     },
-  ovulacao:  { label: "Ovulação",    dot: "bg-emerald-400", bar: "bg-emerald-400", textColor: "text-emerald-600 dark:text-emerald-400", Icon: Sun    },
-  luteal:    { label: "Lútea",       dot: "bg-violet-400",  bar: "bg-violet-400",  textColor: "text-violet-500 dark:text-violet-400", Icon: Moon    },
-  sem_dados: { label: "Sem dados",   dot: "bg-muted-foreground/30", bar: "bg-muted-foreground/20", textColor: "text-muted-foreground", Icon: Moon },
+  menstrual: { label: "Menstruação", bar: "bg-rose-400",    glyph: "menstrual" },
+  folicular: { label: "Folicular",   bar: "bg-sky-300",     glyph: "folicular" },
+  ovulacao:  { label: "Ovulação",    bar: "bg-amber-400",   glyph: "ovulacao" },
+  luteal:    { label: "Lútea",       bar: "bg-violet-400",  glyph: "lutea" },
+  sem_dados: { label: "Sem dados",   bar: "bg-muted-foreground/20", glyph: "lutea" },
 };
 
 function getPhaseKey(engine: CycleEngineOutput): string {
@@ -77,7 +78,6 @@ export function CycleHomeCard() {
   const progress  = Math.max(2, Math.min(98, engine.cycleProgress));
   const eventText = nextEventText(engine, isMale);
   const label     = isMale ? "Ciclo dela" : "O teu ciclo";
-  const Icon      = meta.Icon;
 
   return (
     <button
@@ -88,7 +88,7 @@ export function CycleHomeCard() {
       {/* ── Cabeçalho ── */}
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-[7px] text-[13px] font-semibold text-[#3A4150] dark:text-foreground/80">
-          <span className={cn("h-2 w-2 shrink-0 rounded-full", meta.dot)} />
+          <FeatureGlyph kind={meta.glyph} size={16} dim={phaseKey === "sem_dados"} />
           {label}
         </span>
         <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={2} />
@@ -96,8 +96,7 @@ export function CycleHomeCard() {
 
       {/* ── Fase + dia ── */}
       <div className="mt-2 flex items-center gap-2.5">
-        <span className={cn("flex items-center gap-1.5 text-[15px] font-semibold", meta.textColor)}>
-          <Icon className="h-4 w-4" strokeWidth={1.8} />
+        <span className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
           {meta.label}
         </span>
         <span className="text-[12.5px] text-muted-foreground">Dia {engine.cycleDay}</span>

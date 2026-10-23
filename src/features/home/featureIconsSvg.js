@@ -125,3 +125,54 @@ export function featureIconSvg(kind, size, u, opts = {}) {
   return frame(`<stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFFFFF"/>`,
     `<g transform="translate(32 32) scale(.84) translate(-32 -32)">${def.glyph(u + "x")}</g>`, "");
 }
+
+// ── Desenhos pequenos (sem quadrado) para dentro dos cartões ──
+Object.assign(ICONS, {
+  chama: { glyph: (u) => `<defs>${lg(u + "a", "#FFB15C", "#F0412F")}${lg(u + "c", "#FFF3B8", "#FFC23A")}${shine(u + "s")}</defs>
+      <path d="M32 6c3.6 8 13 12.4 15.4 22 2.7 11.2-4.8 22-15.4 22S13.9 39.2 16.6 28c1.3-5 4.6-8 7-11 .8 3.6 2.5 5.9 4.8 7C28 18.2 28.6 11.6 32 6Z" fill="url(#${u}a)"/>
+      <path d="M32.2 27c2.6 4.4 7.8 6.9 7.8 12.8 0 5-3.6 8.6-8 8.6s-8-3.6-8-8.6c0-3.8 2.5-5.9 4.4-8 .4 1.9 1.5 3 2.5 3.4-.2-2.8.2-5.7 1.3-8.2Z" fill="url(#${u}c)"/>
+      <ellipse cx="22" cy="27.5" rx="3.4" ry="6.2" fill="url(#${u}s)" transform="rotate(20 22 27.5)"/>` },
+  presenca: { glyph: (u) => `<defs>${lg(u + "a", "#FFD45C", "#FF8A00")}</defs>
+      <path d="M36 6 17 35.5h13.5L27 58l20.5-31.5H34Z" fill="url(#${u}a)" stroke="#E8780A" stroke-width="1.2" stroke-linejoin="round"/>` },
+  calendario: { glyph: (u) => `<defs>${lg(u + "a", "#7DA6FF", "#2F5BE0")}</defs>
+      <rect x="10" y="12" width="44" height="42" rx="9" fill="#fff" stroke="#DCE5FF" stroke-width="2"/>
+      <path d="M10 21c0-5 4-9 9-9h26c5 0 9 4 9 9v4H10Z" fill="url(#${u}a)"/>
+      <path d="M21 8v8M43 8v8" stroke="#2F5BE0" stroke-width="3.6" stroke-linecap="round"/>
+      <g fill="#7DA6FF"><circle cx="21" cy="35" r="3"/><circle cx="32" cy="35" r="3"/><circle cx="43" cy="35" r="3"/><circle cx="21" cy="45" r="3"/><circle cx="32" cy="45" r="3" fill="#FF3D6E"/></g>` },
+  menstrual: { glyph: (u) => `<defs>${lg(u + "a", "#FF9BB2", "#E8284F")}${shine(u + "s")}</defs>
+      <path d="M32 7c6 9 15.5 17.6 15.5 28.4C47.5 44.2 40.6 51 32 51s-15.5-6.8-15.5-15.6C16.5 24.6 26 16 32 7Z" fill="url(#${u}a)"/>
+      <ellipse cx="25.2" cy="34" rx="3.4" ry="6.8" fill="url(#${u}s)" transform="rotate(18 25.2 34)"/>` },
+  folicular: { glyph: (u) => `<defs>${lg(u + "a", "#9BE3FF", "#0EA5E9")}${lg(u + "b", "#7DD3FC", "#0284C7")}</defs>
+      <path d="M32 54V30" stroke="#0EA5E9" stroke-width="4" stroke-linecap="round"/>
+      <path d="M32 32C31 20 22 12 9 12c0 13 9 21 23 20Z" fill="url(#${u}a)"/>
+      <path d="M32 38c1-10 8.6-16.6 19.6-16.6 0 11-7.6 17.6-19.6 16.6Z" fill="url(#${u}b)"/>
+      <path d="M14 16c5 2.6 9.6 7 13.4 13" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>` },
+  ovulacao: { glyph: (u) => `<defs><radialGradient id="${u}a" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFF3B0"/><stop offset="1" stop-color="#F59E0B"/></radialGradient></defs>
+      <g stroke="#F5B323" stroke-width="4" stroke-linecap="round"><path d="M32 5v6M32 53v6M5 32h6M53 32h6M12.9 12.9l4.3 4.3M46.8 46.8l4.3 4.3M12.9 51.1l4.3-4.3M46.8 17.2l4.3-4.3"/></g>
+      <circle cx="32" cy="32" r="14" fill="url(#${u}a)"/>` },
+  lutea: { glyph: (u) => `<defs>${lg(u + "a", "#D6C8FF", "#7C3AED")}</defs>
+      <path d="M40 8A24 24 0 1 0 56 41 19.5 19.5 0 0 1 40 8Z" fill="url(#${u}a)"/>
+      <path d="M48.5 12l1.2 3 3 1.2-3 1.2-1.2 3-1.2-3-3-1.2 3-1.2Z" fill="#C4B5FD"/>` },
+});
+
+/** Só o desenho, sem quadrado; `dim` deixa-o em cinza claro (ex.: gesto por fazer). */
+export function featureGlyphSvg(kind, size, u, dim = false) {
+  const def = ICONS[kind];
+  if (!def || !def.glyph) return "";
+  return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" style="overflow:visible;${dim ? "opacity:.32;filter:grayscale(1)" : ""}">${def.glyph(u)}</svg>`;
+}
+
+/** Coração de presença (Tu / Par): cheio e com brilho, ou vazio em cinza. */
+export function presenceHeartSvg(on, size, u) {
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${on
+    ? `<defs>${lg(u + "a", "#FF7896", "#E11D48")}</defs><path d="${HEART}" fill="url(#${u}a)"/><ellipse cx="7.2" cy="7.6" rx="2.4" ry="1.5" fill="#fff" opacity=".75" transform="rotate(-32 7.2 7.6)"/>`
+    : `<path d="${HEART}" style="fill:var(--fi-off,#F1EEEA);stroke:var(--fi-off-line,#D9D4CD)" stroke-width="1.4"/>`}</svg>`;
+}
+
+/** Escudo de proteção: azul com visto, ou vazio em cinza. */
+export function shieldSvg(on, size, u) {
+  const d = "M12 2.5l7.5 2.8v6.1c0 4.7-3.1 8.6-7.5 10.1-4.4-1.5-7.5-5.4-7.5-10.1V5.3Z";
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${on
+    ? `<defs>${lg(u + "a", "#8DB4FF", "#3866E6")}</defs><path d="${d}" fill="url(#${u}a)"/><path d="M8.6 11.8l2.3 2.3 4.4-4.6" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>`
+    : `<path d="${d}" style="fill:var(--fi-off,#F1EEEA);stroke:var(--fi-off-line,#D9D4CD)" stroke-width="1.4"/>`}</svg>`;
+}
