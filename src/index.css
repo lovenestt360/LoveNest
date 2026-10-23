@@ -878,3 +878,10 @@ input, textarea, [contenteditable="true"] {
 @media (prefers-reduced-motion: reduce) {
   .animate-mood-pop { animation: none !important; }
 }
+
+/* Ícones das funcionalidades: o quadrado acompanha o tema */
+.dark {
+  --fi-bg: hsl(var(--card));
+  --fi-line: hsl(var(--border));
+  --fi-ink: hsl(var(--foreground));
+}
