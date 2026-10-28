@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { awardLovePoints } from "@/lib/lovePoints";
+import { notifyLovePointsChanged } from "@/lib/lovePoints";
 
 export interface ReadingProgress {
     progress_percent: number;
@@ -62,7 +62,7 @@ export function useReadingProgress(bookId: string | undefined) {
 
         await supabase.from("book_reading_progress" as any).upsert(payload, { onConflict: "book_id,user_id" });
         if (justCompleted) {
-            awardLovePoints(spaceId, 50, "livro_concluido", "Livro terminado", user.id);
+            notifyLovePointsChanged();
         }
         const updated = { progress_percent: clamped, location, updated_at: new Date().toISOString(), total_minutes_read: totalMinutesRead };
         setMyProgress(updated);
