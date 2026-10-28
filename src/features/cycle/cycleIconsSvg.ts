@@ -108,6 +108,47 @@ const ICONS = {
     <path d="M6 32C13 20 22 14 32 14s19 6 26 18c-7 12-16 18-26 18S13 44 6 32Z" fill="#fff" stroke="#0B1324" stroke-width="3.2"/>
     <circle cx="32" cy="32" r="10" fill="url(#${u}a)"/><circle cx="32" cy="32" r="4" fill="#0B1324"/><circle cx="35" cy="28.5" r="2" fill="#fff"/>`,
   mais: () => `<path d="M32 18v28M18 32h28" stroke="#7A7F8C" stroke-width="4" stroke-linecap="round"/>`,
+  // ── Centro de Conhecimento (docs/mockups/conhecimento-proposta.html) ──
+  ciclo: () => {
+    const c = ["#E8456B", "#E8456B", "#E8456B", "#8CCCF2", "#8CCCF2", "#F2A91F", "#B9A6F7", "#B9A6F7", "#EAE6E0", "#EAE6E0", "#B9A6F7", "#E8456B"];
+    return c.map((fill, i) => {
+      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      return `<circle cx="${32 + 22 * Math.cos(a)}" cy="${32 + 22 * Math.sin(a)}" r="4.6" fill="${fill}"/>`;
+    }).join("") + `<circle cx="32" cy="32" r="7" fill="#0B1324"/>`;
+  },
+  fertil: (u: string) => `<defs>${lg(u + "a", "#B6F0D2", "#2FB67A")}${ROSE(u + "r")}${soft(u + "f")}</defs>
+    <g filter="url(#${u}f)"><path d="M32 56V34" stroke="#2FB67A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M32 36C31 25 23 18 12 18c0 11 8 18 20 18Z" fill="url(#${u}a)"/>
+    <path d="M32 40c1-9 7.6-14.6 17.6-14.6 0 10-6.6 15.6-17.6 14.6Z" fill="url(#${u}a)"/></g>
+    ${heartAt(32, 12, .55, `url(#${u}ra)`)}`,
+  intima: (u: string) => `<defs>${lg(u + "a", "#FFC6D3", "#F0678A")}${soft(u + "f")}</defs>
+    <g filter="url(#${u}f)"><path d="M32 6l20 7.5v16c0 12.6-8.3 23-20 27-11.7-4-20-14.4-20-27v-16Z" fill="url(#${u}a)"/></g>
+    ${heartAt(32, 32, .95, "#fff")}`,
+  gravidez: (u: string) => `<defs>${lg(u + "a", "#FFFFFF", "#E9E5DF")}${soft(u + "f")}</defs>
+    <g filter="url(#${u}f)" transform="rotate(-35 32 32)"><rect x="25" y="4" width="14" height="56" rx="7" fill="url(#${u}a)" stroke="#CFCAC3" stroke-width="1.5"/>
+    <rect x="28" y="24" width="8" height="14" rx="2.5" fill="#F7F5F2" stroke="#CFCAC3"/>
+    <path d="M30.5 27v8M33.5 27v8" stroke="#E8456B" stroke-width="2" stroke-linecap="round"/>
+    <rect x="25" y="44" width="14" height="16" rx="7" fill="#8CCCF2"/></g>`,
+  pergunta: (u: string) => `<defs>${lg(u + "a", "#E6ECF5", "#A9B7CC")}${soft(u + "f")}</defs>
+    <g filter="url(#${u}f)"><path d="M12 14c0-4 3-7 7-7h26c4 0 7 3 7 7v20c0 4-3 7-7 7H28l-9 8v-8c-4 0-7-3-7-7Z" fill="url(#${u}a)"/></g>
+    <path d="M27 19.5c0-3 2.4-5 5.2-5s5 2 5 4.6c0 3.8-5 4-5 7.6" stroke="#0B1324" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+    <circle cx="32.2" cy="32.5" r="2.1" fill="#0B1324"/>`,
+  lampada: (u: string) => `<defs>${rg(u + "a", "#FFF6C8", "#F5B323")}</defs>
+    <path d="M32 8c-9.4 0-17 7.3-17 16.4 0 6 3.4 10 6.4 13.2 1.8 1.9 2.6 3.7 2.6 6V46h16v-2.4c0-2.3.8-4.1 2.6-6 3-3.2 6.4-7.2 6.4-13.2C49 15.3 41.4 8 32 8Z" fill="url(#${u}a)"/>
+    <rect x="24" y="48" width="16" height="5" rx="2.5" fill="#3A4150"/><rect x="26" y="55" width="12" height="4" rx="2" fill="#3A4150"/>`,
+  alerta: (u: string) => `<defs>${lg(u + "a", "#FFB4C4", "#E8456B")}</defs>
+    <path d="M28.5 9.5c1.6-2.7 5.4-2.7 7 0L58 48c1.6 2.7-.3 6-3.5 6h-45C6.3 54 4.4 50.7 6 48Z" fill="url(#${u}a)"/>
+    <path d="M32 23v13" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><circle cx="32" cy="44.5" r="2.8" fill="#fff"/>`,
+  estrela: (u: string) => `<defs>${lg(u + "a", "#A9DCFF", "#3BA7E6")}</defs>
+    <path d="M32 6l6.7 15 16.3 1.7-12.2 11 3.4 16L32 41.5 17.8 49.7l3.4-16L9 22.7l16.3-1.7Z" fill="url(#${u}a)"/>`,
+  medico: (u: string) => `<defs>${lg(u + "a", "#D6C8FF", "#7C3AED")}</defs>
+    <rect x="10" y="10" width="44" height="44" rx="14" fill="url(#${u}a)"/>
+    <path d="M32 21v22M21 32h22" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`,
+  casal: (u: string) => `<defs>${lg(u + "a", "#FFB4C4", "#EC4C72")}${lg(u + "b", "#A9CCFF", "#3B82F6")}</defs>
+    ${heartAt(25, 34, 1.4, `url(#${u}a)`)}${heartAt(39, 30, 1.4, `url(#${u}b)`)}`,
+  guardar: () => `<path d="M18 10h28v44L32 44 18 54Z" fill="none" stroke="#636978" stroke-width="4" stroke-linejoin="round"/>`,
+  guardado: () => `<path d="M18 10h28v44L32 44 18 54Z" fill="#0B1324" stroke="#0B1324" stroke-width="4" stroke-linejoin="round"/>`,
+  lupa: () => `<circle cx="28" cy="28" r="15" fill="none" stroke="#77736C" stroke-width="5"/><path d="M39 39l13 13" stroke="#77736C" stroke-width="5" stroke-linecap="round"/>`,
 };
 
 export type CycleIconKind = keyof typeof ICONS;
