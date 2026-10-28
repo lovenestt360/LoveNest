@@ -1,115 +1,124 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useCycleData } from "@/features/cycle/useCycleData";
 import { CycleToday } from "@/features/cycle/CycleToday";
 import { CyclePartnerView } from "@/features/cycle/CyclePartnerView";
 import { CycleCalendar } from "@/features/cycle/CycleCalendar";
 import { CycleHistory } from "@/features/cycle/CycleHistory";
+import { CycleShare } from "@/features/cycle/CycleShare";
+import { CycleIcon } from "@/features/cycle/CycleIcon";
+import { ROUND, SubHeader } from "@/features/cycle/cycleUi";
 import { KnowledgeCenterCard } from "@/features/cycle/knowledge/KnowledgeCenterCard";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+
+type View = "hoje" | "calendario" | "historico" | "partilha" | "previa";
 
 export default function Cycle() {
   const data = useCycleData();
   const { user } = useAuth();
   const { toast } = useToast();
   const { profile, loading: profileLoading } = useProfile();
+  const { partner } = usePartnerProfile();
+  // /ciclo#calendario, #historico ou #partilha abre logo esse ecrã.
+  const [view, setView] = useState<View>(() => {
+    const h = window.location.hash.slice(1);
+    return h === "calendario" || h === "historico" || h === "partilha" ? h : "hoje";
+  });
   const isPartner = data.isMale;
 
-  const tabs = [
-    { id: "hoje", label: isPartner ? "Resumo" : "Hoje" },
-    { id: "calendario", label: "Calendário" },
-    { id: "historico", label: "Histórico" },
-  ];
-
-  const [activeTab, setActiveTab] = useState("hoje");
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [view]);
 
   // Homem em modo solo: não tem ciclo próprio nem parceira para acompanhar.
   if (!profileLoading && profile?.usage_mode === "solo" && profile?.gender === "male") {
     return <Navigate to="/" replace />;
   }
 
+  if (data.loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // ── Ele: o ciclo dela, só o que ela partilha ──
+  if (isPartner) {
+    const herName = partner?.display_name?.trim() || "tua parceira";
+    const shared = data.profile && data.profile.share_level !== "private" && data.engine;
+    return (
+      <section className="space-y-4 pb-6">
+        <header className="px-1 pt-0.5">
+          <h1 className="text-[28px] font-bold leading-tight tracking-[-0.035em] text-foreground">Ciclo da {herName}</h1>
+          {shared && <p className="mt-0.5 text-[13px] text-muted-foreground">A {herName} partilha isto contigo.</p>}
+        </header>
+        <CyclePartnerView data={data} herName={herName} />
+        {shared && <KnowledgeCenterCard forPartner />}
+      </section>
+    );
+  }
+
+  const partnerName = partner?.display_name?.trim() || "o teu par";
+
   const handleReset = async () => {
-    if (!user || !confirm("Apagar todos os dados do ciclo? Esta acção é irreversível.")) return;
+    if (!user || !confirm("Apagar todos os dados do ciclo? Esta ação é irreversível.")) return;
     try {
       await supabase.from("daily_symptoms").delete().eq("user_id", user.id);
       await supabase.from("period_entries").delete().eq("user_id", user.id);
       await supabase.from("cycle_profiles").delete().eq("user_id", user.id);
       await (supabase as any).from("intimacy_logs").delete().eq("user_id", user.id);
       toast({ title: "Dados apagados" });
+      setView("hoje");
       data.reload();
     } catch (err: any) {
       toast({ title: "Erro ao apagar", description: err?.message, variant: "destructive" });
     }
   };
 
-  if (data.loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-5 w-5 animate-spin text-rose-300" />
-      </div>
-    );
-  }
-
   return (
-    <section className="space-y-5 pb-6">
-
-      {/* Header */}
-      <header>
-        <div className="flex items-end justify-between px-1 pt-0.5">
-          <div>
-            <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em] text-foreground">
-              {isPartner ? "Ciclo da Parceira" : "Ciclo"}
-            </h1>
-            <p className="mt-0.5 text-[13px] text-muted-foreground">
-              {isPartner ? "Acompanha o ciclo da tua parceira." : "Só tu vês os detalhes."}
-            </p>
-          </div>
-        </div>
-        {isPartner && (
-          <p className="mt-2 inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-[11.5px] font-semibold text-rose-600 dark:bg-rose-950/30">
-            Modo observador — apenas leitura
-          </p>
-        )}
-      </header>
-
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-[16px] bg-[#F4F2EF] p-1 dark:bg-muted">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              "flex-1 h-10 rounded-[12px] text-[13px] font-semibold transition-colors duration-150",
-              activeTab === t.id
-                ? "bg-white text-[#0B1324] shadow-[0_1px_2px_rgba(11,19,36,0.06),0_4px_12px_-6px_rgba(11,19,36,0.2)] dark:bg-card dark:text-foreground"
-                : "text-[#7A7F8C] dark:text-muted-foreground"
+    <section className="space-y-4 pb-6">
+      {view === "hoje" && (
+        <>
+          <header className="flex items-start justify-between px-1 pt-0.5">
+            <div>
+              <h1 className="text-[28px] font-bold leading-tight tracking-[-0.035em] text-foreground">Ciclo</h1>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">Só tu vês os detalhes.</p>
+            </div>
+            {data.engine && (
+              <div className="flex gap-2">
+                <button type="button" aria-label="Partilha com o par" onClick={() => setView("partilha")} className={ROUND}>
+                  <CycleIcon kind="partilha" size={22} />
+                </button>
+                <button type="button" aria-label="Calendário" onClick={() => setView("calendario")} className={ROUND}>
+                  <CycleIcon kind="calendario" size={22} />
+                </button>
+              </div>
             )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+          </header>
+          <CycleToday data={data} onOpenCalendar={() => setView("calendario")} />
+          {data.engine && <div className="pt-1"><KnowledgeCenterCard /></div>}
+        </>
+      )}
 
-      {/* Content */}
-      <div key={activeTab + String(isPartner)}>
-        {activeTab === "hoje" && (
-          isPartner ? <CyclePartnerView data={data} /> : <CycleToday data={data} />
-        )}
-        {activeTab === "calendario" && <CycleCalendar data={data} />}
-        {activeTab === "historico" && (
-          <CycleHistory data={data} onReset={isPartner ? undefined : handleReset} />
-        )}
-      </div>
-
-      {/* Centro de Conhecimento — sempre no final da página */}
-      <div className="pt-2">
-        <KnowledgeCenterCard />
-      </div>
+      {view === "calendario" && (
+        <CycleCalendar data={data} onBack={() => setView("hoje")} onOpenHistory={() => setView("historico")} />
+      )}
+      {view === "historico" && (
+        <CycleHistory data={data} onBack={() => setView("calendario")} onOpenShare={() => setView("partilha")} onReset={handleReset} />
+      )}
+      {view === "partilha" && (
+        <CycleShare data={data} partnerName={partnerName} onBack={() => setView("hoje")} onPreview={() => setView("previa")} />
+      )}
+      {view === "previa" && (
+        <>
+          <SubHeader title={`Como ${partnerName} vê`} onBack={() => setView("partilha")} />
+          <CyclePartnerView data={data} herName={profile?.display_name?.trim() || "ti"} preview />
+        </>
+      )}
     </section>
   );
 }

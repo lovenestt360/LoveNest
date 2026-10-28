@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { FeatureGlyph, type GlyphKind } from "@/features/home/FeatureIcon";
+import { FeatureGlyph } from "@/features/home/FeatureIcon";
 import faisca from "@/features/entry/assets/faisca.webp";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { cn } from "@/lib/utils";
@@ -13,33 +13,9 @@ import { CycleSheet, btnGhost, btnInk, picked } from "./CycleSheet";
 import {
   PHASE_SUGGESTIONS, SYMPTOMS, SYMPTOM_GROUPS, readSelection, selectionPayload, type SymptomKey,
 } from "./cycleSymptoms";
-
-// ── Datas em português de Portugal ──────────────────────────────────────────
-const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-const WEEKDAYS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
-const WD_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const asDate = (iso: string) => new Date(iso + "T12:00:00");
-/** "sexta, 6 nov" */
-export const fmtDay = (iso: string) => { const d = asDate(iso); return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
-/** "sexta" ou "amanhã" */
-const relDay = (iso: string, today: string) => {
-  const n = daysBetween(today, iso);
-  if (n === 0) return "hoje";
-  if (n === 1) return "amanhã";
-  if (n === -1) return "ontem";
-  return n > 0 && n < 7 ? WEEKDAYS[asDate(iso).getDay()] : fmtDay(iso);
-};
-
-const PHASE_GLYPH: Record<CyclePhase, GlyphKind> = {
-  menstrual: "menstrual", folicular: "folicular", ovulacao: "ovulacao", luteal: "lutea", sem_dados: "lutea",
-};
-const PHASE_CHIP: Record<CyclePhase, { label: string; cls: string }> = {
-  menstrual: { label: "Período", cls: "bg-[#FDECEF] text-[#C92D52] dark:bg-rose-950/40 dark:text-rose-300" },
-  folicular: { label: "Fase folicular", cls: "bg-[#E9F5FC] text-[#176796] dark:bg-sky-950/40 dark:text-sky-300" },
-  ovulacao:  { label: "Ovulação", cls: "bg-[#FFF4DA] text-[#8A5A06] dark:bg-amber-950/40 dark:text-amber-300" },
-  luteal:    { label: "Fase lútea", cls: "bg-[#F1EDFE] text-[#6B4FD8] dark:bg-violet-950/40 dark:text-violet-300" },
-  sem_dados: { label: "Sem dados", cls: "bg-muted text-muted-foreground" },
-};
+import {
+  CARD, CARD_TITLE, DAY_CLS, PHASE_CHIP, PHASE_GLYPH, PMS_CHIP, SymptomTile, WD_SHORT, asDate, fmtDay, relDay,
+} from "./cycleUi";
 
 const FLOWS: { value: string; label: string; icon: CycleIconKind }[] = [
   { value: "spotting", label: "Manchas", icon: "manchas" },
@@ -55,22 +31,6 @@ const PROTECTION = [
   { value: "diu", label: "DIU" },
   { value: "outro", label: "Outro" },
 ];
-
-const CARD = "rounded-[24px] border border-[#ECE8E3] bg-white p-4 dark:border-border dark:bg-card";
-const TILE = "grid h-[52px] w-[52px] place-items-center rounded-[17px] border border-[#ECE8E3] bg-white transition-[transform,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-border dark:bg-card";
-
-/** Um sintoma para tocar: o desenho num quadrado branco e o nome por baixo. */
-function SymptomTile({ icon, label, on, onClick, dashed }: { icon: CycleIconKind; label: string; on?: boolean; onClick: () => void; dashed?: boolean }) {
-  return (
-    <button type="button" onClick={onClick} aria-pressed={on}
-      className="group flex flex-col items-center gap-1.5 text-[11.5px] font-medium text-[#3A4150] dark:text-foreground/75">
-      <span className={cn(TILE, dashed && "border-dashed", on && cn(picked, "-translate-y-0.5"), "group-active:scale-[0.93]")}>
-        <CycleIcon kind={icon} size={dashed ? 26 : 34} />
-      </span>
-      <span className={cn(on && "font-semibold text-[#0B1324] dark:text-foreground")}>{label}</span>
-    </button>
-  );
-}
 
 /** Escolha de data: hoje, ontem ou outra (sem dias no futuro). */
 function DatePick({ today, value, onChange, min }: { today: string; value: string; onChange: (v: string) => void; min?: string }) {
@@ -94,7 +54,7 @@ function DatePick({ today, value, onChange, min }: { today: string; value: strin
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function CycleToday({ data }: { data: CycleData }) {
+export function CycleToday({ data, onOpenCalendar }: { data: CycleData; onOpenCalendar?: () => void }) {
   if (data.isMale && !data.profile) {
     return (
       <div className="py-16 text-center">
@@ -104,10 +64,10 @@ export function CycleToday({ data }: { data: CycleData }) {
     );
   }
   if (!data.engine || !data.lastPeriod) return <CycleWelcome data={data} />;
-  return <TodayView data={data} />;
+  return <TodayView data={data} onOpenCalendar={onOpenCalendar} />;
 }
 
-function TodayView({ data }: { data: CycleData }) {
+function TodayView({ data, onOpenCalendar }: { data: CycleData; onOpenCalendar?: () => void }) {
   const {
     engine, learned, lastPeriod, openPeriod, periods, todaySymptoms, todayIntimacy, profile,
     reload, ensureProfile, spaceId, user, today, pregnancyRisk,
@@ -249,7 +209,7 @@ function TodayView({ data }: { data: CycleData }) {
   // ── Textos do topo ─────────────────────────────────────────────────────────
   // Com um período aberto é sempre "Período", mesmo que dure mais do que o costume.
   const phase: CyclePhase = openPeriod ? "menstrual" : e.phase;
-  const chip = PHASE_CHIP[phase];
+  const chip = e.isInPmsWindow && !openPeriod ? PMS_CHIP : PHASE_CHIP[phase];
   const late = !openPeriod && e.daysUntilNextPeriod < 0;
   let headline: string;
   let sub: string;
@@ -284,14 +244,6 @@ function TodayView({ data }: { data: CycleData }) {
     if (e.isInPmsWindow) return "Dias de TPM: sê gentil contigo.";
     return null;
   })();
-  const DAY_CLS: Record<string, string> = {
-    period: "bg-[#E8456B] text-white",
-    predicted: "border-[1.6px] border-dashed border-[#E8456B] text-[#C92D52]",
-    fertile: "bg-[#E9F5FC] text-[#176796] dark:bg-sky-950/40 dark:text-sky-300",
-    ovulation: "bg-[#FFF4DA] text-[#8A5A06] shadow-[inset_0_0_0_1.6px_#F2A91F]",
-    pms: "bg-[#F1EDFE] text-[#6B4FD8] dark:bg-violet-950/40 dark:text-violet-300",
-  };
-
   const suggestions = PHASE_SUGGESTIONS[phase];
   const [moreOpen, setMoreOpen] = useState(false);
   const extra = [...sel].filter((k) => !suggestions.includes(k)).length;
@@ -303,18 +255,21 @@ function TodayView({ data }: { data: CycleData }) {
         <CycleRing engine={e} lastPeriodDate={lastPeriod!.start_date} periodDays={openPeriod ? Math.max(periodDay, e.periodLength) : undefined}>
           <FeatureGlyph kind={PHASE_GLYPH[phase]} size={30} />
           <span className="mt-1 text-[46px] font-bold leading-none tracking-[-0.04em] tabular-nums text-foreground">Dia {e.cycleDay}</span>
-          <span className={cn("mt-2 rounded-full px-3 py-1 text-[13px] font-semibold", chip.cls)}>
-            {e.isInPmsWindow && !openPeriod ? "Dias de TPM" : chip.label}
-          </span>
+          <span className={cn("mt-2 rounded-full px-3 py-1 text-[13px] font-semibold", chip.cls)}>{chip.label}</span>
         </CycleRing>
         <p className="mt-1.5 text-center text-[17px] font-semibold tracking-[-0.02em] text-foreground">{headline}</p>
-        <p className="mt-0.5 max-w-[36ch] text-balance text-center text-[13px] text-muted-foreground">{sub}</p>
+        <p className="mt-0.5 max-w-[36ch] text-center text-[13px] text-muted-foreground">
+          {/* Cada parte fica inteira numa linha; a quebra só acontece entre partes. */}
+          {sub.split(" · ").map((part, i, all) => (
+            <span key={i}>{i > 0 && " · "}<span className={cn(all.length > 1 && "whitespace-nowrap")}>{part}</span></span>
+          ))}
+        </p>
       </div>
 
       {/* ── Fluxo (só durante o período) ── */}
       {openPeriod && (
         <section className={CARD}>
-          <h3 className="mb-3 text-[15px] font-semibold tracking-[-0.01em] text-foreground">Fluxo de hoje</h3>
+          <h3 className={cn(CARD_TITLE, "mb-3")}>Fluxo de hoje</h3>
           <div className="flex gap-2">
             {FLOWS.map((f) => (
               <button key={f.value} type="button" onClick={() => changeFlow(f.value)} aria-pressed={flow === f.value}
@@ -330,7 +285,7 @@ function TodayView({ data }: { data: CycleData }) {
       {/* ── Como estás hoje ── */}
       <section className={CARD}>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Como estás hoje?</h3>
+          <h3 className={CARD_TITLE}>Como estás hoje?</h3>
           <span className={cn("text-[12px] transition-colors", showSaved ? "font-semibold text-[#23733F]" : "text-muted-foreground")}>
             {showSaved ? "Guardado" : "Toca no que sentes"}
           </span>
@@ -345,7 +300,12 @@ function TodayView({ data }: { data: CycleData }) {
 
       {/* ── Próximos dias ── */}
       <section className={CARD}>
-        <h3 className="mb-3 text-[15px] font-semibold tracking-[-0.01em] text-foreground">Próximos dias</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className={CARD_TITLE}>Próximos dias</h3>
+          {onOpenCalendar && (
+            <button type="button" onClick={onOpenCalendar} className="text-[13px] font-semibold text-foreground underline underline-offset-[3px]">Calendário</button>
+          )}
+        </div>
         <div className="flex justify-between">
           {week.map(({ iso, type }) => {
             const d = asDate(iso);

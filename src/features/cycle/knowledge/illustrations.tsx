@@ -174,52 +174,6 @@ export function IllustrationFaq({ className = "w-24 h-24" }: { className?: strin
   );
 }
 
-// Ilustração grande para o card de entrada
-export function IllustrationKnowledgeCenter({ className = "w-32 h-32" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 120 120" className={className} aria-hidden>
-      <defs>
-        <linearGradient id="gkc1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fecdd3" />
-          <stop offset="100%" stopColor="#fda4af" />
-        </linearGradient>
-        <linearGradient id="gkc2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ee7b7" />
-          <stop offset="100%" stopColor="#34d399" />
-        </linearGradient>
-        <linearGradient id="gkc3" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#c4b5fd" />
-          <stop offset="100%" stopColor="#a78bfa" />
-        </linearGradient>
-        <linearGradient id="gkc4" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#bae6fd" />
-          <stop offset="100%" stopColor="#7dd3fc" />
-        </linearGradient>
-      </defs>
-
-      {/* Anel exterior */}
-      <circle cx="60" cy="60" r="50" fill="none" stroke="#fecdd3" strokeWidth="3" opacity="0.5" />
-
-      {/* Quatro quadrantes de fase */}
-      <path d="M60 10 A50 50 0 0 1 110 60" fill="none" stroke="url(#gkc2)" strokeWidth="8" strokeLinecap="round" />
-      <path d="M110 60 A50 50 0 0 1 60 110" fill="none" stroke="url(#gkc3)" strokeWidth="8" strokeLinecap="round" />
-      <path d="M60 110 A50 50 0 0 1 10 60" fill="none" stroke="url(#gkc4)" strokeWidth="8" strokeLinecap="round" />
-      <path d="M10 60 A50 50 0 0 1 60 10" fill="none" stroke="url(#gkc1)" strokeWidth="8" strokeLinecap="round" />
-
-      {/* Centro */}
-      <circle cx="60" cy="60" r="22" fill="white" opacity="0.9" />
-      <circle cx="60" cy="60" r="14" fill="url(#gkc1)" opacity="0.7" />
-      <circle cx="60" cy="60" r="7" fill="#fb7185" />
-
-      {/* Pontos nos quadrantes */}
-      <circle cx="60" cy="12" r="4" fill="#34d399" />
-      <circle cx="108" cy="60" r="4" fill="#a78bfa" />
-      <circle cx="60" cy="108" r="4" fill="#7dd3fc" />
-      <circle cx="12" cy="60" r="4" fill="#fb7185" />
-    </svg>
-  );
-}
-
 // Mapa de ilustrações por chave
 export const ILLUSTRATIONS: Record<string, React.FC<{ className?: string }>> = {
   cycle:       IllustrationCycle,
