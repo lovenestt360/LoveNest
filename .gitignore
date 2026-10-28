@@ -27,3 +27,9 @@ dist-ssr
 *.sw?
 .vercel
 .claude
+
+# Ferramentas locais e rascunhos (não versionar)
+scratch/
+.omc/
+.impeccable/
+skills-lock.json
