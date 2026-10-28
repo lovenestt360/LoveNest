@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { FeatureGlyph, type GlyphKind } from "@/features/home/FeatureIcon";
 import { cn } from "@/lib/utils";
-import { runCycleEngineFromProfile } from "./engine";
 import { useCycleData } from "./useCycleData";
 import type { CycleEngineOutput } from "./engine";
 
@@ -64,14 +63,12 @@ function nextEventText(engine: CycleEngineOutput, isMale: boolean): string {
 
 export function CycleHomeCard() {
   const navigate = useNavigate();
-  const { profile, lastPeriod, isMale, loading } = useCycleData();
+  const { profile, engine, isMale, loading } = useCycleData();
 
   // Na Home o cartão só aparece com o ciclo configurado; a descoberta e a
-  // configuração vivem no separador Ciclo.
-  if (loading || !profile) return null;
-
-  const engine = runCycleEngineFromProfile(profile, lastPeriod);
-  if (!engine) return null;
+  // configuração vivem no separador Ciclo. O motor já vem com as médias
+  // aprendidas, igual ao ecrã do Ciclo.
+  if (loading || !profile || !engine) return null;
 
   const phaseKey  = getPhaseKey(engine);
   const meta      = PHASE_META[phaseKey];

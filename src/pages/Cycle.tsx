@@ -9,7 +9,7 @@ import { KnowledgeCenterCard } from "@/features/cycle/knowledge/KnowledgeCenterC
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Flower2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -66,12 +66,9 @@ export default function Cycle() {
               {isPartner ? "Ciclo da Parceira" : "Ciclo"}
             </h1>
             <p className="mt-0.5 text-[13px] text-muted-foreground">
-              {isPartner ? "Acompanha o ciclo da tua parceira." : "O teu rastreio menstrual privado."}
+              {isPartner ? "Acompanha o ciclo da tua parceira." : "Só tu vês os detalhes."}
             </p>
           </div>
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ECE8E3] bg-white dark:border-border dark:bg-card">
-            <Flower2 className="h-[18px] w-[18px] text-rose-500" strokeWidth={1.9} />
-          </span>
         </div>
         {isPartner && (
           <p className="mt-2 inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-[11.5px] font-semibold text-rose-600 dark:bg-rose-950/30">

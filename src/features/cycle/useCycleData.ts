@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
-import { runCycleEngineFromProfile, getPregnancyRisk } from "./engine";
+import { runCycleEngineFromProfile, getPregnancyRisk, learnCycleStats } from "./engine";
 import { todayLocal } from "@/lib/timezone";
 import type { CycleEngineOutput, PregnancyRiskResult } from "./engine";
 
@@ -305,8 +305,9 @@ export function useCycleData() {
   const lastPeriod = periods[0] ?? null;
   const openPeriod = lastPeriod && !lastPeriod.end_date ? lastPeriod : null;
 
-  // Usar o engine para todos os cálculos
-  const engineOutput: CycleEngineOutput | null = runCycleEngineFromProfile(profile, lastPeriod);
+  // Usar o engine para todos os cálculos; as médias vêm do histórico real
+  const learned = learnCycleStats(periods);
+  const engineOutput: CycleEngineOutput | null = runCycleEngineFromProfile(profile, lastPeriod, periods);
   const pregnancyRisk: PregnancyRiskResult = getPregnancyRisk(
     intimacyLogs, engineOutput, lastPeriod?.start_date ?? null
   );
@@ -332,6 +333,7 @@ export function useCycleData() {
     targetUserId,
     // ── Output do engine (toda a lógica calculada)
     engine: engineOutput,
+    learned,
     pregnancyRisk,
     /**
      * @deprecated Use `engine` em vez de `cycleInfo`.
