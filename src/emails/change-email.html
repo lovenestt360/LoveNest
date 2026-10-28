@@ -3,57 +3,62 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LoveNest</title>
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>Confirma o teu novo email</title>
 </head>
-<body style="margin:0;padding:0;background:#f7f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f5;padding:48px 16px;">
+<body style="margin:0;padding:0;background:#F6F4F1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#F6F4F1;">Confirma a mudança do email da tua conta.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F4F1;">
     <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.06);">
-
-          <!-- Brand header -->
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #ECE8E3;border-radius:28px;">
           <tr>
-            <td style="padding:36px 40px 28px;text-align:center;border-bottom:1px solid #f5f0f0;">
-              <div style="width:8px;height:8px;border-radius:50%;background:#fecdd3;display:inline-block;margin-bottom:14px;"></div>
-              <div style="font-size:15px;font-weight:700;color:#1a1a1a;letter-spacing:-0.3px;">LoveNest</div>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:44px 40px 36px;">
-              <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1a1a;line-height:1.3;letter-spacing:-0.4px;">
-                Confirma o novo email.
-              </p>
-              <p style="margin:0 0 32px;font-size:14px;color:#888;line-height:1.7;">
-                Clica no botão abaixo para confirmar a alteração do teu endereço de email no LoveNest.
-              </p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center">
-                    <a href="{{ .ConfirmationURL }}"
-                       style="display:inline-block;background:#f43f5e;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:14px;letter-spacing:-0.1px;">
-                      Confirmar novo email
-                    </a>
-                  </td>
-                </tr>
+            <td style="padding:36px 32px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding:0 0 8px;">
+                  <img src="https://www.lovenestt.com/email/guardiao.png" width="120" height="120" alt="Guardião, a chama do LoveNest" style="display:block;width:120px;height:120px;border:0;" />
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:0 0 10px;font-size:26px;line-height:32px;font-weight:700;letter-spacing:-0.5px;color:#0B1324;">Confirma o teu novo email</td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:0 0 24px;font-size:15px;line-height:23px;color:#6B7280;">Pediste para mudar o email da tua conta de <strong style="color:#0B1324;font-weight:600;">{{ .Email }}</strong> para:</td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:0 0 28px;">
+                  <span style="display:inline-block;padding:8px 16px;border:1px solid #ECE8E3;border-radius:999px;background:#FAF8F6;font-size:14px;font-weight:600;color:#0B1324;">{{ .NewEmail }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:0 0 12px;">
+                  <a href="{{ .ConfirmationURL }}" style="display:block;max-width:320px;background:#0B1324;color:#ffffff;font-size:16px;font-weight:600;line-height:20px;text-decoration:none;padding:17px 24px;border-radius:16px;text-align:center;">Confirmar novo email&nbsp;&rarr;</a>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:16px 0 0;font-size:12px;line-height:18px;color:#9CA3AF;">
+                  O botão não abre? Copia este link para o navegador:<br />
+                  <a href="{{ .ConfirmationURL }}" style="color:#6B7280;word-break:break-all;">{{ .ConfirmationURL }}</a>
+                </td>
+              </tr>
               </table>
-              <p style="margin:28px 0 0;font-size:12px;color:#bbb;text-align:center;line-height:1.6;">
-                Se não pediste esta alteração, contacta-nos imediatamente.
-              </p>
             </td>
           </tr>
-
-          <!-- Footer -->
           <tr>
-            <td style="padding:20px 40px 28px;border-top:1px solid #f5f0f0;text-align:center;">
-              <p style="margin:0;font-size:11px;color:#ccc;line-height:1.6;">
-                Um espaço privado para o vosso amor.<br/>
-                lovenestt.vercel.app
-              </p>
+            <td style="padding:20px 32px 24px;border-top:1px solid #ECE8E3;text-align:center;font-size:12px;line-height:18px;color:#9CA3AF;">
+              Não foste tu? Não toques no botão e muda a tua senha.
             </td>
           </tr>
-
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+          <tr>
+            <td align="center" style="padding:20px 16px 0;font-size:12px;line-height:18px;color:#9CA3AF;">
+              <strong style="color:#0B1324;font-weight:600;">LoveNest</strong> &middot; Um espaço privado para os dois<br />
+              <a href="https://www.lovenestt.com" style="color:#9CA3AF;text-decoration:underline;">www.lovenestt.com</a>
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
