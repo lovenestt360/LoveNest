@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyPartner } from "@/lib/notifyPartner";
-import { awardLovePoints } from "@/lib/lovePoints";
+import { notifyLovePointsChanged } from "@/lib/lovePoints";
 import { X, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -55,7 +55,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
         taken_on: takenOn || null,
       });
       if (insertErr) throw insertErr;
-      awardLovePoints(spaceId, 5, "memoria", "Nova memória guardada", userId).catch(console.error);
+      notifyLovePointsChanged();
       notifyPartner({
         couple_space_id: spaceId,
         title: "Nova memória",
