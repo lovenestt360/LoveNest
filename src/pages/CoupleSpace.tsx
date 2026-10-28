@@ -102,24 +102,14 @@ export default function CoupleSpace() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/entrar"); return; }
 
+      // create_couple_space() gera o código, cria a casa e torna-te membro no
+      // servidor; se já tens casa, devolve-a.
       const { data: existing } = await supabase
         .from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
       if (existing) { await refresh(); return; }
 
-      const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-      const { data: space, error: spaceError } = await supabase
-        .from("couple_spaces").insert({ invite_code: inviteCode }).select().single();
-      if (spaceError) throw spaceError;
-
-      const { error: memberError } = await supabase.from("members")
-        .insert({ couple_space_id: space.id, user_id: user.id });
-      if (memberError) {
-        if (memberError.code === "23505") {
-          await supabase.from("couple_spaces").delete().eq("id", space.id);
-          throw new Error("Já pertences a um espaço.");
-        }
-        throw memberError;
-      }
+      const { error: createError } = await supabase.rpc("create_couple_space" as any);
+      if (createError) throw createError;
       track("space_created");
       await refresh();
     } catch (error) {
@@ -143,14 +133,8 @@ export default function CoupleSpace() {
         .from("members").select("couple_space_id").eq("user_id", user.id).maybeSingle();
 
       if (!existing) {
-        const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-        const { data: space, error: spaceError } = await supabase
-          .from("couple_spaces").insert({ invite_code: inviteCode }).select().single();
-        if (spaceError) throw spaceError;
-
-        const { error: memberError } = await supabase.from("members")
-          .insert({ couple_space_id: space.id, user_id: user.id });
-        if (memberError && memberError.code !== "23505") throw memberError;
+        const { error: createError } = await supabase.rpc("create_couple_space" as any);
+        if (createError) throw createError;
         track("space_created_solo");
       }
 
@@ -179,23 +163,20 @@ export default function CoupleSpace() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/entrar"); return; }
 
+      // A procura do código e a entrada acontecem no servidor: as casas dos
+      // outros não são legíveis a partir do browser.
       const code = inviteCodeInput.trim().toUpperCase();
-      const { data: space, error: spaceError } = await supabase
-        .from("couple_spaces").select("id").eq("invite_code", code).eq("status", "active").maybeSingle();
-      if (spaceError) throw spaceError;
-      if (!space) {
+      const { error: joinError } = await supabase.rpc("join_couple_space" as any, { p_code: code });
+      if (joinError?.message.includes("invalid_code")) {
         pet.current?.react("shake");
         pet.current?.say("Hmm, este código não existe");
         toast({ variant: "destructive", title: "Código inválido", description: "Não encontrámos nenhum espaço com este código." });
         return;
       }
-
-      const { error: joinError } = await supabase.from("members")
-        .insert({ couple_space_id: space.id, user_id: user.id });
       if (joinError) {
         let msg = "Não foi possível entrar no espaço.";
         if (joinError.message.includes("couple_space_full")) msg = "Este espaço já tem dois membros.";
-        else if (joinError.code === "23505") msg = "Já pertences a um espaço.";
+        else if (joinError.message.includes("already_member") || joinError.code === "23505") msg = "Já pertences a um espaço.";
         pet.current?.react("shake");
         toast({ variant: "destructive", title: "Erro ao entrar", description: msg });
         return;
