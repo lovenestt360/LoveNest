@@ -1037,16 +1037,3 @@ export function searchArticles(query: string): Article[] {
   );
 }
 
-// Cores Tailwind por colorKey — centralizadas para evitar purge do CSS
-export const COLOR_MAP: Record<string, {
-  bg: string; bgDark: string; text: string; textDark: string;
-  border: string; borderDark: string; dot: string;
-  cardBg: string; cardBgDark: string;
-}> = {
-  rose:    { bg: "bg-rose-100",    bgDark: "dark:bg-rose-950/30",    text: "text-rose-600",    textDark: "dark:text-rose-300",    border: "border-rose-200",    borderDark: "dark:border-rose-800",    dot: "bg-rose-500",    cardBg: "bg-rose-50",    cardBgDark: "dark:bg-rose-950/20"    },
-  emerald: { bg: "bg-emerald-100", bgDark: "dark:bg-emerald-950/30", text: "text-emerald-600", textDark: "dark:text-emerald-300", border: "border-emerald-200", borderDark: "dark:border-emerald-800", dot: "bg-emerald-500", cardBg: "bg-emerald-50", cardBgDark: "dark:bg-emerald-950/20" },
-  sky:     { bg: "bg-sky-100",     bgDark: "dark:bg-sky-950/30",     text: "text-sky-600",     textDark: "dark:text-sky-300",     border: "border-sky-200",     borderDark: "dark:border-sky-800",     dot: "bg-sky-500",     cardBg: "bg-sky-50",     cardBgDark: "dark:bg-sky-950/20"     },
-  violet:  { bg: "bg-violet-100",  bgDark: "dark:bg-violet-950/30",  text: "text-violet-600",  textDark: "dark:text-violet-300",  border: "border-violet-200",  borderDark: "dark:border-violet-800",  dot: "bg-violet-500",  cardBg: "bg-violet-50",  cardBgDark: "dark:bg-violet-950/20"  },
-  pink:    { bg: "bg-pink-100",    bgDark: "dark:bg-pink-950/30",    text: "text-pink-600",    textDark: "dark:text-pink-300",    border: "border-pink-200",    borderDark: "dark:border-pink-800",    dot: "bg-pink-500",    cardBg: "bg-pink-50",    cardBgDark: "dark:bg-pink-950/20"    },
-  slate:   { bg: "bg-slate-100",   bgDark: "dark:bg-slate-800/50",   text: "text-slate-600",   textDark: "dark:text-slate-300",   border: "border-slate-200",   borderDark: "dark:border-slate-700",   dot: "bg-slate-500",   cardBg: "bg-slate-50",   cardBgDark: "dark:bg-slate-900/20"   },
-};

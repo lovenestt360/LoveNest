@@ -1,375 +1,190 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft, Bookmark, Type, ChevronUp, ChevronDown,
-  CheckCircle2, AlertTriangle, Lightbulb, Stethoscope, Sparkles, Heart,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getArticleById, allCategories, COLOR_MAP, type BlockType } from "./articles";
+import { CycleIcon } from "../CycleIcon";
+import type { CycleIconKind } from "../cycleIconsSvg";
+import { ROUND } from "../cycleUi";
+import { picked } from "../CycleSheet";
+import { allArticles, getArticleById, type ContentBlock } from "./articles";
+import { SaveButton, TopicTile, getFavs, markRead, toggleFav, topicOf } from "./knowledgeUi";
 
-const FAV_KEY = "kc_favs";
-function getFavs(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) ?? "[]")); } catch { return new Set(); }
+// Três tamanhos de letra: [texto, introdução]
+const SIZES = [["text-[15px]", "text-[16px]"], ["text-[16.5px]", "text-[17.5px]"], ["text-[18px]", "text-[19px]"]] as const;
+const SIZE_KEY = "kc_font";
+
+// Caixas com significado: a cor diz o que são.
+const BOXES: Partial<Record<ContentBlock["type"], { icon: CycleIconKind; title: string; cls: string; head: string }>> = {
+  tip:       { icon: "lampada", title: "Dica",                cls: "bg-[#EEF8F1] dark:bg-emerald-950/30", head: "text-[#23733F] dark:text-emerald-300" },
+  warning:   { icon: "alerta",  title: "Atenção",             cls: "bg-[#FDECEF] dark:bg-rose-950/30",    head: "text-[#B0244A] dark:text-rose-300" },
+  curiosity: { icon: "estrela", title: "Curiosidade",         cls: "bg-[#E9F5FC] dark:bg-sky-950/30",     head: "text-[#176796] dark:text-sky-300" },
+  doctor:    { icon: "medico",  title: "Fala com um médico",  cls: "bg-[#F1EDFE] dark:bg-violet-950/30",  head: "text-[#5B3FC4] dark:text-violet-300" },
+};
+
+function Dots({ items, body }: { items: string[]; body: string }) {
+  return (
+    <ul className="grid gap-2">
+      {items.map((it, i) => (
+        <li key={i} className={cn("flex gap-2.5 leading-[1.55] text-[#3A4150] dark:text-foreground/85", body)}>
+          <span className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#B8B3AC] dark:bg-muted-foreground/60" />
+          <span>{it}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
-function saveFavs(s: Set<string>) {
-  try { localStorage.setItem(FAV_KEY, JSON.stringify([...s])); } catch {}
-}
 
-const FONT_SIZES = ["text-sm", "text-base", "text-lg"] as const;
-type FontSize = (typeof FONT_SIZES)[number];
-
-// ── Bloco de conteúdo ─────────────────────────────────────────────────────────
-
-function Block({
-  type, title, text, items, colors, fontSize,
-}: {
-  type: BlockType;
-  title?: string;
-  text?: string;
-  items?: string[];
-  colors: (typeof COLOR_MAP)[string];
-  fontSize: FontSize;
-}) {
-  if (type === "text") {
+function Block({ block, body }: { block: ContentBlock; body: string }) {
+  const { type, title, text, items } = block;
+  const box = BOXES[type];
+  if (box) {
     return (
-      <div className="space-y-2">
-        {title && (
-          <h3 className="text-base font-bold text-foreground leading-snug">{title}</h3>
-        )}
-        {text && (
-          <p className={cn("text-foreground leading-relaxed", fontSize)}>{text}</p>
-        )}
+      <div className={cn("rounded-[20px] p-4", box.cls)}>
+        <p className={cn("mb-2 flex items-center gap-2 text-[14px] font-semibold", box.head)}>
+          <CycleIcon kind={box.icon} size={22} />{title || box.title}
+        </p>
+        {text && <p className={cn("leading-[1.55] text-[#3A4150] dark:text-foreground/85", body)}>{text}</p>}
+        {items && <Dots items={items} body={body} />}
       </div>
     );
   }
-
-  if (type === "list") {
-    return (
-      <div className="space-y-2">
-        {title && <h3 className="text-base font-bold text-foreground">{title}</h3>}
-        <ul className="space-y-2.5">
-          {(items ?? []).map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className={cn("mt-2 h-1.5 w-1.5 rounded-full shrink-0", colors.dot)} />
-              <span className={cn("text-foreground leading-relaxed", fontSize)}>{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
   if (type === "highlight") {
     return (
-      <div className={cn(
-        "rounded-2xl p-4 border space-y-1.5",
-        colors.cardBg, colors.cardBgDark, colors.border, colors.borderDark
-      )}>
-        {title && (
-          <p className={cn("text-xs font-bold uppercase tracking-widest", colors.text, colors.textDark)}>
-            {title}
-          </p>
-        )}
-        {text && <p className={cn("text-foreground leading-relaxed", fontSize)}>{text}</p>}
-        {(items ?? []).map((item, i) => (
-          <li key={i} className="flex items-start gap-2.5 list-none">
-            <span className={cn("mt-2 h-1.5 w-1.5 rounded-full shrink-0", colors.dot)} />
-            <span className={cn("text-foreground leading-relaxed", fontSize)}>{item}</span>
-          </li>
-        ))}
+      <div className="border-l-[3px] border-[#0B1324] py-0.5 pl-4 dark:border-foreground">
+        {title && <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-foreground">{title}</p>}
+        {text && <p className={cn("mt-1 leading-[1.55] text-[#3A4150] dark:text-foreground/85", body)}>{text}</p>}
+        {items && <div className="mt-2"><Dots items={items} body={body} /></div>}
       </div>
     );
   }
-
-  if (type === "tip") {
-    return (
-      <div className="rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/40 space-y-2">
-        <div className="flex items-center gap-2">
-          <Lightbulb className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.5} />
-          {title && <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">{title}</p>}
-        </div>
-        {text && <p className={cn("text-foreground leading-relaxed", fontSize)}>{text}</p>}
-        {(items ?? []).map((item, i) => (
-          <li key={i} className="flex items-start gap-2.5 list-none">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" strokeWidth={1.5} />
-            <span className={cn("text-foreground leading-relaxed", fontSize)}>{item}</span>
-          </li>
-        ))}
-      </div>
-    );
-  }
-
-  if (type === "warning") {
-    return (
-      <div className="rounded-2xl p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-800/40 space-y-2">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={1.5} />
-          {title && <p className="text-xs font-bold uppercase tracking-widest text-rose-500">{title}</p>}
-        </div>
-        {text && <p className={cn("text-foreground leading-relaxed", fontSize)}>{text}</p>}
-        {(items ?? []).map((item, i) => (
-          <li key={i} className="flex items-start gap-2.5 list-none">
-            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" />
-            <span className={cn("text-foreground leading-relaxed", fontSize)}>{item}</span>
-          </li>
-        ))}
-      </div>
-    );
-  }
-
-  if (type === "curiosity") {
-    return (
-      <div className="rounded-2xl p-4 bg-sky-50 dark:bg-sky-950/20 border border-sky-200/50 dark:border-sky-800/40 space-y-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-sky-500 shrink-0" strokeWidth={1.5} />
-          {title && <p className="text-xs font-bold uppercase tracking-widest text-sky-500">{title}</p>}
-        </div>
-        {text && <p className={cn("text-foreground leading-relaxed", fontSize)}>{text}</p>}
-      </div>
-    );
-  }
-
-  if (type === "doctor") {
-    return (
-      <div className="rounded-2xl p-4 bg-violet-50 dark:bg-violet-950/20 border border-violet-200/50 dark:border-violet-800/40 space-y-2">
-        <div className="flex items-center gap-2">
-          <Stethoscope className="h-4 w-4 text-violet-500 shrink-0" strokeWidth={1.5} />
-          {title && <p className="text-xs font-bold uppercase tracking-widest text-violet-500">{title}</p>}
-        </div>
-        {text && <p className={cn("text-foreground leading-relaxed", fontSize)}>{text}</p>}
-        {(items ?? []).map((item, i) => (
-          <li key={i} className="flex items-start gap-2.5 list-none">
-            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" />
-            <span className={cn("text-foreground leading-relaxed", fontSize)}>{item}</span>
-          </li>
-        ))}
-      </div>
-    );
-  }
-
-  return null;
+  return (
+    <div>
+      {title && <h2 className="mb-2 text-[17.5px] font-semibold leading-snug tracking-[-0.02em] text-foreground">{title}</h2>}
+      {text && <p className={cn("leading-[1.62] text-[#3A4150] dark:text-foreground/85", body)}>{text}</p>}
+      {items && <Dots items={items} body={body} />}
+    </div>
+  );
 }
 
-// ── Página principal ──────────────────────────────────────────────────────────
-
 export default function ArticleReader() {
-  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
   const article = getArticleById(slug ?? "");
-  const cat = allCategories.find(c => c.id === article?.categoryId);
-  const colors = COLOR_MAP[cat?.colorKey ?? "slate"];
 
-  const [favs, setFavs] = useState<Set<string>>(getFavs);
-  const [fontSizeIdx, setFontSizeIdx] = useState(0);
-  const [showFontPanel, setShowFontPanel] = useState(false);
+  const [saved, setSaved] = useState(() => getFavs().has(slug ?? ""));
+  const [size, setSize] = useState(() => { try { return Math.min(2, Math.max(0, Number(localStorage.getItem(SIZE_KEY) ?? 0))); } catch { return 0; } });
+  const [showSize, setShowSize] = useState(false);
   const [progress, setProgress] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const isFav = favs.has(slug ?? "");
+
+  // Cada artigo abre no topo, com o seu estado de guardado.
+  useEffect(() => { window.scrollTo({ top: 0 }); setSaved(getFavs().has(slug ?? "")); setProgress(0); }, [slug]);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
     const onScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = el;
-      const pct = scrollHeight <= clientHeight ? 100 : Math.round((scrollTop / (scrollHeight - clientHeight)) * 100);
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = max <= 0 ? 100 : Math.round((window.scrollY / max) * 100);
       setProgress(pct);
+      if (pct >= 85 && slug) markRead(slug);
     };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [slug]);
 
-  const toggleFav = () => {
-    setFavs(prev => {
-      const next = new Set(prev);
-      if (next.has(slug!)) next.delete(slug!); else next.add(slug!);
-      saveFavs(next);
-      return next;
-    });
+  const chooseSize = (i: number) => {
+    setSize(i);
+    try { localStorage.setItem(SIZE_KEY, String(i)); } catch { /* sem armazenamento */ }
   };
 
   if (!article) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-3">
-          <p className="text-foreground font-semibold">Artigo não encontrado</p>
-          <button onClick={() => navigate("/ciclo/conhecimento")} className="text-sm text-rose-500 underline">
-            Voltar ao Centro de Conhecimento
-          </button>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="font-semibold text-foreground">Artigo não encontrado</p>
+        <button type="button" onClick={() => navigate("/ciclo/conhecimento")} className="text-[14px] font-semibold text-foreground underline underline-offset-[3px]">
+          Voltar ao Centro de Conhecimento
+        </button>
       </div>
     );
   }
 
-  const fontSize = FONT_SIZES[fontSizeIdx];
+  const topic = topicOf(article.categoryId);
+  const [body, lead] = SIZES[size];
+  // A seguir: o próximo do mesmo tema; senão, o próximo da lista.
+  const sameTopic = allArticles.filter((a) => a.categoryId === article.categoryId);
+  const next = sameTopic[sameTopic.indexOf(article) + 1] ?? allArticles[(allArticles.indexOf(article) + 1) % allArticles.length];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-
-      {/* ── Barra de progresso ── */}
-      <div className="fixed top-0 left-0 right-0 h-0.5 z-30 bg-muted">
-        <div
-          className={cn("h-full transition-all duration-150", colors.dot)}
-          style={{ width: `${progress}%` }}
-        />
+    <div className="min-h-screen bg-white dark:bg-background">
+      <div className="fixed inset-x-0 top-0 z-30 h-[3px]">
+        <div className="h-full rounded-r-full bg-[#0B1324] transition-[width] duration-150 dark:bg-foreground" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* ── Header fixo ── */}
-      <header className="sticky top-0.5 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-2 px-4 pt-safe-top pt-3 pb-3">
-          <button
-            onClick={() => navigate("/ciclo/conhecimento")}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm dark:bg-background/95">
+        <div className="mx-auto flex max-w-[680px] items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)]">
+          <button type="button" onClick={() => navigate(-1)} aria-label="Voltar" className={ROUND}>
+            <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={2} />
           </button>
-
-          <div className="flex-1 min-w-0">
-            <p className={cn("text-[10px] font-semibold uppercase tracking-widest truncate", colors.text, colors.textDark)}>
-              {cat?.title ?? "Ciclo"}
-            </p>
-          </div>
-
-          {/* Botão de tipo de letra */}
-          <div className="relative">
-            <button
-              onClick={() => setShowFontPanel(p => !p)}
-              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
-            >
-              <Type className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            </button>
-            {showFontPanel && (
-              <div className="absolute right-0 top-10 bg-card border border-border rounded-2xl shadow-lg p-2 flex flex-col gap-1 z-30">
-                <button
-                  onClick={() => { setFontSizeIdx(Math.min(2, fontSizeIdx + 1)); setShowFontPanel(false); }}
-                  disabled={fontSizeIdx === 2}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-sm text-foreground disabled:opacity-40"
-                >
-                  <ChevronUp className="h-3.5 w-3.5" /> Maior
-                </button>
-                <button
-                  onClick={() => { setFontSizeIdx(Math.max(0, fontSizeIdx - 1)); setShowFontPanel(false); }}
-                  disabled={fontSizeIdx === 0}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-sm text-foreground disabled:opacity-40"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" /> Menor
-                </button>
-              </div>
+          <div className="relative flex gap-2">
+            <button type="button" onClick={() => setShowSize((s) => !s)} aria-expanded={showSize} aria-label="Tamanho da letra"
+              className={cn(ROUND, "text-[14px] font-bold")}>Aa</button>
+            <span className={cn(ROUND, "p-0")}><SaveButton saved={saved} onClick={() => setSaved(toggleFav(article.id).has(article.id))} /></span>
+            {showSize && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowSize(false)} aria-hidden="true" />
+                <div className="absolute right-0 top-12 z-20 w-[220px] rounded-[20px] border border-[#ECE8E3] bg-white p-3 shadow-[0_18px_40px_-18px_rgba(11,19,36,0.35)] dark:border-border dark:bg-card">
+                  <p className="mb-2 text-[12.5px] font-semibold text-muted-foreground">Tamanho da letra</p>
+                  <div className="flex gap-1.5">
+                    {[13, 16, 19].map((px, i) => (
+                      <button key={px} type="button" onClick={() => chooseSize(i)} aria-pressed={size === i} aria-label={["Pequena", "Média", "Grande"][i]}
+                        className={cn("flex h-10 flex-1 items-center justify-center rounded-[12px] border border-[#ECE8E3] font-semibold text-foreground dark:border-border", size === i && picked)}
+                        style={{ fontSize: px }}>A</button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
-
-          {/* Favorito */}
-          <button
-            onClick={toggleFav}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
-          >
-            <Bookmark
-              className={cn("h-4 w-4 transition-colors", isFav ? "text-rose-400 fill-rose-400" : "text-muted-foreground")}
-              strokeWidth={1.5}
-            />
-          </button>
         </div>
       </header>
 
-      {/* ── Conteúdo ── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-[680px] mx-auto px-5 pb-20">
+      <article className="mx-auto max-w-[680px] px-5 pb-16">
+        <span className={cn("inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold", topic.chip)}>
+          {topic.short} · {article.readTime} min
+        </span>
+        <h1 className="mt-3 text-[28px] font-bold leading-[1.12] tracking-[-0.035em] text-foreground">{article.title}</h1>
+        <p className="mt-2 text-[14.5px] leading-snug text-muted-foreground">{article.subtitle}</p>
 
-          {/* Hero */}
-          <div className="pt-6 pb-8 space-y-3">
-            <h1 className="text-2xl font-bold text-foreground leading-tight">{article.title}</h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">{article.subtitle}</p>
-            <div className="flex items-center gap-3 pt-1">
-              <span className={cn("text-[10px] font-bold uppercase tracking-widest", colors.text, colors.textDark)}>
-                {cat?.title}
-              </span>
-              <span className="text-muted-foreground/30 text-xs">·</span>
-              <span className="text-[11px] text-muted-foreground">{article.readTime} min de leitura</span>
-            </div>
-          </div>
+        <p className={cn("mt-6 leading-[1.55] text-[#3A4150] dark:text-foreground/90", lead)}>{article.intro}</p>
 
-          {/* Intro */}
-          <div className={cn("rounded-2xl p-5 mb-6", colors.cardBg, colors.cardBgDark)}>
-            <p className={cn("text-foreground leading-relaxed font-medium", fontSize)}>{article.intro}</p>
-          </div>
-
-          {/* Separador */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className={cn("w-2 h-2 rounded-full", colors.dot)} />
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          {/* Blocos */}
-          <div className="space-y-6">
-            {article.blocks.map((block, i) => (
-              <Block
-                key={i}
-                type={block.type}
-                title={block.title}
-                text={block.text}
-                items={block.items}
-                colors={colors}
-                fontSize={fontSize}
-              />
-            ))}
-          </div>
-
-          {/* ── O que isto significa para vocês como casal? ── */}
-          <div className="mt-10 mb-4">
-            <div className="rounded-3xl overflow-hidden border border-rose-200/50 dark:border-rose-800/40"
-              style={{ background: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)" }}>
-              <div className="dark:hidden p-5 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-rose-500" strokeWidth={1.5} />
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-rose-500">
-                    O que isto significa para vocês como casal
-                  </p>
-                </div>
-                <p className={cn("text-gray-700 leading-relaxed", fontSize)}>{article.coupleNote}</p>
-              </div>
-              <div
-                className="hidden dark:block p-5 space-y-3 rounded-3xl"
-                style={{ background: "linear-gradient(135deg, #2a1520 0%, #3b1827 100%)" }}
-              >
-                <div className="flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-rose-400" strokeWidth={1.5} />
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400">
-                    O que isto significa para vocês como casal
-                  </p>
-                </div>
-                <p className={cn("text-gray-200 leading-relaxed", fontSize)}>{article.coupleNote}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mt-6">
-            {article.tags.map(tag => (
-              <span
-                key={tag}
-                className="px-3 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          {/* Botão voltar ao centro */}
-          <button
-            onClick={() => navigate("/ciclo/conhecimento")}
-            className="w-full mt-8 h-12 rounded-2xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-all flex items-center justify-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-            Voltar ao Centro de Conhecimento
-          </button>
-
+        <div className="mt-7 space-y-6">
+          {article.blocks.map((b, i) => <Block key={i} block={b} body={body} />)}
         </div>
-      </div>
 
-      {/* Clique fora do painel de fonte fecha-o */}
-      {showFontPanel && (
-        <div className="fixed inset-0 z-10" onClick={() => setShowFontPanel(false)} />
-      )}
+        {article.coupleNote && (
+          <div className="mt-8 rounded-[20px] border border-[#E1EAF9] bg-[#F3F7FE] p-4 dark:border-sky-900/40 dark:bg-sky-950/20">
+            <p className="mb-2 flex items-center gap-2 text-[14px] font-semibold text-[#1D4FA8] dark:text-sky-300">
+              <CycleIcon kind="casal" size={22} />Para vocês, como casal
+            </p>
+            <p className={cn("leading-[1.55] text-[#3A4150] dark:text-foreground/85", body)}>{article.coupleNote}</p>
+          </div>
+        )}
+
+        {next && next.id !== article.id && (
+          <button type="button" onClick={() => navigate(`/ciclo/conhecimento/${next.id}`, { replace: true })}
+            className="mt-6 flex w-full items-center gap-3 rounded-[22px] border border-[#ECE8E3] p-3.5 text-left transition-colors hover:bg-[#FBFAF8] dark:border-border dark:hover:bg-muted">
+            <TopicTile categoryId={next.categoryId} size={44} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12px] text-muted-foreground">A seguir</span>
+              <span className="block text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground">{next.title}</span>
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
+
+        <p className="mt-6 text-center text-[12px] leading-snug text-muted-foreground">
+          Informação educativa. Não substitui aconselhamento médico.
+        </p>
+      </article>
     </div>
   );
 }
