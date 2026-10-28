@@ -14,7 +14,7 @@ import {
   PHASE_SUGGESTIONS, SYMPTOMS, SYMPTOM_GROUPS, readSelection, selectionPayload, type SymptomKey,
 } from "./cycleSymptoms";
 import {
-  CARD, CARD_TITLE, DAY_CLS, PHASE_CHIP, PHASE_GLYPH, PMS_CHIP, SymptomTile, WD_SHORT, asDate, fmtDay, relDay,
+  CARD, CARD_TITLE, DAY_CLS, MiniCalendar, PHASE_CHIP, PHASE_GLYPH, PMS_CHIP, SymptomTile, WD_SHORT, asDate, fmtDay, relDay,
 } from "./cycleUi";
 
 const FLOWS: { value: string; label: string; icon: CycleIconKind }[] = [
@@ -35,22 +35,28 @@ const PROTECTION = [
 /** Escolha de data: hoje, ontem ou outra (sem dias no futuro). */
 function DatePick({ today, value, onChange, min }: { today: string; value: string; onChange: (v: string) => void; min?: string }) {
   const yesterday = addDays(today, -1);
-  const other = value !== today && value !== yesterday;
-  const chip = (on: boolean) => cn("h-10 rounded-full border border-[#ECE8E3] bg-white px-4 text-[13.5px] font-medium text-[#3A4150] dark:border-border dark:bg-card dark:text-foreground/80", on && cn(picked, "font-semibold text-[#0B1324] dark:text-foreground"));
+  const [showCal, setShowCal] = useState(false);
+  const other = showCal || (value !== today && value !== yesterday);
   return (
     <div className="mt-5 space-y-3 text-left">
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={chip(value === today)} onClick={() => onChange(today)}>Hoje</button>
-        {(!min || yesterday >= min) && <button type="button" className={chip(value === yesterday)} onClick={() => onChange(yesterday)}>Ontem</button>}
-        <label className={cn(chip(other), "relative inline-flex cursor-pointer items-center")}>
-          {other ? fmtDay(value) : "Outro dia"}
-          <input type="date" value={value} max={today} min={min} onChange={(e) => e.target.value && onChange(e.target.value)}
-            className="absolute inset-0 cursor-pointer opacity-0" aria-label="Escolher data" />
-        </label>
+        <button type="button" className={dateChip(!other && value === today)} onClick={() => { setShowCal(false); onChange(today); }}>Hoje</button>
+        {(!min || yesterday >= min) && (
+          <button type="button" className={dateChip(!other && value === yesterday)} onClick={() => { setShowCal(false); onChange(yesterday); }}>Ontem</button>
+        )}
+        <button type="button" className={dateChip(other)} onClick={() => setShowCal(true)} aria-expanded={showCal}>
+          {other && value !== today && value !== yesterday ? fmtDay(value) : "Outro dia"}
+        </button>
       </div>
+      {showCal && <MiniCalendar value={value} onChange={onChange} max={today} min={min} />}
     </div>
   );
 }
+
+const dateChip = (on: boolean) => cn(
+  "h-10 rounded-full border border-[#ECE8E3] bg-white px-4 text-[13.5px] font-medium text-[#3A4150] outline-none focus-visible:ring-2 focus-visible:ring-[#0B1324]/25 dark:border-border dark:bg-card dark:text-foreground/80",
+  on && cn(picked, "font-semibold text-[#0B1324] dark:text-foreground"),
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -428,8 +434,9 @@ function CycleWelcome({ data }: { data: CycleData }) {
   const [days, setDays] = useState<number | null>(5);
   const [busy, setBusy] = useState(false);
   const weekAgo = addDays(today, -7);
-  const chip = (on: boolean) => cn("h-10 rounded-full border border-[#ECE8E3] bg-white px-4 text-[13.5px] font-medium text-[#3A4150] dark:border-border dark:bg-card dark:text-foreground/80", on && cn(picked, "font-semibold text-[#0B1324] dark:text-foreground"));
-  const other = ![today, addDays(today, -1), weekAgo].includes(start);
+  const [showCal, setShowCal] = useState(false);
+  const other = showCal || ![today, addDays(today, -1), weekAgo].includes(start);
+  const quick = (iso: string) => { setShowCal(false); setStart(iso); };
 
   const begin = async () => {
     if (!user || !spaceId) return;
@@ -455,15 +462,14 @@ function CycleWelcome({ data }: { data: CycleData }) {
       <div>
         <p className="mb-2.5 text-[15px] font-semibold text-foreground">Quando começou a última menstruação?</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={chip(start === today)} onClick={() => setStart(today)}>Hoje</button>
-          <button type="button" className={chip(start === addDays(today, -1))} onClick={() => setStart(addDays(today, -1))}>Ontem</button>
-          <button type="button" className={chip(start === weekAgo)} onClick={() => setStart(weekAgo)}>Há 1 semana</button>
-          <label className={cn(chip(other), "relative inline-flex cursor-pointer items-center")}>
-            {other ? fmtDay(start) : "Escolher data"}
-            <input type="date" value={start} max={today} onChange={(ev) => ev.target.value && setStart(ev.target.value)}
-              className="absolute inset-0 cursor-pointer opacity-0" aria-label="Escolher data" />
-          </label>
+          <button type="button" className={dateChip(!other && start === today)} onClick={() => quick(today)}>Hoje</button>
+          <button type="button" className={dateChip(!other && start === addDays(today, -1))} onClick={() => quick(addDays(today, -1))}>Ontem</button>
+          <button type="button" className={dateChip(!other && start === weekAgo)} onClick={() => quick(weekAgo)}>Há 1 semana</button>
+          <button type="button" className={dateChip(other)} onClick={() => setShowCal(true)} aria-expanded={showCal}>
+            {![today, addDays(today, -1), weekAgo].includes(start) ? fmtDay(start) : "Escolher data"}
+          </button>
         </div>
+        {showCal && <div className="mt-3"><MiniCalendar value={start} onChange={setStart} max={today} /></div>}
       </div>
       <div>
         <p className="mb-2.5 text-[15px] font-semibold text-foreground">Quantos dias costuma durar?</p>

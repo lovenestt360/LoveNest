@@ -1,6 +1,6 @@
 // Peças partilhadas pelos ecrãs do Ciclo (maqueta docs/mockups/ciclo-proposta.html).
-import type { ReactNode } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { GlyphKind } from "@/features/home/FeatureIcon";
 import { cn } from "@/lib/utils";
 import { daysBetween, type CyclePhase } from "./engine";
@@ -80,4 +80,61 @@ export function SymptomTile({ icon, label, on, onClick, dashed }: { icon: CycleI
   return onClick
     ? <button type="button" onClick={onClick} aria-pressed={on} className={cls}>{inner}</button>
     : <div className={cls}>{inner}</div>;
+}
+
+const WD_INITIAL = ["S", "T", "Q", "Q", "S", "S", "D"];
+const isoOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * Calendário para escolher um dia dentro de uma folha. Desenhado na página
+ * (o seletor de data do sistema não abre em todos os telemóveis).
+ * Dias fora de [min, max] ficam desligados.
+ */
+export function MiniCalendar({ value, onChange, max, min }: { value: string; onChange: (iso: string) => void; max: string; min?: string }) {
+  const [month, setMonth] = useState(() => { const d = asDate(value); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const lead = (month.getDay() + 6) % 7;
+  const n = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const days = Array.from({ length: n }, (_, i) => isoOf(new Date(month.getFullYear(), month.getMonth(), i + 1)));
+  const firstOf = isoOf(month);
+  const lastOf = days[days.length - 1];
+  const canPrev = !min || firstOf > min;
+  const canNext = lastOf < max;
+  const move = (k: number) => setMonth((m) => new Date(m.getFullYear(), m.getMonth() + k, 1));
+
+  return (
+    <div className="rounded-[20px] border border-[#ECE8E3] p-3 dark:border-border">
+      <div className="mb-2 flex items-center justify-between">
+        <button type="button" aria-label="Mês anterior" disabled={!canPrev} onClick={() => move(-1)} className={cn(ROUND, "h-9 w-9 disabled:opacity-30")}>
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          {MONTHS_LONG[month.getMonth()].charAt(0).toUpperCase() + MONTHS_LONG[month.getMonth()].slice(1)} {month.getFullYear()}
+        </p>
+        <button type="button" aria-label="Mês seguinte" disabled={!canNext} onClick={() => move(1)} className={cn(ROUND, "h-9 w-9 disabled:opacity-30")}>
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-1 text-center">
+        {WD_INITIAL.map((w, i) => <span key={i} className="pb-1 text-[11px] font-semibold text-muted-foreground">{w}</span>)}
+        {Array.from({ length: lead }, (_, i) => <span key={`b${i}`} />)}
+        {days.map((day) => {
+          const off = day > max || (!!min && day < min);
+          const on = day === value;
+          return (
+            <button key={day} type="button" disabled={off} onClick={() => onChange(day)} aria-pressed={on}
+              className="flex h-10 items-center justify-center disabled:cursor-default">
+              <span className={cn(
+                "grid h-9 w-9 place-items-center rounded-full text-[14px] tabular-nums text-[#3A4150] transition-colors dark:text-foreground/80",
+                off ? "text-[#CFCAC3] dark:text-muted-foreground/40" : "hover:bg-[#F7F5F2] dark:hover:bg-muted",
+                on && "bg-[#0B1324] font-semibold text-white hover:bg-[#0B1324] dark:bg-foreground dark:text-background",
+                day === max && !on && "font-semibold underline underline-offset-4",
+              )}>
+                {asDate(day).getDate()}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
