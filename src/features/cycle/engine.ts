@@ -361,9 +361,71 @@ export function runCycleEngine(
   };
 }
 
+// ─────────────────────────────────────────────
+// APRENDIZAGEM — médias a partir do histórico
+// ─────────────────────────────────────────────
+
+export interface LearnedCycle {
+  /** Mediana dos últimos ciclos completos (null se ainda não há nenhum) */
+  cycleLength: number | null;
+  /** Mediana dos períodos já terminados (null se ainda não há nenhum) */
+  periodLength: number | null;
+  /** Quantos ciclos completos entraram na conta */
+  cyclesUsed: number;
+  /** Metade da diferença entre o ciclo mais curto e o mais longo ("±N dias") */
+  variation: number;
+  /** Ciclos completos, do mais recente para o mais antigo */
+  cycles: Array<{ start: string; length: number; periodLength: number | null }>;
+  /** Variação até 7 dias entre ciclos é considerada regular */
+  regular: boolean;
+}
+
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+};
+
+/**
+ * Aprende a duração do ciclo e do período com os registos reais, para que a
+ * utilizadora não tenha de os escrever. Usa os últimos 6 ciclos e ignora
+ * valores fora do plausível (registos esquecidos ou duplicados).
+ */
+export function learnCycleStats(
+  periods: Array<{ start_date: string; end_date: string | null }>
+): LearnedCycle {
+  const sorted = [...periods].sort((a, b) => (a.start_date < b.start_date ? 1 : -1));
+  const periodLen = (p: { start_date: string; end_date: string | null }) => {
+    if (!p.end_date) return null;
+    const n = daysBetween(p.start_date, p.end_date) + 1;
+    return n >= 1 && n <= 12 ? n : null;
+  };
+
+  const cycles: LearnedCycle["cycles"] = [];
+  for (let i = 0; i + 1 < sorted.length && cycles.length < 6; i++) {
+    const length = daysBetween(sorted[i + 1].start_date, sorted[i].start_date);
+    if (length >= 18 && length <= 50) {
+      cycles.push({ start: sorted[i + 1].start_date, length, periodLength: periodLen(sorted[i + 1]) });
+    }
+  }
+
+  const lengths = cycles.map((c) => c.length);
+  const periodLengths = sorted.slice(0, 6).map(periodLen).filter((n): n is number => n !== null);
+  const spread = lengths.length > 1 ? Math.max(...lengths) - Math.min(...lengths) : 0;
+
+  return {
+    cycleLength: lengths.length ? median(lengths) : null,
+    periodLength: periodLengths.length ? median(periodLengths) : null,
+    cyclesUsed: lengths.length,
+    variation: Math.ceil(spread / 2),
+    cycles,
+    regular: spread <= 7,
+  };
+}
+
 /**
  * Retorna o output do motor com base no CycleProfile + última PeriodEntry existentes.
- * Compatível com o formato actual da base de dados.
+ * Com o histórico (`periods`), as médias aprendidas substituem as do perfil.
  */
 export function runCycleEngineFromProfile(
   profile: {
@@ -375,15 +437,17 @@ export function runCycleEngineFromProfile(
   lastPeriod: {
     start_date: string;
     end_date?: string | null;
-  } | null
+  } | null,
+  periods?: Array<{ start_date: string; end_date: string | null }>
 ): CycleEngineOutput | null {
   if (!lastPeriod) return null;
+  const learned = periods ? learnCycleStats(periods) : null;
 
   return runCycleEngine({
     lastPeriodDate: lastPeriod.start_date,
     lastPeriodEndDate: lastPeriod.end_date ?? null,
-    cycleLength: profile?.avg_cycle_length ?? DEFAULTS.cycleLength,
-    periodLength: profile?.avg_period_length ?? DEFAULTS.periodLength,
+    cycleLength: learned?.cycleLength ?? profile?.avg_cycle_length ?? DEFAULTS.cycleLength,
+    periodLength: learned?.periodLength ?? profile?.avg_period_length ?? DEFAULTS.periodLength,
     lutealLength: profile?.luteal_length ?? DEFAULTS.lutealLength,
     pmsDays: profile?.pms_days ?? DEFAULTS.pmsDays,
   });
