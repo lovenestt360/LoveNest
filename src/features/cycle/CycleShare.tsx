@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import type { CycleData } from "./useCycleData";
-import { CycleIcon } from "./CycleIcon";
 import { picked } from "./CycleSheet";
-import { CARD, CARD_TITLE, SubHeader } from "./cycleUi";
+import { SubHeader } from "./cycleUi";
 
 export type ShareLevel = "private" | "summary" | "summary_signals";
 
 /** O que o par vê do ciclo: ela escolhe; nada é partilhado sem escolha dela. */
 export function CycleShare({
-  data, partnerName, onBack, onPreview,
-}: { data: CycleData; partnerName: string; onBack: () => void; onPreview: () => void }) {
+  data, partnerName, onBack,
+}: { data: CycleData; partnerName: string; onBack: () => void }) {
   const { profile, ensureProfile, reload } = data;
   const [level, setLevel] = useState<ShareLevel>((profile?.share_level as ShareLevel) ?? "private");
   const [saving, setSaving] = useState(false);
@@ -66,16 +64,6 @@ export function CycleShare({
           : `Quando marcas que o período começou ou terminou, ${partnerName} recebe um aviso.`}
       </p>
 
-      {level !== "private" && (
-        <button type="button" onClick={onPreview} className={cn(CARD, "flex w-full items-center gap-3 bg-[#F7F5F2] text-left dark:bg-muted")}>
-          <CycleIcon kind="olho" size={30} />
-          <span className="min-w-0 flex-1">
-            <span className={cn(CARD_TITLE, "block text-[14px]")}>Ver como {partnerName} vê</span>
-            <span className="block text-[12.5px] text-muted-foreground">Pré-visualização do ecrã do teu par</span>
-          </span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </button>
-      )}
     </div>
   );
 }

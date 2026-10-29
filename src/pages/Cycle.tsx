@@ -7,8 +7,9 @@ import { CyclePartnerView } from "@/features/cycle/CyclePartnerView";
 import { CycleCalendar } from "@/features/cycle/CycleCalendar";
 import { CycleHistory } from "@/features/cycle/CycleHistory";
 import { CycleShare } from "@/features/cycle/CycleShare";
+import { CycleCareCard } from "@/features/cycle/CycleCareCard";
 import { CycleIcon } from "@/features/cycle/CycleIcon";
-import { ROUND, SubHeader } from "@/features/cycle/cycleUi";
+import { ROUND } from "@/features/cycle/cycleUi";
 import { KnowledgeCenterCard } from "@/features/cycle/knowledge/KnowledgeCenterCard";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -16,7 +17,7 @@ import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type View = "hoje" | "calendario" | "historico" | "partilha" | "previa";
+type View = "hoje" | "calendario" | "historico" | "partilha";
 
 export default function Cycle() {
   const data = useCycleData();
@@ -56,7 +57,7 @@ export default function Cycle() {
           <h1 className="text-[28px] font-bold leading-tight tracking-[-0.035em] text-foreground">Ciclo da {herName}</h1>
           {shared && <p className="mt-0.5 text-[13px] text-muted-foreground">A {herName} partilha isto contigo.</p>}
         </header>
-        <CyclePartnerView data={data} herName={herName} />
+        <CyclePartnerView data={data} herName={herName} myName={profile?.display_name?.trim() || undefined} />
         {shared && <KnowledgeCenterCard forPartner />}
       </section>
     );
@@ -99,6 +100,9 @@ export default function Cycle() {
               </div>
             )}
           </header>
+          {user && data.spaceId && partner?.user_id && (
+            <CycleCareCard userId={user.id} spaceId={data.spaceId} partnerId={partner.user_id} partnerName={partnerName} />
+          )}
           <CycleToday data={data} onOpenCalendar={() => setView("calendario")} />
           {data.engine && <div className="pt-1"><KnowledgeCenterCard /></div>}
         </>
@@ -111,13 +115,7 @@ export default function Cycle() {
         <CycleHistory data={data} onBack={() => setView("calendario")} onOpenShare={() => setView("partilha")} onReset={handleReset} />
       )}
       {view === "partilha" && (
-        <CycleShare data={data} partnerName={partnerName} onBack={() => setView("hoje")} onPreview={() => setView("previa")} />
-      )}
-      {view === "previa" && (
-        <>
-          <SubHeader title={`Como ${partnerName} vê`} onBack={() => setView("partilha")} />
-          <CyclePartnerView data={data} herName={profile?.display_name?.trim() || "ti"} preview />
-        </>
+        <CycleShare data={data} partnerName={partnerName} onBack={() => setView("hoje")} />
       )}
     </section>
   );

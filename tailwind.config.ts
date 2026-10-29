@@ -122,6 +122,15 @@ export default {
           "0%, 100%": { boxShadow: "0 0 8px 0 hsla(335,42%,32%,0.2)" },
           "50%": { boxShadow: "0 0 16px 4px hsla(335,42%,32%,0.35)" },
         },
+        // Anel do Ciclo: o dia de hoje pulsa, os dias entram em sequência.
+        "ring-pulse": {
+          "0%": { transform: "scale(1)", opacity: "0.7" },
+          "80%, 100%": { transform: "scale(1.8)", opacity: "0" },
+        },
+        "ring-dot-in": {
+          from: { opacity: "0" },
+          to: { opacity: "var(--o, 1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -133,6 +142,8 @@ export default {
         "slide-up": "slide-up 0.4s ease-out",
         "tab-tap": "tab-tap 0.2s ease-out",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "ring-pulse": "ring-pulse 2.6s cubic-bezier(0.22,1,0.36,1) infinite",
+        "ring-dot-in": "ring-dot-in 0.5s ease-out both",
       },
     },
   },
