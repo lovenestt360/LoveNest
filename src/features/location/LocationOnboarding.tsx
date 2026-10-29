@@ -1,68 +1,63 @@
-import { Shield, Eye, PowerOff, MapPin } from "lucide-react";
+import guardiao from "@/features/entry/assets/guardiao.webp";
 
-const STEPS = [
+const HEART = "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+
+const POINTS = [
   {
-    Icon: MapPin,
-    title: "Sente a presença um do outro",
-    body: "Quando ativares, o teu par vê onde estás em tempo real. Tu vês onde ele está.",
+    tint: "bg-[#EAF1FF] dark:bg-sky-950/40",
+    art: (
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <defs><linearGradient id="lo-pin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7AA2FF" /><stop offset="1" stopColor="#3B6FF5" /></linearGradient></defs>
+        <path d="M12 22s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12Z" fill="url(#lo-pin)" /><circle cx="12" cy="10" r="2.8" fill="#fff" />
+      </svg>
+    ),
+    title: "Vejam-se no mapa",
+    body: "Cada um vê onde o outro está, em tempo real.",
   },
   {
-    Icon: Eye,
-    title: "Só vocês dois veem",
-    body: "Nenhuma outra pessoa tem acesso à vossa localização. É só entre vocês.",
+    tint: "bg-[#FFEFF3] dark:bg-rose-950/40",
+    art: <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d={HEART} fill="#E8456B" /></svg>,
+    title: "Só vocês os dois",
+    body: "Mais ninguém vê. E só vês o teu par se ele também partilhar.",
   },
   {
-    Icon: Shield,
-    title: "Controlo total",
-    body: "Podes pausar ou desativar a qualquer momento, diretamente nesta página.",
-  },
-  {
-    Icon: PowerOff,
-    title: "Consentimento mútuo",
-    body: "Cada um escolhe se quer partilhar. Só vês o par se ele também tiver ativado.",
+    tint: "bg-[#EEF8F1] dark:bg-emerald-950/40",
+    art: <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="4.5" height="16" rx="2" fill="#23A15A" /><rect x="14.5" y="4" width="4.5" height="16" rx="2" fill="#23A15A" /></svg>,
+    title: "Tu decides",
+    body: "Pausa por uma hora, até amanhã, ou desliga quando quiseres.",
   },
 ];
 
-interface Props {
-  onClose: () => void;
-}
-
-export function LocationOnboarding({ onClose }: Props) {
+/** Boas-vindas à localização (maqueta docs/mockups/localizacao-pagina-proposta.html). */
+export function LocationOnboarding({ sharing, onActivate, onClose }: { sharing: boolean; onActivate: () => void; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-6">
-      <div className="w-full max-w-sm bg-background rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-        {/* Top accent */}
-        <div className="h-1 bg-gradient-to-r from-rose-300 via-rose-400 to-rose-300" />
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0B1324]/40 px-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-[3px]">
+      <div className="w-full max-w-sm rounded-[30px] bg-white px-5 pb-5 text-center shadow-2xl animate-in slide-in-from-bottom-4 duration-300 dark:bg-card">
+        <img src={guardiao} alt="" className="mx-auto -mt-12 h-[104px] w-[104px] object-contain drop-shadow-[0_12px_18px_rgba(59,130,246,0.25)]" />
+        <h2 className="mt-1 text-[22px] font-bold tracking-[-0.03em] text-foreground">Onde estamos</h2>
+        <p className="mt-1 text-[13.5px] text-muted-foreground">Perto um do outro, mesmo quando estão longe.</p>
 
-        <div className="p-6 space-y-5">
-          <div className="text-center space-y-1">
-            <p className="text-[18px] font-bold text-foreground">Onde Estamos</p>
-            <p className="text-[12px] text-muted-foreground/70">
-              Ligados, mesmo quando estão longe.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {STEPS.map(({ Icon, title, body }) => (
-              <div key={title} className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Icon className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[13px] font-semibold text-foreground">{title}</p>
-                  <p className="text-[11px] text-muted-foreground/70 leading-relaxed">{body}</p>
-                </div>
+        <div className="mt-5 grid gap-3 text-left">
+          {POINTS.map((pt) => (
+            <div key={pt.title} className="flex items-start gap-3">
+              <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[14px] ${pt.tint}`}>{pt.art}</span>
+              <div>
+                <p className="text-[14px] font-semibold text-foreground">{pt.title}</p>
+                <p className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground">{pt.body}</p>
               </div>
-            ))}
-          </div>
-
-          <button
-            onClick={onClose}
-            className="w-full py-3.5 rounded-2xl bg-rose-400 text-white text-[14px] font-semibold active:scale-95 transition-all shadow-sm shadow-rose-200 dark:shadow-rose-900/30"
-          >
-            Percebido, vamos lá
-          </button>
+            </div>
+          ))}
         </div>
+
+        <button type="button" onClick={onActivate}
+          className="mt-5 h-[50px] w-full rounded-[17px] bg-[#0B1324] text-[15px] font-semibold text-white transition-transform active:scale-[0.98] dark:bg-foreground dark:text-background">
+          {sharing ? "Vamos lá" : "Ativar a partilha"}
+        </button>
+        {!sharing && (
+          <button type="button" onClick={onClose} className="mt-3 text-[13.5px] font-semibold text-muted-foreground">
+            Agora não
+          </button>
+        )}
       </div>
     </div>
   );

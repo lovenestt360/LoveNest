@@ -116,12 +116,12 @@ function detectStatus(
 function BatteryIcon({ level, charging }: { level: number | null; charging: boolean | null }) {
   if (level === null) return null;
   const Icon = charging ? BatteryCharging : level <= 20 ? BatteryLow : Battery;
-  const color = charging ? '#22c55e' : level <= 20 ? '#ef4444' : '#9ca3af';
+  const color = charging ? '#23A15A' : level <= 20 ? '#E8456B' : '#3A4150';
   return (
-    <div className="flex items-center gap-0.5">
-      <Icon className="w-3 h-3 shrink-0" style={{ color }} strokeWidth={1.5} />
-      <span className="text-[10px]" style={{ color }}>{level}%</span>
-    </div>
+    <span className="inline-flex items-center gap-1.5">
+      <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} strokeWidth={2} />
+      {Math.round(level)}%
+    </span>
   );
 }
 
@@ -153,17 +153,23 @@ type DiaryEntry =
 
 // ── Avatar marker ─────────────────────────────────────────────────────────────
 
+// Azul para o par, rosa para mim (os mesmos do cartão da Home).
+const TONE_BG = {
+  par: 'linear-gradient(160deg, #7AA2FF, #3B6FF5)',
+  me: 'linear-gradient(160deg, #FF9DB5, #E8456B)',
+} as const;
+
 function AvatarMarker({
-  avatarUrl, initial, ring, size = 44,
+  avatarUrl, initial, tone, size = 44,
 }: {
-  avatarUrl?: string | null; initial: string; ring: string; size?: number;
+  avatarUrl?: string | null; initial: string; tone: keyof typeof TONE_BG; size?: number;
 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
       border: '3px solid white',
-      boxShadow: `0 0 0 2.5px ${ring}, 0 8px 24px rgba(0,0,0,0.30)`,
-      overflow: 'hidden', background: avatarUrl ? 'transparent' : ring,
+      boxShadow: '0 10px 22px -10px rgba(11,19,36,0.6)',
+      overflow: 'hidden', background: avatarUrl ? '#fff' : TONE_BG[tone],
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {avatarUrl
@@ -209,18 +215,10 @@ const DEFAULT_H = 290;
 
 // Botão redondo branco por cima do mapa.
 const MAP_BTN = 'flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-[#ECE8E3] bg-white text-[#0B1324] shadow-[0_8px_18px_-10px_rgba(11,19,36,0.45)] transition-transform active:scale-95 dark:border-border dark:bg-card dark:text-foreground';
-const ROSE = '#E5466D';
-const BLUE = '#4D7CFE';
 
 function shortDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)} m`;
   return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
-}
-function bigDistance(m: number): { value: string; unit: string } {
-  if (m < 1000) return { value: String(Math.round(m)), unit: 'm de ti' };
-  const km = m / 1000;
-  const min = Math.round((km / (km > 5 ? 60 : 40)) * 60);
-  return { value: km.toFixed(1).replace('.', ','), unit: `km de ti · ~${min} min` };
 }
 function fullH() { return typeof window !== 'undefined' ? Math.min(Math.round(window.innerHeight * 0.78), 680) : 600; }
 function maxH() { return fullH() + 24; }
@@ -455,19 +453,17 @@ export default function Localizacao() {
   const pauseLabel = !pauseUntil ? '' : pauseUntil.getFullYear() > 9000 ? 'indefinidamente'
     : `até ${pauseUntil.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`;
   const pill = permissionDenied
-    ? { tone: 'off' as const, tag: 'SEM ACESSO', text: 'Toca para tentar de novo' }
+    ? { tone: 'off' as const, tag: 'Sem acesso', text: 'toca para tentar de novo' }
     : isPaused
-    ? { tone: 'paused' as const, tag: 'EM PAUSA', text: `${pauseLabel} · toca para retomar` }
+    ? { tone: 'paused' as const, tag: 'Em pausa', text: `${pauseLabel} · toca para retomar` }
     : together
-    ? { tone: 'together' as const, tag: 'JUNTOS', text: 'Estão juntos agora' }
+    ? { tone: 'together' as const, tag: 'Juntos', text: partnerCtx.label }
     : partnerReal
-    ? { tone: 'live' as const, tag: 'AO VIVO', text: `${partnerName} · ${partnerCtx.label || 'agora'}` }
-    : { tone: 'off' as const, tag: 'OFFLINE', text: `${partnerName} não está a partilhar` };
+    ? { tone: 'live' as const, tag: 'Ao vivo', text: distance !== null ? `estão a ${shortDistance(distance)}` : partnerName }
+    : { tone: 'off' as const, tag: 'Sem partilha', text: `${partnerName} não está a partilhar` };
 
-  // Subtext shown below partner name
-  const partnerSubtext = together
-    ? 'Juntos agora'
-    : [partnerCtx.label, partnerLocation ? shortTimeAgo(partnerLocation.updated_at) : ''].filter(Boolean).join(' · ');
+  // Por baixo do nome do par: a distância (ou "Contigo") e onde está.
+  const partnerLead = together ? 'Contigo' : distance !== null ? null : partnerCtx.label;
 
   return (
     <div className="relative bg-black" style={{ width: '100%', height: '100dvh', overflow: 'hidden' }}>
@@ -515,7 +511,8 @@ export default function Localizacao() {
             {/* Distância entre os dois */}
             {myReal && partnerReal && myLocation && partnerLocation && distance !== null && distance >= 250 && (
               <Marker longitude={(myLocation.lng + partnerLocation.lng) / 2} latitude={(myLocation.lat + partnerLocation.lat) / 2} anchor="center">
-                <span className="pointer-events-none rounded-full bg-[#0B1324] px-2.5 py-1 text-[12px] font-bold tabular-nums text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.7)]">
+                <span className="pointer-events-none inline-flex h-7 items-center gap-1.5 rounded-full bg-white px-3 text-[12.5px] font-bold tabular-nums text-[#0B1324] shadow-[0_6px_16px_-8px_rgba(11,19,36,0.5)]">
+                  <Heart className="h-3.5 w-3.5 text-[#E8456B]" fill="currentColor" strokeWidth={0} />
                   {shortDistance(distance)}
                 </span>
               </Marker>
@@ -540,19 +537,19 @@ export default function Localizacao() {
 
             {/* Marcador: eu */}
             {myReal && myLocation && (
-              <Marker longitude={myLocation.lng} latitude={myLocation.lat} anchor="center" offset={together && partnerReal ? [-24, 0] : [0, 0]}>
+              <Marker longitude={myLocation.lng} latitude={myLocation.lat} anchor="center" offset={together && partnerReal ? [-18, 0] : [0, 0]}>
                 <div className="relative cursor-pointer" onClick={e => { e.stopPropagation(); setActiveMarker(m => m === 'me' ? null : 'me'); }}>
                   {activeMarker === 'me' && (
                     <MarkerCallout name={profile?.display_name ?? 'Eu'} sub="Agora" />
                   )}
-                  <AvatarMarker initial={myInitial} ring={ROSE} size={46} />
+                  <AvatarMarker initial={myInitial} tone="me" size={46} />
                 </div>
               </Marker>
             )}
 
             {/* Marcador: par */}
             {partnerReal && partnerLocation && (
-              <Marker longitude={partnerLocation.lng} latitude={partnerLocation.lat} anchor="center" offset={together && myReal ? [24, 0] : [0, 0]}>
+              <Marker longitude={partnerLocation.lng} latitude={partnerLocation.lat} anchor="center" offset={together && myReal ? [18, 0] : [0, 0]}>
                 <div className="relative cursor-pointer" onClick={e => { e.stopPropagation(); setActiveMarker(m => m === 'partner' ? null : 'partner'); }}>
                   {activeMarker === 'partner' && (
                     <MarkerCallout
@@ -563,7 +560,10 @@ export default function Localizacao() {
                   <span className="pointer-events-none absolute inset-[-6px] rounded-full border-2 border-[#4D7CFE] animate-[map-ping_2.2s_ease-out_infinite]" />
                   <span className="pointer-events-none absolute inset-[-6px] rounded-full border-2 border-[#4D7CFE] animate-[map-ping_2.2s_ease-out_infinite_1.1s]" />
                   {!together && <img src={guardiaoThumb} alt="" className="pointer-events-none absolute bottom-[44px] left-1/2 w-[40px] -translate-x-1/2 animate-[map-ride_1.4s_ease-in-out_infinite]" />}
-                  <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} ring={BLUE} size={54} />
+                  {together && myReal && (
+                    <Heart className="pointer-events-none absolute -top-[18px] left-[-24px] z-10 h-[22px] w-[22px] text-[#E8456B] drop-shadow-[0_2px_4px_rgba(11,19,36,0.25)]" fill="currentColor" stroke="#fff" strokeWidth={2} />
+                  )}
+                  <AvatarMarker avatarUrl={partner?.avatar_url} initial={partnerInitial} tone="par" size={52} />
                 </div>
               </Marker>
             )}
@@ -585,27 +585,20 @@ export default function Localizacao() {
         <button
           type="button"
           onClick={() => { if (isPaused) handleResume(); else if (permissionDenied) retryWatch(); }}
-          className={cn(
-            'flex h-[42px] min-w-0 flex-1 items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold shadow-[0_12px_24px_-12px_rgba(11,19,36,0.7)] transition-colors',
-            pill.tone === 'live' && 'bg-[#0B1324] text-white',
-            pill.tone === 'together' && 'bg-[#E5466D] text-white',
-            (pill.tone === 'paused' || pill.tone === 'off') && 'border border-[#ECE8E3] bg-white text-[#0B1324]',
-          )}
+          className="flex h-[42px] min-w-0 flex-1 items-center gap-2 rounded-full border border-[#ECE8E3] bg-white px-3.5 text-[13px] font-semibold text-[#0B1324] shadow-[0_8px_18px_-10px_rgba(11,19,36,0.45)] dark:border-border dark:bg-card dark:text-foreground"
         >
-          <span className={cn(
-            'h-2 w-2 shrink-0 rounded-full',
-            pill.tone === 'live' && 'bg-emerald-500 animate-[live-dot_1.6s_ease-out_infinite]',
-            pill.tone === 'together' && 'bg-white',
-            pill.tone === 'paused' && 'bg-amber-500',
-            pill.tone === 'off' && 'bg-[#D5D1CB]',
-          )} />
-          <b className={cn(
-            'shrink-0 text-[11px] font-extrabold tracking-[0.08em]',
-            pill.tone === 'live' && 'text-emerald-300',
-            pill.tone === 'paused' && 'text-amber-700',
-            pill.tone === 'off' && 'text-[#7A7F8C]',
-          )}>{pill.tag}</b>
-          <span className="truncate">{pill.text}</span>
+          {pill.tone === 'together' ? (
+            <Heart className="h-3.5 w-3.5 shrink-0 text-[#E8456B]" fill="currentColor" strokeWidth={0} />
+          ) : (
+            <span className={cn(
+              'h-2 w-2 shrink-0 rounded-full',
+              pill.tone === 'live' && 'bg-[#23A15A] shadow-[0_0_0_4px_rgba(35,161,90,0.18)]',
+              pill.tone === 'paused' && 'bg-amber-500 shadow-[0_0_0_4px_rgba(245,158,11,0.18)]',
+              pill.tone === 'off' && 'bg-[#D5D1CB]',
+            )} />
+          )}
+          <span className="shrink-0">{pill.tag}</span>
+          {pill.text && <span className="truncate font-medium text-muted-foreground">· {pill.text}</span>}
         </button>
 
         <button
@@ -703,7 +696,7 @@ export default function Localizacao() {
           {/* Fechada */}
           {isPeekSheet && (
             <div className="flex h-10 items-center gap-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#4D7CFE] text-[11px] font-bold text-white" style={{ boxShadow: '0 0 0 2px #fff, 0 0 0 3.5px #4D7CFE' }}>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold text-white" style={{ background: TONE_BG.par }}>
                 {partner?.avatar_url ? <img src={partner.avatar_url} className="h-full w-full object-cover" alt="" /> : partnerInitial}
               </span>
               <p className="flex-1 truncate text-[13.5px] font-semibold text-foreground">{partnerName}</p>
@@ -721,76 +714,65 @@ export default function Localizacao() {
                 <>
                   {/* O par */}
                   <div className="flex items-center gap-3">
-                    <div className="relative shrink-0">
-                      <div className="flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-full bg-[#4D7CFE] text-[19px] font-extrabold text-white" style={{ boxShadow: '0 0 0 3px #fff, 0 0 0 5px #4D7CFE' }}>
-                        {partner?.avatar_url ? <img src={partner.avatar_url} className="h-full w-full object-cover" alt="" /> : partnerInitial}
-                      </div>
-                      <span className="absolute -bottom-px -right-px h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 dark:border-card" />
+                    <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white text-[19px] font-bold text-white shadow-[0_10px_22px_-10px_rgba(11,19,36,0.55)] dark:border-card" style={{ background: TONE_BG.par }}>
+                      {partner?.avatar_url ? <img src={partner.avatar_url} className="h-full w-full object-cover" alt="" /> : partnerInitial}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className="truncate text-[16px] font-bold leading-tight text-foreground">{partnerName}</p>
-                        {together && <span className="shrink-0 rounded-full bg-[#E5466D] px-2 py-0.5 text-[10.5px] font-bold text-white">Juntos</span>}
-                      </div>
-                      <p className="mt-0.5 flex items-center gap-1 truncate text-[12.5px] text-muted-foreground">
-                        <partnerCtx.Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.9} />
-                        {partnerSubtext}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-0.5 text-[11px] text-muted-foreground">
-                      <BatteryIcon level={partnerLocation.battery_level ?? null} charging={partnerLocation.is_charging ?? null} />
-                      {networkLabel(partnerLocation.network_type) && (
-                        <span className="flex items-center gap-1">
-                          {isWifi(partnerLocation.network_type) ? <Wifi className="h-3 w-3" strokeWidth={1.9} /> : <Signal className="h-3 w-3" strokeWidth={1.9} />}
-                          {networkLabel(partnerLocation.network_type)}
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-[17px] font-bold leading-tight tracking-[-0.02em] text-foreground">{partnerName}</p>
+                        <span className="inline-flex h-[22px] shrink-0 items-center gap-1.5 rounded-full bg-[#EEF8F1] px-2 text-[11px] font-bold text-[#23733F] dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#23A15A]" />Ao vivo
                         </span>
-                      )}
-                      <span>{shortTimeAgo(partnerLocation.updated_at)}</span>
+                      </div>
+                      <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                        {partnerLead ?? <>Está a <b className="font-semibold text-foreground">{shortDistance(distance!)}</b> de ti</>}
+                        {partnerLead !== partnerCtx.label && partnerCtx.label && ` · ${partnerCtx.label}`}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Saídas de casa e tempo fora */}
-                  {(homeStats.timesLeft > 0 || homeStats.totalAwayMs > 60_000) && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {homeStats.timesLeft > 0 && (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-foreground dark:bg-muted">
-                          <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
-                          Saiu {homeStats.timesLeft === 1 ? '1 vez' : `${homeStats.timesLeft}×`} hoje
-                        </span>
-                      )}
-                      {homeStats.totalAwayMs > 60_000 && (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-foreground dark:bg-muted">
-                          <Clock className="h-3.5 w-3.5" strokeWidth={2} />
-                          {formatDuration(homeStats.totalAwayMs)} fora de casa
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Distância ao vivo */}
-                  {distance !== null && !together && (
-                    <div className="mt-3.5 flex items-baseline gap-1.5">
-                      <b className="text-[48px] font-black leading-[0.9] tracking-[-0.05em] tabular-nums text-foreground">{bigDistance(distance).value}</b>
-                      <span className="text-[14px] font-semibold text-muted-foreground">{bigDistance(distance).unit}</span>
-                      <span className="ml-auto inline-flex items-center gap-1.5 text-[10.5px] font-extrabold tracking-[0.1em] text-emerald-600">
-                        <span className="h-[7px] w-[7px] rounded-full bg-emerald-500 animate-[live-dot_1.6s_ease-out_infinite]" />
-                        AO VIVO
+                  {/* Bateria, rede, saídas e tempo fora de casa */}
+                  <div className="mt-3.5 flex flex-wrap gap-1.5">
+                    {partnerLocation.battery_level != null && (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
+                        <BatteryIcon level={partnerLocation.battery_level} charging={partnerLocation.is_charging ?? null} />
                       </span>
-                    </div>
-                  )}
+                    )}
+                    {networkLabel(partnerLocation.network_type) && (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
+                        {isWifi(partnerLocation.network_type) ? <Wifi className="h-3.5 w-3.5" strokeWidth={2} /> : <Signal className="h-3.5 w-3.5" strokeWidth={2} />}
+                        {networkLabel(partnerLocation.network_type)}
+                      </span>
+                    )}
+                    {homeStats.timesLeft > 0 && (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
+                        <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
+                        Saiu {homeStats.timesLeft === 1 ? '1 vez' : `${homeStats.timesLeft}×`} hoje
+                      </span>
+                    )}
+                    {homeStats.totalAwayMs > 60_000 && (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#F7F5F2] px-3 text-[12px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
+                        <Clock className="h-3.5 w-3.5" strokeWidth={2} />
+                        {formatDuration(homeStats.totalAwayMs)} fora de casa
+                      </span>
+                    )}
+                    <span className="inline-flex h-[30px] items-center px-1 text-[12px] text-muted-foreground">
+                      Atualizado {shortTimeAgo(partnerLocation.updated_at)}
+                    </span>
+                  </div>
 
                   {/* Juntos */}
                   {together && (
-                    <div className="mt-3 rounded-[18px] bg-[#FFF0F4] p-3 dark:bg-rose-950/20">
-                      <p className="flex items-center gap-2 text-[13.5px] font-bold text-[#9F1239] dark:text-rose-300">
-                        <Heart className="h-4 w-4" fill="currentColor" strokeWidth={2} />
+                    <div className="mt-3.5 rounded-[20px] bg-gradient-to-br from-[#FFF0F4] to-[#FDF4FF] p-3.5 dark:from-rose-950/30 dark:to-violet-950/20">
+                      <p className="flex items-center gap-2 text-[14px] font-bold text-[#B0244A] dark:text-rose-300">
+                        <Heart className="h-4 w-4 text-[#E8456B]" fill="currentColor" strokeWidth={0} />
                         Estão juntos agora
                       </p>
                       <div className="mt-2.5 flex gap-2">
-                        <button onClick={() => navigate('/memorias')} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[#FBCFDA] bg-white text-[12.5px] font-bold text-foreground active:scale-95 dark:border-rose-900/40 dark:bg-card">
+                        <button onClick={() => navigate('/memorias')} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[#F8D5DE] bg-white text-[12.5px] font-semibold text-foreground active:scale-95 dark:border-rose-900/40 dark:bg-card">
                           <Camera className="h-[15px] w-[15px]" strokeWidth={1.9} /> Criar memória
                         </button>
-                        <button onClick={() => setShowHistoriaSheet(true)} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[#FBCFDA] bg-white text-[12.5px] font-bold text-foreground active:scale-95 dark:border-rose-900/40 dark:bg-card">
+                        <button onClick={() => setShowHistoriaSheet(true)} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[#F8D5DE] bg-white text-[12.5px] font-semibold text-foreground active:scale-95 dark:border-rose-900/40 dark:bg-card">
                           <BookOpen className="h-[15px] w-[15px]" strokeWidth={1.9} /> Nossa História
                         </button>
                       </div>
@@ -899,6 +881,8 @@ export default function Localizacao() {
 
       {showOnboarding && (
         <LocationOnboarding
+          sharing={mySharing}
+          onActivate={() => { localStorage.setItem('location-onboarding-seen', 'true'); setShowOnboarding(false); if (!mySharing) toggleSharing(); }}
           onClose={() => { localStorage.setItem('location-onboarding-seen', 'true'); setShowOnboarding(false); }}
         />
       )}
