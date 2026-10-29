@@ -136,11 +136,11 @@ export function CycleHomeCard() {
       onClick={() => navigate("/ciclo")}
       style={vars}
       aria-label={`${isMale ? "Ciclo dela" : "O teu ciclo"}: ${look.name}, dia ${e.cycleDay}`}
-      className="relative isolate flex w-full items-center gap-3 overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white p-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
+      className="relative isolate flex w-full items-center gap-3 overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white px-3.5 py-3 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
     >
       {/* ── Desenho da fase, com um brilho suave à volta, e estrelinhas ── */}
-      <span className="absolute -right-10 -top-12 -z-10 h-40 w-40 rounded-full" style={{ background: `radial-gradient(circle, ${look.c}26, transparent 66%)` }} aria-hidden="true" />
-      <svg className="cycle-art absolute -right-2.5 -top-2.5 -z-10 h-[76px] w-[76px]" viewBox="0 0 100 100" aria-hidden="true">
+      <span className="absolute -right-9 -top-10 -z-10 h-32 w-32 rounded-full" style={{ background: `radial-gradient(circle, ${look.c}26, transparent 66%)` }} aria-hidden="true" />
+      <svg className="cycle-art absolute -right-2 -top-2 -z-10 h-[58px] w-[58px]" viewBox="0 0 100 100" aria-hidden="true">
         <defs>
           <linearGradient id="cycle-art-grad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#fff" stopOpacity=".95" />
@@ -157,8 +157,8 @@ export function CycleHomeCard() {
       ))}
 
       {/* ── Anel com o dia ── */}
-      <div className="relative h-20 w-20 shrink-0">
-        <svg className="h-20 w-20 overflow-visible" viewBox="0 0 96 96" aria-hidden="true">
+      <div className="relative h-16 w-16 shrink-0">
+        <svg className="h-16 w-16 overflow-visible" viewBox="0 0 96 96" aria-hidden="true">
           {Array.from({ length: len }, (_, i) => {
             const d = i + 1, [x, y] = at(d), col = colorOf(d);
             return (
@@ -170,21 +170,21 @@ export function CycleHomeCard() {
           <circle cx={tx} cy={ty} r="7" fill="#fff" stroke={look.c} strokeWidth="2.5" />
           <circle cx={tx} cy={ty} r="2.6" fill={look.c} />
         </svg>
-        <div className="absolute inset-[18px] grid place-content-center rounded-full bg-white text-center shadow-[0_6px_16px_-6px_var(--shadow)] dark:bg-card">
-          <b className="text-[20px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1324] tabular-nums dark:text-foreground">{e.cycleDay}</b>
-          <span className="mt-0.5 text-[9px] font-bold tracking-[0.08em] text-[var(--c)]">DIA</span>
+        <div className="absolute inset-[14px] grid place-content-center rounded-full bg-white text-center shadow-[0_6px_16px_-6px_var(--shadow)] dark:bg-card">
+          <b className="text-[16px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1324] tabular-nums dark:text-foreground">{e.cycleDay}</b>
+          <span className="text-[7.5px] font-bold tracking-[0.08em] text-[var(--c)]">DIA</span>
         </div>
       </div>
 
       {/* ── Fase, frase e próximo marco ── */}
-      <div className="min-w-0 flex-1 pr-11">
-        <span className="inline-flex h-[22px] items-center gap-[5px] rounded-full pl-[7px] pr-[9px] text-[11px] font-bold text-[var(--deep)] dark:text-[var(--c)]" style={{ background: `${look.c}14` }}>
+      <div className="min-w-0 flex-1 pr-8">
+        <span className="inline-flex h-5 items-center gap-1 rounded-full pl-1.5 pr-2 text-[10.5px] font-bold text-[var(--deep)] dark:text-[var(--c)]" style={{ background: `${look.c}14` }}>
           <svg className="h-3 w-2.5" viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8a5 4.6 0 0 0 10 0C10 5.6 5 0 5 0Z" fill="currentColor" /></svg>
           {isMale ? "Ciclo dela" : "O teu ciclo"}
         </span>
-        <p className="mt-1.5 text-balance text-[19px] font-extrabold leading-[1.05] tracking-[-0.03em] text-[#0B1324] dark:text-foreground">{look.name}</p>
-        <p className="mt-1 text-[12.5px] leading-snug text-[#4A5060] dark:text-foreground/70">{isMale ? look.him : look.her}</p>
-        <span className="mt-[9px] inline-flex h-[26px] items-center gap-1.5 rounded-full bg-[#F4F1EC] px-2.5 text-[11.5px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
+        <p className="mt-1 text-balance text-[16px] font-extrabold leading-[1.1] tracking-[-0.03em] text-[#0B1324] dark:text-foreground">{look.name}</p>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#4A5060] dark:text-foreground/70">{isMale ? look.him : look.her}</p>
+        <span className="mt-1.5 inline-flex h-[22px] items-center gap-1.5 rounded-full bg-[#F4F1EC] px-2 text-[11px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
           <i className="h-1.5 w-1.5 rounded-full bg-[var(--c)]" />
           {nextMark(e, key, today)}
         </span>
