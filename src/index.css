@@ -890,37 +890,27 @@ input, textarea, [contenteditable="true"] {
   --fi-off-line: hsl(var(--border));
 }
 
-/* Jornada: barra elétrica na cor do Guardião (azul) */
-.journey-bolt {
-  background: linear-gradient(90deg, #2F6BFF, #5AA9FF 55%, #8FD0FF);
-  box-shadow: 0 0 8px rgba(47, 107, 255, 0.55);
-  overflow: hidden;
+
+
+/* Cartão do ciclo na Home: fundo na cor da fase, desenho a flutuar, estrelinhas a subir */
+.cycle-card { background: linear-gradient(140deg, var(--g1), var(--g2)); }
+.dark .cycle-card { background: linear-gradient(140deg, color-mix(in srgb, var(--c) 22%, hsl(var(--card))), hsl(var(--card))); }
+.cycle-art { filter: drop-shadow(0 10px 18px var(--shadow)); animation: cycle-float 6s ease-in-out infinite; }
+.cycle-spark { opacity: 0; animation: cycle-rise 5s linear infinite; }
+.cycle-today-pulse { transform-box: fill-box; transform-origin: center; animation: cycle-pulse 2.2s ease-out infinite; }
+@keyframes cycle-float {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50%      { transform: translateY(-6px) rotate(-3deg); }
 }
-.journey-bolt::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 45%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
-  animation: journey-spark 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+@keyframes cycle-rise {
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  20%  { opacity: 0.8; }
+  100% { transform: translateY(-70px) scale(1); opacity: 0; }
 }
-.journey-node {
-  background: radial-gradient(circle at 35% 30%, #8FD0FF, #2F6BFF);
-  box-shadow: 0 0 6px rgba(47, 107, 255, 0.6);
-}
-.journey-ring {
-  border: 1.5px solid rgba(47, 107, 255, 0.55);
-  animation: journey-ripple 1.9s ease-out infinite;
-}
-@keyframes journey-spark {
-  from { transform: translateX(-120%); }
-  to   { transform: translateX(260%); }
-}
-@keyframes journey-ripple {
-  0%   { transform: scale(1);   opacity: 0.9; }
-  100% { transform: scale(2.6); opacity: 0; }
+@keyframes cycle-pulse {
+  from { transform: scale(1); opacity: 0.55; }
+  to   { transform: scale(2.4); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .journey-bolt::after, .journey-ring { animation: none; }
-  .journey-ring { opacity: 0.4; }
+  .cycle-art, .cycle-spark, .cycle-today-pulse { animation: none; }
 }
