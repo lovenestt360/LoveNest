@@ -95,7 +95,7 @@ function Topo() {
 function Face({ initial, photo, tone, live, off }: { initial: string; photo?: string | null; tone: "par" | "me"; live?: boolean; off?: boolean }) {
   return (
     <span className={cn(
-      "relative grid h-12 w-12 shrink-0 place-items-center rounded-full border-[3px] border-white text-[17px] font-bold text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.55)] dark:border-card",
+      "relative grid h-10 w-10 shrink-0 place-items-center rounded-full border-[2.5px] border-white text-[15px] font-bold text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.55)] dark:border-card",
       tone === "par" ? "bg-gradient-to-b from-[#7AA2FF] to-[#3B6FF5]" : "bg-gradient-to-b from-[#FF9DB5] to-[#E8456B]",
       off && "opacity-55 grayscale",
     )}>
@@ -106,7 +106,7 @@ function Face({ initial, photo, tone, live, off }: { initial: string; photo?: st
 }
 
 const Place = ({ children }: { children: string }) => (
-  <span className="inline-flex h-[22px] max-w-[150px] items-center truncate rounded-full bg-white/85 px-2.5 text-[11px] font-semibold text-[#3A4150] shadow-[0_2px_8px_-4px_rgba(11,19,36,0.25)] backdrop-blur-sm dark:bg-card/85 dark:text-foreground/80">
+  <span className="inline-flex h-5 max-w-[150px] items-center truncate rounded-full bg-white/85 px-2 text-[10.5px] font-semibold text-[#3A4150] shadow-[0_2px_8px_-4px_rgba(11,19,36,0.25)] backdrop-blur-sm dark:bg-card/85 dark:text-foreground/80">
     <span className="truncate">{children}</span>
   </span>
 );
@@ -154,7 +154,7 @@ export function LocationHomeCard() {
       className="w-full overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
     >
       <div className={cn(
-        "relative h-[138px] overflow-hidden text-[#0B1324] dark:text-foreground",
+        "relative h-[100px] overflow-hidden text-[#0B1324] dark:text-foreground",
         !active ? "bg-gradient-to-br from-[#F4F2EF] to-[#F7F5F2] dark:from-muted dark:to-muted"
           : together ? "bg-gradient-to-br from-[#FFF0F4] via-[#FDF4FF] to-[#FFEFE8] dark:from-rose-950/30 dark:via-violet-950/20 dark:to-rose-950/20"
           : "bg-gradient-to-br from-[#EAF1FF] via-[#F7F3FF] to-[#FFEFF3] dark:from-sky-950/30 dark:via-violet-950/20 dark:to-rose-950/20",
@@ -168,38 +168,38 @@ export function LocationHomeCard() {
                 <path d={SPARK} fill={fill as string} />
               </svg>
             ))}
-            <div className="absolute left-1/2 top-[26px] flex -translate-x-1/2 flex-col items-center gap-2">
+            <div className="absolute left-1/2 top-[18px] flex -translate-x-1/2 flex-col items-center gap-1.5">
               <div className="relative flex">
                 <svg className="absolute -top-4 left-1/2 z-10 -translate-x-1/2 motion-safe:animate-pulse" width="20" height="20" viewBox="0 0 24 24">
                   <path d={HEART} fill="#E8456B" stroke="#fff" strokeWidth="2" />
                 </svg>
                 <Face initial={partnerInitial} photo={partner?.avatar_url} tone="par" />
-                <span className="-ml-3.5"><Face initial={myInitial} tone="me" /></span>
+                <span className="-ml-3"><Face initial={myInitial} tone="me" /></span>
               </div>
               {(myZone || partnerZone) && <Place>{(myZone || partnerZone)!}</Place>}
             </div>
           </>
         ) : (
           <>
-            <svg viewBox="0 0 358 138" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-              <path d="M88 64 Q 179 4 270 64" fill="none" stroke="currentColor" strokeOpacity={active ? 0.35 : 0.18} strokeWidth="2" strokeDasharray="1 7" strokeLinecap="round" />
+            <svg viewBox="0 0 358 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+              <path d="M88 46 Q 179 -6 270 46" fill="none" stroke="currentColor" strokeOpacity={active ? 0.35 : 0.18} strokeWidth="2" strokeDasharray="1 7" strokeLinecap="round" />
             </svg>
-            <span className={cn("absolute left-1/2 top-[30px] inline-flex h-7 -translate-x-1/2 items-center gap-1.5 rounded-full bg-white px-3 text-[12.5px] font-bold shadow-[0_6px_16px_-8px_rgba(11,19,36,0.45)] dark:bg-card",
+            <span className={cn("absolute left-1/2 top-[18px] inline-flex h-6 -translate-x-1/2 items-center gap-1.5 rounded-full bg-white px-2.5 text-[12px] font-bold shadow-[0_6px_16px_-8px_rgba(11,19,36,0.45)] dark:bg-card",
               !active && "text-muted-foreground")}>
               {active && distance !== null ? (
                 <>
-                  <svg className="motion-safe:animate-pulse" width="13" height="13" viewBox="0 0 24 24"><path d={HEART} fill="#E8456B" /></svg>
+                  <svg className="motion-safe:animate-pulse" width="12" height="12" viewBox="0 0 24 24"><path d={HEART} fill="#E8456B" /></svg>
                   {fmtDistance(distance)}
                 </>
               ) : active ? (
                 <svg width="13" height="13" viewBox="0 0 24 24"><path d={HEART} fill="#E8456B" /></svg>
               ) : "?"}
             </span>
-            <div className="absolute left-[24.5%] top-[42px] flex -translate-x-1/2 flex-col items-center gap-1.5">
+            <div className="absolute left-[24.5%] top-[26px] flex -translate-x-1/2 flex-col items-center gap-1">
               <Face initial={partnerInitial} photo={partner?.avatar_url} tone="par" live={active && partnerSharing} off={!active} />
               {partnerZone && <Place>{partnerZone}</Place>}
             </div>
-            <div className="absolute left-[75.5%] top-[42px] flex -translate-x-1/2 flex-col items-center gap-1.5">
+            <div className="absolute left-[75.5%] top-[26px] flex -translate-x-1/2 flex-col items-center gap-1">
               <Face initial={myInitial} tone="me" off={!active} />
               {myZone && <Place>{myZone}</Place>}
             </div>
@@ -207,20 +207,20 @@ export function LocationHomeCard() {
         )}
       </div>
 
-      <div className="flex items-center gap-3 px-3.5 pb-3.5 pt-3">
+      <div className="flex items-center gap-3 px-3.5 pb-3 pt-2.5">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          <p className="flex items-center gap-2 text-[14px] font-semibold tracking-[-0.01em] text-foreground">
             Onde estamos
             {active && (
-              <span className="inline-flex h-[22px] items-center gap-1.5 rounded-full bg-[#EEF8F1] px-2 text-[11px] font-bold text-[#23733F] dark:bg-emerald-950/40 dark:text-emerald-300">
+              <span className="inline-flex h-5 items-center gap-1.5 rounded-full bg-[#EEF8F1] px-2 text-[10.5px] font-bold text-[#23733F] dark:bg-emerald-950/40 dark:text-emerald-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#23A15A] shadow-[0_0_0_3px_rgba(35,161,90,0.18)]" />Ao vivo
               </span>
             )}
           </p>
           {active ? (
             <>
-              <p className="mt-0.5 truncate text-[13px] text-[#3A4150] dark:text-foreground/80">{line}</p>
-              <p className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+              <p className="mt-0.5 truncate text-[12.5px] text-[#3A4150] dark:text-foreground/80">{line}</p>
+              <p className="mt-px flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 {updatedAt && `Atualizado ${timeAgo(updatedAt)}`}
                 {battery != null && (
                   <span className="inline-flex items-center gap-1">
@@ -242,11 +242,11 @@ export function LocationHomeCard() {
           )}
         </div>
         {active ? (
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F4F1EC] text-foreground dark:bg-muted">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#F4F1EC] text-foreground dark:bg-muted">
             <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
           </span>
         ) : (
-          <span className="inline-flex h-9 shrink-0 items-center rounded-xl bg-[#0B1324] px-3.5 text-[13px] font-semibold text-white dark:bg-foreground dark:text-background">
+          <span className="inline-flex h-8 shrink-0 items-center rounded-xl bg-[#0B1324] px-3 text-[12.5px] font-semibold text-white dark:bg-foreground dark:text-background">
             Ativar
           </span>
         )}
