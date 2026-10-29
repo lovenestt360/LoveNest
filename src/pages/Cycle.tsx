@@ -100,8 +100,8 @@ export default function Cycle() {
               </div>
             )}
           </header>
-          {user && data.spaceId && partner?.user_id && (
-            <CycleCareCard userId={user.id} spaceId={data.spaceId} partnerId={partner.user_id} partnerName={partnerName} />
+          {user && data.spaceId && (
+            <CycleCareCard userId={user.id} spaceId={data.spaceId} partnerName={partnerName} />
           )}
           <CycleToday data={data} onOpenCalendar={() => setView("calendario")} />
           {data.engine && <div className="pt-1"><KnowledgeCenterCard /></div>}
