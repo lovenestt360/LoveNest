@@ -1,114 +1,198 @@
+import type { CSSProperties, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { FeatureGlyph, type GlyphKind } from "@/features/home/FeatureIcon";
-import { cn } from "@/lib/utils";
+import { todayLocal } from "@/lib/timezone";
 import { useCycleData } from "./useCycleData";
-import type { CycleEngineOutput } from "./engine";
+import { daysBetween, type CycleEngineOutput } from "./engine";
+import { MONTHS, asDate } from "./cycleUi";
 
-// ── Metadados por fase ────────────────────────────────────────────────────────
+// ── Cada fase: cores do cartão, desenho e frases (para ela e para ele) ───────
 
-type PhaseMeta = { label: string; bar: string; glyph: GlyphKind };
+type PhaseKey = "menstrual" | "folicular" | "fertil" | "ovulacao" | "lutea" | "tpm";
 
-const PHASE_META: Record<string, PhaseMeta> = {
-  menstrual: { label: "Menstruação", bar: "bg-rose-400",    glyph: "menstrual" },
-  folicular: { label: "Folicular",   bar: "bg-sky-300",     glyph: "folicular" },
-  ovulacao:  { label: "Ovulação",    bar: "bg-amber-400",   glyph: "ovulacao" },
-  luteal:    { label: "Lútea",       bar: "bg-violet-400",  glyph: "lutea" },
-  sem_dados: { label: "Sem dados",   bar: "bg-muted-foreground/20", glyph: "lutea" },
+type PhaseLook = {
+  name: string;
+  c: string; deep: string; g1: string; g2: string; edge: string; shadow: string;
+  art: keyof typeof ART;
+  her: string; him: string;
 };
 
-function getPhaseKey(engine: CycleEngineOutput): string {
-  const p = engine.phase;
-  if (p === "menstrual") return "menstrual";
-  if (p === "folicular") return "folicular";
-  if (p === "ovulacao")  return "ovulacao";
-  if (p === "luteal")    return "luteal";
-  return "sem_dados";
+const PHASES: Record<PhaseKey, PhaseLook> = {
+  menstrual: { name: "Menstruação", c: "#E8456B", deep: "#B8264C", g1: "#FFF3F6", g2: "#FFDCE5", edge: "#FBD3DE", shadow: "rgba(232,69,107,.35)", art: "drop",
+    her: "Dia de abrandar e mimar-te um pouco.", him: "Ela pode precisar de mais mimo hoje." },
+  folicular: { name: "Folicular", c: "#3E9BD8", deep: "#1F74AD", g1: "#F2FAFF", g2: "#D9EEFF", edge: "#CFE6F8", shadow: "rgba(62,155,216,.35)", art: "leaf",
+    her: "A tua energia está a voltar.", him: "A energia dela está a voltar." },
+  fertil: { name: "Janela fértil", c: "#2C9BE0", deep: "#16699E", g1: "#F1F9FF", g2: "#DCEBFF", edge: "#CDE2F7", shadow: "rgba(44,155,224,.35)", art: "heart",
+    her: "Gravidez mais provável nestes dias.", him: "Gravidez mais provável nestes dias." },
+  ovulacao: { name: "Ovulação", c: "#E89B0C", deep: "#A86A00", g1: "#FFFAEC", g2: "#FFE8B8", edge: "#F8E0A8", shadow: "rgba(232,155,12,.38)", art: "sun",
+    her: "Hoje é o teu dia mais fértil.", him: "Hoje é o dia mais fértil dela." },
+  lutea: { name: "Lútea", c: "#8B6FF0", deep: "#5B3FC4", g1: "#F7F3FF", g2: "#E6DEFF", edge: "#DDD2FA", shadow: "rgba(139,111,240,.35)", art: "moon",
+    her: "Energia mais calma, vai ao teu ritmo.", him: "Ela pode estar mais calma, acompanha-a." },
+  tpm: { name: "TPM", c: "#8B6FF0", deep: "#5B3FC4", g1: "#F7F3FF", g2: "#E6DEFF", edge: "#DDD2FA", shadow: "rgba(139,111,240,.35)", art: "moon",
+    her: "Sê gentil contigo, o período vem aí.", him: "Paciência e carinho fazem diferença." },
+};
+
+const GRAD = "url(#cycle-art-grad)";
+const ART = {
+  drop: (
+    <>
+      <path d="M50 6C50 6 18 44 18 64a32 32 0 0 0 64 0C82 44 50 6 50 6Z" fill={GRAD} />
+      <path d="M34 62a16 16 0 0 0 10 16" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" opacity=".7" />
+    </>
+  ),
+  leaf: (
+    <>
+      <path d="M50 92V48" stroke={GRAD} strokeWidth="6" strokeLinecap="round" />
+      <path d="M50 56C50 30 70 14 92 12 92 38 76 56 50 56Z" fill={GRAD} />
+      <path d="M50 66C50 46 34 32 12 30 12 52 28 66 50 66Z" fill={GRAD} opacity=".8" />
+    </>
+  ),
+  heart: (
+    <>
+      <path d="M50 88S10 62 10 36a20 20 0 0 1 40-6 20 20 0 0 1 40 6C90 62 50 88 50 88Z" fill={GRAD} />
+      <path d="M28 34a9 9 0 0 1 10-8" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" opacity=".7" />
+    </>
+  ),
+  sun: (
+    <>
+      <circle cx="50" cy="50" r="22" fill={GRAD} />
+      {Array.from({ length: 8 }, (_, k) => (
+        <rect key={k} x="47" y="6" width="6" height="16" rx="3" fill={GRAD} transform={`rotate(${k * 45} 50 50)`} />
+      ))}
+    </>
+  ),
+  moon: (
+    <>
+      <path d="M64 8A42 42 0 1 0 92 66 34 34 0 0 1 64 8Z" fill={GRAD} />
+      <circle cx="74" cy="26" r="3" fill="#fff" opacity=".8" />
+    </>
+  ),
+} satisfies Record<string, ReactNode>;
+
+// Cores dos dias no anel — as mesmas do anel da página do Ciclo.
+const DAY_COLOR = { period: "#E8456B", fertile: "#6DBDF0", ovulation: "#F2A91F", pms: "#A890F5" } as const;
+
+function phaseOf(e: CycleEngineOutput): PhaseKey {
+  if (e.isInPeriod || e.phase === "menstrual") return "menstrual";
+  if (e.phase === "ovulacao") return "ovulacao";
+  if (e.isInFertileWindow) return "fertil";
+  if (e.isInPmsWindow) return "tpm";
+  if (e.phase === "luteal") return "lutea";
+  return "folicular";
 }
 
-// ── Texto do próximo evento ───────────────────────────────────────────────────
+const fmt = (iso: string) => { const d = asDate(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 
-function nextEventText(engine: CycleEngineOutput, isMale: boolean): string {
-  const them = isMale ? "ela" : "tu";
-  const theirs = isMale ? "dela" : "tua";
-
-  if (engine.isInPeriod) {
-    return `Menstruação · dia ${engine.cycleDay} do ciclo`;
-  }
-  if (engine.isInFertileWindow) {
-    const end = new Date(engine.fertileEndStr + "T12:00:00");
-    const endFmt = end.toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
-    return `Janela fértil até ${endFmt}`;
-  }
-  if (engine.isInPmsWindow) {
-    const n = engine.daysUntilNextPeriod;
-    return `Fase pré-menstrual · ${n > 0 ? `menstruação em ${n} dias` : "brevemente"}`;
-  }
-  // Fertile window upcoming (within 5 days)
-  const daysToFertile = Math.round(
-    (new Date(engine.fertileStartStr + "T12:00:00").getTime() - Date.now()) / 86400000
-  );
-  if (daysToFertile > 0 && daysToFertile <= 5) {
-    return `Janela fértil em ${daysToFertile} dia${daysToFertile === 1 ? "" : "s"}`;
-  }
-
-  const n = engine.daysUntilNextPeriod;
-  const nextDate = new Date(engine.nextPeriodStr + "T12:00:00")
-    .toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
-  if (n <= 0) return `Menstruação prevista para ${nextDate}`;
-  return `Próxima menstruação em ${n} dia${n === 1 ? "" : "s"} · ${nextDate}`;
+// O próximo marco do ciclo, numa etiqueta curta.
+function nextMark(e: CycleEngineOutput, key: PhaseKey, today: string): string {
+  if ((key === "menstrual" || key === "folicular") && e.fertileStartStr > today) return `Fértil a partir de ${fmt(e.fertileStartStr)}`;
+  if (key === "fertil" && e.ovulationDateStr > today) return `Ovulação · ${fmt(e.ovulationDateStr)}`;
+  const n = e.daysUntilNextPeriod;
+  if (n <= 0) return "Período previsto para hoje";
+  if (n <= 7) return `Período em ${n} ${n === 1 ? "dia" : "dias"}`;
+  return `Período · ${fmt(e.nextPeriodStr)}`;
 }
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export function CycleHomeCard() {
   const navigate = useNavigate();
-  const { profile, engine, isMale, loading } = useCycleData();
+  const { profile, engine, isMale, loading, lastPeriod, openPeriod } = useCycleData();
 
   // Na Home o cartão só aparece com o ciclo configurado; a descoberta e a
-  // configuração vivem no separador Ciclo. O motor já vem com as médias
-  // aprendidas, igual ao ecrã do Ciclo.
-  if (loading || !profile || !engine) return null;
+  // configuração vivem no separador Ciclo.
+  if (loading || !profile || !engine || !lastPeriod) return null;
 
-  const phaseKey  = getPhaseKey(engine);
-  const meta      = PHASE_META[phaseKey];
-  const progress  = Math.max(2, Math.min(98, engine.cycleProgress));
-  const eventText = nextEventText(engine, isMale);
-  const label     = isMale ? "Ciclo dela" : "O teu ciclo";
+  const e = engine;
+  const key = phaseOf(e);
+  const look = PHASES[key];
+  const today = todayLocal();
+
+  // O anel: um traço por dia, colorido como na página do Ciclo.
+  const len = e.cycleLength;
+  const dayOf = (iso: string) => daysBetween(lastPeriod.start_date, iso) + 1;
+  const pDays = openPeriod ? Math.max(e.cycleDay, e.periodLength) : e.periodLength;
+  const fStart = dayOf(e.fertileStartStr), fEnd = dayOf(e.fertileEndStr);
+  const ovu = dayOf(e.ovulationDateStr), pms = dayOf(e.pmsStartStr);
+  const todayN = Math.min(e.cycleDay, len);
+  const colorOf = (d: number) =>
+    d <= pDays ? DAY_COLOR.period
+    : d === ovu ? DAY_COLOR.ovulation
+    : d >= fStart && d <= fEnd ? DAY_COLOR.fertile
+    : d >= pms ? DAY_COLOR.pms
+    : null;
+  const at = (d: number) => {
+    const a = ((d - 1) / len) * Math.PI * 2 - Math.PI / 2;
+    return [48 + 40 * Math.cos(a), 48 + 40 * Math.sin(a)] as const;
+  };
+  const [tx, ty] = at(todayN);
+
+  const vars = {
+    "--c": look.c, "--deep": look.deep, "--g1": look.g1, "--g2": look.g2, "--edge": look.edge, "--shadow": look.shadow,
+  } as CSSProperties;
 
   return (
     <button
       type="button"
       onClick={() => navigate("/ciclo")}
-      className="w-full rounded-[20px] border border-[#ECE8E3] bg-white px-3.5 pb-2.5 pt-[11px] text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
+      style={vars}
+      aria-label={`${isMale ? "Ciclo dela" : "O teu ciclo"}: ${look.name}, dia ${e.cycleDay}`}
+      className="cycle-card relative isolate flex w-full items-center gap-3.5 overflow-hidden rounded-[24px] border border-[var(--edge)] p-4 pb-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border"
     >
-      {/* ── Cabeçalho ── */}
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-[7px] text-[13px] font-semibold text-[#3A4150] dark:text-foreground/80">
-          <FeatureGlyph kind={meta.glyph} size={16} dim={phaseKey === "sem_dados"} />
-          {label}
-        </span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={2} />
+      {/* ── Cena: brilho, desenho da fase e estrelinhas ── */}
+      <span className="absolute -right-[50px] -top-[60px] -z-10 h-[210px] w-[210px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.85),transparent_66%)] dark:opacity-10" aria-hidden="true" />
+      <svg className="cycle-art absolute -right-3.5 -top-3 -z-10 h-28 w-28" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="cycle-art-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity=".95" />
+            <stop offset=".55" stopColor={look.c} stopOpacity=".55" />
+            <stop offset="1" stopColor={look.c} stopOpacity=".9" />
+          </linearGradient>
+        </defs>
+        {ART[look.art]}
+      </svg>
+      {[[62, 70, 0], [78, 80, 1.6], [70, 60, 3.2], [88, 55, 2.4]].map(([l, t, d]) => (
+        <svg key={l} className="cycle-spark absolute -z-10 h-2 w-2 text-[var(--c)]" style={{ left: `${l}%`, top: `${t}%`, animationDelay: `${d}s` }} viewBox="0 0 10 10" aria-hidden="true">
+          <path d="M5 0L6.2 3.8 10 5 6.2 6.2 5 10 3.8 6.2 0 5 3.8 3.8Z" fill="currentColor" />
+        </svg>
+      ))}
+
+      {/* ── Anel com o dia ── */}
+      <div className="relative h-24 w-24 shrink-0">
+        <svg className="h-24 w-24 overflow-visible" viewBox="0 0 96 96" aria-hidden="true">
+          {Array.from({ length: len }, (_, i) => {
+            const d = i + 1, [x, y] = at(d), col = colorOf(d);
+            return (
+              <rect key={d} x={x - 2} y={y - 5} width="4" height="10" rx="2" transform={`rotate(${(i / len) * 360} ${x} ${y})`}
+                fill={col ?? "#FFFFFF"} stroke={col ? undefined : look.edge} strokeWidth={col ? undefined : 0.8}
+                opacity={d < todayN ? 0.45 : 1} className={col ? undefined : "dark:fill-white/20 dark:stroke-transparent"} />
+            );
+          })}
+          <circle className="cycle-today-pulse" cx={tx} cy={ty} r="6" fill={look.c} />
+          <circle cx={tx} cy={ty} r="7" fill="#fff" stroke={look.c} strokeWidth="2.5" />
+          <circle cx={tx} cy={ty} r="2.6" fill={look.c} />
+        </svg>
+        <div className="absolute inset-[22px] grid place-content-center rounded-full bg-white text-center shadow-[0_6px_16px_-6px_var(--shadow)] dark:bg-card">
+          <b className="text-[24px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1324] tabular-nums dark:text-foreground">{e.cycleDay}</b>
+          <span className="mt-0.5 text-[9px] font-bold tracking-[0.08em] text-[var(--c)]">DIA</span>
+        </div>
       </div>
 
-      {/* ── Fase + dia ── */}
-      <div className="mt-2 flex items-center gap-2.5">
-        <span className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-          {meta.label}
+      {/* ── Fase, frase e próximo marco ── */}
+      <div className="min-w-0 flex-1 pr-7">
+        <span className="inline-flex h-[22px] items-center gap-[5px] rounded-full bg-white/75 pl-[7px] pr-[9px] text-[11px] font-bold text-[var(--deep)] dark:bg-white/10 dark:text-[var(--c)]">
+          <svg className="h-3 w-2.5" viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8a5 4.6 0 0 0 10 0C10 5.6 5 0 5 0Z" fill="currentColor" /></svg>
+          {isMale ? "Ciclo dela" : "O teu ciclo"}
         </span>
-        <span className="text-[12.5px] text-muted-foreground">Dia {engine.cycleDay}</span>
-        <span className="ml-auto text-[11.5px] tabular-nums text-muted-foreground/70">
-          {engine.cycleDay}/{engine.cycleLength} dias
+        <p className="mt-[7px] text-balance text-[22px] font-extrabold leading-[1.05] tracking-[-0.03em] text-[#0B1324] dark:text-foreground">{look.name}</p>
+        <p className="mt-1 text-[12.5px] leading-snug text-[#4A5060] dark:text-foreground/70">{isMale ? look.him : look.her}</p>
+        <span className="mt-[9px] inline-flex h-[26px] items-center gap-1.5 rounded-full bg-white/70 px-2.5 text-[11.5px] font-semibold text-[#3A4150] dark:bg-white/10 dark:text-foreground/80">
+          <i className="h-1.5 w-1.5 rounded-full bg-[var(--c)]" />
+          {nextMark(e, key, today)}
         </span>
       </div>
 
-      {/* ── Barra de progresso ── */}
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-[#F1EEEA] dark:bg-muted">
-        <div className={cn("h-full rounded-full transition-all duration-700", meta.bar)} style={{ width: `${progress}%` }} />
-      </div>
-
-      {/* ── Próximo evento ── */}
-      <p className="mt-[7px] text-[12px] leading-snug text-muted-foreground">{eventText}</p>
+      <ChevronRight className="absolute right-3.5 top-3.5 h-4 w-4 text-[#B7BBC2]" strokeWidth={2} aria-hidden="true" />
     </button>
   );
 }
