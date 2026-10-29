@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
 import { getFirebaseMessaging, getToken, onMessage } from "@/lib/firebase";
 import { savePushToken } from "@/lib/pushToken";
+import { CARE_EVENT, isCareDone, isCareSeen, parseCare, pendingCare } from "@/features/cycle/cycleCare";
 
 async function upsertFcmToken(fcmToken: string, userId: string, spaceId: string) {
   await savePushToken(fcmToken, userId, spaceId);
@@ -50,6 +51,8 @@ export function useAppNotifications() {
   const [prayerUnread, setPrayerUnread] = useState(0);
   const [complaintsUnread, setComplaintsUnread] = useState(0);
   const [capsuleUnread, setCapsuleUnread] = useState(0);
+  // Um carinho por ver no Ciclo (bolinha no separador).
+  const [cycleUnread, setCycleUnread] = useState(0);
   const locationRef = useRef(location.pathname);
   // Incrementar força o useEffect do canal a recriar a subscrição Realtime
   const [channelKey, setChannelKey] = useState(0);
@@ -64,6 +67,7 @@ export function useAppNotifications() {
     if (location.pathname === "/oracao") setPrayerUnread(0);
     if (location.pathname === "/conflitos") setComplaintsUnread(0);
     if (location.pathname === "/capsula") setCapsuleUnread(0);
+    if (location.pathname.startsWith("/ciclo")) setCycleUnread(0);
   }, [location.pathname]);
 
   const resetChatUnread = useCallback(() => setChatUnread(0), []);
@@ -74,6 +78,17 @@ export function useAppNotifications() {
   const resetPrayerUnread = useCallback(() => setPrayerUnread(0), []);
   const resetComplaintsUnread = useCallback(() => setComplaintsUnread(0), []);
   const resetCapsuleUnread = useCallback(() => setCapsuleUnread(0), []);
+  const resetCycleUnread = useCallback(() => setCycleUnread(0), []);
+
+  // Ao abrir a app: um carinho recebido que ela ainda não viu acende a bolinha.
+  useEffect(() => {
+    if (!spaceId || !user) return;
+    let alive = true;
+    pendingCare(spaceId, user.id).then((r) => {
+      if (alive && r && !isCareDone(r.msg.id) && !isCareSeen(r.msg.id) && !locationRef.current.startsWith("/ciclo")) setCycleUnread(1);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [spaceId, user]);
 
   // Mission complete notifications
   useEffect(() => {
@@ -109,6 +124,15 @@ export function useAppNotifications() {
         (payload) => {
           const msg = payload.new as { sender_user_id: string; content: string };
           if (msg.sender_user_id === user.id) return;
+          // Um carinho do Ciclo: bolinha no Ciclo, o cartão aparece e um aviso próprio.
+          const care = parseCare(msg.content);
+          if (care) {
+            window.dispatchEvent(new CustomEvent(CARE_EVENT));
+            if (!locationRef.current.startsWith("/ciclo")) setCycleUnread(1);
+            if (locationRef.current !== "/chat") setChatUnread((c) => c + 1);
+            toast({ title: "Recebeste um carinho", description: care.care.text });
+            return;
+          }
           if (locationRef.current !== "/chat") {
             setChatUnread((c) => c + 1);
             if (getNotifPrefs().chat) {
@@ -314,7 +338,7 @@ export function useAppNotifications() {
   }, [spaceId, user, channelKey]);
 
   useEffect(() => {
-    const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread + capsuleUnread;
+    const totalUnread = chatUnread + moodUnread + tasksUnread + memoriesUnread + scheduleUnread + prayerUnread + complaintsUnread + capsuleUnread + cycleUnread;
     if ('setAppBadge' in navigator) {
       if (totalUnread > 0) {
         // Safe casting to any because setAppBadge is still experimental/types missing in some TS configs
@@ -323,7 +347,7 @@ export function useAppNotifications() {
         (navigator as any).clearAppBadge().catch(console.error);
       }
     }
-  }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread]);
+  }, [chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread, cycleUnread]);
 
   // ── Notificações FCM em foreground ───────────────────────────────────────
   useEffect(() => {
@@ -399,5 +423,5 @@ export function useAppNotifications() {
     };
   }, [user, spaceId]);
 
-  return { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread, resetChatUnread, resetMoodUnread, resetTasksUnread, resetMemoriesUnread, resetScheduleUnread, resetPrayerUnread, resetComplaintsUnread, resetCapsuleUnread };
+  return { chatUnread, moodUnread, tasksUnread, memoriesUnread, scheduleUnread, prayerUnread, complaintsUnread, capsuleUnread, cycleUnread, resetCycleUnread, resetChatUnread, resetMoodUnread, resetTasksUnread, resetMemoriesUnread, resetScheduleUnread, resetPrayerUnread, resetComplaintsUnread, resetCapsuleUnread };
 }

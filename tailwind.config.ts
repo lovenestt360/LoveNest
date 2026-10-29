@@ -127,6 +127,15 @@ export default {
           "0%": { transform: "scale(1)", opacity: "0.7" },
           "80%, 100%": { transform: "scale(1.8)", opacity: "0" },
         },
+        // Cartão do carinho: entra a descer com um pequeno salto, sai a encolher.
+        "care-in": {
+          "0%": { opacity: "0", transform: "translateY(-14px) scale(0.96)" },
+          "60%": { opacity: "1", transform: "translateY(2px) scale(1.01)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "care-out": {
+          to: { opacity: "0", transform: "translateY(-8px) scale(0.97)" },
+        },
         "ring-dot-in": {
           from: { opacity: "0" },
           to: { opacity: "var(--o, 1)" },
@@ -144,6 +153,8 @@ export default {
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "ring-pulse": "ring-pulse 2.6s cubic-bezier(0.22,1,0.36,1) infinite",
         "ring-dot-in": "ring-dot-in 0.5s ease-out both",
+        "care-in": "care-in 0.55s cubic-bezier(0.22,1,0.36,1) both",
+        "care-out": "care-out 0.25s ease-in forwards",
       },
     },
   },

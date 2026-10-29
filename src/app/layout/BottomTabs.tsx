@@ -11,6 +11,8 @@ type Tab = {
   icon: LucideIcon;
   active: (pathname: string) => boolean;
   badge?: number;
+  /** Bolinha sem número (algo novo por ver). */
+  dot?: boolean;
 };
 
 const startsWithAny = (pathname: string, paths: string[]) =>
@@ -45,7 +47,7 @@ export function BottomTabs() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useProfile();
-  const { chatUnread } = useAppNotifContext();
+  const { chatUnread, cycleUnread } = useAppNotifContext();
 
   const isSolo = profile?.usage_mode === "solo";
   const hideCycle = isSolo && profile?.gender === "male";
@@ -78,6 +80,7 @@ export function BottomTabs() {
           label: "Ciclo",
           icon: Flower2,
           active: (pathname: string) => startsWithAny(pathname, ["/ciclo"]),
+          dot: cycleUnread > 0,
         }]
       : []),
     {
@@ -139,6 +142,12 @@ function TabButton({
         {badge > 0 && (
           <span className="absolute -right-2.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10.5px] font-bold leading-none text-white">
             {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+        {!badge && tab.dot && (
+          <span className="absolute -right-1 -top-0.5 flex h-[11px] w-[11px]" aria-label="Novidade">
+            <span className="absolute inset-0 rounded-full bg-rose-500 opacity-60 motion-safe:animate-ping" />
+            <span className="relative h-[11px] w-[11px] rounded-full bg-rose-500 ring-2 ring-white dark:ring-card" />
           </span>
         )}
       </span>

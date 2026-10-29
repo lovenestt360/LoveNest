@@ -10,6 +10,8 @@ interface AppNotifContextType {
   prayerUnread: number;
   complaintsUnread: number;
   capsuleUnread: number;
+  cycleUnread: number;
+  resetCycleUnread: () => void;
   resetChatUnread: () => void;
   resetMoodUnread: () => void;
   resetTasksUnread: () => void;
@@ -29,6 +31,8 @@ const AppNotifContext = createContext<AppNotifContextType>({
   prayerUnread: 0,
   complaintsUnread: 0,
   capsuleUnread: 0,
+  cycleUnread: 0,
+  resetCycleUnread: () => {},
   resetChatUnread: () => {},
   resetMoodUnread: () => {},
   resetTasksUnread: () => {},

@@ -48,6 +48,31 @@ export async function latestCare(spaceId: string, fromUser: string, toUser: stri
   return { msg, parsed: parseCare(msg.content)!, reply: ((after as CareMessage[] | null) ?? [])[0] ?? null };
 }
 
+/** Ela: o último carinho recebido nas últimas 24 h, se ela ainda não respondeu. */
+export async function pendingCare(spaceId: string, userId: string) {
+  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const { data } = await supabase.from("messages").select("id, created_at, sender_user_id, content")
+    .eq("couple_space_id", spaceId).neq("sender_user_id", userId).eq("is_deleted", false)
+    .gte("created_at", since).order("created_at", { ascending: false }).limit(30);
+  const msg = ((data as CareMessage[] | null) ?? []).find((m) => parseCare(m.content));
+  if (!msg) return null;
+  const { data: after } = await supabase.from("messages").select("id")
+    .eq("couple_space_id", spaceId).eq("sender_user_id", userId).eq("is_deleted", false)
+    .gt("created_at", msg.created_at).limit(1);
+  return (after ?? []).length ? null : { msg, parsed: parseCare(msg.content)! };
+}
+
+// Fechado (X, obrigada ou responder) e visto (já apareceu no Ciclo; apaga a bolinha).
+const flag = (key: string) => { try { return !!localStorage.getItem(key); } catch { return false; } };
+const setFlag = (key: string) => { try { localStorage.setItem(key, "1"); } catch { /* sem armazenamento */ } };
+export const isCareDone = (id: string) => flag(`care_done_${id}`);
+export const markCareDone = (id: string) => setFlag(`care_done_${id}`);
+export const isCareSeen = (id: string) => flag(`care_seen_${id}`);
+export const markCareSeen = (id: string) => setFlag(`care_seen_${id}`);
+
+/** Avisado quando chega um carinho em tempo real, para o cartão aparecer sem recarregar. */
+export const CARE_EVENT = "care-received";
+
 /** "agora", "há 5 min", "há 3 h" */
 export function ago(iso: string) {
   const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
