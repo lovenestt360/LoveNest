@@ -4,7 +4,7 @@ export interface Country {
     language: string;
 }
 
-export const COUNTRIES: Country[] = [
+const LIST: Country[] = [
     { name: "Portugal", code: "PT", language: "pt" },
     { name: "Brasil", code: "BR", language: "pt" },
     { name: "Angola", code: "AO", language: "pt" },
@@ -105,4 +105,13 @@ export const COUNTRIES: Country[] = [
     { name: "Austrália", code: "AU", language: "en" },
     { name: "Nova Zelândia", code: "NZ", language: "en" },
     { name: "Outro país", code: "XX", language: "pt" },
+];
+
+// Moçambique primeiro, depois por ordem alfabética (com acentos à portuguesa)
+// e "Outro país" no fim.
+const byName = (a: Country, b: Country) => a.name.localeCompare(b.name, "pt");
+export const COUNTRIES: Country[] = [
+    ...LIST.filter((c) => c.code === "MZ"),
+    ...LIST.filter((c) => c.code !== "MZ" && c.code !== "XX").sort(byName),
+    ...LIST.filter((c) => c.code === "XX"),
 ];
