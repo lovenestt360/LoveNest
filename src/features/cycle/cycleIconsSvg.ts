@@ -13,6 +13,8 @@ const drop = (x: number, y: number, s: number, fill: string) => `<path transform
 const star4 = (x: number, y: number, r: number, fill: string) => `<path d="M${x} ${y - r}C${x + r * .18} ${y - r * .18} ${x + r * .18} ${y - r * .18} ${x + r} ${y}C${x + r * .18} ${y + r * .18} ${x + r * .18} ${y + r * .18} ${x} ${y + r}C${x - r * .18} ${y + r * .18} ${x - r * .18} ${y + r * .18} ${x - r} ${y}C${x - r * .18} ${y - r * .18} ${x - r * .18} ${y - r * .18} ${x} ${y - r}Z" fill="${fill}"/>`;
 const ROSE = (u: string) => lg(u + "a", "#FF9BB2", "#E8284F");
 
+const HG = (id: string, a: string, b: string) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const face = (u: string, a: string, b: string) => `<defs>${rg(u + "a", a, b)}${soft(u + "f")}</defs><g filter="url(#${u}f)"><circle cx="32" cy="34" r="19" fill="url(#${u}a)"/></g>`;
 const ICONS = {
   calendario: (u: string) => `<defs>${lg(u + "a", "#FF9BB2", "#E8456B")}</defs>
     <rect x="10" y="14" width="44" height="40" rx="10" fill="#fff" stroke="#0B1324" stroke-width="3.4"/>
@@ -104,9 +106,6 @@ const ICONS = {
   partilha: (u: string) => `<defs>${lg(u + "a", "#FFB4C4", "#EC4C72")}${lg(u + "b", "#A9CCFF", "#3B82F6")}</defs>
     <circle cx="23" cy="24" r="9" fill="url(#${u}a)"/><circle cx="43" cy="24" r="9" fill="url(#${u}b)"/>
     <path d="M8 52c0-9 6.7-15 15-15s15 6 15 15Z" fill="url(#${u}a)"/><path d="M28 52c0-9 6.7-15 15-15s15 6 15 15Z" fill="url(#${u}b)" opacity=".9"/>`,
-  olho: (u: string) => `<defs>${rg(u + "a", "#A9CCFF", "#3B82F6")}</defs>
-    <path d="M6 32C13 20 22 14 32 14s19 6 26 18c-7 12-16 18-26 18S13 44 6 32Z" fill="#fff" stroke="#0B1324" stroke-width="3.2"/>
-    <circle cx="32" cy="32" r="10" fill="url(#${u}a)"/><circle cx="32" cy="32" r="4" fill="#0B1324"/><circle cx="35" cy="28.5" r="2" fill="#fff"/>`,
   mais: () => `<path d="M32 18v28M18 32h28" stroke="#7A7F8C" stroke-width="4" stroke-linecap="round"/>`,
   // ── Centro de Conhecimento (docs/mockups/conhecimento-proposta.html) ──
   ciclo: () => {
@@ -149,6 +148,56 @@ const ICONS = {
   guardar: () => `<path d="M18 10h28v44L32 44 18 54Z" fill="none" stroke="#636978" stroke-width="4" stroke-linejoin="round"/>`,
   guardado: () => `<path d="M18 10h28v44L32 44 18 54Z" fill="#0B1324" stroke="#0B1324" stroke-width="4" stroke-linejoin="round"/>`,
   lupa: () => `<circle cx="28" cy="28" r="15" fill="none" stroke="#77736C" stroke-width="5"/><path d="M39 39l13 13" stroke="#77736C" stroke-width="5" stroke-linecap="round"/>`,
+  // ── Mais sintomas e o carinho (docs/mockups/anel-proposta.html) ──
+
+  pernas: (u: string) => `<defs>${lg(u+"a","#FFD9B8","#F29A6B")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M23 6h15v21c0 3.6 1 6.8 2.8 10l3.6 6.6c1.8 3.2 4.6 4.8 8.4 5.8 2.8.8 3.4 3.2 2.4 5.6H35c-2.6 0-4.2-1.2-5.2-3.6L24.4 44C23.4 41.4 23 38.8 23 36Z" fill="url(#${u}a)"/></g>
+    <path d="M7 22l4.5 2-2 4 4.5 2M45 12l4.5 2-2 4 4.5 2" stroke="#9D7BF5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  tontura: (u: string) => `${face(u, "#FFE3D0", "#F4B48E")}
+    <circle cx="25" cy="33" r="3.6" fill="none" stroke="#8A4B2C" stroke-width="2"/><circle cx="25" cy="33" r="1.1" fill="#8A4B2C"/>
+    <circle cx="39" cy="33" r="3.6" fill="none" stroke="#8A4B2C" stroke-width="2"/><circle cx="39" cy="33" r="1.1" fill="#8A4B2C"/>
+    <path d="M25 43.5q2.3-2 4.6 0t4.6 0t4.6 0" stroke="#8A4B2C" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <ellipse cx="32" cy="12" rx="15" ry="4.2" fill="none" stroke="#F2A91F" stroke-width="2.2"/>${star4(17.5, 12, 3.6, "#F2A91F")}${star4(46, 10.5, 3, "#9D7BF5")}`,
+  fraqueza: (u: string) => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <path d="M22 57V36c0-11 7-18 17-18 4 0 7 1.4 8.6 3.6" stroke="#2FB67A" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+    <path d="M22 46c-7 0-11-4.4-11-10 6.6 0 11 4.4 11 10Z" fill="#2FB67A"/>
+    <g filter="url(#${u}f)"><path d="M47.5 22c6 0 9.5 5 9.5 11 0 5-3 9.6-9.5 14-6.5-4.4-9.5-9-9.5-14 0-6 3.5-11 9.5-11Z" fill="url(#${u}a)"/></g>
+    <ellipse cx="44.5" cy="30" rx="2.4" ry="4.2" fill="url(#${u}s)"/>`,
+  gases: (u: string) => `<defs>${rg(u+"a","#D2F5E3","#5CC995")}${shine(u+"s")}</defs>
+    <circle cx="25" cy="39" r="14" fill="url(#${u}a)"/><ellipse cx="20" cy="33" rx="4" ry="5.5" fill="url(#${u}s)" transform="rotate(-25 20 33)"/>
+    <circle cx="43" cy="21" r="9" fill="url(#${u}a)"/><ellipse cx="40" cy="17.5" rx="2.6" ry="3.6" fill="url(#${u}s)" transform="rotate(-25 40 17.5)"/>
+    <circle cx="47" cy="44" r="5.5" fill="url(#${u}a)"/>`,
+  diarreia: (u: string) => `<defs>${lg(u+"a","#FFFFFF","#E3DED7")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M14 17v27c0 3 6 5.4 13.5 5.4S41 47 41 44V17Z" fill="url(#${u}a)" stroke="#D9D3CB" stroke-width="1.6"/>
+    <ellipse cx="27.5" cy="17" rx="13.5" ry="5" fill="#fff" stroke="#D9D3CB" stroke-width="1.6"/><ellipse cx="27.5" cy="17" rx="4" ry="1.7" fill="#B9B2A8"/>
+    <path d="M41 26h11v26H41Z" fill="#fff" stroke="#D9D3CB" stroke-width="1.6"/></g>
+    <path d="M42.5 35h8M42.5 44h8" stroke="#D9D3CB" stroke-width="1.6" stroke-dasharray="2 2"/>`,
+  prisao: (u: string) => `<defs>${lg(u+"a","#FFC6D3","#F0678A")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M25 7v8c0 4.4-7.5 6.4-9.6 14-2.8 10.4 3.6 22 15.6 23.6 10.4 1.4 19-4.6 19-14.2 0-7-5-10.4-9.4-10.4-3.4 0-5 2-6.2.2C33 25.8 35 22 35 18V7Z" fill="url(#${u}a)"/>
+    <ellipse cx="22" cy="31" rx="3.4" ry="6" fill="url(#${u}s)" transform="rotate(20 22 31)"/></g>
+    <path d="M27 41.5c-2.6-4 3.6-7 6-3.4s-3.6 6.4-6.4 2.6M33 38.5c2-1 5 0 6.5 2" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/>`,
+  fome: (u: string) => `<defs>${lg(u+"a","#FFD27A","#F2841F")}${soft(u+"f")}</defs>
+    <path d="M24 8c-3 4 3 6 0 10M32 6c-3 4 3 6 0 10M40 8c-3 4 3 6 0 10" stroke="#C9C2B8" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <g filter="url(#${u}f)"><path d="M8 29h48c0 13.6-10.4 23-24 23S8 42.6 8 29Z" fill="url(#${u}a)"/><rect x="6" y="25.5" width="52" height="6" rx="3" fill="#E36A12"/></g>`,
+  triste: (u: string) => `${face(u, "#CFE8FF", "#6FB2F0")}
+    <circle cx="25" cy="31" r="2.4" fill="#1E4E86"/><circle cx="39" cy="31" r="2.4" fill="#1E4E86"/>
+    <path d="M25 44.5q7-6 14 0" stroke="#1E4E86" stroke-width="2.6" stroke-linecap="round" fill="none"/>`,
+  choro: (u: string) => `${face(u, "#CFE8FF", "#6FB2F0")}
+    <path d="M21.5 30.5q3.5 2.6 7 0M35.5 30.5q3.5 2.6 7 0" stroke="#1E4E86" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <path d="M26 44q6-4.4 12 0" stroke="#1E4E86" stroke-width="2.6" stroke-linecap="round" fill="none"/>${drop(22, 41, .3, "#2F8FE0")}`,
+  altos: (u: string) => `<defs>${HG(u+"a", "#FF8FAA", "#8B6CF0")}</defs>
+    <path d="M7 38c6 0 7.5-20 14.5-20S30 46 37 46s8-24 14-24 6 8 6 8" stroke="url(#${u}a)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  abraco: (u: string) => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${lg(u+"b","#A9CCFF","#3B82F6")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">${heartAt(32, 30, 1.75, `url(#${u}a)`)}</g>
+    <path d="M9 27c0 13.4 10 25 23 25M55 27c0 13.4-10 25-23 25" stroke="url(#${u}b)" stroke-width="5.4" stroke-linecap="round" fill="none"/>`,
+  jantar: (u: string) => `<defs>${lg(u+"a","#FFFFFF","#ECE7E0")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><circle cx="32" cy="34" r="17" fill="url(#${u}a)" stroke="#D9D3CB" stroke-width="1.8"/><circle cx="32" cy="34" r="10" fill="none" stroke="#E4DED6" stroke-width="2"/></g>
+    <path d="M8 14v11c0 2.4 1.4 3.6 3 3.6V54M11 14v10M14 14v11c0 2.4-1.4 3.6-3 3.6" stroke="#7A7F8C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M55 54V14c-4.4 2.2-5.6 9-5.6 16H55" stroke="#7A7F8C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  flor: (u: string) => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${rg(u+"c","#FFF3B0","#F59E0B")}${soft(u+"f")}</defs>
+    <path d="M32 34v22" stroke="#2FB67A" stroke-width="3.4" stroke-linecap="round"/><path d="M32 50c-7-.6-11-5-11-10.6 6.6 0 11 4.4 11 10.6Z" fill="#2FB67A"/>
+    <g filter="url(#${u}f)">${[0, 72, 144, 216, 288].map((a) => `<circle cx="${32 + 10 * Math.cos((a - 90) * Math.PI / 180)}" cy="${23 + 10 * Math.sin((a - 90) * Math.PI / 180)}" r="8" fill="url(#${u}a)"/>`).join("")}</g>
+    <circle cx="32" cy="23" r="6" fill="url(#${u}c)"/>`,
 };
 
 export type CycleIconKind = keyof typeof ICONS;

@@ -73,7 +73,7 @@ export function SymptomTile({ icon, label, on, onClick, dashed }: { icon: CycleI
       <span className={cn(TILE, dashed && "border-dashed", on && cn(picked, "-translate-y-0.5"), onClick && "group-active:scale-[0.93]")}>
         <CycleIcon kind={icon} size={dashed ? 26 : 34} />
       </span>
-      <span className={cn(on && "font-semibold text-[#0B1324] dark:text-foreground")}>{label}</span>
+      <span className={cn("text-center leading-[1.15]", on && "font-semibold text-[#0B1324] dark:text-foreground")}>{label}</span>
     </>
   );
   const cls = "group flex flex-col items-center gap-1.5 text-[11.5px] font-medium text-[#3A4150] dark:text-foreground/75";

@@ -5,7 +5,7 @@ import faisca from "@/features/entry/assets/faisca.webp";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { cn } from "@/lib/utils";
 import { addDays, daysBetween, getDayType, type CyclePhase } from "./engine";
-import type { CycleData } from "./useCycleData";
+import type { CycleData, DailySymptom } from "./useCycleData";
 import { CycleIcon } from "./CycleIcon";
 import type { CycleIconKind } from "./cycleIconsSvg";
 import { CycleRing } from "./CycleRing";
@@ -251,25 +251,44 @@ function TodayView({ data, onOpenCalendar }: { data: CycleData; onOpenCalendar?:
     return null;
   })();
   const suggestions = PHASE_SUGGESTIONS[phase];
+
+  // O que registou em cada dia deste ciclo, para o anel mostrar ao tocar num dia.
+  const [ringLogs, setRingLogs] = useState<Record<string, string[]>>({});
+  const cycleStart = lastPeriod!.start_date;
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    supabase.from("daily_symptoms").select("*").eq("user_id", user.id).gte("day_key", cycleStart).lt("day_key", today)
+      .then(({ data: rows }) => {
+        if (!alive) return;
+        setRingLogs(Object.fromEntries(((rows as DailySymptom[] | null) ?? []).map((r) => [r.day_key, [...readSelection(r)].map((k) => SYMPTOMS[k].label)])));
+      });
+    return () => { alive = false; };
+  }, [user, cycleStart, today]);
   const [moreOpen, setMoreOpen] = useState(false);
   const extra = [...sel].filter((k) => !suggestions.includes(k)).length;
 
   return (
     <div className="space-y-3.5">
       {/* ── Anel e previsão ── */}
-      <div className="flex flex-col items-center pt-1">
-        <CycleRing engine={e} lastPeriodDate={lastPeriod!.start_date} periodDays={openPeriod ? Math.max(periodDay, e.periodLength) : undefined}>
+      <div className="pt-1">
+        <CycleRing engine={e} lastPeriodDate={lastPeriod!.start_date} today={today} logs={ringLogs}
+          periodDays={openPeriod ? Math.max(periodDay, e.periodLength) : undefined}
+          below={(
+            <>
+              <p className="mt-1.5 text-center text-[17px] font-semibold tracking-[-0.02em] text-foreground">{headline}</p>
+              <p className="mt-0.5 max-w-[36ch] text-center text-[13px] text-muted-foreground">
+                {/* Cada parte fica inteira numa linha; a quebra só acontece entre partes. */}
+                {sub.split(" · ").map((part, i, all) => (
+                  <span key={i}>{i > 0 && " · "}<span className={cn(all.length > 1 && "whitespace-nowrap")}>{part}</span></span>
+                ))}
+              </p>
+            </>
+          )}>
           <FeatureGlyph kind={PHASE_GLYPH[phase]} size={30} />
           <span className="mt-1 text-[46px] font-bold leading-none tracking-[-0.04em] tabular-nums text-foreground">Dia {e.cycleDay}</span>
           <span className={cn("mt-2 rounded-full px-3 py-1 text-[13px] font-semibold", chip.cls)}>{chip.label}</span>
         </CycleRing>
-        <p className="mt-1.5 text-center text-[17px] font-semibold tracking-[-0.02em] text-foreground">{headline}</p>
-        <p className="mt-0.5 max-w-[36ch] text-center text-[13px] text-muted-foreground">
-          {/* Cada parte fica inteira numa linha; a quebra só acontece entre partes. */}
-          {sub.split(" · ").map((part, i, all) => (
-            <span key={i}>{i > 0 && " · "}<span className={cn(all.length > 1 && "whitespace-nowrap")}>{part}</span></span>
-          ))}
-        </p>
       </div>
 
       {/* ── Fluxo (só durante o período) ── */}
