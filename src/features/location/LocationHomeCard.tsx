@@ -9,8 +9,12 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { useTierAccess } from "@/hooks/useTierAccess";
 import { useProfile } from "@/hooks/useProfile";
+import { cn } from "@/lib/utils";
 
-type LocationRow = { user_id: string; address: string | null; sharing_enabled: boolean; updated_at: string };
+type LocationRow = {
+  user_id: string; address: string | null; sharing_enabled: boolean; updated_at: string;
+  lat: number | null; lng: number | null; battery_level: number | null;
+};
 
 /**
  * Leitura simples das últimas posições, só para a Home. Ao contrário de
@@ -26,7 +30,7 @@ function useLocationSnapshot() {
     if (!spaceId || !user?.id) return;
     const { data } = await (supabase as any)
       .from("member_locations")
-      .select("user_id,address,sharing_enabled,updated_at")
+      .select("user_id,address,sharing_enabled,updated_at,lat,lng,battery_level")
       .eq("couple_space_id", spaceId);
     setRows((data as LocationRow[]) ?? []);
   }, [spaceId, user?.id]);
@@ -50,17 +54,68 @@ function useLocationSnapshot() {
 
 function timeAgo(iso: string): string {
   try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: pt });
+    // "há 1 hora" em vez de "há aproximadamente 1 hora": cabe numa linha.
+    return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: pt }).replace(/(aproximadamente|cerca de|quase|mais de) /, "");
   } catch {
     return "";
   }
 }
 
+/** Distância em metros entre dois pontos (fórmula de haversine). */
+function metersBetween(a: LocationRow, b: LocationRow) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat! - a.lat!) * rad, dLng = (b.lng! - a.lng!) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat! * rad) * Math.cos(b.lat! * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+const fmtDistance = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",")} km`);
+/** Só a zona: a primeira parte da morada ("Polana", "Av. Salvador Allende"). */
+const zoneOf = (address: string | null) => address?.split(",")[0]?.trim() || null;
+const TOGETHER_M = 200;
+
+const HEART = "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+const SPARK = "M6 0C6.6 5.4 6.6 5.4 12 6 6.6 6.6 6.6 6.6 6 12 5.4 6.6 5.4 6.6 0 6 5.4 5.4 5.4 5.4 6 0Z";
+
+/** Linhas de relevo leves, como um mapa topográfico abstrato (sem ruas nem posições reais). */
+function Topo() {
+  return (
+    <svg viewBox="0 0 358 138" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeOpacity=".06" strokeWidth="1.2">
+        <path d="M-20 30c60-22 110 10 170-6s100-30 230-8" />
+        <path d="M-20 58c70-20 120 14 180-2s110-32 220-6" />
+        <path d="M-20 88c60-14 130 18 190 2s120-26 210 0" />
+        <path d="M-20 118c80-18 130 12 200 0s110-20 200 4" />
+        <circle cx="300" cy="22" r="18" /><circle cx="300" cy="22" r="32" />
+        <circle cx="52" cy="122" r="22" /><circle cx="52" cy="122" r="38" />
+      </g>
+    </svg>
+  );
+}
+
+function Face({ initial, photo, tone, live, off }: { initial: string; photo?: string | null; tone: "par" | "me"; live?: boolean; off?: boolean }) {
+  return (
+    <span className={cn(
+      "relative grid h-12 w-12 shrink-0 place-items-center rounded-full border-[3px] border-white text-[17px] font-bold text-white shadow-[0_10px_20px_-10px_rgba(11,19,36,0.55)] dark:border-card",
+      tone === "par" ? "bg-gradient-to-b from-[#7AA2FF] to-[#3B6FF5]" : "bg-gradient-to-b from-[#FF9DB5] to-[#E8456B]",
+      off && "opacity-55 grayscale",
+    )}>
+      {live && <span className="absolute -inset-[3px] rounded-full border-2 border-[#3B6FF5] motion-safe:animate-ring-pulse" aria-hidden="true" />}
+      {photo ? <img src={photo} alt="" className="h-full w-full rounded-full object-cover" /> : initial}
+    </span>
+  );
+}
+
+const Place = ({ children }: { children: string }) => (
+  <span className="inline-flex h-[22px] max-w-[150px] items-center truncate rounded-full bg-white/85 px-2.5 text-[11px] font-semibold text-[#3A4150] shadow-[0_2px_8px_-4px_rgba(11,19,36,0.25)] backdrop-blur-sm dark:bg-card/85 dark:text-foreground/80">
+    <span className="truncate">{children}</span>
+  </span>
+);
+
 /**
- * "Onde estamos" na Home, sempre com o mesmo cartão de mapa. Com partilha ativa
- * mostra as moradas; sem ela convida a ativar e leva a /localizacao.
- * O mapa é ilustrativo (as posições reais vivem em /localizacao); o texto
- * mostra a morada conhecida de cada um e quando foi atualizada.
+ * "Onde estamos" na Home: uma cena desenhada (não um mapa) com os dois, a
+ * distância entre eles e a zona de cada um. Juntos (a menos de 200 m) os dois
+ * encostam-se; sem partilha a cena fica a cinzento com o convite para ativar.
+ * Maqueta: docs/mockups/localizacao-proposta.html.
  */
 export function LocationHomeCard() {
   const navigate = useNavigate();
@@ -75,20 +130,22 @@ export function LocationHomeCard() {
   const myInitial = (profile?.display_name ?? "Eu").charAt(0).toUpperCase();
   const partnerInitial = partnerName.charAt(0).toUpperCase();
 
-  // Sem partilha (ou sem acesso no plano) o cartão mantém o mesmo aspeto e
-  // continua a ser a entrada para /localizacao, onde se ativa a partilha.
+  // Sem partilha (ou sem acesso no plano) o cartão continua a ser a entrada
+  // para /localizacao, onde se ativa a partilha.
   const active = allowed && (mySharing || partnerSharing);
-
-  const parts: string[] = [];
-  if (!active) parts.push(allowed ? "Ativem a partilha para se verem no mapa" : "Partilha de localização entre os dois");
-  else {
-    if (partnerSharing && partnerLocation?.address) parts.push(`${partnerName} em ${partnerLocation.address}`);
-    else if (partnerSharing) parts.push(`${partnerName} está a partilhar`);
-    else parts.push(`${partnerName} não está a partilhar`);
-    if (mySharing && myLocation?.address) parts.push(`tu em ${myLocation.address}`);
-  }
-
+  const both = active && partnerSharing && mySharing && partnerLocation?.lat != null && myLocation?.lat != null;
+  const distance = both ? metersBetween(partnerLocation!, myLocation!) : null;
+  const together = distance !== null && distance < TOGETHER_M;
+  const partnerZone = partnerSharing ? zoneOf(partnerLocation?.address ?? null) : null;
+  const myZone = mySharing ? zoneOf(myLocation?.address ?? null) : null;
   const updatedAt = partnerSharing ? partnerLocation?.updated_at : myLocation?.updated_at;
+  const battery = partnerSharing ? partnerLocation?.battery_level : null;
+
+  let line: React.ReactNode;
+  if (together) line = <><b className="font-semibold text-foreground">Estão juntos</b> agora</>;
+  else if (distance !== null) line = <><b className="font-semibold text-foreground">{partnerName}</b> está a {fmtDistance(distance)} de ti</>;
+  else if (partnerSharing) line = <><b className="font-semibold text-foreground">{partnerName}</b>{partnerZone ? ` em ${partnerZone}` : " está a partilhar"}</>;
+  else line = <><b className="font-semibold text-foreground">{partnerName}</b> não está a partilhar</>;
 
   return (
     <button
@@ -96,46 +153,103 @@ export function LocationHomeCard() {
       onClick={() => navigate("/localizacao")}
       className="w-full overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
     >
-      <div className="relative h-[92px] bg-[#EEEAE4] dark:bg-muted" aria-hidden="true">
-        <svg viewBox="0 0 358 92" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
-          <path d="M250 0c-10 28 20 48 108 60V0z" fill="#DCE6EF" />
-          <g stroke="#FFFFFF" strokeWidth="6" fill="none" strokeLinecap="round">
-            <path d="M-10 66c80-9 150 4 230-14s110-28 150-25" />
-            <path d="M60 100c10-36 0-64 30-108" />
-            <path d="M180 100c-6-28 10-50 0-108" />
-          </g>
-          <g stroke="#E4DED6" strokeWidth="2" fill="none">
-            <path d="M0 28h358M0 82h358M120 0v92M300 0v92" />
-          </g>
-          <path d="M92 68C150 50 200 40 262 30" stroke="#0B1324" strokeWidth="1.6" strokeDasharray="4 5" fill="none" opacity=".55" />
-        </svg>
-        <span className="absolute left-[19%] top-[52%] flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-white bg-rose-500 text-[13px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.5)]">
-          {myInitial}
-        </span>
-        <span className="absolute left-[71%] top-[14%] flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#4D7CFE] text-[13px] font-semibold text-white shadow-[0_6px_14px_-6px_rgba(11,19,36,0.5)]">
-          {partnerInitial}
-        </span>
+      <div className={cn(
+        "relative h-[138px] overflow-hidden text-[#0B1324] dark:text-foreground",
+        !active ? "bg-gradient-to-br from-[#F4F2EF] to-[#F7F5F2] dark:from-muted dark:to-muted"
+          : together ? "bg-gradient-to-br from-[#FFF0F4] via-[#FDF4FF] to-[#FFEFE8] dark:from-rose-950/30 dark:via-violet-950/20 dark:to-rose-950/20"
+          : "bg-gradient-to-br from-[#EAF1FF] via-[#F7F3FF] to-[#FFEFF3] dark:from-sky-950/30 dark:via-violet-950/20 dark:to-rose-950/20",
+      )} aria-hidden="true">
+        <Topo />
+
+        {together ? (
+          <>
+            {[["left-[31%] top-[22%]", "#F2A91F", 12, "0s"], ["left-[66%] top-[38%]", "#E8456B", 10, ".8s"], ["left-[36%] top-[70%]", "#8B6CF0", 9, "1.4s"]].map(([pos, fill, s, delay]) => (
+              <svg key={pos as string} className={cn("absolute motion-safe:animate-pulse", pos as string)} style={{ animationDelay: delay as string }} width={s as number} height={s as number} viewBox="0 0 12 12">
+                <path d={SPARK} fill={fill as string} />
+              </svg>
+            ))}
+            <div className="absolute left-1/2 top-[26px] flex -translate-x-1/2 flex-col items-center gap-2">
+              <div className="relative flex">
+                <svg className="absolute -top-4 left-1/2 z-10 -translate-x-1/2 motion-safe:animate-pulse" width="20" height="20" viewBox="0 0 24 24">
+                  <path d={HEART} fill="#E8456B" stroke="#fff" strokeWidth="2" />
+                </svg>
+                <Face initial={partnerInitial} photo={partner?.avatar_url} tone="par" />
+                <span className="-ml-3.5"><Face initial={myInitial} tone="me" /></span>
+              </div>
+              {(myZone || partnerZone) && <Place>{(myZone || partnerZone)!}</Place>}
+            </div>
+          </>
+        ) : (
+          <>
+            <svg viewBox="0 0 358 138" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+              <path d="M88 64 Q 179 4 270 64" fill="none" stroke="currentColor" strokeOpacity={active ? 0.35 : 0.18} strokeWidth="2" strokeDasharray="1 7" strokeLinecap="round" />
+            </svg>
+            <span className={cn("absolute left-1/2 top-[30px] inline-flex h-7 -translate-x-1/2 items-center gap-1.5 rounded-full bg-white px-3 text-[12.5px] font-bold shadow-[0_6px_16px_-8px_rgba(11,19,36,0.45)] dark:bg-card",
+              !active && "text-muted-foreground")}>
+              {active && distance !== null ? (
+                <>
+                  <svg className="motion-safe:animate-pulse" width="13" height="13" viewBox="0 0 24 24"><path d={HEART} fill="#E8456B" /></svg>
+                  {fmtDistance(distance)}
+                </>
+              ) : active ? (
+                <svg width="13" height="13" viewBox="0 0 24 24"><path d={HEART} fill="#E8456B" /></svg>
+              ) : "?"}
+            </span>
+            <div className="absolute left-[24.5%] top-[42px] flex -translate-x-1/2 flex-col items-center gap-1.5">
+              <Face initial={partnerInitial} photo={partner?.avatar_url} tone="par" live={active && partnerSharing} off={!active} />
+              {partnerZone && <Place>{partnerZone}</Place>}
+            </div>
+            <div className="absolute left-[75.5%] top-[42px] flex -translate-x-1/2 flex-col items-center gap-1.5">
+              <Face initial={myInitial} tone="me" off={!active} />
+              {myZone && <Place>{myZone}</Place>}
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex items-center gap-3 px-3.5 pb-3.5 pt-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold text-foreground">Onde estamos</p>
-          <p className="truncate text-[12.5px] text-muted-foreground">{parts.join(" · ")}</p>
+          <p className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+            Onde estamos
+            {active && (
+              <span className="inline-flex h-[22px] items-center gap-1.5 rounded-full bg-[#EEF8F1] px-2 text-[11px] font-bold text-[#23733F] dark:bg-emerald-950/40 dark:text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#23A15A] shadow-[0_0_0_3px_rgba(35,161,90,0.18)]" />Ao vivo
+              </span>
+            )}
+          </p>
           {active ? (
-            <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
-              <span className="h-[7px] w-[7px] rounded-full bg-emerald-600" />
-              Partilha ativa{updatedAt ? ` · ${timeAgo(updatedAt)}` : ""}
-            </span>
+            <>
+              <p className="mt-0.5 truncate text-[13px] text-[#3A4150] dark:text-foreground/80">{line}</p>
+              <p className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                {updatedAt && `Atualizado ${timeAgo(updatedAt)}`}
+                {battery != null && (
+                  <span className="inline-flex items-center gap-1">
+                    {updatedAt && "·"}
+                    <svg width="18" height="10" viewBox="0 0 22 12" aria-hidden="true">
+                      <rect x=".75" y=".75" width="18" height="10.5" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      <rect x="20" y="4" width="1.6" height="4" rx=".8" fill="currentColor" />
+                      <rect x="2.5" y="2.5" width={Math.max(1.5, 14.5 * Math.min(1, battery / 100))} height="7" rx="1.6" fill={battery <= 20 ? "#E8456B" : "#23A15A"} />
+                    </svg>
+                    {Math.round(battery)}%
+                  </span>
+                )}
+              </p>
+            </>
           ) : (
-            <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
-              <span className="h-[7px] w-[7px] rounded-full bg-[#D5D1CB]" />
-              Partilha desligada
-            </span>
+            <p className="mt-0.5 text-[13px] leading-snug text-[#3A4150] dark:text-foreground/80">
+              {allowed ? "Saibam onde está o outro e quando estão juntos." : "Partilha de localização entre os dois."}
+            </p>
           )}
         </div>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1EEEA] text-foreground dark:bg-muted">
-          <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2} />
-        </span>
+        {active ? (
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F4F1EC] text-foreground dark:bg-muted">
+            <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
+          </span>
+        ) : (
+          <span className="inline-flex h-9 shrink-0 items-center rounded-xl bg-[#0B1324] px-3.5 text-[13px] font-semibold text-white dark:bg-foreground dark:text-background">
+            Ativar
+          </span>
+        )}
       </div>
     </button>
   );
