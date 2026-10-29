@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
 import { todayLocal } from "@/lib/timezone";
 import { useCycleData } from "./useCycleData";
 import { daysBetween, type CycleEngineOutput } from "./engine";
@@ -12,23 +11,23 @@ type PhaseKey = "menstrual" | "folicular" | "fertil" | "ovulacao" | "lutea" | "t
 
 type PhaseLook = {
   name: string;
-  c: string; deep: string; g1: string; g2: string; edge: string; shadow: string;
+  c: string; deep: string; shadow: string;
   art: keyof typeof ART;
   her: string; him: string;
 };
 
 const PHASES: Record<PhaseKey, PhaseLook> = {
-  menstrual: { name: "Menstruação", c: "#E8456B", deep: "#B8264C", g1: "#FFF3F6", g2: "#FFDCE5", edge: "#FBD3DE", shadow: "rgba(232,69,107,.35)", art: "drop",
+  menstrual: { name: "Menstruação", c: "#E8456B", deep: "#B8264C", shadow: "rgba(232,69,107,.35)", art: "drop",
     her: "Dia de abrandar e mimar-te um pouco.", him: "Ela pode precisar de mais mimo hoje." },
-  folicular: { name: "Folicular", c: "#3E9BD8", deep: "#1F74AD", g1: "#F2FAFF", g2: "#D9EEFF", edge: "#CFE6F8", shadow: "rgba(62,155,216,.35)", art: "leaf",
+  folicular: { name: "Folicular", c: "#3E9BD8", deep: "#1F74AD", shadow: "rgba(62,155,216,.35)", art: "leaf",
     her: "A tua energia está a voltar.", him: "A energia dela está a voltar." },
-  fertil: { name: "Janela fértil", c: "#2C9BE0", deep: "#16699E", g1: "#F1F9FF", g2: "#DCEBFF", edge: "#CDE2F7", shadow: "rgba(44,155,224,.35)", art: "heart",
+  fertil: { name: "Janela fértil", c: "#2C9BE0", deep: "#16699E", shadow: "rgba(44,155,224,.35)", art: "heart",
     her: "Gravidez mais provável nestes dias.", him: "Gravidez mais provável nestes dias." },
-  ovulacao: { name: "Ovulação", c: "#E89B0C", deep: "#A86A00", g1: "#FFFAEC", g2: "#FFE8B8", edge: "#F8E0A8", shadow: "rgba(232,155,12,.38)", art: "sun",
+  ovulacao: { name: "Ovulação", c: "#E89B0C", deep: "#A86A00", shadow: "rgba(232,155,12,.38)", art: "sun",
     her: "Hoje é o teu dia mais fértil.", him: "Hoje é o dia mais fértil dela." },
-  lutea: { name: "Lútea", c: "#8B6FF0", deep: "#5B3FC4", g1: "#F7F3FF", g2: "#E6DEFF", edge: "#DDD2FA", shadow: "rgba(139,111,240,.35)", art: "moon",
+  lutea: { name: "Lútea", c: "#8B6FF0", deep: "#5B3FC4", shadow: "rgba(139,111,240,.35)", art: "moon",
     her: "Energia mais calma, vai ao teu ritmo.", him: "Ela pode estar mais calma, acompanha-a." },
-  tpm: { name: "TPM", c: "#8B6FF0", deep: "#5B3FC4", g1: "#F7F3FF", g2: "#E6DEFF", edge: "#DDD2FA", shadow: "rgba(139,111,240,.35)", art: "moon",
+  tpm: { name: "TPM", c: "#8B6FF0", deep: "#5B3FC4", shadow: "rgba(139,111,240,.35)", art: "moon",
     her: "Sê gentil contigo, o período vem aí.", him: "Paciência e carinho fazem diferença." },
 };
 
@@ -128,7 +127,7 @@ export function CycleHomeCard() {
   const [tx, ty] = at(todayN);
 
   const vars = {
-    "--c": look.c, "--deep": look.deep, "--g1": look.g1, "--g2": look.g2, "--edge": look.edge, "--shadow": look.shadow,
+    "--c": look.c, "--deep": look.deep, "--shadow": look.shadow,
   } as CSSProperties;
 
   return (
@@ -137,11 +136,11 @@ export function CycleHomeCard() {
       onClick={() => navigate("/ciclo")}
       style={vars}
       aria-label={`${isMale ? "Ciclo dela" : "O teu ciclo"}: ${look.name}, dia ${e.cycleDay}`}
-      className="cycle-card relative isolate flex w-full items-center gap-3.5 overflow-hidden rounded-[24px] border border-[var(--edge)] p-4 pb-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border"
+      className="relative isolate flex w-full items-center gap-3 overflow-hidden rounded-[24px] border border-[#ECE8E3] bg-white p-3.5 text-left shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] transition-transform active:scale-[0.99] dark:border-border dark:bg-card"
     >
-      {/* ── Cena: brilho, desenho da fase e estrelinhas ── */}
-      <span className="absolute -right-[50px] -top-[60px] -z-10 h-[210px] w-[210px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.85),transparent_66%)] dark:opacity-10" aria-hidden="true" />
-      <svg className="cycle-art absolute -right-3.5 -top-3 -z-10 h-28 w-28" viewBox="0 0 100 100" aria-hidden="true">
+      {/* ── Desenho da fase, com um brilho suave à volta, e estrelinhas ── */}
+      <span className="absolute -right-10 -top-12 -z-10 h-40 w-40 rounded-full" style={{ background: `radial-gradient(circle, ${look.c}26, transparent 66%)` }} aria-hidden="true" />
+      <svg className="cycle-art absolute -right-2.5 -top-2.5 -z-10 h-[76px] w-[76px]" viewBox="0 0 100 100" aria-hidden="true">
         <defs>
           <linearGradient id="cycle-art-grad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#fff" stopOpacity=".95" />
@@ -158,41 +157,39 @@ export function CycleHomeCard() {
       ))}
 
       {/* ── Anel com o dia ── */}
-      <div className="relative h-24 w-24 shrink-0">
-        <svg className="h-24 w-24 overflow-visible" viewBox="0 0 96 96" aria-hidden="true">
+      <div className="relative h-20 w-20 shrink-0">
+        <svg className="h-20 w-20 overflow-visible" viewBox="0 0 96 96" aria-hidden="true">
           {Array.from({ length: len }, (_, i) => {
             const d = i + 1, [x, y] = at(d), col = colorOf(d);
             return (
               <rect key={d} x={x - 2} y={y - 5} width="4" height="10" rx="2" transform={`rotate(${(i / len) * 360} ${x} ${y})`}
-                fill={col ?? "#FFFFFF"} stroke={col ? undefined : look.edge} strokeWidth={col ? undefined : 0.8}
-                opacity={d < todayN ? 0.45 : 1} className={col ? undefined : "dark:fill-white/20 dark:stroke-transparent"} />
+                fill={col ?? "#E7E2DB"} opacity={d < todayN ? 0.45 : 1} className={col ? undefined : "dark:fill-white/15"} />
             );
           })}
           <circle className="cycle-today-pulse" cx={tx} cy={ty} r="6" fill={look.c} />
           <circle cx={tx} cy={ty} r="7" fill="#fff" stroke={look.c} strokeWidth="2.5" />
           <circle cx={tx} cy={ty} r="2.6" fill={look.c} />
         </svg>
-        <div className="absolute inset-[22px] grid place-content-center rounded-full bg-white text-center shadow-[0_6px_16px_-6px_var(--shadow)] dark:bg-card">
-          <b className="text-[24px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1324] tabular-nums dark:text-foreground">{e.cycleDay}</b>
+        <div className="absolute inset-[18px] grid place-content-center rounded-full bg-white text-center shadow-[0_6px_16px_-6px_var(--shadow)] dark:bg-card">
+          <b className="text-[20px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1324] tabular-nums dark:text-foreground">{e.cycleDay}</b>
           <span className="mt-0.5 text-[9px] font-bold tracking-[0.08em] text-[var(--c)]">DIA</span>
         </div>
       </div>
 
       {/* ── Fase, frase e próximo marco ── */}
-      <div className="min-w-0 flex-1 pr-7">
-        <span className="inline-flex h-[22px] items-center gap-[5px] rounded-full bg-white/75 pl-[7px] pr-[9px] text-[11px] font-bold text-[var(--deep)] dark:bg-white/10 dark:text-[var(--c)]">
+      <div className="min-w-0 flex-1 pr-11">
+        <span className="inline-flex h-[22px] items-center gap-[5px] rounded-full pl-[7px] pr-[9px] text-[11px] font-bold text-[var(--deep)] dark:text-[var(--c)]" style={{ background: `${look.c}14` }}>
           <svg className="h-3 w-2.5" viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8a5 4.6 0 0 0 10 0C10 5.6 5 0 5 0Z" fill="currentColor" /></svg>
           {isMale ? "Ciclo dela" : "O teu ciclo"}
         </span>
-        <p className="mt-[7px] text-balance text-[22px] font-extrabold leading-[1.05] tracking-[-0.03em] text-[#0B1324] dark:text-foreground">{look.name}</p>
+        <p className="mt-1.5 text-balance text-[19px] font-extrabold leading-[1.05] tracking-[-0.03em] text-[#0B1324] dark:text-foreground">{look.name}</p>
         <p className="mt-1 text-[12.5px] leading-snug text-[#4A5060] dark:text-foreground/70">{isMale ? look.him : look.her}</p>
-        <span className="mt-[9px] inline-flex h-[26px] items-center gap-1.5 rounded-full bg-white/70 px-2.5 text-[11.5px] font-semibold text-[#3A4150] dark:bg-white/10 dark:text-foreground/80">
+        <span className="mt-[9px] inline-flex h-[26px] items-center gap-1.5 rounded-full bg-[#F4F1EC] px-2.5 text-[11.5px] font-semibold text-[#3A4150] dark:bg-muted dark:text-foreground/80">
           <i className="h-1.5 w-1.5 rounded-full bg-[var(--c)]" />
           {nextMark(e, key, today)}
         </span>
       </div>
 
-      <ChevronRight className="absolute right-3.5 top-3.5 h-4 w-4 text-[#B7BBC2]" strokeWidth={2} aria-hidden="true" />
     </button>
   );
 }

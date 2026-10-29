@@ -3,10 +3,9 @@ import { cn } from "@/lib/utils";
 import { todayLocal } from "@/lib/timezone";
 import { type StreakState } from "@/features/streak/useStreak";
 import { getDailyMissions, type MissionId } from "@/features/streak/missions";
-import { getJourneyLevel, getStreakLevel } from "@/features/streak/journeyLevels";
+import { getStreakLevel } from "@/features/streak/journeyLevels";
 import { FlamePet } from "@/components/FlamePet";
 import { JourneyBar } from "@/features/streak/JourneyBar";
-import { Flame, Heart, Sparkles } from "lucide-react";
 import { FeatureGlyph, PresenceHeartIcon, ShieldIcon, type GlyphKind } from "@/features/home/FeatureIcon";
 import { MoodFace } from "@/features/mood/MoodArt";
 import { useNavigate } from "react-router-dom";
@@ -82,36 +81,6 @@ function getContextualPhrase(
   return getCountPhrase(streak, false);
 }
 
-// ── Journey — Faísca → Eternidade ────────────────────────────────────────────
-
-const JOURNEY_LEVELS = [
-  { name: "Faísca",     min: 1  },
-  { name: "Brasa",      min: 3  },
-  { name: "Chama",      min: 7  },
-  { name: "Chama Viva", min: 14 },
-  { name: "Farol",      min: 30 },
-  { name: "Eternidade", min: 90 },
-] as const;
-
-type JourneyLevel = typeof JOURNEY_LEVELS[number];
-
-function getCurrentJourneyLevel(streak: number): JourneyLevel | null {
-  return Array.from(JOURNEY_LEVELS).reverse().find(l => streak >= l.min) ?? null;
-}
-
-function getJourneyNext(streak: number): string | null {
-  const current = getCurrentJourneyLevel(streak);
-  const idx = current ? JOURNEY_LEVELS.findIndex(l => l.name === current.name) : -1;
-  return idx >= 0 && idx < JOURNEY_LEVELS.length - 1 ? JOURNEY_LEVELS[idx + 1].name : null;
-}
-
-function getJourneyDaysLeft(streak: number): number {
-  const current = getCurrentJourneyLevel(streak);
-  const idx = current ? JOURNEY_LEVELS.findIndex(l => l.name === current.name) : -1;
-  if (idx < 0 || idx >= JOURNEY_LEVELS.length - 1) return 0;
-  return JOURNEY_LEVELS[idx + 1].min - streak;
-}
-
 // ── Guardian stage colors — espelham STAGE_COLORS do FlamePet ────────────────
 const GUARDIAN_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   faisca:    { bg: "rgba(255,107,157,0.13)", border: "rgba(255,107,157,0.35)", text: "#FF6B9D" },
@@ -143,24 +112,6 @@ function getStreakNumberSize(streak: number): string {
   if (streak >= 30) return "text-7xl";
   if (streak >= 7)  return "text-6xl";
   return "text-5xl";
-}
-
-// ── Relationship state (footer) ───────────────────────────────────────────────
-
-function getRelationshipState(s: number): { name: string; color: string } {
-  if (s >= 90) return { name: "Eternidade",  color: "text-muted-foreground"  };
-  if (s >= 30) return { name: "Farol",       color: "text-muted-foreground"  };
-  if (s >= 14) return { name: "Chama Viva",  color: "text-muted-foreground"  };
-  if (s >= 7)  return { name: "Chama",       color: "text-muted-foreground"  };
-  if (s >= 3)  return { name: "Brasa",       color: "text-muted-foreground"  };
-  if (s >= 1)  return { name: "Faísca",      color: "text-muted-foreground"  };
-  return             { name: "Início",       color: "text-muted-foreground/65"     };
-}
-
-function getRelationshipIcon(name: string) {
-  if (name === "Eternidade" || name === "Farol") return Sparkles;
-  if (name === "Chama Viva" || name === "Chama" || name === "Brasa") return Flame;
-  return Heart;
 }
 
 // ── Missions ──────────────────────────────────────────────────────────────────
@@ -381,7 +332,6 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
 
   const partnerCheckedIn = !isSolo && activeCount >= (myCheckedIn ? 2 : 1);
   const displayPoints    = points ?? 0;
-  const currentLevel     = getCurrentJourneyLevel(currentStreak);
 
   return (
     <div className="space-y-1.5">
@@ -442,12 +392,12 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
         <JourneyBar days={currentStreak} />
         <div className="mt-1 flex items-center justify-between text-[12px] text-muted-foreground">
           <span className={cn("font-semibold", currentStreak >= 1 ? "text-foreground" : "text-muted-foreground/50")}>
-            {currentLevel?.name ?? "Início"}
+            {currentStreak >= 1 ? streakPhase.name : "Início"}
           </span>
           {streakPhase.nextLevelName ? (
             <span>
               Próximo: <b className="font-semibold text-[#2F6BFF]">{streakPhase.nextLevelName}</b>
-              {" · "}faltam {streakPhase.daysToNext} {streakPhase.daysToNext === 1 ? "dia" : "dias"}
+              {" · "}{streakPhase.daysToNext === 1 ? "falta 1 dia" : `faltam ${streakPhase.daysToNext} dias`}
             </span>
           ) : (
             <span>{isSolo ? "Chegaste ao fim da jornada" : "Chegaram ao fim da jornada"}</span>

@@ -892,9 +892,7 @@ input, textarea, [contenteditable="true"] {
 
 
 
-/* Cartão do ciclo na Home: fundo na cor da fase, desenho a flutuar, estrelinhas a subir */
-.cycle-card { background: linear-gradient(140deg, var(--g1), var(--g2)); }
-.dark .cycle-card { background: linear-gradient(140deg, color-mix(in srgb, var(--c) 22%, hsl(var(--card))), hsl(var(--card))); }
+/* Cartão do ciclo na Home: desenho da fase a flutuar, estrelinhas a subir */
 .cycle-art { filter: drop-shadow(0 10px 18px var(--shadow)); animation: cycle-float 6s ease-in-out infinite; }
 .cycle-spark { opacity: 0; animation: cycle-rise 5s linear infinite; }
 .cycle-today-pulse { transform-box: fill-box; transform-origin: center; animation: cycle-pulse 2.2s ease-out infinite; }
