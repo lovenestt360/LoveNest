@@ -72,7 +72,7 @@ BEGIN
     IF r.proname = 'get_partner_cycle_summary' THEN
       v_guard := 'auth.uid() IS NOT NULL AND $1 IS DISTINCT FROM auth.uid() '
               || 'AND NOT public.is_admin() AND NOT public.are_users_in_same_couple_space($1)';
-    ELSIF r.pronargs >= 1 AND r.proargnames[1] ~ 'couple_space_id$' THEN
+    ELSIF r.pronargs >= 1 AND r.proargnames[1] ~ '^_?p?_?couple(_space)?_id$' THEN
       v_guard := 'auth.uid() IS NOT NULL AND NOT public.is_admin() '
               || 'AND NOT public.is_member_of_couple_space($1)';
     ELSE
