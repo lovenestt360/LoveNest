@@ -93,10 +93,14 @@ function useAudioRecorder() {
       }
 
       const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      chunksRef.current = [];
-      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      // Cada gravação tem a sua lista: um gravador anterior que ainda esteja a
+      // fechar não mistura pedaços nesta (isso deixava ficheiros sem cabeçalho,
+      // impossíveis de tocar). Sem timeslice: o ficheiro vem inteiro no fim.
+      const chunks: Blob[] = [];
+      chunksRef.current = chunks;
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
       recRef.current = rec;
-      rec.start(200);
+      rec.start();
       setAudioBlob(null);
       setRecording(true);
       setIsPaused(false);
@@ -114,17 +118,20 @@ function useAudioRecorder() {
 
   const stop = useCallback((): Promise<Blob | null> => new Promise((resolve) => {
     if (!recRef.current || recRef.current.state === "inactive") { resolve(null); return; }
-    recRef.current.onstop = () => {
-      const type = recRef.current?.mimeType || "audio/mp4";
-      const blob = new Blob(chunksRef.current, { type });
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
+    const rec = recRef.current;
+    const chunks = chunksRef.current;
+    const stream = streamRef.current;
+    rec.onstop = () => {
+      const type = rec.mimeType || "audio/mp4";
+      const blob = new Blob(chunks, { type });
+      stream?.getTracks().forEach(t => t.stop());
+      if (streamRef.current === stream) streamRef.current = null;
       const final = blob.size > 0 ? blob : null;
       setAudioBlob(final);
       resolve(final);
     };
-    if (recRef.current.state === "recording") recRef.current.requestData();
-    recRef.current.stop();
+    // stop() entrega o último pedaço antes de onstop.
+    rec.stop();
     setRecording(false);
     setIsPaused(false);
     clearInterval(timerRef.current);
