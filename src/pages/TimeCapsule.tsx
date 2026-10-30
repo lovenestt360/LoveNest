@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
+import { signedMediaUrl } from "@/lib/privateMedia";
 
 function hasSeenReveal(userId: string, capsuleId: string): boolean {
   try { return (JSON.parse(localStorage.getItem(`ln_cap_rev_seen_${userId}`) ?? "[]") as string[]).includes(capsuleId); }
@@ -71,7 +72,10 @@ export default function TimeCapsule() {
         .from("time_capsule_messages").select("*")
         .eq("couple_space_id", member.couple_space_id)
         .order("unlock_date", { ascending: true });
-      setCapsules(data || []);
+      // As fotos abrem por links assinados (o bucket "photos" é privado).
+      const rows = await Promise.all((data || []).map(async (c: any) =>
+        c.image_url ? { ...c, image_url: await signedMediaUrl("photos", c.image_url) } : c));
+      setCapsules(rows);
     } catch (err) {
       console.error(err);
     } finally {
