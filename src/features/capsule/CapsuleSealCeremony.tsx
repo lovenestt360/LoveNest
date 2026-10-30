@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { format, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Lock, X } from "lucide-react";
+import { useSignedMedia } from "@/lib/privateMedia";
 
 const PORTAL_BASE: React.CSSProperties = {
   position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
@@ -35,6 +36,7 @@ export interface SealData {
 
 export function CapsuleSealCeremony({ imageUrl, unlockDate, capsuleId, onClose }: SealData & { onClose: () => void }) {
   const [step, setStep] = useState<0 | 1 | 2>(0);
+  const imageSrc = useSignedMedia("photos", imageUrl);
 
   useEffect(() => {
     const t1 = setTimeout(() => setStep(1), 2200);
@@ -42,7 +44,7 @@ export function CapsuleSealCeremony({ imageUrl, unlockDate, capsuleId, onClose }
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  const hasPhoto  = !!imageUrl && !/\.(mp4|webm|mov)(\?|$)/i.test(imageUrl);
+  const hasPhoto  = !!imageSrc && !!imageUrl && !/\.(mp4|webm|mov)(\?|$)/i.test(imageUrl);
   const dateObj   = new Date(unlockDate);
   const dateStr   = format(dateObj, "d 'de' MMMM 'de' yyyy", { locale: pt });
   const daysUntil = Math.max(0, differenceInDays(dateObj, new Date()));
@@ -73,7 +75,7 @@ export function CapsuleSealCeremony({ imageUrl, unlockDate, capsuleId, onClose }
 
           {/* Foto mal visível por trás — cria atmosfera */}
           {hasPhoto && (
-            <img src={imageUrl!} aria-hidden alt="" style={{
+            <img src={imageSrc!} aria-hidden alt="" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", opacity: 0.18,
               filter: "blur(32px) brightness(0.30)",
@@ -139,11 +141,11 @@ export function CapsuleSealCeremony({ imageUrl, unlockDate, capsuleId, onClose }
               display: "flex", alignItems: "center", justifyContent: "center",
               padding: "28px 40px 12px" }}>
               {/* Ambient blur — preenche o fundo */}
-              <img src={imageUrl!} aria-hidden
+              <img src={imageSrc!} aria-hidden
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
                   objectFit: "cover", filter: "blur(28px) brightness(0.18)", transform: "scale(1.06)" }} />
               {/* Foto principal — contida pelo padding, com cantos suaves */}
-              <img src={imageUrl!} alt="Memória guardada"
+              <img src={imageSrc!} alt="Memória guardada"
                 style={{ position: "relative", zIndex: 1,
                   maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto",
                   borderRadius: 14,

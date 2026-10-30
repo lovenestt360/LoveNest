@@ -21,6 +21,7 @@ import { DEFAULT_CHAT_WALLPAPER } from "@/features/chat/components/defaultWallpa
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useOnlinePresence } from "@/features/presence/onlinePresence";
+import { useSignedMedia } from "@/lib/privateMedia";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -193,6 +194,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
   const [dur, setDur] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const fixingDurRef = useRef(false);
+  const src = useSignedMedia("chat-media", url);
 
   const toggle = useCallback(() => {
     if (!audioRef.current) return;
@@ -210,7 +212,7 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
     <div className="flex items-center gap-2 min-w-[190px]">
       <audio
         ref={audioRef}
-        src={url}
+        src={src ?? undefined}
         preload="metadata"
         playsInline
         onPlay={() => setPlaying(true)}
@@ -399,6 +401,7 @@ function MessageBubble({
   lastInGroup: boolean; selected: boolean; animateIn: boolean;
 }) {
   const lp = useLongPress(onLongPress, 450);
+  const imageSrc = useSignedMedia("chat-media", msg.image_url);
 
   return (
     <div
@@ -453,9 +456,11 @@ function MessageBubble({
 
           {/* Image */}
           {msg.image_url && !isDeleted && (
-            <img src={msg.image_url} alt="Foto"
-              className="rounded-[14px] max-w-full max-h-64 object-cover mb-1 cursor-pointer"
-              onClick={() => window.open(msg.image_url!, "_blank")} />
+            imageSrc
+              ? <img src={imageSrc} alt="Foto"
+                  className="rounded-[14px] max-w-full max-h-64 object-cover mb-1 cursor-pointer"
+                  onClick={() => window.open(imageSrc, "_blank")} />
+              : <div className="mb-1 h-40 w-52 animate-pulse rounded-[14px] bg-black/5 dark:bg-white/10" />
           )}
 
           {/* Audio */}
