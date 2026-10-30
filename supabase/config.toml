@@ -3,9 +3,6 @@ project_id = "zyzeiwyfsnbnpzdqtxik"
 [functions.send-push]
 verify_jwt = false
 
-[functions.generate-vapid-keys]
-verify_jwt = false
-
 [functions.generate-love-wrapped]
 verify_jwt = false
 
