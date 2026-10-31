@@ -178,6 +178,16 @@ Deno.serve(async (req) => {
   const fcmPrivateKey  = Deno.env.get("FCM_PRIVATE_KEY");
   const fcmProjectId   = "lovenest-d7f81";
 
+  // Só o agendador: o job pg_cron envia x-cron-secret (o mesmo segredo do
+  // love-wrapped, lido do Vault). Antes bastava o anon key, que é público.
+  const cronSecret = Deno.env.get("LOVE_WRAPPED_CRON_SECRET");
+  if (!cronSecret || req.headers.get("x-cron-secret") !== cronSecret) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   const sb  = createClient(supabaseUrl, serviceKey);
   const now = new Date();
   const todayISO     = now.toISOString().slice(0, 10);

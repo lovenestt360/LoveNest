@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -276,6 +277,18 @@ serve(async (req) => {
   }
 
   try {
+    // Só quem tem sessão: o anon key (público, está no bundle) passava o
+    // verify_jwt e deixava qualquer pessoa gastar crédito da API.
+    const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: { user } } = token ? await sb.auth.getUser(token) : { data: { user: null } };
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Sessão inválida" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { category } = await req.json();
 
     const categoryPrompts: Record<string, string> = {
