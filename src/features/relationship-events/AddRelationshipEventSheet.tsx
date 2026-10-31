@@ -12,6 +12,7 @@ import {
   type RelationshipEventType,
 } from "./types";
 import type { CreateRelationshipEventInput } from "./useRelationshipEvents";
+import { displayableUrl, toJpegIfHeic } from "@/lib/heic";
 
 interface Props {
   open: boolean;
@@ -110,7 +111,7 @@ export function AddRelationshipEventSheet({
       supabase.storage
         .from("memories")
         .createSignedUrl(editingEvent.image_path, 3600)
-        .then(({ data }) => { if (data) setExistingUrl(data.signedUrl); });
+        .then(({ data }) => { if (data) displayableUrl(data.signedUrl).then(setExistingUrl); });
     } else {
       setExistingUrl(null);
     }
@@ -245,7 +246,7 @@ export function AddRelationshipEventSheet({
                     <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
                     <span className="text-[12px] text-muted-foreground">Adicionar fotografia (opcional)</span>
                     <input type="file" accept="image/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                      onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; setImageFile(f); }} />
+                      onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; if (f) toJpegIfHeic(f).then(setImageFile, () => setImageFile(f)); else setImageFile(null); }} />
                   </div>
                 )}
               </div>

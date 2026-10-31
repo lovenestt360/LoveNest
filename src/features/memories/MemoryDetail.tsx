@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import type { Photo } from "@/pages/Memories";
+import { displayableUrl } from "@/lib/heic";
 
 interface Props {
   photos: Photo[];
@@ -47,11 +48,12 @@ export function MemoryDetail({ photos, startId, onClose, onDeleted }: Props) {
     wanted.forEach(p => requested.current.add(p.id));
     supabase.storage.from("memories")
       .createSignedUrls(wanted.map(p => p.file_path), 3600)
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!data) return;
+        const shown = await Promise.all(data.map(d => d.signedUrl ? displayableUrl(d.signedUrl) : null));
         setUrls(prev => {
           const next = { ...prev };
-          data.forEach((d, i) => { if (d.signedUrl) next[wanted[i].id] = d.signedUrl; });
+          shown.forEach((u, i) => { if (u) next[wanted[i].id] = u; });
           return next;
         });
       });

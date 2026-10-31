@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { displayableUrl } from "@/lib/heic";
 
 /**
  * Ficheiros de buckets privados (chat-media, photos) abrem por links assinados.
@@ -34,12 +35,14 @@ export async function signedMediaUrl(bucket: string, value: string | null | unde
   if (hit && hit.until > Date.now()) return hit.url;
   let p = inflight.get(key);
   if (!p) {
-    p = supabase.storage.from(bucket).createSignedUrl(path, TTL_S).then(({ data }) => {
+    p = supabase.storage.from(bucket).createSignedUrl(path, TTL_S).then(async ({ data }) => {
       inflight.delete(key);
       if (!data?.signedUrl) return null;
+      // Fotos HEIC antigas viram um blob: JPEG (o Chrome não as mostra).
+      const url = await displayableUrl(data.signedUrl);
       // Renova uns minutos antes de expirar.
-      cache.set(key, { url: data.signedUrl, until: Date.now() + (TTL_S - 300) * 1000 });
-      return data.signedUrl;
+      cache.set(key, { url, until: Date.now() + (TTL_S - 300) * 1000 });
+      return url;
     }, () => { inflight.delete(key); return null; });
     inflight.set(key, p);
   }

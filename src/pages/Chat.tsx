@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useOnlinePresence } from "@/features/presence/onlinePresence";
 import { useSignedMedia } from "@/lib/privateMedia";
+import { toJpegIfHeic } from "@/lib/heic";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -278,7 +279,7 @@ function ImagePickerButton({ onPick }: { onPick: (f: File) => void }) {
   return (
     <>
       <input ref={ref} type="file" accept="image/*" className="hidden"
-        onChange={e => { const f = e.target.files?.[0]; if (f) { onPick(f); e.target.value = ""; } }} />
+        onChange={e => { const f = e.target.files?.[0]; if (f) { toJpegIfHeic(f).then(onPick, () => onPick(f)); e.target.value = ""; } }} />
       <button type="button" onClick={() => ref.current?.click()}
         className="w-9 h-9 flex items-center justify-center text-[#9A9DA6] hover:text-foreground shrink-0 transition-colors">
         <ImageIcon className="h-5 w-5" strokeWidth={1.8} />
