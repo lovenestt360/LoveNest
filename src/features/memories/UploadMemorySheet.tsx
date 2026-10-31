@@ -4,6 +4,7 @@ import { notifyPartner } from "@/lib/notifyPartner";
 import { notifyLovePointsChanged } from "@/lib/lovePoints";
 import { X, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { toJpegIfHeic } from "@/lib/heic";
 
 interface Props {
   open: boolean;
@@ -33,6 +34,11 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
     // Limpa o valor para permitir selecionar o mesmo ficheiro novamente
     e.target.value = "";
     if (!f) return;
+    // HEIC (câmara do telemóvel) não abre no Chrome: converte já, para a pré-visualização e o upload.
+    toJpegIfHeic(f).then(loadFile, () => loadFile(f));
+  };
+
+  const loadFile = (f: File) => {
     setFile(f);
     const reader = new FileReader();
     reader.onload = (ev) => setPreview(ev.target?.result as string);

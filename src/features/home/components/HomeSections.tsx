@@ -7,6 +7,7 @@ import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
 import { cn } from "@/lib/utils";
 import { MoodFace } from "@/features/mood/MoodArt";
 import { FeatureIcon } from "@/features/home/FeatureIcon";
+import { displayableUrl } from "@/lib/heic";
 
 /** Superfície comum da Home refinada: branco, borda fina e sombra suave. */
 export const SURFACE =
@@ -218,8 +219,9 @@ function useLastMemory(spaceId: string | null) {
           return;
         }
         const { data: signed } = await supabase.storage.from("memories").createSignedUrl(row.file_path, 3600);
+        const url = signed ? await displayableUrl(signed.signedUrl) : null;
         if (cancelled) return;
-        if (signed) setPhoto({ url: signed.signedUrl, caption: row.caption, date: row.taken_on ?? row.created_at });
+        if (url) setPhoto({ url, caption: row.caption, date: row.taken_on ?? row.created_at });
         setChecked(true);
       });
     return () => {
