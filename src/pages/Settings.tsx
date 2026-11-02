@@ -47,6 +47,7 @@ import { getFirebaseMessaging, getToken, deleteToken } from "@/lib/firebase";
 import { savePushToken } from "@/lib/pushToken";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import type { Tables } from "@/integrations/supabase/types";
+import { toJpegIfHeic } from "@/lib/heic";
 
 interface Profile {
   display_name: string | null;
@@ -398,8 +399,9 @@ export default function Settings() {
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+    const picked = e.target.files?.[0];
+    if (!picked || !user) return;
+    const file = await toJpegIfHeic(picked).catch(() => picked);
 
     // Validate size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {

@@ -10,6 +10,7 @@ import { differenceInDays, parseISO } from "date-fns";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { WrappedFilm } from "@/features/wrapped/WrappedFilm";
 import type { FilmData } from "@/features/wrapped/filmMarkup";
+import { displayableUrl } from "@/lib/heic";
 
 const MONTH_NAMES = [
   "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -96,7 +97,8 @@ export default function LoveWrapped() {
     const paths = (data ?? []).map((p) => p.file_path);
     if (!paths.length) return [];
     const { data: signed } = await supabase.storage.from("memories").createSignedUrls(paths, 3600);
-    return (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
+    const urls = (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
+    return Promise.all(urls.map(displayableUrl));
   };
 
   const handleStartStory = async (index: number) => {

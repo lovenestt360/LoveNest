@@ -16,6 +16,7 @@ import { notifyPartner } from "@/lib/notifyPartner";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
 import { signedMediaUrl } from "@/lib/privateMedia";
+import { toJpegIfHeic } from "@/lib/heic";
 
 function hasSeenReveal(userId: string, capsuleId: string): boolean {
   try { return (JSON.parse(localStorage.getItem(`ln_cap_rev_seen_${userId}`) ?? "[]") as string[]).includes(capsuleId); }
@@ -379,7 +380,7 @@ export default function TimeCapsule() {
                       {selectedImage ? selectedImage.name : "Foto (opcional)"}
                     </span>
                     <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                      onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setSelectedImage(f); }} />
+                      onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) toJpegIfHeic(f).then(setSelectedImage, () => setSelectedImage(f)); }} />
                   </div>
                   {selectedImage && (
                     <button type="button" onClick={() => setSelectedImage(null)}

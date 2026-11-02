@@ -5,6 +5,7 @@ import { pt } from "date-fns/locale";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Photo } from "@/pages/Memories";
+import { displayableUrl } from "@/lib/heic";
 
 interface Props {
   photos: Photo[];
@@ -91,7 +92,7 @@ function MemoryTile({
     supabase.storage
       .from("memories")
       .createSignedUrl(photo.file_path, 3600)
-      .then(({ data }) => { if (data) setUrl(data.signedUrl); });
+      .then(({ data }) => { if (data) displayableUrl(data.signedUrl).then(setUrl); });
   }, [photo.file_path]);
 
   const displayDate = photo.taken_on

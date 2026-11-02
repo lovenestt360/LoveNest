@@ -14,6 +14,7 @@ import {
   type RelationshipEvent,
   type TimelineEntry,
 } from "./types";
+import { displayableUrl } from "@/lib/heic";
 
 function parseDateOnly(iso: string): Date {
   return new Date(iso + "T00:00:00");
@@ -174,7 +175,7 @@ function EventPhotoWithOverlay({
     supabase.storage
       .from("memories")
       .createSignedUrl(imagePath, 3600)
-      .then(({ data }) => { if (data) setUrl(data.signedUrl); });
+      .then(({ data }) => { if (data) displayableUrl(data.signedUrl).then(setUrl); });
   }, [imagePath]);
 
   if (!url) {
