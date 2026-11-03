@@ -1,6 +1,6 @@
 // POST /api/heic — recebe uma foto HEIC (corpo binário) e devolve-a em JPEG.
 // Só para quem tem sessão na LoveNest: a conversão gasta CPU.
-import { heicToJpeg, looksLikeHeic } from "./_heic";
+import { heicToJpeg, looksLikeHeic } from "./_heic.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
