@@ -93,6 +93,7 @@ export function AddRelationshipEventSheet({
   const [previewUrl, setPreviewUrl]   = useState<string | null>(null);
   const [existingUrl, setExistingUrl] = useState<string | null>(null);
   const [saving, setSaving]           = useState(false);
+  const [preparing, setPreparing]     = useState(false);
   const [saved, setSaved]             = useState(false);
   const [savedTitle, setSavedTitle]   = useState("");
   const [savedPhotoUrl, setSavedPhotoUrl] = useState<string | null>(null);
@@ -243,10 +244,21 @@ export function AddRelationshipEventSheet({
                   </div>
                 ) : (
                   <div className="relative w-full rounded-xl border border-dashed border-border/40 py-2.5 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors cursor-pointer">
-                    <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />
-                    <span className="text-[12px] text-muted-foreground">Adicionar fotografia (opcional)</span>
-                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                      onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; if (f) toJpegIfHeic(f).then(setImageFile, () => setImageFile(f)); else setImageFile(null); }} />
+                    {preparing
+                      ? <Loader2 className="w-4 h-4 text-rose-300 shrink-0 animate-spin" strokeWidth={1.5} />
+                      : <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />}
+                    <span className="text-[12px] text-muted-foreground" aria-live="polite">
+                      {preparing ? "A preparar a foto…" : "Adicionar fotografia (opcional)"}
+                    </span>
+                    {!preparing && (
+                      <input type="file" accept="image/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] ?? null; e.target.value = "";
+                          if (!f) { setImageFile(null); return; }
+                          setPreparing(true);
+                          toJpegIfHeic(f).then(setImageFile, () => setImageFile(f)).finally(() => setPreparing(false));
+                        }} />
+                    )}
                   </div>
                 )}
               </div>
@@ -334,7 +346,7 @@ export function AddRelationshipEventSheet({
               {/* CTA */}
               <Button
                 onClick={handleSave}
-                disabled={saving || !title.trim() || !eventDate}
+                disabled={saving || preparing || !title.trim() || !eventDate}
                 className="w-full h-11 rounded-2xl bg-[#C4788C] hover:bg-[#B56A7E] active:bg-[#A65C70] text-white font-semibold text-[13px] shadow-[0_4px_16px_rgba(196,120,140,0.25)] transition-all border-0"
               >
                 {saving ? (

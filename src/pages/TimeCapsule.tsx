@@ -55,6 +55,7 @@ export default function TimeCapsule() {
     ? `${unlockYear}-${unlockMonth.padStart(2, "0")}-${unlockDay.padStart(2, "0")}`
     : "";
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [preparingImage, setPreparingImage] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -375,12 +376,21 @@ export default function TimeCapsule() {
                 </div>
                 <div className="px-4 py-2.5 flex items-center gap-3">
                   <div className="relative flex-1 flex items-center gap-3 cursor-pointer active:opacity-70 transition-opacity">
-                    <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
-                    <span className={cn("text-sm truncate", selectedImage ? "text-foreground font-medium" : "text-muted-foreground")}>
-                      {selectedImage ? selectedImage.name : "Foto (opcional)"}
+                    {preparingImage
+                      ? <Loader2 className="w-4 h-4 text-muted-foreground shrink-0 animate-spin" strokeWidth={1.5} />
+                      : <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />}
+                    <span className={cn("text-sm truncate", selectedImage ? "text-foreground font-medium" : "text-muted-foreground")} aria-live="polite">
+                      {preparingImage ? "A preparar a foto…" : selectedImage ? selectedImage.name : "Foto (opcional)"}
                     </span>
-                    <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                      onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) toJpegIfHeic(f).then(setSelectedImage, () => setSelectedImage(f)); }} />
+                    {!preparingImage && (
+                      <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={e => {
+                          const f = e.target.files?.[0]; e.target.value = "";
+                          if (!f) return;
+                          setPreparingImage(true);
+                          toJpegIfHeic(f).then(setSelectedImage, () => setSelectedImage(f)).finally(() => setPreparingImage(false));
+                        }} />
+                    )}
                   </div>
                   {selectedImage && (
                     <button type="button" onClick={() => setSelectedImage(null)}
@@ -391,7 +401,7 @@ export default function TimeCapsule() {
                 </div>
               </div>
               <button type="submit"
-                disabled={uploading || !newMessage.trim() || !unlockDate}
+                disabled={uploading || preparingImage || !newMessage.trim() || !unlockDate}
                 className="w-full h-[52px] rounded-[18px] bg-[#0B1324] text-white font-semibold text-[15px] disabled:opacity-40 active:scale-[0.99] transition-transform flex items-center justify-center gap-2 shadow-[0_14px_28px_-14px_rgba(11,19,36,0.6)] dark:bg-foreground dark:text-background">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" strokeWidth={1.5} />}
                 {uploading ? "A selar..." : "Selar cápsula"}
