@@ -181,7 +181,7 @@ export default function Jornada() {
   //  - espera pelos dados reais (initialized), nunca pelo streak em cache;
   //  - a primeira vez de sempre só guarda a fase (não celebra a fase atual);
   //  - guarda sempre a fase mais alta, para não repetir ao voltar a subir.
-  const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
+  const [levelUpData, setLevelUpData] = useState<{ prevLevel: number } | null>(null);
   useEffect(() => {
     if (!user?.id || !streakInitialized) return;
     let cancelled = false;
@@ -202,11 +202,7 @@ export default function Jornada() {
       const seen = remote ?? local;
 
       const { celebrate, store } = levelUpCheck(seen, level);
-      if (celebrate) {
-        const prev = STREAK_LEVELS.find(l => l.level === seen);
-        setLevelUpData({ prevName: prev?.name ?? "Faísca" });
-        hapticCelebrate();
-      }
+      if (celebrate) setLevelUpData({ prevLevel: seen });
 
       const next = store ?? seen;
       if (next > local) {
@@ -693,8 +689,9 @@ export default function Jornada() {
       <LevelUpCelebration
         show={!!levelUpData}
         newLevel={streakPhase.level}
-        newName={streakPhase.name}
-        prevName={levelUpData?.prevName ?? ""}
+        prevLevel={levelUpData?.prevLevel ?? Math.max(1, streakPhase.level - 1)}
+        days={currentStreak}
+        names={isSolo ? [myName] : [myName, partnerName]}
         onClose={() => setLevelUpData(null)}
       />
     </div>
