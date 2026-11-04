@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, X, Loader2, BookOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale";
+import { Calendar, Camera, Check, Heart, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import {
-  EVENT_TYPE_CONFIG,
-  EVENT_COLORS,
-  type RelationshipEvent,
-  type RelationshipEventType,
-} from "./types";
+import { EVENT_TYPE_CONFIG, type RelationshipEvent, type RelationshipEventType } from "./types";
 import type { CreateRelationshipEventInput } from "./useRelationshipEvents";
+import { dayNumber, parseDateOnly } from "./story";
 import { displayableUrl, toJpegIfHeic } from "@/lib/heic";
+import "./story.css";
 
 interface Props {
   open: boolean;
@@ -25,52 +23,42 @@ interface Props {
   onCreated?: (title: string) => void;
   defaultTitle?: string;
   defaultDate?: string;
+  /** "Capítulo 10" no topo. */
+  chapterNumber?: number;
+  /** Para mostrar "dia 425" ao lado da data. */
+  relationshipStart?: string | null;
+  /** Com o nome do outro, aparece "Guardar como surpresa". */
+  partnerName?: string | null;
 }
 
 const EVENT_TYPES = Object.keys(EVENT_TYPE_CONFIG) as RelationshipEventType[];
+const todayIso = () => format(new Date(), "yyyy-MM-dd");
 
-const CATEGORY_LABELS: Record<RelationshipEventType, string> = {
-  first_meeting: "Encontro",
-  dating:        "Namoro",
-  engagement:    "Noivado",
-  marriage:      "Casamento",
-  trip:          "Viagem",
-  custom:        "Outro",
-};
-
-// ── Celebração após guardar ────────────────────────────────────────────────────
-function SavedScreen({ title, photoUrl }: { title: string; photoUrl: string | null }) {
+// ── Depois de guardar ─────────────────────────────────────────────────────────
+function SavedScreen({ title, photoUrl, surpriseFor, onDone }: { title: string; photoUrl: string | null; surpriseFor: string | null; onDone: () => void }) {
   return (
-    <div className="px-6 py-8 flex flex-col items-center text-center animate-in fade-in duration-300">
-      {photoUrl && (
-        <div className="w-full rounded-2xl overflow-hidden mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
-          <img src={photoUrl} alt="" className="w-full h-32 object-cover" />
-        </div>
+    <div className="text-center px-2 pb-2 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      {photoUrl ? (
+        <img src={photoUrl} alt="" className="w-full h-[150px] object-cover rounded-[18px] mt-1.5" />
+      ) : (
+        <div className="w-full h-[110px] rounded-[18px] mt-1.5" style={{ background: "linear-gradient(160deg, #FFE3EA, #FFF6F8)" }} />
       )}
-      <div className="relative w-12 h-12 mx-auto mb-3">
-        <div className="absolute inset-0 rounded-full bg-rose-100 dark:bg-rose-900/20 animate-ping opacity-20" />
-        <div className="relative w-full h-full rounded-full bg-rose-50 dark:bg-rose-950/25 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center">
-          <BookOpen className="w-5 h-5 text-rose-400" strokeWidth={1.5} />
-        </div>
+      <div className="relative w-[46px] h-[46px] -mt-[23px] mx-auto rounded-full bg-[#FF4F7B] text-white flex items-center justify-center border-4 border-background">
+        <Check className="w-[18px] h-[18px]" strokeWidth={3} />
       </div>
-      <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.3em] mb-1.5">
-        Novo capítulo
+      <p className="font-serif text-[19px] font-bold mt-3.5">Mais um capítulo escrito</p>
+      <p className="text-[12.5px] text-muted-foreground mt-2 leading-relaxed">
+        "{title}"{" "}
+        {surpriseFor ? `está guardado como surpresa. ${surpriseFor} recebe um aviso para o abrir.` : "já faz parte da vossa história."}
       </p>
-      <p className="font-serif text-[18px] font-bold text-[#1A1A1A] dark:text-zinc-100 leading-tight">
-        Mais um capítulo foi escrito.
-      </p>
-      {title && (
-        <div className="mt-3 bg-rose-50/70 dark:bg-rose-950/15 border border-rose-100 dark:border-rose-900/25 rounded-2xl px-4 py-2.5 w-full">
-          <p className="font-serif text-[12px] font-semibold text-[#1A1A1A] dark:text-zinc-100">
-            "{title}"
-          </p>
-        </div>
-      )}
+      <button type="button" onClick={onDone} className="w-full h-[50px] rounded-2xl bg-muted text-foreground text-[14px] font-extrabold mt-5 active:scale-[0.98] transition-transform">
+        Ver na história
+      </button>
     </div>
   );
 }
 
-// ── Modal centrado via Portal — bypassa qualquer transform ancestor ────────────
+/** Folha que sobe de baixo para escrever (ou editar) um capítulo. */
 export function AddRelationshipEventSheet({
   open,
   onOpenChange,
@@ -82,41 +70,47 @@ export function AddRelationshipEventSheet({
   onCreated,
   defaultTitle,
   defaultDate,
+  chapterNumber,
+  relationshipStart,
+  partnerName,
 }: Props) {
   const { toast } = useToast();
+  const dateRef = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle]             = useState("");
-  const [eventDate, setEventDate]     = useState("");
-  const [eventType, setEventType]     = useState<RelationshipEventType>("custom");
+  const [title, setTitle] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventType, setEventType] = useState<RelationshipEventType>("custom");
   const [description, setDescription] = useState("");
-  const [imageFile, setImageFile]     = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl]   = useState<string | null>(null);
+  const [surprise, setSurprise] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [existingUrl, setExistingUrl] = useState<string | null>(null);
-  const [saving, setSaving]           = useState(false);
-  const [preparing, setPreparing]     = useState(false);
-  const [saved, setSaved]             = useState(false);
-  const [savedTitle, setSavedTitle]   = useState("");
-  const [savedPhotoUrl, setSavedPhotoUrl] = useState<string | null>(null);
+  const [removedPhoto, setRemovedPhoto] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [saved, setSaved] = useState<{ title: string; photo: string | null; surpriseFor: string | null } | null>(null);
 
   useEffect(() => {
-    if (!open) { setSaved(false); return; }
+    if (!open) { setSaved(null); return; }
     setTitle(editingEvent?.title ?? defaultTitle ?? "");
-    setEventDate(editingEvent?.event_date ?? defaultDate ?? "");
+    setEventDate(editingEvent?.event_date ?? defaultDate ?? todayIso());
     setEventType(editingEvent?.event_type ?? "custom");
     setDescription(editingEvent?.description ?? "");
+    setSurprise(false);
     setImageFile(null);
     setPreviewUrl(null);
-    setSaved(false);
+    setPreparing(false);
+    setRemovedPhoto(false);
+    setSaved(null);
 
+    setExistingUrl(null);
     if (editingEvent?.image_path) {
       supabase.storage
         .from("memories")
         .createSignedUrl(editingEvent.image_path, 3600)
         .then(({ data }) => { if (data) displayableUrl(data.signedUrl).then(setExistingUrl); });
-    } else {
-      setExistingUrl(null);
     }
-  }, [open, editingEvent]);
+  }, [open, editingEvent, defaultTitle, defaultDate]);
 
   useEffect(() => {
     if (!imageFile) { setPreviewUrl(null); return; }
@@ -125,16 +119,21 @@ export function AddRelationshipEventSheet({
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const displayImg = previewUrl ?? existingUrl;
+  const displayImg = previewUrl ?? (removedPhoto ? null : existingUrl);
+  const isEditing = !!editingEvent;
+  const canSurprise = !isEditing && !!partnerName;
+  const dayN = eventDate ? dayNumber(relationshipStart ?? null, eventDate) : null;
 
-  const removeImage = () => {
-    setImageFile(null);
-    setPreviewUrl(null);
-    setExistingUrl(null);
+  const close = () => onOpenChange(false);
+
+  const pickFile = (f: File | null) => {
+    if (!f) return;
+    setPreparing(true);
+    toJpegIfHeic(f).then(setImageFile, () => setImageFile(f)).finally(() => setPreparing(false));
   };
 
   const handleSave = async () => {
-    if (!title.trim() || !eventDate) return;
+    if (!title.trim() || !eventDate || preparing) return;
     setSaving(true);
     try {
       let imagePath: string | undefined;
@@ -154,25 +153,24 @@ export function AddRelationshipEventSheet({
         event_type: eventType,
         event_date: eventDate,
         ...(imagePath ? { image_path: imagePath } : {}),
+        ...(isEditing && removedPhoto && !imagePath ? { image_path: null } : {}),
+        ...(canSurprise && surprise ? { is_surprise: true } : {}),
       };
 
-      const { error } = editingEvent
-        ? await onUpdate(editingEvent.id, input)
-        : await onCreate(userId, input);
+      const { error } = editingEvent ? await onUpdate(editingEvent.id, input) : await onCreate(userId, input);
+      if (error) {
+        if (String(error?.message ?? "").includes("is_surprise")) {
+          throw new Error("A surpresa ainda não está ativa. Desliga \"Guardar como surpresa\" e tenta outra vez.");
+        }
+        throw error;
+      }
 
-      if (error) throw error;
-
-      if (!editingEvent) {
-        setSavedTitle(title.trim());
-        setSavedPhotoUrl(previewUrl);
-        setSaved(true);
-        setTimeout(() => {
-          onCreated?.(title.trim());
-          onOpenChange(false);
-        }, 2600);
+      if (!isEditing) {
+        const t = title.trim();
+        setSaved({ title: t, photo: previewUrl, surpriseFor: canSurprise && surprise ? partnerName! : null });
       } else {
         toast({ title: "Capítulo atualizado" });
-        onOpenChange(false);
+        close();
       }
     } catch (err: any) {
       toast({ title: "Erro ao guardar", description: err?.message, variant: "destructive" });
@@ -181,188 +179,186 @@ export function AddRelationshipEventSheet({
     }
   };
 
-  const isEditing = !!editingEvent;
-
   if (!open) return null;
 
-  // createPortal garante que o modal é filho directo de document.body —
-  // nunca afectado por transform/filter de qualquer ancestor do React tree.
   return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
-      style={{ padding: "16px" }}
-    >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
-        onClick={() => !saved && onOpenChange(false)}
-      />
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+      <div className="absolute inset-0 bg-[rgba(28,20,26,0.32)] animate-in fade-in duration-200" onClick={() => !saving && close()} />
 
-      {/* Card centrado — largura máxima 360px */}
       <div
-        className="relative w-full bg-background rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-        style={{ maxWidth: "360px" }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? "Editar capítulo" : "Novo capítulo"}
+        className="relative w-full max-w-md bg-background rounded-t-[30px] px-5 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+20px)] max-h-[94dvh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom duration-300"
       >
+        <div className="w-[38px] h-1 rounded-full bg-border mx-auto mb-3" />
+
         {saved ? (
-          <SavedScreen title={savedTitle} photoUrl={savedPhotoUrl} />
+          <SavedScreen
+            title={saved.title}
+            photoUrl={saved.photo}
+            surpriseFor={saved.surpriseFor}
+            onDone={() => { onCreated?.(saved.title); close(); }}
+          />
         ) : (
           <>
-            {/* Cabeçalho */}
-            <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-border/20">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
-                <p className="font-serif text-[14px] font-bold text-foreground">
-                  {isEditing ? "Editar capítulo" : "Novo capítulo"}
-                </p>
+            <div className="flex justify-between items-start">
+              <div>
+                {chapterNumber && (
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.28em] text-[#E8336A] dark:text-[#FF7A9B]">
+                    Capítulo {chapterNumber}
+                  </p>
+                )}
+                <p className="font-serif text-[18px] font-bold mt-1">{isEditing ? "Editar capítulo" : "Novo capítulo"}</p>
               </div>
-              <button
-                onClick={() => onOpenChange(false)}
-                className="w-6 h-6 rounded-full bg-muted/60 flex items-center justify-center active:scale-90 transition-transform"
-              >
-                <X className="w-3 h-3 text-muted-foreground" strokeWidth={2} />
+              <button type="button" onClick={close} aria-label="Fechar" className="w-[30px] h-[30px] rounded-full bg-muted flex items-center justify-center text-muted-foreground active:scale-90 transition-transform">
+                <X className="w-3.5 h-3.5" strokeWidth={2.4} />
               </button>
             </div>
 
-            {/* Formulário com labels e espaçamento confortável */}
-            <div className="px-4 pt-3 pb-5 space-y-3">
-
-              {/* Fotografia */}
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Fotografia
-                </p>
-                {displayImg ? (
-                  <div className="relative rounded-xl overflow-hidden">
-                    <img src={displayImg} alt="" className="w-full h-24 object-cover" />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 flex items-center justify-center active:scale-90"
-                    >
-                      <X className="w-3 h-3 text-white" strokeWidth={2} />
+            <div className="flex flex-col gap-3.5 mt-3.5">
+              {/* Foto */}
+              {preparing ? (
+                <div className="ns-shine relative h-[136px] rounded-[18px] overflow-hidden bg-[#FFF0F4] dark:bg-rose-500/10 flex items-center justify-center gap-2.5" aria-live="polite">
+                  <Loader2 className="w-[18px] h-[18px] text-[#FF4F7B] animate-spin" />
+                  <div className="text-left">
+                    <p className="text-[13px] font-extrabold">A preparar a foto…</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold">Só uns segundos</p>
+                  </div>
+                </div>
+              ) : displayImg || (editingEvent?.image_path && !removedPhoto) ? (
+                <div className="relative h-[136px] rounded-[18px] overflow-hidden bg-muted">
+                  {displayImg && <img src={displayImg} alt="" className="w-full h-full object-cover" />}
+                  <div className="absolute top-2.5 right-2.5 flex gap-1.5">
+                    <label className="relative h-[26px] px-3 rounded-full bg-white/85 text-[#1C1A1D] text-[11px] font-extrabold flex items-center cursor-pointer">
+                      Trocar
+                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; pickFile(f); }} />
+                    </label>
+                    <button type="button" onClick={() => { setImageFile(null); setExistingUrl(null); setRemovedPhoto(true); }} aria-label="Tirar a foto" className="w-[26px] h-[26px] rounded-full bg-white/85 text-[#1C1A1D] flex items-center justify-center">
+                      <X className="w-3 h-3" strokeWidth={2.4} />
                     </button>
                   </div>
-                ) : (
-                  <div className="relative w-full rounded-xl border border-dashed border-border/40 py-2.5 px-3 flex items-center gap-2.5 active:bg-muted/20 transition-colors cursor-pointer">
-                    {preparing
-                      ? <Loader2 className="w-4 h-4 text-rose-300 shrink-0 animate-spin" strokeWidth={1.5} />
-                      : <Camera className="w-4 h-4 text-rose-300 shrink-0" strokeWidth={1.5} />}
-                    <span className="text-[12px] text-muted-foreground" aria-live="polite">
-                      {preparing ? "A preparar a foto…" : "Adicionar fotografia (opcional)"}
-                    </span>
-                    {!preparing && (
-                      <input type="file" accept="image/*" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] ?? null; e.target.value = "";
-                          if (!f) { setImageFile(null); return; }
-                          setPreparing(true);
-                          toJpegIfHeic(f).then(setImageFile, () => setImageFile(f)).finally(() => setPreparing(false));
-                        }} />
-                    )}
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <label className="relative h-[86px] rounded-[18px] border border-dashed border-border flex items-center justify-center gap-2.5 text-muted-foreground cursor-pointer active:bg-muted/50 transition-colors">
+                  <Camera className="w-[18px] h-[18px] text-[#FF4F7B]" strokeWidth={1.8} />
+                  <span className="text-[13px] font-semibold">Juntar uma foto <span className="font-normal">(opcional)</span></span>
+                  <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; pickFile(f); }} />
+                </label>
+              )}
 
               {/* Título */}
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Nome do momento
-                </p>
+              <label className="block">
+                <span className="text-[11px] font-bold text-muted-foreground">Que momento querem guardar?</span>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Primeira viagem juntos"
-                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
+                  placeholder="Ex: A primeira viagem juntos"
+                  maxLength={120}
+                  className="w-full bg-transparent font-serif text-[16px] font-bold text-foreground placeholder:text-muted-foreground/50 placeholder:font-normal pt-1.5 pb-2 border-b border-border focus:border-[#FF4F7B] outline-none transition-colors"
                 />
-              </div>
-
-              {/* Categoria */}
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Tipo de momento
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {EVENT_TYPES.map((type) => {
-                    const config = EVENT_TYPE_CONFIG[type];
-                    const colors = EVENT_COLORS[type];
-                    const Icon   = config.icon;
-                    const sel    = eventType === type;
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setEventType(type)}
-                        className={cn(
-                          "flex flex-col items-center gap-1.5 py-2.5 rounded-xl border transition-all",
-                          sel
-                            ? cn("border-transparent", colors.iconBg)
-                            : "border-border/30 bg-muted/15 active:bg-muted/40"
-                        )}
-                      >
-                        <Icon
-                          className={cn("w-4 h-4", sel ? colors.iconText : "text-muted-foreground/60")}
-                          strokeWidth={1.5}
-                        />
-                        <span className={cn(
-                          "text-[9px] font-semibold leading-none",
-                          sel ? colors.iconText : "text-muted-foreground/70"
-                        )}>
-                          {CATEGORY_LABELS[type]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              </label>
 
               {/* Data */}
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Data em que aconteceu
-                </p>
-                <input
-                  type="date"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all"
-                />
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => { const el = dateRef.current; if (!el) return; try { el.showPicker(); } catch { el.focus(); el.click(); } }}
+                  className="relative inline-flex items-center gap-2 text-[13px] font-bold text-foreground"
+                >
+                  <Calendar className="w-[15px] h-[15px] text-muted-foreground" strokeWidth={2} />
+                  {eventDate ? format(parseDateOnly(eventDate), "d 'de' MMMM 'de' yyyy", { locale: pt }) : "Escolher a data"}
+                  <input
+                    ref={dateRef}
+                    type="date"
+                    value={eventDate}
+                    max={todayIso()}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 pointer-events-none"
+                    tabIndex={-1}
+                    aria-label="Data em que aconteceu"
+                  />
+                </button>
+                {dayN && <span className="text-[12px] text-muted-foreground">dia {dayN}</span>}
               </div>
 
-              {/* Descrição */}
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Mensagem (opcional)
-                </p>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Uma frase para nunca esquecer…"
-                  rows={2}
-                  className="w-full bg-muted/35 border border-border/40 rounded-xl px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-rose-400/30 focus:border-rose-300 dark:focus:border-rose-700 transition-all resize-none leading-relaxed"
-                />
+              {/* Tipo */}
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Tipo de momento">
+                {EVENT_TYPES.map((type) => {
+                  const sel = eventType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      aria-pressed={sel}
+                      onClick={() => setEventType(type)}
+                      className={cn(
+                        "h-8 px-[13px] rounded-full text-[12px] border transition-colors",
+                        sel
+                          ? "bg-[#FFF0F4] dark:bg-rose-500/15 border-transparent text-[#E8336A] dark:text-[#FF7A9B] font-extrabold"
+                          : "border-border text-foreground/70 font-bold active:bg-muted",
+                      )}
+                    >
+                      {EVENT_TYPE_CONFIG[type].short}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* CTA */}
-              <Button
+              {/* Texto */}
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Conta como foi… (opcional)"
+                rows={3}
+                className="w-full rounded-[14px] bg-muted/60 px-3.5 py-3 font-serif text-[14px] leading-relaxed text-foreground placeholder:italic placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-[#FF4F7B]/25 resize-none"
+              />
+
+              {/* Surpresa */}
+              {canSurprise && (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={surprise}
+                  onClick={() => setSurprise((s) => !s)}
+                  className="flex items-center gap-3 text-left"
+                >
+                  <span className="w-[34px] h-[34px] rounded-full bg-[#FFF0F4] dark:bg-rose-500/15 text-[#FF4F7B] flex items-center justify-center shrink-0">
+                    <Heart className="w-[15px] h-[15px]" fill="currentColor" strokeWidth={0} />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <b className="block text-[13.5px] font-extrabold">Guardar como surpresa</b>
+                    <small className="block text-[11.5px] text-muted-foreground mt-px">{partnerName} só vê quando o abrir.</small>
+                  </span>
+                  <span className={cn("relative w-[42px] h-[26px] rounded-full shrink-0 transition-colors", surprise ? "bg-[#FF4F7B]" : "bg-muted-foreground/25")}>
+                    <span className={cn("absolute top-[3px] w-5 h-5 rounded-full bg-white shadow transition-[left] duration-200", surprise ? "left-[19px]" : "left-[3px]")} />
+                  </span>
+                </button>
+              )}
+
+              {/* Guardar */}
+              <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving || preparing || !title.trim() || !eventDate}
-                className="w-full h-11 rounded-2xl bg-[#C4788C] hover:bg-[#B56A7E] active:bg-[#A65C70] text-white font-semibold text-[13px] shadow-[0_4px_16px_rgba(196,120,140,0.25)] transition-all border-0"
+                className="h-[52px] rounded-2xl bg-[#FF4F7B] text-white text-[14px] font-extrabold flex items-center justify-center gap-2 mt-0.5 disabled:opacity-45 active:scale-[0.98] transition-[transform,opacity]"
               >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                {preparing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> A preparar a foto…</>
+                ) : saving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> A guardar…</>
                 ) : isEditing ? (
                   "Guardar alterações"
                 ) : (
-                  "Guardar este momento"
+                  "Guardar capítulo"
                 )}
-              </Button>
-
+              </button>
             </div>
           </>
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
