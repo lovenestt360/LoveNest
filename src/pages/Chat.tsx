@@ -276,13 +276,22 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
 
 function ImagePickerButton({ onPick }: { onPick: (f: File) => void }) {
   const ref = useRef<HTMLInputElement>(null);
+  const [preparing, setPreparing] = useState(false);
   return (
     <>
       <input ref={ref} type="file" accept="image/*" className="hidden"
-        onChange={e => { const f = e.target.files?.[0]; if (f) { toJpegIfHeic(f).then(onPick, () => onPick(f)); e.target.value = ""; } }} />
-      <button type="button" onClick={() => ref.current?.click()}
+        onChange={e => {
+          const f = e.target.files?.[0]; e.target.value = "";
+          if (!f) return;
+          setPreparing(true);
+          toJpegIfHeic(f).then(onPick, () => onPick(f)).finally(() => setPreparing(false));
+        }} />
+      <button type="button" onClick={() => ref.current?.click()} disabled={preparing}
+        aria-label={preparing ? "A preparar a foto" : "Enviar foto"}
         className="w-9 h-9 flex items-center justify-center text-[#9A9DA6] hover:text-foreground shrink-0 transition-colors">
-        <ImageIcon className="h-5 w-5" strokeWidth={1.8} />
+        {preparing
+          ? <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.8} />
+          : <ImageIcon className="h-5 w-5" strokeWidth={1.8} />}
       </button>
     </>
   );

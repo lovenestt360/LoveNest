@@ -401,15 +401,16 @@ export default function Settings() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0];
     if (!picked || !user) return;
+    setUploading(true);
     const file = await toJpegIfHeic(picked).catch(() => picked);
 
     // Validate size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
+      setUploading(false);
       toast({ title: "Arquivo muito grande", description: "O limite é de 5MB por foto.", variant: "destructive" });
       return;
     }
 
-    setUploading(true);
     const fileExt = file.name.split('.').pop();
     const path = `${user.id}/${Date.now()}.${fileExt}`;
 

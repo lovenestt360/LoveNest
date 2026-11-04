@@ -20,6 +20,7 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
   const [caption, setCaption] = useState("");
   const [takenOn, setTakenOn] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const reset = () => {
     setFile(null);
     setPreview(null);
@@ -35,7 +36,8 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
     e.target.value = "";
     if (!f) return;
     // HEIC (câmara do telemóvel) não abre no Chrome: converte já, para a pré-visualização e o upload.
-    toJpegIfHeic(f).then(loadFile, () => loadFile(f));
+    setPreparing(true);
+    toJpegIfHeic(f).then(loadFile, () => loadFile(f)).finally(() => setPreparing(false));
   };
 
   const loadFile = (f: File) => {
@@ -109,13 +111,15 @@ export function UploadMemorySheet({ open, onClose, spaceId, userId, onUploaded }
       {!preview ? (
         <div className="relative flex-1 flex flex-col items-center justify-center gap-5 px-8 active:bg-muted/30 transition-colors cursor-pointer">
           <div className="w-20 h-20 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center">
-            <ImagePlus className="w-9 h-9 text-rose-400" />
+            {preparing
+              ? <Loader2 className="w-9 h-9 text-rose-400 animate-spin" />
+              : <ImagePlus className="w-9 h-9 text-rose-400" />}
           </div>
-          <div className="text-center space-y-1">
-            <p className="text-base font-bold text-foreground">Escolher fotografia</p>
-            <p className="text-sm text-muted-foreground">Toca para escolher da galeria</p>
+          <div className="text-center space-y-1" aria-live="polite">
+            <p className="text-base font-bold text-foreground">{preparing ? "A preparar a foto…" : "Escolher fotografia"}</p>
+            <p className="text-sm text-muted-foreground">{preparing ? "Só uns segundos" : "Toca para escolher da galeria"}</p>
           </div>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+          {!preparing && <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />}
         </div>
       ) : (
         <>

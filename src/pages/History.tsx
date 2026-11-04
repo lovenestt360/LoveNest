@@ -13,6 +13,7 @@ import { BookChapters, buildTimelineEntries } from "@/features/relationship-even
 import { AddRelationshipEventSheet } from "@/features/relationship-events/AddRelationshipEventSheet";
 import type { RelationshipEvent } from "@/features/relationship-events/types";
 import { useToast } from "@/hooks/use-toast";
+import { displayableUrl } from "@/lib/heic";
 
 function parseDateOnly(iso: string): Date {
   return new Date(iso + "T00:00:00");
@@ -61,7 +62,7 @@ function BookCover({
     supabase.storage
       .from("memories")
       .createSignedUrl(photoPath, 3600)
-      .then(({ data }) => { if (data) setImgUrl(data.signedUrl); });
+      .then(({ data }) => { if (data) displayableUrl(data.signedUrl).then(setImgUrl); });
   }, [photoPath]);
 
   // 3. Após 2.6s inicia o crossfade rosa → foto (só se a foto já carregou)
