@@ -1,12 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Navigate } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
   Lock, Unlock, Plus, Loader2, Trash2,
-  Clock, Sparkles, X, ImageIcon, CheckCircle2, ChevronRight,
+  Clock, Sparkles, X, ImageIcon, CheckCircle2, ChevronRight, Heart,
 } from "lucide-react";
+import { usePartnerProfile } from "@/hooks/usePartnerProfile";
+import { hapticCelebrate, hapticLight, hapticSuccess } from "@/lib/haptic";
+import { centerIn, createParticles, prefersReducedMotion, type Particles } from "@/components/celebration/particles";
+import "@/components/celebration/celebration.css";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -37,6 +41,9 @@ export default function TimeCapsule() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { profile, loading: profileLoading } = useProfile();
+  const { partner } = usePartnerProfile();
+  const partnerName = partner?.display_name?.split(" ")[0] || "O teu par";
+  const myName = profile?.display_name?.split(" ")[0] || "O teu par";
 
   const [loading, setLoading] = useState(true);
   const [capsules, setCapsules] = useState<any[]>([]);
@@ -310,7 +317,14 @@ export default function TimeCapsule() {
       {selectedCapsule && (revealPhase !== "idle" || capsuleType(selectedCapsule) === "ready") && (
         <CapsuleRevealFlow
           capsule={selectedCapsule} phase={revealPhase} revealing={revealing}
-          onClose={handleCloseDetail} onReveal={handleReveal} />
+          userId={user?.id} partnerName={partnerName}
+          onClose={handleCloseDetail} onReveal={handleReveal}
+          onReply={() => { handleCloseDetail(); setIsAdding(true); }}
+          onLove={() => {
+            if (!houseId) return;
+            notifyPartner({ couple_space_id: houseId, title: "Cápsula do Tempo",
+              body: `${myName} amou a cápsula que lhe guardaste.`, url: "/capsula", type: "memorias" });
+          }} />
       )}
       {selectedCapsule && revealPhase === "idle" && capsuleType(selectedCapsule) === "revealed" && (
         <RevealedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} />
@@ -574,41 +588,175 @@ const PARTICLES = [
   { dx: -88,  dy:  0  }, { dx: -62,  dy: -62 },
 ];
 
-function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
+/** Cadeado com a argola separada, para a ver saltar quando abre. */
+function CapsuleLock({ size = 34, open = false }: { size?: number; open?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="14" width="22" height="15" rx="3" />
+      {open ? <path d="M10 14V9.5a6 6 0 0111.6-2.2" /> : <g className="cap-shackle"><path d="M10 14V9.5a6 6 0 0112 0V14" /></g>}
+      <path d="M16 20v3" />
+    </svg>
+  );
+}
+
+const HOLD_MS = 1200;
+const HOLD_LEN = 478;
+
+function CapsuleRevealFlow({ capsule, phase, revealing, userId, partnerName, onClose, onReveal, onReply, onLove }: {
   capsule: any;
   phase: "idle" | "unlocking" | "revealed";
   revealing: boolean;
+  userId: string | undefined;
+  partnerName: string;
   onClose: () => void;
   onReveal: () => void;
+  onReply: () => void;
+  onLove: () => void;
 }) {
   const quote        = pickQuote(REVEAL_QUOTES,    capsule.id);
   const revealedQuote = pickQuote(REVEALED_QUOTES, capsule.id);
   const unlockDate   = new Date(capsule.unlock_date);
   const date         = format(unlockDate, "d 'de' MMMM 'de' yyyy", { locale: pt });
-  const dayOfWeek    = format(unlockDate, "EEEE", { locale: pt });
-
-  const diffDays  = Math.floor((Date.now() - unlockDate.getTime()) / 86_400_000);
-  const relStr    = diffDays === 0 ? "Hoje"
-    : diffDays === 1 ? "Ontem"
-    : diffDays < 30  ? `Há ${diffDays} dias`
-    : diffDays < 365 ? `Há ${Math.floor(diffDays / 30)} ${Math.floor(diffDays / 30) === 1 ? "mês" : "meses"}`
-    : `Há ${Math.floor(diffDays / 365)} ${Math.floor(diffDays / 365) === 1 ? "ano" : "anos"}`;
 
   const isVideo  = /\.(mp4|webm|mov)(\?|$)/i.test(capsule.image_url || "");
   const hasPhoto = !!capsule.image_url && !isVideo;
   const hasMedia = !!capsule.image_url;
 
+  const fromPartner = !!userId && capsule.creator_id !== userId;
+  const author      = fromPartner ? partnerName : "ti";
+  const createdAt   = capsule.created_at ? new Date(capsule.created_at) : null;
+  const waitedDays  = createdAt ? Math.max(0, differenceInDays(new Date(), createdAt)) : null;
+  const writtenOn   = createdAt ? format(createdAt, "d 'de' MMMM", { locale: pt }) : null;
+
+  const rootRef   = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const iconRef   = useRef<HTMLSpanElement>(null);
+  const fx        = useRef<Particles | null>(null);
+  const reduce    = prefersReducedMotion();
+
+  // ── Mantém premido para abrir ──
+  const [holdK, setHoldK]     = useState(0);
+  const [holding, setHolding] = useState(false);
+  const [opened, setOpened]   = useState(false);
+  const holdRaf  = useRef<number | null>(null);
+  const holdKRef = useRef(0);
+  const setK = (k: number) => { holdKRef.current = k; setHoldK(k); };
+
+  const finishHold = () => {
+    setHolding(false);
+    setOpened(true);
+    hapticSuccess();
+    setTimeout(onReveal, reduce ? 0 : 380);
+  };
+  const startHold = () => {
+    if (opened || revealing) return;
+    setHolding(true);
+    hapticLight();
+    const t0 = performance.now(), from = holdKRef.current;
+    const step = (t: number) => {
+      const k = Math.min(1, from + (t - t0) / HOLD_MS);
+      setK(k);
+      if (k >= 1) { holdRaf.current = null; finishHold(); return; }
+      holdRaf.current = requestAnimationFrame(step);
+    };
+    holdRaf.current = requestAnimationFrame(step);
+  };
+  const endHold = () => {
+    if (holdRaf.current === null) return;
+    cancelAnimationFrame(holdRaf.current);
+    holdRaf.current = null;
+    setHolding(false);
+    // Largou antes do fim: o anel volta para trás
+    const t0 = performance.now(), from = holdKRef.current;
+    const back = (t: number) => {
+      if (holdRaf.current !== null) return;
+      const k = Math.max(0, from - (t - t0) / 350);
+      setK(k);
+      if (k > 0) requestAnimationFrame(back);
+    };
+    requestAnimationFrame(back);
+  };
+  useEffect(() => () => { if (holdRaf.current !== null) cancelAnimationFrame(holdRaf.current); }, []);
+
+  // Se a revelação falhar, o cadeado volta a fechar
+  useEffect(() => {
+    if (!revealing && phase === "idle" && opened) { setOpened(false); setK(0); }
+  }, [revealing, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Dias de espera a contar ──
+  const [shownWait, setShownWait] = useState(reduce ? waitedDays ?? 0 : 0);
+  useEffect(() => {
+    if (waitedDays === null || reduce) return;
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 1300);
+      setShownWait(Math.round(waitedDays * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [waitedDays, reduce]);
+
+  // ── Corações na abertura ──
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    fx.current = createParticles(canvas);
+    return () => { fx.current?.destroy(); fx.current = null; };
+  }, []);
+  useEffect(() => {
+    if (phase !== "unlocking") return;
+    const id = setTimeout(() => {
+      if (!rootRef.current || !iconRef.current) return;
+      const [x, y] = centerIn(rootRef.current, iconRef.current);
+      fx.current?.burst(x, y, { n: 60, colors: ["#FB7185", "#F43F5E", "#FDA4AF", "#FFE4E6", "#FDE68A"], shapes: ["heart", "heart", "spark", "dot"], speed: 8.5 });
+      hapticCelebrate();
+    }, 60);
+    return () => clearTimeout(id);
+  }, [phase]);
+
+  // ── A mensagem escreve-se letra a letra ──
+  const message: string = capsule.message ?? "";
+  const [typed, setTyped] = useState(reduce ? message.length : 0);
+  useEffect(() => {
+    if (phase !== "revealed" || reduce) { if (phase === "revealed") setTyped(message.length); return; }
+    setTyped(0);
+    const perChar = Math.max(8, Math.min(26, 2400 / Math.max(1, message.length)));
+    let i = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const start = setTimeout(function tick() {
+      i++;
+      setTyped(i);
+      if (i < message.length) timer = setTimeout(tick, perChar);
+    }, 1000);
+    return () => { clearTimeout(start); clearTimeout(timer); };
+  }, [phase, message, reduce]);
+  const typingDone = typed >= message.length;
+
+  const [loved, setLoved] = useState(false);
+  const love = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (rootRef.current) {
+      const r = rootRef.current.getBoundingClientRect(), b = e.currentTarget.getBoundingClientRect();
+      fx.current?.burst(b.left - r.left + b.width / 2, b.top - r.top, { n: 16, colors: ["#FF4F7B", "#FDA4AF"], shapes: ["heart"], speed: 5, size: [8, 14] });
+    }
+    hapticLight();
+    if (!loved) { setLoved(true); onLove(); }
+  };
+
   return createPortal(
-    <div style={{ ...PORTAL_BASE, background: "#08020e", overflow: "hidden" }}>
+    <div ref={rootRef} style={{ ...PORTAL_BASE, background: "#08020e", overflow: "hidden" }}>
+      <canvas ref={canvasRef} className="cap-fx" aria-hidden="true" />
 
       {/* ═══════════════════ IDLE — pronto para revelar ═══════════════════ */}
       <div style={{
-        position: "absolute", inset: 0,
+        position: "absolute", inset: 0, zIndex: 1,
         display: "flex", flexDirection: "column",
         opacity: phase === "idle" ? 1 : 0,
         transition: "opacity 400ms ease",
         pointerEvents: phase === "idle" ? "auto" : "none",
-      }}>
+        visibility: phase === "revealed" ? "hidden" : "visible",
+      }} className={opened ? "cap-opened" : undefined}>
         {/* Glow ambient */}
         <div style={{ position: "absolute", top: "28%", left: "50%", transform: "translateX(-50%)",
           width: 220, height: 220, borderRadius: "50%",
@@ -616,8 +764,8 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
           filter: "blur(52px)", pointerEvents: "none" }} />
 
         {/* X */}
-        <button onClick={onClose} style={{
-          position: "absolute", top: 16, right: 16, zIndex: 2,
+        <button onClick={onClose} aria-label="Fechar" style={{
+          position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 16px)", right: 16, zIndex: 2,
           width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
           background: "rgba(255,255,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center",
         }}>
@@ -628,24 +776,32 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
           justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
           <div style={{ position: "relative", width: 148, height: 148,
-            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 30 }}>
             <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
               border: "1px solid rgba(244,63,94,0.14)",
               animation: "capsule-ring 3.6s ease-in-out infinite" }} />
             <div style={{ position: "absolute", inset: 16, borderRadius: "50%",
               border: "1px solid rgba(244,63,94,0.24)",
               animation: "capsule-ring 3.6s ease-in-out infinite 0.7s" }} />
-            <div style={{ position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
+            <svg className="cap-hold" viewBox="0 0 160 160" aria-hidden="true">
+              <circle cx="80" cy="80" r="76" strokeDasharray={HOLD_LEN} strokeDashoffset={HOLD_LEN * (1 - holdK)} />
+            </svg>
+            <div className={holding && holdK > 0.04 ? "cap-tremble" : undefined} style={{ position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
               background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.26)",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(251,113,133,0.95)",
               animation: "capsule-float 4s ease-in-out infinite" }}>
-              <Unlock size={34} color="rgba(251,113,133,0.95)" strokeWidth={1} />
+              <CapsuleLock size={36} />
             </div>
           </div>
+          {waitedDays !== null && waitedDays > 0 && (
+            <span className="cap-waited" style={{ animation: "capsule-fade-up 600ms 100ms both ease" }}>
+              {fromPartner ? `${partnerName} guardou-a há` : "Guardaste-a há"} <b>{shownWait}</b> {waitedDays === 1 ? "dia" : "dias"}
+            </span>
+          )}
           <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.5,
             marginBottom: 16, whiteSpace: "pre-line",
             animation: "capsule-fade-up 600ms 200ms both ease" }}>{quote}</p>
-          <p style={{ fontSize: 11, letterSpacing: "0.12em",             color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>{date}</p>
+          <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "rgba(255,255,255,0.22)", animation: "capsule-fade-up 600ms 340ms both ease" }}>{date}</p>
         </div>
 
         {/* Botões */}
@@ -654,18 +810,31 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
             color: "rgba(255,255,255,0.20)" }}>
             Uma vez aberta, a mensagem fica visível para os dois permanentemente.
           </p>
-          <button onClick={onReveal} disabled={revealing} style={{
-            width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
-            background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
-            boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
-            color: "#fff", fontWeight: 700, fontSize: 16,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            opacity: revealing ? 0.6 : 1,
-          }}>
-            {revealing
-              ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
-              : <Unlock size={20} strokeWidth={1.5} />}
-            {revealing ? "A revelar..." : "Revelar cápsula"}
+          <button
+            type="button"
+            className={`cap-btn${holding ? " cap-pressing" : ""}`}
+            aria-label="Mantém premido para abrir a cápsula"
+            disabled={revealing}
+            onPointerDown={(e) => { e.preventDefault(); startHold(); }}
+            onPointerUp={endHold}
+            onPointerLeave={endHold}
+            onPointerCancel={endHold}
+            onContextMenu={(e) => e.preventDefault()}
+            onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !holding) { e.preventDefault(); startHold(); } }}
+            onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") endHold(); }}
+            style={{
+              width: "100%", height: 56, borderRadius: 28, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
+              boxShadow: "0 16px 48px rgba(244,63,94,0.32)",
+              color: "#fff", fontWeight: 700, fontSize: 16,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            }}>
+            <span className="cap-btn-fill" style={{ transform: `scaleX(${holdK})` }} />
+            <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 10 }}>
+              {revealing || opened
+                ? <><Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />A abrir...</>
+                : <><Heart size={18} fill="currentColor" strokeWidth={0} />Mantém premido para abrir</>}
+            </span>
           </button>
           <button onClick={onClose} disabled={revealing} style={{
             width: "100%", height: 44, background: "none", border: "none", cursor: "pointer",
@@ -676,7 +845,7 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
 
       {/* ═══════════════════ UNLOCKING — sequência cinematic ═════════════ */}
       {phase === "unlocking" && (
-        <div style={{ position: "absolute", inset: 0,
+        <div style={{ position: "absolute", inset: 0, zIndex: 2,
           display: "flex", alignItems: "center", justifyContent: "center" }}>
 
           {/* Foto a materializar-se em desfoque */}
@@ -688,6 +857,8 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
               transition: "opacity 1.6s ease",
             }} />
           )}
+
+          <div className="cap-flash" />
 
           {/* Burst rings */}
           <div style={{ position: "absolute", width: 88, height: 88, borderRadius: "50%",
@@ -707,27 +878,27 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
             }} />
           ))}
 
-          {/* Ícone cadeado aberto com escala */}
-          <div style={{ position: "relative", zIndex: 2,
+          {/* Cadeado aberto com escala */}
+          <span ref={iconRef} style={{ position: "relative", zIndex: 2,
             width: 88, height: 88, borderRadius: "50%",
             background: "rgba(244,63,94,0.18)", border: "1px solid rgba(244,63,94,0.32)",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(251,113,133,1)",
             animation: "burst-icon 800ms ease both",
             boxShadow: "0 0 80px rgba(244,63,94,0.45)" }}>
-            <Unlock size={38} color="rgba(251,113,133,1)" strokeWidth={1} />
-          </div>
+            <CapsuleLock size={40} open />
+          </span>
         </div>
       )}
 
       {/* ═══════════════════ REVEALED — a memória ════════════════════════ */}
       {phase === "revealed" && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", background: "#000",
+        <div style={{ position: "absolute", inset: 0, zIndex: 3, display: "flex", flexDirection: "column", background: "#000",
           animation: "capsule-fade-up 300ms ease both" }}>
 
           {/* X */}
           <div style={{ position: "absolute", top: 16, right: 16, zIndex: 10,
             paddingTop: "env(safe-area-inset-top, 0px)" }}>
-            <button onClick={onClose} style={{
+            <button onClick={onClose} aria-label="Fechar" style={{
               width: 36, height: 36, borderRadius: "50%", border: "none", cursor: "pointer",
               background: "rgba(0,0,0,0.60)", backdropFilter: "blur(10px)",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -740,7 +911,7 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
           {hasPhoto && (
             <div style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img src={capsule.image_url} aria-hidden
+              <img src={capsule.image_url} aria-hidden alt=""
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
                   objectFit: "cover", filter: "blur(28px) brightness(0.22)", transform: "scale(1.10)" }} />
               <img src={capsule.image_url} alt="Memória"
@@ -763,8 +934,8 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
               animation: "capsule-fade-up 500ms ease both" }}>
               <div style={{ width: 80, height: 80, borderRadius: "50%",
                 background: "rgba(244,63,94,0.10)", border: "1px solid rgba(244,63,94,0.22)",
-                display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Unlock size={36} color="rgba(251,113,133,0.80)" strokeWidth={1} />
+                display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(251,113,133,0.80)" }}>
+                <CapsuleLock size={36} open />
               </div>
             </div>
           )}
@@ -772,37 +943,51 @@ function CapsuleRevealFlow({ capsule, phase, revealing, onClose, onReveal }: {
           {/* Painel de informação — sobe com animação */}
           <div className="bg-card rounded-t-[2rem] px-5 pt-5 shrink-0 overflow-y-auto"
             style={{
-              maxHeight: hasMedia ? "52svh" : "82svh",
+              maxHeight: hasMedia ? "56svh" : "82svh",
               paddingBottom: "max(env(safe-area-inset-bottom,0px),1.5rem)",
               boxShadow: "0 -16px 48px rgba(0,0,0,0.28)",
               animation: "panel-slide-up 500ms 300ms ease both",
             }}>
 
             {/* Quote emocional */}
-            <p className="text-sm italic text-rose-400 leading-relaxed mb-1 whitespace-pre-line"
+            <p className="text-sm italic text-rose-400 leading-relaxed mb-2 whitespace-pre-line"
               style={{ animation: "capsule-fade-up 400ms 600ms both ease" }}>
               {revealedQuote}
             </p>
 
-            {/* Data + relativo */}
-            <p className="text-xs text-muted-foreground first-letter:uppercase mb-0.5"
+            {/* De quem e quando */}
+            <p className="flex items-center gap-2 text-[12.5px] font-bold text-muted-foreground mb-4"
               style={{ animation: "capsule-fade-up 400ms 720ms both ease" }}>
-              {dayOfWeek}, {date}
-            </p>
-            <p className="text-[11px] font-semibold text-rose-400 mb-4"
-              style={{ animation: "capsule-fade-up 400ms 780ms both ease" }}>
-              {relStr}
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black text-white"
+                style={{ background: fromPartner ? "#60A5FA" : "#FF4F7B" }}>
+                {(fromPartner ? partnerName : "Tu").charAt(0).toUpperCase()}
+              </span>
+              {fromPartner ? `De ${author}, para ti` : "Escrita por ti"}
+              {writtenOn && <> · {writtenOn}</>}
             </p>
 
             {/* Separador */}
             <div className="h-px bg-border/50 mb-4"
               style={{ animation: "capsule-fade-up 400ms 820ms both ease" }} />
 
-            {/* Mensagem */}
-            <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap mb-4"
+            {/* Mensagem, letra a letra */}
+            <p className="font-serif text-[15px] text-foreground leading-relaxed whitespace-pre-wrap mb-4" aria-label={message}
               style={{ animation: "capsule-fade-up 400ms 900ms both ease" }}>
-              {capsule.message}
+              {message.slice(0, typed)}
+              {!typingDone && <span className="cap-caret" />}
             </p>
+
+            {/* Reagir */}
+            <div className={`cap-reacts mb-4${typingDone ? " cap-on" : ""}`}>
+              {fromPartner && (
+                <button type="button" className="cap-react" onClick={love} aria-pressed={loved}>
+                  <Heart size={14} fill="currentColor" strokeWidth={0} />{loved ? "Amaste" : "Amei"}
+                </button>
+              )}
+              <button type="button" className="cap-react cap-ghost" onClick={onReply}>
+                <Plus size={14} strokeWidth={2.4} />Responder com outra cápsula
+              </button>
+            </div>
 
             {/* Rodapé */}
             <p className="text-[10px] text-muted-foreground/45 pt-3 border-t border-border/40 leading-relaxed"

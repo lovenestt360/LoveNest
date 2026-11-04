@@ -28,7 +28,7 @@ import flameSentinelaT from "@/assets/flame/flame_05_sentinela_thumb.png";
 import flameEternoT    from "@/assets/flame/flame_06_eterno_thumb.png";
 import flameSoberanoT  from "@/assets/flame/flame_07_soberano_thumb.png";
 
-const STAGE_ASSETS: Record<FlamePetProps["stage"], string> = {
+export const STAGE_ASSETS: Record<FlamePetProps["stage"], string> = {
   faisca: flameFaisca, brasa: flameBrasa, chama: flameChama,
   guardiao: flameGuardiao, sentinela: flameSentinela,
   eterno: flameEterno, soberano: flameSoberano,
@@ -41,7 +41,7 @@ const STAGE_THUMBS: Record<FlamePetProps["stage"], string> = {
 };
 
 // Cor por fase — GUARDIAO_DA_CHAMA_SPEC.md secção 2.
-const STAGE_COLORS: Record<FlamePetProps["stage"], string> = {
+export const STAGE_COLORS: Record<FlamePetProps["stage"], string> = {
   faisca: "#FF6B9D", brasa: "#FF8B3D", chama: "#2DD9C4",
   guardiao: "#3B82E5", sentinela: "#9B5DE5",
   eterno: "#FFC83D", soberano: "#9B5DE5",
