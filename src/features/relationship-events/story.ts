@@ -25,6 +25,8 @@ export interface Milestone {
   /** "500 dias" */
   short: string;
   date: Date;
+  /** Tamanho na história: "xl" para os anos, "sm" para a primeira semana. */
+  weight: "sm" | "md" | "xl";
 }
 
 const DAY_MARKS = [100, 500, 1000, 2000, 3000, 5000, 10000];
@@ -32,15 +34,15 @@ const DAY_MARKS = [100, 500, 1000, 2000, 3000, 5000, 10000];
 /** Todos os marcos de tempo juntos a partir do início, por ordem. */
 export function milestonesFor(start: Date, maxYears = 60): Milestone[] {
   const list: Milestone[] = [
-    { label: "1 semana juntos", short: "1 semana", date: addDays(start, 7) },
-    { label: "1 mês juntos", short: "1 mês", date: addMonths(start, 1) },
-    { label: "3 meses juntos", short: "3 meses", date: addMonths(start, 3) },
-    { label: "6 meses juntos", short: "6 meses", date: addMonths(start, 6) },
+    { label: "1 semana juntos", short: "1 semana", date: addDays(start, 7), weight: "sm" },
+    { label: "1 mês juntos", short: "1 mês", date: addMonths(start, 1), weight: "md" },
+    { label: "3 meses juntos", short: "3 meses", date: addMonths(start, 3), weight: "md" },
+    { label: "6 meses juntos", short: "6 meses", date: addMonths(start, 6), weight: "md" },
   ];
-  for (const d of DAY_MARKS) list.push({ label: `${d} dias juntos`, short: `${d} dias`, date: addDays(start, d) });
+  for (const d of DAY_MARKS) list.push({ label: `${d} dias juntos`, short: `${d} dias`, date: addDays(start, d), weight: "md" });
   for (let y = 1; y <= maxYears; y++) {
     const short = `${y} ${y === 1 ? "ano" : "anos"}`;
-    list.push({ label: `${short} juntos`, short, date: addYears(start, y) });
+    list.push({ label: `${short} juntos`, short, date: addYears(start, y), weight: "xl" });
   }
   return list.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
@@ -121,4 +123,26 @@ export function onThisDay(
     .sort((a, b) => a.d.getTime() - b.d.getTime());
   if (hits.length === 0) return null;
   return { event: hits[0].event, years: today.getFullYear() - hits[0].d.getFullYear() };
+}
+
+const PHRASES: Record<string, string> = {
+  "1 semana juntos": "Os primeiros sete dias de uma história que acabou de começar.",
+  "1 mês juntos": "Trinta dias onde tudo se transformou.",
+  "3 meses juntos": "Três meses a descobrir um ao outro.",
+  "100 dias juntos": "Cem dias de pequenos grandes momentos.",
+  "6 meses juntos": "Metade de um ano de cumplicidade e carinho.",
+  "1 ano juntos": "Um ano inteiro de momentos que nunca vão ser esquecidos.",
+  "500 dias juntos": "Quinhentos dias a escolherem-se, todos os dias.",
+  "2 anos juntos": "Dois anos a escrever uma história linda juntos.",
+  "1000 dias juntos": "Mil dias. E a história ainda agora começou.",
+  "3 anos juntos": "Três anos de amor que continua a crescer.",
+  "5 anos juntos": "Cinco anos de uma vida partilhada com todo o coração.",
+  "10 anos juntos": "Uma década juntos. Uma vida construída, capítulo a capítulo.",
+};
+
+/** A frase que acompanha cada marco na história. */
+export function milestonePhrase(label: string): string {
+  if (PHRASES[label]) return PHRASES[label];
+  if (/anos juntos$/.test(label)) return `${label.replace(" juntos", "")} de amor que continua a crescer.`;
+  return "Mais um marco na vossa história.";
 }

@@ -9,6 +9,7 @@ import {
   chapterNumbers,
   isSealedFor,
   isWaitingToBeOpened,
+  milestonePhrase,
   nextMilestone,
   onThisDay,
   parseDateOnly,
@@ -254,12 +255,33 @@ function ChapterItem({
   );
 }
 
-function MilestoneMark({ label, date }: { label: string; date: Date }) {
+/** Um marco de tempo juntos: centrado e em destaque, como uma página do livro. */
+function MilestoneMark({ label, date, weight, kicker, phrase }: {
+  label: string;
+  date: Date;
+  weight: "sm" | "md" | "xl";
+  kicker?: string;
+  phrase: string;
+}) {
+  const big = weight === "xl";
   return (
-    <div className="flex items-center gap-2.5 py-4 border-b border-border/70 text-[12.5px] text-foreground/75">
-      <Heart className="w-3 h-3 text-[#FF4F7B] shrink-0" fill="currentColor" strokeWidth={0} />
-      {label}
-      <small className="ml-auto text-[11px] text-muted-foreground">{format(date, "d MMM yyyy", { locale: pt })}</small>
+    <div className={cn("text-center px-4 border-b border-border/70", big ? "py-11" : weight === "md" ? "py-9" : "py-7")}>
+      {kicker && <Kicker className="mb-3">{kicker}</Kicker>}
+      <div className="flex items-center justify-center gap-3">
+        <span className={cn("h-px bg-[#FF4F7B]/25", big ? "w-14" : "w-10")} />
+        <Heart className={cn("text-[#FF4F7B] shrink-0", big ? "w-4 h-4" : "w-3 h-3")} fill="currentColor" strokeWidth={0} />
+        <span className={cn("h-px bg-[#FF4F7B]/25", big ? "w-14" : "w-10")} />
+      </div>
+      <p className={cn(
+        "font-serif font-bold leading-tight mt-3.5 text-foreground",
+        big ? "text-[28px]" : weight === "md" ? "text-[23px]" : "text-[19px]",
+      )}>
+        {label}
+      </p>
+      <p className="text-[11.5px] text-muted-foreground mt-2">{format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}</p>
+      <p className={cn("font-serif italic text-muted-foreground leading-relaxed mt-3 mx-auto max-w-[280px]", big ? "text-[13.5px]" : "text-[12.5px]")}>
+        "{phrase}"
+      </p>
     </div>
   );
 }
@@ -267,7 +289,7 @@ function MilestoneMark({ label, date }: { label: string; date: Date }) {
 // ── A lista inteira ───────────────────────────────────────────────────────────
 type Row =
   | { kind: "event"; event: RelationshipEvent; date: Date }
-  | { kind: "mark"; label: string; date: Date };
+  | { kind: "mark"; label: string; date: Date; weight: "sm" | "md" | "xl"; kicker?: string; phrase: string };
 
 export function BookChapters({
   events,
@@ -296,8 +318,13 @@ export function BookChapters({
   const rows = useMemo<Row[]>(() => {
     const list: Row[] = visible.map((event) => ({ kind: "event", event, date: parseDateOnly(event.event_date) }));
     if (startDate) {
-      list.push({ kind: "mark", label: "O início da nossa história", date: parseDateOnly(startDate) });
-      for (const m of pastMilestones(startDate)) list.push({ kind: "mark", label: m.label, date: m.date });
+      list.push({
+        kind: "mark", label: "O primeiro dia", date: parseDateOnly(startDate), weight: "xl",
+        kicker: "Onde tudo começou", phrase: "O dia em que a vossa história começou.",
+      });
+      for (const m of pastMilestones(startDate)) {
+        list.push({ kind: "mark", label: m.label, date: m.date, weight: m.weight, phrase: milestonePhrase(m.label) });
+      }
     }
     // No mesmo dia, o marco vem antes do capítulo.
     return list.sort((a, b) => a.date.getTime() - b.date.getTime() || (a.kind === "mark" ? -1 : 1) - (b.kind === "mark" ? -1 : 1));
@@ -324,7 +351,7 @@ export function BookChapters({
 
       {rows.map((row, i) =>
         row.kind === "mark" ? (
-          <MilestoneMark key={`m-${i}`} label={row.label} date={row.date} />
+          <MilestoneMark key={`m-${i}`} label={row.label} date={row.date} weight={row.weight} kicker={row.kicker} phrase={row.phrase} />
         ) : (
           <ChapterItem
             key={row.event.id}

@@ -5,6 +5,7 @@ import {
   dayNumber,
   isSealedFor,
   isWaitingToBeOpened,
+  milestonePhrase,
   nextMilestone,
   onThisDay,
   pastMilestones,
@@ -117,5 +118,13 @@ describe("chapterNumbers e onThisDay", () => {
     expect(r.event.id).toBe("a");
     expect(r.years).toBe(1);
     expect(onThisDay([a, b], day("2026-11-04"))).toBeNull();
+  });
+});
+
+describe("milestonePhrase", () => {
+  it("tem frase para os marcos conhecidos e para anos sem frase própria", () => {
+    expect(milestonePhrase("1 mês juntos")).toBe("Trinta dias onde tudo se transformou.");
+    expect(milestonePhrase("7 anos juntos")).toBe("7 anos de amor que continua a crescer.");
+    expect(milestonePhrase("2000 dias juntos")).toBe("Mais um marco na vossa história.");
   });
 });
