@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { todayLocal } from "@/lib/timezone";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { getJourneyLevel, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
+import { getJourneyLevel, getStreakLevel, STREAK_LEVELS, levelUpCheck } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -175,26 +175,26 @@ export default function Jornada() {
 
   // ── Deteção de level-up entre sessões ──────────────────────────────────
   // Chave por user.id — cada membro tem a sua própria celebração.
-  // Guard (currentStreak === 0) evita falsos positivos no loading inicial.
-  // stored = 0 → primeira visita ao Jornada: mostrar animação se level > 1
-  //              (o guard já garante que não é o estado vazio do loading).
-  // stored > 0 → visita de retorno: mostrar só quando o level subiu.
+  // Só celebra quando a fase sobe acima da mais alta já vista neste aparelho:
+  //  - espera pelos dados reais (initialized), nunca pelo streak em cache;
+  //  - primeira vez neste aparelho (ou dados limpos pelo iPhone): só guarda;
+  //  - guarda sempre a fase mais alta, para não repetir ao voltar a subir.
   const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
   useEffect(() => {
-    if (!user?.id || currentStreak === 0) return;
+    if (!user?.id || !streakInitialized) return;
     const key = `lovenest_last_streak_level_${user.id}`;
-    const stored = parseInt(localStorage.getItem(key) ?? "0");
-    const neverStored = stored === 0;
-    const shouldShow = neverStored
-      ? streakPhase.level > 1              // Primeira visita: mostrar se acima de Faísca
-      : streakPhase.level > stored;        // Visita de retorno: mostrar só se subiu
-    if (shouldShow) {
+    let stored = 0;
+    try { stored = parseInt(localStorage.getItem(key) ?? "0", 10) || 0; } catch { return; }
+    const { celebrate, store } = levelUpCheck(stored, streakPhase.level);
+    if (celebrate) {
       const prev = STREAK_LEVELS.find(l => l.level === stored);
       setLevelUpData({ prevName: prev?.name ?? "Faísca" });
       hapticCelebrate();
     }
-    localStorage.setItem(key, String(streakPhase.level));
-  }, [user?.id, streakPhase.level]);
+    if (store !== null) {
+      try { localStorage.setItem(key, String(store)); } catch { /* sem armazenamento */ }
+    }
+  }, [user?.id, streakInitialized, streakPhase.level]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
