@@ -173,27 +173,51 @@ export default function Jornada() {
   // Fase do Guardião — streak puro. Pontos são moeda gastável, não contam.
   const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
 
-  // ── Deteção de level-up entre sessões ──────────────────────────────────
-  // Chave por user.id — cada membro tem a sua própria celebração.
-  // Só celebra quando a fase sobe acima da mais alta já vista neste aparelho:
+  // ── "A vossa chama evoluiu!" — para os dois, como a revelação da Cápsula ──
+  // Cada um tem guardada no seu perfil (profiles.guardian_stage_seen) a fase mais
+  // alta que já celebrou. Quem abrir a Jornada depois de a fase subir vê a
+  // animação uma vez, em qualquer telemóvel. Sem a coluna (SQL por aplicar),
+  // usa o que está guardado neste aparelho.
   //  - espera pelos dados reais (initialized), nunca pelo streak em cache;
-  //  - primeira vez neste aparelho (ou dados limpos pelo iPhone): só guarda;
+  //  - a primeira vez de sempre só guarda a fase (não celebra a fase atual);
   //  - guarda sempre a fase mais alta, para não repetir ao voltar a subir.
   const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
   useEffect(() => {
     if (!user?.id || !streakInitialized) return;
-    const key = `lovenest_last_streak_level_${user.id}`;
-    let stored = 0;
-    try { stored = parseInt(localStorage.getItem(key) ?? "0", 10) || 0; } catch { return; }
-    const { celebrate, store } = levelUpCheck(stored, streakPhase.level);
-    if (celebrate) {
-      const prev = STREAK_LEVELS.find(l => l.level === stored);
-      setLevelUpData({ prevName: prev?.name ?? "Faísca" });
-      hapticCelebrate();
-    }
-    if (store !== null) {
-      try { localStorage.setItem(key, String(store)); } catch { /* sem armazenamento */ }
-    }
+    let cancelled = false;
+    const level = streakPhase.level;
+    const localKey = `lovenest_last_streak_level_${user.id}`;
+
+    (async () => {
+      let local = 0;
+      try { local = parseInt(localStorage.getItem(localKey) ?? "0", 10) || 0; } catch { /* sem armazenamento */ }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("guardian_stage_seen")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const remote = error ? null : ((data as { guardian_stage_seen?: number | null } | null)?.guardian_stage_seen ?? null);
+      const seen = remote ?? local;
+
+      const { celebrate, store } = levelUpCheck(seen, level);
+      if (celebrate) {
+        const prev = STREAK_LEVELS.find(l => l.level === seen);
+        setLevelUpData({ prevName: prev?.name ?? "Faísca" });
+        hapticCelebrate();
+      }
+
+      const next = store ?? seen;
+      if (next > local) {
+        try { localStorage.setItem(localKey, String(next)); } catch { /* sem armazenamento */ }
+      }
+      if (!error && next > 0 && next !== remote) {
+        await supabase.from("profiles").update({ guardian_stage_seen: next } as never).eq("user_id", user.id);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [user?.id, streakInitialized, streakPhase.level]);
 
   // Animated points counter
