@@ -94,7 +94,7 @@
 .cap-hold circle { fill: none; stroke: #FB7185; stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(251,113,133,.8)); }
 .cap-tremble { animation: lu-shake .08s linear infinite !important; }
 .cap-shackle { transition: transform .45s cubic-bezier(.34,1.56,.64,1); transform-box: view-box; transform-origin: 22px 14px; }
-.cap-opened .cap-shackle { transform: translateY(-4px) rotate(24deg); }
+.cap-opened .cap-shackle { transform: translateY(-5px) rotate(10deg); }
 .cap-btn { position: relative; overflow: hidden; touch-action: none; -webkit-touch-callout: none; transition: transform .15s; }
 .cap-btn.cap-pressing { transform: scale(.98); }
 .cap-btn-fill { position: absolute; inset: 0; background: rgba(255,255,255,.22); transform-origin: left; transform: scaleX(0); pointer-events: none; }
