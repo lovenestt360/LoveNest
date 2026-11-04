@@ -1,76 +1,84 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { Sparkles, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, Heart, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { EVENT_TYPE_CONFIG, type RelationshipEvent } from "./types";
 import {
-  DEFAULT_EVENT_ICON,
-  EVENT_TYPE_CONFIG,
-  TOGETHER_MILESTONES,
-  MILESTONE_PHRASES,
-  type MilestoneWeight,
-  type RelationshipEvent,
-  type TimelineEntry,
-} from "./types";
-import { displayableUrl } from "@/lib/heic";
+  chapterNumbers,
+  isSealedFor,
+  isWaitingToBeOpened,
+  nextMilestone,
+  onThisDay,
+  parseDateOnly,
+  pastMilestones,
+  sortChapters,
+} from "./story";
+import { usePhotoUrl } from "./usePhotoUrl";
 
-function parseDateOnly(iso: string): Date {
-  return new Date(iso + "T00:00:00");
+export const ACCENT = "#FF4F7B";
+export const ACCENT_INK = "#E8336A";
+
+export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p className={cn("text-[10px] font-extrabold uppercase tracking-[0.28em] text-[#E8336A] dark:text-[#FF7A9B]", className)}>
+      {children}
+    </p>
+  );
 }
 
-/** Constrói entradas ordenadas cronologicamente (mais antiga = Capítulo 1). */
-export function buildTimelineEntries(
-  events: RelationshipEvent[],
-  relationshipStartDate: string | null,
-): TimelineEntry[] {
-  const entries: TimelineEntry[] = events.map((event) => ({
-    kind: "event",
-    event,
-    date: parseDateOnly(event.event_date),
-  }));
-
-  if (relationshipStartDate) {
-    const start = parseDateOnly(relationshipStartDate);
-    const today = new Date();
-    for (const milestone of TOGETHER_MILESTONES) {
-      const date = milestone.add(start);
-      if (date <= today) {
-        entries.push({ kind: "milestone", label: milestone.label, weight: milestone.weight, date });
-      }
-    }
-  }
-
-  return entries.sort((a, b) => a.date.getTime() - b.date.getTime());
+export function Author({ name, mine }: { name: string; mine: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+      <span
+        className="w-[18px] h-[18px] rounded-full inline-flex items-center justify-center text-[8.5px] font-extrabold text-white shrink-0"
+        style={{ background: mine ? ACCENT : "#60A5FA" }}
+      >
+        {name.trim().charAt(0).toUpperCase() || "?"}
+      </span>
+      {name}
+    </span>
+  );
 }
 
-// ── Long press hook ────────────────────────────────────────────────────────────
-function useLongPress(onTrigger: () => void, ms = 900) {
-  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const callbackRef = useRef(onTrigger);
-  callbackRef.current = onTrigger;
+/** "Capítulo 3 · Viagem · 3 nov 2025" (o tipo "Outro" não aparece). */
+export function chapterMeta(event: RelationshipEvent, n: number | undefined) {
+  const type = event.event_type !== "custom" ? EVENT_TYPE_CONFIG[event.event_type]?.short : null;
+  const date = format(parseDateOnly(event.event_date), "d MMM yyyy", { locale: pt });
+  return { n, type, date };
+}
 
+// ── Toque longo (menu) sem abrir o capítulo ao largar ─────────────────────────
+function useLongPress(onTrigger: () => void, ms = 650) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fired = useRef(false);
+  const cb = useRef(onTrigger);
+  cb.current = onTrigger;
   const [pressing, setPressing] = useState(false);
 
   const start = () => {
+    fired.current = false;
     setPressing(true);
-    timerRef.current = setTimeout(() => {
+    timer.current = setTimeout(() => {
+      fired.current = true;
       setPressing(false);
-      callbackRef.current();
+      cb.current();
     }, ms);
   };
-
   const cancel = () => {
     setPressing(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timer.current) clearTimeout(timer.current);
   };
 
   return {
     pressing,
+    /** true se o toque acabou de abrir o menu (o clique a seguir é ignorado). */
+    consumed: () => { const f = fired.current; fired.current = false; return f; },
     handlers: {
       onTouchStart: start,
       onTouchEnd: cancel,
+      onTouchMove: cancel,
       onTouchCancel: cancel,
       onMouseDown: start,
       onMouseUp: cancel,
@@ -80,408 +88,286 @@ function useLongPress(onTrigger: () => void, ms = 900) {
   };
 }
 
-// ── Divisor entre capítulos ───────────────────────────────────────────────────
-function ChapterDivider() {
+// ── Próximo marco ─────────────────────────────────────────────────────────────
+function NextMilestoneCard({ startDate, onPlan }: { startDate: string; onPlan: () => void }) {
+  const nm = useMemo(() => nextMilestone(startDate), [startDate]);
+  if (!nm) return null;
+  const today = nm.daysLeft === 0;
+
   return (
-    <div className="flex items-center gap-3 my-1 px-5">
-      <div className="h-px flex-1 bg-rose-100/50 dark:bg-rose-900/12" />
-      <div className="flex gap-1.5">
-        <div className="w-1 h-1 rounded-full bg-rose-300/70 dark:bg-rose-700/60" />
-        <div className="w-1 h-1 rounded-full bg-rose-200/50 dark:bg-rose-800/50" />
-        <div className="w-1 h-1 rounded-full bg-rose-100/30 dark:bg-rose-900/40" />
+    <section className="rounded-[22px] border border-border/70 px-[18px] pt-[18px] pb-4">
+      <div className="flex justify-between items-baseline gap-3">
+        <Kicker>{today ? "Hoje é dia de festa" : "Próximo marco"}</Kicker>
+        <span className="text-[12px] text-muted-foreground first-letter:uppercase">
+          {format(nm.next.date, "EEE, d MMM", { locale: pt })}
+        </span>
       </div>
-      <div className="h-px flex-1 bg-rose-100/50 dark:bg-rose-900/12" />
-    </div>
-  );
-}
 
-// ── XS milestone ──────────────────────────────────────────────────────────────
-function XSSeparator({ label, date }: { label: string; date: Date }) {
-  return (
-    <div className="flex items-center justify-center gap-2.5 py-4">
-      <div className="h-px w-5 bg-rose-100/40 dark:bg-rose-900/15" />
-      <span className="text-[10px] text-gray-300/70 dark:text-gray-600/60 italic">
-        {label} · {format(date, "d 'de' MMM 'de' yyyy", { locale: pt })}
-      </span>
-      <div className="h-px w-5 bg-rose-100/40 dark:bg-rose-900/15" />
-    </div>
-  );
-}
-
-// ── Cabeçalho de capítulo (usado quando não há foto) ─────────────────────────
-function ChapterHeader({
-  chapterNumber,
-  title,
-  date,
-  titleSize = "md",
-  isFirst = false,
-  eyebrow,
-}: {
-  chapterNumber: number;
-  title: string;
-  date: Date;
-  titleSize?: "sm" | "md" | "xl";
-  isFirst?: boolean;
-  eyebrow?: string;
-}) {
-  const sizeClass = isFirst
-    ? "text-[32px]"
-    : { sm: "text-[20px]", md: "text-[24px]", xl: "text-[28px]" }[titleSize];
-
-  return (
-    <div className="text-center px-6 mb-5">
-      {isFirst && (
-        <p className="text-[9px] font-bold text-rose-400/60 uppercase tracking-[0.4em] mb-3">
-          Onde tudo começou
+      {today ? (
+        <p className="font-serif text-[22px] font-bold leading-snug mt-3">
+          Hoje fazem <span className="text-[#FF4F7B]">{nm.next.label}</span>
         </p>
+      ) : (
+        <div className="flex items-baseline gap-2.5 mt-2.5">
+          <b className="font-serif text-[40px] font-bold leading-none text-[#FF4F7B] tabular-nums">{nm.daysLeft}</b>
+          <span className="text-[13.5px] text-muted-foreground leading-snug">
+            {nm.daysLeft === 1 ? "dia até" : "dias até"}
+            <em className="block not-italic font-serif font-bold text-[15px] text-foreground">{nm.next.label}</em>
+          </span>
+        </div>
       )}
-      <div className="flex items-center justify-center gap-3 mb-3">
-        <div className={cn("h-px bg-rose-200/50 dark:bg-rose-800/25", isFirst ? "w-14" : "w-10")} />
-        <p className={cn("font-bold text-rose-400 uppercase tracking-[0.35em]", isFirst ? "text-[9px]" : "text-[8px]")}>
-          {eyebrow ? `${eyebrow} · ` : ""}Capítulo {chapterNumber}
-        </p>
-        <div className={cn("h-px bg-rose-200/50 dark:bg-rose-800/25", isFirst ? "w-14" : "w-10")} />
-      </div>
-      <p className={cn("font-serif font-bold text-[#1A1A1A] dark:text-zinc-100 leading-tight", sizeClass)}>
-        {title}
-      </p>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2">
-        {format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}
-      </p>
-    </div>
-  );
-}
 
-// ── Foto com título e descrição sobrepostos ────────────────────────────────────
-function EventPhotoWithOverlay({
-  imagePath,
-  title,
-  description,
-  date,
-  chapterNumber,
-  isFirst,
-  eventLabel,
-}: {
-  imagePath: string;
-  title: string;
-  description: string | null;
-  date: Date;
-  chapterNumber: number;
-  isFirst: boolean;
-  eventLabel?: string;
-}) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    supabase.storage
-      .from("memories")
-      .createSignedUrl(imagePath, 3600)
-      .then(({ data }) => { if (data) displayableUrl(data.signedUrl).then(setUrl); });
-  }, [imagePath]);
-
-  if (!url) {
-    return (
-      <div className="mx-4">
-        <div className="px-1 mb-3 animate-pulse">
-          <div className="h-2.5 w-28 bg-muted/40 rounded mb-2" />
-          <div className="h-5 w-40 bg-muted/30 rounded" />
-        </div>
-        <div
-          className="w-full rounded-2xl bg-muted/20 animate-pulse"
-          style={{ height: isFirst ? "360px" : "300px" }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-4">
-      {/* ── Cabeçalho editorial ACIMA da foto ── */}
-      <div className="mb-4">
-        {isFirst && (
-          <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.42em] mb-2 text-center">
-            Onde tudo começou
-          </p>
-        )}
-
-        {/* Linha com número do capítulo */}
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-px flex-1 bg-rose-200/60 dark:bg-rose-800/25" />
-          <p className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.42em]">
-            Capítulo {chapterNumber}
-          </p>
-          <div className="h-px flex-1 bg-rose-200/60 dark:bg-rose-800/25" />
-        </div>
-
-        {/* Tipo de acontecimento */}
-        {eventLabel && (
-          <p className="text-[11px] font-bold text-rose-500/80 uppercase tracking-[0.28em] text-center mb-1.5">
-            {eventLabel}
-          </p>
-        )}
-
-        {/* Data destacada */}
-        <p className="font-serif text-[20px] font-bold text-foreground text-center leading-tight">
-          {format(date, "d 'de' MMMM 'de' yyyy", { locale: pt })}
-        </p>
-      </div>
-
-      {/* ── Foto ── */}
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-[0_8px_36px_rgba(0,0,0,0.16)]"
-        style={{ height: isFirst ? "360px" : "300px" }}
-      >
-        <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
-
-        {/* Título + descrição sobrepostos na zona inferior */}
-        <div className="absolute bottom-0 left-0 right-0 px-5 pb-6">
-          <p
-            className="font-serif font-bold text-white leading-tight"
-            style={{
-              fontSize: isFirst ? "28px" : "24px",
-              textShadow: "0 2px 16px rgba(0,0,0,0.5)",
-            }}
+      {!today && (
+        <>
+          <div
+            className="relative h-1 rounded-full bg-muted mt-4"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(nm.progress * 100)}
+            aria-label={`Faltam ${nm.daysLeft} dias para ${nm.next.label}`}
           >
-            {title}
-          </p>
-          {description && (
-            <p className="text-[12px] text-white/65 italic mt-2 leading-relaxed line-clamp-2">
-              {description}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Capítulo de milestone ─────────────────────────────────────────────────────
-function MilestoneChapter({
-  label, date, weight, phrase, chapterNumber, isFirst,
-}: {
-  label: string;
-  date: Date;
-  weight: MilestoneWeight;
-  phrase?: string;
-  chapterNumber: number;
-  isFirst: boolean;
-}) {
-  const titleSize = weight === "xl" ? "xl" : weight === "md" ? "md" : "sm";
-  const vPadding  = isFirst ? "py-12" : weight === "xl" ? "py-10" : weight === "md" ? "py-8" : "py-6";
-
-  return (
-    <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500", vPadding)}>
-      <ChapterHeader chapterNumber={chapterNumber} title={label} date={date} titleSize={titleSize} isFirst={isFirst} />
-
-      {phrase && (
-        <p className={cn(
-          "text-center italic text-gray-400 dark:text-gray-500 leading-relaxed px-8 max-w-[300px] mx-auto",
-          weight === "xl" || isFirst ? "text-[13px]" : "text-[11px]",
-        )}>
-          "{phrase}"
-        </p>
-      )}
-
-      {(weight === "xl" || isFirst) && (
-        <div className="flex justify-center mt-5">
-          <div className="flex gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-300/70" />
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-200/50" />
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-100/30" />
+            <div className="absolute inset-y-0 left-0 rounded-full bg-[#FF4F7B]" style={{ width: `${nm.progress * 100}%` }}>
+              <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-background border-[3px] border-[#FF4F7B]" />
+            </div>
           </div>
-        </div>
+          <div className="flex justify-between mt-2 text-[11px] text-muted-foreground">
+            <span>{nm.prev?.short ?? "O início"}</span>
+            <span>{nm.next.short}</span>
+          </div>
+        </>
       )}
 
-      <ChapterDivider />
+      <div className="flex justify-between items-center mt-3.5 pt-3 border-t border-border/70">
+        <p className="text-[12px] text-muted-foreground">Como vão celebrar?</p>
+        <button type="button" onClick={onPlan} className="inline-flex items-center gap-1 text-[12.5px] font-extrabold text-[#E8336A] dark:text-[#FF7A9B] active:opacity-70">
+          Planear juntos <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.4} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── Neste dia ─────────────────────────────────────────────────────────────────
+function OnThisDayRow({ event, years, onOpen }: { event: RelationshipEvent; years: number; onOpen: () => void }) {
+  const url = usePhotoUrl(event.image_path);
+  return (
+    <button type="button" onClick={onOpen} className="w-full flex items-center gap-3 mt-5 text-left active:opacity-70">
+      <span className="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 bg-[#FFF0F4] dark:bg-rose-500/15 flex items-center justify-center">
+        {url ? <img src={url} alt="" className="w-full h-full object-cover" />
+             : <Heart className="w-4 h-4 text-[#FF4F7B]" fill="currentColor" />}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[12px] text-muted-foreground">
+          Há {years} {years === 1 ? "ano" : "anos"}, neste dia
+        </span>
+        <span className="block font-serif text-[14px] font-bold truncate">{event.title}</span>
+      </span>
+    </button>
+  );
+}
+
+// ── Capítulo selado (surpresa por abrir) ──────────────────────────────────────
+function SealedCard({ event, authorName, onOpen }: { event: RelationshipEvent; authorName: string; onOpen: () => void }) {
+  const url = usePhotoUrl(event.image_path);
+  const [breaking, setBreaking] = useState(false);
+  return (
+    <div className={cn("mt-5", breaking && "ns-breaking")}>
+      <button
+        type="button"
+        aria-label="Abrir o capítulo surpresa"
+        onClick={() => {
+          if (breaking) return;
+          setBreaking(true);
+          setTimeout(onOpen, 850);
+        }}
+        className="relative block w-full h-[210px] rounded-[18px] overflow-hidden"
+        style={{ background: "linear-gradient(160deg, #FFE3EA, #FFF6F8)" }}
+      >
+        {url && <img src={url} alt="" className="ns-sealed-photo absolute inset-0 w-full h-full object-cover" />}
+        <span className="ns-veil absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center bg-white/40 transition-opacity duration-700">
+          <span className="w-[52px] h-[52px] rounded-full bg-[#FF4F7B] text-white flex items-center justify-center shadow-[0_8px_20px_-8px_rgba(255,79,123,0.8)]">
+            <Heart className="w-5 h-5" fill="currentColor" strokeWidth={0} />
+          </span>
+          <b className="font-serif text-[15px] font-bold mt-1 text-[#1C1A1D]">{authorName} escreveu-te um capítulo</b>
+          <small className="text-[11.5px] text-[#55525A]">Toca para abrir</small>
+        </span>
+      </button>
     </div>
   );
 }
 
-// ── Capítulo de evento (com long press) ───────────────────────────────────────
-function EventChapter({
-  event,
-  chapterNumber,
-  isFirst,
-  onLongPress,
+// ── Um capítulo na lista ──────────────────────────────────────────────────────
+function ChapterItem({
+  event, number, author, mine, waiting, onOpen, onLongPress,
 }: {
   event: RelationshipEvent;
-  chapterNumber: number;
-  isFirst: boolean;
-  onLongPress: (event: RelationshipEvent) => void;
+  number: number | undefined;
+  author: string;
+  mine: boolean;
+  waiting: boolean;
+  onOpen: (e: RelationshipEvent) => void;
+  onLongPress: (e: RelationshipEvent) => void;
 }) {
-  const config   = EVENT_TYPE_CONFIG[event.event_type];
-  const Icon     = config?.icon ?? DEFAULT_EVENT_ICON;
-  const hasPhoto = !!event.image_path;
-  const vPad     = isFirst ? "pt-10 pb-2" : "pt-7 pb-2";
-
-  const { pressing, handlers } = useLongPress(() => onLongPress(event));
+  const url = usePhotoUrl(event.image_path);
+  const { pressing, handlers, consumed } = useLongPress(() => onLongPress(event));
+  const meta = chapterMeta(event, number);
 
   return (
-    <div
+    <article
       {...handlers}
+      role="button"
+      tabIndex={0}
+      onClick={() => { if (!consumed()) onOpen(event); }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(event); } }}
       className={cn(
-        "animate-in fade-in slide-in-from-bottom-2 duration-500 select-none cursor-pointer",
-        vPad,
-        pressing && "opacity-70 scale-[0.985] transition-all duration-150",
+        "py-[22px] border-b border-border/70 select-none cursor-pointer transition-[opacity,transform] duration-150 outline-none focus-visible:ring-2 focus-visible:bg-muted/40",
+        pressing && "opacity-70 scale-[0.985]",
       )}
     >
-      {hasPhoto ? (
-        /* Foto com título e descrição sobrepostos */
-        <div className="mb-6">
-          <EventPhotoWithOverlay
-            imagePath={event.image_path!}
-            title={event.title}
-            description={event.description}
-            date={parseDateOnly(event.event_date)}
-            chapterNumber={chapterNumber}
-            isFirst={isFirst}
-            eventLabel={config?.label}
-          />
-        </div>
-      ) : (
-        /* Sem foto: cabeçalho centrado + descrição */
-        <div className="mb-5">
-          <div className="flex justify-center mb-4">
-            <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/20 border border-rose-100/60 dark:border-rose-900/25 flex items-center justify-center">
-              <Icon className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.5} />
-            </div>
-          </div>
-          <ChapterHeader
-            chapterNumber={chapterNumber}
-            title={event.title}
-            date={parseDateOnly(event.event_date)}
-            titleSize="md"
-            isFirst={isFirst}
-            eyebrow={config?.label}
-          />
-          {event.description && (
-            <div className="text-center px-7">
-              <p className="text-[13px] text-gray-500 dark:text-gray-400 italic leading-relaxed">
-                "{event.description}"
-              </p>
-            </div>
-          )}
+      {event.image_path && (
+        <div className="h-[210px] rounded-[18px] overflow-hidden bg-muted mb-3.5">
+          {url && <img src={url} alt="" className="w-full h-full object-cover animate-in fade-in duration-500" />}
         </div>
       )}
+      <p className="text-[11.5px] text-muted-foreground">
+        {meta.n && <span className="font-extrabold text-[#E8336A] dark:text-[#FF7A9B]">Capítulo {meta.n}</span>}
+        {meta.type && <> · {meta.type}</>} · {meta.date}
+      </p>
+      <h3 className="font-serif text-[19px] font-bold leading-snug mt-1.5 text-foreground">{event.title}</h3>
+      {event.description && (
+        <p className="font-serif italic text-[13px] text-muted-foreground leading-relaxed mt-2 line-clamp-2">
+          {event.description}
+        </p>
+      )}
+      <div className="flex justify-between items-center mt-3">
+        <Author name={author} mine={mine} />
+        {waiting ? (
+          <span className="text-[11.5px] font-bold text-muted-foreground">Surpresa · ainda por abrir</span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[12.5px] font-extrabold text-[#E8336A] dark:text-[#FF7A9B]">
+            Abrir <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.4} />
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
 
-      <ChapterDivider />
+function MilestoneMark({ label, date }: { label: string; date: Date }) {
+  return (
+    <div className="flex items-center gap-2.5 py-4 border-b border-border/70 text-[12.5px] text-foreground/75">
+      <Heart className="w-3 h-3 text-[#FF4F7B] shrink-0" fill="currentColor" strokeWidth={0} />
+      {label}
+      <small className="ml-auto text-[11px] text-muted-foreground">{format(date, "d MMM yyyy", { locale: pt })}</small>
     </div>
   );
 }
 
-// ── BookChapters — componente principal ───────────────────────────────────────
+// ── A lista inteira ───────────────────────────────────────────────────────────
+type Row =
+  | { kind: "event"; event: RelationshipEvent; date: Date }
+  | { kind: "mark"; label: string; date: Date };
+
 export function BookChapters({
-  entries,
-  onEdit,
-  onDelete,
+  events,
+  startDate,
+  userId,
+  nameOf,
+  onOpen,
+  onOpenSurprise,
+  onLongPress,
+  onPlan,
 }: {
-  entries: TimelineEntry[];
-  onEdit: (event: RelationshipEvent) => void;
-  onDelete: (event: RelationshipEvent) => void;
+  events: RelationshipEvent[];
+  startDate: string | null;
+  userId: string | undefined;
+  nameOf: (userId: string) => string;
+  onOpen: (event: RelationshipEvent) => void;
+  onOpenSurprise: (event: RelationshipEvent) => void;
+  onLongPress: (event: RelationshipEvent) => void;
+  onPlan: () => void;
 }) {
-  const [menuEvent, setMenuEvent] = useState<RelationshipEvent | null>(null);
+  const numbers = useMemo(() => chapterNumbers(events), [events]);
+  const sealed = useMemo(() => sortChapters(events.filter((e) => isSealedFor(e, userId))), [events, userId]);
+  const visible = useMemo(() => events.filter((e) => !isSealedFor(e, userId)), [events, userId]);
+  const memory = useMemo(() => onThisDay(visible), [visible]);
 
-  if (entries.length === 0) {
-    return (
-      <div className="py-16 text-center px-6">
-        <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/25 flex items-center justify-center mx-auto mb-4">
-          <Sparkles className="w-4 h-4 text-rose-300" strokeWidth={1.5} />
-        </div>
-        <p className="font-serif text-[17px] font-semibold text-[#1A1A1A] dark:text-zinc-100">
-          O primeiro capítulo ainda não foi escrito
-        </p>
-        <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
-          Toquem no + para começar a contar a vossa história.
-        </p>
-      </div>
-    );
-  }
-
-  let chapterCount = 0;
-  const processedEntries = entries.map((entry) => {
-    const isXS = entry.kind === "milestone" && entry.weight === "xs";
-    const num  = isXS ? null : ++chapterCount;
-    return { entry, chapterNumber: num, isFirst: num === 1 };
-  });
+  const rows = useMemo<Row[]>(() => {
+    const list: Row[] = visible.map((event) => ({ kind: "event", event, date: parseDateOnly(event.event_date) }));
+    if (startDate) {
+      list.push({ kind: "mark", label: "O início da nossa história", date: parseDateOnly(startDate) });
+      for (const m of pastMilestones(startDate)) list.push({ kind: "mark", label: m.label, date: m.date });
+    }
+    // No mesmo dia, o marco vem antes do capítulo.
+    return list.sort((a, b) => a.date.getTime() - b.date.getTime() || (a.kind === "mark" ? -1 : 1) - (b.kind === "mark" ? -1 : 1));
+  }, [visible, startDate]);
 
   return (
-    <>
-      <div>
-        {processedEntries.map(({ entry, chapterNumber, isFirst }, i) => {
-          if (entry.kind === "milestone") {
-            if (entry.weight === "xs") {
-              return <XSSeparator key={`xs-${i}`} label={entry.label} date={entry.date} />;
-            }
-            return (
-              <MilestoneChapter
-                key={`m-${i}`}
-                label={entry.label}
-                date={entry.date}
-                weight={entry.weight}
-                phrase={MILESTONE_PHRASES[entry.label]}
-                chapterNumber={chapterNumber!}
-                isFirst={isFirst}
-              />
-            );
-          }
-          return (
-            <EventChapter
-              key={entry.event.id}
-              event={entry.event}
-              chapterNumber={chapterNumber!}
-              isFirst={isFirst}
-              onLongPress={setMenuEvent}
-            />
-          );
-        })}
-      </div>
+    <div>
+      {startDate && <NextMilestoneCard startDate={startDate} onPlan={onPlan} />}
 
-      {/* ── Menu de contexto via Portal (evita transform ancestor) ── */}
-      {menuEvent && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-end">
-          <div
-            className="absolute inset-0 bg-black/35 backdrop-blur-[2px] animate-in fade-in duration-150"
-            onClick={() => setMenuEvent(null)}
-          />
-          <div className="relative w-full bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-200 pb-8">
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-4">
-              <div className="w-8 h-1 rounded-full bg-border" />
-            </div>
+      {sealed.map((e) => (
+        <SealedCard key={e.id} event={e} authorName={nameOf(e.created_by)} onOpen={() => onOpenSurprise(e)} />
+      ))}
 
-            {/* Título do capítulo */}
-            <p className="font-serif text-[15px] font-semibold text-[#1A1A1A] dark:text-zinc-100 text-center px-8 mb-5 leading-snug">
-              "{menuEvent.title}"
-            </p>
+      {memory && <OnThisDayRow event={memory.event} years={memory.years} onOpen={() => onOpen(memory.event)} />}
 
-            <div className="px-5 space-y-2.5">
-              <button
-                onClick={() => { onEdit(menuEvent); setMenuEvent(null); }}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/40 active:bg-muted/70 transition-colors"
-              >
-                <Pencil className="w-4 h-4 text-foreground/60" strokeWidth={1.5} />
-                <span className="text-[14px] font-medium text-foreground">Editar este capítulo</span>
-              </button>
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground mt-9 mb-1.5">Capítulos</p>
 
-              <button
-                onClick={() => { onDelete(menuEvent); setMenuEvent(null); }}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-red-50 dark:bg-red-950/20 active:bg-red-100 dark:active:bg-red-950/40 transition-colors"
-              >
-                <Trash2 className="w-4 h-4 text-red-500" strokeWidth={1.5} />
-                <span className="text-[14px] font-medium text-red-500">Remover este capítulo</span>
-              </button>
-
-              <button
-                onClick={() => setMenuEvent(null)}
-                className="w-full py-3 text-[13px] text-gray-400 dark:text-gray-500 text-center"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {visible.length === 0 && (
+        <div className="py-8 border-b border-border/70">
+          <p className="font-serif text-[17px] font-bold">O primeiro capítulo ainda não foi escrito</p>
+          <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">Toquem no + para começar a contar a vossa história.</p>
+        </div>
       )}
-    </>
+
+      {rows.map((row, i) =>
+        row.kind === "mark" ? (
+          <MilestoneMark key={`m-${i}`} label={row.label} date={row.date} />
+        ) : (
+          <ChapterItem
+            key={row.event.id}
+            event={row.event}
+            number={numbers.get(row.event.id)}
+            author={nameOf(row.event.created_by)}
+            mine={row.event.created_by === userId}
+            waiting={isWaitingToBeOpened(row.event, userId)}
+            onOpen={onOpen}
+            onLongPress={onLongPress}
+          />
+        ),
+      )}
+    </div>
+  );
+}
+
+// ── Menu do capítulo (toque longo ou "…") ─────────────────────────────────────
+export function ChapterMenu({
+  event, onEdit, onDelete, onClose,
+}: {
+  event: RelationshipEvent;
+  onEdit: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] flex items-end">
+      <div className="absolute inset-0 bg-black/30 animate-in fade-in duration-150" onClick={onClose} />
+      <div className="relative w-full bg-background rounded-t-[30px] animate-in slide-in-from-bottom duration-200 px-5 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+        <div className="w-[38px] h-1 rounded-full bg-border mx-auto mb-4" />
+        <p className="font-serif text-[15px] font-bold text-center px-6 mb-4 leading-snug">{event.title}</p>
+        <div className="space-y-2">
+          <button onClick={onEdit} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/60 active:bg-muted text-[14px] font-semibold">
+            <Pencil className="w-4 h-4 text-foreground/60" strokeWidth={1.8} /> Editar capítulo
+          </button>
+          <button onClick={onDelete} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-red-50 dark:bg-red-950/25 active:bg-red-100 text-[14px] font-semibold text-red-500">
+            <Trash2 className="w-4 h-4" strokeWidth={1.8} /> Remover capítulo
+          </button>
+          <button onClick={onClose} className="w-full py-3 text-[13px] text-muted-foreground">Cancelar</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
