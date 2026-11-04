@@ -156,3 +156,15 @@ export function getJourneyLevel(totalPoints: number): JourneyProgress {
     progressPct: Math.min(100, Math.round((into / span) * 100)),
   };
 }
+
+/**
+ * Celebração "A vossa chama evoluiu!": só quando a fase sobe acima da mais
+ * alta já vista neste aparelho. Na primeira vez (stored = 0) só se guarda.
+ * Devolve a fase a guardar (null = não mexer) e se deve celebrar.
+ */
+export function levelUpCheck(stored: number, level: number): { celebrate: boolean; store: number | null } {
+  return {
+    celebrate: stored > 0 && level > stored,
+    store: level > stored ? level : null,
+  };
+}

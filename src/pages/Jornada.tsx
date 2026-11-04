@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { todayLocal } from "@/lib/timezone";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { getJourneyLevel, getStreakLevel, STREAK_LEVELS } from "@/features/streak/journeyLevels";
+import { getJourneyLevel, getStreakLevel, STREAK_LEVELS, levelUpCheck } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -173,28 +173,52 @@ export default function Jornada() {
   // Fase do Guardião — streak puro. Pontos são moeda gastável, não contam.
   const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
 
-  // ── Deteção de level-up entre sessões ──────────────────────────────────
-  // Chave por user.id — cada membro tem a sua própria celebração.
-  // Guard (currentStreak === 0) evita falsos positivos no loading inicial.
-  // stored = 0 → primeira visita ao Jornada: mostrar animação se level > 1
-  //              (o guard já garante que não é o estado vazio do loading).
-  // stored > 0 → visita de retorno: mostrar só quando o level subiu.
+  // ── "A vossa chama evoluiu!" — para os dois, como a revelação da Cápsula ──
+  // Cada um tem guardada no seu perfil (profiles.guardian_stage_seen) a fase mais
+  // alta que já celebrou. Quem abrir a Jornada depois de a fase subir vê a
+  // animação uma vez, em qualquer telemóvel. Sem a coluna (SQL por aplicar),
+  // usa o que está guardado neste aparelho.
+  //  - espera pelos dados reais (initialized), nunca pelo streak em cache;
+  //  - a primeira vez de sempre só guarda a fase (não celebra a fase atual);
+  //  - guarda sempre a fase mais alta, para não repetir ao voltar a subir.
   const [levelUpData, setLevelUpData] = useState<{ prevName: string } | null>(null);
   useEffect(() => {
-    if (!user?.id || currentStreak === 0) return;
-    const key = `lovenest_last_streak_level_${user.id}`;
-    const stored = parseInt(localStorage.getItem(key) ?? "0");
-    const neverStored = stored === 0;
-    const shouldShow = neverStored
-      ? streakPhase.level > 1              // Primeira visita: mostrar se acima de Faísca
-      : streakPhase.level > stored;        // Visita de retorno: mostrar só se subiu
-    if (shouldShow) {
-      const prev = STREAK_LEVELS.find(l => l.level === stored);
-      setLevelUpData({ prevName: prev?.name ?? "Faísca" });
-      hapticCelebrate();
-    }
-    localStorage.setItem(key, String(streakPhase.level));
-  }, [user?.id, streakPhase.level]);
+    if (!user?.id || !streakInitialized) return;
+    let cancelled = false;
+    const level = streakPhase.level;
+    const localKey = `lovenest_last_streak_level_${user.id}`;
+
+    (async () => {
+      let local = 0;
+      try { local = parseInt(localStorage.getItem(localKey) ?? "0", 10) || 0; } catch { /* sem armazenamento */ }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("guardian_stage_seen")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const remote = error ? null : ((data as { guardian_stage_seen?: number | null } | null)?.guardian_stage_seen ?? null);
+      const seen = remote ?? local;
+
+      const { celebrate, store } = levelUpCheck(seen, level);
+      if (celebrate) {
+        const prev = STREAK_LEVELS.find(l => l.level === seen);
+        setLevelUpData({ prevName: prev?.name ?? "Faísca" });
+        hapticCelebrate();
+      }
+
+      const next = store ?? seen;
+      if (next > local) {
+        try { localStorage.setItem(localKey, String(next)); } catch { /* sem armazenamento */ }
+      }
+      if (!error && next > 0 && next !== remote) {
+        await supabase.from("profiles").update({ guardian_stage_seen: next } as never).eq("user_id", user.id);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.id, streakInitialized, streakPhase.level]);
 
   // Animated points counter
   const { display: pointsDisplay, popped: pointsPopped } = useCountUp(totalPoints);
