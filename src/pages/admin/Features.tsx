@@ -1,510 +1,209 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
-import { 
-  ShieldCheck, Hash, RefreshCw, ArrowLeft, Plus, 
-  User, Users, Globe, Trash2, Power, Zap
-} from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/reui/badge";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_FEATURE_KEYS = [
-  "home_lovestreak",
-  "home_memories",
-  "home_historia",
-  "home_capsula",
-  "home_desafios",
-  "home_oracao",
-  "home_wrapped",
-  "home_jejum",
-  "home_conversas",
-  "home_humor",
-  "home_ciclo",
-  "home_rotina",
-  "home_conflitos",
-  "home_localizacao",
-  "system_premium"
-];
+/**
+ * Funções — um só sítio para cada funcionalidade da app:
+ *  - plano mínimo (feature_tiers.min_tier) decide quem tem acesso (PremiumGuard);
+ *  - ligada/desligada (feature_flags global) — desligada mostra "Em breve" a todos;
+ *  - testar numa casa (feature_flags scope "couple") — só essa casa a vê, sem olhar ao plano.
+ * As chaves são as mesmas de feature_tiers.feature_id, que são as que a app usa.
+ */
+
+interface FeatureTier { feature_id: string; feature_label: string; min_tier: number }
+interface Flag { id: string; key: string; scope: "global" | "couple" | "user"; target_id: string | null; enabled: boolean }
+interface House { id: string; house_name: string | null; partner1_name?: string | null; partner2_name?: string | null }
+interface Plan { id: string; name: string; price: string; tier_level: number; is_active: boolean }
+
+const TIER_NAMES: Record<number, string> = { 0: "Grátis", 1: "Plus", 2: "Pro", 3: "Max" };
 
 export default function FeaturesControl() {
-  const [loading, setLoading] = useState(true);
-  const [flags, setFlags] = useState<any[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [houses, setHouses] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [searchTarget, setSearchTarget] = useState("");
-  const [isAddingForFeature, setIsAddingForFeature] = useState<string | null>(null);
-  const [isAddingFeature, setIsAddingFeature] = useState(false);
-  const [newFeatureKey, setNewFeatureKey] = useState("");
-  
-  const [featureKeys, setFeatureKeys] = useState<string[]>(() => {
-    const saved = localStorage.getItem('admin_feature_keys');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return Array.from(new Set([...DEFAULT_FEATURE_KEYS, ...parsed]));
-      } catch (e) {
-        return DEFAULT_FEATURE_KEYS;
-      }
-    }
-    return DEFAULT_FEATURE_KEYS;
-  });
-
-  const [defaultTestTarget, setDefaultTestTarget] = useState<{ id: string, scope: 'user' | 'couple' } | null>(() => {
-    const stored = localStorage.getItem("lovenest_default_test_target");
-    return stored ? JSON.parse(stored) : null;
-  });
-
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [features, setFeatures] = useState<FeatureTier[]>([]);
+  const [flags, setFlags] = useState<Flag[]>([]);
+  const [houses, setHouses] = useState<House[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [testing, setTesting] = useState<FeatureTier | null>(null);
+  const [search, setSearch] = useState("");
 
-  // A autorização já não depende de um header x-admin-id controlado pelo
-  // cliente — is_admin() verifica auth.uid() do lado do servidor, por isso
-  // o cliente normal já chega para todas as chamadas admin.
-  const adminClient = supabase;
-
-  useEffect(() => {
-    localStorage.setItem('admin_feature_keys', JSON.stringify(featureKeys));
-  }, [featureKeys]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const { data: flagsData, error: flagsError } = await adminClient.from("feature_flags").select("*").order("key");
-      if (flagsError) throw flagsError;
-      setFlags(flagsData || []);
-
-      const { data: housesData } = await adminClient.from("couple_spaces").select("id, house_name, partner1_name, partner2_name").order("house_name");
-      setHouses(housesData || []);
-
-      const { data: usersData } = await adminClient.from("profiles").select("user_id, display_name").order("display_name");
-      setUsers(usersData || []);
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkAdmin = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/admin-login");
-      return;
-    }
-    const { data: adminUser, error } = await supabase
-      .from("admin_users")
-      .select("id, username")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (error || !adminUser) {
-      navigate("/admin-login");
-      return;
-    }
-
-    setUserProfile({
-      user_id: adminUser.id,
-      display_name: adminUser.username || "Admin",
-    });
+  const load = async () => {
+    const [ft, fl, hs, pl] = await Promise.all([
+      (supabase as any).from("feature_tiers").select("feature_id, feature_label, min_tier").order("feature_label"),
+      supabase.from("feature_flags" as any).select("*"),
+      supabase.from("couple_spaces").select("id, house_name, partner1_name, partner2_name").order("house_name"),
+      supabase.from("subscription_plans").select("id, name, price, tier_level, is_active").order("tier_level"),
+    ]);
+    if (ft.error) toast({ title: "Erro a carregar", description: ft.error.message, variant: "destructive" });
+    setFeatures((ft.data ?? []) as FeatureTier[]);
+    setFlags((fl.data ?? []) as unknown as Flag[]);
+    setHouses((hs.data ?? []) as House[]);
+    setPlans(((pl.data ?? []) as Plan[]).filter(p => p.is_active));
+    setLoading(false);
   };
 
   useEffect(() => {
-    checkAdmin();
-    fetchData();
-  }, []);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/admin-login"); return; }
+      const { data: admin } = await supabase.from("admin_users").select("id").eq("user_id", user.id).maybeSingle();
+      if (!admin) { navigate("/admin-login"); return; }
+      load();
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const features = useMemo(() => {
-    return featureKeys.map(key => {
-      const keyFlags = flags.filter(f => f.key === key);
-      const globalFlag = keyFlags.find(f => f.key === key && f.scope === "global");
-      const overrides = keyFlags.filter(f => f.scope !== "global");
-      
-      return {
-        key,
-        globalEnabled: globalFlag ? globalFlag.enabled : true,
-        globalId: globalFlag?.id,
-        overrides
-      };
-    });
-  }, [flags, featureKeys]);
+  const houseName = (id: string) => {
+    const h = houses.find(x => x.id === id);
+    if (!h) return "Casa removida";
+    return h.house_name?.trim() || [h.partner1_name, h.partner2_name].filter(Boolean).join(" & ") || "Sem nome";
+  };
+  const globalOn = (key: string) => flags.find(f => f.key === key && f.scope === "global")?.enabled ?? true;
+  const testHouses = (key: string) => flags.filter(f => f.key === key && f.scope === "couple" && f.enabled && f.target_id);
+  const tiersInUse = useMemo(() => {
+    const used = new Set<number>([0, 1, 2, ...plans.map(p => p.tier_level), ...features.map(f => f.min_tier)]);
+    return [...used].filter(t => TIER_NAMES[t] !== undefined).sort();
+  }, [plans, features]);
 
-  const getTargetName = (id: string, scope: string) => {
-    if (scope === "couple") {
-      const h = houses.find(house => house.id === id);
-      return h ? h.house_name || `${h.partner1_name} & ${h.partner2_name}` : id.slice(0, 8);
-    }
-    const u = users.find(user => user.user_id === id);
-    return u ? u.display_name : id.slice(0, 8);
+  const setTier = async (f: FeatureTier, tier: number) => {
+    setSaving(f.feature_id);
+    setFeatures(prev => prev.map(x => x.feature_id === f.feature_id ? { ...x, min_tier: tier } : x));
+    const { error } = await (supabase as any).from("feature_tiers")
+      .update({ min_tier: tier, updated_at: new Date().toISOString() }).eq("feature_id", f.feature_id);
+    if (error) { toast({ title: "Não foi possível mudar o plano", description: error.message, variant: "destructive" }); load(); }
+    setSaving(null);
   };
 
-  const toggleGlobal = async (key: string, currentStatus: boolean) => {
-    const newStatus = !currentStatus;
-
-    // Optimistic update imediato
-    setFlags(prev => {
-      const existingIdx = prev.findIndex(f => f.key === key && f.scope === "global" && !f.target_id);
-      if (existingIdx > -1) {
-        const updated = [...prev];
-        updated[existingIdx] = { ...updated[existingIdx], enabled: newStatus };
-        return updated;
-      }
-      return [...prev, { id: `temp-${key}`, key, scope: 'global', target_id: null, enabled: newStatus }];
-    });
-
-    try {
-      // UPSERT via RPC — evita duplicados (UNIQUE index garante 1 linha por key+scope)
-      const { error } = await adminClient.rpc("upsert_feature_flag", {
-        p_key: key,
-        p_scope: "global",
-        p_enabled: newStatus,
-        p_target_id: null,
-      });
-      if (error) throw error;
-
-      toast({ title: "Atualizado", description: `${key} → ${newStatus ? 'ATIVO' : 'DESLIGADO'}` });
-      // Re-fetch para sincronizar IDs reais (sem setTimeout — fetch directo)
-      fetchData();
-    } catch (err: any) {
-      fetchData(); // revert
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    }
+  const setGlobal = async (f: FeatureTier, on: boolean) => {
+    setSaving(f.feature_id);
+    const { error } = await supabase.rpc("upsert_feature_flag" as any, { p_key: f.feature_id, p_scope: "global", p_enabled: on, p_target_id: null });
+    if (error) toast({ title: "Não foi possível mudar", description: error.message, variant: "destructive" });
+    else toast({ title: on ? `${f.feature_label} ligada` : `${f.feature_label} desligada`, description: on ? "Volta a aparecer para quem tem o plano." : "Aparece \"Em breve\" para todos, menos casas em teste." });
+    await load();
+    setSaving(null);
   };
 
-  const toggleOverride = async (flag: any, newStatus: boolean) => {
-    setFlags(prev => prev.map(f => f.id === flag.id ? { ...f, enabled: newStatus } : f));
-
-    try {
-      const { error } = await adminClient.rpc("upsert_feature_flag", {
-        p_key: flag.key,
-        p_scope: flag.scope,
-        p_enabled: newStatus,
-        p_target_id: flag.target_id,
-      });
-      if (error) throw error;
-      fetchData();
-    } catch (err: any) {
-      fetchData();
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    }
+  const addTest = async (f: FeatureTier, houseId: string) => {
+    const { error } = await supabase.rpc("upsert_feature_flag" as any, { p_key: f.feature_id, p_scope: "couple", p_enabled: true, p_target_id: houseId });
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    load();
+  };
+  const removeTest = async (flagId: string) => {
+    const { error } = await supabase.from("feature_flags" as any).delete().eq("id", flagId);
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    load();
   };
 
-  const deleteFlag = async (id: string) => {
-    if (!confirm("Remover esta regra?")) return;
-    try {
-      const { error } = await adminClient.from("feature_flags").delete().eq("id", id);
-      if (error) throw error;
-      setFlags(prev => prev.filter(f => f.id !== id));
-      toast({ title: "Removido", description: "Regra eliminada." });
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    }
-  };
-
-  const handleFastAdd = async (key: string) => {
-    const target = defaultTestTarget || { id: userProfile?.user_id, scope: 'user' };
-    if (!target.id) return;
-    
-    try {
-      const { error } = await adminClient.from("feature_flags").insert({
-        key,
-        scope: target.scope,
-        target_id: target.id,
-        enabled: true
-      });
-      if (error && error.code !== '23505') throw error;
-      fetchData();
-      toast({ title: "Teste Ativado", description: `Liberado para ${getTargetName(target.id, target.scope)}` });
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    }
-  };
-
-  const addFeatureKey = () => {
-    if (!newFeatureKey) return;
-    const cleanKey = newFeatureKey.trim().toLowerCase().replace(/\s+/g, '_');
-    if (!featureKeys.includes(cleanKey)) {
-      setFeatureKeys([...featureKeys, cleanKey]);
-      toast({ title: "Sucesso", description: `Funcionalidade "${cleanKey}" registada.` });
-    }
-    setNewFeatureKey("");
-    setIsAddingFeature(false);
-  };
-
-  const filteredHouses = useMemo(() => houses.filter(h => 
-    (h.house_name || "").toLowerCase().includes(searchTarget.toLowerCase()) ||
-    (h.partner1_name || "").toLowerCase().includes(searchTarget.toLowerCase())
-  ), [houses, searchTarget]);
-
-  const filteredUsers = useMemo(() => users.filter(u => 
-    (u.display_name || "").toLowerCase().includes(searchTarget.toLowerCase())
-  ), [users, searchTarget]);
-
-  const isSystemEnabled = useMemo(() => {
-    const master = flags.find(f => f.key === "system_enabled" && f.scope === "global");
-    return master ? master.enabled !== false : true;
-  }, [flags]);
-
-  const createFlag = async (key: string, scope: string, target_id: string) => {
-    try {
-      const { error } = await adminClient.from("feature_flags").insert({ key, scope, target_id, enabled: true });
-      if (error && error.code !== '23505') throw error;
-      fetchData();
-      setIsAddingForFeature(null);
-      toast({ title: "Sucesso", description: "Regra criada." });
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    }
-  };
+  const filteredHouses = houses.filter(h => houseName(h.id).toLowerCase().includes(search.trim().toLowerCase())).slice(0, 30);
 
   return (
-    <div className="admin-scope min-h-screen bg-background pb-20 font-sans">
-      <header className="bg-card border-b p-6 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-card/80">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="rounded-full">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-black flex items-center gap-2 text-foreground">
-                <Hash className="w-6 h-6 text-primary" />
-                Feature Manager
-              </h1>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">Painel de Controlo Simplificado</p>
-            </div>
+    <div className="min-h-[100dvh] bg-[#F2F0ED] px-4 pb-16 pt-6 text-[#0B1324] dark:bg-background dark:text-foreground">
+      <div className="mx-auto max-w-3xl">
+        <button onClick={() => navigate("/admin")} className="mb-4 inline-flex items-center gap-2 text-[13.5px] font-semibold text-[#4A5060] dark:text-muted-foreground">
+          <ArrowLeft className="h-4 w-4" /> Painel
+        </button>
+        <h1 className="text-[24px] font-bold tracking-[-0.025em]">Funções</h1>
+        <p className="mt-1 max-w-[60ch] text-[13.5px] leading-relaxed text-[#4A5060] dark:text-muted-foreground">
+          O plano decide quem tem acesso. Desligar mostra "Em breve" a todos. "Testar numa casa" liga a função só para as casas que escolheres, mesmo sem o plano.
+        </p>
+
+        {plans.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold text-[#4A5060] ring-1 ring-[#ECE8E3] dark:bg-card dark:ring-border">Grátis · 0 MZN</span>
+            {plans.map(p => (
+              <span key={p.id} className="rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold text-[#4A5060] ring-1 ring-[#ECE8E3] dark:bg-card dark:ring-border">
+                {TIER_NAMES[p.tier_level] ?? "Plano"} · {p.name} · {p.price}
+              </span>
+            ))}
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="rounded-xl border-2">
-            <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
-            Atualizar
-          </Button>
-        </div>
-      </header>
+        )}
 
-      <main className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-        {/* Top Control Bar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <section className={cn(
-            "lg:col-span-2 bg-card border-2 rounded-3xl p-6 shadow-xl flex items-center justify-between transition-all",
-            isSystemEnabled ? "border-success/20 bg-success/5" : "border-destructive/40 bg-destructive/5"
-          )}>
-            <div className="flex items-center gap-5">
-              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg", isSystemEnabled ? "bg-success" : "bg-destructive")}>
-                <Power className="w-7 h-7 text-white" />
-              </div>
-              <div className="space-y-0.5">
-                <h2 className="text-xl font-black uppercase italic tracking-tighter">Master Switch</h2>
-                <p className="text-xs text-muted-foreground">{isSystemEnabled ? "FLAGS INDIVIDUAIS ATIVAS" : "BYPASS ATIVO: TUDO ABERTO"}</p>
-              </div>
-            </div>
-            <Switch checked={isSystemEnabled} onCheckedChange={async () => {
-              const newStatus = !isSystemEnabled;
-              
-              // Optimistic Update
-              setFlags(prev => {
-                const existingIdx = prev.findIndex(f => f.key === "system_enabled" && f.scope === "global");
-                if (existingIdx > -1) {
-                  const newFlags = [...prev];
-                  newFlags[existingIdx] = { ...newFlags[existingIdx], enabled: newStatus };
-                  return newFlags;
-                }
-                return [...prev, { id: 'temp-master', key: 'system_enabled', scope: 'global', enabled: newStatus }];
-              });
-
-              try {
-                const { error } = await adminClient.rpc("upsert_feature_flag", {
-                  p_key: "system_enabled",
-                  p_scope: "global",
-                  p_enabled: newStatus,
-                  p_target_id: null,
-                });
-                if (error) throw error;
-                fetchData();
-                toast({ title: "Master Switch", description: `Sistema agora está ${newStatus ? 'ONLINE' : 'EM BYPASS'}.` });
-              } catch (err: any) {
-                fetchData();
-                toast({ title: "Erro", description: err.message, variant: "destructive" });
-              }
-            }} className="scale-125 data-[state=checked]:bg-success" />
-          </section>
-
-          <section className="bg-card border-2 border-border rounded-3xl p-6 shadow-xl flex flex-col justify-center gap-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Destaque de Teste</Label>
-            <select
-              className="w-full h-11 px-4 rounded-xl bg-muted border-none text-sm font-bold outline-none ring-primary/20 focus:ring-2"
-              value={defaultTestTarget ? `${defaultTestTarget.scope}:${defaultTestTarget.id}` : ""}
-              onChange={(e) => {
-                const [scope, id] = e.target.value.split(":");
-                if (id) {
-                  const target = { id, scope: scope as any };
-                  setDefaultTestTarget(target);
-                  localStorage.setItem("lovenest_default_test_target", JSON.stringify(target));
-                } else {
-                  setDefaultTestTarget(null);
-                  localStorage.removeItem("lovenest_default_test_target");
-                }
-              }}
-            >
-              <option value="">Admin (Eu)</option>
-              <optgroup label="Casas">
-                {houses.map(h => <option key={h.id} value={`couple:${h.id}`}>{h.house_name || "Sem nome"}</option>)}
-              </optgroup>
-              <optgroup label="Utilizadores">
-                {users.map(u => <option key={u.user_id} value={`user:${u.user_id}`}>{u.display_name}</option>)}
-              </optgroup>
-            </select>
-          </section>
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
-          {features.map(feature => (
-            <div key={feature.key} className="bg-card rounded-3xl border border-border/50 p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-              <div className="flex items-start justify-between mb-8">
-                <div>
-                  <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-1">
-                    {feature.key.replace(/^home_/, '').replace('_', ' ')}
-                  </h3>
-                  <code className="text-[10px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded uppercase">
-                    {feature.key}
-                  </code>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge size="sm" variant={feature.globalEnabled ? "success-light" : "destructive-light"}>
-                    {feature.globalEnabled ? "Ativo em Todos" : "Privado/Restrito"}
-                  </Badge>
-                  <Switch
-                    checked={feature.globalEnabled}
-                    onCheckedChange={(c) => toggleGlobal(feature.key, feature.globalEnabled)}
-                    className={cn(
-                      "scale-110",
-                      feature.globalEnabled ? "data-[state=checked]:bg-success" : "data-[state=unchecked]:bg-destructive"
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  <span>Excepções</span>
-                  <span className="bg-muted px-2 rounded-full font-mono">{feature.overrides.length}</span>
-                </div>
-                
-                <div className="min-h-[100px] flex flex-col gap-2 p-4 bg-muted/20 rounded-2xl border border-dashed border-border/60">
-                  {feature.overrides.map(f => (
-                    <div key={f.id} className="flex items-center justify-between bg-card p-2.5 rounded-xl border border-border/50 shadow-sm">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold">{getTargetName(f.target_id, f.scope)}</span>
-                        <span className="text-[8px] text-muted-foreground font-mono uppercase tracking-tighter">{f.target_id.slice(0, 10)}...</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={f.enabled}
-                          onCheckedChange={(c) => toggleOverride(f, c)}
-                          className={cn(
-                            "scale-75",
-                            f.enabled ? "data-[state=checked]:bg-success" : "data-[state=unchecked]:bg-destructive"
-                          )}
-                        />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => deleteFlag(f.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {feature.overrides.length === 0 && (
-                    <div className="flex-1 flex items-center justify-center text-[10px] font-bold italic text-muted-foreground opacity-40">Nenhuma excepção</div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-primary/20 hover:bg-primary/5 text-primary" onClick={() => handleFastAdd(feature.key)}>
-                     <Zap className="h-3.5 w-3.5 mr-2 fill-primary" /> Teste Rápido
-                   </Button>
-                   <Button variant="outline" className="rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-success/20 hover:bg-success/5 text-success" onClick={() => setIsAddingForFeature(feature.key)}>
-                     <Plus className="h-3.5 w-3.5 mr-2" /> Novo Alvo
-                   </Button>
-                </div>
-              </div>
-
-              {/* Add Override Modal Overlay */}
-              {isAddingForFeature === feature.key && (
-                <div className="absolute inset-0 bg-card/95 backdrop-blur-sm z-20 flex flex-col p-8 animate-in zoom-in-95">
-                  <div className="flex items-center justify-between mb-6">
-                    <h4 className="text-lg font-black uppercase italic tracking-tighter">Novo Alvo para {feature.key.split('_').pop()}</h4>
-                    <Button variant="ghost" size="sm" onClick={() => setIsAddingForFeature(null)} className="rounded-full h-8 w-8 p-0">X</Button>
+        {loading ? (
+          <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-[#7A7F8C]" /></div>
+        ) : (
+          <div className="mt-4 overflow-hidden rounded-[20px] border border-[#ECE8E3] bg-white dark:border-border dark:bg-card">
+            {features.map(f => {
+              const on = globalOn(f.feature_id);
+              const tests = testHouses(f.feature_id);
+              return (
+                <div key={f.feature_id} className="flex flex-wrap items-center gap-3 border-b border-[#F0EDE9] px-4 py-3 last:border-b-0 dark:border-border/60">
+                  <div className="min-w-[140px] flex-1">
+                    <p className="text-[14.5px] font-semibold">{f.feature_label}</p>
+                    <p className="text-[12.5px] text-[#7A7F8C]">
+                      {!on ? "Desligada · \"Em breve\"" : f.min_tier === 0 ? "Para todos" : `Para quem tem ${TIER_NAMES[f.min_tier] ?? "o plano"}`}
+                      {tests.length > 0 && ` · em teste em ${tests.length === 1 ? houseName(tests[0].target_id!) : `${tests.length} casas`}`}
+                    </p>
                   </div>
-                  <div className="space-y-4">
-                    <Input placeholder="Filtrar..." value={searchTarget} onChange={(e) => setSearchTarget(e.target.value)} className="h-10 rounded-xl" />
-                    <select id={`target-${feature.key}`} className="w-full h-11 px-4 rounded-xl bg-muted border-none font-bold text-sm">
-                      <option value="">Selecionar...</option>
-                      <optgroup label="Casas">
-                        {filteredHouses.map(h => <option key={h.id} value={`couple:${h.id}`}>{h.house_name}</option>)}
-                      </optgroup>
-                      <optgroup label="Utilizadores">
-                        {filteredUsers.map(u => <option key={u.user_id} value={`user:${u.user_id}`}>{u.display_name}</option>)}
-                      </optgroup>
-                    </select>
-                    <Button className="w-full h-12 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/25" onClick={() => {
-                      const sel = document.getElementById(`target-${feature.key}`) as HTMLSelectElement;
-                      if (!sel.value) return;
-                      const [scope, id] = sel.value.split(":");
-                      createFlag(feature.key, scope, id);
-                    }}>Confirmar Regra</Button>
+                  <div className="inline-flex rounded-[10px] bg-[#F2F0ED] p-[3px] dark:bg-muted" role="group" aria-label={`Plano mínimo de ${f.feature_label}`}>
+                    {tiersInUse.map(t => (
+                      <button key={t} onClick={() => setTier(f, t)} disabled={saving === f.feature_id} aria-pressed={f.min_tier === t}
+                        className={cn("h-7 rounded-lg px-2.5 text-[12px] font-semibold transition-colors",
+                          f.min_tier === t ? "bg-white text-[#0B1324] shadow-sm dark:bg-card dark:text-foreground" : "text-[#7A7F8C]")}>
+                        {TIER_NAMES[t]}
+                      </button>
+                    ))}
                   </div>
+                  <button onClick={() => { setTesting(f); setSearch(""); }}
+                    className="h-8 rounded-full bg-[#F7F5F2] px-3 text-[12.5px] font-semibold text-[#4A5060] dark:bg-muted dark:text-muted-foreground">
+                    {tests.length > 0 ? `Em teste (${tests.length})` : "Testar numa casa"}
+                  </button>
+                  <button role="switch" aria-checked={on} aria-label={`${f.feature_label} ${on ? "ligada" : "desligada"}`}
+                    disabled={saving === f.feature_id} onClick={() => setGlobal(f, !on)}
+                    className={cn("relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors", on ? "bg-[#0B1324] dark:bg-foreground" : "bg-[#D9D5CF] dark:bg-muted")}>
+                    <span className={cn("absolute top-[3px] h-4 w-4 rounded-full bg-white transition-[left]", on ? "left-[19px]" : "left-[3px]")} />
+                  </button>
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            })}
+            {features.length === 0 && <p className="px-4 py-8 text-center text-[13.5px] text-[#7A7F8C]">Ainda não há funções configuradas.</p>}
+          </div>
+        )}
+      </div>
 
-          {/* Add Manual Feature Card */}
-          <div className="bg-muted/50 rounded-3xl border-2 border-dashed border-border flex flex-col items-center justify-center p-8 transition-all hover:bg-muted min-h-[400px]">
-            {isAddingFeature ? (
-              <div className="w-full space-y-4 animate-in fade-in zoom-in-95">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Feature Key (ID)</Label>
-                  <Input placeholder="ex: home_new_module" value={newFeatureKey} onChange={(e) => setNewFeatureKey(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addFeatureKey()} className="h-12 rounded-xl border-none shadow-sm focus-visible:ring-primary" autoFocus />
-                </div>
-                <div className="flex gap-2">
-                  <Button className="flex-1 rounded-xl font-black uppercase tracking-tighter" onClick={addFeatureKey}>Adicionar</Button>
-                  <Button variant="ghost" className="rounded-xl font-black" onClick={() => setIsAddingFeature(false)}>Cancelar</Button>
-                </div>
+      {/* Testar numa casa */}
+      {testing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1324]/35 p-4" onClick={() => setTesting(null)}>
+          <div role="dialog" aria-modal="true" aria-label={`Testar ${testing.feature_label}`}
+            className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-[22px] bg-white p-[18px] dark:bg-card" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[18px] font-bold tracking-[-0.02em]">Testar {testing.feature_label}</p>
+                <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">Estas casas veem a função mesmo desligada ou sem o plano.</p>
               </div>
-            ) : (
-              <Button variant="ghost" className="h-full w-full flex flex-col gap-4 rounded-3xl" onClick={() => setIsAddingFeature(true)}>
-                <div className="w-16 h-16 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-md"><Plus className="w-8 h-8 text-success" /></div>
-                <div className="text-center">
-                  <span className="block text-2xl font-black italic tracking-tighter uppercase">Adicionar</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nova Funcionalidade</span>
-                </div>
-              </Button>
+              <button onClick={() => setTesting(null)} aria-label="Fechar" className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#F7F5F2] text-[#7A7F8C] dark:bg-muted"><X className="h-3.5 w-3.5" /></button>
+            </div>
+
+            {testHouses(testing.feature_id).length > 0 && (
+              <div className="mt-3 overflow-hidden rounded-2xl border border-[#ECE8E3] dark:border-border">
+                {testHouses(testing.feature_id).map(fl => (
+                  <div key={fl.id} className="flex items-center gap-3 border-b border-[#F0EDE9] px-3.5 py-2.5 last:border-b-0 dark:border-border/60">
+                    <span className="flex-1 text-[14px] font-semibold">{houseName(fl.target_id!)}</span>
+                    <button onClick={() => removeTest(fl.id)} className="h-8 rounded-full bg-[#F7F5F2] px-3 text-[12.5px] font-semibold dark:bg-muted">Tirar</button>
+                  </div>
+                ))}
+              </div>
             )}
+
+            <label className="mt-3 flex h-10 items-center gap-2 rounded-xl border border-[#ECE8E3] px-3 dark:border-border">
+              <Search className="h-4 w-4 text-[#9AA0AB]" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Procurar casal" className="flex-1 bg-transparent text-[14px] outline-none" />
+            </label>
+            <div className="mt-2">
+              {filteredHouses.filter(h => !testHouses(testing.feature_id).some(t => t.target_id === h.id)).map(h => (
+                <div key={h.id} className="flex items-center gap-3 py-2">
+                  <span className="flex-1 truncate text-[14px]">{houseName(h.id)}</span>
+                  <button onClick={() => addTest(testing, h.id)} className="h-8 rounded-full bg-[#0B1324] px-3 text-[12.5px] font-semibold text-white dark:bg-foreground dark:text-background">Adicionar</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setTesting(null)} className="mt-3 h-11 w-full rounded-2xl bg-[#0B1324] text-[14px] font-semibold text-white dark:bg-foreground dark:text-background">Feito</button>
           </div>
         </div>
-
-        {/* Global Hierarchy Legend */}
-        <section className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-             <div className="space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center"><Globe className="w-8 h-8 text-white" /></div>
-                <h3 className="text-3xl font-black italic tracking-tighter uppercase">Arquitetura de Controlo</h3>
-                <p className="text-sm text-slate-400 font-bold leading-relaxed">
-                  As regras aplicam-se em cascata. <br/>
-                  Clica em <span className="text-primary">Teste Rápido</span> para libertar funcionalidades para ti sem abrir ao público.
-                </p>
-             </div>
-             <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-3 font-black text-[11px] uppercase tracking-widest">
-                <div className="flex justify-between border-b border-white/5 pb-2"><span className="text-emerald-400">1. Individual (User)</span><span className="text-slate-500">MAX</span></div>
-                <div className="flex justify-between border-b border-white/5 pb-2"><span className="text-indigo-400">2. Casa (Couple)</span><span className="text-slate-500">MID</span></div>
-                <div className="flex justify-between"><span className="text-slate-200">3. Aplicação (Global)</span><span className="text-slate-500">BASE</span></div>
-             </div>
-          </div>
-        </section>
-      </main>
+      )}
     </div>
   );
 }
