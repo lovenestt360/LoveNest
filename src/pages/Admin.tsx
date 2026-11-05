@@ -33,6 +33,8 @@ import {
 
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 import AdminBiblioteca from "./admin/AdminBiblioteca";
+import { TodayView, CouplesView } from "@/features/admin/TodayCouples";
+import { useAuth } from "@/features/auth/AuthContext";
 
 function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminUserId: string | null }) {
     const [freeMode, setFreeMode] = useState(false);
@@ -106,7 +108,9 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("overview");
+    const [tab, setTab] = useState<"today" | "couples" | "overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
+    const [coupleFocus, setCoupleFocus] = useState<string | null>(null);
+    const { user: authUser } = useAuth();
     const [verifications, setVerifications] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
     const [houses, setHouses] = useState<any[]>([]);
@@ -941,43 +945,37 @@ export default function Admin() {
                     </div>
                 </div>
 
-                <nav className="flex-1 overflow-y-auto p-4 flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible">
-                    <Button variant={tab === "overview" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("overview")}>
-                        <Activity className="w-4 h-4" /> <span className="hidden md:inline">Overview</span>
-                    </Button>
-                    <Button variant={tab === "houses" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("houses")}>
-                        <Home className="w-4 h-4" /> <span className="hidden md:inline">Casas ({houses.length})</span>
-                    </Button>
-                    <Button variant={tab === "payments" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("payments")}>
-                        <CreditCard className="w-4 h-4" /> <span className="hidden md:inline">Pagamentos {pendingPayments.length > 0 && `(${pendingPayments.length})`}</span>
-                    </Button>
-                    <Button variant={tab === "users" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("users")}>
-                        <Users className="w-4 h-4" /> <span className="hidden md:inline">Utilizadores ({users.length})</span>
-                    </Button>
-                    <Button variant={tab === "plans" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("plans")}>
-                        <Tag className="w-4 h-4" /> <span className="hidden md:inline">Planos</span>
-                    </Button>
-                    <Button variant={tab === "announcements" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("announcements")}>
-                        <Megaphone className="w-4 h-4" /> <span className="hidden md:inline">Avisos</span>
-                    </Button>
-                    <Button variant={tab === "settings" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("settings")}>
-                        <Settings className="w-4 h-4" /> <span className="hidden md:inline">Configurações</span>
-                    </Button>
-                    <Button variant={tab === "verifications" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("verifications")}>
-                        <ShieldCheck className="w-4 h-4" /> <span className="hidden md:inline">Verificações ({verifications.filter(v => v.status === 'pending').length})</span>
-                    </Button>
-                    <Button variant={tab === "pwa" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("pwa")}>
-                        <Smartphone className="w-4 h-4" /> <span className="hidden md:inline">Tutorial PWA</span>
-                    </Button>
-                    <Button variant={tab === "wrapped" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("wrapped")}>
-                        <Sparkles className="w-4 h-4" /> <span className="hidden md:inline">LoveWrapped</span>
-                    </Button>
-                    <Button variant={tab === "biblioteca" ? "secondary" : "ghost"} className="justify-start gap-3 w-full" onClick={() => setTab("biblioteca")}>
-                        <Library className="w-4 h-4" /> <span className="hidden md:inline">Biblioteca</span>
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-3 w-full" onClick={() => navigate("/admin/features")}>
-                        <Hash className="w-4 h-4" /> <span className="hidden md:inline">Funções</span>
-                    </Button>
+                <nav className="flex-1 overflow-y-auto p-3 flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible">
+                    {(() => {
+                        const item = (key: string, label: string, Icon: any, onClick: () => void, badge?: number, sub = false) => (
+                            <button key={key} onClick={onClick}
+                                className={cn("flex shrink-0 items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-semibold transition-colors md:w-full",
+                                    sub ? "h-8 md:pl-9 text-[13px]" : "h-10",
+                                    tab === key ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
+                                {!sub && <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />}
+                                <span className={cn(!sub && "hidden md:inline", sub && "whitespace-nowrap")}>{label}</span>
+                                {!!badge && <span className="ml-auto rounded-full bg-[#0B1324] px-1.5 text-[11px] font-bold leading-[18px] text-white dark:bg-foreground dark:text-background">{badge}</span>}
+                            </button>
+                        );
+                        const week = 7 * 86_400_000;
+                        const endingSoon = houses.filter(h => h.subscription_status === "active" && h.subscription_ends_at && new Date(h.subscription_ends_at).getTime() > Date.now() && new Date(h.subscription_ends_at).getTime() - Date.now() < week).length;
+                        const pendingVer = verifications.filter(v => v.status === "pending").length;
+                        return (
+                            <>
+                                {item("today", "Hoje", Activity, () => setTab("today"), pendingPayments.length + pendingVer + endingSoon)}
+                                {item("couples", "Casais", Users, () => { setCoupleFocus(null); setTab("couples"); })}
+                                {item("verifications", "Verificações", ShieldCheck, () => setTab("verifications"), pendingVer, true)}
+                                {item("payments", "Pagamentos", CreditCard, () => setTab("payments"), pendingPayments.length)}
+                                {item("plans", "Planos", Tag, () => setTab("plans"), 0, true)}
+                                {item("settings", "Contas e WhatsApp", Settings, () => setTab("settings"), 0, true)}
+                                {item("features", "Funções", Hash, () => navigate("/admin/features"))}
+                                {item("biblioteca", "Conteúdo", Library, () => setTab("biblioteca"))}
+                                {item("announcements", "Avisos", Megaphone, () => setTab("announcements"), 0, true)}
+                                {item("wrapped", "LoveWrapped", Sparkles, () => setTab("wrapped"), 0, true)}
+                                {item("pwa", "Tutorial PWA", Smartphone, () => setTab("pwa"), 0, true)}
+                            </>
+                        );
+                    })()}
                 </nav>
 
                 <div className="p-4 border-t">
@@ -989,6 +987,21 @@ export default function Admin() {
 
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-background relative">
+
+                {tab === "today" && (
+                    <TodayView
+                        data={{ houses, users, payments, verifications, plans }}
+                        adminName={(users.find((u: any) => u.user_id === authUser?.id)?.display_name || "").split(" ")[0]}
+                        onOpenReceipt={handleOpenReceipt}
+                        onApprove={handleApprovePayment}
+                        onReview={() => setTab("verifications")}
+                        onOpenCouple={(id) => { setCoupleFocus(id); setTab("couples"); }}
+                        onAnnounce={() => setTab("announcements")}
+                    />
+                )}
+                {tab === "couples" && (
+                    <CouplesView key={coupleFocus ?? "all"} data={{ houses, users, payments, verifications, plans }} initialId={coupleFocus} onChanged={fetchAllData} />
+                )}
 
                 {/* OVERVIEW TAB */}
                 {tab === "overview" && (
