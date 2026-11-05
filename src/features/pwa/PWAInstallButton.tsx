@@ -9,8 +9,8 @@ export function PWAInstallButton() {
   const location = useLocation();
   const { setShowModal, installPrompt } = usePWATutorial();
 
-  // Não mostrar na landing page — prejudica a experiência de marketing
-  if (location.pathname === "/landing") return null;
+  // Não mostrar na landing page (marketing) nem no painel admin
+  if (location.pathname === "/landing" || location.pathname.startsWith("/admin")) return null;
 
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||

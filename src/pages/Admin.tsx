@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
     ShieldCheck, Check, X, FileText, Users, User, Home, Hash, FileImage, FileQuestion,
     Megaphone, Activity, AlertTriangle, Send, LogOut, Image as ImageIcon,
-    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy, ToggleLeft, ToggleRight,
+    CreditCard, Tag, Plus, Trash2, Settings, Flame, Trophy,
     Sparkles, Calendar, Coins, Target, TrendingUp, Search, RefreshCw, Smartphone, Upload, Library, Edit2
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -73,7 +73,7 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
 
             invalidateFreeModeCache();
             setFreeMode(checked);
-            toast({ title: checked ? "Free Mode Ativado" : "Free Mode Desativado", description: checked ? "Todas as funcionalidades estão agora gratuitas." : "O sistema de subscrições foi reativado." });
+            toast({ title: checked ? "Modo gratuito ligado" : "Modo gratuito desligado", description: checked ? "Todas as funções ficam abertas para todos." : "O acesso volta a depender do plano de cada casa." });
         } catch (error: any) {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
@@ -81,29 +81,24 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
         }
     };
 
-    if (loadingFM) return <div className="glass-card rounded-2xl p-6 animate-pulse h-24" />;
+    if (loadingFM) return <div className="h-[84px] animate-pulse rounded-[20px] border border-[#ECE8E3] bg-white dark:border-border dark:bg-card" />;
 
     return (
-        <div className={`border-2 rounded-3xl p-6 shadow-sm transition-all ${freeMode ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+        <div className="rounded-[20px] border border-[#ECE8E3] bg-white p-4 dark:border-border dark:bg-card">
             <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${freeMode ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                        {freeMode ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">Free Mode</h3>
-                        <p className="text-sm text-muted-foreground">
-                            {freeMode ? "A app está totalmente gratuita. Subscrições desativadas." : "O sistema de monetização está ativo."}
-                        </p>
-                    </div>
+                <div className="min-w-0">
+                    <p className="text-[15px] font-bold">Modo gratuito</p>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-[#7A7F8C]">
+                        {freeMode
+                            ? "Ligado: todas as funções estão abertas para todos e ninguém paga. Os planos ficam escondidos."
+                            : "Desligado: cada casa tem acesso conforme o seu plano."}
+                    </p>
                 </div>
-                <Switch checked={freeMode} onCheckedChange={handleToggle} disabled={togglingFM} />
+                <button role="switch" aria-checked={freeMode} aria-label="Modo gratuito" disabled={togglingFM} onClick={() => handleToggle(!freeMode)}
+                    className={cn("relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors disabled:opacity-60", freeMode ? "bg-[#0B1324] dark:bg-foreground" : "bg-[#D9D5CF] dark:bg-muted")}>
+                    <span className={cn("absolute top-[3px] h-4 w-4 rounded-full bg-white transition-[left]", freeMode ? "left-[19px]" : "left-[3px]")} />
+                </button>
             </div>
-            {freeMode && (
-                <p className="text-xs text-primary font-medium mt-3 bg-primary/10 p-2 rounded-lg">
-                    Todas as funcionalidades premium estão desbloqueadas para todos os utilizadores. A infraestrutura de pagamentos mantém-se intacta.
-                </p>
-            )}
         </div>
     );
 }
@@ -535,14 +530,14 @@ export default function Admin() {
             </AlertDialog>
 
             {/* Sidebar Navigation */}
-            <aside className="w-full md:w-64 bg-card border-r flex flex-col h-auto md:h-screen shrink-0">
-                <div className="p-6 border-b flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                        <ShieldCheck className="w-6 h-6 outline-none" />
-                    </div>
+            <aside className="flex h-auto w-full shrink-0 flex-col border-r border-[#ECE8E3] bg-white text-[#0B1324] dark:border-border dark:bg-card dark:text-foreground md:h-screen md:w-60">
+                <div className="flex items-center gap-2.5 border-b border-[#ECE8E3] px-5 py-5 dark:border-border">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#0B1324] text-white dark:bg-foreground dark:text-background">
+                        <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={1.8} />
+                    </span>
                     <div>
-                        <h1 className="text-lg font-black tracking-tight text-foreground leading-tight">Painel Admin</h1>
-                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">LoveNest SaaS</p>
+                        <p className="text-[15px] font-bold leading-tight tracking-[-0.01em]">Painel</p>
+                        <p className="text-[12px] text-[#7A7F8C]">LoveNest</p>
                     </div>
                 </div>
 
@@ -574,10 +569,11 @@ export default function Admin() {
                     })()}
                 </nav>
 
-                <div className="p-4 border-t">
-                    <Button variant="destructive" className="w-full justify-start gap-3" onClick={handleLogout}>
-                        <LogOut className="w-4 h-4" /> <span className="hidden md:inline">Terminar Sessão</span>
-                    </Button>
+                <div className="border-t border-[#ECE8E3] p-3 dark:border-border">
+                    <button onClick={handleLogout}
+                        className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-[14px] font-semibold text-[#4A5060] transition-colors hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted">
+                        <LogOut className="h-4 w-4" strokeWidth={1.8} /> <span className="hidden md:inline">Sair</span>
+                    </button>
                 </div>
             </aside>
 
