@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useNames } from "./TodayCouples";
+import { LIVE_FEATURES } from "./liveFeatures";
 
 /* Painel admin (parte 3): Pagamentos — Por aprovar, Histórico, Planos, Contas e WhatsApp. */
 
@@ -237,7 +238,7 @@ function PlansTab({ plans, featureTiers, freeModeSlot, onChanged }: { plans: any
 
   /** O que um nível desbloqueia vem de "Funções" (feature_tiers), não de uma lista à parte. */
   const includes = (tier: number) =>
-    featureTiers.filter(f => (f.min_tier ?? 0) >= 1 && f.min_tier <= tier).map(f => f.feature_label || f.feature_id);
+    featureTiers.filter(f => LIVE_FEATURES.has(f.feature_id) && (f.min_tier ?? 0) >= 1 && f.min_tier <= tier).map(f => f.feature_label || f.feature_id);
   const tiersUsed = useMemo(() => Array.from(new Set([1, 2, ...plans.map(p => p.tier_level ?? 1)])).sort(), [plans]);
   const sorted = [...plans].sort((a, b) => (b.is_active ? 1 : 0) - (a.is_active ? 1 : 0) || (a.tier_level ?? 0) - (b.tier_level ?? 0) || money(a.price) - money(b.price));
 

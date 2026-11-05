@@ -33,6 +33,7 @@ import {
 
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 import AdminBiblioteca from "./admin/AdminBiblioteca";
+import FeaturesControl from "./admin/Features";
 import { TodayView, CouplesView } from "@/features/admin/TodayCouples";
 import { PaymentsView, type PaymentsTab } from "@/features/admin/Payments";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -109,7 +110,7 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"today" | "couples" | "payhistory" | "overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
+    const [tab, setTab] = useState<"today" | "couples" | "payhistory" | "features" | "overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
     const [coupleFocus, setCoupleFocus] = useState<string | null>(null);
     const { user: authUser } = useAuth();
     const [verifications, setVerifications] = useState<any[]>([]);
@@ -952,12 +953,13 @@ export default function Admin() {
                             <button key={key} onClick={onClick}
                                 className={cn("flex shrink-0 items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-semibold transition-colors md:w-full",
                                     sub ? "h-8 md:pl-9 text-[13px]" : "h-10",
-                                    (tab === key || (key === "payments" && tab === "payhistory")) ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
+                                    (tab === key || NAV_GROUP[tab] === key) ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
                                 {!sub && <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />}
                                 <span className={cn(!sub && "hidden md:inline", sub && "whitespace-nowrap")}>{label}</span>
                                 {!!badge && <span className="ml-auto rounded-full bg-[#0B1324] px-1.5 text-[11px] font-bold leading-[18px] text-white dark:bg-foreground dark:text-background">{badge}</span>}
                             </button>
                         );
+                        const NAV_GROUP: Record<string, string> = { verifications: "couples", payhistory: "payments", plans: "payments", settings: "payments", announcements: "biblioteca", wrapped: "biblioteca", pwa: "biblioteca" };
                         const week = 7 * 86_400_000;
                         const endingSoon = houses.filter(h => h.subscription_status === "active" && h.subscription_ends_at && new Date(h.subscription_ends_at).getTime() > Date.now() && new Date(h.subscription_ends_at).getTime() - Date.now() < week).length;
                         const pendingVer = verifications.filter(v => v.status === "pending").length;
@@ -965,15 +967,9 @@ export default function Admin() {
                             <>
                                 {item("today", "Hoje", Activity, () => setTab("today"), pendingPayments.length + pendingVer + endingSoon)}
                                 {item("couples", "Casais", Users, () => { setCoupleFocus(null); setTab("couples"); })}
-                                {item("verifications", "Verificações", ShieldCheck, () => setTab("verifications"), pendingVer, true)}
                                 {item("payments", "Pagamentos", CreditCard, () => setTab("payments"), pendingPayments.length)}
-                                {item("plans", "Planos", Tag, () => setTab("plans"), 0, true)}
-                                {item("settings", "Contas e WhatsApp", Settings, () => setTab("settings"), 0, true)}
-                                {item("features", "Funções", Hash, () => navigate("/admin/features"))}
+                                {item("features", "Funções", Hash, () => setTab("features"))}
                                 {item("biblioteca", "Conteúdo", Library, () => setTab("biblioteca"))}
-                                {item("announcements", "Avisos", Megaphone, () => setTab("announcements"), 0, true)}
-                                {item("wrapped", "LoveWrapped", Sparkles, () => setTab("wrapped"), 0, true)}
-                                {item("pwa", "Tutorial PWA", Smartphone, () => setTab("pwa"), 0, true)}
                             </>
                         );
                     })()}
@@ -989,6 +985,28 @@ export default function Admin() {
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-background relative">
 
+                {(() => {
+                    const groups: Record<string, [string, string][]> = {
+                        couples: [["couples", "Casais"], ["verifications", `Verificações${verifications.filter(v => v.status === "pending").length ? ` (${verifications.filter(v => v.status === "pending").length})` : ""}`]],
+                        biblioteca: [["biblioteca", "Biblioteca"], ["announcements", "Avisos"], ["wrapped", "LoveWrapped"], ["pwa", "Tutorial PWA"]],
+                    };
+                    const g = groups[tab] ? tab : ({ verifications: "couples", announcements: "biblioteca", wrapped: "biblioteca", pwa: "biblioteca" } as Record<string, string>)[tab];
+                    if (!g) return null;
+                    return (
+                        <div className="mx-auto mb-4 max-w-5xl">
+                            {g === "biblioteca" && <h2 className="mb-3 text-[24px] font-bold tracking-[-0.025em]">Conteúdo</h2>}
+                            <div className="inline-flex flex-wrap rounded-xl bg-[#F2F0ED] p-[3px] dark:bg-muted">
+                                {groups[g].map(([k, l]) => (
+                                    <button key={k} onClick={() => { if (k === "couples") setCoupleFocus(null); setTab(k as typeof tab); }}
+                                        className={cn("h-8 rounded-[9px] px-3 text-[13px] font-semibold", tab === k ? "bg-white text-[#0B1324] shadow-sm dark:bg-card dark:text-foreground" : "text-[#7A7F8C]")}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })()}
+                {tab === "features" && <FeaturesControl embedded />}
                 {tab === "today" && (
                     <TodayView
                         data={{ houses, users, payments, verifications, plans }}
