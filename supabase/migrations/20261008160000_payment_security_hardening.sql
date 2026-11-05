@@ -147,7 +147,7 @@ GRANT EXECUTE ON FUNCTION public.expire_due_subscriptions() TO service_role;
 -- Give existing active non-lifetime customers one complete term from rollout
 -- if historical activation dates are unavailable. This is intentionally
 -- generous rather than expiring a legitimate customer immediately.
-DO $
+DO $$
 DECLARE
   r RECORD;
 BEGIN
@@ -166,7 +166,7 @@ END $$;
 
 -- Keep status/tier in sync for older clients that only understand
 -- subscription_status. pg_cron is already used elsewhere in LoveNest.
-DO $
+DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
     IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'expire-subscriptions-hourly') THEN
