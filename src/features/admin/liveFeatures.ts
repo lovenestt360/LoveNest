@@ -7,4 +7,5 @@
 export const LIVE_FEATURES = new Set([
   "agenda", "mood", "prayer", "conflicts", "memories", "historia", "cycle",
   "challenges", "time_capsules", "wrapped", "lovestreak", "location_sharing", "wallpapers",
+  "biblioteca",
 ]);

@@ -94,7 +94,9 @@ const AppRoutes = () => (
     {/* Protected routes (login + pareamento) */}
     <Route element={<ProtectedRoute />}>
       {/* Fullscreen readers — sem bottom nav */}
-      <Route path="biblioteca/:bookId/ler" element={<BookReader />} />
+      <Route element={<PremiumGuard requiredFeature="biblioteca" />}>
+        <Route path="biblioteca/:bookId/ler" element={<BookReader />} />
+      </Route>
       <Route path="ciclo/conhecimento/:slug" element={<ArticleReader />} />
 
       <Route element={<AppShell />}>
@@ -109,9 +111,11 @@ const AppRoutes = () => (
         <Route element={<PremiumGuard requiredFeature="agenda" />}>
           <Route path="plano" element={<Plano />} />
         </Route>
-        <Route path="biblioteca" element={<Biblioteca />} />
-        <Route path="biblioteca/:bookId" element={<BookDetail />} />
-        <Route path="biblioteca/:bookId/reflexoes" element={<BookReflections />} />
+        <Route element={<PremiumGuard requiredFeature="biblioteca" />}>
+          <Route path="biblioteca" element={<Biblioteca />} />
+          <Route path="biblioteca/:bookId" element={<BookDetail />} />
+          <Route path="biblioteca/:bookId/reflexoes" element={<BookReflections />} />
+        </Route>
 
         {/* Premium Routes — controlled by plan features in admin */}
         <Route element={<PremiumGuard requiredFeature="mood" />}>
