@@ -5,13 +5,10 @@ import { Clock, CreditCard, Loader2, Search, ShieldCheck, X } from "lucide-react
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { BTN, CARD, GHOST, ROW, Segmented } from "./ui";
 
 /* Painel admin (parte 2): "Hoje" e "Casais", na linguagem branca da app. */
 
-const CARD = "rounded-[20px] border border-[#ECE8E3] bg-white dark:border-border dark:bg-card";
-const ROW = "flex items-center gap-3 border-t border-[#F0EDE9] px-4 py-3 first:border-t-0 dark:border-border/60";
-const BTN = "h-[34px] shrink-0 whitespace-nowrap rounded-full bg-[#0B1324] px-3.5 text-[13px] font-semibold text-white disabled:opacity-60 dark:bg-foreground dark:text-background";
-const GHOST = "h-[34px] shrink-0 whitespace-nowrap rounded-full bg-[#F7F5F2] px-3.5 text-[13px] font-semibold text-[#0B1324] disabled:opacity-60 dark:bg-muted dark:text-foreground";
 const TIER: Record<number, string> = { 1: "Plus", 2: "Pro", 3: "Max" };
 const BILLING: Record<string, string> = { monthly: "Mensal", semiannual: "Semestral", annual: "Anual", lifetime: "Vitalício" };
 
@@ -226,13 +223,9 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
         <h2 className="text-[24px] font-bold tracking-[-0.025em]">Casais</h2>
         <span className="text-[13px] text-[#7A7F8C]">{data.houses.length} casais · {data.users.length} pessoas</span>
       </div>
-      <div className="mt-3 inline-flex flex-wrap rounded-xl bg-[#F2F0ED] p-[3px] dark:bg-muted">
-        {([["all", "Todos"], ["paid", "Pagos"], ["trial", "Experiência"], ["none", "Sem plano"], ["solo", "Sem par"]] as [Filter, string][]).map(([k, l]) => (
-          <button key={k} onClick={() => setFilter(k)}
-            className={cn("h-8 rounded-[9px] px-3 text-[13px] font-semibold", filter === k ? "bg-white text-[#0B1324] shadow-sm dark:bg-card dark:text-foreground" : "text-[#7A7F8C]")}>
-            {l}
-          </button>
-        ))}
+      <div className="mt-3">
+        <Segmented<Filter> value={filter} onChange={setFilter}
+          options={[["all", "Todos"], ["paid", "Pagos"], ["trial", "Experiência"], ["none", "Sem plano"], ["solo", "Sem par"]]} />
       </div>
       <label className="mt-3 flex h-10 max-w-sm items-center gap-2 rounded-xl border border-[#ECE8E3] bg-white px-3 dark:border-border dark:bg-card">
         <Search className="h-4 w-4 text-[#9AA0AB]" />

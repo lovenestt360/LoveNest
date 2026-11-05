@@ -1,64 +1,14 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { Bell, Loader2, Upload, X } from "lucide-react";
+import { Bell, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { BTN, CARD, Chips, Confirm, GHOST, INPUT, LABEL, MUTED, ROW, Spinner, TEXTAREA, Toggle } from "./ui";
 
 /* Painel admin (parte 4): Conteúdo — Avisos, LoveWrapped, Tutorial PWA. */
 
-const CARD = "rounded-[20px] border border-[#ECE8E3] bg-white dark:border-border dark:bg-card";
-const ROW = "flex flex-wrap items-center gap-3 border-t border-[#F0EDE9] px-4 py-3 first:border-t-0 dark:border-border/60";
-const BTN = "h-[34px] shrink-0 whitespace-nowrap rounded-full bg-[#0B1324] px-3.5 text-[13px] font-semibold text-white disabled:opacity-60 dark:bg-foreground dark:text-background";
-const GHOST = "h-[34px] shrink-0 whitespace-nowrap rounded-full bg-[#F7F5F2] px-3.5 text-[13px] font-semibold text-[#0B1324] disabled:opacity-60 dark:bg-muted dark:text-foreground";
-const INPUT = "h-11 w-full rounded-xl border border-[#ECE8E3] bg-white px-3 text-[14px] outline-none focus:border-[#0B1324] dark:border-border dark:bg-card";
-const LABEL = "mb-1.5 block text-[12.5px] font-semibold text-[#7A7F8C]";
-const MUTED = "text-[#7A7F8C]";
-const RED = "bg-[#B91C1C] text-white dark:bg-[#B91C1C] dark:text-white";
-
-function Chips<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map(([k, l]) => (
-        <button key={k} type="button" onClick={() => onChange(k)}
-          className={cn("h-[34px] rounded-full border px-3 text-[13px] font-semibold",
-            value === k ? "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background" : "border-[#ECE8E3] text-[#4A5060] dark:border-border")}>
-          {l}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function Toggle({ on, onChange, label, disabled }: { on: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} disabled={disabled} onClick={() => onChange(!on)}
-      className={cn("relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors disabled:opacity-60", on ? "bg-[#0B1324] dark:bg-foreground" : "bg-[#D9D5CF] dark:bg-muted")}>
-      <span className={cn("absolute top-[3px] h-4 w-4 rounded-full bg-white transition-[left]", on ? "left-[19px]" : "left-[3px]")} />
-    </button>
-  );
-}
-
-function Confirm({ title, children, action, busy, onCancel, onConfirm }: { title: string; children: ReactNode; action: string; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1324]/35 p-4" onClick={() => !busy && onCancel()}>
-      <div role="alertdialog" aria-modal="true" className="w-full max-w-sm rounded-[22px] bg-white p-[18px] dark:bg-card" onClick={e => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-[18px] font-bold tracking-[-0.02em]">{title}</p>
-          <button onClick={onCancel} aria-label="Fechar" className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#F7F5F2] text-[#7A7F8C] dark:bg-muted"><X className="h-3.5 w-3.5" /></button>
-        </div>
-        <div className="mt-3 rounded-[14px] bg-[#FDF3F2] px-3.5 py-3 text-[13px] leading-relaxed text-[#8A1C1C]">{children}</div>
-        <div className="mt-4 flex gap-2">
-          <button onClick={onCancel} disabled={busy} className={cn(GHOST, "h-11 flex-1 rounded-[14px]")}>Cancelar</button>
-          <button onClick={onConfirm} disabled={busy} className={cn(BTN, RED, "h-11 flex-1 rounded-[14px]")}>
-            {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : action}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ═══════════════ Avisos ═══════════════ */
 
@@ -157,7 +107,7 @@ export function AnnouncementsTab() {
               <label className={LABEL}>Mensagem</label>
               <textarea rows={3} value={content} onChange={e => setContent(e.target.value)} maxLength={240}
                 placeholder="Curta e clara. Uma ou duas frases."
-                className="w-full rounded-xl border border-[#ECE8E3] bg-white px-3 py-2.5 text-[14px] outline-none focus:border-[#0B1324] dark:border-border dark:bg-card" />
+                className={TEXTAREA} />
             </div>
             <div>
               <label className={LABEL}>Para quem</label>
@@ -211,7 +161,7 @@ export function AnnouncementsTab() {
 
       <p className="mb-2 mt-6 text-[14px] font-semibold">Avisos</p>
       <div className={CARD}>
-        {loading && <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#7A7F8C]" /></div>}
+        {loading && <Spinner />}
         {!loading && list.length === 0 && <p className={cn("px-4 py-6 text-[13.5px]", MUTED)}>Ainda não publicaste avisos.</p>}
         {list.map(a => {
           const on = live(a);
@@ -345,7 +295,7 @@ export function WrappedTab() {
 
       <p className="mb-2 mt-6 text-[14px] font-semibold">Meses gerados</p>
       <div className={CARD}>
-        {loading && <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#7A7F8C]" /></div>}
+        {loading && <Spinner />}
         {!loading && months.length === 0 && <p className={cn("px-4 py-6 text-[13.5px]", MUTED)}>Ainda não há LoveWrapped gerados.</p>}
         {months.map(m => (
           <div key={`${m.year}-${m.month}`} className={ROW}>
