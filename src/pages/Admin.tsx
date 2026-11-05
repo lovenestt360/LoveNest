@@ -3,9 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { ShieldCheck, Users, Home, Hash, FileImage, FileQuestion, Activity, LogOut, CreditCard, Sparkles, RefreshCw, Library } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/reui/badge";
+import { ShieldCheck, Users, Hash, Activity, LogOut, CreditCard, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getReceiptSignedUrl } from "@/lib/receiptStorage";
 
@@ -15,6 +13,7 @@ import FeaturesControl from "./admin/Features";
 import { TodayView, CouplesView } from "@/features/admin/TodayCouples";
 import { PaymentsView, type PaymentsTab } from "@/features/admin/Payments";
 import { AnnouncementsTab, WrappedTab, PwaTab } from "@/features/admin/Content";
+import { VerificationsView } from "@/features/admin/Verifications";
 import { useAuth } from "@/features/auth/AuthContext";
 
 function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminUserId: string | null }) {
@@ -94,7 +93,6 @@ export default function Admin() {
     const [users, setUsers] = useState<any[]>([]);
     const [plans, setPlans] = useState<any[]>([]);
     const [paymentSettings, setPaymentSettings] = useState<any>(null);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
 
 
@@ -251,65 +249,14 @@ export default function Admin() {
         }
     };
 
-    const handleToggleHouseVerification = async (id: string, currentStatus: boolean) => {
-        try {
-            const { error } = await adminClient.rpc("admin_set_verified" as any, { p_couple_space_id: id, p_verified: !currentStatus });
-            if (error) throw error;
-            toast({ title: !currentStatus ? "Casa Verificada!" : "Selo Removido", description: "O estado de confiança da casa foi atualizado." });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
-    const handleApproveVerification = async (verId: string, userId: string) => {
-        try {
-            const { error: vErr } = await adminClient.from("identity_verifications").update({ status: 'verified' }).eq("id", verId);
-            if (vErr) throw vErr;
-
-            const { error: pErr } = await adminClient.from("profiles").update({ verification_status: 'verified' }).eq("user_id", userId);
-            if (pErr) throw pErr;
-
-            toast({ title: "Utilizador Verificado" });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
-    const handleRejectVerification = async (verId: string, userId: string, notes: string) => {
-        try {
-            const { error: vErr } = await adminClient.from("identity_verifications").update({ status: 'rejected', admin_notes: notes }).eq("id", verId);
-            if (vErr) throw vErr;
-
-            const { error: pErr } = await adminClient.from("profiles").update({ verification_status: 'rejected' }).eq("user_id", userId);
-            if (pErr) throw pErr;
-
-            toast({ title: "Verificação Recusada" });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
     if (loading && payments.length === 0) {
-        return <div className="flex justify-center items-center h-screen animate-pulse bg-background text-foreground tracking-widest font-bold">CARREGANDO SISTEMA...</div>;
+        return <div className="flex h-screen items-center justify-center bg-[#F7F5F2] text-[13.5px] font-medium text-[#7A7F8C] dark:bg-background">A carregar o painel…</div>;
     }
 
     const pendingPayments = payments.filter(p => p.status === 'pending');
 
     return (
-        <div className="admin-scope flex flex-col md:flex-row h-screen overflow-hidden bg-muted/30">
-            {/* Image Modal */}
-            {selectedImage && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setSelectedImage(null)}>
-                    <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
-                        <img src={selectedImage} alt="Comprovativo" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" />
-                        <Button variant="secondary" className="mt-4" onClick={() => setSelectedImage(null)}>Fechar Visualização</Button>
-                    </div>
-                </div>
-            )}
-
+        <div className="admin-scope flex h-screen flex-col overflow-hidden bg-[#F7F5F2] text-[#0B1324] dark:bg-background dark:text-foreground md:flex-row">
             {/* Sidebar Navigation */}
             <aside className="flex h-auto w-full shrink-0 flex-col border-r border-[#ECE8E3] bg-white text-[#0B1324] dark:border-border dark:bg-card dark:text-foreground md:h-screen md:w-60">
                 <div className="flex items-center gap-2.5 border-b border-[#ECE8E3] px-5 py-5 dark:border-border">
@@ -420,242 +367,7 @@ export default function Admin() {
                 {tab === "pwa" && <div className="mx-auto max-w-5xl"><PwaTab /></div>}
 
                 {tab === "verifications" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-6xl mx-auto">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h2 className="text-2xl font-bold flex items-center gap-2">
-                                <ShieldCheck className="w-6 h-6 text-primary" />
-                                Verificação de Identidade
-                            </h2>
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={fetchAllData} disabled={loading}>
-                                    <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
-                                    Atualizar
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-6">
-                            {verifications.length === 0 ? (
-                                <div className="glass-card p-12 text-center">
-                                    <p className="text-muted-foreground italic">Nenhuma submissão de verificação encontrada.</p>
-                                </div>
-                            ) : (() => {
-                                // Grouping logic
-                                const houseGroups: any[] = [];
-                                const processedVerIds = new Set();
-
-                                // 1. Group by known houses
-                                (houses || []).forEach(h => {
-                                    const houseMembers = h.members || [];
-                                    const houseSubmissions = verifications.filter(v => 
-                                        houseMembers.some((m: any) => m.user_id === v.user_id)
-                                    );
-
-                                    if (houseSubmissions.length > 0) {
-                                        houseGroups.push({
-                                            id: h.id,
-                                            name: h.house_name || "Casa Sem Nome",
-                                            members: houseMembers,
-                                            submissions: houseSubmissions,
-                                            is_verified: h.is_verified || false
-                                        });
-                                        houseSubmissions.forEach(v => processedVerIds.add(v.id));
-                                    }
-                                });
-
-                                // 2. Add verifications with no detected house
-                                const orphaned = verifications.filter(v => !processedVerIds.has(v.id));
-                                orphaned.forEach(ov => {
-                                    houseGroups.push({
-                                        id: 'orphan-' + ov.id,
-                                        name: 'Sem Casa Detectada',
-                                        members: [{ user_id: ov.user_id }],
-                                        submissions: [ov],
-                                        isOrphan: true
-                                    });
-                                });
-
-                                return houseGroups.map((group) => (
-                                    <div key={group.id} className="bg-card border-2 rounded-3xl p-6 shadow-md flex flex-col gap-6 transition-all overflow-hidden relative">
-                                        
-                                        {/* HOUSE HEADER */}
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dashed">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
-                                                    <Home className="w-6 h-6" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                                                        {group.name}
-                                                        {group.isOrphan && <Badge size="sm" variant="warning-light">Avulso</Badge>}
-                                                    </h3>
-                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-0.5">
-                                                        <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                                                            <Hash className="w-3 h-3" /> ID DA CASA: <span className="text-primary/70">{group.isOrphan ? 'N/A' : group.id.slice(0, 13)}</span>
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                                                            <Users className="w-3 h-3" /> MEMBROS: <span className="text-primary/70">{group.members.length}/2</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex gap-2">
-                                                <div className="text-right flex flex-col items-end">
-                                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Status da Casa</p>
-                                                    <span className={cn(
-                                                        "text-[10px] font-black uppercase tracking-widest",
-                                                        (group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length) || group.is_verified
-                                                            ? "text-emerald-600"
-                                                            : "text-orange-500"
-                                                    )}>
-                                                        {(group.submissions.every((s: any) => s.status === 'verified') && group.members.length === group.submissions.length) || group.is_verified
-                                                            ? "CASA VERIFICADA" : "VERIFICAÇÃO PENDENTE"}
-                                                    </span>
-                                                </div>
-
-                                                {/* SEAL ACTION BUTTON */}
-                                                {!group.isOrphan && (
-                                                    <div className="flex items-center">
-                                                        {group.is_verified ? (
-                                                            <button 
-                                                                onClick={() => handleToggleHouseVerification(group.id, true)}
-                                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-success text-success-foreground text-[10px] font-black shadow-lg shadow-success/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-                                                            >
-                                                                <Sparkles className="w-3.5 h-3.5" /> Selo Ativo
-                                                            </button>
-                                                        ) : (
-                                                            (() => {
-                                                                const bothVerified = group.submissions.length === 2 && group.submissions.every((s: any) => s.status === 'verified');
-                                                                if (bothVerified) {
-                                                                    return (
-                                                                        <Button 
-                                                                            size="sm" 
-                                                                            className="h-10 bg-primary/20 hover:bg-primary/30 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest"
-                                                                            onClick={() => handleToggleHouseVerification(group.id, false)}
-                                                                        >
-                                                                            ENVIAR SELO
-                                                                        </Button>
-                                                                    );
-                                                                }
-                                                                return null;
-                                                            })()
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* MEMBERS GRID */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
-                                            {/* Vertical divider on desktop */}
-                                            <div className="hidden lg:block absolute left-1/2 top-4 bottom-4 w-px bg-border/50 border-dashed border-l" />
-
-                                            {/* Render 2 slots if possible, or just the submissions for orphans */}
-                                            {(group.members.length === 0 ? group.submissions : group.members).map((member: any, idx: number) => {
-                                                const userId = member.user_id;
-                                                const submission = group.submissions.find((s: any) => s.user_id === userId);
-                                                const profile = users.find(u => u.id === userId);
-
-                                                return (
-                                                    <div key={userId || idx} className="space-y-4 relative">
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <div className="text-[10px] font-black text-white bg-primary px-2 py-0.5 rounded shadow-sm uppercase tracking-tighter">
-                                                                Membro {idx + 1}
-                                                            </div>
-                                                            {userId && <span className="text-[9px] font-mono text-muted-foreground opacity-50">UID: {userId.slice(0, 8)}</span>}
-                                                        </div>
-
-                                                        {submission ? (
-                                                            <div className="space-y-4">
-                                                                <div className="flex items-center gap-4">
-                                                                    <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted shadow-inner border">
-                                                                        {profile?.avatar_url ? (
-                                                                            <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-                                                                        ) : (
-                                                                            <div className="h-full w-full flex items-center justify-center text-xl font-bold bg-primary/10 text-primary uppercase">
-                                                                                {(profile?.display_name || submission.full_name || "?").charAt(0)}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex-1">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <h4 className="font-bold text-lg leading-tight">{submission.full_name}</h4>
-                                                                            <Badge
-                                                                                size="sm"
-                                                                                variant={submission.status === 'pending' ? "info-light" : submission.status === 'verified' ? "success-light" : "destructive-light"}
-                                                                            >
-                                                                                {submission.status}
-                                                                            </Badge>
-                                                                        </div>
-                                                                        <p className="text-xs text-muted-foreground font-medium">@{profile?.display_name || "utilizador"} • Submetido a {new Date(submission.created_at).toLocaleDateString()}</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid grid-cols-2 gap-3 bg-muted/20 p-3 rounded-2xl border border-dashed text-xs">
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black uppercase text-muted-foreground mb-0.5 opacity-70 tracking-widest">Documento</p>
-                                                                        <p className="font-bold text-primary">{submission.document_type || 'BI'} • {submission.age} anos</p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black uppercase text-muted-foreground mb-0.5 opacity-70 tracking-widest">Nº Documento</p>
-                                                                        <p className="font-mono font-bold tracking-tighter">{submission.id_number}</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* DOCUMENTS PREVIEW */}
-                                                                <div className="space-y-2">
-                                                                    <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Imagens do Documento</p>
-                                                                    <div className="flex gap-2">
-                                                                        <Button size="sm" variant="outline" className="flex-1 text-[10px] h-9 border-2" onClick={async () => {
-                                                                            const { data } = await adminClient.storage.from('identity-documents').createSignedUrl(submission.document_url, 60);
-                                                                            if (data) setSelectedImage(data.signedUrl);
-                                                                        }}>
-                                                                            <FileImage className="w-3 h-3 mr-1.5" /> Frente
-                                                                        </Button>
-                                                                        {submission.document_back_url ? (
-                                                                            <Button size="sm" variant="outline" className="flex-1 text-[10px] h-9 border-2" onClick={async () => {
-                                                                                const { data } = await adminClient.storage.from('identity-documents').createSignedUrl(submission.document_back_url, 60);
-                                                                                if (data) setSelectedImage(data.signedUrl);
-                                                                            }}>
-                                                                                <FileImage className="w-3 h-3 mr-1.5" /> Verso
-                                                                            </Button>
-                                                                        ) : (
-                                                                            <div className="flex-1 text-[9px] font-bold text-muted-foreground border border-dashed rounded-lg flex items-center justify-center opacity-50 uppercase">Face Única</div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* ACTIONS */}
-                                                                {submission.status === 'pending' && (
-                                                                    <div className="flex gap-2 pt-2">
-                                                                        <Button variant="outline" size="sm" className="flex-1 text-[10px] border-red-500/20 text-red-600 hover:bg-red-50" onClick={() => handleRejectVerification(submission.id, submission.user_id, "Documento Inválido")}>
-                                                                            Recusar
-                                                                        </Button>
-                                                                        <Button size="sm" className="flex-1 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApproveVerification(submission.id, submission.user_id)}>
-                                                                            Aprovar
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="h-[220px] rounded-3xl border border-dashed bg-muted/5 flex flex-col items-center justify-center text-center p-6 transition-all border-muted-foreground/20">
-                                                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 opacity-30">
-                                                                    <FileQuestion className="w-6 h-6" />
-                                                                </div>
-                                                                <h4 className="font-bold text-muted-foreground/60 text-sm">{profile?.display_name || "Membro " + (idx + 1)}</h4>
-                                                                <p className="text-[10px] font-medium text-muted-foreground/40 mt-1 uppercase tracking-widest">Aguardando submissão</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                ))
-                            })()}
-                        </div>
-                    </div>
+                    <VerificationsView houses={houses} users={users} verifications={verifications} onChanged={fetchAllData} />
                 )}
 
                 {/* BIBLIOTECA TAB */}
