@@ -17,6 +17,24 @@ const BILLING_LABELS: Record<string, string> = {
     lifetime:   "Vitalício",
 };
 
+const BILLING_ORDER: Record<string, number> = { monthly: 0, semiannual: 1, annual: 2, lifetime: 3 };
+const BILLING_MONTHS: Record<string, number> = { semiannual: 6, annual: 12 };
+const amountOf = (price: unknown) => {
+    const n = parseFloat(String(price ?? "").replace(/[^\d.,]/g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+};
+
+/** Para planos semestrais/anuais: preço por mês e quanto poupa face ao mensal do mesmo nível. */
+function savingsOf(plan: any, plans: any[]) {
+    const months = BILLING_MONTHS[plan.billing_type];
+    if (!months) return null;
+    const monthly = plans.find(x => x.tier_level === plan.tier_level && (x.billing_type ?? "monthly") === "monthly");
+    const price = amountOf(plan.price);
+    if (!monthly || !price) return null;
+    const saved = Math.round(amountOf(monthly.price) * months - price);
+    return { perMonth: Math.round(price / months), saved: saved > 0 ? saved : 0 };
+}
+
 const FEATURE_LABELS: Record<string, string> = {
     mood: "Humor do casal",
     memories: "Memórias e álbuns",
@@ -108,8 +126,11 @@ export default function Subscription() {
                 .order("created_at", { ascending: true });
 
             if (activePlans && activePlans.length > 0) {
-                setPlans(activePlans);
-                setSelectedPlan(activePlans[0]);
+                const sorted = [...activePlans].sort((a: any, b: any) =>
+                    (a.tier_level ?? 0) - (b.tier_level ?? 0) ||
+                    (BILLING_ORDER[a.billing_type ?? "monthly"] ?? 9) - (BILLING_ORDER[b.billing_type ?? "monthly"] ?? 9));
+                setPlans(sorted);
+                setSelectedPlan(sorted.find((x: any) => x.billing_type === "annual") ?? sorted[0]);
             }
 
             const { data: psData } = await (supabase as any).from("payment_settings").select("*").limit(1).maybeSingle();
@@ -290,9 +311,10 @@ export default function Subscription() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {plans.map((p, index) => {
+                                    {plans.map((p) => {
                                         const isSelected = selectedPlan?.id === p.id;
-                                        const isPopular = index === 1;
+                                        const savings = savingsOf(p, plans);
+                                        const isPopular = p.billing_type === "annual" && !!savings;
                                         return (
                                             <div
                                                 key={p.id}
@@ -301,8 +323,8 @@ export default function Subscription() {
                                             >
                                                 {isPopular && (
                                                     <div className="absolute -top-2.5 left-5">
-                                                        <span className="bg-primary text-primary-foreground text-[11px] font-semibold px-3 py-1 rounded-full">
-                                                            Mais popular
+                                                        <span className="rounded-full bg-[#0B1324] px-3 py-1 text-[11px] font-semibold text-white dark:bg-foreground dark:text-background">
+                                                            Mais vantajoso
                                                         </span>
                                                     </div>
                                                 )}
@@ -311,7 +333,11 @@ export default function Subscription() {
                                                         <h4 className="font-bold text-base mb-0.5">{p.name}</h4>
                                                         <p className="text-[12.5px] font-medium text-muted-foreground">
                                                             {BILLING_LABELS[p.billing_type] || "Mensal"}
+                                                            {savings ? ` · ${savings.perMonth} MT por mês` : " · para os dois"}
                                                         </p>
+                                                        {savings && savings.saved > 0 && (
+                                                            <p className="mt-0.5 text-[12.5px] font-semibold text-[#1E7A44]">Poupam {savings.saved} MT</p>
+                                                        )}
                                                     </div>
                                                     <div className="text-right shrink-0">
                                                         <p className="text-[20px] font-semibold leading-none tracking-[-0.02em] text-foreground">{p.price}</p>
