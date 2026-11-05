@@ -520,7 +520,7 @@ export default function Admin() {
             const { error } = await adminClient.from("subscription_plans").insert({
                 name: newPlanName,
                 price: newPlanPrice,
-                price_mzn: newPlanPriceMzn.trim() ? Number(newPlanPriceMzn) : null,
+                price_mzn: null,
                 billing_type: newPlanBillingType,
                 tier_level: newPlanTierLevel,
                 features: selectedFeatures,
@@ -621,7 +621,7 @@ export default function Admin() {
             const { error } = await adminClient.from("subscription_plans").update({
                 name: editPlanName,
                 price: editPlanPrice,
-                price_mzn: editPlanPriceMzn.trim() ? Number(editPlanPriceMzn) : null,
+                price_mzn: null,
                 billing_type: editPlanBillingType,
                 tier_level: editPlanTierLevel,
                 features: editPlanFeatures
@@ -1376,13 +1376,6 @@ export default function Admin() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço automático (MZN)</label>
-                                    <Input type="number" min="0" step="0.01" value={newPlanPriceMzn} onChange={e => setNewPlanPriceMzn(e.target.value)} placeholder="Ex: 5000" className="bg-background" />
-                                    <p className="text-[11px] text-muted-foreground mt-1">Só preenche se quiseres ativar o pagamento automático (PaySuite) para este plano.</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
                                     <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
                                     <div className="flex flex-wrap gap-2">
                                         {BILLING_TYPES.map(bt => (
@@ -1448,11 +1441,6 @@ export default function Admin() {
                                         <div>
                                             <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
                                             <Input value={editPlanPrice} onChange={e => setEditPlanPrice(e.target.value)} className="bg-background" />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço automático (MZN)</label>
-                                            <Input type="number" min="0" step="0.01" value={editPlanPriceMzn} onChange={e => setEditPlanPriceMzn(e.target.value)} placeholder="Ex: 5000" className="bg-background" />
-                                            <p className="text-[11px] text-muted-foreground mt-1">Só preenche se quiseres ativar o pagamento automático (PaySuite) para este plano.</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>

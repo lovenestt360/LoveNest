@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Zap, Smartphone, Loader2 } from "lucide-react";
+import { CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,6 @@ import { useReceiptUpload } from "@/hooks/useReceiptUpload";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
-const PAYSUITE_METHODS: { id: "mpesa" | "emola" | "credit_card"; label: string; icon: typeof Smartphone }[] = [
-    { id: "mpesa", label: "M-Pesa", icon: Smartphone },
-    { id: "emola", label: "e-Mola", icon: Smartphone },
-    { id: "credit_card", label: "Cartão", icon: CreditCard },
-];
 
 const BILLING_LABELS: Record<string, string> = {
     monthly:    "Mensal",
@@ -62,7 +57,6 @@ export default function Subscription() {
     const [userEmail, setUserEmail] = useState("");
     const [userName, setUserName] = useState("");
 
-    const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -192,26 +186,6 @@ export default function Subscription() {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
             setSubmitting(false);
-        }
-    };
-
-    const handlePaySuite = async (method: "mpesa" | "emola" | "credit_card") => {
-        if (!selectedPlan?.price_mzn || !house) return;
-        try {
-            setPayingMethod(method);
-            const { data, error } = await supabase.functions.invoke("create-paysuite-payment", {
-                body: { couple_space_id: house.id, plan_id: selectedPlan.id, method },
-            });
-            if (error) throw error;
-            if (!data?.checkout_url) throw new Error(data?.error || "Não foi possível iniciar o pagamento.");
-            window.location.assign(data.checkout_url);
-        } catch (error: any) {
-            toast({
-                title: "Pagamento automático indisponível",
-                description: error.message || "Tenta novamente ou usa o método manual abaixo.",
-                variant: "destructive",
-            });
-            setPayingMethod(null);
         }
     };
 
@@ -371,39 +345,6 @@ export default function Subscription() {
                                     })}
                                 </div>
                             )}
-
-                            {/* Pagamento instantâneo via PaySuite */}
-                            {selectedPlan?.price_mzn ? (
-                                <div className="space-y-3">
-                                    <h3 className="font-bold text-base flex items-center gap-1.5">
-                                        <Zap className="w-4 h-4 text-primary" strokeWidth={2} />
-                                        Pagamento instantâneo
-                                    </h3>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {PAYSUITE_METHODS.map(({ id, label, icon: Icon }) => (
-                                            <button
-                                                key={id}
-                                                onClick={() => handlePaySuite(id)}
-                                                disabled={!!payingMethod}
-                                                className="py-3 px-2 rounded-[14px] border border-[#ECE8E3] bg-white hover:border-[#D5D1CB] text-center transition-colors font-semibold text-sm disabled:opacity-60 flex flex-col items-center gap-1.5 dark:border-border dark:bg-card"
-                                            >
-                                                {payingMethod === id
-                                                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                                                    : <Icon className="w-4 h-4" strokeWidth={1.5} />}
-                                                {label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <p className="text-[11px] text-muted-foreground px-1">
-                                        Ativação automática, sem esperar por aprovação.
-                                    </p>
-                                    <div className="flex items-center gap-3 pt-1">
-                                        <div className="flex-1 h-px bg-border" />
-                                        <span className="text-[11px] font-medium text-muted-foreground">ou paga manualmente</span>
-                                        <div className="flex-1 h-px bg-border" />
-                                    </div>
-                                </div>
-                            ) : null}
 
                             {/* Payment Method */}
                             {paymentMethods.length > 0 && (
