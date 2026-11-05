@@ -107,7 +107,7 @@ BEGIN
 
   UPDATE public.couple_spaces
   SET subscription_status     = 'active',
-      plan_id                 = v_plan.id,
+      plan_id                 = v_plan.id::text,  -- couple_spaces.plan_id é TEXT
       tier_level              = COALESCE(v_plan.tier_level, 0),
       subscription_started_at = COALESCE(subscription_started_at, p_effective_at),
       subscription_ends_at    = v_new_end
@@ -152,9 +152,9 @@ DECLARE
   r RECORD;
 BEGIN
   FOR r IN
-    SELECT cs.id AS couple_space_id, cs.plan_id
+    SELECT cs.id AS couple_space_id, sp.id AS plan_id
     FROM public.couple_spaces cs
-    JOIN public.subscription_plans sp ON sp.id = cs.plan_id
+    JOIN public.subscription_plans sp ON sp.id::text = cs.plan_id  -- plan_id é TEXT
     WHERE cs.subscription_status = 'active'
       AND cs.plan_id IS NOT NULL
       AND cs.subscription_started_at IS NULL
