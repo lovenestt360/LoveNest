@@ -34,6 +34,7 @@ import {
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 import AdminBiblioteca from "./admin/AdminBiblioteca";
 import { TodayView, CouplesView } from "@/features/admin/TodayCouples";
+import { PaymentsView, type PaymentsTab } from "@/features/admin/Payments";
 import { useAuth } from "@/features/auth/AuthContext";
 
 function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminUserId: string | null }) {
@@ -108,7 +109,7 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"today" | "couples" | "overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
+    const [tab, setTab] = useState<"today" | "couples" | "payhistory" | "overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
     const [coupleFocus, setCoupleFocus] = useState<string | null>(null);
     const { user: authUser } = useAuth();
     const [verifications, setVerifications] = useState<any[]>([]);
@@ -951,7 +952,7 @@ export default function Admin() {
                             <button key={key} onClick={onClick}
                                 className={cn("flex shrink-0 items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-semibold transition-colors md:w-full",
                                     sub ? "h-8 md:pl-9 text-[13px]" : "h-10",
-                                    tab === key ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
+                                    (tab === key || (key === "payments" && tab === "payhistory")) ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
                                 {!sub && <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />}
                                 <span className={cn(!sub && "hidden md:inline", sub && "whitespace-nowrap")}>{label}</span>
                                 {!!badge && <span className="ml-auto rounded-full bg-[#0B1324] px-1.5 text-[11px] font-bold leading-[18px] text-white dark:bg-foreground dark:text-background">{badge}</span>}
@@ -999,6 +1000,23 @@ export default function Admin() {
                         onAnnounce={() => setTab("announcements")}
                     />
                 )}
+                {(tab === "payments" || tab === "payhistory" || tab === "plans" || tab === "settings") && (() => {
+                    const toView: Record<string, PaymentsTab> = { payments: "pending", payhistory: "history", plans: "plans", settings: "accounts" };
+                    const toAdmin: Record<PaymentsTab, typeof tab> = { pending: "payments", history: "payhistory", plans: "plans", accounts: "settings" };
+                    return (
+                        <PaymentsView
+                            data={{ houses, users, payments, plans }}
+                            paymentSettings={paymentSettings}
+                            featureTiers={featureTiers}
+                            tab={toView[tab]}
+                            onTab={(t) => setTab(toAdmin[t])}
+                            freeModeSlot={<FreeModeToggle adminClient={adminClient} adminUserId={adminUserId} />}
+                            onOpenReceipt={handleOpenReceipt}
+                            onApprove={handleApprovePayment}
+                            onChanged={fetchAllData}
+                        />
+                    );
+                })()}
                 {tab === "couples" && (
                     <CouplesView key={coupleFocus ?? "all"} data={{ houses, users, payments, verifications, plans }} initialId={coupleFocus} onChanged={fetchAllData} />
                 )}
@@ -1064,110 +1082,6 @@ export default function Admin() {
                                     Ver Pagamentos
                                 </Button>
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* PAYMENTS TAB */}
-                {tab === "payments" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h2 className="text-2xl font-bold flex items-center gap-2"><CreditCard className="w-6 h-6 text-primary" /> Pagamentos</h2>
-                            <div className="relative w-full md:w-72">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Pesquisar por casa..."
-                                    value={paymentsSearch}
-                                    onChange={(e) => setPaymentsSearch(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                            {(["pending", "approved", "rejected", "all"] as const).map((s) => (
-                                <Button
-                                    key={s}
-                                    size="sm"
-                                    variant={paymentsFilter === s ? "secondary" : "ghost"}
-                                    onClick={() => setPaymentsFilter(s)}
-                                    className="font-bold"
-                                >
-                                    {s === "pending" ? "Pendentes" : s === "approved" ? "Aprovados" : s === "rejected" ? "Rejeitados" : "Todos"}
-                                </Button>
-                            ))}
-                        </div>
-
-                        <div className="space-y-3">
-                            {filteredPayments.length === 0 ? (
-                                <div className="bg-card border rounded-2xl p-8 text-center text-muted-foreground italic">
-                                    Nenhum pagamento encontrado.
-                                </div>
-                            ) : filteredPayments.map((payment) => (
-                                <div key={payment.id} className="bg-card border rounded-2xl p-5 shadow-sm space-y-3">
-                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-lg">{payment.couple_spaces?.house_name || "Casa sem nome"}</h4>
-                                                <Badge
-                                                    size="sm"
-                                                    variant={payment.status === "pending" ? "warning-light" : payment.status === "approved" ? "success-light" : "destructive-light"}
-                                                >
-                                                    {payment.status === "pending" ? "Pendente" : payment.status === "approved" ? "Aprovado" : "Rejeitado"}
-                                                </Badge>
-                                                {payment.provider === "paysuite" && (
-                                                    <Badge size="sm" variant="info-light">PaySuite</Badge>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">Casal: {payment.couple_spaces?.partner1_name} & {payment.couple_spaces?.partner2_name}</p>
-                                            <p className="text-sm font-medium mt-1">Plano: <span className="text-primary">{payment.plan_name}</span> · <span className="font-bold">{payment.amount}</span></p>
-                                            <p className="text-xs text-muted-foreground mt-0.5">Método: {payment.method} · {new Date(payment.created_at).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                                            {payment.admin_notes && (
-                                                <p className="text-xs text-destructive mt-1">Nota: {payment.admin_notes}</p>
-                                            )}
-                                        </div>
-                                        <div className="flex w-full md:w-auto gap-2 shrink-0">
-                                            {payment.proof_url ? (
-                                                <Button size="sm" variant="outline" onClick={() => handleOpenReceipt(payment.proof_url)}>
-                                                    <ImageIcon className="w-4 h-4 mr-2" /> Comprovativo
-                                                </Button>
-                                            ) : (
-                                                <Button size="sm" variant="outline" disabled>Sem Anexo</Button>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {payment.status === "pending" && (
-                                        <div className="flex flex-col md:flex-row gap-2 pt-1 border-t">
-                                            <Textarea
-                                                placeholder="Nota (opcional, mostrada em caso de rejeição)"
-                                                value={rejectNotes[payment.id] || ""}
-                                                onChange={(e) => setRejectNotes(n => ({ ...n, [payment.id]: e.target.value }))}
-                                                className="bg-background min-h-[40px] flex-1 mt-3"
-                                            />
-                                            <div className="flex gap-2 shrink-0 mt-3">
-                                                <Button
-                                                    disabled={processingPaymentId === payment.id}
-                                                    className="gap-2 bg-success hover:bg-success/90 text-success-foreground"
-                                                    onClick={() => handleApprovePayment(payment.id, payment.couple_space_id, payment.plan_name)}
-                                                >
-                                                    {processingPaymentId === payment.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                                    Aprovar
-                                                </Button>
-                                                <Button
-                                                    disabled={processingPaymentId === payment.id}
-                                                    variant="destructive"
-                                                    className="gap-2"
-                                                    onClick={() => handleRejectPayment(payment.id)}
-                                                >
-                                                    {processingPaymentId === payment.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-                                                    Rejeitar
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
                         </div>
                     </div>
                 )}
@@ -1368,201 +1282,6 @@ export default function Admin() {
                     </div>
                 )}
 
-                {/* PLANS TAB */}
-                {tab === "plans" && (
-                    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Tag className="w-6 h-6 text-primary" /> Gestão de Planos</h2>
-
-                        <form onSubmit={handleCreatePlan} className="bg-primary/5 border border-primary/20 rounded-3xl p-6 shadow-sm">
-                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                                <Plus className="w-5 h-5 text-primary" /> Criar Novo Plano
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-1 block">Nome do Plano</label>
-                                    <Input value={newPlanName} onChange={e => setNewPlanName(e.target.value)} placeholder="Ex: LoveNest Anual" required className="bg-background" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
-                                    <Input value={newPlanPrice} onChange={e => setNewPlanPrice(e.target.value)} placeholder="Ex: 5000 MZN / Ano" required className="bg-background" />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {BILLING_TYPES.map(bt => (
-                                            <button key={bt.id} type="button" onClick={() => setNewPlanBillingType(bt.id)}
-                                                className={`px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${newPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
-                                                {bt.label}{bt.days ? ` · ${bt.days}d` : " · ∞"}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Nível de Acesso (Tier)</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {TIER_LEVELS.map(tl => (
-                                            <button key={tl.level} type="button" onClick={() => setNewPlanTierLevel(tl.level)}
-                                                className={`px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${newPlanTierLevel === tl.level ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
-                                                {tl.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mb-6">
-                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Funcionalidades do Plano</label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                    {ALL_FEATURES.map(feature => {
-                                        const isSelected = selectedFeatures.includes(feature.id);
-                                        return (
-                                            <div
-                                                key={feature.id}
-                                                onClick={() => {
-                                                    if (isSelected) {
-                                                        setSelectedFeatures(prev => prev.filter(f => f !== feature.id));
-                                                    } else {
-                                                        setSelectedFeatures(prev => [...prev, feature.id]);
-                                                    }
-                                                }}
-                                                className={`cursor-pointer rounded-xl border p-2 flex items-center justify-between text-xs font-bold transition-all ${isSelected ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted'}`}
-                                            >
-                                                <span>{feature.label}</span>
-                                                {isSelected && <Check className="w-3 h-3" />}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <Button type="submit" disabled={creatingPlan} className="w-full md:w-auto">
-                                {creatingPlan ? "A criar..." : "Adicionar Plano"}
-                            </Button>
-                        </form>
-
-                        {/* Edit Plan Modal */}
-                        <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
-                            <DialogContent className="max-w-lg rounded-2xl p-0 gap-0 overflow-hidden">
-                                    <DialogHeader className="p-6 border-b bg-muted/30 text-left space-y-0">
-                                        <DialogTitle>Editar Plano</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Nome do Plano</label>
-                                            <Input value={editPlanName} onChange={e => setEditPlanName(e.target.value)} className="bg-background" />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-1 block">Preço</label>
-                                            <Input value={editPlanPrice} onChange={e => setEditPlanPrice(e.target.value)} className="bg-background" />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Tipo de Cobrança</label>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {BILLING_TYPES.map(bt => (
-                                                        <button key={bt.id} type="button" onClick={() => setEditPlanBillingType(bt.id)}
-                                                            className={`px-2.5 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${editPlanBillingType === bt.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
-                                                            {bt.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="text-sm font-bold text-muted-foreground mb-2 block">Nível de Acesso (Tier)</label>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {TIER_LEVELS.map(tl => (
-                                                        <button key={tl.level} type="button" onClick={() => setEditPlanTierLevel(tl.level)}
-                                                            className={`px-2.5 py-1.5 rounded-xl border-2 text-xs font-bold transition-all ${editPlanTierLevel === tl.level ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/40'}`}>
-                                                            {tl.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-muted-foreground mb-2 block">Destaques do Plano <span className="font-normal text-muted-foreground/60">(opcional — para mostrar na página de subscrição)</span></label>
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                                {ALL_FEATURES.map(feature => {
-                                                    const isSelected = editPlanFeatures.includes(feature.id);
-                                                    return (
-                                                        <div
-                                                            key={feature.id}
-                                                            onClick={() => {
-                                                                if (isSelected) {
-                                                                    setEditPlanFeatures(prev => prev.filter(f => f !== feature.id));
-                                                                } else {
-                                                                    setEditPlanFeatures(prev => [...prev, feature.id]);
-                                                                }
-                                                            }}
-                                                            className={`cursor-pointer rounded-xl border p-2 flex items-center justify-between text-xs font-bold transition-all ${isSelected ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted'}`}
-                                                        >
-                                                            <span>{feature.label}</span>
-                                                            {isSelected && <Check className="w-3 h-3" />}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <DialogFooter className="p-4 bg-muted/30 border-t">
-                                        <Button variant="outline" onClick={() => setEditingPlan(null)}>Cancelar</Button>
-                                        <Button className="font-bold" disabled={savingPlanEdit || !editPlanName.trim() || !editPlanPrice.trim()} onClick={handleSavePlanEdit}>
-                                            {savingPlanEdit ? "A guardar..." : "Guardar Alterações"}
-                                        </Button>
-                                    </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {plans.map((p) => (
-                                <div key={p.id} className="bg-card border rounded-2xl p-5 shadow-sm relative">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h4 className="text-xl font-bold text-primary">{p.name}</h4>
-                                            <p className="text-2xl font-black">{p.price}</p>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            <Badge size="sm" variant={p.is_active ? "success-light" : "secondary"}>
-                                                {p.is_active ? 'Visível' : 'Oculto'}
-                                            </Badge>
-                                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${TIER_LEVELS.find(t => t.level === (p.tier_level ?? 1))?.color ?? 'bg-muted text-muted-foreground'}`}>
-                                                Tier {p.tier_level ?? 1} · {TIER_LEVELS.find(t => t.level === (p.tier_level ?? 1))?.label ?? 'Plus'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <ul className="space-y-2 mb-6 text-sm text-foreground/80 flex-1">
-                                        {p.features?.map((f: string, i: number) => {
-                                            const label = ALL_FEATURES.find(ft => ft.id === f)?.label ?? f;
-                                            return (
-                                                <li key={i} className="flex items-center gap-2"><Check className="w-4 h-4 text-primary shrink-0" /> {label}</li>
-                                            );
-                                        })}
-                                    </ul>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" className="flex-1" onClick={() => openEditPlan(p)}>
-                                            <Edit2 className="w-4 h-4 mr-2" /> Editar
-                                        </Button>
-                                        <Button variant={p.is_active ? "outline" : "default"} className="flex-1" onClick={() => handleTogglePlan(p.id, p.is_active)}>
-                                            {p.is_active ? "Desativar" : "Ativar"}
-                                        </Button>
-                                        <Button variant="destructive" size="icon" onClick={() => handleDeletePlan(p.id)}>
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* O plano mínimo de cada função passou para "Funções" (um só sítio). */}
-                {tab === "plans" && (
-                    <div className="max-w-5xl mx-auto mt-8 flex items-center justify-between gap-3 rounded-2xl border border-[#ECE8E3] bg-white px-4 py-3 dark:border-border dark:bg-card">
-                        <p className="text-sm text-muted-foreground">O que cada plano desbloqueia define-se agora em <b className="text-foreground">Funções</b>.</p>
-                        <Button variant="outline" className="rounded-full" onClick={() => navigate("/admin/features")}>Abrir Funções</Button>
-                    </div>
-                )}
-
                 {/* ANNOUNCEMENTS TAB */}
                 {tab === "announcements" && (
                     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
@@ -1618,73 +1337,6 @@ export default function Admin() {
                         </div>
                     </div>
                 )}
-
-                {/* SETTINGS TAB */}
-                {tab === "settings" && (
-                    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6 text-primary" /> Configurações</h2>
-
-                        {/* FREE MODE TOGGLE */}
-                        <FreeModeToggle adminClient={adminClient} adminUserId={adminUserId} />
-
-                        <h3 className="text-xl font-bold text-muted-foreground">Configurações de Pagamento</h3>
-                        <form onSubmit={handleSaveSettings} className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
-
-                            <h3 className="font-bold mb-4 text-primary">Contas de Recebimento</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número M-Pesa</label>
-                                    <Input value={settingsForm.mpesa_number} onChange={e => setSettingsForm({ ...settingsForm, mpesa_number: e.target.value })} placeholder="Ex: 841234567" className="bg-background" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número e-Mola</label>
-                                    <Input value={settingsForm.emola_number} onChange={e => setSettingsForm({ ...settingsForm, emola_number: e.target.value })} placeholder="Ex: 861234567" className="bg-background" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número mKesh</label>
-                                    <Input value={settingsForm.mkesh_number} onChange={e => setSettingsForm({ ...settingsForm, mkesh_number: e.target.value })} placeholder="Ex: 821234567" className="bg-background" />
-                                </div>
-                                <div className="md:col-span-3">
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Nome Presente nas Contas</label>
-                                    <Input value={settingsForm.account_name} onChange={e => setSettingsForm({ ...settingsForm, account_name: e.target.value })} placeholder="Ex: João Silva" required className="bg-background" />
-                                </div>
-                            </div>
-
-                            <div className="h-px w-full bg-border mb-8"></div>
-
-                            <h3 className="font-bold mb-4 text-green-600">Configurações WhatsApp</h3>
-                            <div className="space-y-6 mb-8">
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Número de WhatsApp (com indicativo)</label>
-                                    <Input value={settingsForm.whatsapp_number} onChange={e => setSettingsForm({ ...settingsForm, whatsapp_number: e.target.value })} placeholder="Ex: 258841234567" required className="bg-background" />
-                                    <p className="text-xs text-muted-foreground mt-1">O número para onde os casais enviam o comprovativo.</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-muted-foreground mb-2 block">Mensagem Automática</label>
-                                    <Textarea
-                                        value={settingsForm.whatsapp_message_template}
-                                        onChange={e => setSettingsForm({ ...settingsForm, whatsapp_message_template: e.target.value })}
-                                        className="bg-background min-h-[150px] font-mono text-sm"
-                                    />
-                                    <div className="mt-2 text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-                                        <strong>Variavéis dinâmicas disponíveis:</strong><br />
-                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;user_name&#125;</code>
-                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;user_email&#125;</code>
-                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;house_name&#125;</code>
-                                        <code className="bg-background px-1 py-0.5 rounded mr-1">&#123;plan_name&#125;</code>
-                                        <code className="bg-background px-1 py-0.5 rounded">&#123;plan_price&#125;</code>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button type="submit" className="w-full md:w-auto h-12 text-md font-bold" disabled={savingSettings}>
-                                {savingSettings ? "A Guardar..." : "Salvar Configurações"}
-                            </Button>
-                        </form>
-                    </div>
-                )}
-
-
 
                 {/* LOVEWRAPPED TAB */}
                 {tab === "wrapped" && (
