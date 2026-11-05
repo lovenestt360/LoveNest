@@ -41,7 +41,7 @@ function planOf(h: any, plans: any[]) {
   return plans.find(p => String(p.id) === String(h.plan_id));
 }
 
-function useNames(data: AdminData) {
+export function useNames(data: Pick<AdminData, "users">) {
   return useMemo(() => {
     const byId = new Map(data.users.map((u: any) => [u.user_id, u]));
     const people = (h: any) => (h.members ?? []).map((m: any) => byId.get(m.user_id)).filter(Boolean);
