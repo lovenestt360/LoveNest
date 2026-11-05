@@ -107,7 +107,7 @@ BEGIN
 
   UPDATE public.couple_spaces
   SET subscription_status     = 'active',
-      plan_id                 = v_plan.id,
+      plan_id                 = v_plan.id::text,  -- couple_spaces.plan_id é TEXT
       tier_level              = COALESCE(v_plan.tier_level, 0),
       subscription_started_at = COALESCE(subscription_started_at, p_effective_at),
       subscription_ends_at    = v_new_end
@@ -147,14 +147,14 @@ GRANT EXECUTE ON FUNCTION public.expire_due_subscriptions() TO service_role;
 -- Give existing active non-lifetime customers one complete term from rollout
 -- if historical activation dates are unavailable. This is intentionally
 -- generous rather than expiring a legitimate customer immediately.
-DO $
+DO $$
 DECLARE
   r RECORD;
 BEGIN
   FOR r IN
-    SELECT cs.id AS couple_space_id, cs.plan_id
+    SELECT cs.id AS couple_space_id, sp.id AS plan_id
     FROM public.couple_spaces cs
-    JOIN public.subscription_plans sp ON sp.id = cs.plan_id
+    JOIN public.subscription_plans sp ON sp.id::text = cs.plan_id  -- plan_id é TEXT
     WHERE cs.subscription_status = 'active'
       AND cs.plan_id IS NOT NULL
       AND cs.subscription_started_at IS NULL
@@ -162,11 +162,11 @@ BEGIN
   LOOP
     PERFORM public.activate_paid_subscription(r.couple_space_id, r.plan_id, now());
   END LOOP;
-END $;
+END $$;
 
 -- Keep status/tier in sync for older clients that only understand
 -- subscription_status. pg_cron is already used elsewhere in LoveNest.
-DO $
+DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
     IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'expire-subscriptions-hourly') THEN
@@ -179,7 +179,7 @@ BEGIN
       'SELECT public.expire_due_subscriptions();'
     );
   END IF;
-END $;
+END $$;
 
 -- ── Manual payment normalization ───────────────────────────────────────────
 -- Any authenticated browser insert is treated as a manual request. The user
