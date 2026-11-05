@@ -106,7 +106,9 @@ const AppRoutes = () => (
         <Route path="vida" element={<Navigate to="/" replace />} />
         <Route path="configuracoes" element={<Settings />} />
         <Route path="subscricao" element={<Subscription />} />
-        <Route path="plano" element={<Plano />} />
+        <Route element={<PremiumGuard requiredFeature="agenda" />}>
+          <Route path="plano" element={<Plano />} />
+        </Route>
         <Route path="biblioteca" element={<Biblioteca />} />
         <Route path="biblioteca/:bookId" element={<BookDetail />} />
         <Route path="biblioteca/:bookId/reflexoes" element={<BookReflections />} />

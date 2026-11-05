@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFreeMode } from "@/hooks/useFreeMode";
 import Paywall from "@/components/Paywall";
 import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
+import { useFeatureAccess } from "@/features/feature-access/FeatureAccessContext";
+import faisca from "@/assets/flame/flame_01_faisca_thumb.png";
 
 // Tier levels — must match subscription_plans.tier_level in DB
 // 0 = Free, 1 = Plus, 2 = Pro, 3 = Max
@@ -11,6 +13,7 @@ import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 
 export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) {
     const { freeMode, loading: freeModeLoading } = useFreeMode();
+    const { isEnabled, isTesting, loading: flagsLoading } = useFeatureAccess();
     const [loading, setLoading] = useState(true);
     const [access, setAccess] = useState<"allow" | "paywall" | "upgrade">("paywall");
 
@@ -89,7 +92,13 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
         check();
     }, [freeMode, freeModeLoading, requiredFeature]);
 
-    if (loading || freeModeLoading) {
+    // Funções (painel admin): desligada = "Em breve"; em teste nesta casa = entra sem olhar ao plano.
+    if (requiredFeature && !flagsLoading) {
+        if (!isEnabled(requiredFeature)) return <ComingSoon />;
+        if (isTesting(requiredFeature)) return <Outlet />;
+    }
+
+    if (loading || freeModeLoading || flagsLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="text-center">
@@ -129,4 +138,23 @@ export function PremiumGuard({ requiredFeature }: { requiredFeature?: string }) 
     }
 
     return <Outlet />;
+}
+
+/** Função desligada no painel: aparece "Em breve" em vez de abrir. */
+function ComingSoon() {
+    return (
+        <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center animate-in fade-in">
+            <img src={faisca} alt="" className="w-[110px] animate-[ln-bob_3.6s_ease-in-out_infinite]" />
+            <h2 className="mt-2 text-[21px] font-bold tracking-[-0.025em] text-foreground">Em breve</h2>
+            <p className="mt-1.5 max-w-[280px] text-[14px] leading-relaxed text-muted-foreground">
+                Estamos a preparar esta parte da app. Voltem daqui a pouco.
+            </p>
+            <button
+                onClick={() => (window.history.length > 1 ? window.history.back() : window.location.assign("/"))}
+                className="mt-5 h-11 rounded-2xl bg-[#0B1324] px-6 text-[14px] font-semibold text-white dark:bg-foreground dark:text-background"
+            >
+                Voltar
+            </button>
+        </div>
+    );
 }

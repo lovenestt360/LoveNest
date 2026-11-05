@@ -976,7 +976,7 @@ export default function Admin() {
                         <Library className="w-4 h-4" /> <span className="hidden md:inline">Biblioteca</span>
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 w-full" onClick={() => navigate("/admin/features")}>
-                        <Hash className="w-4 h-4" /> <span className="hidden md:inline">Feature Control</span>
+                        <Hash className="w-4 h-4" /> <span className="hidden md:inline">Funções</span>
                     </Button>
                 </nav>
 
@@ -1542,51 +1542,11 @@ export default function Admin() {
                     </div>
                 )}
 
-                {/* FEATURE TIERS SECTION — dentro da tab de planos */}
-                {tab === "plans" && featureTiers.length > 0 && (
-                    <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto mt-8">
-                        <div className="border-t pt-8">
-                            <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                Níveis de Acesso por Funcionalidade
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                Define o tier mínimo necessário para aceder a cada funcionalidade. Tier 0 = gratuito para todos.
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {featureTiers.map((ft: any) => (
-                                    <div key={ft.feature_id} className="flex items-center justify-between bg-card border rounded-xl px-4 py-3">
-                                        <span className="text-sm font-semibold">{ft.feature_label}</span>
-                                        <div className="flex gap-1">
-                                            {TIER_LEVELS.map(tl => (
-                                                <button
-                                                    key={tl.level}
-                                                    disabled={savingFeatureTier === ft.feature_id}
-                                                    onClick={async () => {
-                                                        setSavingFeatureTier(ft.feature_id);
-                                                        await adminClient
-                                                            .from("feature_tiers" as any)
-                                                            .update({ min_tier: tl.level, updated_at: new Date().toISOString() })
-                                                            .eq("feature_id", ft.feature_id);
-                                                        setFeatureTiers(prev => prev.map(f =>
-                                                            f.feature_id === ft.feature_id ? { ...f, min_tier: tl.level } : f
-                                                        ));
-                                                        setSavingFeatureTier(null);
-                                                    }}
-                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all border ${
-                                                        ft.min_tier === tl.level
-                                                            ? 'border-primary bg-primary text-primary-foreground'
-                                                            : 'border-border bg-background hover:border-primary/40 text-muted-foreground'
-                                                    }`}
-                                                >
-                                                    {tl.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                {/* O plano mínimo de cada função passou para "Funções" (um só sítio). */}
+                {tab === "plans" && (
+                    <div className="max-w-5xl mx-auto mt-8 flex items-center justify-between gap-3 rounded-2xl border border-[#ECE8E3] bg-white px-4 py-3 dark:border-border dark:bg-card">
+                        <p className="text-sm text-muted-foreground">O que cada plano desbloqueia define-se agora em <b className="text-foreground">Funções</b>.</p>
+                        <Button variant="outline" className="rounded-full" onClick={() => navigate("/admin/features")}>Abrir Funções</Button>
                     </div>
                 )}
 

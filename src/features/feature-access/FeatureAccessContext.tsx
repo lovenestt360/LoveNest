@@ -14,6 +14,8 @@ interface FeatureFlag {
 
 interface FeatureAccessContextType {
   isEnabled: (key: string) => boolean;
+  /** Ligada de propósito para esta casa ou pessoa (teste) — passa à frente do plano. */
+  isTesting: (key: string) => boolean;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -26,6 +28,7 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Volta a ler quando muda a sessão ou a casa (antes lia uma vez, às vezes ainda sem sessão).
   const fetchFlags = useCallback(async () => {
     setLoading(true);
     try {
@@ -43,18 +46,15 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id, spaceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchFlags();
   }, [fetchFlags]);
 
   const isEnabled = (key: string): boolean => {
-    // 0. Master Switch Check
-    const masterFlag = flags.find(f => f.key === "system_enabled" && f.scope === "global");
-    if (masterFlag && masterFlag.enabled === false) {
-      return true; // System is disabled, so all features are enabled (Bypass)
-    }
+    // O antigo "system_enabled" (interruptor geral que desligava todas as regras) deixou de
+    // existir no painel: o que se desliga em "Funções" vale sempre.
 
     // 1. User scope check
     const userFlag = flags.find(f => f.key === key && f.scope === "user" && f.target_id === user?.id);
@@ -72,8 +72,13 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
     return true;
   };
 
+  const isTesting = (key: string): boolean =>
+    flags.some(f => f.key === key && f.enabled &&
+      ((f.scope === "couple" && f.target_id === spaceId) || (f.scope === "user" && f.target_id === user?.id)));
+
   const value = useMemo(() => ({
     isEnabled,
+    isTesting,
     loading,
     refresh: fetchFlags
   }), [flags, loading, user?.id, spaceId, fetchFlags]);
