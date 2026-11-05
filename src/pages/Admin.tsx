@@ -659,7 +659,7 @@ export default function Admin() {
                 )}
 
                 {/* BIBLIOTECA TAB */}
-                {tab === "biblioteca" && <AdminBiblioteca adminClient={adminClient} />}
+                {tab === "biblioteca" && <div className="mx-auto max-w-5xl"><AdminBiblioteca /></div>}
             </main>
         </div>
     );

@@ -1,35 +1,19 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale";
+import { BookText, FileText, Image as ImageIcon, Layers, Loader2, Plus, Upload } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getReceiptSignedUrl } from "@/lib/receiptStorage";
 import {
-    Library, Plus, Trash2, Pencil, Upload, RefreshCw, Check, X,
-    Image as ImageIcon, FileText, LayoutGrid, ShoppingBag, BookText, Layers, Bell,
-} from "lucide-react";
+    BTN, CARD, Chips, Confirm, GHOST, INPUT, LABEL, MUTED, Modal, RED, ROW, Segmented, Spinner, TEXTAREA, Toggle,
+} from "@/features/admin/ui";
 import { ChapterManagerDialog } from "./ChapterManagerDialog";
 
-// ── Types ───────────────────────────────────────────────────────────────
+/* Biblioteca no painel admin: livros, pedidos de compra, categorias e a montra (banners). */
 
-type BookCategory = {
-    id: string;
-    name: string;
-    slug: string;
-    sort_order: number;
-};
+type BookCategory = { id: string; name: string; slug: string; sort_order: number };
 
 type Book = {
     id: string;
@@ -53,15 +37,7 @@ type Book = {
     sort_order: number;
 };
 
-type LibrarySettings = {
-    id: string;
-    grid_columns: number;
-    banner_enabled: boolean;
-    banner_image_url: string | null;
-    banner_title: string | null;
-    banner_subtitle: string | null;
-    banner_link_book_id: string | null;
-};
+type LibrarySettings = { id: string; grid_columns: number };
 
 type LibraryBanner = {
     id: string;
@@ -72,7 +48,6 @@ type LibraryBanner = {
     subtitle: string | null;
     link_book_id: string | null;
     _isNew?: boolean;
-    _localId?: string;
 };
 
 type BookPurchase = {
@@ -83,28 +58,31 @@ type BookPurchase = {
     amount: string | null;
     method: string | null;
     proof_url: string | null;
-    admin_notes: string | null;
     created_at: string;
     books?: { title: string; cover_url: string | null } | null;
     couple_spaces?: { house_name: string | null; partner1_name: string | null; partner2_name: string | null } | null;
 };
 
+type SubTab = "books" | "purchases" | "categories" | "showcase";
+
 function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+    return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-// ── Root component ─────────────────────────────────────────────────────
+const STATUS: [Book["status"], string][] = [["published", "Publicado"], ["draft", "Rascunho"], ["archived", "Arquivado"]];
 
-export default function AdminBiblioteca({ adminClient }: { adminClient: any }) {
+function Cover({ url, title, className }: { url: string | null | undefined; title?: string; className?: string }) {
+    return url
+        ? <img src={url} alt={title ?? ""} className={cn("h-[72px] w-12 shrink-0 rounded-[8px] border border-[#ECE8E3] object-cover dark:border-border", className)} />
+        : <span className={cn("flex h-[72px] w-12 shrink-0 items-center justify-center rounded-[8px] bg-[#F7F5F2] text-[#9AA0AB] dark:bg-muted", className)}><BookText className="h-4 w-4" strokeWidth={1.7} /></span>;
+}
+
+// ── Raiz ───────────────────────────────────────────────────────────────
+
+export default function AdminBiblioteca() {
     const { toast } = useToast();
-    const [subTab, setSubTab] = useState<"settings" | "categories" | "books" | "purchases">("settings");
+    const [tab, setTab] = useState<SubTab>("books");
     const [loading, setLoading] = useState(true);
-
     const [settings, setSettings] = useState<LibrarySettings | null>(null);
     const [categories, setCategories] = useState<BookCategory[]>([]);
     const [books, setBooks] = useState<Book[]>([]);
@@ -112,472 +90,63 @@ export default function AdminBiblioteca({ adminClient }: { adminClient: any }) {
     const [banners, setBanners] = useState<LibraryBanner[]>([]);
 
     const fetchAll = async () => {
-        setLoading(true);
-        const [settingsRes, categoriesRes, booksRes, purchasesRes, bannersRes] = await Promise.all([
-            adminClient.from("library_settings" as any).select("*").maybeSingle(),
-            adminClient.from("book_categories" as any).select("*").order("sort_order"),
-            adminClient.from("books" as any).select("*").order("sort_order"),
-            adminClient.from("book_purchases" as any)
+        const db = supabase as any;
+        const [s, c, b, p, bn] = await Promise.all([
+            db.from("library_settings").select("id, grid_columns").maybeSingle(),
+            db.from("book_categories").select("*").order("sort_order"),
+            db.from("books").select("*").order("sort_order"),
+            db.from("book_purchases")
                 .select("*, books(title, cover_url), couple_spaces(house_name, partner1_name, partner2_name)")
                 .eq("status", "pending")
                 .order("created_at", { ascending: false }),
-            adminClient.from("library_banners" as any).select("*").order("sort_order"),
+            db.from("library_banners").select("*").order("sort_order"),
         ]);
-
-        if (settingsRes.data) setSettings(settingsRes.data);
-        if (categoriesRes.data) setCategories(categoriesRes.data);
-        if (booksRes.data) setBooks(booksRes.data);
-        if (purchasesRes.data) setPurchases(purchasesRes.data);
-        if (bannersRes.data) setBanners(bannersRes.data);
-
-        if (settingsRes.error || categoriesRes.error || booksRes.error || purchasesRes.error) {
-            toast({ variant: "destructive", title: "Erro ao carregar Biblioteca", description: "Verifica se a migration da Biblioteca foi aplicada." });
+        if (s.error || c.error || b.error || p.error) {
+            toast({ variant: "destructive", title: "Erro a carregar a Biblioteca", description: (s.error || c.error || b.error || p.error).message });
         }
+        setSettings(s.data ?? null);
+        setCategories(c.data ?? []);
+        setBooks(b.data ?? []);
+        setPurchases(p.data ?? []);
+        setBanners(bn.data ?? []);
         setLoading(false);
     };
 
-    useEffect(() => { fetchAll(); }, [adminClient]);
+    useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between gap-4">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <Library className="w-6 h-6 text-primary" /> Biblioteca
-                </h2>
-                <Button variant="outline" size="sm" onClick={fetchAll} disabled={loading}>
-                    <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
-                    Atualizar
-                </Button>
-            </div>
-
-            <Tabs value={subTab} onValueChange={(v) => setSubTab(v as typeof subTab)}>
-                <TabsList className="h-auto flex-wrap">
-                    <TabsTrigger value="settings">Definições</TabsTrigger>
-                    <TabsTrigger value="categories">Categorias ({categories.length})</TabsTrigger>
-                    <TabsTrigger value="books">Livros ({books.length})</TabsTrigger>
-                    <TabsTrigger value="purchases">
-                        Pedidos de Compra{purchases.length > 0 ? ` (${purchases.length})` : ""}
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="settings" className="pt-6">
-                    <SettingsPanel adminClient={adminClient} settings={settings} books={books} banners={banners} onSaved={fetchAll} />
-                </TabsContent>
-
-                <TabsContent value="categories" className="pt-6">
-                    <CategoriesPanel adminClient={adminClient} categories={categories} onChanged={fetchAll} />
-                </TabsContent>
-
-                <TabsContent value="books" className="pt-6">
-                    <BooksPanel adminClient={adminClient} books={books} categories={categories} onChanged={fetchAll} />
-                </TabsContent>
-
-                <TabsContent value="purchases" className="pt-6">
-                    <PurchasesPanel adminClient={adminClient} purchases={purchases} onChanged={fetchAll} />
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
-}
-
-// ── 1. Definições da Biblioteca ────────────────────────────────────────
-
-function SettingsPanel({ adminClient, settings, books, banners: initialBanners, onSaved }: {
-    adminClient: any;
-    settings: LibrarySettings | null;
-    books: Book[];
-    banners: LibraryBanner[];
-    onSaved: () => void;
-}) {
-    const { toast } = useToast();
-    const [gridColumns, setGridColumns] = useState("2");
-    const [saving, setSaving] = useState(false);
-    const [banners, setBanners] = useState<LibraryBanner[]>([]);
-    const [deletedIds, setDeletedIds] = useState<string[]>([]);
-    const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-
-    useEffect(() => {
-        if (!settings) return;
-        setGridColumns(String(settings.grid_columns ?? 2));
-    }, [settings]);
-
-    useEffect(() => {
-        setBanners(initialBanners);
-    }, [initialBanners]);
-
-    const addBanner = () => {
-        const localId = crypto.randomUUID();
-        setBanners(prev => [...prev, {
-            id: localId,
-            sort_order: prev.length,
-            enabled: true,
-            image_url: null,
-            title: null,
-            subtitle: null,
-            link_book_id: null,
-            _isNew: true,
-            _localId: localId,
-        }]);
-    };
-
-    const deleteBanner = (idx: number) => {
-        const b = banners[idx];
-        if (!b._isNew) setDeletedIds(prev => [...prev, b.id]);
-        setBanners(prev => prev.filter((_, i) => i !== idx));
-    };
-
-    const updateBanner = (idx: number, patch: Partial<LibraryBanner>) => {
-        setBanners(prev => prev.map((b, i) => i === idx ? { ...b, ...patch } : b));
-    };
-
-    const handleUploadBannerImage = async (idx: number, file: File) => {
-        setUploadingIdx(idx);
-        try {
-            const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-            const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-            const { error: uploadError } = await adminClient.storage.from("library-banners").upload(path, file, { upsert: true });
-            if (uploadError) throw uploadError;
-            const { data } = adminClient.storage.from("library-banners").getPublicUrl(path);
-            updateBanner(idx, { image_url: data.publicUrl });
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao enviar imagem", description: err.message });
-        } finally {
-            setUploadingIdx(null);
-        }
-    };
-
-    const handleSave = async () => {
-        if (!settings) return;
-        setSaving(true);
-        try {
-            // Guarda colunas
-            const { error: settingsErr } = await adminClient.from("library_settings" as any)
-                .update({ grid_columns: Number(gridColumns) }).eq("id", settings.id);
-            if (settingsErr) throw settingsErr;
-
-            // Elimina banners removidos
-            if (deletedIds.length > 0) {
-                const { error: delErr } = await adminClient.from("library_banners" as any)
-                    .delete().in("id", deletedIds);
-                if (delErr) throw delErr;
-            }
-
-            // Upsert banners existentes e novos
-            for (let i = 0; i < banners.length; i++) {
-                const b = banners[i];
-                const payload = {
-                    sort_order: i,
-                    enabled: b.enabled,
-                    image_url: b.image_url,
-                    title: b.title || null,
-                    subtitle: b.subtitle || null,
-                    link_book_id: b.link_book_id || null,
-                };
-                if (b._isNew) {
-                    const { error } = await adminClient.from("library_banners" as any).insert(payload);
-                    if (error) throw error;
-                } else {
-                    const { error } = await adminClient.from("library_banners" as any)
-                        .update(payload).eq("id", b.id);
-                    if (error) throw error;
-                }
-            }
-
-            setDeletedIds([]);
-            toast({ title: "Definições guardadas" });
-            onSaved();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao guardar", description: err.message });
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    if (!settings) {
-        return <p className="text-muted-foreground italic">A carregar definições...</p>;
-    }
-
-    return (
-        <div className="space-y-6 max-w-2xl">
-            {/* Layout */}
-            <div className="bg-card border rounded-3xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
-                    <LayoutGrid className="w-5 h-5 text-primary" /> Layout da grelha
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">Número de colunas usado na grelha de livros da Biblioteca.</p>
-                <div className="max-w-[160px]">
-                    <Select value={gridColumns} onValueChange={setGridColumns}>
-                        <SelectTrigger className="bg-background">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="1">1 coluna</SelectItem>
-                            <SelectItem value="2">2 colunas</SelectItem>
-                            <SelectItem value="3">3 colunas</SelectItem>
-                            <SelectItem value="4">4 colunas</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            {/* Banners */}
-            <div className="bg-card border rounded-3xl p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-bold flex items-center gap-2">
-                            <ImageIcon className="w-5 h-5 text-primary" /> Banners em destaque
-                        </h3>
-                        <p className="text-sm text-muted-foreground">Aparecem no carousel do topo da Biblioteca.</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={addBanner} className="gap-2">
-                        <Plus className="w-4 h-4" /> Adicionar
-                    </Button>
-                </div>
-
-                {banners.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">Nenhum banner. Clica em "Adicionar" para criar um.</p>
-                )}
-
-                <div className="space-y-4">
-                    {banners.map((b, idx) => (
-                        <div key={b._localId ?? b.id} className="border rounded-2xl p-4 space-y-3 bg-muted/30">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Banner {idx + 1}</span>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-7 w-7" onClick={() => deleteBanner(idx)}>
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
-
-                            {/* Imagem */}
-                            <div className="flex items-center gap-4">
-                                {b.image_url ? (
-                                    <img src={b.image_url} alt="Banner" className="w-32 h-16 object-cover rounded-xl border" />
-                                ) : (
-                                    <div className="w-32 h-16 rounded-xl border bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                                        <ImageIcon className="w-5 h-5" />
-                                    </div>
-                                )}
-                                <Button variant="secondary" size="sm" className="gap-2" disabled={uploadingIdx === idx} asChild>
-                                    <label className="cursor-pointer">
-                                        {uploadingIdx === idx ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                                        Imagem
-                                        <input type="file" accept="image/*" hidden onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) handleUploadBannerImage(idx, file);
-                                        }} />
-                                    </label>
-                                </Button>
-                            </div>
-
-                            {/* Título + Subtítulo */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-xs font-bold text-muted-foreground mb-1 block">Título</Label>
-                                    <Input value={b.title ?? ""} onChange={(e) => updateBanner(idx, { title: e.target.value })} placeholder="Ex: Novidade da semana" className="bg-background h-8 text-sm" />
-                                </div>
-                                <div>
-                                    <Label className="text-xs font-bold text-muted-foreground mb-1 block">Subtítulo</Label>
-                                    <Input value={b.subtitle ?? ""} onChange={(e) => updateBanner(idx, { subtitle: e.target.value })} placeholder="Ex: Descobre a nossa nova edição" className="bg-background h-8 text-sm" />
-                                </div>
-                            </div>
-
-                            {/* Livro */}
-                            <div>
-                                <Label className="text-xs font-bold text-muted-foreground mb-1 block">Livro (ao clicar no banner)</Label>
-                                <Select value={b.link_book_id ?? "none"} onValueChange={(v) => updateBanner(idx, { link_book_id: v === "none" ? null : v })}>
-                                    <SelectTrigger className="bg-background h-8 text-sm">
-                                        <SelectValue placeholder="Nenhum" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Nenhum</SelectItem>
-                                        {books.map(bk => (
-                                            <SelectItem key={bk.id} value={bk.id}>{bk.title}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex justify-end">
-                <Button onClick={handleSave} disabled={saving} className="gap-2">
-                    {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    Guardar Definições
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-// ── 2. Categorias ─────────────────────────────────────────────────────
-
-function CategoriesPanel({ adminClient, categories, onChanged }: {
-    adminClient: any;
-    categories: BookCategory[];
-    onChanged: () => void;
-}) {
-    const { toast } = useToast();
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [name, setName] = useState("");
-    const [sortOrder, setSortOrder] = useState("0");
-    const [saving, setSaving] = useState(false);
-
-    const resetForm = () => {
-        setEditingId(null);
-        setName("");
-        setSortOrder("0");
-    };
-
-    const startEdit = (cat: BookCategory) => {
-        setEditingId(cat.id);
-        setName(cat.name);
-        setSortOrder(String(cat.sort_order));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        setSaving(true);
-        try {
-            const payload = { name: name.trim(), slug: slugify(name), sort_order: Number(sortOrder) || 0 };
-            if (editingId) {
-                const { error } = await adminClient.from("book_categories" as any).update(payload).eq("id", editingId);
-                if (error) throw error;
-                toast({ title: "Categoria atualizada" });
-            } else {
-                const { error } = await adminClient.from("book_categories" as any).insert(payload);
-                if (error) throw error;
-                toast({ title: "Categoria criada" });
-            }
-            resetForm();
-            onChanged();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao guardar categoria", description: err.message });
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDelete = async (id: string) => {
-        try {
-            const { error } = await adminClient.from("book_categories" as any).delete().eq("id", id);
-            if (error) throw error;
-            toast({ title: "Categoria eliminada" });
-            if (editingId === id) resetForm();
-            onChanged();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao eliminar", description: err.message });
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            <form onSubmit={handleSubmit} className="bg-primary/5 border border-primary/20 rounded-3xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                    {editingId ? <Pencil className="w-5 h-5 text-primary" /> : <Plus className="w-5 h-5 text-primary" />}
-                    {editingId ? "Editar Categoria" : "Nova Categoria"}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-4 mb-4">
-                    <div>
-                        <Label className="text-sm font-bold text-muted-foreground mb-1 block">Nome</Label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Romance" required className="bg-background" />
-                    </div>
-                    <div>
-                        <Label className="text-sm font-bold text-muted-foreground mb-1 block">Ordem</Label>
-                        <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="bg-background" />
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <Button type="submit" disabled={saving} className="gap-2">
-                        {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : (editingId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
-                        {editingId ? "Guardar" : "Criar"}
-                    </Button>
-                    {editingId && (
-                        <Button type="button" variant="ghost" onClick={resetForm}>Cancelar</Button>
-                    )}
-                </div>
-            </form>
-
-            <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                {categories.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground italic">Nenhuma categoria criada.</div>
-                ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-muted/50 border-b">
-                            <tr>
-                                <th className="p-4 font-bold text-muted-foreground">Nome</th>
-                                <th className="p-4 font-bold text-muted-foreground">Slug</th>
-                                <th className="p-4 font-bold text-muted-foreground">Ordem</th>
-                                <th className="p-4 font-bold text-muted-foreground text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {categories.map(cat => (
-                                <tr key={cat.id} className="hover:bg-muted/30 transition-colors">
-                                    <td className="p-4 font-medium">{cat.name}</td>
-                                    <td className="p-4 text-muted-foreground font-mono text-xs">{cat.slug}</td>
-                                    <td className="p-4 text-muted-foreground">{cat.sort_order}</td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => startEdit(cat)}>
-                                                <Pencil className="w-4 h-4" />
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Eliminar categoria?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            "{cat.name}" será removida. Livros nesta categoria ficam sem categoria.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(cat.id)}>Eliminar</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+        <div>
+            <Segmented<SubTab> value={tab} onChange={setTab} options={[
+                ["books", `Livros (${books.length})`],
+                ["purchases", `Pedidos de compra${purchases.length ? ` (${purchases.length})` : ""}`],
+                ["categories", "Categorias"],
+                ["showcase", "Montra"],
+            ]} />
+            <div className="mt-4">
+                {loading ? <Spinner /> : (
+                    <>
+                        {tab === "books" && <BooksPanel books={books} categories={categories} onChanged={fetchAll} />}
+                        {tab === "purchases" && <PurchasesPanel purchases={purchases} onChanged={fetchAll} />}
+                        {tab === "categories" && <CategoriesPanel categories={categories} books={books} onChanged={fetchAll} />}
+                        {tab === "showcase" && <ShowcasePanel settings={settings} books={books} banners={banners} onSaved={fetchAll} />}
+                    </>
                 )}
             </div>
         </div>
     );
 }
 
-// ── 3. Livros ──────────────────────────────────────────────────────────
+// ── Livros ─────────────────────────────────────────────────────────────
 
-type BookFormState = {
-    title: string;
-    author: string;
-    description: string;
-    category_id: string | null;
-    is_free: boolean;
-    price: string;
-    status: "published" | "draft" | "archived";
-    tags: string;
-    is_recommended: boolean;
-    is_featured: boolean;
-    estimated_minutes: string;
-    page_count: string;
-    chapter_count: string;
-    sort_order: string;
-    cover_url: string | null;
-    file_path: string | null;
-    file_type: "pdf" | "epub" | "lovenest" | null;
+type BookForm = {
+    title: string; author: string; description: string; category_id: string | null;
+    is_free: boolean; price: string; status: Book["status"]; tags: string;
+    is_recommended: boolean; is_featured: boolean;
+    estimated_minutes: string; page_count: string; chapter_count: string; sort_order: string;
+    cover_url: string | null; file_path: string | null; file_type: Book["file_type"];
 };
 
-const EMPTY_BOOK_FORM: BookFormState = {
+const EMPTY: BookForm = {
     title: "", author: "", description: "", category_id: null,
     is_free: false, price: "0", status: "published", tags: "",
     is_recommended: false, is_featured: false,
@@ -585,692 +154,579 @@ const EMPTY_BOOK_FORM: BookFormState = {
     cover_url: null, file_path: null, file_type: null,
 };
 
-function tagsToText(tags: string[]): string {
-    return tags.join(", ");
-}
-
-function textToTags(text: string): string[] {
-    return text.split(",").map(t => t.trim()).filter(Boolean);
-}
-
-function BooksPanel({ adminClient, books, categories, onChanged }: {
-    adminClient: any;
-    books: Book[];
-    categories: BookCategory[];
-    onChanged: () => void;
-}) {
+function BooksPanel({ books, categories, onChanged }: { books: Book[]; categories: BookCategory[]; onChanged: () => void }) {
     const { toast } = useToast();
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState<BookFormState>(EMPTY_BOOK_FORM);
-    const [showForm, setShowForm] = useState(false);
+    const db = supabase as any;
+    const [editing, setEditing] = useState<string | "new" | null>(null);
+    const [form, setForm] = useState<BookForm>(EMPTY);
     const [saving, setSaving] = useState(false);
-    const [uploadingCover, setUploadingCover] = useState(false);
-    const [uploadingFile, setUploadingFile] = useState(false);
-    const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
-    const [notifying, setNotifying] = useState<"launch" | "price" | null>(null);
+    const [uploading, setUploading] = useState<"cover" | "file" | null>(null);
+    const [chapters, setChapters] = useState(false);
+    const [notify, setNotify] = useState<"launch" | "price" | null>(null);
+    const [deleting, setDeleting] = useState<Book | null>(null);
+    const [busy, setBusy] = useState(false);
+    const editingId = editing && editing !== "new" ? editing : null;
+    const set = (patch: Partial<BookForm>) => setForm(f => ({ ...f, ...patch }));
 
-    // Para LoveNest Book, chapter_count e estimated_minutes são mantidos por
-    // trigger na BD — sincroniza os valores mostrados sempre que a lista de
-    // livros é atualizada (ex: ao publicar um capítulo no gestor), sem nunca
-    // os tornar editáveis/submetíveis.
+    // LoveNest Book: capítulos e tempo são mantidos por trigger; mostra o valor atual sem o tornar editável.
     useEffect(() => {
         if (!editingId || form.file_type !== "lovenest") return;
-        const latest = books.find(b => b.id === editingId);
-        if (!latest) return;
-        const latestCount = latest.chapter_count != null ? String(latest.chapter_count) : "0";
-        const latestMinutes = latest.estimated_minutes != null ? String(latest.estimated_minutes) : "";
-        setForm(f => (
-            latestCount !== f.chapter_count || latestMinutes !== f.estimated_minutes
-                ? { ...f, chapter_count: latestCount, estimated_minutes: latestMinutes }
-                : f
-        ));
+        const b = books.find(x => x.id === editingId);
+        if (!b) return;
+        const count = b.chapter_count != null ? String(b.chapter_count) : "0";
+        const mins = b.estimated_minutes != null ? String(b.estimated_minutes) : "";
+        setForm(f => (count !== f.chapter_count || mins !== f.estimated_minutes ? { ...f, chapter_count: count, estimated_minutes: mins } : f));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [books, editingId, form.file_type]);
 
     const categoryName = (id: string | null) => categories.find(c => c.id === id)?.name ?? "Sem categoria";
 
-    const startCreate = () => {
-        setEditingId(null);
-        setForm(EMPTY_BOOK_FORM);
-        setShowForm(true);
+    const open = (b: Book | null) => {
+        setForm(b ? {
+            title: b.title, author: b.author ?? "", description: b.description ?? "", category_id: b.category_id,
+            is_free: b.is_free, price: String(b.price ?? 0), status: b.status, tags: (b.tags ?? []).join(", "),
+            is_recommended: b.is_recommended, is_featured: b.is_featured,
+            estimated_minutes: b.estimated_minutes != null ? String(b.estimated_minutes) : "",
+            page_count: b.page_count != null ? String(b.page_count) : "",
+            chapter_count: b.chapter_count != null ? String(b.chapter_count) : "",
+            sort_order: String(b.sort_order ?? 0),
+            cover_url: b.cover_url, file_path: b.file_path, file_type: b.file_type,
+        } : EMPTY);
+        setEditing(b ? b.id : "new");
     };
 
-    const startEdit = (book: Book) => {
-        setEditingId(book.id);
-        setForm({
-            title: book.title,
-            author: book.author ?? "",
-            description: book.description ?? "",
-            category_id: book.category_id,
-            is_free: book.is_free,
-            price: String(book.price ?? 0),
-            status: book.status,
-            tags: tagsToText(book.tags ?? []),
-            is_recommended: book.is_recommended,
-            is_featured: book.is_featured,
-            estimated_minutes: book.estimated_minutes != null ? String(book.estimated_minutes) : "",
-            page_count: book.page_count != null ? String(book.page_count) : "",
-            chapter_count: book.chapter_count != null ? String(book.chapter_count) : "",
-            sort_order: String(book.sort_order ?? 0),
-            cover_url: book.cover_url,
-            file_path: book.file_path,
-            file_type: book.file_type,
-        });
-        setShowForm(true);
+    const uploadCover = async (file: File) => {
+        setUploading("cover");
+        const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${file.name.split(".").pop()?.toLowerCase() || "jpg"}`;
+        const { error } = await supabase.storage.from("book-covers").upload(path, file, { upsert: true });
+        if (error) toast({ variant: "destructive", title: "Não foi possível enviar a capa", description: error.message });
+        else set({ cover_url: supabase.storage.from("book-covers").getPublicUrl(path).data.publicUrl });
+        setUploading(null);
     };
 
-    const handleUploadCover = async (file: File) => {
-        setUploadingCover(true);
-        try {
-            const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-            const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-            const { error } = await adminClient.storage.from("book-covers").upload(path, file, { upsert: true });
-            if (error) throw error;
-            const { data } = adminClient.storage.from("book-covers").getPublicUrl(path);
-            setForm(f => ({ ...f, cover_url: data.publicUrl }));
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao enviar capa", description: err.message });
-        } finally {
-            setUploadingCover(false);
-        }
-    };
-
-    const handleUploadBookFile = async (file: File) => {
+    const uploadFile = async (file: File) => {
         const ext = file.name.split(".").pop()?.toLowerCase();
-        if (ext !== "pdf" && ext !== "epub") {
-            toast({ variant: "destructive", title: "Formato inválido", description: "Apenas ficheiros PDF ou EPUB são suportados." });
-            return;
-        }
-        setUploadingFile(true);
-        try {
-            const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-            const { error } = await adminClient.storage.from("book-files").upload(path, file, { upsert: true });
-            if (error) throw error;
-            setForm(f => ({ ...f, file_path: path, file_type: ext as "pdf" | "epub" }));
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao enviar ficheiro", description: err.message });
-        } finally {
-            setUploadingFile(false);
-        }
+        if (ext !== "pdf" && ext !== "epub") { toast({ variant: "destructive", title: "Só PDF ou EPUB" }); return; }
+        setUploading("file");
+        const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+        const { error } = await supabase.storage.from("book-files").upload(path, file, { upsert: true });
+        if (error) toast({ variant: "destructive", title: "Não foi possível enviar o ficheiro", description: error.message });
+        else set({ file_path: path, file_type: ext });
+        setUploading(null);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const save = async () => {
         if (!form.title.trim()) return;
         setSaving(true);
+        const payload: Record<string, unknown> = {
+            title: form.title.trim(),
+            author: form.author.trim() || null,
+            description: form.description.trim() || null,
+            category_id: form.category_id,
+            is_free: form.is_free,
+            price: form.is_free ? 0 : Number(form.price) || 0,
+            currency: "MZN",
+            status: form.status,
+            tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
+            is_recommended: form.is_recommended,
+            is_featured: form.is_featured,
+            estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : null,
+            page_count: form.page_count ? Number(form.page_count) : null,
+            sort_order: Number(form.sort_order) || 0,
+            cover_url: form.cover_url,
+            file_path: form.file_path,
+            file_type: form.file_type,
+        };
+        // LoveNest Book: chapter_count e estimated_minutes vêm dos capítulos publicados (trigger).
+        if (form.file_type !== "lovenest") payload.chapter_count = form.chapter_count ? Number(form.chapter_count) : null;
+        else delete payload.estimated_minutes;
+
+        const { data, error } = editingId
+            ? await db.from("books").update(payload).eq("id", editingId).select("id").single()
+            : await db.from("books").insert(payload).select("id").single();
+        setSaving(false);
+        if (error) { toast({ variant: "destructive", title: "Não foi possível guardar", description: error.message }); return; }
+        toast({ title: editingId ? "Livro guardado" : "Livro criado" });
+        // Um livro novo fica aberto, para poder juntar capítulos ou avisar os casais.
+        if (!editingId && data?.id) setEditing(data.id);
+        else setEditing(null);
+        onChanged();
+    };
+
+    const sendNotify = async () => {
+        if (!editingId || !notify) return;
+        setBusy(true);
+        const title = notify === "launch" ? "Novo livro disponível" : "Preço atualizado";
+        const body = notify === "launch" ? form.title : `${form.title} · ${form.is_free ? "Grátis" : `${form.price} MZN`}`;
+        const { data, error } = await supabase.functions.invoke("send-push", {
+            body: { title, body, url: `/biblioteca/${editingId}`, type: "biblioteca", broadcast: true },
+        });
+        setBusy(false);
+        setNotify(null);
+        if (error) toast({ variant: "destructive", title: "A notificação não saiu", description: error.message });
+        else toast({ title: "Notificação enviada", description: `${data?.sent ?? 0} ${data?.sent === 1 ? "aparelho" : "aparelhos"}.` });
+    };
+
+    const remove = async () => {
+        if (!deleting) return;
+        setBusy(true);
+        const { error } = await db.from("books").delete().eq("id", deleting.id);
+        setBusy(false);
+        if (error) { toast({ variant: "destructive", title: "Não foi possível apagar", description: error.message }); return; }
+        toast({ title: "Livro apagado" });
+        if (editingId === deleting.id) setEditing(null);
+        setDeleting(null);
+        onChanged();
+    };
+
+    const pill = "rounded-full bg-[#F7F5F2] px-2 py-0.5 text-[11.5px] font-semibold text-[#4A5060] dark:bg-muted dark:text-muted-foreground";
+
+    return (
+        <>
+            <div className="flex justify-end">
+                <button className={cn(BTN, "inline-flex items-center gap-1.5")} onClick={() => open(null)}><Plus className="h-4 w-4" /> Novo livro</button>
+            </div>
+            <div className={cn(CARD, "mt-3")}>
+                {books.length === 0 && <p className={cn("px-4 py-6 text-[13.5px]", MUTED)}>Ainda não há livros.</p>}
+                {books.map(b => (
+                    <div key={b.id} className={ROW}>
+                        <Cover url={b.cover_url} title={b.title} />
+                        <div className="min-w-[180px] flex-1">
+                            <p className="line-clamp-1 text-[14px] font-semibold">{b.title}</p>
+                            <p className={cn("text-[12.5px]", MUTED)}>{[b.author, categoryName(b.category_id)].filter(Boolean).join(" · ")}</p>
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                                <span className={pill}>{b.is_free ? "Grátis" : `${Number(b.price)} ${b.currency}`}</span>
+                                {b.status !== "published" && <span className={cn(pill, "bg-[#FEF5E7] text-[#B45309]")}>{b.status === "draft" ? "Rascunho" : "Arquivado"}</span>}
+                                {b.is_featured && <span className={pill}>Destaque</span>}
+                                {b.is_recommended && <span className={pill}>Recomendado</span>}
+                                {b.file_type && <span className={pill}>{b.file_type === "lovenest" ? "LoveNest Book" : b.file_type.toUpperCase()}</span>}
+                            </div>
+                        </div>
+                        <button className={GHOST} onClick={() => open(b)}>Editar</button>
+                        <button className={cn(GHOST, "text-[#B91C1C]")} onClick={() => setDeleting(b)}>Apagar</button>
+                    </div>
+                ))}
+            </div>
+
+            {editing && (
+                <Modal wide title={editingId ? "Editar livro" : "Novo livro"} onClose={() => !saving && setEditing(null)}>
+                    <div className="mt-4 space-y-4">
+                        <div className="flex gap-4">
+                            <div className="flex flex-col items-center gap-2">
+                                <Cover url={form.cover_url} className="h-[108px] w-[72px]" />
+                                <label className={cn(GHOST, "inline-flex h-8 cursor-pointer items-center gap-1 px-3 text-[12.5px]", uploading === "cover" && "pointer-events-none opacity-60")}>
+                                    {uploading === "cover" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" strokeWidth={1.8} />} Capa
+                                    <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); e.currentTarget.value = ""; }} />
+                                </label>
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-3">
+                                <div>
+                                    <label className={LABEL}>Título</label>
+                                    <input className={INPUT} value={form.title} onChange={e => set({ title: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className={LABEL}>Autor</label>
+                                    <input className={INPUT} value={form.author} onChange={e => set({ author: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className={LABEL}>Descrição</label>
+                            <textarea rows={3} className={TEXTAREA} value={form.description} onChange={e => set({ description: e.target.value })} />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label className={LABEL}>Categoria</label>
+                                <select className={INPUT} value={form.category_id ?? ""} onChange={e => set({ category_id: e.target.value || null })}>
+                                    <option value="">Sem categoria</option>
+                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className={LABEL}>Preço (MZN)</label>
+                                <div className="flex items-center gap-3">
+                                    <input className={INPUT} type="number" min="0" step="1" value={form.price} disabled={form.is_free} onChange={e => set({ price: e.target.value })} />
+                                    <label className="flex shrink-0 items-center gap-2 text-[13px] font-semibold"><Toggle on={form.is_free} onChange={v => set({ is_free: v })} label="Grátis" /> Grátis</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className={LABEL}>Estado</label>
+                            <Chips<Book["status"]> value={form.status} onChange={v => set({ status: v })} options={STATUS} />
+                        </div>
+                        <div className="flex flex-wrap gap-5">
+                            <label className="flex items-center gap-2 text-[13.5px] font-semibold"><Toggle on={form.is_featured} onChange={v => set({ is_featured: v })} label="Destaque" /> Destaque</label>
+                            <label className="flex items-center gap-2 text-[13.5px] font-semibold"><Toggle on={form.is_recommended} onChange={v => set({ is_recommended: v })} label="Recomendado" /> Recomendado</label>
+                        </div>
+
+                        <div>
+                            <label className={LABEL}>Formato</label>
+                            <Chips<"none" | "pdf" | "epub" | "lovenest"> value={form.file_type ?? "none"}
+                                onChange={v => set({ file_type: v === "none" ? null : v, ...(v === "lovenest" ? { file_path: null } : {}) })}
+                                options={[["lovenest", "LoveNest Book"], ["pdf", "PDF"], ["epub", "EPUB"], ["none", "Por definir"]]} />
+                            <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
+                                {form.file_type === "lovenest" ? (
+                                    <>
+                                        <button type="button" className={cn(GHOST, "inline-flex items-center gap-1.5")} disabled={!editingId} onClick={() => setChapters(true)}>
+                                            <Layers className="h-4 w-4" strokeWidth={1.8} /> Capítulos ({form.chapter_count || 0})
+                                        </button>
+                                        {!editingId && <span className={cn("text-[12.5px]", MUTED)}>Guarda o livro primeiro.</span>}
+                                    </>
+                                ) : (
+                                    <>
+                                        <label className={cn(GHOST, "inline-flex cursor-pointer items-center gap-1.5", uploading === "file" && "pointer-events-none opacity-60")}>
+                                            {uploading === "file" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" strokeWidth={1.8} />}
+                                            {form.file_path ? "Trocar ficheiro" : "Enviar PDF ou EPUB"}
+                                            <input type="file" accept=".pdf,.epub" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.currentTarget.value = ""; }} />
+                                        </label>
+                                        {form.file_path && <span className={cn("text-[12.5px]", MUTED)}>{form.file_type?.toUpperCase()} carregado</span>}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        <details className="rounded-[14px] border border-[#ECE8E3] px-3.5 py-2.5 dark:border-border">
+                            <summary className="cursor-pointer text-[13px] font-semibold text-[#4A5060] dark:text-muted-foreground">Mais detalhes</summary>
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label className={LABEL}>Etiquetas (separadas por vírgula)</label>
+                                    <input className={INPUT} value={form.tags} onChange={e => set({ tags: e.target.value })} placeholder="romance, casal" />
+                                </div>
+                                <div>
+                                    <label className={LABEL}>Ordem na lista</label>
+                                    <input className={INPUT} type="number" value={form.sort_order} onChange={e => set({ sort_order: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className={LABEL}>Tempo de leitura (min)</label>
+                                    {form.file_type === "lovenest"
+                                        ? <p className={cn(INPUT, "flex items-center bg-[#F7F5F2] dark:bg-muted")}>{form.estimated_minutes || 0} · automático</p>
+                                        : <input className={INPUT} type="number" min="0" value={form.estimated_minutes} onChange={e => set({ estimated_minutes: e.target.value })} />}
+                                </div>
+                                {form.file_type === "pdf" && (
+                                    <div>
+                                        <label className={LABEL}>Páginas</label>
+                                        <input className={INPUT} type="number" min="0" value={form.page_count} onChange={e => set({ page_count: e.target.value })} />
+                                    </div>
+                                )}
+                                {form.file_type === "epub" && (
+                                    <div>
+                                        <label className={LABEL}>Capítulos</label>
+                                        <input className={INPUT} type="number" min="0" value={form.chapter_count} onChange={e => set({ chapter_count: e.target.value })} />
+                                    </div>
+                                )}
+                            </div>
+                        </details>
+
+                        {editingId && (
+                            <div className="rounded-[14px] bg-[#F7F5F2] px-3.5 py-3 dark:bg-muted">
+                                <p className="text-[13.5px] font-semibold">Avisar os casais</p>
+                                <p className={cn("mt-0.5 text-[12.5px]", MUTED)}>Notificação para todos com as notificações ligadas.</p>
+                                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                    <button type="button" className={cn(GHOST, "bg-white dark:bg-card")} onClick={() => setNotify("launch")}>Livro novo</button>
+                                    <button type="button" className={cn(GHOST, "bg-white dark:bg-card")} onClick={() => setNotify("price")}>Preço mudou</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                        <button type="button" onClick={() => setEditing(null)} disabled={saving} className={cn(GHOST, "h-11 flex-1 rounded-[14px]")}>Fechar</button>
+                        <button type="button" onClick={save} disabled={saving || !form.title.trim()} className={cn(BTN, "h-11 flex-1 rounded-[14px]")}>
+                            {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : editingId ? "Guardar" : "Criar livro"}
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+            {editingId && form.file_type === "lovenest" && (
+                <ChapterManagerDialog open={chapters} onOpenChange={setChapters} adminClient={supabase}
+                    bookId={editingId} bookTitle={form.title || "Livro"} onChanged={onChanged} />
+            )}
+
+            {notify && (
+                <Confirm danger={false} title={notify === "launch" ? "Avisar do livro novo?" : "Avisar da mudança de preço?"}
+                    action="Enviar" busy={busy} onCancel={() => setNotify(null)} onConfirm={sendNotify}>
+                    Todos os casais com notificações recebem: «{notify === "launch" ? `Novo livro disponível · ${form.title}` : `Preço atualizado · ${form.title}`}».
+                </Confirm>
+            )}
+
+            {deleting && (
+                <Confirm title="Apagar este livro?" action="Apagar de vez" busy={busy} onCancel={() => setDeleting(null)} onConfirm={remove}>
+                    «{deleting.title}» sai da Biblioteca para sempre. Para só o esconder, muda o estado para Arquivado.
+                </Confirm>
+            )}
+        </>
+    );
+}
+
+// ── Pedidos de compra ──────────────────────────────────────────────────
+
+function PurchasesPanel({ purchases, onChanged }: { purchases: BookPurchase[]; onChanged: () => void }) {
+    const { toast } = useToast();
+    const db = supabase as any;
+    const [busy, setBusy] = useState<string | null>(null);
+    const [rejecting, setRejecting] = useState<BookPurchase | null>(null);
+    const [note, setNote] = useState("");
+
+    const who = (p: BookPurchase) =>
+        p.couple_spaces?.house_name?.trim() || [p.couple_spaces?.partner1_name, p.couple_spaces?.partner2_name].filter(Boolean).join(" & ") || "Casa sem nome";
+
+    const openReceipt = async (ref: string) => {
+        try { window.open(await getReceiptSignedUrl(ref), "_blank", "noopener,noreferrer"); }
+        catch (e: any) { toast({ variant: "destructive", title: "Não foi possível abrir o comprovativo", description: e.message }); }
+    };
+
+    const setStatus = async (p: BookPurchase, status: "approved" | "rejected") => {
+        setBusy(p.id);
+        const { error } = await db.from("book_purchases").update(status === "approved" ? { status } : { status, admin_notes: note.trim() || null }).eq("id", p.id);
+        setBusy(null);
+        if (error) { toast({ variant: "destructive", title: "Não foi possível", description: error.message }); return; }
+        toast({ title: status === "approved" ? "Compra aprovada: o livro já abre para o casal" : "Compra rejeitada" });
+        setRejecting(null); setNote("");
+        onChanged();
+    };
+
+    if (purchases.length === 0) {
+        return <div className={cn(CARD, "px-4 py-8 text-center text-[13.5px]", MUTED)}>Nenhum pedido à espera. Quando um casal pagar um livro, aparece aqui.</div>;
+    }
+    return (
+        <>
+            <div className={CARD}>
+                {purchases.map(p => (
+                    <div key={p.id} className={ROW}>
+                        <Cover url={p.books?.cover_url} title={p.books?.title} />
+                        <div className="min-w-[180px] flex-1">
+                            <p className="truncate text-[14px] font-semibold">{p.books?.title ?? "Livro"}</p>
+                            <p className={cn("text-[12.5px]", MUTED)}>{who(p)} · <b className="font-semibold text-[#0B1324] dark:text-foreground">{p.amount}</b>{p.method ? ` · ${p.method}` : ""} · {format(new Date(p.created_at), "d MMM, HH:mm", { locale: pt })}</p>
+                        </div>
+                        <div className="flex gap-1.5">
+                            {p.proof_url && <button className={GHOST} onClick={() => openReceipt(p.proof_url!)}>Comprovativo</button>}
+                            <button className={GHOST} disabled={busy === p.id} onClick={() => { setNote(""); setRejecting(p); }}>Rejeitar</button>
+                            <button className={BTN} disabled={busy === p.id} onClick={() => setStatus(p, "approved")}>
+                                {busy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aprovar"}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {rejecting && (
+                <Modal title="Rejeitar compra?" subtitle={`${rejecting.books?.title ?? "Livro"} · ${who(rejecting)}`} onClose={() => !busy && setRejecting(null)}>
+                    <label className={cn(LABEL, "mt-4")}>Porquê (o casal vê esta nota)</label>
+                    <textarea rows={3} className={TEXTAREA} value={note} onChange={e => setNote(e.target.value)} placeholder="Ex.: o valor do comprovativo não corresponde ao preço" />
+                    <div className="mt-4 flex gap-2">
+                        <button onClick={() => setRejecting(null)} disabled={!!busy} className={cn(GHOST, "h-11 flex-1 rounded-[14px]")}>Cancelar</button>
+                        <button onClick={() => setStatus(rejecting, "rejected")} disabled={!!busy} className={cn(BTN, RED, "h-11 flex-1 rounded-[14px]")}>
+                            {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Rejeitar"}
+                        </button>
+                    </div>
+                </Modal>
+            )}
+        </>
+    );
+}
+
+// ── Categorias ─────────────────────────────────────────────────────────
+
+function CategoriesPanel({ categories, books, onChanged }: { categories: BookCategory[]; books: Book[]; onChanged: () => void }) {
+    const { toast } = useToast();
+    const db = supabase as any;
+    const [editing, setEditing] = useState<BookCategory | "new" | null>(null);
+    const [name, setName] = useState("");
+    const [order, setOrder] = useState("0");
+    const [busy, setBusy] = useState(false);
+    const [deleting, setDeleting] = useState<BookCategory | null>(null);
+
+    const open = (c: BookCategory | null) => {
+        setName(c?.name ?? "");
+        setOrder(String(c?.sort_order ?? categories.length));
+        setEditing(c ?? "new");
+    };
+
+    const save = async () => {
+        if (!name.trim()) return;
+        setBusy(true);
+        const payload = { name: name.trim(), slug: slugify(name), sort_order: Number(order) || 0 };
+        const { error } = editing && editing !== "new"
+            ? await db.from("book_categories").update(payload).eq("id", editing.id)
+            : await db.from("book_categories").insert(payload);
+        setBusy(false);
+        if (error) { toast({ variant: "destructive", title: "Não foi possível guardar", description: error.message }); return; }
+        toast({ title: editing === "new" ? "Categoria criada" : "Categoria guardada" });
+        setEditing(null);
+        onChanged();
+    };
+
+    const remove = async () => {
+        if (!deleting) return;
+        setBusy(true);
+        const { error } = await db.from("book_categories").delete().eq("id", deleting.id);
+        setBusy(false);
+        if (error) { toast({ variant: "destructive", title: "Não foi possível apagar", description: error.message }); return; }
+        toast({ title: "Categoria apagada" });
+        setDeleting(null);
+        onChanged();
+    };
+
+    const count = (id: string) => books.filter(b => b.category_id === id).length;
+
+    return (
+        <>
+            <div className="flex justify-end">
+                <button className={cn(BTN, "inline-flex items-center gap-1.5")} onClick={() => open(null)}><Plus className="h-4 w-4" /> Nova categoria</button>
+            </div>
+            <div className={cn(CARD, "mt-3 max-w-2xl")}>
+                {categories.length === 0 && <p className={cn("px-4 py-6 text-[13.5px]", MUTED)}>Ainda não há categorias.</p>}
+                {categories.map(c => (
+                    <div key={c.id} className={ROW}>
+                        <span className={cn("w-6 text-center text-[12.5px] tabular-nums", MUTED)}>{c.sort_order}</span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[14px] font-semibold">{c.name}</p>
+                            <p className={cn("text-[12.5px]", MUTED)}>{count(c.id)} {count(c.id) === 1 ? "livro" : "livros"}</p>
+                        </div>
+                        <button className={GHOST} onClick={() => open(c)}>Editar</button>
+                        <button className={cn(GHOST, "text-[#B91C1C]")} onClick={() => setDeleting(c)}>Apagar</button>
+                    </div>
+                ))}
+            </div>
+
+            {editing && (
+                <Modal title={editing === "new" ? "Nova categoria" : "Editar categoria"} onClose={() => !busy && setEditing(null)}>
+                    <div className="mt-4 grid grid-cols-[1fr_96px] gap-3">
+                        <div>
+                            <label className={LABEL}>Nome</label>
+                            <input className={INPUT} value={name} onChange={e => setName(e.target.value)} placeholder="Ex.: Romance" />
+                        </div>
+                        <div>
+                            <label className={LABEL}>Ordem</label>
+                            <input className={INPUT} type="number" value={order} onChange={e => setOrder(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                        <button onClick={() => setEditing(null)} disabled={busy} className={cn(GHOST, "h-11 flex-1 rounded-[14px]")}>Cancelar</button>
+                        <button onClick={save} disabled={busy || !name.trim()} className={cn(BTN, "h-11 flex-1 rounded-[14px]")}>
+                            {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+            {deleting && (
+                <Confirm title="Apagar esta categoria?" action="Apagar" busy={busy} onCancel={() => setDeleting(null)} onConfirm={remove}>
+                    «{deleting.name}» sai da Biblioteca. {count(deleting.id) > 0 ? `Os ${count(deleting.id)} livros dela ficam sem categoria.` : ""}
+                </Confirm>
+            )}
+        </>
+    );
+}
+
+// ── Montra (grelha e banners) ──────────────────────────────────────────
+
+function ShowcasePanel({ settings, books, banners: initial, onSaved }: {
+    settings: LibrarySettings | null; books: Book[]; banners: LibraryBanner[]; onSaved: () => void;
+}) {
+    const { toast } = useToast();
+    const db = supabase as any;
+    const [columns, setColumns] = useState("2");
+    const [banners, setBanners] = useState<LibraryBanner[]>([]);
+    const [deletedIds, setDeletedIds] = useState<string[]>([]);
+    const [uploading, setUploading] = useState<number | null>(null);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => { if (settings) setColumns(String(settings.grid_columns ?? 2)); }, [settings]);
+    useEffect(() => { setBanners(initial); setDeletedIds([]); }, [initial]);
+
+    const update = (i: number, patch: Partial<LibraryBanner>) => setBanners(prev => prev.map((b, j) => (j === i ? { ...b, ...patch } : b)));
+    const add = () => setBanners(prev => [...prev, { id: crypto.randomUUID(), sort_order: prev.length, enabled: true, image_url: null, title: null, subtitle: null, link_book_id: null, _isNew: true }]);
+    const drop = (i: number) => {
+        const b = banners[i];
+        if (!b._isNew) setDeletedIds(prev => [...prev, b.id]);
+        setBanners(prev => prev.filter((_, j) => j !== i));
+    };
+
+    const uploadImage = async (i: number, file: File) => {
+        setUploading(i);
+        const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${file.name.split(".").pop()?.toLowerCase() || "jpg"}`;
+        const { error } = await supabase.storage.from("library-banners").upload(path, file, { upsert: true });
+        if (error) toast({ variant: "destructive", title: "Não foi possível enviar a imagem", description: error.message });
+        else update(i, { image_url: supabase.storage.from("library-banners").getPublicUrl(path).data.publicUrl });
+        setUploading(null);
+    };
+
+    const save = async () => {
+        if (!settings) return;
+        setSaving(true);
         try {
-            const payload: Record<string, unknown> = {
-                title: form.title.trim(),
-                author: form.author.trim() || null,
-                description: form.description.trim() || null,
-                category_id: form.category_id,
-                is_free: form.is_free,
-                price: form.is_free ? 0 : Number(form.price) || 0,
-                currency: "MZN",
-                status: form.status,
-                tags: textToTags(form.tags),
-                is_recommended: form.is_recommended,
-                is_featured: form.is_featured,
-                estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : null,
-                page_count: form.page_count ? Number(form.page_count) : null,
-                sort_order: Number(form.sort_order) || 0,
-                cover_url: form.cover_url,
-                file_path: form.file_path,
-                file_type: form.file_type,
-            };
-            // Para LoveNest Book, chapter_count e estimated_minutes são mantidos
-            // automaticamente por trigger a partir dos capítulos publicados —
-            // nunca sobrescrever aqui, ou desfaz-se o valor real sempre que o
-            // livro é guardado.
-            if (form.file_type !== "lovenest") {
-                payload.chapter_count = form.chapter_count ? Number(form.chapter_count) : null;
-            } else {
-                delete payload.estimated_minutes;
-            }
-            if (editingId) {
-                const { error } = await adminClient.from("books" as any).update(payload).eq("id", editingId);
+            const { error: e1 } = await db.from("library_settings").update({ grid_columns: Number(columns) }).eq("id", settings.id);
+            if (e1) throw e1;
+            if (deletedIds.length) {
+                const { error } = await db.from("library_banners").delete().in("id", deletedIds);
                 if (error) throw error;
-                toast({ title: "Livro atualizado" });
-            } else {
-                const { error } = await adminClient.from("books" as any).insert(payload);
-                if (error) throw error;
-                toast({ title: "Livro criado" });
             }
-            setShowForm(false);
-            setEditingId(null);
-            setForm(EMPTY_BOOK_FORM);
-            onChanged();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao guardar livro", description: err.message });
+            for (let i = 0; i < banners.length; i++) {
+                const b = banners[i];
+                const payload = { sort_order: i, enabled: b.enabled, image_url: b.image_url, title: b.title || null, subtitle: b.subtitle || null, link_book_id: b.link_book_id || null };
+                const { error } = b._isNew
+                    ? await db.from("library_banners").insert(payload)
+                    : await db.from("library_banners").update(payload).eq("id", b.id);
+                if (error) throw error;
+            }
+            toast({ title: "Montra guardada" });
+            onSaved();
+        } catch (e: any) {
+            toast({ variant: "destructive", title: "Não foi possível guardar", description: e.message });
         } finally {
             setSaving(false);
         }
     };
 
-    const handleNotify = async (kind: "launch" | "price") => {
-        if (!editingId) return;
-        setNotifying(kind);
-        try {
-            const title = kind === "launch" ? "Novo livro disponível" : "Preço actualizado";
-            const body = kind === "launch"
-                ? form.title
-                : `${form.title} — ${form.is_free ? "Grátis" : `${form.price} MZN`}`;
-            const { error } = await supabase.functions.invoke("send-push", {
-                body: { title, body, url: `/biblioteca/${editingId}`, type: "biblioteca", broadcast: true },
-            });
-            if (error) throw error;
-            toast({ title: "Notificação enviada" });
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao enviar notificação", description: err.message });
-        } finally {
-            setNotifying(null);
-        }
-    };
-
-    const handleDelete = async (id: string) => {
-        try {
-            const { error } = await adminClient.from("books" as any).delete().eq("id", id);
-            if (error) throw error;
-            toast({ title: "Livro eliminado" });
-            if (editingId === id) { setShowForm(false); setEditingId(null); setForm(EMPTY_BOOK_FORM); }
-            onChanged();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao eliminar", description: err.message });
-        }
-    };
+    if (!settings) return <div className={cn(CARD, "px-4 py-8 text-center text-[13.5px]", MUTED)}>As definições da Biblioteca não existem na base de dados.</div>;
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-end">
-                {!showForm && (
-                    <Button onClick={startCreate} className="gap-2">
-                        <Plus className="w-4 h-4" /> Novo Livro
-                    </Button>
-                )}
+        <div className="max-w-2xl space-y-3">
+            <div className={cn(CARD, "p-4")}>
+                <p className="text-[15px] font-bold">Livros por linha</p>
+                <p className={cn("mt-1 text-[13px]", MUTED)}>Quantas capas aparecem lado a lado na Biblioteca.</p>
+                <div className="mt-3"><Chips value={columns} onChange={setColumns} options={[["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]]} /></div>
             </div>
 
-            {showForm && (
-                <form onSubmit={handleSubmit} className="bg-primary/5 border border-primary/20 rounded-3xl p-6 shadow-sm space-y-4">
-                    <h3 className="text-lg font-bold flex items-center gap-2">
-                        {editingId ? <Pencil className="w-5 h-5 text-primary" /> : <Plus className="w-5 h-5 text-primary" />}
-                        {editingId ? "Editar Livro" : "Novo Livro"}
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Título</Label>
-                            <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} required className="bg-background" />
-                        </div>
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Autor</Label>
-                            <Input value={form.author} onChange={(e) => setForm(f => ({ ...f, author: e.target.value }))} className="bg-background" />
-                        </div>
-                    </div>
-
+            <div className={cn(CARD, "p-4")}>
+                <div className="flex items-start justify-between gap-3">
                     <div>
-                        <Label className="text-sm font-bold text-muted-foreground mb-1 block">Descrição</Label>
-                        <Textarea value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} className="bg-background min-h-24" />
+                        <p className="text-[15px] font-bold">Banners no topo</p>
+                        <p className={cn("mt-1 text-[13px]", MUTED)}>Passam em carrossel no topo da Biblioteca. Tocar abre o livro escolhido.</p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Categoria</Label>
-                            <Select value={form.category_id ?? "none"} onValueChange={(v) => setForm(f => ({ ...f, category_id: v === "none" ? null : v }))}>
-                                <SelectTrigger className="bg-background">
-                                    <SelectValue placeholder="Sem categoria" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">Sem categoria</SelectItem>
-                                    {categories.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Preço (MZN)</Label>
-                            <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={form.price}
-                                onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))}
-                                disabled={form.is_free}
-                                className="bg-background disabled:opacity-50"
-                            />
-                        </div>
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Estado</Label>
-                            <Select value={form.status} onValueChange={(v) => setForm(f => ({ ...f, status: v as BookFormState["status"] }))}>
-                                <SelectTrigger className="bg-background">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="published">Publicado</SelectItem>
-                                    <SelectItem value="draft">Rascunho</SelectItem>
-                                    <SelectItem value="archived">Arquivado</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tags (separadas por vírgula)</Label>
-                        <Input value={form.tags} onChange={(e) => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="Ex: romance, autoajuda, casal" className="bg-background" />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tempo estimado (min)</Label>
-                            {form.file_type === "lovenest" ? (
-                                <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
-                                    {form.estimated_minutes || 0} (automático)
-                                </div>
-                            ) : (
-                                <Input type="number" min="0" value={form.estimated_minutes} onChange={(e) => setForm(f => ({ ...f, estimated_minutes: e.target.value }))} className="bg-background" />
-                            )}
-                        </div>
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Páginas (PDF)</Label>
-                            <Input type="number" min="0" value={form.page_count} onChange={(e) => setForm(f => ({ ...f, page_count: e.target.value }))} className="bg-background" />
-                        </div>
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Capítulos (EPUB)</Label>
-                            {form.file_type === "lovenest" ? (
-                                <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
-                                    {form.chapter_count || 0} (automático)
-                                </div>
-                            ) : (
-                                <Input type="number" min="0" value={form.chapter_count} onChange={(e) => setForm(f => ({ ...f, chapter_count: e.target.value }))} className="bg-background" />
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-6">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <Switch checked={form.is_free} onCheckedChange={(v) => setForm(f => ({ ...f, is_free: v }))} />
-                            <span className="text-sm font-bold">Livro gratuito</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <Switch checked={form.is_recommended} onCheckedChange={(v) => setForm(f => ({ ...f, is_recommended: v }))} />
-                            <span className="text-sm font-bold">Recomendado</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <Switch checked={form.is_featured} onCheckedChange={(v) => setForm(f => ({ ...f, is_featured: v }))} />
-                            <span className="text-sm font-bold">Destaque</span>
-                        </label>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Ordem</Label>
-                            <Input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: e.target.value }))} className="bg-background" />
-                        </div>
-                        <div>
-                            <Label className="text-sm font-bold text-muted-foreground mb-1 block">Tipo de livro</Label>
-                            <Select
-                                value={form.file_type ?? "none"}
-                                onValueChange={(v) => setForm(f => ({
-                                    ...f,
-                                    file_type: v === "none" ? null : (v as BookFormState["file_type"]),
-                                    ...(v === "lovenest" ? { file_path: null } : {}),
-                                }))}
-                            >
-                                <SelectTrigger className="bg-background">
-                                    <SelectValue placeholder="Por definir" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">Por definir</SelectItem>
-                                    <SelectItem value="pdf">PDF</SelectItem>
-                                    <SelectItem value="epub">EPUB</SelectItem>
-                                    <SelectItem value="lovenest">LoveNest Book</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        {/* Cover upload */}
-                        <div className="flex items-center gap-4">
-                            {form.cover_url ? (
-                                <img src={form.cover_url} alt="Capa" className="w-16 h-24 object-cover rounded-lg border" />
-                            ) : (
-                                <div className="w-16 h-24 rounded-lg border bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                                    <ImageIcon className="w-5 h-5" />
-                                </div>
-                            )}
-                            <Button variant="secondary" className="gap-2" disabled={uploadingCover} asChild>
-                                <label className="cursor-pointer">
-                                    {uploadingCover ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                    Capa
-                                    <input type="file" accept="image/*" hidden onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) handleUploadCover(file);
-                                    }} />
-                                </label>
-                            </Button>
-                        </div>
-
-                        {/* Book file upload (PDF/EPUB) ou gestor de capítulos (LoveNest Book) */}
-                        {form.file_type === "lovenest" ? (
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-24 rounded-lg border bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                                    <Layers className="w-6 h-6" />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        className="gap-2"
-                                        disabled={!editingId}
-                                        onClick={() => setChapterManagerOpen(true)}
-                                    >
-                                        <Layers className="w-4 h-4" /> Gerir Capítulos
-                                    </Button>
-                                    {!editingId && (
-                                        <span className="text-[11px] text-muted-foreground italic">Guarda o livro primeiro para adicionar capítulos.</span>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-4">
-                                <div className={cn(
-                                    "w-16 h-24 rounded-lg border flex items-center justify-center shrink-0",
-                                    form.file_path ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                                )}>
-                                    <FileText className="w-6 h-6" />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <Button variant="secondary" className="gap-2" disabled={uploadingFile} asChild>
-                                        <label className="cursor-pointer">
-                                            {uploadingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                            Ficheiro (PDF/EPUB)
-                                            <input type="file" accept=".pdf,.epub" hidden onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) handleUploadBookFile(file);
-                                            }} />
-                                        </label>
-                                    </Button>
-                                    {form.file_type && (
-                                        <span className="text-xs font-bold uppercase text-muted-foreground">{form.file_type} carregado</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {editingId && form.file_type === "lovenest" && (
-                        <ChapterManagerDialog
-                            open={chapterManagerOpen}
-                            onOpenChange={setChapterManagerOpen}
-                            adminClient={adminClient}
-                            bookId={editingId}
-                            bookTitle={form.title || "Livro"}
-                            onChanged={onChanged}
-                        />
-                    )}
-
-                    <div className="flex gap-2 pt-2">
-                        <Button type="submit" disabled={saving} className="gap-2">
-                            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : (editingId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
-                            {editingId ? "Guardar Alterações" : "Criar Livro"}
-                        </Button>
-                        <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_BOOK_FORM); }}>
-                            Cancelar
-                        </Button>
-                    </div>
-
-                    {editingId && (
-                        <div className="border-t pt-4 space-y-3">
-                            <p className="text-sm font-bold text-muted-foreground flex items-center gap-2">
-                                <Bell className="w-4 h-4" /> Notificar Utilizadores
-                            </p>
-                            <p className="text-xs text-muted-foreground">Envia push notification a todos os utilizadores com notificações ativas.</p>
-                            <div className="flex flex-wrap gap-2">
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button type="button" variant="outline" size="sm" className="gap-2" disabled={notifying !== null}>
-                                            {notifying === "launch" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
-                                            Novo Lançamento
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Notificar todos os utilizadores?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Será enviada uma notificação de "Novo livro disponível — {form.title}" para todos os utilizadores com push ativo.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleNotify("launch")}>Enviar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button type="button" variant="outline" size="sm" className="gap-2" disabled={notifying !== null}>
-                                            {notifying === "price" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
-                                            Alteração de Preço
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Notificar alteração de preço?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Será enviada uma notificação de "Preço actualizado — {form.title}" para todos os utilizadores com push ativo.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleNotify("price")}>Enviar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
-                    )}
-                </form>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {books.length === 0 ? (
-                    <div className="col-span-full bg-card border rounded-2xl p-8 text-center text-muted-foreground italic">
-                        Nenhum livro criado.
-                    </div>
-                ) : books.map(book => (
-                    <div key={book.id} className="bg-card border rounded-2xl p-4 shadow-sm flex gap-3">
-                        {book.cover_url ? (
-                            <img src={book.cover_url} alt={book.title} className="w-16 h-24 object-cover rounded-lg border shrink-0" />
-                        ) : (
-                            <div className="w-16 h-24 rounded-lg border bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                                <BookText className="w-5 h-5" />
-                            </div>
-                        )}
-                        <div className="flex-1 min-w-0 flex flex-col">
-                            <p className="font-bold text-sm leading-snug line-clamp-2">{book.title}</p>
-                            {book.author && <p className="text-xs text-muted-foreground mt-0.5">{book.author}</p>}
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                                <span className={cn(
-                                    "text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
-                                    book.is_free ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary"
-                                )}>
-                                    {book.is_free ? "Grátis" : `${Number(book.price).toFixed(2)} ${book.currency}`}
-                                </span>
-                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                                    {categoryName(book.category_id)}
-                                </span>
-                                {book.status !== "published" && (
-                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-destructive/10 text-destructive">
-                                        {book.status === "draft" ? "Rascunho" : "Arquivado"}
-                                    </span>
-                                )}
-                                {book.is_recommended && (
-                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600">
-                                        Recomendado
-                                    </span>
-                                )}
-                                {book.is_featured && (
-                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600">
-                                        Destaque
-                                    </span>
-                                )}
-                                {book.file_type && (
-                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                                        {book.file_type}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex gap-2 mt-auto pt-2">
-                                <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => startEdit(book)}>
-                                    <Pencil className="w-3.5 h-3.5" /> Editar
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="gap-1.5 text-destructive hover:text-destructive">
-                                            <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Eliminar livro?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                "{book.title}" será removido permanentemente da Biblioteca.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(book.id)}>Eliminar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// ── 4. Pedidos de Compra ──────────────────────────────────────────────
-
-function PurchasesPanel({ adminClient, purchases, onChanged }: {
-    adminClient: any;
-    purchases: BookPurchase[];
-    onChanged: () => void;
-}) {
-    const { toast } = useToast();
-    const [notes, setNotes] = useState<Record<string, string>>({});
-    const [processingId, setProcessingId] = useState<string | null>(null);
-
-    const handleOpenReceipt = async (ref: string) => {
-        try {
-            const signedUrl = await getReceiptSignedUrl(ref);
-            window.open(signedUrl, "_blank", "noopener,noreferrer");
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Erro ao abrir comprovativo", description: error.message });
-        }
-    };
-
-    const handleApprove = async (id: string) => {
-        setProcessingId(id);
-        try {
-            const { error } = await adminClient.from("book_purchases" as any).update({ status: "approved" }).eq("id", id);
-            if (error) throw error;
-            toast({ title: "Compra aprovada" });
-            onChanged();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao aprovar", description: err.message });
-        } finally {
-            setProcessingId(null);
-        }
-    };
-
-    const handleReject = async (id: string) => {
-        setProcessingId(id);
-        try {
-            const { error } = await adminClient.from("book_purchases" as any).update({
-                status: "rejected",
-                admin_notes: notes[id] || null,
-            }).eq("id", id);
-            if (error) throw error;
-            toast({ title: "Compra rejeitada" });
-            onChanged();
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Erro ao rejeitar", description: err.message });
-        } finally {
-            setProcessingId(null);
-        }
-    };
-
-    if (purchases.length === 0) {
-        return (
-            <div className="bg-card border rounded-2xl p-8 text-center text-muted-foreground italic flex flex-col items-center gap-2">
-                <ShoppingBag className="w-8 h-8 opacity-40" />
-                Nenhum pedido de compra pendente.
-            </div>
-        );
-    }
-
-    return (
-        <div className="grid gap-4">
-            {purchases.map(p => (
-                <div key={p.id} className="bg-card border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-4">
-                    {p.books?.cover_url ? (
-                        <img src={p.books.cover_url} alt={p.books?.title ?? ""} className="w-16 h-24 object-cover rounded-lg border shrink-0" />
-                    ) : (
-                        <div className="w-16 h-24 rounded-lg border bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                            <BookText className="w-5 h-5" />
-                        </div>
-                    )}
-
-                    <div className="flex-1 min-w-0 space-y-2">
-                        <div>
-                            <p className="font-bold text-sm">{p.books?.title ?? "Livro"}</p>
-                            <p className="text-xs text-muted-foreground">
-                                {p.couple_spaces?.house_name || "Casa sem nome"} — {p.couple_spaces?.partner1_name || "P1"} & {p.couple_spaces?.partner2_name || "P2"}
-                            </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 text-xs">
-                            <span className="font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary">{p.amount}</span>
-                            {p.method && <span className="font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{p.method}</span>}
-                            <span className="px-2 py-0.5 rounded-md bg-orange-400/10 text-orange-500 font-bold uppercase">Pendente</span>
-                        </div>
-
-                        {p.proof_url && (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenReceipt(p.proof_url!)}
-                            >
-                                Abrir comprovativo
-                            </Button>
-                        )}
-
-                        <div className="flex flex-col md:flex-row gap-2 pt-1">
-                            <Textarea
-                                placeholder="Nota (opcional, mostrada em caso de rejeição)"
-                                value={notes[p.id] || ""}
-                                onChange={(e) => setNotes(n => ({ ...n, [p.id]: e.target.value }))}
-                                className="bg-background min-h-[40px] flex-1"
-                            />
-                            <div className="flex gap-2 shrink-0">
-                                <Button onClick={() => handleApprove(p.id)} disabled={processingId === p.id} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
-                                    {processingId === p.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                    Aprovar
-                                </Button>
-                                <Button onClick={() => handleReject(p.id)} disabled={processingId === p.id} variant="destructive" className="gap-2">
-                                    {processingId === p.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-                                    Rejeitar
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                    <button className={cn(GHOST, "inline-flex items-center gap-1")} onClick={add}><Plus className="h-4 w-4" /> Banner</button>
                 </div>
-            ))}
+                {banners.length === 0 && <p className={cn("mt-3 text-[13px]", MUTED)}>Sem banners.</p>}
+                <div className="mt-3 space-y-3">
+                    {banners.map((b, i) => (
+                        <div key={b.id} className="rounded-[14px] border border-[#ECE8E3] p-3 dark:border-border">
+                            <div className="flex items-center gap-3">
+                                {b.image_url
+                                    ? <img src={b.image_url} alt="" className="h-14 w-28 shrink-0 rounded-[10px] object-cover" />
+                                    : <span className="flex h-14 w-28 shrink-0 items-center justify-center rounded-[10px] bg-[#F7F5F2] text-[#9AA0AB] dark:bg-muted"><ImageIcon className="h-4 w-4" strokeWidth={1.7} /></span>}
+                                <label className={cn(GHOST, "inline-flex cursor-pointer items-center gap-1.5", uploading === i && "pointer-events-none opacity-60")}>
+                                    {uploading === i ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" strokeWidth={1.8} />} Imagem
+                                    <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(i, f); e.currentTarget.value = ""; }} />
+                                </label>
+                                <span className="ml-auto"><Toggle on={b.enabled} onChange={v => update(i, { enabled: v })} label="Banner visível" /></span>
+                            </div>
+                            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                                <input className={INPUT} value={b.title ?? ""} onChange={e => update(i, { title: e.target.value })} placeholder="Título" />
+                                <input className={INPUT} value={b.subtitle ?? ""} onChange={e => update(i, { subtitle: e.target.value })} placeholder="Subtítulo" />
+                                <select className={cn(INPUT, "sm:col-span-2")} value={b.link_book_id ?? ""} onChange={e => update(i, { link_book_id: e.target.value || null })}>
+                                    <option value="">Ao tocar: não abre nenhum livro</option>
+                                    {books.map(bk => <option key={bk.id} value={bk.id}>Ao tocar: abre «{bk.title}»</option>)}
+                                </select>
+                            </div>
+                            <button className={cn(GHOST, "mt-2.5 h-8 text-[12.5px] text-[#B91C1C]")} onClick={() => drop(i)}>Tirar este banner</button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <button onClick={save} disabled={saving} className={cn(BTN, "h-11 rounded-[14px] px-6")}>
+                {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar montra"}
+            </button>
         </div>
     );
 }
