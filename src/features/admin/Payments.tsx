@@ -200,7 +200,7 @@ function HistoryTab({ data, onOpenReceipt }: { data: { houses: any[]; users: any
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Chips value={status} onChange={setStatus} options={[["all", "Todos"], ["approved", "Aprovados"], ["rejected", "Rejeitados"], ["pending", "Por aprovar"]]} />
+        <Chips<"all" | "approved" | "rejected" | "pending"> value={status} onChange={setStatus} options={[["all", "Todos"], ["approved", "Aprovados"], ["rejected", "Rejeitados"], ["pending", "Por aprovar"]]} />
         <label className="flex h-[34px] min-w-[200px] flex-1 items-center gap-2 rounded-full border border-[#ECE8E3] bg-white px-3 dark:border-border dark:bg-card md:max-w-xs">
           <Search className="h-4 w-4 text-[#9AA0AB]" />
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Procurar casal ou plano" className="flex-1 bg-transparent text-[13.5px] outline-none" />
