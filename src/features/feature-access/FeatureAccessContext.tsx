@@ -53,11 +53,8 @@ export const FeatureAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [fetchFlags]);
 
   const isEnabled = (key: string): boolean => {
-    // 0. Master Switch Check
-    const masterFlag = flags.find(f => f.key === "system_enabled" && f.scope === "global");
-    if (masterFlag && masterFlag.enabled === false) {
-      return true; // System is disabled, so all features are enabled (Bypass)
-    }
+    // O antigo "system_enabled" (interruptor geral que desligava todas as regras) deixou de
+    // existir no painel: o que se desliga em "Funções" vale sempre.
 
     // 1. User scope check
     const userFlag = flags.find(f => f.key === key && f.scope === "user" && f.target_id === user?.id);
