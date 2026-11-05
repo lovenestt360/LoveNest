@@ -265,7 +265,7 @@ export function PaymentReturn({ paymentId, onFailed, onLeave, onDone, onHome, on
         user ? supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       if (row?.couple_space_id) {
-        const { data: house } = await supabase.from("couple_spaces").select("subscription_ends_at").eq("id", row.couple_space_id).maybeSingle();
+        const { data: house } = await (supabase as any).from("couple_spaces").select("subscription_ends_at").eq("id", row.couple_space_id).maybeSingle();
         setEndsAt(house?.subscription_ends_at ?? null);
       }
       setMyName((profile?.display_name ?? "").split(" ")[0]);
