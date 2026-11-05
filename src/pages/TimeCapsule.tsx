@@ -64,6 +64,7 @@ export default function TimeCapsule() {
     ? `${unlockYear}-${unlockMonth.padStart(2, "0")}-${unlockDay.padStart(2, "0")}`
     : "";
   const [customDate, setCustomDate] = useState(false);
+  const [forPartner, setForPartner] = useState(false);
   const time = useTimeTogether();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preparingImage, setPreparingImage] = useState(false);
@@ -152,6 +153,7 @@ export default function TimeCapsule() {
         .from("time_capsule_messages")
         .insert({
           couple_space_id: houseId, creator_id: user.id,
+          ...(forPartner && partner?.user_id ? { recipient_id: partner.user_id } : {}),
           message: newMessage, image_url: publicUrl,
           unlock_date: sealedDate, is_unlocked: false,
         })
@@ -163,8 +165,8 @@ export default function TimeCapsule() {
         description: `Será aberta a ${format(new Date(sealedDate), "d 'de' MMMM 'de' yyyy", { locale: pt })}.`,
       });
       notifyPartner({ couple_space_id: houseId, title: "Cápsula do Tempo",
-        body: "O teu par guardou uma memória para o futuro.", url: "/capsula", type: "memorias" });
-      setNewMessage(""); setUnlockDay(""); setUnlockMonth(""); setUnlockYear(""); setSelectedImage(null); setIsAdding(false);
+        body: forPartner ? "O teu par guardou uma cápsula só para ti." : "O teu par guardou uma memória para o futuro.", url: "/capsula", type: "memorias" });
+      setNewMessage(""); setUnlockDay(""); setUnlockMonth(""); setUnlockYear(""); setSelectedImage(null); setForPartner(false); setIsAdding(false);
       loadCapsules();
       window.dispatchEvent(new CustomEvent("lovenest-capsule-sealed", {
         detail: { imageUrl: publicUrl, unlockDate: sealedDate, capsuleId: inserted?.id ?? `${Date.now()}` },
@@ -230,11 +232,19 @@ export default function TimeCapsule() {
   // Tipo por utilizador: data passada + utilizador ainda não viu a revelação → "ready"
   const capsuleType = (c: any): "ready" | "locked" | "revealed" => {
     if (!isPast(new Date(c.unlock_date))) return "locked";
+    // Só para o par: quem escreveu espera que o outro a abra; depois vê-a como aberta.
+    if (c.recipient_id && c.recipient_id !== userId) return c.is_unlocked ? "revealed" : "locked";
     if (userId && hasSeenReveal(userId, c.id)) return "revealed";
     return "ready";
   };
 
   const authorOf = (c: any) => (c.creator_id === user?.id ? "Tu" : partnerName);
+  /** "Para o Rui" · "Do Rui, só para ti" · "A tua cápsula" · "Do Rui" */
+  const titleOf = (c: any) => {
+    if (c.recipient_id && c.creator_id === user?.id) return `Para ${partnerName}`;
+    if (c.recipient_id === user?.id) return `De ${partnerName}, só para ti`;
+    return c.creator_id === user?.id ? "A tua cápsula" : `Do ${partnerName}`;
+  };
   const ready    = capsules.filter(c => capsuleType(c) === "ready");
   const locked   = capsules.filter(c => capsuleType(c) === "locked");
   const revealed = capsules.filter(c => capsuleType(c) === "revealed");
@@ -287,7 +297,7 @@ export default function TimeCapsule() {
                   <SectionLabel>A aguardar</SectionLabel>
                   <div className="mt-2 rounded-[22px] border border-[#ECE8E3] bg-white px-3.5 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border dark:bg-card">
                     {locked.map(c => (
-                      <CapsuleRow key={c.id} c={c} type="locked" author={authorOf(c)} userId={user?.id}
+                      <CapsuleRow key={c.id} c={c} type="locked" author={authorOf(c)} title={titleOf(c)} waitingFor={c.recipient_id && c.creator_id === user?.id && isPast(new Date(c.unlock_date)) ? partnerName : undefined} userId={user?.id}
                         onTap={() => setSelectedCapsule(c)} onDelete={() => setConfirmDeleteId(c.id)} />
                     ))}
                   </div>
@@ -327,7 +337,8 @@ export default function TimeCapsule() {
         <RevealedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} />
       )}
       {selectedCapsule && revealPhase === "idle" && capsuleType(selectedCapsule) === "locked" && (
-        <LockedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} author={authorOf(selectedCapsule)} />
+        <LockedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} author={authorOf(selectedCapsule)} title={titleOf(selectedCapsule)}
+          onlyFor={selectedCapsule.recipient_id && selectedCapsule.creator_id === user?.id ? partnerName : undefined} />
       )}
 
       {/* ── CREATE SHEET ───────────────────────────────── */}
@@ -348,6 +359,20 @@ export default function TimeCapsule() {
             </div>
             <form onSubmit={handleCreate} className="space-y-3">
               <div>
+                {partner?.user_id && (
+                  <div className="mb-4">
+                    <p className="mb-2 text-[12.5px] font-semibold text-muted-foreground">Para quem?</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[[false, "Para os dois"], [true, `Só para ${partnerName}`]].map(([v, l]) => (
+                        <button key={String(v)} type="button" onClick={() => setForPartner(v as boolean)}
+                          className={cn("h-[34px] rounded-full border px-3.5 text-[13px] font-semibold transition-colors",
+                            forPartner === v ? "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background" : "border-[#ECE8E3] text-[#4A5060] dark:border-border dark:text-muted-foreground")}>
+                          {l as string}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <p className="mb-2 text-[12.5px] font-semibold text-muted-foreground">Quando abre?</p>
                 <div className="flex flex-wrap gap-1.5">
                   {DATE_SHORTCUTS(time.startDate).map(sc => {
@@ -585,8 +610,8 @@ function ReadyCard({ c, author, mine, onTap }: { c: any; author: string; mine: b
   );
 }
 
-function CapsuleRow({ c, type, author, userId, onTap, onDelete }: {
-  c: any; type: "locked" | "revealed"; author: string; userId?: string;
+function CapsuleRow({ c, type, author, title, waitingFor, userId, onTap, onDelete }: {
+  c: any; type: "locked" | "revealed"; author: string; title?: string; waitingFor?: string; userId?: string;
   onTap: () => void; onDelete: () => void;
 }) {
   const unlockDateObj = new Date(c.unlock_date);
@@ -596,11 +621,11 @@ function CapsuleRow({ c, type, author, userId, onTap, onDelete }: {
     <div onClick={onTap} className="flex cursor-pointer items-center gap-3 border-b border-[#F0EDE9] py-3 last:border-b-0 active:opacity-75 dark:border-border/60">
       <span className={TILE}><Lock className="h-[18px] w-[18px]" strokeWidth={1.7} /></span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14.5px] font-semibold text-foreground">{author === "Tu" ? "A tua cápsula" : `Do ${author}`}</span>
+        <span className="block truncate text-[14.5px] font-semibold text-foreground">{title ?? (author === "Tu" ? "A tua cápsula" : `Do ${author}`)}</span>
         <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground">Abre a {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}</span>
       </span>
       <span className="shrink-0 rounded-full bg-[#F7F5F2] px-2.5 py-1 text-[12px] font-semibold tabular-nums text-[#4A5060] dark:bg-muted dark:text-muted-foreground">
-        {untilLabel(daysDiff)}
+        {waitingFor ? `À espera de ${waitingFor}` : untilLabel(daysDiff)}
       </span>
       <DeleteCell capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
     </div>
@@ -1176,7 +1201,7 @@ function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () =>
   );
 }
 
-function LockedDetailView({ capsule, onClose, author }: { capsule: any; onClose: () => void; author: string }) {
+function LockedDetailView({ capsule, onClose, author, title, onlyFor }: { capsule: any; onClose: () => void; author: string; title?: string; onlyFor?: string }) {
   const unlockDateObj = new Date(capsule.unlock_date);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(id); }, []);
@@ -1196,7 +1221,7 @@ function LockedDetailView({ capsule, onClose, author }: { capsule: any; onClose:
       <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
         <p className="text-[12px] font-semibold text-muted-foreground">Cápsula selada</p>
         <h2 className="mt-1.5 text-[22px] font-bold leading-tight tracking-[-0.025em] text-foreground">
-          {author === "Tu" ? "A tua cápsula" : `Do ${author}, para os dois`}
+          {title ?? (author === "Tu" ? "A tua cápsula" : `Do ${author}, para os dois`)}
         </h2>
         {capsule.created_at && (
           <p className="mt-1.5 text-[13px] text-muted-foreground">Guardada a {format(new Date(capsule.created_at), "d 'de' MMMM", { locale: pt })}</p>
@@ -1210,7 +1235,7 @@ function LockedDetailView({ capsule, onClose, author }: { capsule: any; onClose:
           </span>
         </div>
         <p className="relative mt-1 rounded-[14px] bg-[#F7F5F2] px-3.5 py-2 text-[13px] font-medium text-foreground dark:bg-muted">
-          Ainda não! Eu guardo até ao dia.
+          {onlyFor ? (left > 0 ? `Só ${onlyFor} a pode abrir.` : `Chegou o dia! À espera que ${onlyFor} a abra.`) : "Ainda não! Eu guardo até ao dia."}
         </p>
 
         <div className="mt-5 flex gap-2" aria-label={`Faltam ${d} dias, ${h} horas e ${m} minutos`}>
@@ -1222,7 +1247,7 @@ function LockedDetailView({ capsule, onClose, author }: { capsule: any; onClose:
           ))}
         </div>
         <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
-          Abre a {date}.<br />Avisamos os dois quando faltarem poucos dias.
+          {left > 0 ? <>Abre a {date}.<br />Avisamos os dois quando faltarem poucos dias.</> : <>Pode ser aberta desde {date}.</>}
         </p>
       </div>
 
