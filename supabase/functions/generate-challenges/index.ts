@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FALLBACK: Record<string, { title: string; description: string }[]> = {
+const CHALLENGES: Record<string, { title: string; description: string }[]> = {
   romantico: [
     { title: "Jantar à luz de velas em casa", description: "Cozinhem juntos e criem uma noite especial sem sair de casa." },
     { title: "Carta de amor surpresa", description: "Escreve uma carta sincera e deixa-a num sítio inesperado." },
@@ -277,8 +277,7 @@ serve(async (req) => {
   }
 
   try {
-    // Só quem tem sessão: o anon key (público, está no bundle) passava o
-    // verify_jwt e deixava qualquer pessoa gastar crédito da API.
+    // Só quem tem sessão (o anon key é público, está no bundle).
     const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: { user } } = token ? await sb.auth.getUser(token) : { data: { user: null } };
@@ -291,56 +290,8 @@ serve(async (req) => {
 
     const { category } = await req.json();
 
-    const categoryPrompts: Record<string, string> = {
-      romantico: "desafios românticos e criativos para casais (encontros, surpresas, cartas de amor, jantares especiais)",
-      aventura: "desafios de aventura e exploração para casais (viajar, experimentar coisas novas, atividades ao ar livre)",
-      comunicacao: "desafios de comunicação e conexão emocional para casais (conversas profundas, perguntas, vulnerabilidade)",
-      diversao: "desafios divertidos e lúdicos para casais (jogos, competições amigáveis, cozinhar juntos)",
-      crescimento: "desafios de crescimento pessoal e espiritual para casais (leitura conjunta, oração, meditação, objetivos)"
-    };
-
-    const catDesc = categoryPrompts[category] || "desafios variados e criativos para casais";
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-
-    // Try Anthropic API first
-    if (ANTHROPIC_API_KEY) {
-      try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 1024,
-            system: "És um assistente criativo para casais. Gera desafios únicos, divertidos e significativos para fortalecer a relação. Responde APENAS em JSON válido, sem markdown, sem explicações adicionais.",
-            messages: [{
-              role: "user",
-              content: `Gera exatamente 5 ${catDesc}. Cada desafio deve ter um título curto (máx 50 caracteres) e uma descrição motivadora (máx 120 caracteres). Responde APENAS com um array JSON no formato: [{"title":"...","description":"..."}]`
-            }],
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const content = data.content?.[0]?.text || "[]";
-          const jsonMatch = content.match(/\[[\s\S]*\]/);
-          const challenges = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-          if (challenges.length > 0) {
-            return new Response(JSON.stringify({ challenges }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-        }
-      } catch {
-        // fall through to fallback
-      }
-    }
-
-    // Fallback: pick 5 random challenges from the 50 curated ones
-    const pool = FALLBACK[category] || FALLBACK.romantico;
+    // 5 desafios ao acaso entre os 50 escritos para a categoria.
+    const pool = CHALLENGES[category] || CHALLENGES.romantico;
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
 
     return new Response(JSON.stringify({ challenges: shuffled }), {
