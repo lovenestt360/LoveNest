@@ -9,7 +9,7 @@ Produção: https://www.lovenestt.com
 - React 18 + TypeScript + Vite, Tailwind, shadcn/ui, Framer Motion
 - Supabase: Auth, Postgres com RLS, Storage, Realtime, Edge Functions (Deno), pg_cron
 - Firebase Cloud Messaging para notificações push
-- PaySuite para pagamentos (M-Pesa, e-Mola, cartão) + pagamento manual com comprovativo
+- EPay para pagamentos (M-Pesa, e-Mola, IZI) + pagamento manual com comprovativo
 - Sentry para erros, Vercel para o frontend
 
 ## Desenvolvimento
@@ -41,7 +41,7 @@ SELECT tablename, policyname, cmd, roles, qual, with_check FROM pg_policies WHER
 
 ## Edge Functions
 
-`supabase functions deploy <nome>`. Segredos necessários (`supabase secrets set`): `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`, `FCM_VAPID_KEY`, `PAYSUITE_API_KEY`, `PAYSUITE_WEBHOOK_SECRET`, `ADMIN_SETUP_KEY`, `LOVE_WRAPPED_CRON_SECRET`.
+`supabase functions deploy <nome>`. Segredos necessários (`supabase secrets set`): `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`, `FCM_VAPID_KEY`, `EPAY_SECRET_KEY`, `ADMIN_SETUP_KEY`, `LOVE_WRAPPED_CRON_SECRET`.
 
 ### LoveWrapped (`generate-love-wrapped`)
 

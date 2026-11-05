@@ -132,7 +132,8 @@ export default function Admin() {
                     )
                 `)
                 .order("created_at", { ascending: false });
-            setPayments(paymentsData || []);
+            // Um pagamento EPay por concluir é só alguém no checkout: ativa sozinho, nada para aprovar.
+            setPayments((paymentsData || []).filter((p: any) => !(p.provider === "epay" && p.status === "pending")));
 
             // 2. Casas
             const { data: housesData } = await adminClient

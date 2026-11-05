@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle, UploadCloud, CreditCard, MessageCircle, Sparkles, Shield, Clock, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, CheckCircle, UploadCloud, CreditCard, MessageCircle, Shield, Clock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -8,51 +8,14 @@ import { useFreeMode } from "@/hooks/useFreeMode";
 import { useReceiptUpload } from "@/hooks/useReceiptUpload";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
+import { ConfirmPlan, PaymentReturn, PlanChooser, sortPlans } from "@/features/subscription/EpayFlow";
 
 
-const BILLING_LABELS: Record<string, string> = {
-    monthly:    "Mensal",
-    semiannual: "Semestral",
-    annual:     "Anual",
-    lifetime:   "Vitalício",
+const EPAY_PENDING_KEY = "ln_epay_pending";
+const readPending = () => { try { return localStorage.getItem(EPAY_PENDING_KEY); } catch { return null; } };
+const writePending = (id: string | null) => {
+    try { if (id) localStorage.setItem(EPAY_PENDING_KEY, id); else localStorage.removeItem(EPAY_PENDING_KEY); } catch { /* sem armazenamento */ }
 };
-
-const BILLING_ORDER: Record<string, number> = { monthly: 0, semiannual: 1, annual: 2, lifetime: 3 };
-const BILLING_MONTHS: Record<string, number> = { semiannual: 6, annual: 12 };
-const amountOf = (price: unknown) => {
-    const n = parseFloat(String(price ?? "").replace(/[^\d.,]/g, "").replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
-};
-
-/** Para planos semestrais/anuais: preço por mês e quanto poupa face ao mensal do mesmo nível. */
-function savingsOf(plan: any, plans: any[]) {
-    const months = BILLING_MONTHS[plan.billing_type];
-    if (!months) return null;
-    const monthly = plans.find(x => x.tier_level === plan.tier_level && (x.billing_type ?? "monthly") === "monthly");
-    const price = amountOf(plan.price);
-    if (!monthly || !price) return null;
-    const saved = Math.round(amountOf(monthly.price) * months - price);
-    return { perMonth: Math.round(price / months), saved: saved > 0 ? saved : 0 };
-}
-
-const FEATURE_LABELS: Record<string, string> = {
-    mood: "Humor do casal",
-    memories: "Memórias e álbuns",
-    agenda: "Agenda, rotinas e tarefas",
-    prayer: "Oração em casal",
-    cycle: "Ciclo menstrual",
-    conflicts: "Gestão de conflitos",
-    wallpapers: "Wallpapers exclusivos",
-    time_capsules: "Cápsulas do tempo",
-    challenges: "Desafios de casal",
-    wrapped: "LoveWrapped anual",
-    lovestreak: "Jornada e missões",
-    location_sharing: "Partilha de localização",
-    biblioteca: "Biblioteca de leitura",
-    historia: "A nossa história",
-};
-
-const resolveFeatureLabel = (feat: string) => FEATURE_LABELS[feat] ?? feat;
 
 export default function Subscription() {
     const [loading, setLoading] = useState(true);
@@ -61,6 +24,11 @@ export default function Subscription() {
     const [plans, setPlans] = useState<any[]>([]);
 
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
+    const [view, setView] = useState<"plans" | "confirm" | "manual">("plans");
+    const [paying, setPaying] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [returnId, setReturnId] = useState<string | null>(() => searchParams.get("pagamento") ?? readPending());
     const [selectedMethod, setSelectedMethod] = useState<any>(null);
 
     const [paymentSettings, setPaymentSettings] = useState<any>(null);
@@ -116,6 +84,10 @@ export default function Subscription() {
             if (!user) return;
             setUserEmail(user.email || "");
 
+            // Com o Modo gratuito ligado, só o admin vê os planos (para testar o pagamento).
+            const { data: adminRow } = await supabase.from("admin_users").select("id").eq("user_id", user.id).maybeSingle();
+            setIsAdmin(!!adminRow);
+
             const { data: profile } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
             setUserName(profile?.display_name || user.user_metadata?.full_name || "Utilizador");
 
@@ -126,9 +98,7 @@ export default function Subscription() {
                 .order("created_at", { ascending: true });
 
             if (activePlans && activePlans.length > 0) {
-                const sorted = [...activePlans].sort((a: any, b: any) =>
-                    (a.tier_level ?? 0) - (b.tier_level ?? 0) ||
-                    (BILLING_ORDER[a.billing_type ?? "monthly"] ?? 9) - (BILLING_ORDER[b.billing_type ?? "monthly"] ?? 9));
+                const sorted = sortPlans(activePlans as any[]);
                 setPlans(sorted);
                 setSelectedPlan(sorted.find((x: any) => x.billing_type === "annual") ?? sorted[0]);
             }
@@ -156,6 +126,7 @@ export default function Subscription() {
                         .select("*")
                         .eq("couple_space_id", members.couple_space_id)
                         .eq("status", "pending")
+                        .neq("provider", "epay")
                         .order("created_at", { ascending: false })
                         .limit(1)
                         .maybeSingle();
@@ -167,6 +138,50 @@ export default function Subscription() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Ao voltar do checkout. Num telemóvel com a app instalada, o regresso pode abrir noutra
+    // janela: por isso a app também retoma quando volta a ficar visível.
+    useEffect(() => {
+        if (searchParams.get("cancelado")) {
+            writePending(null);
+            setReturnId(null);
+            setSearchParams({}, { replace: true });
+            return;
+        }
+        const onVisible = () => {
+            if (document.visibilityState === "visible") setReturnId(cur => cur ?? readPending());
+        };
+        document.addEventListener("visibilitychange", onVisible);
+        return () => document.removeEventListener("visibilitychange", onVisible);
+    }, [searchParams, setSearchParams]);
+
+    const leaveReturn = useCallback(() => {
+        writePending(null);
+        setReturnId(null);
+        setSearchParams({}, { replace: true });
+        loadData();
+    }, [setSearchParams]);
+
+    const handleReturnFailed = useCallback((message?: string) => {
+        toast({ title: "Pagamento não concluído", description: message ?? "Podem tentar outra vez.", variant: "destructive" });
+        setView("plans");
+        leaveReturn();
+    }, [leaveReturn, toast]);
+
+    const handleReturnDone = useCallback(() => writePending(null), []);
+
+    const handlePay = async () => {
+        if (!selectedPlan) return;
+        setPaying(true);
+        const { data, error } = await supabase.functions.invoke("epay", { body: { action: "create", plan_id: selectedPlan.id } });
+        if (error || !data?.payment_url) {
+            setPaying(false);
+            toast({ title: "Não foi possível iniciar o pagamento", description: "Tenta outra vez daqui a pouco.", variant: "destructive" });
+            return;
+        }
+        writePending(data.payment_id);
+        window.location.href = data.payment_url;
     };
 
     const handleSubscribe = async () => {
@@ -220,11 +235,26 @@ export default function Subscription() {
 
     const { freeMode } = useFreeMode();
 
+    if (returnId) {
+        return (
+            <div className="ink-primary animate-fade-in">
+                <PaymentReturn
+                    paymentId={returnId}
+                    onFailed={handleReturnFailed}
+                    onLeave={leaveReturn}
+                    onDone={handleReturnDone}
+                    onHome={() => navigate("/")}
+                    onStart={() => navigate("/historia")}
+                />
+            </div>
+        );
+    }
+
     if (loading) {
         return <div className="flex items-center justify-center py-24 text-[14px] font-medium text-muted-foreground animate-pulse">A carregar planos…</div>;
     }
 
-    if (freeMode) {
+    if (freeMode && !isAdmin) {
         return (
             <div className="ink-primary animate-fade-in">
                 <ScreenHeader title="Subscrição" subtitle="Plano LoveNest" className="mb-5" />
@@ -265,9 +295,7 @@ export default function Subscription() {
                             <Clock className="w-12 h-12 text-slate-400 mx-auto mb-5" strokeWidth={1.5} />
                             <h2 className="mb-2 text-[22px] font-semibold tracking-[-0.02em]">Em análise</h2>
                             <p className="text-[14px] text-muted-foreground leading-relaxed">
-                                {pendingPayment.provider === "paysuite"
-                                    ? "Estamos a confirmar o teu pagamento automaticamente. A subscrição ativa-se sozinha em poucos instantes."
-                                    : "Recebemos o teu comprovativo. A nossa equipa está a verificar o pagamento."}
+                                Recebemos o teu comprovativo. A nossa equipa está a verificar o pagamento.
                             </p>
 
                             <div className="mt-5 mb-6 space-y-2 rounded-[18px] border border-[#ECE8E3] bg-[#F7F5F2] p-4 text-left dark:border-border dark:bg-muted">
@@ -281,7 +309,7 @@ export default function Subscription() {
                                 </div>
                             </div>
 
-                            {pendingPayment.provider !== "paysuite" && paymentSettings?.whatsapp_number && (
+                            {paymentSettings?.whatsapp_number && (
                                 <>
                                     <Button onClick={handleWhatsApp} className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 h-14 font-bold text-[15px] rounded-2xl shadow-lg">
                                         <MessageCircle className="w-5 h-5" strokeWidth={1.5} /> Acelerar via WhatsApp
@@ -292,81 +320,20 @@ export default function Subscription() {
                         </div>
                     </div>
                 ) : (
-                    <div className="animate-in slide-in-from-bottom-4">
-                        {/* Hero */}
-                        <div className="pb-2 pt-1 text-center">
-                            <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full mb-4">
-                                <Sparkles className="w-3 h-3" strokeWidth={2} />
-                                Acesso ilimitado para dois
+                    view === "confirm" && selectedPlan ? (
+                        <ConfirmPlan plan={selectedPlan} house={house} paying={paying} onBack={() => setView("plans")} onPay={handlePay} />
+                    ) : view === "manual" ? (
+                        <div className="space-y-6 animate-in slide-in-from-right-4">
+                            <div className="flex items-center gap-2.5">
+                                <button type="button" onClick={() => setView("plans")} aria-label="Voltar aos planos"
+                                    className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#F2F0ED] dark:bg-muted">
+                                    <ArrowLeft className="h-4 w-4" />
+                                </button>
+                                <div>
+                                    <h2 className="text-[20px] font-bold tracking-[-0.025em]">Enviar comprovativo</h2>
+                                    <p className="text-[12.5px] text-muted-foreground">{selectedPlan?.name} · {selectedPlan?.price}</p>
+                                </div>
                             </div>
-                            <h2 className="mb-2 text-[24px] font-semibold tracking-[-0.03em]">Escolhe o teu plano</h2>
-                            <p className="text-[13px] text-muted-foreground leading-relaxed">Investe na vossa relação. Cancela quando quiseres.</p>
-                        </div>
-
-                        <div className="space-y-6 pt-4">
-                            {/* Plans */}
-                            {plans.length === 0 ? (
-                                <div className="glass-card p-6 text-center">
-                                    <p className="text-muted-foreground text-sm italic">Nenhum plano disponível no momento.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {plans.map((p) => {
-                                        const isSelected = selectedPlan?.id === p.id;
-                                        const savings = savingsOf(p, plans);
-                                        const isPopular = p.billing_type === "annual" && !!savings;
-                                        return (
-                                            <div
-                                                key={p.id}
-                                                onClick={() => setSelectedPlan(p)}
-                                                className={`relative rounded-[22px] p-5 cursor-pointer transition-all border-2 ${isSelected ? 'border-[#0B1324] bg-white shadow-[0_14px_30px_-16px_rgba(11,19,36,0.4)] dark:border-foreground dark:bg-card' : 'border-[#ECE8E3] bg-white hover:border-[#D5D1CB] dark:border-border dark:bg-card'}`}
-                                            >
-                                                {isPopular && (
-                                                    <div className="absolute -top-2.5 left-5">
-                                                        <span className="rounded-full bg-[#0B1324] px-3 py-1 text-[11px] font-semibold text-white dark:bg-foreground dark:text-background">
-                                                            Mais vantajoso
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1 pr-2">
-                                                        <h4 className="font-bold text-base mb-0.5">{p.name}</h4>
-                                                        <p className="text-[12.5px] font-medium text-muted-foreground">
-                                                            {BILLING_LABELS[p.billing_type] || "Mensal"}
-                                                            {savings ? ` · ${savings.perMonth} MT por mês` : " · para os dois"}
-                                                        </p>
-                                                        {savings && savings.saved > 0 && (
-                                                            <p className="mt-0.5 text-[12.5px] font-semibold text-[#1E7A44]">Poupam {savings.saved} MT</p>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <p className="text-[20px] font-semibold leading-none tracking-[-0.02em] text-foreground">{p.price}</p>
-                                                    </div>
-                                                </div>
-
-                                                {p.features?.length > 0 && (
-                                                    <ul className="mt-3 space-y-1.5 border-t border-border/50 pt-3">
-                                                        {p.features.map((feat: string, i: number) => (
-                                                            <li key={i} className="flex gap-2 items-start text-[12px] text-muted-foreground">
-                                                                <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" strokeWidth={2} />
-                                                                {resolveFeatureLabel(feat)}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-
-                                                {isSelected && (
-                                                    <div className="absolute -right-2 -top-2 rounded-full ring-4 ring-white dark:ring-background">
-                                                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                                                            <CheckCircle className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2.5} />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
 
                             {/* Payment Method */}
                             {paymentMethods.length > 0 && (
@@ -467,20 +434,6 @@ export default function Subscription() {
                                 )}
                             </div>
 
-                            {/* Trust indicators */}
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                                {[
-                                    { icon: Shield, label: "Seguro" },
-                                    { icon: CheckCircle, label: "Garantido" },
-                                    { icon: Sparkles, label: "Acesso total" },
-                                ].map(({ icon: Icon, label }) => (
-                                    <div key={label} className="flex flex-col items-center gap-1.5 rounded-[14px] border border-[#ECE8E3] bg-white px-2 py-3 dark:border-border dark:bg-card">
-                                        <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                                        <span className="text-[11px] font-semibold text-muted-foreground">{label}</span>
-                                    </div>
-                                ))}
-                            </div>
-
                             {/* Submit */}
                             <Button
                                 className="w-full h-[52px] rounded-[18px] font-semibold text-[15px] shadow-[0_14px_28px_-14px_rgba(11,19,36,0.6)] active:scale-[0.99] transition-transform"
@@ -494,7 +447,16 @@ export default function Subscription() {
                                 Após a validação pelo admin, a tua subscrição é ativada automaticamente.
                             </p>
                         </div>
-                    </div>
+                    ) : (
+                        <PlanChooser
+                            plans={plans}
+                            selected={selectedPlan}
+                            onSelect={setSelectedPlan}
+                            onContinue={() => setView("confirm")}
+                            onManual={() => setView("manual")}
+                            canManual={paymentMethods.length > 0}
+                        />
+                    )
                 )}
             </main>
         </div>
