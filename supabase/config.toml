@@ -6,10 +6,7 @@ verify_jwt = false
 [functions.generate-love-wrapped]
 verify_jwt = false
 
-[functions.create-paysuite-payment]
-verify_jwt = false
-
-[functions.paysuite-webhook]
+[functions.epay]
 verify_jwt = false
 
 [functions.admin-claim]
