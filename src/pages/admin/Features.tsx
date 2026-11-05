@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { LIVE_FEATURES } from "@/features/admin/liveFeatures";
 
 /**
  * Funções — um só sítio para cada funcionalidade da app:
@@ -20,7 +21,7 @@ interface Plan { id: string; name: string; price: string; tier_level: number; is
 
 const TIER_NAMES: Record<number, string> = { 0: "Grátis", 1: "Plus", 2: "Pro", 3: "Max" };
 
-export default function FeaturesControl() {
+export default function FeaturesControl({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ export default function FeaturesControl() {
       supabase.from("subscription_plans").select("id, name, price, tier_level, is_active").order("tier_level"),
     ]);
     if (ft.error) toast({ title: "Erro a carregar", description: ft.error.message, variant: "destructive" });
-    setFeatures((ft.data ?? []) as FeatureTier[]);
+    setFeatures(((ft.data ?? []) as FeatureTier[]).filter(f => LIVE_FEATURES.has(f.feature_id)));
     setFlags((fl.data ?? []) as unknown as Flag[]);
     setHouses((hs.data ?? []) as House[]);
     setPlans(((pl.data ?? []) as Plan[]).filter(p => p.is_active));
@@ -101,11 +102,13 @@ export default function FeaturesControl() {
   const filteredHouses = houses.filter(h => houseName(h.id).toLowerCase().includes(search.trim().toLowerCase())).slice(0, 30);
 
   return (
-    <div className="min-h-[100dvh] bg-[#F2F0ED] px-4 pb-16 pt-6 text-[#0B1324] dark:bg-background dark:text-foreground">
-      <div className="mx-auto max-w-3xl">
-        <button onClick={() => navigate("/admin")} className="mb-4 inline-flex items-center gap-2 text-[13.5px] font-semibold text-[#4A5060] dark:text-muted-foreground">
-          <ArrowLeft className="h-4 w-4" /> Painel
-        </button>
+    <div className={embedded ? "text-[#0B1324] dark:text-foreground" : "min-h-[100dvh] bg-[#F2F0ED] px-4 pb-16 pt-6 text-[#0B1324] dark:bg-background dark:text-foreground"}>
+      <div className={embedded ? "mx-auto max-w-4xl" : "mx-auto max-w-3xl"}>
+        {!embedded && (
+          <button onClick={() => navigate("/admin")} className="mb-4 inline-flex items-center gap-2 text-[13.5px] font-semibold text-[#4A5060] dark:text-muted-foreground">
+            <ArrowLeft className="h-4 w-4" /> Painel
+          </button>
+        )}
         <h1 className="text-[24px] font-bold tracking-[-0.025em]">Funções</h1>
         <p className="mt-1 max-w-[60ch] text-[13.5px] leading-relaxed text-[#4A5060] dark:text-muted-foreground">
           O plano decide quem tem acesso. Desligar mostra "Em breve" a todos. "Testar numa casa" liga a função só para as casas que escolheres, mesmo sem o plano.

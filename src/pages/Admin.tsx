@@ -33,6 +33,7 @@ import {
 
 import { invalidateFreeModeCache } from "@/hooks/useFreeMode";
 import AdminBiblioteca from "./admin/AdminBiblioteca";
+import FeaturesControl from "./admin/Features";
 import { TodayView, CouplesView } from "@/features/admin/TodayCouples";
 import { PaymentsView, type PaymentsTab } from "@/features/admin/Payments";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -109,7 +110,7 @@ function FreeModeToggle({ adminClient, adminUserId }: { adminClient: any; adminU
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<"today" | "couples" | "payhistory" | "overview" | "houses" | "announcements" | "plans" | "users" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
+    const [tab, setTab] = useState<"today" | "couples" | "payhistory" | "features" | "announcements" | "plans" | "settings" | "wrapped" | "pwa" | "verifications" | "biblioteca" | "payments">("today");
     const [coupleFocus, setCoupleFocus] = useState<string | null>(null);
     const { user: authUser } = useAuth();
     const [verifications, setVerifications] = useState<any[]>([]);
@@ -126,96 +127,19 @@ export default function Admin() {
     const [newContent, setNewContent] = useState("");
     const [sendingMsg, setSendingMsg] = useState(false);
 
-    // Plan form
-    const BILLING_TYPES = [
-        { id: "monthly",     label: "Mensal",    days: 30  },
-        { id: "semiannual",  label: "Semestral", days: 180 },
-        { id: "annual",      label: "Anual",     days: 365 },
-        { id: "lifetime",    label: "Vitalício", days: null },
-    ];
-
-    const TIER_LEVELS = [
-        { level: 0, label: "Free",  color: "bg-muted text-muted-foreground" },
-        { level: 1, label: "Plus",  color: "bg-blue-500/10 text-blue-600" },
-        { level: 2, label: "Pro",   color: "bg-purple-500/10 text-purple-600" },
-        { level: 3, label: "Max",   color: "bg-orange-400/10 text-orange-500" },
-    ];
-
-    const [newPlanName, setNewPlanName] = useState("");
-    const [newPlanPrice, setNewPlanPrice] = useState("");
-    const [newPlanPriceMzn, setNewPlanPriceMzn] = useState("");
-    const [newPlanBillingType, setNewPlanBillingType] = useState("monthly");
-    const [newPlanTierLevel, setNewPlanTierLevel] = useState(1);
-    const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-    const [creatingPlan, setCreatingPlan] = useState(false);
-
-    // Plan editing
-    const [editingPlan, setEditingPlan] = useState<any>(null);
-    const [editPlanName, setEditPlanName] = useState("");
-    const [editPlanPrice, setEditPlanPrice] = useState("");
-    const [editPlanPriceMzn, setEditPlanPriceMzn] = useState("");
-    const [editPlanBillingType, setEditPlanBillingType] = useState("monthly");
-    const [editPlanTierLevel, setEditPlanTierLevel] = useState(1);
-    const [editPlanFeatures, setEditPlanFeatures] = useState<string[]>([]);
-    const [savingPlanEdit, setSavingPlanEdit] = useState(false);
-
     // Feature tiers
     const [featureTiers, setFeatureTiers] = useState<any[]>([]);
-    const [savingFeatureTier, setSavingFeatureTier] = useState<string | null>(null);
-
-    // Settings form
-    const [savingSettings, setSavingSettings] = useState(false);
-    const [settingsForm, setSettingsForm] = useState({
-        mpesa_number: "",
-        emola_number: "",
-        mkesh_number: "",
-        account_name: "",
-        whatsapp_number: "",
-        whatsapp_message_template: ""
-    });
-
-    // Manual Plan Assignment
-    const [assignModalOpen, setAssignModalOpen] = useState(false);
-    const [selectedHouse, setSelectedHouse] = useState<any>(null);
-    const [selectedPlanForAssign, setSelectedPlanForAssign] = useState("");
-    const [assignTrialDays, setAssignTrialDays] = useState("0");
-    const [assigningPlan, setAssigningPlan] = useState(false);
 
     // LoveWrapped generation
     const [generatingWrapped, setGeneratingWrapped] = useState(false);
     const [clearingWrapped, setClearingWrapped] = useState(false);
     const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth() || 12);
     const [wrappedYear, setWrappedYear] = useState(new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear());
-    const [searchHouse, setSearchHouse] = useState("");
-    const [paymentsSearch, setPaymentsSearch] = useState("");
-    const [paymentsFilter, setPaymentsFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
-    const [planToDelete, setPlanToDelete] = useState<string | null>(null);
     const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     const [pwaSettings, setPwaSettings] = useState<any>(null);
     const [savingPwa, setSavingPwa] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState<"android" | "ios" | null>(null);
-
-    // Só os ids que algum PremiumGuard/useTierAccess realmente consulta —
-    // home/chat/stats/biblioteca/fasting foram removidos porque mudar o
-    // nível mínimo deles no admin não tinha qualquer efeito (nenhum gate
-    // em toda a app os lê; "fasting" em particular partilha sempre o
-    // gate "prayer" porque /jejum redireciona para /jornada-espiritual).
-    const ALL_FEATURES = [
-        { id: "mood", label: "Humor" },
-        { id: "memories", label: "Memórias" },
-        { id: "agenda", label: "Agenda" },
-        { id: "prayer", label: "Oração" },
-        { id: "cycle", label: "Ciclo" },
-        { id: "conflicts", label: "Conflitos" },
-        { id: "wallpapers", label: "Wallpapers" },
-        { id: "time_capsules", label: "Cápsulas" },
-        { id: "challenges", label: "Desafios" },
-        { id: "wrapped", label: "LoveWrapped" },
-        { id: "lovestreak", label: "Jornada" },
-        { id: "location_sharing", label: "Localização" },
-        { id: "historia", label: "Nossa História" },
-    ];
 
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -298,14 +222,6 @@ export default function Admin() {
             // 6. Configurações de Pagamento
             const { data: psData } = await adminClient.from("payment_settings").select("*").limit(1).maybeSingle();
             if (psData) {
-                setSettingsForm({
-                    mpesa_number: psData.mpesa_number || "",
-                    emola_number: psData.emola_number || "",
-                    mkesh_number: psData.mkesh_number || "",
-                    account_name: psData.account_name || "",
-                    whatsapp_number: psData.whatsapp_number || "",
-                    whatsapp_message_template: psData.whatsapp_message_template || ""
-                });
                 setPaymentSettings(psData);
             }
 
@@ -355,7 +271,6 @@ export default function Admin() {
     };
 
     const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
-    const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
 
     const handleOpenReceipt = async (ref: string) => {
         try {
@@ -396,82 +311,6 @@ export default function Admin() {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         } finally {
             setProcessingPaymentId(null);
-        }
-    };
-
-    const handleRejectPayment = async (paymentId: string) => {
-        setProcessingPaymentId(paymentId);
-        try {
-            const { error } = await adminClient.rpc("admin_reject_payment" as any, {
-                p_payment_id: paymentId,
-                p_notes: rejectNotes[paymentId] || null,
-            });
-            if (error) throw error;
-            toast({ title: "Pagamento Rejeitado" });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setProcessingPaymentId(null);
-        }
-    };
-
-    const handleToggleSuspension = async (houseId: string, currentStatus: boolean) => {
-        try {
-            const { error } = await adminClient.rpc("admin_set_suspended" as any, { p_couple_space_id: houseId, p_suspended: !currentStatus });
-            if (error) throw error;
-            toast({ title: "Sucesso", description: `Casa ${!currentStatus ? 'suspensa' : 'ativada'} com sucesso.` });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
-    const handleAssignPlan = async () => {
-        if (!selectedHouse || !selectedPlanForAssign) return;
-        try {
-            setAssigningPlan(true);
-            const planDetails = plans.find(p => p.name === selectedPlanForAssign);
-
-            const trialDays = parseInt(assignTrialDays) || 0;
-
-            const { error: hErr } = await adminClient.rpc("admin_assign_plan" as any, {
-                p_couple_space_id: selectedHouse.id,
-                p_plan_id: planDetails?.id ?? null,
-                p_tier_level: planDetails?.tier_level ?? 1,
-                p_trial_days: trialDays,
-            });
-            if (hErr) throw hErr;
-
-            toast({ title: "Plano Atribuído!", description: `A casa agora tem acesso ao plano ${selectedPlanForAssign}.` });
-            setAssignModalOpen(false);
-            setSelectedHouse(null);
-            setSelectedPlanForAssign("");
-            setAssignTrialDays("0");
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setAssigningPlan(false);
-        }
-    };
-
-    const handleRemovePlan = async () => {
-        if (!selectedHouse) return;
-        try {
-            setAssigningPlan(true);
-            const { error } = await adminClient.rpc("admin_remove_plan" as any, { p_couple_space_id: selectedHouse.id });
-            if (error) throw error;
-            toast({ title: "Plano Removido", description: "A casa voltou ao estado sem plano." });
-            setAssignModalOpen(false);
-            setSelectedHouse(null);
-            setSelectedPlanForAssign("");
-            setAssignTrialDays("0");
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setAssigningPlan(false);
         }
     };
 
@@ -517,130 +356,6 @@ export default function Admin() {
             toast({ title: "Erro", description: error.message, variant: "destructive" });
         }
     }
-
-    const handleCreatePlan = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            setCreatingPlan(true);
-            const { error } = await adminClient.from("subscription_plans").insert({
-                name: newPlanName,
-                price: newPlanPrice,
-                price_mzn: null,
-                billing_type: newPlanBillingType,
-                tier_level: newPlanTierLevel,
-                features: selectedFeatures,
-                is_active: true
-            });
-            if (error) throw error;
-            toast({ title: "Plano Criado", description: "Novo plano de subscrição adicionado." });
-            setNewPlanName("");
-            setNewPlanPrice("");
-            setNewPlanPriceMzn("");
-            setNewPlanBillingType("monthly");
-            setSelectedFeatures([]);
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setCreatingPlan(false);
-        }
-    };
-
-    const handleSaveSettings = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            setSavingSettings(true);
-            const payload = { ...settingsForm, updated_at: new Date().toISOString() };
-
-            if (paymentSettings?.id) {
-                // Registo já existe — UPDATE pelo ID real da BD
-                const { error } = await adminClient
-                    .from("payment_settings")
-                    .update(payload)
-                    .eq("id", paymentSettings.id);
-                if (error) throw error;
-            } else {
-                // Primeiro registo — INSERT e deixar a BD gerar o UUID
-                const { data: inserted, error } = await adminClient
-                    .from("payment_settings")
-                    .insert(payload)
-                    .select()
-                    .single();
-                if (error) throw error;
-                // Guardar em memória para edições futuras na mesma sessão
-                if (inserted) setPaymentSettings(inserted);
-            }
-
-            toast({ title: "Configurações Guardadas", description: "As configurações foram atualizadas com sucesso." });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setSavingSettings(false);
-        }
-    };
-
-    const handleTogglePlan = async (id: string, activeStatus: boolean) => {
-        try {
-            const { error } = await adminClient.from("subscription_plans").update({ is_active: !activeStatus }).eq("id", id);
-            if (error) throw error;
-            toast({ title: "Sucesso", description: `Plano ${!activeStatus ? 'ativado' : 'desativado'}.` });
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
-    const handleDeletePlan = (id: string) => {
-        setPlanToDelete(id);
-    };
-
-    const confirmDeletePlan = async () => {
-        if (!planToDelete) return;
-        try {
-            const { error } = await adminClient.from("subscription_plans").delete().eq("id", planToDelete);
-            if (error) throw error;
-            toast({ title: "Eliminado", description: "Plano eliminado com sucesso." });
-            setPlanToDelete(null);
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        }
-    };
-
-    const openEditPlan = (plan: any) => {
-        setEditingPlan(plan);
-        setEditPlanName(plan.name);
-        setEditPlanPrice(plan.price);
-        setEditPlanPriceMzn(plan.price_mzn != null ? String(plan.price_mzn) : "");
-        setEditPlanBillingType(plan.billing_type || "monthly");
-        setEditPlanTierLevel(plan.tier_level ?? 1);
-        const validIds = ALL_FEATURES.map(f => f.id);
-        setEditPlanFeatures((plan.features || []).filter((f: string) => validIds.includes(f)));
-    };
-
-    const handleSavePlanEdit = async () => {
-        if (!editingPlan || !editPlanName.trim() || !editPlanPrice.trim()) return;
-        try {
-            setSavingPlanEdit(true);
-            const { error } = await adminClient.from("subscription_plans").update({
-                name: editPlanName,
-                price: editPlanPrice,
-                price_mzn: null,
-                billing_type: editPlanBillingType,
-                tier_level: editPlanTierLevel,
-                features: editPlanFeatures
-            }).eq("id", editingPlan.id);
-            if (error) throw error;
-            toast({ title: "Plano Atualizado", description: "As alterações foram guardadas." });
-            setEditingPlan(null);
-            fetchAllData();
-        } catch (error: any) {
-            toast({ title: "Erro", description: error.message, variant: "destructive" });
-        } finally {
-            setSavingPlanEdit(false);
-        }
-    };
 
     const handleSavePwaSettings = async () => {
         if (!pwaSettings) return;
@@ -788,24 +503,6 @@ export default function Admin() {
     }
 
     const pendingPayments = payments.filter(p => p.status === 'pending');
-    const activeHouses = houses.filter(h => !h.is_suspended);
-
-    const filteredPayments = payments.filter(p => {
-        if (paymentsFilter !== "all" && p.status !== paymentsFilter) return false;
-        if (!paymentsSearch) return true;
-        const q = paymentsSearch.toLowerCase();
-        return (
-            p.couple_spaces?.house_name?.toLowerCase().includes(q) ||
-            p.couple_spaces?.partner1_name?.toLowerCase().includes(q) ||
-            p.couple_spaces?.partner2_name?.toLowerCase().includes(q)
-        );
-    });
-
-    const filteredHouses = houses.filter(h => 
-        (h.house_name?.toLowerCase().includes(searchHouse.toLowerCase())) ||
-        (h.partner1_name?.toLowerCase().includes(searchHouse.toLowerCase())) ||
-        (h.partner2_name?.toLowerCase().includes(searchHouse.toLowerCase()))
-    );
 
     return (
         <div className="admin-scope flex flex-col md:flex-row h-screen overflow-hidden bg-muted/30">
@@ -818,103 +515,6 @@ export default function Admin() {
                     </div>
                 </div>
             )}
-
-            {/* Manual Assignment Modal */}
-            <Dialog open={assignModalOpen && !!selectedHouse} onOpenChange={setAssignModalOpen}>
-                {selectedHouse && (() => {
-                const currentPlan = plans.find(p => p.id === selectedHouse.plan_id);
-                const hasActivePlan = selectedHouse.subscription_status === 'active' && currentPlan;
-                const trialActive = selectedHouse.trial_used && selectedHouse.trial_ends_at && new Date(selectedHouse.trial_ends_at) > new Date();
-                const trialEndsAt = selectedHouse.trial_ends_at ? new Date(selectedHouse.trial_ends_at).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
-                return (
-                <DialogContent className="max-w-md rounded-2xl p-0 gap-0 overflow-hidden">
-                    <DialogHeader className="p-6 border-b bg-muted/30 text-left space-y-0">
-                        <DialogTitle>Atribuir Plano Manualmente</DialogTitle>
-                    </DialogHeader>
-                    <div className="p-6 space-y-4">
-                        {/* House info */}
-                        <div>
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Casa</p>
-                            <p className="font-bold">{selectedHouse.house_name} <span className="text-muted-foreground font-normal">({selectedHouse.partner1_name} & {selectedHouse.partner2_name})</span></p>
-                        </div>
-
-                        {/* Current plan status */}
-                        <div className={cn("rounded-xl p-4 space-y-1", hasActivePlan ? 'bg-success/10 border border-success/20' : 'bg-muted/50 border border-dashed')}>
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Estado Atual</p>
-                            {hasActivePlan ? (
-                                <>
-                                    <p className="font-bold text-success">{currentPlan.name}
-                                        <span className="ml-2 text-xs font-normal text-muted-foreground">Tier {currentPlan.tier_level}</span>
-                                    </p>
-                                    {trialActive && trialEndsAt && (
-                                        <p className="text-xs text-muted-foreground">Trial termina: <span className="font-bold text-foreground">{trialEndsAt}</span></p>
-                                    )}
-                                </>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    {trialActive
-                                        ? <span>Trial ativo até <span className="font-bold text-foreground">{trialEndsAt}</span></span>
-                                        : "Sem plano ativo"}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Plan selector */}
-                        <div>
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Atribuir Novo Plano</label>
-                            <Select value={selectedPlanForAssign} onValueChange={setSelectedPlanForAssign}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="-- Selecione --" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {plans.map(p => (
-                                        <SelectItem key={p.id} value={p.name}>{p.name} · {p.price} · Tier {p.tier_level}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Trial days */}
-                        <div>
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Renovar Trial (dias, 0 = não alterar)</label>
-                            <Input type="number" min="0" value={assignTrialDays} onChange={(e) => setAssignTrialDays(e.target.value)} />
-                        </div>
-                    </div>
-                    <DialogFooter className="p-4 bg-muted/30 border-t flex-row justify-between sm:justify-between gap-2">
-                        {hasActivePlan ? (
-                            <Button variant="destructive" size="sm" className="font-bold" disabled={assigningPlan} onClick={handleRemovePlan}>
-                                Remover Plano
-                            </Button>
-                        ) : <div />}
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancelar</Button>
-                            <Button className="font-bold" disabled={!selectedPlanForAssign || assigningPlan} onClick={handleAssignPlan}>
-                                {assigningPlan ? "A guardar..." : "Confirmar"}
-                            </Button>
-                        </div>
-                    </DialogFooter>
-                </DialogContent>
-                );
-                })()}
-            </Dialog>
-
-            {/* Delete Plan Confirmation */}
-            <AlertDialog open={!!planToDelete} onOpenChange={open => !open && setPlanToDelete(null)}>
-                <AlertDialogContent className="rounded-3xl">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Eliminar Plano?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. O plano será removido permanentemente.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDeletePlan} className="bg-destructive hover:bg-destructive/90 rounded-full">
-                            Eliminar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
 
             {/* Clear Wrapped Confirmation */}
             <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
@@ -952,12 +552,13 @@ export default function Admin() {
                             <button key={key} onClick={onClick}
                                 className={cn("flex shrink-0 items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-semibold transition-colors md:w-full",
                                     sub ? "h-8 md:pl-9 text-[13px]" : "h-10",
-                                    (tab === key || (key === "payments" && tab === "payhistory")) ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
+                                    (tab === key || NAV_GROUP[tab] === key) ? "bg-[#F2F0ED] text-[#0B1324] dark:bg-muted dark:text-foreground" : "text-[#4A5060] hover:bg-[#F7F5F2] dark:text-muted-foreground dark:hover:bg-muted")}>
                                 {!sub && <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />}
                                 <span className={cn(!sub && "hidden md:inline", sub && "whitespace-nowrap")}>{label}</span>
                                 {!!badge && <span className="ml-auto rounded-full bg-[#0B1324] px-1.5 text-[11px] font-bold leading-[18px] text-white dark:bg-foreground dark:text-background">{badge}</span>}
                             </button>
                         );
+                        const NAV_GROUP: Record<string, string> = { verifications: "couples", payhistory: "payments", plans: "payments", settings: "payments", announcements: "biblioteca", wrapped: "biblioteca", pwa: "biblioteca" };
                         const week = 7 * 86_400_000;
                         const endingSoon = houses.filter(h => h.subscription_status === "active" && h.subscription_ends_at && new Date(h.subscription_ends_at).getTime() > Date.now() && new Date(h.subscription_ends_at).getTime() - Date.now() < week).length;
                         const pendingVer = verifications.filter(v => v.status === "pending").length;
@@ -965,15 +566,9 @@ export default function Admin() {
                             <>
                                 {item("today", "Hoje", Activity, () => setTab("today"), pendingPayments.length + pendingVer + endingSoon)}
                                 {item("couples", "Casais", Users, () => { setCoupleFocus(null); setTab("couples"); })}
-                                {item("verifications", "Verificações", ShieldCheck, () => setTab("verifications"), pendingVer, true)}
                                 {item("payments", "Pagamentos", CreditCard, () => setTab("payments"), pendingPayments.length)}
-                                {item("plans", "Planos", Tag, () => setTab("plans"), 0, true)}
-                                {item("settings", "Contas e WhatsApp", Settings, () => setTab("settings"), 0, true)}
-                                {item("features", "Funções", Hash, () => navigate("/admin/features"))}
+                                {item("features", "Funções", Hash, () => setTab("features"))}
                                 {item("biblioteca", "Conteúdo", Library, () => setTab("biblioteca"))}
-                                {item("announcements", "Avisos", Megaphone, () => setTab("announcements"), 0, true)}
-                                {item("wrapped", "LoveWrapped", Sparkles, () => setTab("wrapped"), 0, true)}
-                                {item("pwa", "Tutorial PWA", Smartphone, () => setTab("pwa"), 0, true)}
                             </>
                         );
                     })()}
@@ -989,6 +584,28 @@ export default function Admin() {
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-background relative">
 
+                {(() => {
+                    const groups: Record<string, [string, string][]> = {
+                        couples: [["couples", "Casais"], ["verifications", `Verificações${verifications.filter(v => v.status === "pending").length ? ` (${verifications.filter(v => v.status === "pending").length})` : ""}`]],
+                        biblioteca: [["biblioteca", "Biblioteca"], ["announcements", "Avisos"], ["wrapped", "LoveWrapped"], ["pwa", "Tutorial PWA"]],
+                    };
+                    const g = groups[tab] ? tab : ({ verifications: "couples", announcements: "biblioteca", wrapped: "biblioteca", pwa: "biblioteca" } as Record<string, string>)[tab];
+                    if (!g) return null;
+                    return (
+                        <div className="mx-auto mb-4 max-w-5xl">
+                            {g === "biblioteca" && <h2 className="mb-3 text-[24px] font-bold tracking-[-0.025em]">Conteúdo</h2>}
+                            <div className="inline-flex flex-wrap rounded-xl bg-[#F2F0ED] p-[3px] dark:bg-muted">
+                                {groups[g].map(([k, l]) => (
+                                    <button key={k} onClick={() => { if (k === "couples") setCoupleFocus(null); setTab(k as typeof tab); }}
+                                        className={cn("h-8 rounded-[9px] px-3 text-[13px] font-semibold", tab === k ? "bg-white text-[#0B1324] shadow-sm dark:bg-card dark:text-foreground" : "text-[#7A7F8C]")}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })()}
+                {tab === "features" && <FeaturesControl embedded />}
                 {tab === "today" && (
                     <TodayView
                         data={{ houses, users, payments, verifications, plans }}
@@ -1019,267 +636,6 @@ export default function Admin() {
                 })()}
                 {tab === "couples" && (
                     <CouplesView key={coupleFocus ?? "all"} data={{ houses, users, payments, verifications, plans }} initialId={coupleFocus} onChanged={fetchAllData} />
-                )}
-
-                {/* OVERVIEW TAB */}
-                {tab === "overview" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h2 className="text-2xl font-bold">Dashboard</h2>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-9 gap-2 font-bold bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
-                                onClick={fetchAllData}
-                                disabled={loading}
-                            >
-                                <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                                {loading ? "A atualizar..." : "Forçar Atualização"}
-                            </Button>
-                        </div>
-
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Home className="w-6 h-6 text-primary mb-4" />
-                                <span className="text-3xl font-black">{houses.length}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Total Casas</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left">
-                                <Users className="w-6 h-6 text-blue-500 mb-4" />
-                                <span className="text-3xl font-black">{users.length}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Utilizadores</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-green-500/20">
-                                <Activity className="w-6 h-6 text-green-500 mb-4" />
-                                <span className="text-3xl font-black">{activeHouses.length}</span>
-                                <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Casas Ativas</span>
-                            </div>
-                            <div className="glass-card rounded-2xl p-6 flex flex-col text-left border-orange-400/20 bg-orange-400/5">
-                                <FileText className="w-6 h-6 text-orange-500 mb-4" />
-                                <span className="text-3xl font-black">{pendingPayments.length}</span>
-                                <span className="text-sm text-orange-500/70 font-bold uppercase tracking-wider mt-1">Pendentes</span>
-                            </div>
-                        </div>
-
-                        {/* Pending Subscriptions — resumo curto, gestão completa fica na aba Pagamentos */}
-                        <div className="mt-8">
-                            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-11 h-11 rounded-xl bg-orange-400/10 text-orange-500 flex items-center justify-center shrink-0">
-                                        <FileText className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg leading-tight">
-                                            {pendingPayments.length > 0
-                                                ? `${pendingPayments.length} pagamento${pendingPayments.length === 1 ? "" : "s"} a aguardar aprovação`
-                                                : "Sem pagamentos pendentes"}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground">Aprovação, rejeição e histórico completo na aba Pagamentos.</p>
-                                    </div>
-                                </div>
-                                <Button className="w-full md:w-auto font-bold" onClick={() => setTab("payments")}>
-                                    Ver Pagamentos
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* HOUSES TAB */}
-                {tab === "houses" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-6xl mx-auto">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h2 className="text-2xl font-bold flex items-center gap-2"><Home className="w-6 h-6 text-primary" /> Gestão de Casas</h2>
-                            
-                            <div className="relative w-full md:w-72">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <Input 
-                                    placeholder="Procurar casa ou casal..." 
-                                    className="pl-10 h-10 rounded-xl"
-                                    value={searchHouse}
-                                    onChange={(e) => setSearchHouse(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                                <Table>
-                                    <TableHeader className="bg-muted/50">
-                                        <TableRow className="hover:bg-transparent">
-                                            <TableHead className="font-bold">Casa / Iniciais</TableHead>
-                                            <TableHead className="font-bold">Parceiros</TableHead>
-                                            <TableHead className="font-bold">Plano / Estado</TableHead>
-                                            <TableHead className="font-bold">Trial / Expiração</TableHead>
-                                            <TableHead className="font-bold text-right">Ações</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredHouses.map((house) => {
-                                            const activePayment = payments.find(p => p.couple_space_id === house.id && p.status === 'approved');
-                                            const effectiveTrialEnd = house.trial_ends_at
-                                                ?? (house.trial_started_at ? new Date(new Date(house.trial_started_at).getTime() + 15 * 86400000).toISOString() : null);
-                                            const isTrialExpired = effectiveTrialEnd && new Date(effectiveTrialEnd) < new Date();
-                                            
-                                            // Age gap detection (if both ages exist)
-                                            const p1Age = house.partner1_age;
-                                            const p2Age = house.partner2_age;
-                                            const ageGap = (p1Age && p2Age) ? Math.abs(p1Age - p2Age) : null;
-                                            const isAgeGapSignificant = ageGap !== null && ageGap >= 10; // Example: significant if gap is 10+ years
-
-                                            const verificationStatus = verifications.find(v => v.couple_space_id === house.id);
-                                            
-                                            return (
-                                                <TableRow key={house.id} className={cn(house.is_suspended && "bg-destructive/[0.02] opacity-80")}>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
-                                                                {house.initials || "LN"}
-                                                            </div>
-                                                            <span className="font-bold truncate max-w-[150px]">{house.house_name || "Sem Nome"}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-1">
-                                                            <p className="text-muted-foreground whitespace-nowrap font-medium flex items-center gap-2">
-                                                                {house.partner1_name || "P1"} & {house.partner2_name || "P2"}
-                                                            </p>
-                                                            <div className="flex gap-1.5 overflow-hidden">
-                                                                {house.members?.map((m: any, idx: number) => {
-                                                                    const profile = users.find(u => u.id === m.user_id);
-                                                                    const isV = profile?.verification_status === 'verified';
-                                                                    return (
-                                                                        <div key={m.user_id} className={cn(
-                                                                            "text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0",
-                                                                            isV ? "bg-success/10 text-success" : "bg-muted text-muted-foreground/60"
-                                                                        )}>
-                                                                            {isV ? <ShieldCheck className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
-                                                                            {profile?.display_name?.split(' ')[0] || `P${idx+1}`}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="font-medium text-xs truncate max-w-[120px]">{activePayment?.plan_name || "Trial / Sem Plano"}</span>
-                                                            <Badge size="sm" variant={house.subscription_status === 'active' ? "success-light" : "warning-light"} className="w-fit">
-                                                                {house.subscription_status}
-                                                            </Badge>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {house.trial_started_at ? (
-                                                            <div className="flex flex-col">
-                                                                <span className={cn(
-                                                                    "text-xs font-bold",
-                                                                    !isTrialExpired ? "text-success" : "text-destructive"
-                                                                )}>
-                                                                    {(!isTrialExpired) ? "Ativo" : "Expirado"}
-                                                                </span>
-                                                                <span className="text-[10px] text-muted-foreground">Termina: {effectiveTrialEnd ? new Date(effectiveTrialEnd).toLocaleDateString('pt-PT') : "—"}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-xs text-muted-foreground">—</span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end items-center gap-2">
-                                                            {/* House Verification Badge / Action */}
-                                                            {house.is_verified ? (
-                                                                <button 
-                                                                    onClick={() => handleToggleHouseVerification(house.id, true)}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success text-success-foreground text-[10px] font-black shadow-lg shadow-success/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-                                                                >
-                                                                    <Sparkles className="w-3.5 h-3.5" /> Verificada
-                                                                </button>
-                                                            ) : (
-                                                                (() => {
-                                                                    const bothVerified = house.members?.length === 2 && house.members.every((m: any) => {
-                                                                        const p = users.find(u => u.id === m.user_id);
-                                                                        return (p as any)?.verification_status === 'verified';
-                                                                    });
-                                                                    if (bothVerified) {
-                                                                        return (
-                                                                            <Button 
-                                                                                size="sm" 
-                                                                                className="h-8 bg-primary/20 hover:bg-primary/30 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest"
-                                                                                onClick={() => handleToggleHouseVerification(house.id, false)}
-                                                                            >
-                                                                                VERIFICAR CASA
-                                                                            </Button>
-                                                                        );
-                                                                    }
-                                                                    return null;
-                                                                })()
-                                                            )}
-
-                                                            {house.is_suspended && (
-                                                                <div className="flex items-center gap-1 text-[10px] font-bold text-destructive mr-2 uppercase">
-                                                                    <AlertTriangle className="w-3 h-3" /> Suspensa
-                                                                </div>
-                                                            )}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-8 text-[10px] font-bold"
-                                                                onClick={() => {
-                                                                    setSelectedHouse(house);
-                                                                    setAssignModalOpen(true);
-                                                                }}
-                                                            >
-                                                                PLANO
-                                                            </Button>
-                                                            <Button
-                                                                variant={house.is_suspended ? "default" : "destructive"}
-                                                                size="icon"
-                                                                className="h-8 w-8"
-                                                                onClick={() => handleToggleSuspension(house.id, house.is_suspended)}
-                                                            >
-                                                                {house.is_suspended ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                        {filteredHouses.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="p-8 text-center text-muted-foreground italic">Nenhuma casa encontrada...</TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                        </div>
-                    </div>
-                )}
-
-                {/* USERS TAB */}
-                {tab === "users" && (
-                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Todos os Utilizadores</h2>
-                        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
-                                <Table>
-                                    <TableHeader className="bg-muted/50">
-                                        <TableRow className="hover:bg-transparent">
-                                            <TableHead className="font-bold">Nome (Display)</TableHead>
-                                            <TableHead className="font-bold">Data Registo</TableHead>
-                                            <TableHead className="font-bold">ID Interno</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {users.map((u) => (
-                                            <TableRow key={u.id}>
-                                                <TableCell className="font-medium">{u.display_name || "Sem Nome"}</TableCell>
-                                                <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString('pt-PT')}</TableCell>
-                                                <TableCell className="text-xs font-mono text-muted-foreground/60">{u.id}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                        </div>
-                    </div>
                 )}
 
                 {/* ANNOUNCEMENTS TAB */}
