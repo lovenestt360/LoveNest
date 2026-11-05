@@ -30,6 +30,7 @@ const FEATURE_LABELS: Record<string, string> = {
     wrapped: "LoveWrapped anual",
     lovestreak: "Jornada e missões",
     location_sharing: "Partilha de localização",
+    biblioteca: "Biblioteca de leitura",
     historia: "A nossa história",
 };
 
