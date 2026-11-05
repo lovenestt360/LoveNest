@@ -162,7 +162,7 @@ BEGIN
   LOOP
     PERFORM public.activate_paid_subscription(r.couple_space_id, r.plan_id, now());
   END LOOP;
-END $;
+END $$;
 
 -- Keep status/tier in sync for older clients that only understand
 -- subscription_status. pg_cron is already used elsewhere in LoveNest.
@@ -179,7 +179,7 @@ BEGIN
       'SELECT public.expire_due_subscriptions();'
     );
   END IF;
-END $;
+END $$;
 
 -- ── Manual payment normalization ───────────────────────────────────────────
 -- Any authenticated browser insert is treated as a manual request. The user
