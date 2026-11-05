@@ -4,7 +4,6 @@ import { pt } from "date-fns/locale";
 import { Loader2, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useNames } from "./TodayCouples";
 import { LIVE_FEATURES } from "./liveFeatures";
@@ -300,7 +299,10 @@ function PlansTab({ plans, featureTiers, freeModeSlot, onChanged }: { plans: any
                   <p className="truncate text-[15px] font-bold">{p.name}</p>
                   <p className={cn("text-[12.5px]", MUTED)}>{BILLING.find(b => b[0] === p.billing_type)?.[1] ?? "Mensal"} · {TIER[p.tier_level] ?? `Nível ${p.tier_level}`}</p>
                 </div>
-                <Switch checked={!!p.is_active} onCheckedChange={() => toggle(p)} aria-label="Visível para os casais" />
+                <button role="switch" aria-checked={!!p.is_active} aria-label="Visível para os casais" onClick={() => toggle(p)}
+                  className={cn("relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors", p.is_active ? "bg-[#0B1324] dark:bg-foreground" : "bg-[#D9D5CF] dark:bg-muted")}>
+                  <span className={cn("absolute top-[3px] h-4 w-4 rounded-full bg-white transition-[left]", p.is_active ? "left-[19px]" : "left-[3px]")} />
+                </button>
               </div>
               <p className="mt-3 text-[24px] font-bold tracking-[-0.03em]">{p.price}</p>
               <p className={cn("mt-1 line-clamp-2 text-[12.5px] leading-relaxed", MUTED)}>
