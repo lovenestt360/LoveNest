@@ -18,22 +18,17 @@ const BILLING_LABELS: Record<string, string> = {
 };
 
 const FEATURE_LABELS: Record<string, string> = {
-    home: "Home",
-    chat: "Chat",
     mood: "Humor do casal",
     memories: "Memórias e álbuns",
     agenda: "Agenda, rotinas e tarefas",
     prayer: "Oração em casal",
-    fasting: "Jejum",
     cycle: "Ciclo menstrual",
     conflicts: "Gestão de conflitos",
     wallpapers: "Wallpapers exclusivos",
-    stats: "Estatísticas do casal",
     time_capsules: "Cápsulas do tempo",
     challenges: "Desafios de casal",
     wrapped: "LoveWrapped anual",
     lovestreak: "Jornada e missões",
-    biblioteca: "Biblioteca de leitura",
     location_sharing: "Partilha de localização",
     historia: "A nossa história",
 };

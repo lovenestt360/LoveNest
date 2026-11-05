@@ -268,7 +268,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
         {h && (
           <div className={cn(CARD, "h-fit p-4")}>
             <p className="text-[17px] font-bold tracking-[-0.02em]">{coupleName(h)}</p>
-            <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">Na app desde {d(h.created_at, "d MMM yyyy")}</p>
+            <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">Na app desde {d(h.created_at, "d MMM yyyy")}{h.is_suspended && <b className="ml-1.5 font-semibold text-[#B91C1C]">· suspensa</b>}</p>
             <div className="mt-3 text-[13px]">
               {people(h).map((p: any) => (
                 <div key={p.user_id} className="flex justify-between gap-3 border-t border-[#F0EDE9] py-2 dark:border-border/60">
@@ -285,6 +285,10 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
               <button className={GHOST} onClick={() => open("renew")}>Renovar</button>
               {status === "paid" && endsAt && <button className={GHOST} onClick={() => open("extend")}>Prolongar</button>}
               {status === "paid" && <button className={GHOST} onClick={() => open("remove")}>Remover plano</button>}
+              <button className={cn(GHOST, !h.is_suspended && "text-[#B91C1C]")} disabled={busy}
+                onClick={() => run(() => supabase.rpc("admin_set_suspended" as any, { p_couple_space_id: h.id, p_suspended: !h.is_suspended }) as any, h.is_suspended ? "Casa reativada" : "Casa suspensa")}>
+                {h.is_suspended ? "Reativar casa" : "Suspender casa"}
+              </button>
             </div>
           </div>
         )}
