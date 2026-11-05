@@ -161,11 +161,11 @@ export function AnnouncementsTab() {
             </div>
             <div>
               <label className={LABEL}>Para quem</label>
-              <Chips value={audience} onChange={setAudience} options={AUDIENCE} />
+              <Chips<Audience> value={audience} onChange={setAudience} options={AUDIENCE} />
             </div>
             <div>
               <label className={LABEL}>Quanto tempo fica</label>
-              <Chips value={duration} onChange={setDuration} options={DURATION} />
+              <Chips<Duration> value={duration} onChange={setDuration} options={DURATION} />
             </div>
             <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[#ECE8E3] px-3.5 py-3 dark:border-border">
               <div className="flex min-w-0 items-center gap-2.5">
