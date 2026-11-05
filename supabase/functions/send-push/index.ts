@@ -67,6 +67,9 @@ Deno.serve(async (req) => {
 
     const payload = await req.json();
     const { couple_space_id, title, body: notifBody, url, type, is_test, template_key, ping, broadcast } = payload;
+    // Aviso do painel só para parte das casas: "paid" (plano pago) ou "trial" (em experiência).
+    const audience: "paid" | "trial" | null =
+      payload.audience === "paid" || payload.audience === "trial" ? payload.audience : null;
     await logInternal("PAYLOAD_DATA", { couple_space_id, is_test, template_key, broadcast });
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
@@ -112,7 +115,7 @@ Deno.serve(async (req) => {
     // Autorização: broadcast exige admin; envio a um espaço exige que o
     // remetente pertença a esse espaço. Sem isto, qualquer conta autenticada
     // podia pedir um broadcast global ou notificar um espaço alheio.
-    if (broadcast) {
+    if (broadcast || audience) {
       const { data: adminRow } = await adminClient
         .from("admin_users")
         .select("id")
@@ -150,6 +153,24 @@ Deno.serve(async (req) => {
 
     if (broadcast) {
       // sem filtro — envia a todos (já validado que o remetente é admin acima)
+    } else if (audience) {
+      const nowIso = new Date().toISOString();
+      const { data: spaces, error: spacesError } = await adminClient
+        .from("couple_spaces")
+        .select("id, subscription_status, subscription_ends_at, trial_ends_at");
+      if (spacesError) throw spacesError;
+      const isPaid = (s: any) =>
+        s.subscription_status === "active" && (!s.subscription_ends_at || s.subscription_ends_at > nowIso);
+      const ids = (spaces ?? [])
+        .filter((s: any) => audience === "paid" ? isPaid(s) : !isPaid(s) && s.trial_ends_at && s.trial_ends_at > nowIso)
+        .map((s: any) => s.id);
+      if (ids.length === 0) {
+        return new Response(JSON.stringify({ sent: 0, message: "No active recipients" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      query = query.in("couple_space_id", ids);
     } else {
       query = query.eq("couple_space_id", couple_space_id);
       if (is_test) {
