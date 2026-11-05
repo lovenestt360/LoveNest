@@ -600,6 +600,11 @@ input, textarea, [contenteditable="true"] {
     50%  { transform: scale(1.18); opacity: 0.12; }
     100% { transform: scale(1);    opacity: 0.35; }
   }
+  /* Mascote a flutuar devagar (Faísca nos ecrãs de espera) */
+  @keyframes ln-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
   @keyframes capsule-float {
     0%, 100% { transform: translateY(0px); }
     50%      { transform: translateY(-8px); }

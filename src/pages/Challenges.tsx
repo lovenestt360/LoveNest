@@ -4,10 +4,13 @@ import { pt } from "date-fns/locale";
 import {
   CheckCircle2, Plus, Trophy, Sparkles, Loader2, Trash2,
   Heart, Compass, MessageCircle, Gamepad2, Sprout, BookOpen,
-  Star, X, Flame, Target,
+  Star, X, Flame, Target, Check, ImagePlus,
 } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import faisca from "@/assets/flame/flame_01_faisca_thumb.png";
+import { usePhotoUrl } from "@/features/relationship-events/usePhotoUrl";
+import { toJpegIfHeic } from "@/lib/heic";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useBiblioteca, type Book } from "@/hooks/useBiblioteca";
 import { useProfile } from "@/hooks/useProfile";
@@ -98,6 +101,13 @@ export default function Challenges() {
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [completionPhrase, setCompletionPhrase] = useState(MEMORY_PHRASES[0]);
   const [lastCompletedTitle, setLastCompletedTitle] = useState("");
+
+  // Ideias (uma de cada vez) e memória ao concluir
+  const [ideaIdx, setIdeaIdx] = useState(0);
+  const [memNote, setMemNote] = useState("");
+  const [memPhoto, setMemPhoto] = useState<File | null>(null);
+  const [memPreparing, setMemPreparing] = useState(false);
+  const [memSaving, setMemSaving] = useState(false);
 
   // Ref para não mostrar overlay duplicado no próprio dispositivo via Realtime
   const justCompletedRef = useRef<string | null>(null);
@@ -191,13 +201,16 @@ export default function Challenges() {
     }
   };
 
-  const handleComplete = async (challenge: any) => {
+  const handleComplete = async (challenge: any, memory?: { note?: string; photoPath?: string }) => {
     const becomeCompleted = !challenge.is_completed;
     try {
       const { error } = await supabase.from("couple_challenges").update({
         is_completed: becomeCompleted,
         completed_at: becomeCompleted ? new Date().toISOString() : null,
-      }).eq("id", challenge.id);
+        // Colunas da migração 20261106120000 — só quando há nota/foto
+        ...(becomeCompleted && memory?.note ? { memory_note: memory.note } : {}),
+        ...(becomeCompleted && memory?.photoPath ? { memory_photo: memory.photoPath } : {}),
+      } as any).eq("id", challenge.id);
       if (error) throw error;
       loadChallenges();
       if (becomeCompleted) {
@@ -227,17 +240,18 @@ export default function Challenges() {
     }
   };
 
-  const handleGenerateChallenges = async () => {
+  const handleGenerateChallenges = async (category: string = selectedCategory) => {
     setGenerating(true);
     setAiSuggestions([]);
-    if (selectedCategory === "livros") {
+    setIdeaIdx(0);
+    if (category === "livros") {
       setAiSuggestions(generateBookSuggestions(books, ownedBookIds, myProgressByBook));
       setGenerating(false);
       return;
     }
     try {
       const { data, error } = await supabase.functions.invoke("generate-challenges", {
-        body: { category: selectedCategory },
+        body: { category },
       });
       if (error) throw error;
       if (data?.challenges?.length > 0) {
@@ -282,10 +296,45 @@ export default function Challenges() {
     }
   };
 
+  const saveMemory = async () => {
+    const c = pendingComplete;
+    if (!c) return;
+    setMemSaving(true);
+    try {
+      let photoPath: string | undefined;
+      if (memPhoto && houseId) {
+        const ext = memPhoto.name.split(".").pop() ?? "jpg";
+        const path = `${houseId}/desafio-${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("memories").upload(path, memPhoto, { contentType: memPhoto.type });
+        if (error) throw error;
+        photoPath = path;
+      }
+      setPendingComplete(null);
+      await handleComplete(c, { note: memNote.trim() || undefined, photoPath });
+      setMemNote(""); setMemPhoto(null);
+    } catch (error: any) {
+      toast({ title: "Erro ao guardar", description: error.message, variant: "destructive" });
+    } finally {
+      setMemSaving(false);
+    }
+  };
+
+  const pickCategory = (id: string) => {
+    setSelectedCategory(id);
+    handleGenerateChallenges(id);
+  };
+  const currentIdea = aiSuggestions[Math.min(ideaIdx, aiSuggestions.length - 1)] ?? null;
+  const nextIdea = () => {
+    if (ideaIdx + 1 < aiSuggestions.length) setIdeaIdx(i => i + 1);
+    else handleGenerateChallenges();
+  };
+
   const inProgress        = challenges.filter(c => !c.is_completed);
   const completed         = challenges.filter(c =>  c.is_completed);
   const heroChallenge     = inProgress[0] ?? null;
   const remainingProgress = inProgress.slice(1);
+  const thisMonth = completed.filter(c => c.completed_at && new Date(c.completed_at).getMonth() === new Date().getMonth()
+    && new Date(c.completed_at).getFullYear() === new Date().getFullYear()).length;
 
   if (!profileLoading && profile?.usage_mode === "solo") {
     return <Navigate to="/" replace />;
@@ -314,17 +363,7 @@ export default function Challenges() {
               activeTab === "historico" ? "bg-white text-[#0B1324] shadow-[0_1px_2px_rgba(11,19,36,0.06),0_4px_12px_-6px_rgba(11,19,36,0.2)] dark:bg-card dark:text-foreground" : "text-[#7A7F8C] dark:text-muted-foreground"
             )}
           >
-            Histórico
-            {completed.length > 0 && (
-              <span className={cn(
-                "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                activeTab === "historico"
-                  ? "bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400"
-                  : "bg-muted-foreground/15 text-muted-foreground"
-              )}>
-                {completed.length}
-              </span>
-            )}
+            Memórias
           </button>
         </div>
 
@@ -338,303 +377,135 @@ export default function Challenges() {
           ════════════════════════════════════════════════════ */
           <div className="space-y-5">
 
-            {/* ── Botões de ação ───────────────────────────────── */}
-            {!showGenerator && !showManual && (
-              <div className="flex gap-2 animate-in fade-in duration-200">
-                <button
-                  onClick={() => setShowGenerator(true)}
-                  className="flex-1 h-11 rounded-2xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-all shadow-sm"
-                >
-                  <Sparkles className="w-4 h-4" /> Gerar com IA
-                </button>
-                <button
-                  onClick={() => setShowManual(true)}
-                  className="flex-1 h-11 rounded-2xl bg-card border border-border text-foreground text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-all shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Criar manual
-                </button>
+            {/* ── A viver agora ─────────────────────────────── */}
+            {heroChallenge ? (
+              <section className="animate-in fade-in duration-300">
+                <p className="mb-2 px-1 text-[12px] font-semibold text-muted-foreground">A viver agora</p>
+                <div className={CARD + " p-4"}>
+                  <p className="text-[12px] font-medium text-muted-foreground">
+                    Começaram {daysAgo(heroChallenge.created_at)}
+                  </p>
+                  <h2 className="mt-1.5 text-[17.5px] font-bold leading-snug tracking-[-0.02em] text-foreground">{heroChallenge.title}</h2>
+                  {heroChallenge.description && (
+                    <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#4A5060] dark:text-muted-foreground line-clamp-3">{heroChallenge.description}</p>
+                  )}
+                  <div className="mt-3.5 flex items-center justify-between border-t border-[#F0EDE9] pt-3 dark:border-border/60">
+                    <button onClick={() => handleDelete(heroChallenge.id)} aria-label="Apagar desafio"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground/50 active:bg-muted">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setPendingComplete(heroChallenge)}
+                      className="inline-flex h-[38px] items-center gap-1.5 rounded-full bg-[#0B1324] px-3.5 text-[13px] font-semibold text-white active:scale-[0.97] transition-transform dark:bg-foreground dark:text-background">
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.4} /> Já vivemos isto
+                    </button>
+                  </div>
+                </div>
+              </section>
+            ) : (
+              <div className={CARD + " flex items-center gap-3 p-4"}>
+                <img src={faisca} alt="" className="w-[58px] shrink-0 animate-[ln-bob_3.6s_ease-in-out_infinite]" />
+                <div>
+                  <p className="text-[15px] font-semibold text-foreground">Que memória vão criar?</p>
+                  <p className="mt-0.5 text-[13px] text-muted-foreground">Escolham uma ideia em baixo ou criem o vosso desafio.</p>
+                </div>
               </div>
             )}
 
-            {/* ── Gerador IA (expandido) ────────────────────────── */}
-            {showGenerator && (
-              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="p-4 border-b border-border flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-rose-500" />
-                    <span className="font-semibold text-[15px]">Gerador de Desafios</span>
+            {/* ── Números ───────────────────────────────────── */}
+            {challenges.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {[[completed.length, "vividos"], [inProgress.length, "a viver"], [thisMonth, "este mês"]].map(([n, l]) => (
+                  <div key={l as string} className="rounded-2xl border border-[#ECE8E3] px-3 py-2.5 dark:border-border">
+                    <p className="text-[20px] font-bold tracking-[-0.03em] tabular-nums text-foreground">{n}</p>
+                    <p className="text-[11.5px] font-medium text-muted-foreground">{l}</p>
                   </div>
-                  <button
-                    onClick={() => { setShowGenerator(false); setAiSuggestions([]); }}
-                    className="p-1.5 rounded-lg text-muted-foreground/40 active:bg-muted transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="p-4 space-y-4">
-                  <div>
-                    <p className="text-[13px] font-semibold text-foreground mb-3">
-                      O que gostariam de explorar juntos?
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {CATEGORY_DEFS.map(({ id, label, Icon, color, bg }) => (
-                        <button
-                          key={id}
-                          onClick={() => setSelectedCategory(id)}
-                          className={cn(
-                            "flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all active:scale-[0.97]",
-                            selectedCategory === id
-                              ? "border-rose-400 bg-rose-50 dark:bg-rose-950/30"
-                              : "border-border bg-muted/40"
-                          )}
-                        >
-                          <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", bg)}>
-                            <Icon className={cn("w-4 h-4", color)} />
-                          </div>
-                          <span className={cn(
-                            "text-[13px] font-semibold leading-tight",
-                            selectedCategory === id ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
-                          )}>
-                            {label}
-                          </span>
-                        </button>
-                      ))}
+                ))}
+              </div>
+            )}
+
+            {/* ── Restantes a viver ─────────────────────────── */}
+            {remainingProgress.length > 0 && (
+              <section>
+                <h3 className="mb-2 px-1 text-[15px] font-semibold tracking-[-0.01em] text-foreground">Também a viver</h3>
+                <div className={CARD + " px-3.5"}>
+                  {remainingProgress.map(c => (
+                    <div key={c.id} className="flex items-center gap-3 border-b border-[#F0EDE9] py-3 last:border-b-0 dark:border-border/60">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14.5px] font-semibold text-foreground">{c.title}</span>
+                        <span className="block text-[12.5px] text-muted-foreground">Começaram {daysAgo(c.created_at)}</span>
+                      </span>
+                      <button onClick={() => handleDelete(c.id)} aria-label="Apagar desafio" className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground/50 active:bg-muted">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => setPendingComplete(c)} className="h-8 rounded-full bg-[#F7F5F2] px-3 text-[12.5px] font-semibold text-foreground active:scale-[0.97] dark:bg-muted">
+                        Vivemos
+                      </button>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-                  <button
-                    onClick={handleGenerateChallenges}
-                    disabled={generating}
-                    className="w-full h-11 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-all"
-                  >
-                    {generating ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> A gerar sugestões...</>
-                    ) : (
-                      <><Sparkles className="w-4 h-4" /> Gerar 5 Desafios</>
-                    )}
+            {/* ── Ideias para vocês ─────────────────────────── */}
+            <section>
+              <h3 className="mb-2 px-1 text-[15px] font-semibold tracking-[-0.01em] text-foreground">Ideias para vocês</h3>
+              <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {CATEGORY_DEFS.map(({ id, label }) => (
+                  <button key={id} onClick={() => pickCategory(id)}
+                    className={cn("h-[34px] shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-colors",
+                      selectedCategory === id && (aiSuggestions.length > 0 || generating)
+                        ? "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background"
+                        : "border-[#ECE8E3] text-[#4A5060] dark:border-border dark:text-muted-foreground")}>
+                    {label}
                   </button>
-
-                  {/* ── Sugestões IA — redesenhadas ─────────────── */}
-                  {aiSuggestions.length > 0 && (
-                    <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
-                          {aiSuggestions.length} sugestões para vocês
-                        </p>
-                        <button
-                          className="text-[12px] font-semibold text-rose-500 active:opacity-70"
-                          onClick={handleAddAllAiChallenges}
-                        >
-                          Adicionar todas
-                        </button>
+                ))}
+              </div>
+              <div className={CARD + " mt-2.5 flex gap-3 p-3.5"}>
+                <img src={faisca} alt="" className="h-[46px] w-[46px] shrink-0" />
+                <div className="min-w-0 flex-1">
+                  {generating ? (
+                    <p className="flex items-center gap-2 py-2 text-[13.5px] text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> A pensar numa ideia…</p>
+                  ) : currentIdea ? (
+                    <div key={currentIdea.title} className="animate-in fade-in slide-in-from-right-2 duration-300">
+                      <p className="text-[14.5px] font-semibold text-foreground">{currentIdea.title}</p>
+                      {currentIdea.description && <p className="mt-0.5 text-[13px] leading-snug text-[#4A5060] dark:text-muted-foreground">{currentIdea.description}</p>}
+                      <div className="mt-2.5 flex gap-2">
+                        <button onClick={() => handleAddAiChallenge(currentIdea)} className="h-8 rounded-full bg-[#0B1324] px-3 text-[12.5px] font-semibold text-white dark:bg-foreground dark:text-background">Aceitar</button>
+                        <button onClick={nextIdea} className="h-8 rounded-full bg-[#F7F5F2] px-3 text-[12.5px] font-semibold text-[#4A5060] dark:bg-muted dark:text-muted-foreground">Outra ideia</button>
                       </div>
-                      {aiSuggestions.map((s, i) => (
-                        <div
-                          key={i}
-                          className="bg-background border border-border rounded-2xl p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300"
-                          style={{ animationDelay: `${i * 60}ms` }}
-                        >
-                          <div className="flex items-start gap-3">
-                            {/* number badge */}
-                            <div className="shrink-0 w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mt-0.5">
-                              <span className="text-[11px] font-black text-rose-500 tabular-nums">
-                                {String(i + 1).padStart(2, "0")}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-[14px] text-foreground leading-snug">{s.title}</p>
-                              {s.description && (
-                                <p className="text-[12px] text-muted-foreground mt-1.5 leading-relaxed">{s.description}</p>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => handleAddAiChallenge(s)}
-                              className="shrink-0 w-9 h-9 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background flex items-center justify-center active:scale-95 transition-all shadow-sm mt-0.5"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-[14.5px] font-semibold text-foreground">Escolham um tema</p>
+                      <p className="mt-0.5 text-[13px] text-muted-foreground">A Faísca sugere uma ideia para fazerem juntos.</p>
                     </div>
                   )}
                 </div>
               </div>
-            )}
 
-            {/* ── Criação manual (expandida) ────────────────────── */}
-            {showManual && (
-              <form
-                onSubmit={handleAddChallenge}
-                className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-200"
-              >
-                <div className="p-4 border-b border-border flex items-center justify-between">
-                  <span className="font-semibold text-[15px]">Criar desafio</span>
-                  <button
-                    type="button"
-                    onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }}
-                    className="p-1.5 rounded-lg text-muted-foreground/40 active:bg-muted transition-colors"
-                  >
-                    <X className="w-4 h-4" />
+              {!showManual ? (
+                <button onClick={() => setShowManual(true)}
+                  className="mt-2.5 flex h-[46px] w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#DED9D3] text-[13.5px] font-semibold text-[#4A5060] dark:border-border dark:text-muted-foreground">
+                  <Plus className="h-4 w-4" /> Criar o nosso próprio desafio
+                </button>
+              ) : (
+                <form onSubmit={handleAddChallenge} className={CARD + " mt-2.5 space-y-3 p-4 animate-in fade-in duration-200"}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[15px] font-semibold">O vosso desafio</span>
+                    <button type="button" onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }} aria-label="Fechar"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F5F2] text-muted-foreground dark:bg-muted"><X className="h-4 w-4" /></button>
+                  </div>
+                  <Input placeholder="Ex: Cozinhar uma receita nova juntos" value={newTitle} onChange={e => setNewTitle(e.target.value)} autoFocus
+                    className="h-12 rounded-xl border-[#ECE8E3] bg-white text-[15px] dark:border-border dark:bg-card" />
+                  <Textarea placeholder="Mais detalhes (opcional)" value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3}
+                    className="min-h-[80px] resize-none rounded-xl border-[#ECE8E3] bg-white text-[14px] dark:border-border dark:bg-card" />
+                  <button type="submit" disabled={!newTitle.trim()}
+                    className="h-11 w-full rounded-xl bg-[#0B1324] text-[14px] font-semibold text-white disabled:opacity-50 dark:bg-foreground dark:text-background">
+                    Criar desafio
                   </button>
-                </div>
-                <div className="p-4 space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-muted-foreground">
-                      O que gostariam de fazer?
-                    </label>
-                    <Input
-                      placeholder="Ex: Cozinhar uma receita nova juntos"
-                      value={newTitle}
-                      onChange={e => setNewTitle(e.target.value)}
-                      autoFocus
-                      className="h-12 rounded-xl bg-muted border-border text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-muted-foreground">
-                      Mais detalhes (opcional)
-                    </label>
-                    <Textarea
-                      placeholder="Descrevam como gostariam de viver este desafio..."
-                      value={newDesc}
-                      onChange={e => setNewDesc(e.target.value)}
-                      className="rounded-xl bg-muted border-border resize-none text-sm focus-visible:ring-rose-400/30 focus-visible:border-rose-400 min-h-[80px]"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => { setShowManual(false); setNewTitle(""); setNewDesc(""); }}
-                      className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground active:scale-[0.98] transition-all"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!newTitle.trim()}
-                      className="flex-1 h-11 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-sm font-semibold disabled:opacity-50 active:scale-[0.98] transition-all"
-                    >
-                      Criar desafio
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-
-            {/* ── Hero: O desafio de hoje ───────────────────────── */}
-            {heroChallenge && (
-              <section className="animate-in fade-in slide-in-from-bottom-3 duration-300">
-                <div className="relative bg-gradient-to-br from-rose-500 to-rose-600 rounded-3xl p-5 overflow-hidden shadow-lg">
-                  <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
-                  <div className="absolute -right-2 -bottom-12 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
-                  <div className="relative">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/75 mb-3 uppercase tracking-wide">
-                      <Target className="w-3 h-3" />
-                      O desafio de hoje
-                    </span>
-                    <h2 className="text-[19px] font-bold text-white leading-snug mb-1.5 pr-4">
-                      {heroChallenge.title}
-                    </h2>
-                    {heroChallenge.description && (
-                      <p className="text-[13px] text-white/70 mb-4 leading-relaxed line-clamp-2">
-                        {heroChallenge.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-[11px] text-white/50">
-                        Criado {format(new Date(heroChallenge.created_at), "d MMM", { locale: pt })}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDelete(heroChallenge.id)}
-                          className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/10 text-white/60 active:bg-white/20 transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setPendingComplete(heroChallenge)}
-                          className="px-5 h-9 rounded-xl bg-white text-rose-600 text-[13px] font-bold active:scale-[0.97] transition-all shadow-sm"
-                        >
-                          Concluir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* ── Stats ─────────────────────────────────────────── */}
-            {challenges.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300">
-                <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                  <Trophy className="w-5 h-5 text-rose-500 mx-auto mb-1.5" />
-                  <p className="text-2xl font-bold text-foreground">{completed.length}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Concluídos</p>
-                </div>
-                <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                  <Flame className="w-5 h-5 text-rose-500 mx-auto mb-1.5" />
-                  <p className="text-2xl font-bold text-foreground">{inProgress.length}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Em progresso</p>
-                </div>
-              </div>
-            )}
-
-            {/* ── Restantes em progresso ────────────────────────── */}
-            {remainingProgress.length > 0 && (
-              <section className="space-y-2.5 animate-in fade-in duration-300">
-                <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground px-1">
-                  Em progresso
-                </h3>
-                {remainingProgress.map(c => (
-                  <div
-                    key={c.id}
-                    className="bg-card border border-border rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-all"
-                  >
-                    <h4 className="font-semibold text-[15px] text-foreground leading-snug mb-1">{c.title}</h4>
-                    {c.description && (
-                      <p className="text-[12px] text-muted-foreground mb-3 leading-relaxed">{c.description}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-[11px] text-muted-foreground/50">
-                        Criado {format(new Date(c.created_at), "d MMM", { locale: pt })}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDelete(c.id)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/35 active:text-red-400 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setPendingComplete(c)}
-                          className="px-4 h-8 rounded-xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background text-[12px] font-semibold active:scale-[0.97] transition-all"
-                        >
-                          Concluir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </section>
-            )}
-
-            {/* ── Empty state ───────────────────────────────────── */}
-            {inProgress.length === 0 && (
-              <div className="text-center py-14 space-y-4 animate-in fade-in duration-300">
-                <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mx-auto">
-                  <Star className="w-7 h-7 text-rose-400" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <p className="font-bold text-foreground text-[16px]">Que memória vão criar hoje?</p>
-                  <p className="text-[13px] text-muted-foreground mt-1.5">
-                    Usem a IA ou escrevam o vosso próprio desafio
-                  </p>
-                </div>
-              </div>
-            )}
+                </form>
+              )}
+            </section>
           </div>
 
         ) : (
@@ -642,92 +513,25 @@ export default function Challenges() {
              TAB: HISTÓRICO
           ════════════════════════════════════════════════════ */
           <div className="space-y-4 animate-in fade-in duration-200">
-            {completed.length === 0 ? (
-              <div className="text-center py-16 space-y-4">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
-                  <Trophy className="w-7 h-7 text-muted-foreground/40" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <p className="font-bold text-foreground text-[16px]">Ainda sem memórias</p>
-                  <p className="text-[13px] text-muted-foreground mt-1.5">
-                    Os desafios concluídos aparecem aqui
-                  </p>
-                </div>
+            <div className={CARD + " flex items-center gap-3 px-4 py-3"}>
+              <img src={faisca} alt="" className="w-[52px] shrink-0" />
+              {completed.length === 0 ? (
+                <p className="text-[13.5px] text-muted-foreground">Os desafios que viverem aparecem aqui, como memórias.</p>
+              ) : (
+                <p className="text-[13px] leading-snug text-[#4A5060] dark:text-muted-foreground">
+                  <b className="mr-1 text-[24px] font-bold tracking-[-0.03em] text-foreground">{completed.length}</b>
+                  {completed.length === 1 ? "aventura vivida juntos" : "aventuras vividas juntos"}
+                  {completed[0]?.completed_at && <><br />A última foi {daysAgo(completed[0].completed_at)}.</>}
+                </p>
+              )}
+            </div>
+            {completed.length > 0 && (
+              <div className="relative pl-5">
+                <span className="absolute bottom-1.5 left-[5px] top-1.5 w-[1.5px] bg-[#ECE8E3] dark:bg-border" />
+                {[...completed].sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? "")).map(c => (
+                  <MemoryItem key={c.id} c={c} onUndo={() => handleComplete(c)} onDelete={() => handleDelete(c.id)} />
+                ))}
               </div>
-            ) : (
-              <>
-                {/* ── Contador ─────────────────────────────────── */}
-                <div className="relative bg-gradient-to-br from-green-500 to-green-600 rounded-3xl p-5 overflow-hidden shadow-lg">
-                  <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10 pointer-events-none" />
-                  <div className="relative flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-                      <Trophy className="w-7 h-7 text-white" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-semibold text-white/75 uppercase tracking-wide">
-                        Livro de Memórias
-                      </p>
-                      <p className="text-[28px] font-black text-white leading-none mt-0.5">
-                        {completed.length}
-                        <span className="text-[14px] font-semibold text-white/70 ml-2">
-                          {completed.length === 1 ? "memória" : "memórias"}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Cards de concluídos — redesenhados ──────── */}
-                <section className="space-y-3">
-                  {completed.map((c, i) => (
-                    <div
-                      key={c.id}
-                      className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in duration-200"
-                    >
-                      {/* Top bar verde */}
-                      <div className="bg-green-50 dark:bg-green-950/25 px-4 py-2.5 flex items-center justify-between border-b border-green-100 dark:border-green-900/30">
-                        <span className="text-[11px] font-semibold text-green-700 dark:text-green-400">
-                          {c.completed_at
-                            ? format(new Date(c.completed_at), "d 'de' MMMM 'de' yyyy", { locale: pt })
-                            : "Concluído"}
-                        </span>
-                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                      </div>
-
-                      <div className="p-4">
-                        <h4 className="font-bold text-[15px] text-foreground leading-snug">{c.title}</h4>
-                        {c.description && (
-                          <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">
-                            {c.description}
-                          </p>
-                        )}
-
-                        {/* Frase memorável */}
-                        <div className="mt-3 pl-3 border-l-2 border-rose-200 dark:border-rose-800">
-                          <p className="text-[12px] text-muted-foreground/70 italic leading-relaxed">
-                            {MEMORY_PHRASES[i % MEMORY_PHRASES.length]}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-3 mt-3.5">
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            className="w-7 h-7 flex items-center justify-center text-muted-foreground/25 active:text-red-400 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleComplete(c)}
-                            className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors px-1"
-                          >
-                            Desfazer
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              </>
             )}
           </div>
         )}
@@ -737,59 +541,40 @@ export default function Challenges() {
           OVERLAY: Confirmar conclusão — centrado, mais emoção
       ════════════════════════════════════════════════════════ */}
       {pendingComplete && (
-        <div
-          className="fixed inset-0 z-[90] bg-background/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-200"
-          onClick={() => setPendingComplete(null)}
-        >
-          <div
-            className="w-full max-w-sm bg-card border border-border rounded-3xl p-7 shadow-2xl animate-in zoom-in-95 duration-300 space-y-6"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Ícone com anéis */}
-            <div className="flex items-center justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 w-24 h-24 rounded-full bg-rose-100 dark:bg-rose-950/30" style={{ transform: "translate(-50%,-50%)", left: "50%", top: "50%", width: "96px", height: "96px" }} />
-                <div className="absolute rounded-full bg-rose-100/60 dark:bg-rose-900/20" style={{ width: "72px", height: "72px", left: "50%", top: "50%", transform: "translate(-50%,-50%)" }} />
-                <div className="relative w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shadow-md">
-                  <Heart className="w-8 h-8 text-rose-500" strokeWidth={1.5} />
-                </div>
-              </div>
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-[#0B1324]/35 animate-in fade-in duration-200"
+          onClick={() => !memSaving && setPendingComplete(null)}>
+          <div className="w-full max-w-md rounded-t-[28px] bg-white px-[18px] pb-[max(env(safe-area-inset-bottom,0px),22px)] pt-2.5 animate-in slide-in-from-bottom duration-300 dark:bg-card"
+            onClick={e => e.stopPropagation()}>
+            <div className="mx-auto mb-3 h-1 w-[38px] rounded-full bg-[#E6E2DD] dark:bg-border" />
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[17px] font-bold leading-snug tracking-[-0.02em] text-foreground">{pendingComplete.title}</p>
+              <button onClick={() => setPendingComplete(null)} aria-label="Fechar"
+                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#F7F5F2] text-muted-foreground dark:bg-muted"><X className="h-3.5 w-3.5" /></button>
             </div>
-
-            <div className="text-center space-y-2">
-              <h3 className="text-[21px] font-bold text-foreground leading-tight">
-                Viveram este desafio?
-              </h3>
-              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
-                Cada momento partilhado fica gravado para sempre na vossa história.
-              </p>
-            </div>
-
-            {/* Título do desafio em destaque */}
-            <div className="bg-muted/60 rounded-2xl px-4 py-3 text-center">
-              <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">
-                "{pendingComplete.title}"
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              <button
-                onClick={async () => {
-                  const c = pendingComplete;
-                  setPendingComplete(null);
-                  await handleComplete(c);
-                }}
-                className="w-full h-13 rounded-2xl bg-[#0B1324] text-white dark:bg-foreground dark:text-background font-bold text-[15px] active:scale-[0.98] transition-all py-3.5"
-              >
-                Sim, vivemos esta memória
-              </button>
-              <button
-                onClick={() => setPendingComplete(null)}
-                className="w-full py-3 rounded-2xl text-muted-foreground text-[14px] font-medium active:bg-muted transition-colors"
-              >
-                Ainda não
-              </button>
-            </div>
+            <p className="mb-2 mt-4 text-[12.5px] font-semibold text-muted-foreground">Como foi? (opcional)</p>
+            <Textarea value={memNote} onChange={e => setMemNote(e.target.value)} placeholder="Uma frase para se lembrarem…" rows={3} maxLength={280}
+              className="min-h-[72px] resize-none rounded-[14px] border-[#ECE8E3] bg-white text-[14px] dark:border-border dark:bg-card" />
+            <p className="mb-2 mt-4 text-[12.5px] font-semibold text-muted-foreground">Foto do momento (opcional)</p>
+            <label className="relative flex h-[52px] cursor-pointer items-center gap-2.5 rounded-2xl border border-dashed border-[#DED9D3] px-3.5 text-[13.5px] font-semibold text-[#4A5060] dark:border-border dark:text-muted-foreground">
+              {memPreparing ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <ImagePlus className="h-[18px] w-[18px]" strokeWidth={1.7} />}
+              <span className="truncate">{memPreparing ? "A preparar a foto…" : memPhoto ? memPhoto.name : "Juntar uma foto"}</span>
+              {!memPreparing && (
+                <input type="file" accept="image/*" className="sr-only" onChange={e => {
+                  const f = e.target.files?.[0]; e.target.value = "";
+                  if (!f) return;
+                  setMemPreparing(true);
+                  toJpegIfHeic(f).then(setMemPhoto, () => setMemPhoto(f)).finally(() => setMemPreparing(false));
+                }} />
+              )}
+            </label>
+            <p className="mt-3.5 text-[12.5px] leading-relaxed text-muted-foreground">O vosso par recebe um aviso e a memória fica no histórico dos dois.</p>
+            <button onClick={saveMemory} disabled={memSaving || memPreparing}
+              className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0B1324] text-[15px] font-semibold text-white disabled:opacity-60 dark:bg-foreground dark:text-background">
+              {memSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" strokeWidth={2.4} />}
+              Sim, vivemos isto
+            </button>
+            <button onClick={() => setPendingComplete(null)} disabled={memSaving}
+              className="mt-1 h-[42px] w-full text-[14px] font-semibold text-muted-foreground">Ainda não</button>
           </div>
         </div>
       )}
@@ -854,6 +639,43 @@ export default function Challenges() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Apoio ─────────────────────────────────────────────────── */
+
+const CARD = "rounded-[22px] border border-[#ECE8E3] bg-white shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border dark:bg-card";
+
+function daysAgo(iso?: string | null) {
+  if (!iso) return "";
+  const d = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+  if (d === 0) return "hoje";
+  if (d === 1) return "ontem";
+  if (d < 30) return `há ${d} dias`;
+  const m = Math.floor(d / 30);
+  return `há ${m} ${m === 1 ? "mês" : "meses"}`;
+}
+
+function MemoryItem({ c, onUndo, onDelete }: { c: any; onUndo: () => void; onDelete: () => void }) {
+  const photo = usePhotoUrl(c.memory_photo ?? null);
+  return (
+    <div className="relative pb-5">
+      <span className="absolute -left-[19px] top-[5px] h-[9px] w-[9px] rounded-full bg-[#0B1324] ring-[3px] ring-white dark:bg-foreground dark:ring-background" />
+      <p className="text-[12px] font-medium text-muted-foreground">
+        {c.completed_at ? format(new Date(c.completed_at), "d 'de' MMMM 'de' yyyy", { locale: pt }) : "Vivido"}
+      </p>
+      <p className="mt-0.5 text-[15px] font-semibold leading-snug text-foreground">{c.title}</p>
+      {c.memory_note && <p className="mt-1 text-[13px] text-[#4A5060] dark:text-muted-foreground">"{c.memory_note}"</p>}
+      {c.memory_photo && (
+        <div className="mt-2 h-[120px] overflow-hidden rounded-[14px] bg-muted">
+          {photo && <img src={photo} alt="" className="h-full w-full object-cover" />}
+        </div>
+      )}
+      <div className="mt-1.5 flex gap-3">
+        <button onClick={onUndo} className="text-[11.5px] font-medium text-muted-foreground/60">Desfazer</button>
+        <button onClick={onDelete} className="text-[11.5px] font-medium text-muted-foreground/60">Apagar</button>
+      </div>
     </div>
   );
 }
