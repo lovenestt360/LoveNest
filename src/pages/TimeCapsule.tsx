@@ -5,7 +5,7 @@ import { format, isPast, differenceInDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
   Lock, Unlock, Plus, Loader2, Trash2,
-  Clock, Sparkles, X, ImageIcon, CheckCircle2, ChevronRight, Heart,
+  Clock, Sparkles, X, ImageIcon, CheckCircle2, ChevronRight, Heart, Mail, CalendarDays,
 } from "lucide-react";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import { hapticCelebrate, hapticLight, hapticSuccess } from "@/lib/haptic";
@@ -21,6 +21,8 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { cn } from "@/lib/utils";
 import { signedMediaUrl } from "@/lib/privateMedia";
 import { toJpegIfHeic } from "@/lib/heic";
+import { useTimeTogether } from "@/hooks/useTimeTogether";
+import faisca from "@/assets/flame/flame_01_faisca_thumb.png";
 
 function hasSeenReveal(userId: string, capsuleId: string): boolean {
   try { return (JSON.parse(localStorage.getItem(`ln_cap_rev_seen_${userId}`) ?? "[]") as string[]).includes(capsuleId); }
@@ -61,6 +63,8 @@ export default function TimeCapsule() {
   const unlockDate = (unlockDay && unlockMonth && unlockYear)
     ? `${unlockYear}-${unlockMonth.padStart(2, "0")}-${unlockDay.padStart(2, "0")}`
     : "";
+  const [customDate, setCustomDate] = useState(false);
+  const time = useTimeTogether();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preparingImage, setPreparingImage] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -230,6 +234,7 @@ export default function TimeCapsule() {
     return "ready";
   };
 
+  const authorOf = (c: any) => (c.creator_id === user?.id ? "Tu" : partnerName);
   const ready    = capsules.filter(c => capsuleType(c) === "ready");
   const locked   = capsules.filter(c => capsuleType(c) === "locked");
   const revealed = capsules.filter(c => capsuleType(c) === "revealed");
@@ -271,40 +276,32 @@ export default function TimeCapsule() {
             </div>
           ) : (
             <>
-              {ready.length > 0 && (
-                <section className="space-y-2">
-                  <SectionLabel icon={<Sparkles className="h-3 w-3 text-rose-400" strokeWidth={1.5} />}>
-                    Prontas a abrir
-                  </SectionLabel>
-                  {ready.map(c => (
-                    <CapsuleRow key={c.id} c={c} type="ready" userId={user?.id}
-                      onTap={() => setSelectedCapsule(c)}
-                      onDelete={() => setConfirmDeleteId(c.id)} />
-                  ))}
-                </section>
+              {locked[0] && (
+                <NextCapsuleCard c={locked[0]} author={authorOf(locked[0])} onTap={() => setSelectedCapsule(locked[0])} />
               )}
+              {ready.map(c => (
+                <ReadyCard key={c.id} c={c} author={authorOf(c)} mine={c.creator_id === user?.id} onTap={() => setSelectedCapsule(c)} />
+              ))}
               {locked.length > 0 && (
-                <section className="space-y-2">
-                  <SectionLabel icon={<Lock className="h-3 w-3 text-violet-400" strokeWidth={1.5} />}>
-                    A aguardar
-                  </SectionLabel>
-                  {locked.map(c => (
-                    <CapsuleRow key={c.id} c={c} type="locked" userId={user?.id}
-                      onTap={() => setSelectedCapsule(c)}
-                      onDelete={() => setConfirmDeleteId(c.id)} />
-                  ))}
+                <section>
+                  <SectionLabel>A aguardar</SectionLabel>
+                  <div className="mt-2 rounded-[22px] border border-[#ECE8E3] bg-white px-3.5 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border dark:bg-card">
+                    {locked.map(c => (
+                      <CapsuleRow key={c.id} c={c} type="locked" author={authorOf(c)} userId={user?.id}
+                        onTap={() => setSelectedCapsule(c)} onDelete={() => setConfirmDeleteId(c.id)} />
+                    ))}
+                  </div>
                 </section>
               )}
               {revealed.length > 0 && (
-                <section className="space-y-2">
-                  <SectionLabel icon={<Unlock className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />}>
-                    Reveladas
-                  </SectionLabel>
-                  {revealed.map(c => (
-                    <CapsuleRow key={c.id} c={c} type="revealed" userId={user?.id}
-                      onTap={() => setSelectedCapsule(c)}
-                      onDelete={() => setConfirmDeleteId(c.id)} />
-                  ))}
+                <section>
+                  <SectionLabel>Abertas</SectionLabel>
+                  <div className="mt-2 rounded-[22px] border border-[#ECE8E3] bg-white px-3.5 shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border dark:bg-card">
+                    {revealed.map(c => (
+                      <CapsuleRow key={c.id} c={c} type="revealed" author={authorOf(c)} userId={user?.id}
+                        onTap={() => setSelectedCapsule(c)} onDelete={() => setConfirmDeleteId(c.id)} />
+                    ))}
+                  </div>
                 </section>
               )}
             </>
@@ -330,7 +327,7 @@ export default function TimeCapsule() {
         <RevealedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} />
       )}
       {selectedCapsule && revealPhase === "idle" && capsuleType(selectedCapsule) === "locked" && (
-        <LockedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} />
+        <LockedDetailView capsule={selectedCapsule} onClose={handleCloseDetail} author={authorOf(selectedCapsule)} />
       )}
 
       {/* ── CREATE SHEET ───────────────────────────────── */}
@@ -350,10 +347,29 @@ export default function TimeCapsule() {
               )}
             </div>
             <form onSubmit={handleCreate} className="space-y-3">
-              <div className="bg-[#F7F5F2] border border-[#ECE8E3] rounded-[18px] divide-y divide-[#ECE8E3] dark:bg-muted dark:border-border dark:divide-border/50">
-                <div className="px-4 py-3 flex items-start gap-3">
-                  <p className="text-[13px] font-semibold text-foreground shrink-0 mt-[5px]">Abre em</p>
-                  <div className="flex-1 flex items-center justify-end gap-1.5">
+              <div>
+                <p className="mb-2 text-[12.5px] font-semibold text-muted-foreground">Quando abre?</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {DATE_SHORTCUTS(time.startDate).map(sc => {
+                    const on = !customDate && unlockDate === toIso(sc.date);
+                    return (
+                      <button key={sc.label} type="button"
+                        onClick={() => { setCustomDate(false); setUnlockDay(String(sc.date.getDate())); setUnlockMonth(String(sc.date.getMonth() + 1)); setUnlockYear(String(sc.date.getFullYear())); }}
+                        className={cn("h-[34px] rounded-full border px-3 text-[13px] font-semibold transition-colors",
+                          on ? "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background" : "border-[#ECE8E3] text-[#4A5060] dark:border-border dark:text-muted-foreground")}>
+                        {sc.label}
+                      </button>
+                    );
+                  })}
+                  <button type="button" onClick={() => setCustomDate(true)}
+                    className={cn("inline-flex h-[34px] items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors",
+                      customDate ? "border-[#0B1324] bg-[#0B1324] text-white dark:border-foreground dark:bg-foreground dark:text-background" : "border-[#ECE8E3] text-[#4A5060] dark:border-border dark:text-muted-foreground")}>
+                    <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.8} /> Outra data
+                  </button>
+                </div>
+                {customDate && (
+                  <div className="mt-2 flex items-center gap-1.5 rounded-[14px] bg-[#F7F5F2] px-3 py-2.5 dark:bg-muted">
+                    <div className="flex-1 flex items-center justify-end gap-1.5">
                     {/* Dia */}
                     <select value={unlockDay} onChange={e => setUnlockDay(e.target.value)}
                       className="appearance-none bg-white dark:bg-card border border-[#ECE8E3] dark:border-border rounded-xl px-2 py-1.5 text-sm text-foreground outline-none cursor-pointer text-center min-w-[44px]">
@@ -379,14 +395,23 @@ export default function TimeCapsule() {
                       ))}
                     </select>
                   </div>
-                </div>
+                  </div>
+                )}
+                {unlockDate && (
+                  <div className="mt-2 flex items-center gap-2.5 rounded-[14px] bg-[#F7F5F2] px-3.5 py-2.5 text-[13.5px] dark:bg-muted">
+                    <Lock className="h-4 w-4 shrink-0" strokeWidth={1.7} />
+                    <b className="font-semibold">Abre a {format(new Date(`${unlockDate}T00:00:00`), "d 'de' MMMM 'de' yyyy", { locale: pt })}</b>
+                  </div>
+                )}
+              </div>
+              <div className="bg-white border border-[#ECE8E3] rounded-[18px] divide-y divide-[#ECE8E3] dark:bg-card dark:border-border dark:divide-border/50">
                 <div className="px-4 py-3 space-y-1">
-                  <p className="text-[13px] font-semibold text-foreground">Mensagem</p>
+                  <p className="text-[12.5px] font-semibold text-muted-foreground">A mensagem</p>
                   <Textarea
-                    placeholder="Escreve para o vosso eu do futuro..."
+                    placeholder="Quando leres isto…"
                     value={newMessage} onChange={e => setNewMessage(e.target.value)}
-                    rows={3} required
-                    className="bg-transparent border-none p-0 resize-none text-sm focus-visible:ring-0 placeholder:text-muted-foreground/50" />
+                    rows={4} required
+                    className="bg-transparent border-none p-0 resize-none text-[15px] leading-relaxed focus-visible:ring-0 placeholder:text-muted-foreground/50" />
                 </div>
                 <div className="px-4 py-2.5 flex items-center gap-3">
                   <div className="relative flex-1 flex items-center gap-3 cursor-pointer active:opacity-70 transition-opacity">
@@ -474,74 +499,126 @@ function DeleteCell({ capsuleId, userId, creatorId, onDelete }: {
   );
 }
 
-/* ── Compact list rows ────────────────────────────────────── */
+/* ── Lista: cartões e linhas ─────────────────────────────── */
 
-function CapsuleRow({ c, type, userId, onTap, onDelete }: {
-  c: any; type: "ready" | "locked" | "revealed"; userId?: string;
+const CARD = "rounded-[22px] border border-[#ECE8E3] bg-white shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:border-border dark:bg-card";
+const TILE = "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F7F5F2] text-[#0B1324] dark:bg-muted dark:text-foreground";
+
+function toIso(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Atalhos de data: 1 mês, 6 meses, 1 ano e o próximo aniversário da relação. */
+function DATE_SHORTCUTS(startDate: string | null): { label: string; date: Date }[] {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const plus = (m: number) => { const d = new Date(today); d.setMonth(d.getMonth() + m); return d; };
+  const list = [{ label: "1 mês", date: plus(1) }, { label: "6 meses", date: plus(6) }, { label: "1 ano", date: plus(12) }];
+  if (startDate) {
+    const s = new Date(`${startDate}T00:00:00`);
+    const next = new Date(today.getFullYear(), s.getMonth(), s.getDate());
+    if (next <= today) next.setFullYear(next.getFullYear() + 1);
+    list.push({ label: "Aniversário", date: next });
+  }
+  return list;
+}
+
+/** "há 6 meses", "há 12 dias" */
+function agoLabel(iso?: string | null) {
+  if (!iso) return "";
+  const d = Math.max(0, differenceInDays(new Date(), new Date(iso)));
+  if (d < 1) return "hoje";
+  if (d < 30) return `há ${d} ${d === 1 ? "dia" : "dias"}`;
+  if (d < 365) { const m = Math.floor(d / 30); return `há ${m} ${m === 1 ? "mês" : "meses"}`; }
+  const y = Math.floor(d / 365); return `há ${y} ${y === 1 ? "ano" : "anos"}`;
+}
+
+function untilLabel(days: number) {
+  if (days <= 0) return "Hoje";
+  if (days < 60) return `${days} ${days === 1 ? "dia" : "dias"}`;
+  if (days < 330) return `${Math.round(days / 30)} meses`;
+  const y = Math.round(days / 365); return `${y} ${y === 1 ? "ano" : "anos"}`;
+}
+
+function NextCapsuleCard({ c, author, onTap }: { c: any; author: string; onTap: () => void }) {
+  const unlock = new Date(c.unlock_date);
+  const days = Math.max(0, differenceInDays(unlock, new Date()));
+  const created = c.created_at ? new Date(c.created_at).getTime() : Date.now();
+  const total = Math.max(1, unlock.getTime() - created);
+  const pct = Math.min(100, Math.max(3, ((Date.now() - created) / total) * 100));
+  return (
+    <button type="button" onClick={onTap} className={cn(CARD, "relative block w-full overflow-hidden px-4 pb-3.5 pt-4 text-left active:scale-[0.99] transition-transform")}>
+      <img src={faisca} alt="" className="pointer-events-none absolute right-1.5 top-2 w-[76px] animate-[ln-bob_3.6s_ease-in-out_infinite]" />
+      <p className="text-[12px] font-semibold text-muted-foreground">A próxima abre em</p>
+      <p className="mt-1.5 flex items-baseline gap-2">
+        <b className="text-[40px] font-bold leading-none tracking-[-0.04em] tabular-nums text-foreground">{days}</b>
+        <span className="text-[14px] text-[#4A5060] dark:text-muted-foreground">{days === 1 ? "dia" : "dias"}</span>
+      </p>
+      <p className="mt-1 text-[13px] text-[#4A5060] dark:text-muted-foreground">
+        {format(unlock, "d 'de' MMMM", { locale: pt })} · {author === "Tu" ? "tua" : `do ${author}`}
+      </p>
+      <div className="relative mt-3.5 h-1 rounded-full bg-[#F0EDE9] dark:bg-muted">
+        <i className="absolute inset-y-0 left-0 rounded-full bg-[#0B1324] dark:bg-foreground" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="mt-1.5 flex justify-between text-[11.5px] text-muted-foreground">
+        <span>{c.created_at ? `Selada a ${format(new Date(c.created_at), "d 'de' MMMM", { locale: pt })}` : "Selada"}</span>
+        <span>{Math.round(pct)}% do caminho</span>
+      </div>
+    </button>
+  );
+}
+
+function ReadyCard({ c, author, mine, onTap }: { c: any; author: string; mine: boolean; onTap: () => void }) {
+  return (
+    <button type="button" onClick={onTap} className={cn(CARD, "flex w-full items-center gap-3 px-3.5 py-3 text-left active:scale-[0.99] transition-transform")}>
+      <span className={cn(TILE, "relative")}>
+        <Unlock className="h-5 w-5" strokeWidth={1.7} />
+        <span className="absolute right-1.5 top-1.5 h-[7px] w-[7px] rounded-full bg-[#E5466D] ring-2 ring-[#F7F5F2] dark:ring-muted" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14.5px] font-semibold text-foreground">Uma cápsula está pronta</span>
+        <span className="block text-[12.5px] text-muted-foreground">
+          {mine ? "Guardaste-a" : `${author} guardou-a`} {agoLabel(c.created_at)}
+        </span>
+      </span>
+      <span className="h-[34px] rounded-full bg-[#0B1324] px-3.5 text-[13px] font-semibold leading-[34px] text-white dark:bg-foreground dark:text-background">Abrir</span>
+    </button>
+  );
+}
+
+function CapsuleRow({ c, type, author, userId, onTap, onDelete }: {
+  c: any; type: "locked" | "revealed"; author: string; userId?: string;
   onTap: () => void; onDelete: () => void;
 }) {
   const unlockDateObj = new Date(c.unlock_date);
   const daysDiff = Math.max(0, differenceInDays(unlockDateObj, new Date()));
 
-  if (type === "ready") return (
-    <div onClick={onTap}
-      className="flex items-center gap-3 px-4 py-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/40 rounded-[18px] active:opacity-75 transition-opacity cursor-pointer">
-      <div className="w-9 h-9 rounded-full bg-white dark:bg-card border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shrink-0 shadow-sm">
-        <Unlock className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-rose-500 leading-tight">O momento chegou</p>
-        <p className="text-[12px] text-muted-foreground leading-tight mt-0.5 truncate">
-          {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
-        </p>
-      </div>
-      <span className="shrink-0 text-[10px] font-bold text-white bg-rose-500 px-2.5 py-1 rounded-full">
-        Revelar
+  if (type === "locked") return (
+    <div onClick={onTap} className="flex cursor-pointer items-center gap-3 border-b border-[#F0EDE9] py-3 last:border-b-0 active:opacity-75 dark:border-border/60">
+      <span className={TILE}><Lock className="h-[18px] w-[18px]" strokeWidth={1.7} /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14.5px] font-semibold text-foreground">{author === "Tu" ? "A tua cápsula" : `Do ${author}`}</span>
+        <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground">Abre a {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}</span>
+      </span>
+      <span className="shrink-0 rounded-full bg-[#F7F5F2] px-2.5 py-1 text-[12px] font-semibold tabular-nums text-[#4A5060] dark:bg-muted dark:text-muted-foreground">
+        {untilLabel(daysDiff)}
       </span>
       <DeleteCell capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
     </div>
   );
 
-  if (type === "locked") {
-    const label = daysDiff === 0 ? "Hoje" : daysDiff === 1 ? "1 dia" : `${daysDiff} dias`;
-    return (
-      <div onClick={onTap}
-        className="flex items-center gap-3 px-4 py-3 rounded-[18px] bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border active:opacity-75 transition-opacity cursor-pointer">
-        <div className="w-9 h-9 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/40 flex items-center justify-center shrink-0">
-          <Lock className="w-4 h-4 text-violet-400" strokeWidth={1.5} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] text-foreground truncate">
-            {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
-          </p>
-        </div>
-        <span className="shrink-0 text-[10px] font-bold text-violet-500 bg-violet-50 dark:bg-violet-950/40 px-2.5 py-1 rounded-full border border-violet-100 dark:border-violet-900/40">
-          {label}
-        </span>
-        <DeleteCell capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
-      </div>
-    );
-  }
-
-  // revealed
   const isImg = c.image_url && !/\.(mp4|webm|mov)(\?|$)/i.test(c.image_url);
   return (
-    <div onClick={onTap}
-      className="flex items-center gap-3 px-4 py-3 rounded-[18px] bg-white border border-[#ECE8E3] shadow-[0_1px_2px_rgba(11,19,36,0.04),0_10px_28px_-14px_rgba(11,19,36,0.16)] dark:bg-card dark:border-border active:opacity-75 transition-opacity cursor-pointer">
-      {isImg ? (
-        <img src={c.image_url} alt="" className="w-9 h-9 rounded-xl object-cover shrink-0 border border-border/40" />
-      ) : (
-        <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center shrink-0">
-          <CheckCircle2 className="w-4 h-4 text-rose-400" strokeWidth={1.5} />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-muted-foreground leading-tight">
-          {format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt })}
-        </p>
-        <p className="text-xs text-foreground truncate leading-tight">{c.message}</p>
-      </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
+    <div onClick={onTap} className="flex cursor-pointer items-center gap-3 border-b border-[#F0EDE9] py-3 last:border-b-0 active:opacity-75 dark:border-border/60">
+      {isImg
+        ? <img src={c.image_url} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
+        : <span className={TILE}><Mail className="h-[18px] w-[18px]" strokeWidth={1.7} /></span>}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14.5px] font-semibold text-foreground">{c.message}</span>
+        <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground">
+          {author === "Tu" ? "Tua" : `Do ${author}`} · aberta a {format(unlockDateObj, "d 'de' MMMM", { locale: pt })}
+        </span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" strokeWidth={1.5} />
       <DeleteCell capsuleId={c.id} userId={userId} creatorId={c.creator_id} onDelete={onDelete} />
     </div>
   );
@@ -1099,80 +1176,59 @@ function RevealedDetailView({ capsule, onClose }: { capsule: any; onClose: () =>
   );
 }
 
-function LockedDetailView({ capsule, onClose }: { capsule: any; onClose: () => void }) {
+function LockedDetailView({ capsule, onClose, author }: { capsule: any; onClose: () => void; author: string }) {
   const unlockDateObj = new Date(capsule.unlock_date);
-  const daysDiff = Math.max(0, differenceInDays(unlockDateObj, new Date()));
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(id); }, []);
+  const left = Math.max(0, unlockDateObj.getTime() - now);
+  const d = Math.floor(left / 86_400_000);
+  const h = Math.floor((left % 86_400_000) / 3_600_000);
+  const m = Math.floor((left % 3_600_000) / 60_000);
   const date = format(unlockDateObj, "d 'de' MMMM 'de' yyyy", { locale: pt });
 
   return createPortal(
-    <div style={{ ...PORTAL_BASE, background: "#04020e" }}>
-
-      {/* Glow suave — não tapa conteúdo */}
-      <div style={{
-        position: "absolute", top: "26%", left: "50%",
-        transform: "translateX(-50%)",
-        width: 240, height: 240, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(139,92,246,0.20) 0%, transparent 70%)",
-        filter: "blur(52px)", pointerEvents: "none",
-      }} />
-
-      <button onClick={onClose}
-        style={{
-          position: "absolute", top: 16, right: 16, zIndex: 2,
-          width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
-          background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-        <X size={18} color="rgba(255,255,255,0.65)" strokeWidth={1.5} />
+    <div style={{ ...PORTAL_BASE }} className="bg-white dark:bg-background">
+      <button onClick={onClose} aria-label="Fechar"
+        className="absolute right-4 top-[calc(env(safe-area-inset-top)+16px)] z-[2] flex h-10 w-10 items-center justify-center rounded-full bg-[#F7F5F2] text-muted-foreground dark:bg-muted">
+        <X className="h-4 w-4" strokeWidth={2} />
       </button>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
+      <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+        <p className="text-[12px] font-semibold text-muted-foreground">Cápsula selada</p>
+        <h2 className="mt-1.5 text-[22px] font-bold leading-tight tracking-[-0.025em] text-foreground">
+          {author === "Tu" ? "A tua cápsula" : `Do ${author}, para os dois`}
+        </h2>
+        {capsule.created_at && (
+          <p className="mt-1.5 text-[13px] text-muted-foreground">Guardada a {format(new Date(capsule.created_at), "d 'de' MMMM", { locale: pt })}</p>
+        )}
 
-        {/* Aneis + ícone */}
-        <div style={{ position: "relative", width: 148, height: 148,
-          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%",
-            border: "1px solid rgba(139,92,246,0.16)",
-            animation: "capsule-ring 3.6s ease-in-out infinite" }} />
-          <div style={{ position: "absolute", inset: 16, borderRadius: "50%",
-            border: "1px solid rgba(139,92,246,0.24)",
-            animation: "capsule-ring 3.6s ease-in-out infinite 0.7s" }} />
-          <div style={{
-            position: "relative", zIndex: 1, width: 80, height: 80, borderRadius: "50%",
-            background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.28)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "capsule-float 4s ease-in-out infinite",
-          }}>
-            <Lock size={34} color="rgba(196,181,253,0.90)" strokeWidth={1} />
-          </div>
+        <div className="relative mt-5 flex h-[190px] w-[190px] items-center justify-center">
+          <span className="absolute inset-[18px] rounded-full" style={{ background: "radial-gradient(circle, rgba(255,107,157,.14), transparent 68%)" }} />
+          <img src={faisca} alt="A Faísca a guardar a cápsula" className="relative w-[150px] animate-[ln-bob_3.6s_ease-in-out_infinite]" />
+          <span className="absolute bottom-[30px] right-[26px] flex h-10 w-10 items-center justify-center rounded-[13px] bg-white text-[#0B1324] shadow-[0_6px_16px_-8px_rgba(11,19,36,0.4)] ring-1 ring-[#ECE8E3] dark:bg-card dark:text-foreground dark:ring-border">
+            <Lock className="h-5 w-5" strokeWidth={1.7} />
+          </span>
         </div>
+        <p className="relative mt-1 rounded-[14px] bg-[#F7F5F2] px-3.5 py-2 text-[13px] font-medium text-foreground dark:bg-muted">
+          Ainda não! Eu guardo até ao dia.
+        </p>
 
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
-          color: "rgba(167,139,250,0.45)", marginBottom: 14,
-          animation: "capsule-fade-up 600ms 80ms both ease" }}>
-          Esta memória ainda não está pronta
-        </p>
-        <p style={{ fontSize: 88, fontWeight: 800, color: "#fff", lineHeight: 1,
-          marginBottom: 4, animation: "capsule-fade-up 600ms 180ms both ease" }}>
-          {daysDiff}
-        </p>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.30)", marginBottom: 12,
-          animation: "capsule-fade-up 600ms 260ms both ease" }}>
-          dia{daysDiff !== 1 ? "s" : ""} até poder ser aberta
-        </p>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.16)",
-          animation: "capsule-fade-up 600ms 340ms both ease" }}>
-          {date}
+        <div className="mt-5 flex gap-2" aria-label={`Faltam ${d} dias, ${h} horas e ${m} minutos`}>
+          {[[d, "dias"], [h, "horas"], [m, "min"]].map(([v, l]) => (
+            <div key={l as string} className="w-[70px] rounded-2xl border border-[#ECE8E3] py-2.5 dark:border-border">
+              <b className="block text-[24px] font-bold tracking-[-0.03em] tabular-nums text-foreground">{String(v).padStart(2, "0")}</b>
+              <small className="text-[11px] font-semibold text-muted-foreground">{l}</small>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
+          Abre a {date}.<br />Avisamos os dois quando faltarem poucos dias.
         </p>
       </div>
 
-      <div style={{ padding: "0 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),44px)" }}>
+      <div style={{ padding: "0 24px", paddingBottom: "max(env(safe-area-inset-bottom,0px),32px)" }}>
         <button onClick={onClose}
-          style={{
-            width: "100%", height: 48, borderRadius: 24, border: "none", cursor: "pointer",
-            background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.40)",
-            fontWeight: 600, fontSize: 14,
-          }}>
+          className="h-[50px] w-full rounded-2xl bg-[#F7F5F2] text-[15px] font-semibold text-foreground dark:bg-muted">
           Fechar
         </button>
       </div>
