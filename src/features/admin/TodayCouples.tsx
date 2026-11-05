@@ -15,7 +15,7 @@ const GHOST = "h-[34px] shrink-0 whitespace-nowrap rounded-full bg-[#F7F5F2] px-
 const TIER: Record<number, string> = { 1: "Plus", 2: "Pro", 3: "Max" };
 const BILLING: Record<string, string> = { monthly: "Mensal", semiannual: "Semestral", annual: "Anual", lifetime: "Vitalício" };
 
-type Status = "paid" | "trial" | "none" | "solo";
+type Status = "paid" | "trial" | "none";
 
 export interface AdminData {
   houses: any[];
@@ -27,8 +27,10 @@ export interface AdminData {
 
 const d = (iso?: string | null, f = "d MMM") => (iso ? format(new Date(iso), f, { locale: pt }) : "");
 
+/** Casa com uma só pessoa. É uma nota à parte: não esconde o plano. */
+const isSolo = (h: any) => (h.members?.length ?? 0) < 2;
+
 function statusOf(h: any): Status {
-  if ((h.members?.length ?? 0) < 2) return "solo";
   const now = Date.now();
   if (h.subscription_status === "active" && (!h.subscription_ends_at || new Date(h.subscription_ends_at).getTime() > now)) return "paid";
   if (h.trial_ends_at && new Date(h.trial_ends_at).getTime() > now) return "trial";
@@ -162,8 +164,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
   const [days, setDays] = useState(15);
 
   const list = data.houses.filter(h => {
-    const s = statusOf(h);
-    if (filter !== "all" && s !== filter) return false;
+    if (filter === "solo" ? !isSolo(h) : filter !== "all" && statusOf(h) !== filter) return false;
     if (!q.trim()) return true;
     const hay = (coupleName(h) + " " + people(h).map((p: any) => `${p.display_name ?? ""} ${p.email ?? ""}`).join(" ")).toLowerCase();
     return hay.includes(q.trim().toLowerCase());
@@ -208,15 +209,15 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
       return <span className="rounded-full bg-[#EEF3FF] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#3557C8]">{TIER[planOf(x, data.plans)?.tier_level] ?? "Pago"}</span>;
     }
     if (s === "trial") return <span className="rounded-full bg-[#F7F5F2] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#4A5060]">Experiência</span>;
-    if (s === "solo") return <span className="rounded-full bg-[#F7F5F2] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#4A5060]">Sem par</span>;
+    if (isSolo(x)) return <span className="rounded-full bg-[#F7F5F2] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#4A5060]">Sem par</span>;
     return <span className="rounded-full bg-[#F7F5F2] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#4A5060]">Sem plano</span>;
   };
   const subtitle = (x: any) => {
     const s = statusOf(x);
-    if (s === "paid") return `${planOf(x, data.plans)?.name ?? "Plano"}${x.subscription_ends_at ? ` · até ${d(x.subscription_ends_at)}` : " · vitalício"}`;
-    if (s === "trial") return `Experiência até ${d(x.trial_ends_at)}`;
-    if (s === "solo") return "Ainda não convidou o par";
-    return "Sem plano";
+    const solo = isSolo(x) ? " · ainda sem par" : "";
+    if (s === "paid") return `${planOf(x, data.plans)?.name ?? "Plano"}${x.subscription_ends_at ? ` · até ${d(x.subscription_ends_at)}` : " · vitalício"}${solo}`;
+    if (s === "trial") return `Experiência até ${d(x.trial_ends_at)}${solo}`;
+    return isSolo(x) ? "Ainda não convidou o par" : "Sem plano";
   };
 
   return (
