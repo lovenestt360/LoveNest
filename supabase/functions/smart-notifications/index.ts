@@ -148,6 +148,47 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+type Msg = { title: string; body: string };
+
+// O acontecimento vem de love_shields.last_event (ver fn_settle_streak).
+function flameEventMessage(e: any, isSolo: boolean): Msg | null {
+  const days = Number(e?.days) || 0;
+
+  if (e?.kind === "flame_lost") {
+    const past = days === 1 ? "Foi um dia lindo." : `Foram ${days} dias lindos.`;
+    return isSolo
+      ? { title: "A chama apagou-se, tu não", body: `${past} Basta uma faísca para recomeçar: volta hoje.` }
+      : { title: "A chama apagou-se, o amor não", body: `${past} Basta uma faísca para recomeçar: voltem hoje.` };
+  }
+
+  if (e?.kind !== "shield_used") return null;
+
+  const left = Number(e.left) || 0;
+  if (left === 0) {
+    return isSolo
+      ? { title: "A tua chama está por um fio", body: "Usaste o último escudo do mês. Hoje, aparece!" }
+      : { title: "A vossa chama está por um fio", body: "Usaram o último escudo do mês. Hoje, apareçam os dois!" };
+  }
+
+  const used = Number(e.used) || 1;
+  const saved = used === 1 ? "Um escudo salvou" : `${used} escudos salvaram`;
+  const streak = isSolo
+    ? (days === 1 ? "o teu primeiro dia" : `os teus ${days} dias`)
+    : (days === 1 ? "o vosso primeiro dia" : `os vossos ${days} dias`);
+  const remaining = left === 1 ? "Resta 1." : `Restam ${left}.`;
+  return isSolo
+    ? { title: "Ufa! A tua chama sobreviveu", body: `${saved} ${streak}. ${remaining} Hoje é contigo!` }
+    : { title: "Ufa! A vossa chama sobreviveu", body: `${saved} ${streak}. ${remaining} Hoje é convosco!` };
+}
+
+function trialEndingMessage(daysLeft: number, isSolo: boolean): Msg {
+  const title = daysLeft === 1 ? "Só mais 1 dia com tudo aberto" : `Só mais ${daysLeft} dias com tudo aberto`;
+  return {
+    title,
+    body: isSolo ? "Escolhe o teu plano e continua, sem parar." : "Escolham o vosso plano e continuem juntos, sem parar.",
+  };
+}
+
 const COOLDOWNS: Record<string, number> = {
   silent_day: 16, partner_active: 8, flame_risk: 8,
   perfect_day: 20, milestone: 168, capsule_soon: 48, wrapped_ready: 72,
@@ -206,7 +247,7 @@ Deno.serve(async (req) => {
 
     const { data: spaces, error: err } = await sb
       .from("couple_spaces")
-      .select("id, streak_count, last_streak_date, members(user_id)");
+      .select("id, streak_count, last_streak_date, trial_ends_at, subscription_status, subscription_ends_at, is_suspended, members(user_id)");
     if (err) throw err;
 
     for (const space of (spaces || [])) {
@@ -247,6 +288,21 @@ Deno.serve(async (req) => {
         .eq("month", now.getMonth() + 1).eq("year", now.getFullYear())
         .maybeSingle();
 
+      const { data: shieldRow } = await sb
+        .from("love_shields").select("last_event")
+        .eq("couple_space_id", spaceId)
+        .maybeSingle();
+      const flameEvent = (shieldRow as any)?.last_event ?? null;
+      const flameEventIsFresh = !!flameEvent?.at && nowMs - new Date(flameEvent.at).getTime() < 86400000;
+
+      const trialEndsAt: string | null = (space as any).trial_ends_at ?? null;
+      const trialMsLeft = trialEndsAt ? new Date(trialEndsAt).getTime() - nowMs : 0;
+      const subEndsAt: string | null = (space as any).subscription_ends_at ?? null;
+      const isPaid = (space as any).subscription_status === "active"
+        && (!subEndsAt || new Date(subEndsAt).getTime() > nowMs);
+      const trialEnding = !isPaid && trialMsLeft > 0 && trialMsLeft <= 3 * 86400000;
+      const isSuspended = (space as any).is_suspended === true;
+
       for (const member of members) {
         const userId  = member.user_id;
         const partner = members.find((m: any) => m.user_id !== userId);
@@ -274,6 +330,60 @@ Deno.serve(async (req) => {
           const s = (userSettings || []).find((r: any) => r.category === cat);
           return s?.enabled === true;
         };
+
+        const deliver = async (ruleKey: string, m: Msg, url: string): Promise<boolean> => {
+          const { data: subs } = await sb
+            .from("push_subscriptions")
+            .select("id, fcm_token")
+            .eq("user_id", userId)
+            .not("fcm_token", "is", null);
+
+          if (!subs || subs.length === 0) return false;
+
+          let sent = false;
+          for (const sub of subs) {
+            const result = await sendFcmMessage(
+              accessToken, fcmProjectId, sub.fcm_token!,
+              m.title, m.body, url
+            );
+            if (result.ok) {
+              sent = true;
+            } else if (result.error === "UNREGISTERED" || result.error === "INVALID_ARGUMENT") {
+              await sb.from("push_subscriptions").delete().eq("id", sub.id);
+            }
+          }
+
+          if (sent) {
+            await sb.from("notification_history").insert({
+              user_id: userId, couple_space_id: spaceId, rule_key: ruleKey,
+            });
+            totalSent++;
+            console.log(`[smart-notif] ${ruleKey} → ${userId}`);
+          }
+          return sent;
+        };
+
+        const everSent = async (ruleKey: string): Promise<boolean> => {
+          const { count } = await sb
+            .from("notification_history").select("id", { count: "exact", head: true })
+            .eq("user_id", userId).eq("rule_key", ruleKey);
+          return (count ?? 0) > 0;
+        };
+
+        // Avisos únicos da chama e da experiência: a partir das 9h, antes da hora
+        // preferida e do limite diário, porque cada um só é enviado uma vez.
+        if (localHour >= 9 && !isSuspended) {
+          if (flameEventIsFresh && categoryEnabled("engagement")) {
+            const eventKey = `flame_event_${flameEvent.at}`;
+            const eventMsg = flameEventMessage(flameEvent, isSolo);
+            if (eventMsg && !(await everSent(eventKey)) && (await deliver(eventKey, eventMsg, "/jornada"))) continue;
+          }
+          if (trialEnding && categoryEnabled("system")) {
+            const trialKey = `trial_ending_${trialEndsAt}`;
+            const daysLeft = Math.ceil(trialMsLeft / 86400000);
+            if (!(await everSent(trialKey)) && (await deliver(trialKey, trialEndingMessage(daysLeft, isSolo), "/subscricao"))) continue;
+          }
+        }
 
         const preferredHour: number | null = (() => {
           const s = (userSettings || []).find((r: any) => r.preferred_hour != null);
@@ -517,36 +627,7 @@ Deno.serve(async (req) => {
 
         const cooldownKey = rule.startsWith("perfect_day_") ? "perfect_day"
           : rule.startsWith("milestone_") ? "milestone" : rule;
-        const targetUrl = RULE_URLS[cooldownKey] || "/";
-
-        const { data: subs } = await sb
-          .from("push_subscriptions")
-          .select("id, fcm_token")
-          .eq("user_id", userId)
-          .not("fcm_token", "is", null);
-
-        if (!subs || subs.length === 0) continue;
-
-        let sent = false;
-        for (const sub of subs) {
-          const result = await sendFcmMessage(
-            accessToken, fcmProjectId, sub.fcm_token!,
-            msg.title, msg.body, targetUrl
-          );
-          if (result.ok) {
-            sent = true;
-          } else if (result.error === "UNREGISTERED" || result.error === "INVALID_ARGUMENT") {
-            await sb.from("push_subscriptions").delete().eq("id", sub.id);
-          }
-        }
-
-        if (sent) {
-          await sb.from("notification_history").insert({
-            user_id: userId, couple_space_id: spaceId, rule_key: rule,
-          });
-          totalSent++;
-          console.log(`[smart-notif] ${rule} → ${userId}`);
-        }
+        await deliver(rule, msg, RULE_URLS[cooldownKey] || "/");
       }
     }
 
