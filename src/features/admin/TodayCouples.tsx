@@ -144,7 +144,8 @@ export function TodayView({ data, adminName, onOpenReceipt, onApprove, onReview,
 /* ═══════════════ Casais ═══════════════ */
 
 type Filter = "all" | "paid" | "trial" | "none" | "solo";
-type Action = "change" | "renew" | "extend" | "remove" | null;
+type Action = "change" | "renew" | "extend" | "remove" | "suspend" | "removeTrial" | null;
+type SuspendReason = "subscription" | "irregular";
 
 export function CouplesView({ data, initialId, onChanged }: { data: AdminData; initialId?: string | null; onChanged: () => void }) {
   const { toast } = useToast();
@@ -159,6 +160,8 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
   const [planId, setPlanId] = useState<string>("");
   const [method, setMethod] = useState("M-Pesa");
   const [days, setDays] = useState(15);
+  const [reason, setReason] = useState<SuspendReason>("subscription");
+  const [note, setNote] = useState("");
 
   const list = data.houses.filter(h => {
     if (filter === "solo" ? !isSolo(h) : filter !== "all" && statusOf(h) !== filter) return false;
@@ -173,7 +176,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
 
   const open = (a: Action) => {
     setPlanId(String(plan?.id ?? activePlans[0]?.id ?? ""));
-    setMethod("M-Pesa"); setDays(15); setAction(a);
+    setMethod("M-Pesa"); setDays(15); setReason("subscription"); setNote(""); setAction(a);
   };
 
   /** A data em que o plano acaba depois de somar a duração (mesma regra do servidor). */
@@ -261,7 +264,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
         {h && (
           <div className={cn(CARD, "h-fit p-4")}>
             <p className="text-[17px] font-bold tracking-[-0.02em]">{coupleName(h)}</p>
-            <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">Na app desde {d(h.created_at, "d MMM yyyy")}{h.is_suspended && <b className="ml-1.5 font-semibold text-[#B91C1C]">· suspensa</b>}</p>
+            <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">Na app desde {d(h.created_at, "d MMM yyyy")}{h.is_suspended && <b className="ml-1.5 font-semibold text-[#B91C1C]">· suspensa ({h.suspension_reason === "irregular" ? "irregularidade" : "subscrição"})</b>}</p>
             <div className="mt-3 text-[13px]">
               {people(h).map((p: any) => (
                 <div key={p.user_id} className="flex justify-between gap-3 border-t border-[#F0EDE9] py-2 dark:border-border/60">
@@ -278,10 +281,15 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
               <button className={GHOST} onClick={() => open("renew")}>Renovar</button>
               {status === "paid" && endsAt && <button className={GHOST} onClick={() => open("extend")}>Prolongar</button>}
               {status === "paid" && <button className={GHOST} onClick={() => open("remove")}>Remover plano</button>}
-              <button className={cn(GHOST, !h.is_suspended && "text-[#B91C1C]")} disabled={busy}
-                onClick={() => run(() => supabase.rpc("admin_set_suspended" as any, { p_couple_space_id: h.id, p_suspended: !h.is_suspended }) as any, h.is_suspended ? "Casa reativada" : "Casa suspensa")}>
-                {h.is_suspended ? "Reativar casa" : "Suspender casa"}
-              </button>
+              {status === "trial" && <button className={GHOST} onClick={() => open("removeTrial")}>Remover experiência</button>}
+              {h.is_suspended ? (
+                <button className={GHOST} disabled={busy}
+                  onClick={() => run(() => supabase.rpc("admin_set_suspended" as any, { p_couple_space_id: h.id, p_suspended: false }) as any, "Casa reativada")}>
+                  Reativar casa
+                </button>
+              ) : (
+                <button className={cn(GHOST, "text-[#B91C1C]")} onClick={() => open("suspend")}>Suspender casa</button>
+              )}
             </div>
           </div>
         )}
@@ -294,7 +302,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[18px] font-bold tracking-[-0.02em]">
-                  {action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar sem pagamento" : "Remover o plano?"}
+                  {action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar sem pagamento" : action === "suspend" ? "Suspender casa" : action === "removeTrial" ? "Remover a experiência?" : "Remover o plano?"}
                 </p>
                 <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">
                   {action === "renew" ? "Para quando o casal pagou por fora (ex.: pelo WhatsApp)" : action === "extend" ? "Uma oferta: compensar uma falha, agradecer, promoção" : `${coupleName(h)} · ${subtitle(h)}`}
@@ -344,8 +352,36 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
               </div>
             )}
 
+            {action === "removeTrial" && (
+              <div className="mt-3 rounded-[14px] bg-[#FDF3F2] px-3.5 py-3 text-[13px] leading-relaxed text-[#8A1C1C]">
+                A experiência termina já e a casa vê o ecrã "O vosso teste grátis terminou". As memórias ficam guardadas. Não pode começar outro teste; para voltar a dar tempo, usa Mudar plano.
+              </div>
+            )}
+            {action === "suspend" && (
+              <>
+                <p className="mb-2 mt-4 text-[12.5px] font-semibold text-[#7A7F8C]">Porquê</p>
+                <div className="grid gap-2">
+                  {([["subscription", "Falta de pagamento", "Sai sozinha quando o pagamento for confirmado."], ["irregular", "Algo irregular", "Pagar não resolve. Só tu podes reativar."]] as [SuspendReason, string, string][]).map(([k, t, sub]) => (
+                    <button key={k} type="button" onClick={() => setReason(k)}
+                      className={cn("rounded-[14px] border px-3.5 py-2.5 text-left", reason === k ? "border-2 border-[#0B1324] dark:border-foreground" : "border-[#ECE8E3] dark:border-border")}>
+                      <span className="block text-[14px] font-semibold">{t}</span>
+                      <span className="block text-[12.5px] text-[#7A7F8C]">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+                {reason === "irregular" && (
+                  <>
+                    <label htmlFor="suspend-note" className="mb-1.5 mt-3 block text-[12.5px] font-semibold text-[#7A7F8C]">Mensagem para a casa (opcional)</label>
+                    <textarea id="suspend-note" rows={3} value={note} onChange={e => setNote(e.target.value)} maxLength={240}
+                      placeholder="Se ficar vazia, a casa vê uma mensagem geral a pedir para falar connosco."
+                      className="w-full rounded-xl border border-[#ECE8E3] bg-white px-3 py-2.5 text-[14px] outline-none focus:border-[#0B1324] dark:border-border dark:bg-card" />
+                  </>
+                )}
+              </>
+            )}
+
             {/* Resumo */}
-            {action !== "remove" && (
+            {action !== "remove" && action !== "suspend" && action !== "removeTrial" && (
               <div className="mt-4 rounded-[14px] bg-[#F7F5F2] px-3.5 py-3 text-[13.5px] leading-relaxed dark:bg-muted">
                 {action === "extend" ? (
                   <>Passa de {endsAt ? d(h.subscription_ends_at, "d 'de' MMMM") : "hoje"} para <b>{format(addDays(endsAt && endsAt.getTime() > Date.now() ? endsAt : new Date(), days), "d 'de' MMMM yyyy", { locale: pt })}</b>. Não entra nas contas de pagamentos.</>
@@ -360,14 +396,16 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
             <div className="mt-4 flex gap-2">
               <button onClick={() => setAction(null)} disabled={busy} className={cn(GHOST, "h-11 flex-1 rounded-[14px]")}>Cancelar</button>
               <button disabled={busy || ((action === "change" || action === "renew") && !chosen)}
-                className={cn(BTN, "h-11 flex-1 rounded-[14px]", action === "remove" && "bg-[#B91C1C] dark:bg-[#B91C1C] dark:text-white")}
+                className={cn(BTN, "h-11 flex-1 rounded-[14px]", (action === "remove" || action === "suspend" || action === "removeTrial") && "bg-[#B91C1C] dark:bg-[#B91C1C] dark:text-white")}
                 onClick={() => {
                   if (action === "change" && chosen) return run(() => supabase.rpc("admin_assign_plan" as any, { p_couple_space_id: h.id, p_plan_id: chosen.id, p_tier_level: chosen.tier_level ?? 1, p_trial_days: 0 }) as any, "Plano mudado");
                   if (action === "renew" && chosen) return run(() => supabase.rpc("admin_renew_subscription" as any, { p_couple_space_id: h.id, p_plan_id: chosen.id, p_method: method }) as any, "Renovado");
                   if (action === "extend") return run(() => supabase.rpc("admin_extend_subscription" as any, { p_couple_space_id: h.id, p_days: days }) as any, "Prolongado");
+                  if (action === "suspend") return run(() => supabase.rpc("admin_set_suspended" as any, { p_couple_space_id: h.id, p_suspended: true, p_reason: reason, p_note: reason === "irregular" ? note : null }) as any, "Casa suspensa");
+                  if (action === "removeTrial") return run(() => supabase.rpc("admin_remove_trial" as any, { p_couple_space_id: h.id }) as any, "Experiência removida");
                   if (action === "remove") return run(() => supabase.rpc("admin_remove_plan" as any, { p_couple_space_id: h.id }) as any, "Plano removido");
                 }}>
-                {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar" : "Remover plano"}
+                {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar" : action === "suspend" ? "Suspender" : action === "removeTrial" ? "Remover experiência" : "Remover plano"}
               </button>
             </div>
           </div>

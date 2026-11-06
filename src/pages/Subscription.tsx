@@ -279,7 +279,7 @@ export default function Subscription() {
             <ScreenHeader title="Subscrição" subtitle="Plano LoveNest" className="mb-5" />
 
             <main>
-                {hasActivePaidSubscription(house) ? (
+                {hasActivePaidSubscription(house) && !house?.is_suspended ? (
                     <div className="animate-in zoom-in-95">
                         <div className="glass-card p-8 text-center">
                             <CheckCircle className="w-12 h-12 text-primary mx-auto mb-5" strokeWidth={1.5} />
