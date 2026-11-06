@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
-import { X, Share2, Loader2, Flame, Sparkles, BookHeart, HeartHandshake, Lock } from "lucide-react";
+import { X, Share2, Loader2, Flame, BookHeart, HeartHandshake, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { CeremonyContent, CeremonyType } from "@/lib/ceremonies";
 
 const ICON_BY_TYPE: Record<CeremonyType, React.ElementType> = {
   streak_milestone: Flame,
-  level_up:         Sparkles,
   livro_concluido:  BookHeart,
   aniversario:      HeartHandshake,
   capsula:          Lock,
@@ -21,12 +20,6 @@ const THEME: Record<CeremonyType, {
     border: "rgba(167,139,250,0.18)", iconBg: "rgba(124,58,237,0.22)",
     ctaBg: "linear-gradient(135deg,#7c3aed 0%,#4c1d95 100%)",
     cardBg: "linear-gradient(160deg,#1a0830 0%,#0d0518 100%)",
-  },
-  level_up: {
-    glow: "rgba(244,63,94,0.40)", accent: "rgba(251,113,133,0.92)",
-    border: "rgba(251,113,133,0.18)", iconBg: "rgba(244,63,94,0.22)",
-    ctaBg: "linear-gradient(135deg,#f43f5e 0%,#be123c 100%)",
-    cardBg: "linear-gradient(160deg,#1e0510 0%,#0f0208 100%)",
   },
   streak_milestone: {
     glow: "rgba(244,63,94,0.40)", accent: "rgba(251,113,133,0.92)",
@@ -50,7 +43,6 @@ const THEME: Record<CeremonyType, {
 
 const CTA_LABEL: Record<CeremonyType, string> = {
   capsula:          "Ver as cápsulas",
-  level_up:         "Continuar",
   streak_milestone: "Continuar",
   livro_concluido:  "Continuar",
   aniversario:      "Continuar",

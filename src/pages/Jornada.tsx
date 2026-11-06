@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { todayLocal } from "@/lib/timezone";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { getJourneyLevel, getStreakLevel, STREAK_LEVELS, levelUpCheck } from "@/features/streak/journeyLevels";
+import { getStreakLevel, STREAK_LEVELS, levelUpCheck } from "@/features/streak/journeyLevels";
 import { useNavigate } from "react-router-dom";
 import { useStreak } from "@/features/streak/useStreak";
 import { useCoupleSpaceId } from "@/hooks/useCoupleSpaceId";
@@ -122,13 +122,8 @@ export default function Jornada() {
     [isSolo, hasSpiritual]
   );
 
-  // — LovePoints state —
-  // totalPoints = saldo gastável (desce ao comprar); lifetimePoints =
-  // total alguma vez ganho (nunca desce) — é este que define o Nível
-  // da Jornada, para a regra "o nível nunca desce" se manter verdadeira
-  // mesmo depois de compras na loja.
+  // — LovePoints state — só servem para comprar proteção; a fase depende dos dias.
   const [totalPoints, setTotalPoints]   = useState(0);
-  const [lifetimePoints, setLifetimePoints] = useState(0);
   const [loadingPoints, setLoadingPoints] = useState(false);
 
   // — Shields state (reduzido, dados no hook) —
@@ -174,7 +169,6 @@ export default function Jornada() {
   const missionsInProgress   = missions.filter(m => !m.completed && m.completedCount > 0).length;
   const canBuyShield   = totalPoints >= 200;
   const isPerfectDay   = bothActive && missionsDone === missionDefs.length;
-  const journey        = useMemo(() => getJourneyLevel(lifetimePoints), [lifetimePoints]);
   // Fase do Guardião — streak puro. Pontos são moeda gastável, não contam.
   const streakPhase    = useMemo(() => getStreakLevel(currentStreak), [currentStreak]);
 
@@ -280,18 +274,10 @@ export default function Jornada() {
     if (!spaceId) return;
     setLoadingPoints(true);
     try {
-      const [{ data, error }, { data: lifetimeData, error: lifetimeError }] = await Promise.all([
-        supabase.rpc("get_total_points", { p_couple_space_id: spaceId }),
-        supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }),
-      ]);
+      const { data, error } = await supabase.rpc("get_total_points", { p_couple_space_id: spaceId });
       if (error) {
         console.error("[Jornada] get_total_points error:", error.message);
         return;
-      }
-      if (lifetimeError) {
-        console.error("[Jornada] get_lifetime_points error:", lifetimeError.message);
-      } else {
-        setLifetimePoints((lifetimeData as number) ?? 0);
       }
       setTotalPoints((data as number) ?? 0);
     } catch (err: any) {
@@ -682,7 +668,7 @@ export default function Jornada() {
           {missionsPts + pointsToday > 0 && <span className="ml-auto text-[12.5px] font-semibold text-emerald-700 dark:text-emerald-400">+{missionsPts + pointsToday} hoje</span>}
         </div>
         <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
-          {isSolo ? "+10 por cada dia que apareces." : "+10 por cada dia em que os dois aparecem."} Gastar pontos nunca faz descer o vosso nível.
+          {isSolo ? "+10 por cada dia que apareces." : "+10 por cada dia em que os dois aparecem."}
         </p>
         <div className="mt-3.5 flex items-center gap-3 border-t border-[#ECE8E3] pt-3.5 dark:border-border">
           <div className="flex gap-1.5" aria-label={`${shieldsRemaining} de 3 escudos`}>

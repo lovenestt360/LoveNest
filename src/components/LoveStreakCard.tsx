@@ -132,7 +132,7 @@ function getCardStatus(bothActive: boolean, myCheckedIn: boolean, shieldUsedToda
 
 // ── Data hook ─────────────────────────────────────────────────────────────────
 
-type CardCache = { points: number; lifetimePoints: number; missions: MissionStatus; cacheDate?: string };
+type CardCache = { points: number; missions: MissionStatus; cacheDate?: string };
 
 function readCardCache(spaceId: string | null): CardCache | null {
   if (!spaceId) return null;
@@ -158,21 +158,18 @@ function useCardData(threshold: number) {
   const spaceId = useCoupleSpaceId();
   const cached = readCardCache(spaceId);
   const [points, setPoints] = useState<number | null>(cached?.points ?? null);
-  const [lifetimePoints, setLifetimePoints] = useState<number | null>(cached?.lifetimePoints ?? null);
   const [missions, setMissions] = useState<MissionStatus>(cached?.missions ?? EMPTY_MISSIONS);
 
   // Refs para evitar stale closure no writeCardCache — o callback captura
   // sempre o valor mais recente sem precisar de entrar nas dependências.
   const pointsRef        = useRef(points);
-  const lifetimePointsRef = useRef(lifetimePoints);
   useEffect(() => { pointsRef.current = points; }, [points]);
-  useEffect(() => { lifetimePointsRef.current = lifetimePoints; }, [lifetimePoints]);
 
   const fetchData = useCallback(async () => {
     if (!spaceId) return;
     const today = todayLocal();
 
-    // Busca pontos, pontos lifetime e missões em paralelo.
+    // Busca pontos e missões em paralelo.
     // Cache só é escrita uma vez, na resolução do Promise.all de missões,
     // quando já temos todos os valores frescos via refs.
     (supabase.rpc("get_total_points" as any, { p_couple_space_id: spaceId }) as any)
@@ -180,13 +177,6 @@ function useCardData(threshold: number) {
         if (typeof data === "number") {
           setPoints(data);
           pointsRef.current = data;
-        }
-      });
-    (supabase.rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId }) as any)
-      .then(({ data }: any) => {
-        if (typeof data === "number") {
-          setLifetimePoints(data);
-          lifetimePointsRef.current = data;
         }
       });
     Promise.all([
@@ -207,7 +197,6 @@ function useCardData(threshold: number) {
       setMissions(newMissions);
       if (spaceId) writeCardCache(spaceId, {
         points:        pointsRef.current ?? 0,
-        lifetimePoints: lifetimePointsRef.current ?? 0,
         missions:      newMissions,
       });
     });
@@ -261,7 +250,7 @@ function useCardData(threshold: number) {
     return () => { supabase.removeChannel(channel); };
   }, [spaceId]);
 
-  return { points, lifetimePoints, missions };
+  return { points, missions };
 }
 
 // ── Card ──────────────────────────────────────────────────────────────────────
@@ -281,7 +270,7 @@ export function LoveStreakCard({ streak, loading }: { streak: StreakState; loadi
   const isSolo          = profile?.usage_mode === "solo";
   const hasSpiritual    = profile?.religion !== "none";
   const threshold        = isSolo ? 1 : Math.max(streak.totalMembers, 2);
-  const { points, lifetimePoints, missions } = useCardData(threshold);
+  const { points, missions } = useCardData(threshold);
   const spaceId             = useCoupleSpaceId();
   const navigate            = useNavigate();
   // streakPhase calculado depois do early-return de loading,
