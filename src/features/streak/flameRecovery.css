@@ -1,0 +1,22 @@
+.flame-droop {
+  transform-origin: 50% 80%;
+  animation: flame-droop 4.5s ease-in-out infinite;
+}
+
+.flame-glad {
+  animation: flame-glad 2.4s ease-in-out infinite;
+}
+
+@keyframes flame-droop {
+  0%, 100% { transform: rotate(-1.5deg) scaleY(1); }
+  50% { transform: rotate(1.5deg) scaleY(0.96); }
+}
+
+@keyframes flame-glad {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flame-droop, .flame-glad { animation: none; }
+}

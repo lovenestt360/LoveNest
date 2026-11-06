@@ -156,9 +156,13 @@ function flameEventMessage(e: any, isSolo: boolean): Msg | null {
 
   if (e?.kind === "flame_lost") {
     const past = days === 1 ? "Foi um dia lindo." : `Foram ${days} dias lindos.`;
+    const them = days === 1 ? "o" : "os";
+    const next = e.recoverable
+      ? (isSolo ? `Ainda vais a tempo de ${them} recuperar.` : `Ainda vão a tempo de ${them} recuperar.`)
+      : (isSolo ? "Basta uma faísca para recomeçar: volta hoje." : "Basta uma faísca para recomeçar: voltem hoje.");
     return isSolo
-      ? { title: "A chama apagou-se, tu não", body: `${past} Basta uma faísca para recomeçar: volta hoje.` }
-      : { title: "A chama apagou-se, o amor não", body: `${past} Basta uma faísca para recomeçar: voltem hoje.` };
+      ? { title: "A chama apagou-se, tu não", body: `${past} ${next}` }
+      : { title: "A chama apagou-se, o amor não", body: `${past} ${next}` };
   }
 
   if (e?.kind !== "shield_used") return null;

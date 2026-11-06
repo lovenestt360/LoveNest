@@ -16,6 +16,7 @@ import { CelebrationBurst } from "@/components/CelebrationBurst";
 import { hapticSuccess, hapticCelebrate, hapticLight } from "@/lib/haptic";
 import { getDailyMissions, type MissionDef } from "@/features/streak/missions";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { FlameLost, FlameRecovered } from "@/features/streak/FlameRecovery";
 import { Guardian, type GuardianHandle } from "@/features/entry/Guardian";
 import { prefersReducedMotion } from "@/features/entry/entryUtils";
 import { Check, Flame, Loader2, Shield } from "lucide-react";
@@ -132,6 +133,10 @@ export default function Jornada() {
 
   // — Shields state (reduzido, dados no hook) —
   const [buyingShield, setBuyingShield] = useState(false);
+
+  // — Recuperar a chama —
+  const [recovering, setRecovering] = useState(false);
+  const [recovered, setRecovered] = useState<{ days: number; cost: number; pointsLeft: number } | null>(null);
 
   // — Missions state —
   const [missions, setMissions]         = useState<Mission[]>([]);
@@ -374,6 +379,31 @@ export default function Jornada() {
 
   // ── Check-in ─────────────────────────────
 
+  const recoverFlame = async () => {
+    if (!spaceId || recovering) return;
+    setRecovering(true);
+    try {
+      const { data, error } = await supabase.rpc("fn_recover_streak" as any, { p_couple_space_id: spaceId });
+      if (error) { toast.error("Não foi possível recuperar a chama. Tenta outra vez."); return; }
+
+      const result = data as any;
+      if (result?.status === "ok") {
+        hapticCelebrate();
+        setRecovered({ days: result.days, cost: result.cost, pointsLeft: result.points_left });
+      } else if (result?.status === "insufficient_points") {
+        toast.error(`Faltam ${result.missing} pontos para recuperar a chama.`);
+      } else if (result?.status === "already_recovered_this_month") {
+        toast.error("A recuperação deste mês já foi usada.");
+      } else {
+        toast.error("O prazo para recuperar a chama terminou.");
+      }
+      await Promise.all([fetchPoints(), refresh()]);
+      window.dispatchEvent(new CustomEvent("streak-updated"));
+    } finally {
+      setRecovering(false);
+    }
+  };
+
   const handleCheckIn = async () => {
     hapticLight();
     const { ok, message } = await checkIn();
@@ -483,6 +513,29 @@ export default function Jornada() {
       />
 
       {/* ── O vosso Guardião ── */}
+      {recovered ? (
+        <FlameRecovered
+          days={recovered.days}
+          cost={recovered.cost}
+          pointsLeft={recovered.pointsLeft}
+          isSolo={isSolo}
+          checkedIn={myCheckedIn}
+          checkingIn={checkingIn}
+          onCheckIn={handleCheckIn}
+          onDone={() => setRecovered(null)}
+        />
+      ) : streak?.recovery ? (
+        <FlameLost
+          days={streak.recovery.days}
+          deadline={streak.recovery.deadline}
+          cost={streak.recovery.cost}
+          points={totalPoints}
+          pointsLoading={loadingPoints && totalPoints === 0}
+          isSolo={isSolo}
+          busy={recovering}
+          onRecover={recoverFlame}
+        />
+      ) : (
       <section className="relative pt-6 text-center">
         {!streakInitialized ? (
           <div className="mx-auto h-[190px] w-[190px] animate-pulse rounded-full bg-[#F7F5F2] dark:bg-muted" />
@@ -541,6 +594,7 @@ export default function Jornada() {
           })}
         </ol>
       </section>
+      )}
 
       {/* ── Hoje ── */}
       <section className={CARD}>
