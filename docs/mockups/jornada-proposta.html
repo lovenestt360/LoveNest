@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jornada · proposta</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0B1324; --text:#3A4150; --muted:#7A7F8C; --faint:#77736C; --edge:#ECE8E3; --field:#F7F5F2; --rose:#E5466D; --blue:#4D7CFE; --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; justify-content: center; padding: 40px 16px; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .phone { width: 390px; background: #fff; border-radius: 38px; padding: 54px 16px 34px; box-shadow: 0 30px 60px -32px rgba(11,19,36,.45); position: relative; overflow: hidden; }
+  /* ── Guardiões (mascotes) ── */
+  .pet { position: relative; display: block; pointer-events: none; }
+  .pet img { width: 100%; height: auto; display: block; animation: bob 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+  .pet::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,19,36,.16), transparent); animation: shadow 3.6s ease-in-out infinite; z-index: -1; }
+  .pet.glow-rose::before, .pet.glow-blue::before { content: ""; position: absolute; inset: 12% 14% 18%; border-radius: 50%; filter: blur(26px); z-index: -1; animation: glow 3.6s ease-in-out infinite; }
+  .pet.glow-rose::before { background: rgba(244,114,182,.28); }
+  .pet.glow-blue::before { background: rgba(77,124,254,.26); }
+  @keyframes bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.01); } }
+  @keyframes shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(.82); opacity: .6; } }
+  @keyframes glow { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .pet-in { opacity: 0; transform: translateY(16px) scale(.92); animation: petIn .9s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+  @keyframes petIn { to { opacity: 1; transform: none; } }
+  .pet.talking img { animation: talk .5s ease-in-out infinite alternate; }
+  @keyframes talk { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-2px) scaleY(1.03); } }
+  .pet.happy img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  @keyframes hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-18px) scale(1.06, .96); } 60% { transform: translateY(0) scale(.97, 1.03); } 100% { transform: translateY(0) scale(1); } }
+  .speaker { display: flex; align-items: flex-end; gap: 10px; }
+  .speaker .pet { width: 64px; flex-shrink: 0; margin-bottom: -6px; }
+  .speaker .chat { flex: 1; min-width: 0; }
+  .speaker .bub { max-width: 100%; }
+  .speaker .bub:first-child { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+  .float-heart { position: absolute; color: var(--rose); font-size: 14px; opacity: 0; animation: heartUp 2.8s ease-out infinite; }
+  @keyframes heartUp { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+
+  /* ── Guardiões: interações ── */
+  .pet-body { display: block; position: relative; pointer-events: auto; cursor: pointer; transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)); transition: transform .45s var(--ease), filter .3s; }
+  .pet.shy .pet-body { transform: scaleX(-1) rotate(-4deg) translateY(4px); filter: saturate(.85); }
+  .pet.nod .pet-body img { animation: nod .4s var(--ease) 1, bob 3.6s ease-in-out infinite .4s; }
+  @keyframes nod { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(4deg); } }
+  .pet.wiggle .pet-body img { animation: wiggle .6s ease-in-out 1, bob 3.6s ease-in-out infinite .6s; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+  .pet.shake .pet-body img { animation: shake .5s ease-in-out 1, bob 3.6s ease-in-out infinite .5s; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px) rotate(-3deg); } 40%, 80% { transform: translateX(6px) rotate(3deg); } }
+  .pet.spin .pet-body img { animation: spin .9s var(--ease) 1, bob 3.6s ease-in-out infinite .9s; }
+  @keyframes spin { 0% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16px) rotate(180deg) scale(1.05); } 100% { transform: translateY(0) rotate(360deg); } }
+  .pet.happy .pet-body img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  .pet-say { position: absolute; bottom: 92%; right: 38%; white-space: nowrap; background: #fff; border: 1px solid var(--edge); border-radius: 14px; border-bottom-right-radius: 4px; padding: 7px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink); box-shadow: 0 10px 22px -14px rgba(11,19,36,.45); opacity: 0; transform: translateY(6px) scale(.9); transform-origin: bottom right; transition: opacity .25s, transform .35s var(--ease); pointer-events: none; z-index: 5; }
+  .pet-say.show { opacity: 1; transform: none; }
+  .pet.say-right .pet-say { right: auto; left: 38%; border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; transform-origin: bottom left; }
+  .pet.say-top .pet-say { bottom: auto; top: -18px; right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); transform-origin: bottom center; border-bottom-right-radius: 14px; }
+  .pet.say-top .pet-say.show { transform: translate(-50%, 0); }
+  .burst { position: absolute; left: 50%; top: 30%; color: var(--rose); font-size: 14px; pointer-events: none; animation: burst 1.1s ease-out forwards; z-index: 4; }
+  @keyframes burst { 0% { opacity: 0; transform: translate(-50%, 0) scale(.4); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1) rotate(var(--r)); } }
+
+
+  .in { opacity: 0; transform: translateY(12px); animation: rise .6s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 80ms + 100ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .head { display: flex; align-items: center; gap: 12px; }
+  .round { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .head h1 { font-size: 22px; letter-spacing: -0.03em; font-weight: 700; }
+  .head p { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .pill { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--edge); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .hero { text-align: center; margin-top: 18px; }
+  .hero .pet { width: 190px; margin: 0 auto; }
+  .pet.glow-teal::before { content: ""; position: absolute; inset: 12% 14% 18%; border-radius: 50%; filter: blur(26px); z-index: -1; background: rgba(45,217,196,.3); animation: glow 3.6s ease-in-out infinite; }
+  .stage-name { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+  .days { font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .days small { font-size: 15px; font-weight: 500; letter-spacing: 0; color: var(--muted); margin-left: 6px; }
+  .to-next { margin: 18px 6px 0; display: flex; align-items: center; gap: 10px; }
+  .bar { flex: 1; height: 6px; border-radius: 9px; background: #EEEBE6; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 9px; background: var(--ink); transform-origin: left; animation: grow 1.2s var(--ease) both .5s; }
+  @keyframes grow { from { transform: scaleX(0); } }
+  .to-next img { width: 30px; height: 30px; filter: grayscale(.6); opacity: .7; }
+  .to-next-label { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .to-next-label b { color: var(--ink); font-weight: 600; }
+  .strip { list-style: none; display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 18px; }
+  .strip li { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9.5px; color: var(--muted); }
+  .strip img { width: 34px; height: 34px; transition: transform .3s var(--ease); }
+  .strip span { font-weight: 600; color: var(--ink); font-size: 9.5px; }
+  .strip small { font-size: 8.5px; }
+  .strip li.lock img { filter: grayscale(1); opacity: .3; }
+  .strip li.lock span { color: var(--muted); font-weight: 500; }
+  .strip li.next img { filter: grayscale(.7); opacity: .6; }
+  .strip li.now img { transform: scale(1.18); }
+  .strip li.now span::after { content: ""; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--ink); margin: 2px auto 0; }
+
+  .card { border: 1px solid var(--edge); border-radius: 22px; padding: 16px; margin-top: 14px; background: #fff; box-shadow: 0 1px 2px rgba(11,19,36,.03), 0 14px 30px -26px rgba(11,19,36,.35); }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .card-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+  .card-head span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .who { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 16px; background: var(--field); }
+  .av { position: relative; width: 34px; height: 34px; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .av::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px dashed currentColor; opacity: .45; transition: all .4s var(--ease); }
+  .av.a { background: var(--rose); color: #fff; } .av.a::before { border-color: var(--rose); }
+  .av.b { background: var(--blue); } .av.b::before { border-color: var(--blue); }
+  .who.here .av::before { border-style: solid; opacity: 1; }
+  .who b { display: block; font-size: 13px; font-weight: 600; }
+  .who small { font-size: 11.5px; color: var(--muted); }
+  .who.here small { color: #15803D; }
+  .note { font-size: 13px; color: var(--text); margin-top: 12px; line-height: 1.45; }
+  .btn { width: 100%; height: 52px; border-radius: 17px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; box-shadow: 0 14px 28px -16px rgba(11,19,36,.65); transition: transform .25s var(--ease), background .3s; }
+  .btn:active { transform: scale(.98); }
+  .btn.done { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; height: 44px; font-size: 14px; }
+  .btn.ghost:disabled { opacity: .45; cursor: default; }
+
+  .gbar { height: 6px; border-radius: 9px; background: #EEEBE6; margin-top: 12px; overflow: hidden; }
+  .gbar i { display: block; height: 100%; background: var(--ink); border-radius: 9px; transition: width .6s var(--ease); }
+  .gest { list-style: none; margin-top: 8px; }
+  .gest li { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
+  .gest li + li { border-top: 1px solid var(--edge); }
+  .gi { width: 36px; height: 36px; border-radius: 12px; background: var(--field); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .gest b { display: block; font-size: 14px; font-weight: 600; }
+  .gest small { font-size: 12px; color: var(--muted); }
+  .pts { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tick { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #D5D1CB; display: flex; align-items: center; justify-content: center; font-size: 11px; color: transparent; flex-shrink: 0; transition: all .35s var(--ease); }
+  .gest li.ok .tick { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .gest li.ok .pts { color: var(--ink); font-weight: 600; }
+
+  .points { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+  .points b { font-size: 34px; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .points span { font-size: 13px; color: var(--muted); }
+  .points em { font-style: normal; margin-left: auto; font-size: 12.5px; font-weight: 600; color: #15803D; }
+  .shield { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .slots { display: flex; gap: 5px; }
+  .slots i { width: 26px; height: 30px; border-radius: 8px 8px 13px 13px; border: 1.5px dashed #D5D1CB; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 12px; transition: all .4s var(--ease); }
+  .slots i.on { border: 0; background: var(--blue); color: #fff; }
+  .shield b { display: block; font-size: 14px; font-weight: 600; }
+  .shield small { font-size: 12px; color: var(--muted); }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .stat { border: 1px solid var(--edge); border-radius: 20px; padding: 14px; }
+  .stat span { font-size: 11.5px; color: var(--muted); }
+  .stat b { display: block; font-size: 26px; letter-spacing: -0.03em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .stat b small { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0; margin-left: 3px; }
+  .tab { height: 70px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="head in" style="--d:0">
+    <button class="round" aria-label="Voltar">‹</button>
+    <div><h1>Jornada</h1><p>A vossa chama · nível 3</p></div>
+    <span class="pill">🔥 <span data-streak>12</span></span>
+  </div>
+
+  <section class="hero">
+    <div class="pet glow-teal pet-in say-right" data-pet="flame" style="--d:1;margin-top:26px"><img src="/src/features/landing/stages/chama.webp" alt="" /></div>
+    <p class="stage-name in" style="--d:3">CHAMA</p>
+    <p class="days in" style="--d:3"><span data-days>12</span><small>dias juntos</small></p>
+    <div class="to-next in" style="--d:4"><div class="bar"><i style="width:71%"></i></div><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+    <p class="to-next-label in" style="--d:4" data-next>Faltam <b>2 dias</b> para o Guardião</p>
+    <ul class="strip in" style="--d:5"><li class="done"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /><span>Faísca</span><small>0 dias</small></li><li class="done"><img src="/src/assets/flame/flame_02_brasa_thumb.png" alt="" /><span>Brasa</span><small>3 dias</small></li><li class="now"><img src="/src/assets/flame/flame_03_chama_thumb.png" alt="" /><span>Chama</span><small>7 dias</small></li><li class="next"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /><span>Guardião</span><small>14 dias</small></li><li class="lock"><img src="/src/assets/flame/flame_05_sentinela_thumb.png" alt="" /><span>Sentinela</span><small>30 dias</small></li><li class="lock"><img src="/src/assets/flame/flame_06_eterno_thumb.png" alt="" /><span>Eterno</span><small>90 dias</small></li><li class="lock"><img src="/src/assets/flame/flame_07_soberano_thumb.png" alt="" /><span>Soberano</span><small>365 dias</small></li></ul>
+  </section>
+
+  <section class="card in" style="--d:6">
+    <div class="card-head"><h2>Hoje</h2><span data-hours>8h restantes</span></div>
+    <div class="duo">
+      <div class="who" data-me><span class="av a">A</span><div><b>Tu</b><small data-me-state>ainda não</small></div></div>
+      <div class="who here"><span class="av b">M</span><div><b>Miguel</b><small>presente ✓</small></div></div>
+    </div>
+    <p class="note" data-note>O Miguel já apareceu. Falta só tu para a chama contar hoje.</p>
+    <button class="btn" data-checkin>🔥 Estou presente hoje</button>
+  </section>
+
+  <section class="card in" style="--d:7">
+    <div class="card-head"><h2>Gestos de hoje</h2><span data-gcount>2 de 4 · +15 pts</span></div>
+    <div class="gbar"><i data-gbar style="width:50%"></i></div>
+    <ul class="gest">
+      <li class="ok"><span class="gi">💬</span><div><b>Conversa</b><small>Enviem uma mensagem hoje</small></div><span class="pts">+10</span><span class="tick">✓</span></li>
+      <li data-g-presence><span class="gi">🔥</span><div><b>Presença</b><small>Digam ao outro que estão aqui</small></div><span class="pts">+10</span><span class="tick">✓</span></li>
+      <li class="ok"><span class="gi">😊</span><div><b>Sentimento</b><small>Partilhem como estão</small></div><span class="pts">+5</span><span class="tick">✓</span></li>
+      <li><span class="gi">🙏</span><div><b>Oração</b><small>Um momento de oração hoje</small></div><span class="pts">+5</span><span class="tick">✓</span></li>
+    </ul>
+  </section>
+
+  <section class="card in" style="--d:8">
+    <div class="card-head"><h2>LovePoints</h2><span>trocam por proteção</span></div>
+    <div class="points"><b data-points>340</b><span>pts</span><em data-today>+15 hoje</em></div>
+    <div class="shield">
+      <div class="slots" data-slots><i class="on">🛡</i><i></i><i></i></div>
+      <div><b>LoveShield</b><small>Protege a chama num dia em falta</small></div>
+    </div>
+    <button class="btn ghost" data-buy>Comprar escudo · 200 pts</button>
+  </section>
+
+  <div class="stats in" style="--d:9">
+    <div class="stat"><span>Melhor sequência</span><b>21<small>dias</small></b></div>
+    <div class="stat"><span>Esta semana</span><b>6<small>de 7 dias</small></b></div>
+  </div>
+  <div class="tab"></div>
+</div>
+
+<script>
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // ── Guardiões que reagem ─────────────────────────────────────────────────
+  const $pet = (root, name) => root.querySelector(`[data-pet="${name}"]`);
+
+  function react(pet, cls) {
+    if (!pet) return;
+    ["nod", "wiggle", "shake", "spin", "happy"].forEach(c => pet.classList.remove(c));
+    void pet.offsetWidth;
+    pet.classList.add(cls);
+  }
+
+  function say(pet, text, ms = 2200) {
+    if (!pet) return;
+    let b = pet.querySelector(".pet-say");
+    if (!b) { b = document.createElement("div"); b.className = "pet-say"; pet.appendChild(b); }
+    b.textContent = text;
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+    clearTimeout(b._t);
+    if (ms) b._t = setTimeout(() => b.classList.remove("show"), ms);
+  }
+
+  function hearts(pet, n = 7) {
+    if (!pet || reduced) return;
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement("span");
+      h.className = "burst"; h.textContent = "♥";
+      const a = (Math.PI * 2 * i) / n + Math.random() * .6;
+      h.style.setProperty("--dx", `${Math.cos(a) * (40 + Math.random() * 30)}px`);
+      h.style.setProperty("--dy", `${-30 - Math.random() * 50}px`);
+      h.style.setProperty("--r", `${(Math.random() - .5) * 60}deg`);
+      h.style.fontSize = `${10 + Math.random() * 8}px`;
+      h.style.animationDelay = `${i * 30}ms`;
+      pet.appendChild(h); setTimeout(() => h.remove(), 1300);
+    }
+  }
+
+
+  document.querySelectorAll(".pet").forEach(pet => {
+    const img = pet.querySelector("img"); const body = document.createElement("span"); body.className = "pet-body"; img.replaceWith(body); body.appendChild(img);
+    body.addEventListener("click", () => { react(pet, "happy"); hearts(pet); say(pet, ["Olá! 💕", "Quase Guardião 💪", "Hehe 😊"][Math.floor(Math.random() * 3)]); });
+  });
+  const flame = $pet(document, "flame");
+  setTimeout(() => { react(flame, "wiggle"); say(flame, "Falta só tu hoje 🥺", 2600); }, reduced ? 0 : 1400);
+
+  const count = (el, to) => { const from = Number(el.textContent); const t0 = performance.now(); const d = reduced ? 1 : 700;
+    const tick = (n) => { const q = Math.min(1, (n - t0) / d); el.textContent = Math.round(from + (to - from) * q); if (q < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); };
+
+  let points = 340, today = 15, done = 2;
+  document.querySelector("[data-checkin]").addEventListener("click", (e) => {
+    const b = e.currentTarget; if (b.classList.contains("done")) return;
+    b.classList.add("done"); b.innerHTML = "Presente hoje ✓";
+    document.querySelector("[data-me]").classList.add("here");
+    document.querySelector("[data-me-state]").textContent = "presente ✓";
+    document.querySelector("[data-note]").textContent = "Os dois apareceram. A chama de hoje está acesa 🔥";
+    document.querySelector("[data-g-presence]").classList.add("ok");
+    done = 3; today += 10; points += 10;
+    document.querySelector("[data-gcount]").textContent = `${done} de 4 · +${today} pts`;
+    document.querySelector("[data-gbar]").style.width = (done / 4 * 100) + "%";
+    document.querySelector("[data-today]").textContent = `+${today} hoje`;
+    count(document.querySelector("[data-points]"), points);
+    document.querySelector("[data-next]").innerHTML = "Falta <b>1 dia</b> para o Guardião"; document.querySelector(".bar i").style.width = "86%";
+    count(document.querySelector("[data-days]"), 13); count(document.querySelector("[data-streak]"), 13);
+    react(flame, "spin"); hearts(flame, 14); say(flame, "Os dois! Chama acesa 🔥", 2800);
+  });
+  document.querySelector("[data-buy]").addEventListener("click", (e) => {
+    const slots = [...document.querySelectorAll("[data-slots] i")]; const free = slots.find(s => !s.classList.contains("on"));
+    if (!free || points < 200) return;
+    free.classList.add("on"); free.textContent = "🛡"; points -= 200; count(document.querySelector("[data-points]"), points);
+    react(flame, "happy"); say(flame, "Chama protegida 🛡️", 2400);
+    if (points < 200) { e.currentTarget.disabled = true; e.currentTarget.textContent = "Faltam pontos para outro escudo"; }
+  });
+</script>
+</body>
+</html>

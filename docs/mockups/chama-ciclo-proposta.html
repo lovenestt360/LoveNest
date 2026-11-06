@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chama e ciclo</title>
+<style>
+  :root { --ink:#0B1324; --mut:#8A8F99; --line:#ECE8E3; --sub:#3A4150; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:#F6F4F1; font-family:-apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); padding:24px 16px 48px; }
+  h2 { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); margin:26px auto 10px; max-width:380px; font-weight:700; }
+  .card { max-width:380px; margin:0 auto 12px; background:#fff; border:1px solid var(--line); border-radius:24px; padding:12px 16px; box-shadow:0 1px 2px rgba(11,19,36,.04),0 10px 28px -14px rgba(11,19,36,.16); }
+  .row { display:flex; align-items:center; justify-content:space-between; }
+  .title { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--sub); }
+  .muted { color:var(--mut); }
+  .pet { width:40px; height:40px; object-fit:contain; }
+  .big { font-size:34px; font-weight:800; letter-spacing:-.035em; line-height:.95; }
+
+  /* ── jornada ── */
+  .track { margin-top:14px; display:flex; align-items:center; }
+  .seg { position:relative; flex:1; height:3px; margin:0 3px; border-radius:3px; background:#E3DFD9; }
+  .seg .solid { position:absolute; inset:0; border-radius:3px; }
+  .seg svg { position:absolute; left:0; top:50%; height:22px; transform:translateY(-50%); overflow:visible; pointer-events:none; }
+  .node { position:relative; width:10px; height:10px; border-radius:50%; flex:none; background:#fff; border:2px solid #E3DFD9; }
+  .node.on { border:none; }
+  .node.cur { width:16px; height:16px; border:2.5px solid #fff; }
+  .node.cur::after { content:""; position:absolute; inset:-5px; border-radius:50%; border:1.5px solid var(--c); animation:rip 1.9s ease-out infinite; }
+  @keyframes rip { from { transform:scale(.8); opacity:.9 } to { transform:scale(1.9); opacity:0 } }
+  .labels { margin-top:8px; display:flex; justify-content:space-between; font-size:12px; }
+
+  /* ── ciclo ── */
+  .cy { position:relative; overflow:hidden; border-radius:22px; padding:14px 14px 12px; }
+  .cy .glow { position:absolute; inset:-40% -20% auto auto; width:220px; height:220px; border-radius:50%; filter:blur(10px); opacity:.55; pointer-events:none; }
+  .chip { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:99px; font-size:11px; font-weight:600; }
+  .strip { position:relative; display:flex; gap:3px; height:8px; margin-top:14px; }
+  .strip i { height:100%; border-radius:4px; }
+  .today { position:absolute; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff; border:2.5px solid var(--ink); box-shadow:0 2px 6px rgba(11,19,36,.25); }
+  .today b { position:absolute; inset:3px; border-radius:50%; }
+  .ticks { display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--mut); }
+  .ticks b { color:var(--ink); font-weight:600; }
+  .note { max-width:380px; margin:0 auto; font-size:12.5px; line-height:1.5; color:#5B6270; }
+</style>
+</head>
+<body>
+
+<h2>Chama — Faísca (dia 2)</h2>
+<div class="card" data-days="2"></div>
+<h2>Chama — Chama (dia 9)</h2>
+<div class="card" data-days="9"></div>
+<h2>Chama — Sentinela (dia 41)</h2>
+<div class="card" data-days="41"></div>
+
+<p class="note">Cada bolinha tem a cor do Guardião nessa fase: rosa, laranja, verde-água, azul, violeta e dourado. O troço que estás a percorrer é feito de vários raios finos sobrepostos, que tremem como eletricidade. Os troços já feitos ficam lisos, no degradê das duas cores.</p>
+
+<h2>Ciclo — ela (menstruação, dia 5)</h2>
+<div class="card cy" id="cy1"></div>
+<h2>Ciclo — ele (janela fértil, dia 12)</h2>
+<div class="card cy" id="cy2"></div>
+
+<script>
+const STAGES = [
+  { name:"Faísca",    min:0,  c:"#FF6B9D", img:"flame_01_faisca" },
+  { name:"Brasa",     min:3,  c:"#FF8B3D", img:"flame_02_brasa" },
+  { name:"Chama",     min:7,  c:"#1BBFAD", img:"flame_03_chama" },
+  { name:"Guardião",  min:14, c:"#3B82E5", img:"flame_04_guardiao" },
+  { name:"Sentinela", min:30, c:"#9B5DE5", img:"flame_05_sentinela" },
+  { name:"Eterno",    min:90, c:"#E0A915", img:"flame_06_eterno" },
+];
+const bolts = [];
+
+function chama(el) {
+  const d = +el.dataset.days;
+  let cur = 0; STAGES.forEach((s, i) => { if (d >= s.min) cur = i; });
+  const s = STAGES[cur], nx = STAGES[cur + 1];
+  const left = nx ? nx.min - d : 0;
+  let track = "";
+  STAGES.forEach((st, i) => {
+    if (i > 0) {
+      const p = STAGES[i - 1];
+      const fill = d >= st.min ? 1 : d >= p.min ? (d - p.min) / (st.min - p.min) : 0;
+      const grad = `linear-gradient(90deg, ${p.c}, ${st.c})`;
+      track += `<div class="seg">${fill >= 1 ? `<div class="solid" style="background:${grad}"></div>` : fill > 0 ? `<svg data-fill="${fill}" data-a="${p.c}" data-b="${st.c}"></svg>` : ""}</div>`;
+    }
+    const on = d >= st.min, isCur = i === cur;
+    track += `<div class="node ${on ? "on" : ""} ${isCur ? "cur" : ""}" style="--c:${st.c};${on ? `background:${st.c};${isCur ? `box-shadow:0 0 0 1.5px ${st.c},0 0 10px ${st.c}aa` : `box-shadow:0 0 6px ${st.c}88`}` : ""}"></div>`;
+  });
+  el.innerHTML = `
+    <div class="row"><div><div class="title">🔥 A vossa chama</div><div class="muted" style="font-size:12px;margin-top:4px">${s.name} · nível ${cur + 1}</div></div>
+      <img class="pet" src="../../src/assets/flame/${s.img}_thumb.png"></div>
+    <div class="row" style="margin-top:4px;align-items:flex-end"><div><div class="big">${d}</div><div class="muted" style="font-size:11px;margin-top:4px">dias de presença</div></div>
+      <div class="muted" style="font-size:10px;font-weight:600">❤ Tu &nbsp; ❤ Par</div></div>
+    <div class="track">${track}</div>
+    <div class="labels"><b style="color:${s.c}">${s.name}</b>
+      <span class="muted">Próximo: <b style="color:${nx.c}">${nx.name}</b> · ${left === 1 ? "falta 1 dia" : `faltam ${left} dias`}</span></div>
+    <div style="margin:10px -16px 8px;height:1px;background:var(--line)"></div>
+    <div class="muted" style="font-size:11.5px"><b style="color:var(--ink)">165</b> pts · <b style="color:var(--ink)">1</b> gesto</div>`;
+  el.querySelectorAll("svg[data-fill]").forEach((svg) => bolts.push(svg));
+}
+document.querySelectorAll("[data-days]").forEach(chama);
+
+// Raio: linha partida com deslocamento aleatório nos pontos do meio.
+function boltPath(w, amp, n) {
+  let p = `M0 11`;
+  for (let i = 1; i < n; i++) p += ` L${(w * i / n).toFixed(1)} ${(11 + (Math.random() * 2 - 1) * amp).toFixed(1)}`;
+  return p + ` L${w} 11`;
+}
+let id = 0;
+function drawBolts() {
+  bolts.forEach((svg) => {
+    const segW = svg.parentElement.clientWidth, w = segW * +svg.dataset.fill;
+    svg.setAttribute("width", w); svg.setAttribute("viewBox", `0 0 ${w} 22`);
+    if (!svg.dataset.id) svg.dataset.id = "g" + id++;
+    const g = svg.dataset.id, a = svg.dataset.a, b = svg.dataset.b;
+    const n = Math.max(4, Math.round(w / 6));
+    svg.innerHTML = `<defs><linearGradient id="${g}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>
+      <filter id="${g}f" x="-20%" y="-100%" width="140%" height="300%"><feGaussianBlur stdDeviation="1.6"/></filter></defs>
+      <rect x="0" y="9.5" width="${w}" height="3" rx="1.5" fill="url(#${g})" opacity=".35"/>
+      ${[9, 7, 5, 3].map((amp) => `<path d="${boltPath(w, amp, n)}" fill="none" stroke="url(#${g})" stroke-width="3" filter="url(#${g}f)" opacity=".8"/>`).join("")}
+      ${[8, 6, 4, 2].map((amp, k) => `<path d="${boltPath(w, amp, n)}" fill="none" stroke="${k === 3 ? "#fff" : `url(#${g})`}" stroke-width="${k === 3 ? 1.2 : 1.3}" stroke-linejoin="round"/>`).join("")}
+      <circle cx="${w}" cy="11" r="3" fill="#fff"/><circle cx="${w}" cy="11" r="5" fill="${b}" opacity=".35" filter="url(#${g}f)"/>`;
+  });
+}
+drawBolts(); setInterval(drawBolts, 90);
+
+// ── ciclo ──
+function ciclo(el, o) {
+  const L = 28, P = 5, ov = 14, fs = 10, fe = 15, pms = 24;
+  const parts = [
+    [P, "#E8456B"], [fs - 1 - P, "#E7E2DB"], [ov - fs, "#6DBDF0"], [1, "#F2A91F"], [fe - ov, "#6DBDF0"], [pms - 1 - fe, "#E7E2DB"], [L - pms + 1, "#A890F5"],
+  ];
+  const pos = ((o.day - .5) / L) * 100;
+  el.innerHTML = `
+    <div class="glow" style="background:radial-gradient(circle, ${o.c}33, transparent 65%)"></div>
+    <div class="row" style="position:relative">
+      <div class="title"><span style="color:#E8456B">💧</span> ${o.title}</div>
+      <span class="muted" style="font-size:16px">›</span></div>
+    <div style="position:relative;display:flex;align-items:center;gap:14px;margin-top:10px">
+      <svg width="66" height="66" viewBox="0 0 66 66" style="flex:none">
+        ${Array.from({ length: L }, (_, i) => {
+          const d = i + 1, ang = (i / L) * 2 * Math.PI - Math.PI / 2;
+          const col = d <= P ? "#E8456B" : d === ov ? "#F2A91F" : d >= fs && d <= fe ? "#6DBDF0" : d >= pms ? "#A890F5" : "#E7E2DB";
+          const x = 33 + 27 * Math.cos(ang), y = 33 + 27 * Math.sin(ang);
+          return `<rect x="${x - 1.6}" y="${y - 4}" width="3.2" height="8" rx="1.6" fill="${col}" opacity="${d < o.day ? .45 : 1}" transform="rotate(${(i / L) * 360} ${x} ${y})"/>`;
+        }).join("")}
+        ${(() => { const ang = ((o.day - 1) / L) * 2 * Math.PI - Math.PI / 2; const x = 33 + 27 * Math.cos(ang), y = 33 + 27 * Math.sin(ang);
+          return `<circle cx="${x}" cy="${y}" r="5.5" fill="#fff" stroke="#0B1324" stroke-width="2"/><circle cx="${x}" cy="${y}" r="2.2" fill="${o.c}"/>`; })()}
+        <text x="33" y="31" text-anchor="middle" font-size="16" font-weight="800" fill="#0B1324">${o.day}</text>
+        <text x="33" y="43" text-anchor="middle" font-size="8" font-weight="600" fill="#8A8F99">DE ${L}</text>
+      </svg>
+      <div style="min-width:0">
+        <div style="font-size:18px;font-weight:700;letter-spacing:-.02em">${o.phase}</div>
+        <span class="chip" style="margin-top:5px;background:${o.c}1f;color:${o.cText}">${o.chip}</span>
+        <div class="muted" style="font-size:12px;margin-top:6px">${o.tip}</div>
+      </div>
+    </div>
+    <div class="strip">${parts.map(([n, c]) => `<i style="flex:${n};background:${c}"></i>`).join("")}
+      <span class="today" style="left:${pos}%"><b style="background:${o.c}"></b></span></div>
+    <div class="ticks">${o.ticks.map((t) => `<span>${t}</span>`).join("")}</div>`;
+}
+ciclo(document.getElementById("cy1"), { title:"O teu ciclo", day:5, phase:"Menstruação", c:"#E8456B", cText:"#C2264F",
+  chip:"Último dia previsto", tip:"Descansa e bebe muita água",
+  ticks:["<b>Hoje</b> · dia 5", "Fértil · 10 nov", "Período · 23 nov"] });
+ciclo(document.getElementById("cy2"), { title:"Ciclo dela", day:12, phase:"Janela fértil", c:"#6DBDF0", cText:"#2C86C2",
+  chip:"Até 15 nov", tip:"A energia dela costuma estar em alta",
+  ticks:["<b>Hoje</b> · dia 12", "Ovulação · 14 nov", "Período · 23 nov"] });
+</script>
+</body>
+</html>

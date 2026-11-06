@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LoveNest · página inicial</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#0B1324; --text:#3A4150; --muted:#7A7F8C; --faint:#77736C; --edge:#ECE8E3; --field:#F7F5F2;
+    --rose:#E5466D; --sand:#F1EBE3; --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: Inter, system-ui, sans-serif; background: #fff; color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+  /* ── Botões ── */
+  .btn { height: 54px; border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15.5px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 14px 28px -16px rgba(11,19,36,.65); transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .2s; position: relative; overflow: hidden; user-select: none; }
+  .btn .arrow { display: inline-block; transition: transform .3s var(--ease); }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 18px 32px -16px rgba(11,19,36,.7); }
+  .btn:hover .arrow { transform: translateX(4px); }
+  .btn:active { transform: scale(.98); box-shadow: 0 8px 18px -12px rgba(11,19,36,.6); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; }
+  .btn.ghost:hover { background: var(--field); box-shadow: none; }
+  .btn.off { background: #C9C6C0; box-shadow: none; pointer-events: none; }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.35); transform: scale(0); animation: ripple .6s ease-out forwards; pointer-events: none; }
+  .ghost .ripple { background: rgba(11,19,36,.08); }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  /* ── Conversa (a app a falar) ── */
+  .chat { display: flex; flex-direction: column; gap: 8px; }
+  .bub { max-width: 86%; padding: 10px 14px; border-radius: 18px; font-size: 14.5px; line-height: 1.4; opacity: 0; transform: translateY(8px) scale(.98); transform-origin: bottom left; animation: pop .45s var(--ease) forwards; }
+  .bub.app { background: #fff; border: 1px solid var(--edge); border-bottom-left-radius: 6px; align-self: flex-start; color: var(--ink); }
+  .bub.me { background: var(--sand); border-bottom-right-radius: 6px; align-self: flex-end; transform-origin: bottom right; }
+  .bub.big-q { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; border: none; padding: 0; background: none; max-width: 100%; }
+  @keyframes pop { to { opacity: 1; transform: none; } }
+  .typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 18px; border-bottom-left-radius: 6px; background: #fff; border: 1px solid var(--edge); opacity: 0; animation: pop .3s var(--ease) forwards; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #B9B4AC; animation: dot 1s ease-in-out infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-3px); opacity: 1; } }
+  .from { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+  .from .logo-dot { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  /* ── Guardiões (mascotes) ── */
+  .pet { position: relative; display: block; pointer-events: none; }
+  .pet img { width: 100%; height: auto; display: block; animation: bob 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+  .pet::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,19,36,.16), transparent); animation: shadow 3.6s ease-in-out infinite; z-index: -1; }
+  .pet.glow-rose::before, .pet.glow-blue::before { content: ""; position: absolute; inset: 12% 14% 18%; border-radius: 50%; filter: blur(26px); z-index: -1; animation: glow 3.6s ease-in-out infinite; }
+  .pet.glow-rose::before { background: rgba(244,114,182,.28); }
+  .pet.glow-blue::before { background: rgba(77,124,254,.26); }
+  @keyframes bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.01); } }
+  @keyframes shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(.82); opacity: .6; } }
+  @keyframes glow { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .pet-in { opacity: 0; transform: translateY(16px) scale(.92); animation: petIn .9s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+  @keyframes petIn { to { opacity: 1; transform: none; } }
+  .pet.talking img { animation: talk .5s ease-in-out infinite alternate; }
+  @keyframes talk { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-2px) scaleY(1.03); } }
+  .pet.happy img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  @keyframes hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-18px) scale(1.06, .96); } 60% { transform: translateY(0) scale(.97, 1.03); } 100% { transform: translateY(0) scale(1); } }
+  .speaker { display: flex; align-items: flex-end; gap: 10px; }
+  .speaker .pet { width: 64px; flex-shrink: 0; margin-bottom: -6px; }
+  .speaker .chat { flex: 1; min-width: 0; }
+  .speaker .bub { max-width: 100%; }
+  .speaker .bub:first-child { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+  .float-heart { position: absolute; color: var(--rose); font-size: 14px; opacity: 0; animation: heartUp 2.8s ease-out infinite; }
+  @keyframes heartUp { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+
+  /* ── Guardiões: interações ── */
+  .pet-body { display: block; position: relative; pointer-events: auto; cursor: pointer; transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)); transition: transform .45s var(--ease), filter .3s; }
+  .pet.shy .pet-body { transform: scaleX(-1) rotate(-4deg) translateY(4px); filter: saturate(.85); }
+  .pet.nod .pet-body img { animation: nod .4s var(--ease) 1, bob 3.6s ease-in-out infinite .4s; }
+  @keyframes nod { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(4deg); } }
+  .pet.wiggle .pet-body img { animation: wiggle .6s ease-in-out 1, bob 3.6s ease-in-out infinite .6s; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+  .pet.shake .pet-body img { animation: shake .5s ease-in-out 1, bob 3.6s ease-in-out infinite .5s; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px) rotate(-3deg); } 40%, 80% { transform: translateX(6px) rotate(3deg); } }
+  .pet.spin .pet-body img { animation: spin .9s var(--ease) 1, bob 3.6s ease-in-out infinite .9s; }
+  @keyframes spin { 0% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16px) rotate(180deg) scale(1.05); } 100% { transform: translateY(0) rotate(360deg); } }
+  .pet.happy .pet-body img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  .pet-say { position: absolute; bottom: 92%; right: 38%; white-space: nowrap; background: #fff; border: 1px solid var(--edge); border-radius: 14px; border-bottom-right-radius: 4px; padding: 7px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink); box-shadow: 0 10px 22px -14px rgba(11,19,36,.45); opacity: 0; transform: translateY(6px) scale(.9); transform-origin: bottom right; transition: opacity .25s, transform .35s var(--ease); pointer-events: none; z-index: 5; }
+  .pet-say.show { opacity: 1; transform: none; }
+  .pet.say-right .pet-say { right: auto; left: 38%; border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; transform-origin: bottom left; }
+  .pet.say-top .pet-say { bottom: auto; top: -18px; right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); transform-origin: bottom center; border-bottom-right-radius: 14px; }
+  .pet.say-top .pet-say.show { transform: translate(-50%, 0); }
+  .burst { position: absolute; left: 50%; top: 30%; color: var(--rose); font-size: 14px; pointer-events: none; animation: burst 1.1s ease-out forwards; z-index: 4; }
+  @keyframes burst { 0% { opacity: 0; transform: translate(-50%, 0) scale(.4); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1) rotate(var(--r)); } }
+
+
+  .btn { padding: 0 26px; text-decoration: none; }
+
+  /* Navegação */
+  .nav { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid transparent; transition: border-color .3s; }
+  .nav.scrolled { border-bottom-color: var(--edge); }
+  .nav .wrap { height: 64px; display: flex; align-items: center; justify-content: space-between; }
+  .word { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+  .word i { font-style: normal; color: var(--rose); }
+  .nav-actions { display: flex; align-items: center; gap: 6px; }
+  .nav-link { font-size: 14px; font-weight: 600; padding: 10px 14px; border-radius: 999px; transition: background .2s; }
+  .nav-link:hover { background: var(--field); }
+  .nav-cta { height: 42px; border-radius: 999px; font-size: 14px; padding: 0 18px; display: none; }
+
+  /* Entrada */
+  .rise { opacity: 0; transform: translateY(16px); animation: rise .8s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 100ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); transition-delay: calc(var(--i, 0) * 70ms); }
+  .reveal.seen { opacity: 1; transform: none; }
+
+  /* Hero */
+  .hero { padding: 28px 0 40px; }
+  .hero .wrap { display: grid; gap: 28px; align-items: center; }
+  .eyebrow { font-size: 13px; font-weight: 600; color: var(--muted); }
+  h1 { font-size: clamp(38px, 9vw, 68px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 700; margin-top: 12px; }
+  .lead { margin-top: 16px; font-size: clamp(16px, 2.2vw, 19px); line-height: 1.5; color: var(--muted); max-width: 480px; }
+  .ctas { margin-top: 26px; display: flex; flex-direction: column; gap: 10px; }
+  .fine { margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+  .scene { position: relative; height: 540px; max-width: 520px; width: 100%; margin: 0 auto; }
+  .scene .card { position: absolute; background: #fff; border: 1px solid var(--edge); border-radius: 22px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(11,19,36,.04), 0 18px 36px -22px rgba(11,19,36,.32); opacity: 0; animation: cardIn .8s var(--ease) forwards, float 6s ease-in-out infinite; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(18px) rotate(var(--r)); } to { opacity: 1; transform: rotate(var(--r)); } }
+  @keyframes float { 0%, 100% { transform: rotate(var(--r)) translateY(0); } 50% { transform: rotate(var(--r)) translateY(-6px); } }
+  .k { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .big { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .big small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+  .duo { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 13.5px; color: var(--text); }
+  .av { width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .av.a { background: #E5466D; } .av.b { background: #4D7CFE; margin-left: -14px; border: 2px solid #fff; }
+  .pair { position: absolute; left: 0; right: 0; bottom: 250px; display: flex; justify-content: center; align-items: flex-end; gap: 4px; }
+  .pair .pet { width: 150px; }
+  .pair .pet.f { width: 132px; }
+  .floor { position: absolute; left: 50%; bottom: 246px; width: 300px; margin-left: -150px; height: 30px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,19,36,.07), transparent); }
+
+  /* Secções */
+  section.block { padding: 64px 0; }
+  .sec-head { max-width: 620px; }
+  .sec-head.center { margin: 0 auto; text-align: center; }
+  h2 { font-size: clamp(30px, 6vw, 46px); line-height: 1.06; letter-spacing: -0.04em; font-weight: 700; margin-top: 10px; }
+  .sec-lead { margin-top: 14px; font-size: 16.5px; line-height: 1.55; color: var(--muted); }
+
+  /* Um dia no LoveNest */
+  .day { margin-top: 36px; display: grid; gap: 14px; }
+  .moment { border: 1px solid var(--edge); border-radius: 26px; padding: 20px; background: #fff; transition: transform .35s var(--ease), box-shadow .35s var(--ease); }
+  .moment:hover { transform: translateY(-3px); box-shadow: 0 22px 40px -28px rgba(11,19,36,.45); }
+  .when { display: flex; align-items: center; justify-content: space-between; }
+  .when b { font-size: 13px; font-weight: 600; }
+  .when span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .moment h3 { margin-top: 14px; font-size: 20px; letter-spacing: -0.025em; font-weight: 700; }
+  .moment p { margin-top: 6px; font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+  .mini { margin-top: 16px; background: var(--field); border: 1px solid var(--edge); border-radius: 18px; padding: 14px; min-height: 118px; }
+  .moods { display: flex; gap: 8px; margin-top: 10px; }
+  .moods button { width: 44px; height: 44px; border-radius: 14px; background: #fff; border: 1px solid var(--edge); font-size: 20px; transition: transform .25s var(--ease), border-color .2s; }
+  .moods button:hover { transform: translateY(-2px); }
+  .moods button.sel { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .mood-note { margin-top: 10px; font-size: 13px; color: var(--text); min-height: 18px; }
+  .plan { display: flex; gap: 12px; align-items: center; }
+  .plan .date { width: 52px; height: 56px; border-radius: 14px; background: #fff; border: 1px solid var(--edge); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+  .plan .date small { font-size: 10px; font-weight: 600; letter-spacing: .1em; color: var(--rose); }
+  .plan .date b { font-size: 20px; letter-spacing: -0.02em; }
+  .plan p { margin: 0; font-size: 14px; color: var(--ink); font-weight: 600; }
+  .plan span { font-size: 12.5px; color: var(--muted); }
+  .check { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+  .check i { width: 18px; height: 18px; border-radius: 50%; background: var(--ink); color: #fff; font-style: normal; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; }
+
+  /* A chama */
+  .flame-sec { background: #fff; }
+  .stages { margin-top: 34px; display: flex; gap: 10px; overflow-x: auto; padding: 46px 4px 8px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .stages::-webkit-scrollbar { display: none; }
+  .stage-item { flex: 0 0 116px; box-shadow: 0 14px 30px -26px rgba(11,19,36,.35); scroll-snap-align: start; background: #fff; border: 1px solid var(--edge); border-radius: 22px; padding: 14px 10px 16px; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .2s; }
+  .stage-item:hover, .stage-item.on { transform: translateY(-4px); border-color: #D5D1CB; box-shadow: 0 18px 30px -24px rgba(11,19,36,.5); }
+  .stage-item .pet { width: 72px; }
+  .stage-item .pet-body { cursor: inherit; }
+  .stage-item b { margin-top: 8px; font-size: 14px; font-weight: 600; }
+  .stage-item small { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stage-item .pet-say { right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); bottom: 100%; border-bottom-right-radius: 14px; transform-origin: bottom center; }
+  .stage-item .pet-say.show { transform: translate(-50%, 0); }
+  .flame-steps { margin-top: 26px; display: grid; gap: 10px; }
+  .flame-steps div { display: flex; gap: 12px; align-items: center; font-size: 15px; }
+  .flame-steps .n { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 1px solid var(--edge); font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Privacidade */
+  .private { display: grid; gap: 28px; align-items: center; }
+  .vault { position: relative; border: 1px solid var(--edge); border-radius: 30px; padding: 30px 22px 26px; text-align: center; }
+  .vault .pet { width: 150px; margin: 0 auto; }
+  .vault .pet .pet-say { right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); border-bottom-right-radius: 14px; }
+  .vault .pet .pet-say.show { transform: translate(-50%, 0); }
+  .promises { display: grid; gap: 0; border: 1px solid var(--edge); border-radius: 22px; overflow: hidden; margin-top: 26px; }
+  .promise { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; transition: background .2s; }
+  .promise + .promise { border-top: 1px solid var(--edge); }
+  .promise:hover { background: var(--field); }
+  .promise i { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-style: normal; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .promise b { display: block; font-size: 15px; font-weight: 600; }
+  .promise span { display: block; font-size: 13.5px; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+
+  /* Final */
+  .final { text-align: center; padding: 72px 0 80px; }
+  .final .pair-sm { display: flex; justify-content: center; align-items: flex-end; gap: 2px; height: 150px; }
+  .final .pair-sm .pet { width: 120px; }
+  .final .pair-sm .pet.f { width: 104px; }
+  .final .ctas { align-items: center; }
+  footer { border-top: 1px solid var(--edge); padding: 26px 0 34px; }
+  footer .wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; font-size: 13px; color: var(--muted); }
+
+  /* Hero: cartões que os Guardiões criam */
+  .card.swap { animation: none; opacity: 1; transform: rotate(var(--r)); }
+  .card .c-in { animation: cIn .6s var(--ease); }
+  @keyframes cIn { from { opacity: 0; transform: translateY(8px) scale(.96); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+  .card .c-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .card .c-row b { font-size: 14.5px; font-weight: 600; display: block; letter-spacing: -0.01em; }
+  .card .c-row small { font-size: 12px; color: var(--muted); }
+  .card .c-emo { font-size: 24px; line-height: 1; }
+  .card .c-date { width: 40px; height: 44px; border-radius: 12px; border: 1px solid var(--edge); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .card .c-date small { font-size: 9px; letter-spacing: .1em; color: var(--rose); font-weight: 600; }
+  .card .c-photo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #F6D9C6, #EBDDF3); flex-shrink: 0; }
+  .fly { position: absolute; z-index: 8; pointer-events: none; font-size: 22px; line-height: 1; }
+  .fly-card { position: absolute; z-index: 8; pointer-events: none; width: 54px; height: 38px; border-radius: 10px; background: #fff; border: 1px solid var(--edge); box-shadow: 0 10px 20px -12px rgba(11,19,36,.5); }
+
+  /* Viagem pelas funções */
+  .journey { position: relative; height: calc(var(--n) * 85vh + 100vh); }
+  .journey-pin { position: sticky; top: 64px; height: calc(100vh - 64px); display: flex; align-items: center; overflow: hidden; }
+  .journey-grid { width: 100%; display: grid; gap: 18px; align-items: center; }
+  .j-copy h2 { font-size: clamp(26px, 5vw, 44px); }
+  .j-now { margin-top: 14px; min-height: 108px; }
+  .j-kicker { font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .j-title { margin-top: 6px; font-size: clamp(20px, 3.2vw, 28px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+  .j-desc { margin-top: 6px; font-size: 15px; color: var(--muted); line-height: 1.5; max-width: 420px; }
+  .j-now.change > * { animation: jIn .55s var(--ease) both; }
+  .j-now.change > *:nth-child(2) { animation-delay: .05s; } .j-now.change > *:nth-child(3) { animation-delay: .1s; }
+  @keyframes jIn { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+  .j-list { list-style: none; display: none; margin-top: 22px; border-left: 2px solid var(--edge); }
+  .j-list li { display: flex; gap: 14px; padding: 9px 0 9px 18px; margin-left: -2px; border-left: 2px solid transparent; cursor: pointer; transition: border-color .3s, opacity .3s; opacity: .45; }
+  .j-list li.on { border-left-color: var(--ink); opacity: 1; }
+  .j-list li.done { opacity: .75; }
+  .j-list .j-n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .j-list b { font-size: 15px; font-weight: 600; }
+  .j-list p { font-size: 13px; color: var(--muted); margin-top: 1px; max-height: 0; overflow: hidden; transition: max-height .4s var(--ease); }
+  .j-list li.on p { max-height: 40px; }
+  .j-stage { position: relative; display: flex; justify-content: center; align-items: center; justify-self: center; padding: 0 70px; }
+  .device { position: relative; width: 236px; height: 480px; border-radius: 40px; background: #0B1324; padding: 9px; box-shadow: 0 40px 70px -40px rgba(11,19,36,.6), 0 0 0 1px rgba(11,19,36,.06); }
+  .notch { position: absolute; top: 15px; left: 50%; width: 70px; height: 20px; margin-left: -35px; border-radius: 12px; background: #0B1324; z-index: 3; }
+  .device-screen { position: relative; width: 100%; height: 100%; border-radius: 32px; background: #fff; overflow: hidden; }
+  .screen { position: absolute; inset: 0; padding: 44px 14px 14px; display: flex; flex-direction: column; gap: 9px; opacity: 0; transform: translateX(26px) scale(.98); transition: opacity .45s var(--ease), transform .55s var(--ease); pointer-events: none; }
+  .screen.on { opacity: 1; transform: none; }
+  .screen.past { transform: translateX(-26px) scale(.98); }
+  .s-hi, .s-title { font-size: 18px; font-weight: 700; letter-spacing: -0.03em; }
+  .s-card { border: 1px solid var(--edge); border-radius: 16px; padding: 10px 11px; background: #fff; }
+  .s-k { font-size: 8.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .s-row { display: flex; align-items: center; gap: 9px; margin-top: 4px; }
+  .s-row b { display: block; font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; }
+  .s-row small, .s-mt { font-size: 10.5px; color: var(--muted); }
+  .s-row .s-emo { margin-left: auto; font-size: 20px; }
+  .s-av { width: 26px; height: 26px; border-radius: 50%; background: #4D7CFE; color: #fff; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s-pet { width: 30px; height: 30px; }
+  .s-date { width: 34px; height: 38px; border-radius: 10px; border: 1px solid var(--edge); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .s-date small { font-size: 7.5px; letter-spacing: .1em; color: var(--rose); font-weight: 600; }
+  .s-head { display: flex; align-items: center; gap: 9px; padding-bottom: 8px; border-bottom: 1px solid var(--edge); }
+  .s-head b { display: block; font-size: 13px; } .s-head small { font-size: 10px; color: #22A55A; }
+  .s-chat { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: flex-end; }
+  .s-bub { max-width: 80%; padding: 7px 10px; border-radius: 14px; font-size: 11.5px; }
+  .s-bub.you { border: 1px solid var(--edge); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .s-bub.me { background: var(--sand); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .screen.on .s-bub { animation: pop .4s var(--ease) both; }
+  .screen.on .s-bub:nth-child(2) { animation-delay: .25s; } .screen.on .s-bub:nth-child(3) { animation-delay: .5s; } .screen.on .s-bub:nth-child(4) { animation-delay: .75s; }
+  .s-input { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--edge); border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 11px; color: var(--faint); }
+  .s-input i { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: #fff; font-style: normal; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .s-moods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .s-moods span { border: 1px solid var(--edge); border-radius: 14px; padding: 8px 0 6px; text-align: center; font-size: 20px; transition: border-color .3s, box-shadow .3s; }
+  .s-moods span.sel { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .s-moods small { display: block; font-size: 9.5px; color: var(--muted); margin-top: 2px; }
+  .s-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 9.5px; color: var(--muted); }
+  .s-week span { border-radius: 12px; padding: 6px 0; }
+  .s-week b { display: block; font-size: 13px; color: var(--ink); margin-top: 2px; }
+  .s-week span.on { background: var(--ink); color: rgba(255,255,255,.7); } .s-week span.on b { color: #fff; }
+  .s-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .s-grid span { aspect-ratio: 1; border-radius: 12px; background: var(--g); display: flex; align-items: flex-end; padding: 5px; }
+  .s-grid small { font-size: 9px; font-weight: 600; color: rgba(11,19,36,.7); }
+  .screen.on .s-grid span { animation: pop .45s var(--ease) both; }
+  .screen.on .s-grid span:nth-child(2) { animation-delay: .06s; } .screen.on .s-grid span:nth-child(3) { animation-delay: .12s; }
+  .screen.on .s-grid span:nth-child(4) { animation-delay: .18s; } .screen.on .s-grid span:nth-child(5) { animation-delay: .24s; } .screen.on .s-grid span:nth-child(6) { animation-delay: .3s; }
+  .s-map { position: relative; height: 210px; border-radius: 18px; border: 1px solid var(--edge); background: linear-gradient(#F4F1EC 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(90deg, #F4F1EC 1px, transparent 1px) 0 0 / 22px 22px, #FBFAF8; overflow: hidden; }
+  .s-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .s-map .pin { position: absolute; width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 6px 12px -6px rgba(11,19,36,.5); }
+  .s-map .pin.a { background: #E5466D; left: 14%; bottom: 14%; }
+  .s-map .pin.b { background: #4D7CFE; right: 14%; top: 18%; }
+  .screen.on .s-map .pin.b { animation: walk 3s ease-in-out infinite alternate; }
+  @keyframes walk { to { transform: translate(-16px, 14px); } }
+  .s-big { display: block; font-size: 14px; margin-top: 4px; }
+  .s-bar { height: 6px; border-radius: 9px; background: #EEEBE6; margin-top: 8px; overflow: hidden; }
+  .s-bar i { display: block; height: 100%; background: var(--ink); border-radius: 9px; }
+  .screen.on .s-bar i { animation: grow 1.2s var(--ease) both .2s; }
+  @keyframes grow { from { width: 0 !important; } }
+  .s-book { width: 34px; height: 46px; border-radius: 6px; background: linear-gradient(160deg, #0B1324, #34405A); flex-shrink: 0; }
+  .s-wrapped { flex: 1; border-radius: 20px; background: #0B1324; color: #fff; padding: 16px 14px; display: flex; flex-direction: column; }
+  .s-wrapped > b { font-size: 22px; letter-spacing: -0.03em; margin-top: 6px; }
+  .s-stats { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .s-stats span { background: rgba(255,255,255,.07); border-radius: 12px; padding: 9px; font-size: 10px; color: rgba(255,255,255,.6); }
+  .s-stats b { display: block; font-size: 18px; color: #fff; letter-spacing: -0.02em; }
+  .screen.on .s-stats span { animation: pop .45s var(--ease) both; }
+  .screen.on .s-stats span:nth-child(2) { animation-delay: .1s; } .screen.on .s-stats span:nth-child(3) { animation-delay: .2s; } .screen.on .s-stats span:nth-child(4) { animation-delay: .3s; }
+  .tap-ring { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid var(--ink); opacity: 0; pointer-events: none; z-index: 5; }
+  .tap-ring.go { animation: tap .9s var(--ease); }
+  @keyframes tap { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: .9; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.6); } }
+  [data-tap].pressed { animation: press .5s var(--ease); }
+  @keyframes press { 40% { transform: scale(.93); } }
+  .j-path { position: absolute; left: 0; top: 0; width: 70px; height: 100%; overflow: visible; }
+  .j-path path { fill: none; stroke: #E5E0D8; stroke-width: 1.5; stroke-dasharray: 2 5; vector-effect: non-scaling-stroke; }
+  .j-guide { position: absolute; left: -6px; top: 0; width: 76px; z-index: 6; transition: transform .7s var(--ease); }
+  .j-guide .pet-say { white-space: normal; width: max-content; max-width: 180px; }
+  .j-peek { position: absolute; right: -4px; bottom: 30px; width: 70px; z-index: 6; }
+  .j-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .j-progress i { display: block; height: 100%; width: 100%; background: var(--ink); transform-origin: left; transform: scaleX(0); }
+
+  /* Capítulos */
+  .chapter { position: relative; }
+  .ch-pin { position: sticky; top: 64px; height: calc(100vh - 64px); display: flex; align-items: center; overflow: hidden; }
+  .ch-grid { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: center; }
+  .ch-copy { min-width: 0; }
+  .ch-kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .ch-kicker span { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .ch-kicker span::after { content: ""; display: inline-block; width: 22px; height: 1.5px; background: var(--edge); vertical-align: middle; margin-left: 10px; }
+  .ch-copy h2 { font-size: clamp(26px, 4.6vw, 46px); }
+  .ch-text { margin-top: 10px; }
+  .ch-widget { margin-top: 18px; }
+  .ch-stage { position: relative; justify-self: center; padding: 0 0 0 64px; }
+  .ch-guide { position: absolute; left: -4px; bottom: 18%; width: 78px; z-index: 6; }
+  .ch-guide .pet-say { white-space: normal; width: max-content; max-width: 170px; }
+  .device { position: relative; width: min(290px, calc((100vh - 150px) * .462)); aspect-ratio: 390 / 844; border-radius: 42px; background: #0B1324; padding: 8px; box-shadow: 0 50px 80px -50px rgba(11,19,36,.55), 0 0 0 1px rgba(11,19,36,.08); }
+  .device-screen { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #fff; }
+  .shot { position: absolute; left: 0; top: 0; width: 100%; display: block; }
+  .shot.pan { will-change: transform; }
+  .msgs { position: absolute; left: 0; right: 0; top: 12.32%; bottom: 8.06%; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: #fff; }
+  .msgs img { width: 100%; display: block; flex-shrink: 0; }
+  .msgs .nb { flex-shrink: 0; max-width: 72%; margin: 4px 4%; padding: 7px 10px; border-radius: 14px; font-size: 11px; line-height: 1.35; animation: pop .4s var(--ease) both; }
+  .msgs .nb.me { align-self: flex-end; background: #F1EBE3; border-bottom-right-radius: 4px; }
+  .msgs .nb.you { align-self: flex-start; background: #fff; border: 1px solid var(--edge); border-bottom-left-radius: 4px; }
+  .msgs .nb small { display: block; text-align: right; font-size: 8px; color: var(--muted); margin-top: 2px; }
+  .push { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 7; display: flex; gap: 9px; align-items: flex-start; padding: 9px 10px; border-radius: 16px; background: rgba(255,255,255,.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 14px 30px -14px rgba(11,19,36,.45), 0 0 0 1px rgba(11,19,36,.05); transform: translateY(-130%); transition: transform .6s var(--ease); }
+  .push.show { transform: none; }
+  .push-ic { width: 26px; height: 26px; border-radius: 8px; background: #fff; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .push-ic img { width: 20px; height: 20px; }
+  .push b { display: block; font-size: 10.5px; } .push span { display: block; font-size: 11px; color: var(--text); line-height: 1.3; }
+  .push small { margin-left: auto; font-size: 9px; color: var(--muted); }
+  .live { display: inline-block; border: 1px solid var(--edge); border-radius: 22px; padding: 14px 18px; text-align: center; box-shadow: 0 18px 36px -28px rgba(11,19,36,.4); }
+  .live-n { display: flex; gap: 16px; margin-top: 6px; align-items: baseline; justify-content: center; }
+  .live-n span { display: flex; flex-direction: column; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .live-n b { font-size: 26px; letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .live-n span:first-child b { color: var(--rose); }
+  .live small { display: block; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+  .try-chat { display: flex; gap: 8px; max-width: 420px; }
+  .try-chat input { flex: 1; min-width: 0; height: 48px; border-radius: 999px; border: 1px solid var(--edge); background: var(--field); padding: 0 18px; font: inherit; font-size: 15px; outline: none; transition: border-color .2s, background .2s, box-shadow .25s; }
+  .try-chat input:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 4px rgba(11,19,36,.06); }
+  .try-chat button { width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 18px; flex-shrink: 0; transition: transform .2s var(--ease); }
+  .try-chat button:hover { transform: translateY(-2px); }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .quick button, .moods-real button, .days button { border: 1px solid var(--edge); background: #fff; border-radius: 999px; font-size: 13.5px; transition: border-color .2s, transform .2s var(--ease), box-shadow .2s; }
+  .quick button { height: 36px; padding: 0 14px; }
+  .quick button:hover, .moods-real button:hover, .days button:hover { border-color: #CFCAC2; transform: translateY(-2px); }
+  .moods-real { display: flex; gap: 8px; flex-wrap: wrap; max-width: 440px; }
+  .moods-real button { height: 40px; padding: 0 14px 0 10px; display: inline-flex; align-items: center; gap: 6px; }
+  .moods-real button span { font-size: 18px; }
+  .moods-real button.sel, .days button.sel { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .days { display: flex; gap: 8px; }
+  .days button { width: 62px; height: 70px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .days small { font-size: 10px; letter-spacing: .1em; color: var(--muted); }
+  .days b { font-size: 22px; letter-spacing: -0.02em; }
+  .tap-ring { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid var(--ink); opacity: 0; pointer-events: none; z-index: 8; }
+  .tap-ring.go { animation: tap .9s var(--ease); }
+  @keyframes tap { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: .9; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.6); } }
+  .ch-dots { position: fixed; left: 18px; top: 50%; transform: translateY(-50%); z-index: 20; display: none; flex-direction: column; gap: 12px; opacity: 0; transition: opacity .3s; }
+  .ch-dots.show { opacity: 1; }
+  .ch-dots a { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 600; }
+  .ch-dots i { width: 8px; height: 8px; border-radius: 50%; background: #DAD5CE; transition: transform .3s var(--ease), background .3s; }
+  .ch-dots span { opacity: 0; transform: translateX(-4px); transition: opacity .25s, transform .3s var(--ease); }
+  .ch-dots a.on i { background: var(--ink); transform: scale(1.35); }
+  .ch-dots a.on span, .ch-dots a:hover span { opacity: 1; transform: none; color: var(--ink); }
+  .scene-top .card .push-like { display: flex; gap: 9px; align-items: flex-start; }
+
+  /* Memórias: pilha de fotos */
+  .deck { position: relative; width: 210px; height: 230px; margin: 4px 0 6px 10px; }
+  .polaroid { position: absolute; inset: 0; margin: 0; background: #fff; padding: 10px 10px 34px; border-radius: 14px; border: 1px solid var(--edge); box-shadow: 0 18px 34px -24px rgba(11,19,36,.5); transform: rotate(calc((var(--i) - 1) * 5deg)) translateY(calc(var(--i) * -3px)); transition: transform .5s var(--ease), opacity .4s; }
+  .polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; }
+  .polaroid figcaption { position: absolute; left: 12px; right: 12px; bottom: 9px; font-size: 13px; font-weight: 600; }
+  .polaroid.gone { opacity: 0; pointer-events: none; }
+  .deck-btn { margin-top: 10px; width: auto; display: inline-flex; }
+  /* Desafios */
+  .challenge { max-width: 380px; border: 1px solid var(--edge); border-radius: 22px; padding: 16px 18px; box-shadow: 0 18px 36px -28px rgba(11,19,36,.4); display: grid; gap: 4px; }
+  .challenge b { font-size: 18px; letter-spacing: -0.02em; margin-top: 4px; }
+  .challenge small { font-size: 13.5px; color: var(--muted); }
+  .challenge .btn { margin-top: 12px; height: 46px; width: auto; justify-self: start; }
+  .challenge.ok .btn { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; }
+  /* Wrapped: slides reais que avançam com o scroll */
+  .story { opacity: 0; transition: opacity .6s var(--ease), transform .8s var(--ease); transform: scale(1.03); }
+  .story.on { opacity: 1; transform: none; }
+  .story-bars { position: absolute; top: 2.2%; left: 4%; right: 4%; display: flex; gap: 4px; z-index: 3; }
+  .story-bars i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.25); overflow: hidden; }
+  .story-bars b { display: block; height: 100%; background: #fff; transform-origin: left; transform: scaleX(0); }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 380px; }
+  .stats span { border: 1px solid var(--edge); border-radius: 18px; padding: 12px 14px; font-size: 12.5px; color: var(--muted); }
+  .stats b { display: block; font-size: 28px; letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* Conversa de boas-vindas */
+  .reply-row:not(.show) { display: none; }
+  .reply-row.show { animation: rise .4s var(--ease) both; }
+  .scene { height: auto !important; }
+  .scene-top { position: relative; height: 300px; }
+  .scene-top .pair { bottom: 8px !important; }
+  .scene-top .floor { bottom: 4px !important; }
+  .hello { position: relative !important; margin-top: 6px; }
+  .hello { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border: 1px solid var(--edge); border-radius: 24px; padding: 14px; box-shadow: 0 24px 50px -30px rgba(11,19,36,.45); opacity: 0; animation: cardIn .8s var(--ease) forwards .9s; --r: 0deg; }
+  .hello-top { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .hello-top img { width: 26px; height: 26px; }
+  .hello-top .dot { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; margin-left: auto; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  .hello .chat { margin-top: 10px; min-height: 64px; max-height: 190px; overflow-y: auto; scrollbar-width: none; }
+  .hello .bub { font-size: 14px; padding: 9px 13px; }
+  .reply-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s var(--ease); pointer-events: none; }
+  .reply-row.show { opacity: 1; transform: none; pointer-events: auto; }
+  .name-in { flex: 1; min-width: 0; height: 44px; border-radius: 14px; border: 1px solid var(--edge); background: var(--field); padding: 0 14px; font: inherit; font-size: 15px; outline: none; transition: border-color .2s, background .2s, box-shadow .25s; }
+  .name-in:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 4px rgba(11,19,36,.06); }
+  .send { width: 44px; height: 44px; border-radius: 14px; background: var(--ink); color: #fff; font-size: 17px; flex-shrink: 0; transition: transform .2s var(--ease), opacity .2s; }
+  .send:disabled { opacity: .3; }
+  .send:not(:disabled):hover { transform: translateX(2px); }
+  .chip-btn { height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--edge); background: #fff; font-size: 13.5px; font-weight: 500; transition: border-color .2s, background .2s, transform .2s var(--ease); }
+  .chip-btn:hover { border-color: var(--ink); transform: translateY(-1px); }
+  .chip-btn.quiet { border-color: transparent; color: var(--muted); }
+  .scroll-hint { display: inline-block; animation: hint 1.4s ease-in-out infinite; }
+  @keyframes hint { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+
+  /* Títulos palavra a palavra */
+  .words .w { display: inline-block; opacity: 0; transform: translateY(.45em) rotate(2deg); transition: opacity .6s var(--ease), transform .7s var(--ease); transition-delay: calc(var(--wi) * 55ms); }
+  .seen .words .w, .words.seen .w { opacity: 1; transform: none; }
+  .name-swap { display: inline-block; animation: swap .6s var(--ease); }
+  @keyframes swap { from { opacity: 0; transform: translateY(.3em); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+
+  /* A chama evolui com o scroll */
+  .evolve { position: relative; height: 320vh; background: #fff; }
+  .evolve-pin { position: sticky; top: 64px; height: calc(100vh - 64px); display: flex; align-items: center; overflow: hidden; }
+  .evolve-pin .wrap { width: 100%; display: grid; gap: 18px; align-items: center; justify-items: center; text-align: center; }
+  .orb { position: relative; width: min(64vw, 300px); aspect-ratio: 1; }
+  .orb svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .orb .track { fill: none; stroke: #E9E5DF; stroke-width: 3; }
+  .orb .bar { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .15s linear; }
+  .orb .halo { position: absolute; inset: 16%; border-radius: 50%; filter: blur(34px); opacity: .55; transition: background .6s; }
+  .orb .pet { position: absolute; inset: 14%; }
+  .orb .pet-body { width: 100%; height: 100%; }
+  .orb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transform: scale(.85); transition: opacity .5s var(--ease), transform .6s var(--ease); animation: bob 3.6s ease-in-out infinite; }
+  .orb img.on { opacity: 1; transform: scale(1); }
+  .orb .pet-say { right: auto; left: 50%; bottom: 96%; transform: translate(-50%, 6px) scale(.9); border-bottom-right-radius: 14px; }
+  .orb .pet-say.show { transform: translate(-50%, 0); }
+  .evolve-meta { display: flex; align-items: baseline; gap: 10px; justify-content: center; }
+  .evolve-meta b { font-size: 28px; letter-spacing: -0.03em; }
+  .evolve-meta span { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .evolve-dots { display: flex; gap: 6px; justify-content: center; }
+  .evolve-dots i { width: 7px; height: 7px; border-radius: 50%; background: #DAD5CE; transition: background .3s, transform .3s var(--ease); }
+  .evolve-dots i.on { background: var(--ink); transform: scale(1.25); }
+  .evolve-tip { font-size: 13px; color: var(--faint); }
+
+  /* Companheiro que acompanha o scroll */
+  .buddy { position: fixed; right: 16px; bottom: 16px; z-index: 40; display: flex; align-items: flex-end; gap: 8px; opacity: 0; transform: translateY(20px) scale(.9); transition: opacity .4s, transform .5s var(--ease); pointer-events: none; }
+  .buddy.show { opacity: 1; transform: none; pointer-events: auto; }
+  .buddy .pet { width: 64px; }
+  .buddy .pet::after { display: none; }
+  .buddy .pet-say { left: auto; right: 74%; bottom: 70%; white-space: normal; width: max-content; max-width: 210px; border-bottom-right-radius: 4px; transform: translateY(6px) scale(.9); transform-origin: bottom right; }
+  .buddy .pet-say.show { transform: none; }
+
+  /* Privacidade: promessas que se marcam */
+  .promise i { background: #fff; border: 1.5px solid #D5D1CB; color: transparent; transition: background .3s, border-color .3s, color .3s, transform .4s var(--ease); }
+  .promise.ok i { background: var(--ink); border-color: var(--ink); color: #fff; transform: scale(1.1); }
+  .promise { cursor: pointer; }
+
+  /* Botões magnéticos */
+  .magnetic { transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+
+  @media (min-width: 720px) {
+    .ctas { flex-direction: row; }
+    .ctas .btn { width: auto; }
+    .day { grid-template-columns: repeat(3, 1fr); }
+    .stages { overflow: visible; justify-content: space-between; }
+    .stage-item { flex: 1 1 0; }
+    .flame-steps { grid-template-columns: repeat(3, 1fr); }
+    .nav-cta { display: inline-flex; }
+  }
+  @media (min-width: 960px) {
+    .wrap { padding: 0 32px; }
+    .hero { padding: 56px 0 72px; }
+    .hero .wrap { grid-template-columns: 1.05fr .95fr; gap: 40px; }
+    .scene-top { height: 360px; }
+    .pair .pet { width: 210px; } .pair .pet.f { width: 184px; }
+    .evolve-pin .wrap { grid-template-columns: 1fr 1fr; text-align: left; justify-items: start; }
+    .evolve-pin .orb { justify-self: center; width: 360px; }
+    .evolve-meta, .evolve-dots { justify-content: flex-start; }
+    .pair .pet { width: 240px; } .pair .pet.f { width: 210px; }
+    section.block { padding: 104px 0; }
+    .private { grid-template-columns: 1fr 1fr; gap: 64px; }
+  }
+  @media (min-width: 960px) {
+    .journey-grid { grid-template-columns: 1fr 1fr; gap: 48px; }
+    .j-list { display: block; }
+    .j-now { display: none; }
+    .device { width: 270px; height: 556px; }
+    .j-stage { padding: 0 96px; }
+    .j-guide { width: 92px; left: 0; }
+    .j-peek { width: 84px; right: 0; }
+  }
+  @media (min-width: 960px) {
+    .ch-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; }
+    .chapter.flip .ch-copy { order: 2; }
+    .ch-stage { padding: 0 0 0 96px; }
+    .ch-guide { width: 92px; left: 0; }
+    .ch-dots { display: flex; }
+  }
+  @media (max-width: 959px) {
+    .ch-pin { align-items: flex-start; padding-top: 14px; }
+    .ch-text { font-size: 14.5px; margin-top: 6px; }
+    .ch-widget { margin-top: 10px; }
+    .ch-copy h2 { font-size: 26px; }
+    .device { width: min(214px, calc((100vh - 64px - 300px) * .462)); border-radius: 32px; padding: 6px; }
+    .device-screen { border-radius: 27px; }
+    .ch-stage { padding-left: 54px; }
+    .ch-guide { width: 60px; }
+    .moods-real { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 2px 20px; }
+    .moods-real button { flex-shrink: 0; }
+    .quick { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 10px -20px 0; padding: 2px 20px; }
+    .quick button { flex-shrink: 0; }
+    .live { padding: 10px 14px; } .live-n b { font-size: 20px; } .live-n { gap: 12px; }
+    .days button { width: 54px; height: 58px; } .days b { font-size: 18px; }
+    .try-chat input, .try-chat button { height: 44px; } .try-chat button { width: 44px; }
+    .deck { width: 120px; height: 140px; margin: 0; display: inline-block; vertical-align: middle; }
+    .polaroid { padding: 6px 6px 24px; } .polaroid figcaption { font-size: 10px; bottom: 6px; left: 8px; }
+    .deck-btn { margin: 0 0 0 18px; vertical-align: middle; height: 44px; padding: 0 16px; font-size: 14px; }
+    .challenge { padding: 12px 14px; } .challenge b { font-size: 15px; } .challenge small { display: none; } .challenge .btn { margin-top: 6px; height: 40px; }
+    .stats { grid-template-columns: repeat(4, 1fr); gap: 6px; } .stats span { padding: 8px; font-size: 10px; } .stats b { font-size: 18px; }
+  }
+  @media (max-width: 719px) {
+    .journey-pin { align-items: flex-start; padding-top: 18px; }
+    .j-copy h2 { display: none; }
+    .j-now { margin-top: 4px; min-height: 96px; }
+    .device { width: 200px; height: 408px; border-radius: 34px; padding: 7px; }
+    .device-screen { border-radius: 28px; }
+    .screen { padding-top: 38px; gap: 7px; }
+    .s-map { height: 160px; }
+    .j-stage { padding: 0 62px; }
+    .j-guide { width: 64px; }
+    .j-peek { width: 58px; bottom: 20px; }
+  }
+  @media (max-width: 719px) {
+    .evolve-pin .sec-lead, .evolve-tip { display: none; }
+    .evolve-pin h2 { font-size: 30px; }
+    .orb { width: min(62vw, 250px); }
+  }
+  @media (max-width: 959px) {
+    .pair .pet { width: 132px; } .pair .pet.f { width: 116px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .words .w { opacity: 1; transform: none; }
+    .evolve { height: auto; } .evolve-pin { position: static; height: auto; padding: 64px 0; }
+    .chapter { height: auto !important; } .ch-pin { position: static; height: auto; padding: 56px 0; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <span class="word">Love<i>N</i>est</span>
+    <div class="nav-actions">
+      <button class="nav-link">Entrar</button>
+      <button class="btn nav-cta" data-cta>Criar o nosso espaço</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Hero: os dois Guardiões a conversar -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow rise" style="--d:0" data-hello-eyebrow>Um espaço só para os dois</p>
+        <h1 class="rise" style="--d:1">O amor também vive nos dias comuns.</h1>
+        <p class="lead rise" style="--d:2">Conversem, cuidem um do outro e guardem a vossa história num lugar privado. Sem feed, sem publicidade, sem pressão.</p>
+        <div class="ctas rise" style="--d:3">
+          <button class="btn magnetic" data-act="start" data-cta>Criar o nosso espaço <span class="arrow">→</span></button>
+          <button class="btn ghost magnetic">Já temos conta</button>
+        </div>
+        <p class="fine rise" style="--d:4">Grátis · leva menos de um minuto</p>
+      </div>
+
+      <div class="scene" data-scene>
+        <div class="scene-top">
+        <div class="card" data-slot="0" style="top:8px;left:0;--r:-2.5deg;animation-delay:.3s,1.1s;min-width:150px"><div class="k">Tempo juntos</div><div class="big"><span data-count="278">0</span> <small>dias</small></div></div>
+        <div class="card" data-slot="1" style="top:30px;right:0;--r:2deg;animation-delay:.5s,1.7s;max-width:210px;min-width:170px"><div class="k">A vossa chama</div><div class="duo"><span><span class="av a">A</span><span class="av b">M</span></span>Os dois apareceram hoje</div></div>
+        <div class="floor"></div>
+        <div class="pair">
+          <div class="pet f glow-rose pet-in" data-pet="her" style="--d:3"><img src="/src/features/entry/assets/faisca.webp" alt="" /></div>
+          <div class="pet glow-blue pet-in say-right" data-pet="him" style="--d:4"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+        </div>
+        </div>
+        <div class="hello" data-hello>
+          <div class="hello-top"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" />O Guardião<span class="dot"></span></div>
+          <div class="chat" data-hello-chat></div>
+          <form class="reply-row" data-reply="name" onsubmit="return false">
+            <input class="name-in" placeholder="O teu nome" maxlength="30" autocomplete="given-name" />
+            <button class="send" disabled aria-label="Enviar">→</button>
+          </form>
+          <div class="reply-row" data-reply="who">
+            <button class="chip-btn" data-who="yes">Sim 💕</button>
+            <button class="chip-btn" data-who="solo">Ainda não</button>
+            <button class="chip-btn" data-who="peek">Só a espreitar 👀</button>
+          </div>
+          <div class="reply-row" data-reply="go">
+            <button class="chip-btn" data-go="start" style="background:var(--ink);color:#fff;border-color:var(--ink)">Criar agora →</button>
+            <button class="chip-btn quiet" data-go="tour">Mostrar primeiro <span class="scroll-hint">↓</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Capítulos: cada função sentida ao descer -->
+  <nav class="ch-dots" data-ch-dots aria-label="Funções"><a href="#ch-casa" data-dot="casa"><i></i><span>Casa</span></a><a href="#ch-chat" data-dot="chat"><i></i><span>Conversa</span></a><a href="#ch-humor" data-dot="humor"><i></i><span>Humor</span></a><a href="#ch-agenda" data-dot="agenda"><i></i><span>Agenda</span></a><a href="#ch-capsula" data-dot="capsula"><i></i><span>Cápsula do tempo</span></a><a href="#ch-memorias" data-dot="memorias"><i></i><span>Memórias</span></a><a href="#ch-desafios" data-dot="desafios"><i></i><span>Desafios</span></a><a href="#ch-wrapped" data-dot="wrapped"><i></i><span>O vosso mês</span></a></nav>
+  <section class="chapter " id="ch-casa" data-chapter="casa" data-say="Cada segundo conta 💙" style="height:230vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>01</span>Casa</p>
+          <h2 class="words">Tudo o que importa hoje, num só olhar.</h2>
+          <p class="sec-lead ch-text">O tempo que estão juntos, a vossa chama, o que vem a seguir e como está o teu par.</p>
+          <div class="ch-widget"><div class="live"><span class="k">Tempo juntos</span><div class="live-n"><span><b data-t="d">278</b>dias</span><span><b data-t="h">11</b>hrs</span><span><b data-t="m">50</b>min</span><span><b data-t="s">19</b>seg</span></div><small>Desde 17 de janeiro de 2026</small></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-casa"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot pan" src="/docs/mockups/landing-shots/home-full.webp" alt="Ecrã inicial do LoveNest" data-pan /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter flip" id="ch-chat" data-chapter="chat" data-say="Escreve-lhe 💬" style="height:170vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>02</span>Conversa</p>
+          <h2 class="words">Um chat só vosso.</h2>
+          <p class="sec-lead ch-text">Sem grupos e sem ruído. Experimenta: escreve uma mensagem ao Miguel.</p>
+          <div class="ch-widget"><form class="try-chat" data-try-chat onsubmit="return false"><input placeholder="Escreve ao Miguel…" maxlength="60" /><button aria-label="Enviar">↑</button></form><div class="quick" data-quick><button>Já tenho saudades 🥺</button><button>Jantamos fora? 🍝</button><button>Amo-te ❤️</button></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-chat"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot" src="/docs/mockups/landing-shots/chat.webp" alt="Conversa do LoveNest" /><div class="msgs" data-msgs><img src="/docs/mockups/landing-shots/chat-msgs.webp" alt="" /></div><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter " id="ch-humor" data-chapter="humor" data-say="Como estás hoje? 😊" style="height:170vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>03</span>Humor</p>
+          <h2 class="words">Diz como te sentes, num toque.</h2>
+          <p class="sec-lead ch-text">O teu par fica a saber antes de perguntar. Escolhe um:</p>
+          <div class="ch-widget"><div class="moods-real" data-moods-real><button data-mood="Feliz" data-react="happy"><span>😊</span>Feliz</button><button data-mood="Tranquilo" data-react="nod"><span>😌</span>Tranquilo</button><button data-mood="Apaixonado" data-react="love"><span>😍</span>Apaixonado</button><button data-mood="Ansioso" data-react="hug"><span>😰</span>Ansioso</button><button data-mood="Triste" data-react="hug"><span>😢</span>Triste</button><button data-mood="Cansado" data-react="nod"><span>😴</span>Cansado</button><button data-mood="Irritado" data-react="hug"><span>😤</span>Irritado</button><button data-mood="Grato" data-react="happy"><span>🙏</span>Grato</button></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-humor"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot" src="/docs/mockups/landing-shots/humor.webp" alt="Humor do dia" /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter flip" id="ch-agenda" data-chapter="agenda" data-say="Quando é o jantar? 🍝" style="height:170vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>04</span>Agenda</p>
+          <h2 class="words">Combinem o que vem a seguir.</h2>
+          <p class="sec-lead ch-text">Jantares, datas e rotinas a dois, sem agenda pesada. Escolhe o dia do jantar:</p>
+          <div class="ch-widget"><div class="days" data-days><button data-day="23" data-label="quinta"><small>QUI</small><b>23</b></button><button data-day="24" data-label="sexta"><small>SEX</small><b>24</b></button><button data-day="25" data-label="sábado"><small>SÁB</small><b>25</b></button><button data-day="26" data-label="domingo"><small>DOM</small><b>26</b></button></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-agenda"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot" src="/docs/mockups/landing-shots/plano.webp" alt="Agenda do casal" /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter " id="ch-capsula" data-chapter="capsula" data-say="Eu guardo isto 🔒" style="height:170vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>05</span>Cápsula do tempo</p>
+          <h2 class="words">Mensagens para o futuro.</h2>
+          <p class="sec-lead ch-text">Escrevam hoje o que só vão abrir daqui a um ano.</p>
+          <div class="ch-widget"><form class="try-chat" data-try-capsule onsubmit="return false"><input placeholder="Para nós, daqui a um ano…" maxlength="60" /><button aria-label="Guardar">↓</button></form></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-capsula"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot" src="/docs/mockups/landing-shots/capsula.webp" alt="Cápsula do tempo" /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter flip" id="ch-memorias" data-chapter="memorias" data-say="Que fotos bonitas 📸" style="height:230vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>06</span>Memórias</p>
+          <h2 class="words">O que vivem não se perde.</h2>
+          <p class="sec-lead ch-text">Fotos e momentos guardados por mês, só para vocês os dois. Guarda uma:</p>
+          <div class="ch-widget"><div class="deck" data-deck><figure class="polaroid" data-photo="Lago ao fim da tarde" style="--i:0"><img src="/docs/mockups/landing-shots/foto-p1011.webp" alt="" /><figcaption>Lago ao fim da tarde</figcaption></figure><figure class="polaroid" data-photo="A cascata" style="--i:1"><img src="/docs/mockups/landing-shots/foto-p1035.webp" alt="" /><figcaption>A cascata</figcaption></figure><figure class="polaroid" data-photo="As tuas flores" style="--i:2"><img src="/docs/mockups/landing-shots/foto-p360.webp" alt="" /><figcaption>As tuas flores</figcaption></figure></div><button class="btn deck-btn" data-keep>Guardar esta <span class="arrow">→</span></button></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-memorias"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot pan" src="/docs/mockups/landing-shots/memorias-full.webp" alt="Memórias do casal" data-pan /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter" id="ch-desafios" data-chapter="desafios" data-say="Bora fazer isto? 💪" style="height:170vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>07</span>Desafios</p>
+          <h2 class="words">Pequenas aventuras a dois.</h2>
+          <p class="sec-lead ch-text">Um desafio por dia para fazerem juntos. Hoje é este:</p>
+          <div class="ch-widget"><div class="challenge" data-challenge><span class="k">O desafio de hoje</span><b>Cozinhar juntos um prato novo</b><small>Escolham uma receita que nenhum dos dois fez.</small><button class="btn" data-done>Concluir <span class="arrow">✓</span></button></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-desafios"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot" src="/docs/mockups/landing-shots/desafios.webp" alt="Desafios do casal" /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="chapter flip" id="ch-wrapped" data-chapter="wrapped" data-say="Que mês! 🎉" style="height:260vh">
+    <div class="ch-pin">
+      <div class="wrap ch-grid">
+        <div class="ch-copy">
+          <p class="ch-kicker"><span>08</span>O vosso mês</p>
+          <h2 class="words">No fim do mês, a vossa história.</h2>
+          <p class="sec-lead ch-text">Um resumo bonito de tudo o que viveram. Desce e vê o de setembro:</p>
+          <div class="ch-widget"><div class="stats" data-stats><span><b data-to="1248">0</b>mensagens</span><span><b data-to="24">0</b>memórias</span><span><b data-to="21">0</b>dias de chama</span><span><b data-to="3">0</b>desafios</span></div></div>
+        </div>
+        <div class="ch-stage">
+          <div class="pet glow-blue ch-guide say-right" data-pet="g-wrapped"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+          <div class="device"><div class="device-screen"><img class="shot story" src="/docs/mockups/landing-shots/story1.webp" alt="" data-story="0" /><img class="shot story" src="/docs/mockups/landing-shots/story2.webp" alt="" data-story="1" /><img class="shot story" src="/docs/mockups/landing-shots/story3.webp" alt="" data-story="2" /><img class="shot story" src="/docs/mockups/landing-shots/story4.webp" alt="" data-story="3" /><div class="push" data-push><span class="push-ic"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span><div><b>LoveNest</b><span data-push-text></span></div><small>agora</small></div><span class="tap-ring" data-tap-ring></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- A chama evolui com o scroll -->
+  <section class="evolve" data-evolve data-comment="Desce devagar e vê-me crescer 🔥">
+    <div class="evolve-pin">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">A vossa chama</p>
+          <h2 class="words">Cresce quando os dois aparecem.</h2>
+          <p class="sec-lead" style="max-width:440px">Cada casal tem um Guardião. Começa como uma faísca e evolui com a vossa presença, um dia de cada vez.</p>
+          <div class="evolve-meta" style="margin-top:22px"><b data-stage-name>Faísca</b><span data-stage-days>dia 0</span></div>
+          <div class="evolve-dots" style="margin-top:12px"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <p class="evolve-tip" style="margin-top:12px">Continua a descer ↓</p>
+        </div>
+        <div class="orb">
+          <div class="halo" data-halo></div>
+          <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="47" /><circle class="bar" cx="50" cy="50" r="47" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" data-ring /></svg>
+          <div class="pet" data-pet="evo"><span class="pet-body">
+            <img src="/src/assets/flame/flame_01_faisca_full.png" alt="" data-i="0" class="on" />
+            <img src="/src/assets/flame/flame_02_brasa_full.png" alt="" data-i="1" />
+            <img src="/src/assets/flame/flame_03_chama_full.png" alt="" data-i="2" />
+            <img src="/src/assets/flame/flame_04_guardiao_full.png" alt="" data-i="3" />
+            <img src="/src/assets/flame/flame_05_sentinela_full.png" alt="" data-i="4" />
+            <img src="/src/assets/flame/flame_06_eterno_full.png" alt="" data-i="5" />
+            <img src="/src/assets/flame/flame_07_soberano_full.png" alt="" data-i="6" />
+          </span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- A chama cresce -->
+  <section class="block flame-sec" style="padding-top:56px" data-comment="Toca neles, eles falam 😄">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <p class="eyebrow">Os sete Guardiões</p>
+        <h2 class="words" style="font-size:clamp(26px,4.6vw,36px)">Toca em cada um.</h2>
+      </div>
+      <div class="stages" data-stages>
+        <button class="stage-item reveal" style="--i:0" data-stage="Faísca" data-say="Uma faísca é suficiente para começar ✨">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_01_faisca_thumb.png" alt="" /></span></span>
+          <b>Faísca</b><small>Começa aqui</small>
+        </button>
+        <button class="stage-item reveal" style="--i:1" data-stage="Brasa" data-say="Já há calor 🔥">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_02_brasa_thumb.png" alt="" /></span></span>
+          <b>Brasa</b><small>3 dias</small>
+        </button>
+        <button class="stage-item reveal" style="--i:2" data-stage="Chama" data-say="A chama acende 💫">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_03_chama_thumb.png" alt="" /></span></span>
+          <b>Chama</b><small>7 dias</small>
+        </button>
+        <button class="stage-item reveal" style="--i:3" data-stage="Guardião" data-say="Agora protejo-vos 💙">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></span></span>
+          <b>Guardião</b><small>14 dias</small>
+        </button>
+        <button class="stage-item reveal" style="--i:4" data-stage="Sentinela" data-say="Sempre atento 👀">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_05_sentinela_thumb.png" alt="" /></span></span>
+          <b>Sentinela</b><small>30 dias</small>
+        </button>
+        <button class="stage-item reveal" style="--i:5" data-stage="Eterno" data-say="Isto já é para sempre ♾️">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_06_eterno_thumb.png" alt="" /></span></span>
+          <b>Eterno</b><small>90 dias</small>
+        </button>
+        <button class="stage-item reveal" style="--i:6" data-stage="Soberano" data-say="Um ano juntos 👑">
+          <span class="pet"><span class="pet-body"><img src="/src/assets/flame/flame_07_soberano_thumb.png" alt="" /></span></span>
+          <b>Soberano</b><small>1 ano</small>
+        </button>
+      </div>
+      <div class="flame-steps reveal">
+        <div><span class="n">1</span>Os dois aparecem no dia</div>
+        <div><span class="n">2</span>A chama ganha força</div>
+        <div><span class="n">3</span>O Guardião evolui convosco</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacidade -->
+  <section class="block" data-comment="Toca nas promessas. Eu cumpro-as 🔒">
+    <div class="wrap private">
+      <div class="reveal">
+        <p class="eyebrow">Privacidade</p>
+        <h2 class="words">A vossa relação não é conteúdo.</h2>
+        <p class="sec-lead">Conversas, humor, memórias e localização são íntimos. Tratamo-los como tal.</p>
+        <div class="promises">
+          <div class="promise"><i>✓</i><div><b>Privado por defeito</b><span>Só vocês os dois veem o vosso espaço.</span></div></div>
+          <div class="promise"><i>✓</i><div><b>Sem publicidade</b><span>Nada do que partilham serve para vender anúncios.</span></div></div>
+          <div class="promise"><i>✓</i><div><b>Sem feed público</b><span>Não há gostos, seguidores nem comparações.</span></div></div>
+          <div class="promise"><i>✓</i><div><b>Vocês decidem</b><span>A localização e o resto ligam-se só se quiserem.</span></div></div>
+        </div>
+      </div>
+      <div class="vault reveal" style="--i:2">
+        <div class="pet glow-blue say-top" data-pet="guard" style="width:150px;margin:20px auto 0"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+        <p class="k" style="margin-top:14px">O vosso Guardião</p>
+        <p style="margin-top:6px;font-size:15px;color:var(--text)">Toma conta do que é vosso.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final -->
+  <section class="final" data-comment="Vamos? Eu fico à vossa espera 💙">
+    <div class="wrap">
+      <div class="pair-sm reveal">
+        <div class="pet f glow-rose" data-pet="her2"><img src="/src/features/entry/assets/faisca.webp" alt="" /></div>
+        <div class="pet glow-blue" data-pet="him2"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+      </div>
+      <h2 class="reveal words" style="margin-top:18px" data-final-title>Comecem pelos dias comuns.</h2>
+      <p class="sec-lead reveal" style="max-width:460px;margin-left:auto;margin-right:auto">Criem o vosso espaço hoje. O vosso par junta-se depois com um código.</p>
+      <div class="ctas reveal" style="justify-content:center">
+        <button class="btn magnetic" data-act="start" data-cta>Criar o nosso espaço <span class="arrow">→</span></button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="buddy" data-buddy>
+  <div class="pet" data-pet="buddy"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+</div>
+
+<footer><div class="wrap"><span class="word" style="font-size:15px">Love<i>N</i>est</span>O amor também vive nos dias comuns.</div></footer>
+
+<script>
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = (ms) => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+  // ── Guardiões que reagem ─────────────────────────────────────────────────
+  const $pet = (root, name) => root.querySelector(`[data-pet="${name}"]`);
+
+  function react(pet, cls) {
+    if (!pet) return;
+    ["nod", "wiggle", "shake", "spin", "happy"].forEach(c => pet.classList.remove(c));
+    void pet.offsetWidth;
+    pet.classList.add(cls);
+  }
+
+  function say(pet, text, ms = 2200) {
+    if (!pet) return;
+    let b = pet.querySelector(".pet-say");
+    if (!b) { b = document.createElement("div"); b.className = "pet-say"; pet.appendChild(b); }
+    b.textContent = text;
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+    clearTimeout(b._t);
+    if (ms) b._t = setTimeout(() => b.classList.remove("show"), ms);
+  }
+
+  function hearts(pet, n = 7) {
+    if (!pet || reduced) return;
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement("span");
+      h.className = "burst"; h.textContent = "♥";
+      const a = (Math.PI * 2 * i) / n + Math.random() * .6;
+      h.style.setProperty("--dx", `${Math.cos(a) * (40 + Math.random() * 30)}px`);
+      h.style.setProperty("--dy", `${-30 - Math.random() * 50}px`);
+      h.style.setProperty("--r", `${(Math.random() - .5) * 60}deg`);
+      h.style.fontSize = `${10 + Math.random() * 8}px`;
+      h.style.animationDelay = `${i * 30}ms`;
+      pet.appendChild(h); setTimeout(() => h.remove(), 1300);
+    }
+  }
+
+
+  // Envolve as imagens para os Guardiões se poderem inclinar e reagir.
+  document.querySelectorAll(".pet").forEach(pet => {
+    let body = pet.querySelector(".pet-body");
+    const img = pet.querySelector("img");
+    if (!body) { body = document.createElement("span"); body.className = "pet-body"; img.replaceWith(body); body.appendChild(img); }
+    if (pet.closest(".stage-item")) return;
+    body.addEventListener("click", () => { react(pet, "happy"); hearts(pet); say(pet, ["Olá! 💕", "Hehe 😊", "Vamos?"][Math.floor(Math.random() * 3)]); });
+    body.addEventListener("mouseenter", () => react(pet, "wiggle"));
+  });
+
+  // Inclinam-se para o rato.
+  addEventListener("pointermove", (e) => {
+    if (reduced) return;
+    document.querySelectorAll(".pet-body").forEach(body => {
+      const r = body.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) return;
+      const dx = (e.clientX - (r.left + r.width / 2)) / innerWidth;
+      const dy = (e.clientY - (r.top + r.height / 2)) / innerHeight;
+      body.style.setProperty("--rot", `${Math.max(-10, Math.min(10, dx * 30))}deg`);
+      body.style.setProperty("--tx", `${Math.max(-6, Math.min(6, dx * 20))}px`);
+      body.style.setProperty("--ty", `${Math.max(-4, Math.min(4, dy * 12))}px`);
+    });
+  });
+
+  // A app "escreve".
+  async function play(chat) {
+    const script = JSON.parse(chat.dataset.script || "[]");
+    chat.innerHTML = "";
+    await sleep(Number(chat.dataset.start || 0));
+    for (const [who, text] of script) {
+      if (who !== "me") {
+        const t = document.createElement("div"); t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
+        chat.appendChild(t); await sleep(Math.min(1100, 380 + text.length * 14)); t.remove();
+      } else await sleep(600);
+      const b = document.createElement("div"); b.className = "bub " + who; b.textContent = text; chat.appendChild(b);
+      await sleep(260);
+    }
+  }
+
+  // Contagem.
+  document.querySelectorAll("[data-count]").forEach(el => {
+    const to = Number(el.dataset.count), t0 = performance.now() + (reduced ? 0 : 600), dur = reduced ? 0 : 1400;
+    const tick = (now) => { const p = dur ? Math.max(0, Math.min(1, (now - t0) / dur)) : 1; el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+
+  const her = $pet(document, "her"), him = $pet(document, "him");
+  let visitor = "";
+  const halos = ["rgba(244,114,182,.45)","rgba(255,139,61,.4)","rgba(45,217,196,.35)","rgba(77,124,254,.4)","rgba(155,93,229,.4)","rgba(255,200,61,.45)","rgba(155,93,229,.45)"];
+
+  // Palavra a palavra.
+  document.querySelectorAll(".words").forEach(h => {
+    h.innerHTML = h.textContent.split(" ").map((w, i) => `<span class="w" style="--wi:${i}">${w}</span>`).join(" ");
+  });
+  function setWords(h, text) {
+    h.innerHTML = text.split(" ").map((w, i) => `<span class="w" style="--wi:${i}">${w}</span>`).join(" ");
+    h.classList.remove("seen"); void h.offsetWidth; h.classList.add("seen");
+  }
+  const heroH1 = document.querySelector("h1");
+  heroH1.classList.add("words");
+  heroH1.innerHTML = heroH1.textContent.split(" ").map((w, i) => `<span class="w" style="--wi:${i + 2}">${w}</span>`).join(" ");
+  requestAnimationFrame(() => heroH1.classList.add("seen"));
+
+  // ── Conversa com quem chega ──
+  const helloChat = document.querySelector("[data-hello-chat]");
+  const rows = Object.fromEntries([...document.querySelectorAll("[data-reply]")].map(r => [r.dataset.reply, r]));
+  const showRow = (name) => Object.entries(rows).forEach(([k, r]) => r.classList.toggle("show", k === name));
+  async function guardianSays(lines, pet = him) {
+    for (const text of lines) {
+      const t = document.createElement("div"); t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
+      helloChat.appendChild(t); pet.classList.add("talking"); helloChat.scrollTop = 1e6;
+      await sleep(Math.min(1000, 360 + text.length * 13));
+      t.remove(); pet.classList.remove("talking");
+      const b = document.createElement("div"); b.className = "bub app"; b.textContent = text; helloChat.appendChild(b);
+      helloChat.scrollTop = 1e6; await sleep(240);
+    }
+  }
+  function youSay(text) {
+    const b = document.createElement("div"); b.className = "bub me"; b.textContent = text; helloChat.appendChild(b); helloChat.scrollTop = 1e6;
+  }
+  function personalise(name) {
+    visitor = name;
+    try { localStorage.setItem("onboarding_name", name); } catch {}
+    const eb = document.querySelector("[data-hello-eyebrow]");
+    eb.innerHTML = `<span class="name-swap">Olá, ${name} 👋</span>`;
+    document.querySelectorAll("[data-cta]").forEach(b => { if (!b.classList.contains("nav-cta")) b.innerHTML = `Começar, ${name} <span class="arrow">→</span>`; });
+    setWords(document.querySelector("[data-final-title]"), `${name}, comecem pelos dias comuns.`);
+  }
+
+  (async () => {
+    await sleep(1400);
+    react(him, "wiggle"); say(him, "Olá! 👋", 1800);
+    await guardianSays(["Olá! Sou o Guardião do LoveNest.", "Como te chamas?"]);
+    showRow("name");
+  })();
+
+  const nameForm = rows.name, nameIn = nameForm.querySelector("input"), sendBtn = nameForm.querySelector("button");
+  nameIn.addEventListener("input", () => {
+    sendBtn.disabled = !nameIn.value.trim();
+    react(her, "nod");
+    const v = nameIn.value.trim().split(" ")[0];
+    if (v) say(her, `Olá, ${v}! 👋`, 0); else say(her, "…", 800);
+  });
+  nameForm.addEventListener("submit", async () => {
+    const name = nameIn.value.trim().split(" ")[0]; if (!name) return;
+    const nice = name.charAt(0).toUpperCase() + name.slice(1);
+    showRow(null); youSay(nice); personalise(nice);
+    react(her, "happy"); react(him, "happy"); hearts(him, 8);
+    say(her, `${nice}! 💕`, 1800);
+    await sleep(400);
+    await guardianSays([`Prazer, ${nice} 💙`, "Há alguém especial na tua vida?"]);
+    showRow("who");
+  });
+  rows.who.addEventListener("click", async (e) => {
+    const c = e.target.closest("[data-who]"); if (!c) return;
+    showRow(null); youSay(c.textContent);
+    if (c.dataset.who === "yes") {
+      react(her, "happy"); react(him, "spin"); hearts(her, 10); hearts(him, 10);
+      await guardianSays(["Que bonito! 💕", "Este espaço é para vocês os dois. Criamos o vosso?"]);
+    } else if (c.dataset.who === "solo") {
+      react(him, "nod");
+      await guardianSays(["Também tens o modo a solo, só para ti 🌿", "Queres experimentar?"]);
+    } else {
+      react(him, "wiggle");
+      await guardianSays(["Fica à vontade! 😊", "Desce e eu mostro-te tudo."]);
+    }
+    showRow("go");
+  });
+  rows.go.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-go]"); if (!c) return;
+    if (c.dataset.go === "tour") { scrollTo({ top: document.querySelector(".chapter").offsetTop, behavior: "smooth" }); }
+    else { react(him, "spin"); hearts(him, 12); say(him, "Vamos a isso! ✨"); }
+  });
+
+  // ── Hero: os Guardiões criam os cartões da app ──
+  const sceneTop = document.querySelector(".scene-top");
+  const slots = [...document.querySelectorAll("[data-slot]")];
+  const centre = (el) => { const r = el.getBoundingClientRect(), b = sceneTop.getBoundingClientRect(); return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2 }; };
+  function arc(el, from, to, dur = 900, lift = 90) {
+    sceneTop.appendChild(el);
+    const mid = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - lift };
+    const kf = [0, .25, .5, .75, 1].map(t => {
+      const x = (1 - t) * (1 - t) * from.x + 2 * (1 - t) * t * mid.x + t * t * to.x;
+      const y = (1 - t) * (1 - t) * from.y + 2 * (1 - t) * t * mid.y + t * t * to.y;
+      return { transform: `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${t * 20 - 10}deg) scale(${1 + Math.sin(t * Math.PI) * .25})`, opacity: t > .92 ? 0 : 1 };
+    });
+    return el.animate(kf, { duration: reduced ? 1 : dur, easing: "cubic-bezier(.45,.05,.35,1)" }).finished.then(() => el.remove());
+  }
+  let slotTurn = 0;
+  async function place(html, fromPet) {
+    const slot = slots[slotTurn++ % slots.length];
+    const card = Object.assign(document.createElement("span"), { className: "fly-card" });
+    await arc(card, centre(fromPet), centre(slot), 800, 60);
+    slot.classList.add("swap");
+    slot.innerHTML = `<div class="c-in">${html}</div>`;
+    slot.animate([{ transform: `rotate(${getComputedStyle(slot).getPropertyValue("--r")}) scale(1.06)` }, { transform: `rotate(${getComputedStyle(slot).getPropertyValue("--r")}) scale(1)` }], { duration: 450, easing: "cubic-bezier(.22,1,.36,1)" });
+  }
+  const ACTS = [
+    async () => { // a Faísca atira um coração, o Guardião apanha
+      react(her, "wiggle");
+      await arc(Object.assign(document.createElement("span"), { className: "fly", textContent: "❤️" }), centre(her), centre(him), 950, 110);
+      react(him, "happy"); hearts(him, 5);
+      await place(`<div class="k">LoveNest · agora</div><div class="c-row"><span class="c-emo">💌</span><div><b>O Miguel pensou em ti</b><small>Toca para responder</small></div></div>`, him);
+    },
+    async () => { // humor
+      react(him, "nod");
+      await arc(Object.assign(document.createElement("span"), { className: "fly", textContent: "😊" }), centre(him), { x: centre(him).x, y: centre(him).y - 80 }, 700, 20);
+      await place(`<div class="k">LoveNest · agora</div><div class="c-row"><span class="c-emo">😊</span><div><b>A Ana está feliz</b><small>Humor de hoje</small></div></div>`, him);
+    },
+    async () => { // memória
+      react(her, "happy");
+      await place(`<div class="k">LoveNest · agora</div><div class="c-row"><span class="c-photo"></span><div><b>Nova memória</b><small>O primeiro café · 12 fotos</small></div></div>`, her);
+    },
+    async () => { // plano
+      react(him, "spin");
+      await place(`<div class="k">LoveNest · agora</div><div class="c-row"><span class="c-date"><small>SÁB</small>25</span><div><b>Cinema no sábado</b><small>19:30 · os dois</small></div></div>`, him);
+    },
+    async () => { // a chama sobe com os dois
+      react(her, "happy"); setTimeout(() => react(him, "happy"), 150); hearts(her, 4); hearts(him, 4);
+      await place(`<div class="k">LoveNest · agora</div><div class="c-row"><img src="/src/assets/flame/flame_03_chama_thumb.png" alt="" style="width:36px;height:36px" /><div><b>12 dias de chama 🔥</b><small>Os dois apareceram hoje</small></div></div>`, her);
+    },
+  ];
+  (async () => {
+    await sleep(2600);
+    let i = 0;
+    while (true) {
+      if (document.visibilityState === "visible" && sceneTop.getBoundingClientRect().bottom > 0) await ACTS[i++ % ACTS.length]();
+      await new Promise(r => setTimeout(r, reduced ? 4000 : 2600));
+    }
+  })();
+
+  // ── Capítulos ──
+  const chapters = [...document.querySelectorAll("[data-chapter]")];
+  const dotsNav = document.querySelector("[data-ch-dots]");
+  function push(ch, text, ms = 3200) {
+    const el = ch.querySelector("[data-push]"); if (!el) return;
+    el.querySelector("[data-push-text]").textContent = text;
+    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), ms);
+  }
+  function tapAt(ch, xPct, yPct) {
+    const ring = ch.querySelector("[data-tap-ring]");
+    ring.style.left = xPct + "%"; ring.style.top = yPct + "%";
+    ring.classList.remove("go"); void ring.offsetWidth; ring.classList.add("go");
+  }
+  const greeted = new Set();
+  function onChapters() {
+    let active = null;
+    chapters.forEach(ch => {
+      const r = ch.getBoundingClientRect();
+      const total = ch.offsetHeight - innerHeight;
+      const pr = Math.max(0, Math.min(1, -r.top / (total || 1)));
+      if (r.top < innerHeight * .5 && r.bottom > innerHeight * .5) active = ch;
+      const pan = ch.querySelector("[data-pan]");
+      if (pan && !reduced) {
+        const screen = pan.parentElement;
+        pan.style.transform = `translateY(${-pr * (pan.offsetHeight - screen.offsetHeight)}px)`;
+      }
+      if (r.top < innerHeight * .4 && r.bottom > innerHeight * .6 && !greeted.has(ch)) {
+        greeted.add(ch);
+        const g = ch.querySelector(".ch-guide");
+        setTimeout(() => { react(g, "wiggle"); say(g, (visitor && ch.dataset.chapter === "casa" ? `${visitor}, ` : "") + ch.dataset.say, 2600); }, 500);
+      }
+    });
+    dotsNav.classList.toggle("show", !!active);
+    dotsNav.querySelectorAll("a").forEach(a => a.classList.toggle("on", active && a.dataset.dot === active.dataset.chapter));
+  }
+  addEventListener("scroll", onChapters, { passive: true }); onChapters();
+
+  // Casa: o tempo juntos a correr de verdade.
+  const since = new Date(2026, 0, 17);
+  setInterval(() => {
+    const ms = Date.now() - since; const t = { d: Math.floor(ms / 864e5), h: Math.floor(ms / 36e5) % 24, m: Math.floor(ms / 6e4) % 60, s: Math.floor(ms / 1e3) % 60 };
+    document.querySelectorAll("[data-t]").forEach(el => { el.textContent = String(t[el.dataset.t]).padStart(el.dataset.t === "d" ? 1 : 2, "0"); });
+  }, 1000);
+
+  // Conversa: o que escreves aparece no chat real e o Miguel responde.
+  const chatCh = document.querySelector("#ch-chat"), msgs = chatCh.querySelector("[data-msgs]"), chatG = chatCh.querySelector(".ch-guide");
+  const replies = ["Também tenho ❤️", "Combinado 🍝", "Amo-te mais 🥰", "Hehe, já vou 😊"];
+  const hhmm = () => new Date().toTimeString().slice(0, 5);
+  function sendMsg(text) {
+    if (!text) return;
+    const b = document.createElement("div"); b.className = "nb me"; b.innerHTML = `${text.replace(/</g, "&lt;")}<small>${hhmm()} ✓✓</small>`; msgs.appendChild(b);
+    tapAt(chatCh, 95, 97.5); react(chatG, "nod");
+    setTimeout(() => {
+      const r = /\bamo/i.test(text) ? "Amo-te mais 🥰" : /saudade/i.test(text) ? "Também tenho ❤️ Já vou" : /jant/i.test(text) ? "Combinado 🍝 Às 20h?" : replies[Math.floor(Math.random() * replies.length)];
+      const y = document.createElement("div"); y.className = "nb you"; y.innerHTML = `${r}<small>${hhmm()}</small>`; msgs.appendChild(y);
+      react(chatG, "happy"); hearts(chatG, 5);
+    }, reduced ? 0 : 1300);
+  }
+  const chatForm = chatCh.querySelector("[data-try-chat]"), chatIn = chatForm.querySelector("input");
+  chatForm.addEventListener("submit", () => { sendMsg(chatIn.value.trim()); chatIn.value = ""; });
+  chatCh.querySelectorAll("[data-quick] button").forEach(b => b.addEventListener("click", () => sendMsg(b.textContent)));
+
+  // Humor: o teu par recebe a notificação; o Guardião reage ao que sentes.
+  const humorCh = document.querySelector("#ch-humor"), humorG = humorCh.querySelector(".ch-guide");
+  const moodPos = { Feliz: [19, 30], Tranquilo: [41, 30], Apaixonado: [63, 30], Ansioso: [84, 30], Triste: [19, 40], Cansado: [41, 40], Irritado: [63, 40], Grato: [84, 40] };
+  humorCh.querySelectorAll("[data-mood]").forEach(b => b.addEventListener("click", () => {
+    humorCh.querySelectorAll("[data-mood]").forEach(x => x.classList.toggle("sel", x === b));
+    const m = b.dataset.mood, emo = b.querySelector("span").textContent;
+    tapAt(humorCh, ...moodPos[m]);
+    push(humorCh, `Humor ${visitor ? "de " + visitor : "da Ana"}: ${m} ${emo}`);
+    const kind = b.dataset.react;
+    if (kind === "hug") { react(humorG, "nod"); say(humorG, "Estou aqui contigo 🤍", 2400); hearts(humorG, 4); }
+    else if (kind === "love") { react(humorG, "happy"); hearts(humorG, 12); say(humorG, "Que bonito 😍", 2200); }
+    else { react(humorG, "happy"); say(humorG, kind === "nod" ? "Boa, com calma 🌿" : "Isso! 😊", 2200); }
+  }));
+
+  // Agenda: escolher o dia marca o jantar e chega a notificação.
+  const agCh = document.querySelector("#ch-agenda"), agG = agCh.querySelector(".ch-guide");
+  const dayPos = { "23": [73, 79.5], "24": [85, 79.5], "25": [10.5, 84.5], "26": [23, 84.5] };
+  agCh.querySelectorAll("[data-day]").forEach(b => b.addEventListener("click", () => {
+    agCh.querySelectorAll("[data-day]").forEach(x => x.classList.toggle("sel", x === b));
+    tapAt(agCh, ...dayPos[b.dataset.day]);
+    push(agCh, `Jantar marcado para ${b.dataset.label}, às 20:30 🍝`);
+    react(agG, "spin"); say(agG, "Marcado! 🗓️", 2000);
+  }));
+
+  // Cápsula: a mensagem fica guardada para daqui a um ano.
+  const capCh = document.querySelector("#ch-capsula"), capG = capCh.querySelector(".ch-guide");
+  const capForm = capCh.querySelector("[data-try-capsule]"), capIn = capForm.querySelector("input");
+  capForm.addEventListener("submit", () => {
+    if (!capIn.value.trim()) { react(capG, "shake"); say(capG, "Escreve algo primeiro ✍️", 1800); return; }
+    const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+    tapAt(capCh, 94, 5.5);
+    push(capCh, `Cápsula guardada. Abre a ${d.toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} 🔒`, 3800);
+    react(capG, "spin"); hearts(capG, 8); say(capG, "Guardada até lá 🔒", 2400);
+    capIn.value = "";
+  });
+
+  // ── Memórias: a foto vai para o espaço do casal ──
+  const memCh = document.querySelector("#ch-memorias"), memG = memCh.querySelector(".ch-guide");
+  memCh.querySelector("[data-keep]").addEventListener("click", () => {
+    const left = [...memCh.querySelectorAll(".polaroid:not(.gone)")];
+    if (!left.length) { memCh.querySelectorAll(".polaroid").forEach(p => p.classList.remove("gone")); return; }
+    const top = left[left.length - 1];
+    const dev = memCh.querySelector(".device").getBoundingClientRect(), r = top.getBoundingClientRect();
+    if (!reduced) top.animate([{ transform: getComputedStyle(top).transform }, { transform: `translate(${dev.left + dev.width / 2 - (r.left + r.width / 2)}px, ${dev.top + dev.height * .3 - (r.top + r.height / 2)}px) scale(.3) rotate(12deg)`, opacity: .2 }], { duration: 700, easing: "cubic-bezier(.45,.05,.35,1)" });
+    setTimeout(() => {
+      top.classList.add("gone");
+      tapAt(memCh, 92, 6.5);
+      push(memCh, `Nova memória: ${top.dataset.photo} 📸`);
+      react(memG, "happy"); hearts(memG, 6); say(memG, "Guardada para sempre 💛", 2200);
+      if (left.length === 1) memCh.querySelector("[data-keep]").innerHTML = 'Ver outra vez <span class="arrow">↺</span>';
+    }, reduced ? 0 : 650);
+  });
+
+  // ── Desafios: concluir dá festa ──
+  const dsCh = document.querySelector("#ch-desafios"), dsG = dsCh.querySelector(".ch-guide"), dsCard = dsCh.querySelector("[data-challenge]");
+  dsCh.querySelector("[data-done]").addEventListener("click", () => {
+    if (dsCard.classList.contains("ok")) return;
+    dsCard.classList.add("ok"); dsCh.querySelector("[data-done]").innerHTML = 'Concluído <span class="arrow">✓</span>';
+    tapAt(dsCh, 78.5, 44.2);
+    push(dsCh, "Desafio concluído: Cozinhar juntos um prato novo 🎉");
+    react(dsG, "spin"); hearts(dsG, 14); say(dsG, "Vocês conseguiram! 🎉", 2600);
+  });
+
+  // ── Wrapped: os slides avançam com o scroll; os números contam ──
+  const wrCh = document.querySelector("#ch-wrapped"), slides = wrCh.querySelectorAll("[data-story]");
+  let slideNow = -1;
+  function onWrapped() {
+    const r = wrCh.getBoundingClientRect(), total = wrCh.offsetHeight - innerHeight;
+    const pr = reduced ? 1 : Math.max(0, Math.min(.999, -r.top / (total || 1)));
+    const k = pr * slides.length, idx = Math.floor(k);
+    if (idx !== slideNow) {
+      slideNow = idx; slides.forEach((sl, i) => sl.classList.toggle("on", i === idx));
+      if (r.top < innerHeight * .5 && r.bottom > innerHeight * .5) { const g = wrCh.querySelector(".ch-guide"); react(g, idx === slides.length - 1 ? "spin" : "nod"); if (idx === slides.length - 1) hearts(g, 10); }
+    }
+  }
+  addEventListener("scroll", onWrapped, { passive: true }); onWrapped();
+  new IntersectionObserver((es, o) => es.forEach(en => {
+    if (!en.isIntersecting) return; o.disconnect();
+    en.target.querySelectorAll("[data-to]").forEach(el => {
+      const to = Number(el.dataset.to), t0 = performance.now(), dur = reduced ? 0 : 1600;
+      const tick = (now) => { const q = dur ? Math.min(1, (now - t0) / dur) : 1; el.textContent = Math.round(to * (1 - Math.pow(1 - q, 3))).toLocaleString("pt-PT"); if (q < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    });
+  }), { threshold: .6 }).observe(wrCh.querySelector("[data-stats]"));
+
+  // ── Companheiro ──
+  const buddy = document.querySelector("[data-buddy]"), buddyPet = $pet(document, "buddy");
+  function buddySay(text) {
+    react(buddyPet, "nod");
+    say(buddyPet, visitor && Math.random() < .5 ? `${visitor}, ${text.charAt(0).toLowerCase()}${text.slice(1)}` : text, 3200);
+  }
+  const hide = new Set();
+  const heroIO = new IntersectionObserver((es) => { es.forEach(en => en.isIntersecting ? hide.add(en.target) : hide.delete(en.target)); buddy.classList.toggle("show", hide.size === 0); }, { threshold: .15 });
+  heroIO.observe(document.querySelector(".hero"));
+  const chIO = new IntersectionObserver((es) => { es.forEach(en => en.isIntersecting ? hide.add(en.target) : hide.delete(en.target)); buddy.classList.toggle("show", hide.size === 0); }, { threshold: 0 });
+  document.querySelectorAll("[data-chapter]").forEach(c => chIO.observe(c));
+
+  const commented = new Set();
+  const cIO = new IntersectionObserver((es) => es.forEach(en => {
+    if (!en.isIntersecting || commented.has(en.target)) return;
+    commented.add(en.target); setTimeout(() => buddySay(en.target.dataset.comment), 500);
+  }), { threshold: .35 });
+  document.querySelectorAll("[data-comment]").forEach(el => cIO.observe(el));
+  buddyPet.querySelector(".pet-body")?.addEventListener("click", () => document.querySelector(".final").scrollIntoView({ behavior: "smooth" }));
+
+  // ── A chama evolui com o scroll ──
+  const STAGES = [["Faísca",0,"Uma faísca chega para começar ✨"],["Brasa",3,"Já há calor aqui 🔥"],["Chama",7,"Uma semana! A chama acende 💫"],["Guardião",14,"Agora protejo-vos 💙"],["Sentinela",30,"Um mês. Sempre atento 👀"],["Eterno",90,"Isto já é para durar ♾️"],["Soberano",365,"Um ano juntos 👑"]];
+  const evo = document.querySelector("[data-evolve]"), evoPet = $pet(document, "evo");
+  const evoImgs = evo.querySelectorAll(".orb img"), ring = evo.querySelector("[data-ring]"), halo = evo.querySelector("[data-halo]");
+  const dots = evo.querySelectorAll(".evolve-dots i");
+  let stageNow = -1;
+  function onEvolve() {
+    const r = evo.getBoundingClientRect();
+    const total = evo.offsetHeight - innerHeight;
+    const p = reduced ? 1 : Math.max(0, Math.min(1, -r.top / (total || 1)));
+    const idx = Math.min(STAGES.length - 1, Math.floor(p * STAGES.length));
+    ring.style.strokeDashoffset = String(100 - p * 100);
+    // dias entre o limiar do estágio e o seguinte
+    const within = p * STAGES.length - idx;
+    const d0 = STAGES[idx][1], d1 = STAGES[idx + 1] ? STAGES[idx + 1][1] : 365;
+    const days = idx === STAGES.length - 1 ? 365 : Math.round(d0 + (d1 - d0) * within);
+    evo.querySelector("[data-stage-days]").textContent = days >= 365 ? "1 ano" : `dia ${days}`;
+    if (idx !== stageNow) {
+      stageNow = idx;
+      evoImgs.forEach((im, i) => im.classList.toggle("on", i === idx));
+      dots.forEach((d, i) => d.classList.toggle("on", i <= idx));
+      evo.querySelector("[data-stage-name]").textContent = STAGES[idx][0];
+      halo.style.background = halos[idx];
+      if (r.top < innerHeight * .5 && r.bottom > innerHeight * .5) { react(evoPet, "happy"); hearts(evoPet, 5); say(evoPet, STAGES[idx][2], 2000); }
+    }
+  }
+  addEventListener("scroll", onEvolve, { passive: true }); onEvolve();
+  // A faixa dos 7 leva ao ponto certo da evolução.
+  document.querySelectorAll(".stage-item").forEach((item, i) => item.addEventListener("dblclick", () => {
+    const total = evo.offsetHeight - innerHeight;
+    scrollTo({ top: evo.offsetTop + total * (i + .5) / STAGES.length, behavior: "smooth" });
+  }));
+
+  // ── Privacidade: as promessas marcam-se ──
+  const guardP = $pet(document, "guard");
+  const promises = [...document.querySelectorAll(".promise")];
+  function tick(pr) {
+    if (pr.classList.contains("ok")) return;
+    pr.classList.add("ok"); react(guardP, "nod");
+    if (promises.every(x => x.classList.contains("ok"))) setTimeout(() => { react(guardP, "happy"); hearts(guardP, 10); say(guardP, "Prometido 🤝", 2600); }, 300);
+  }
+  promises.forEach(pr => pr.addEventListener("click", () => tick(pr)));
+  new IntersectionObserver((es, o) => es.forEach(en => {
+    if (!en.isIntersecting) return; o.disconnect();
+    promises.forEach((pr, i) => setTimeout(() => tick(pr), reduced ? 0 : 900 + i * 650));
+  }), { threshold: .5 }).observe(document.querySelector(".promises"));
+
+  // ── Botões magnéticos ──
+  document.querySelectorAll(".magnetic").forEach(b => {
+    b.addEventListener("pointermove", (e) => {
+      if (reduced || e.pointerType !== "mouse") return;
+      const r = b.getBoundingClientRect();
+      b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .12}px, ${(e.clientY - r.top - r.height / 2) * .25}px)`;
+    });
+    b.addEventListener("pointerleave", () => { b.style.transform = ""; });
+  });
+
+  // Aparecer ao fazer scroll.
+  const io = new IntersectionObserver((entries) => entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    en.target.classList.add("seen");
+    en.target.querySelectorAll(".words").forEach(w => w.classList.add("seen"));
+    en.target.querySelectorAll("[data-onview]").forEach(c => { delete c.dataset.onview; play(c); });
+    io.unobserve(en.target);
+  }), { threshold: 0.2 });
+  document.querySelectorAll(".reveal, .words").forEach(el => io.observe(el));
+
+  // Barra de navegação ganha linha ao descer.
+  addEventListener("scroll", () => document.querySelector(".nav").classList.toggle("scrolled", scrollY > 8), { passive: true });
+
+  // Estágios da chama: cada um fala ao passar ou tocar.
+  document.querySelectorAll(".stage-item").forEach(item => {
+    const pet = item.querySelector(".pet");
+    const go = () => {
+      document.querySelectorAll(".stage-item").forEach(x => x.classList.toggle("on", x === item));
+      react(pet, "happy"); say(pet, item.dataset.say, 2400);
+    };
+    item.addEventListener("mouseenter", go); item.addEventListener("click", go);
+  });
+
+  // Privacidade: o Guardião fala quando aparece.
+  const guard = $pet(document, "guard");
+  new IntersectionObserver((es, o) => es.forEach(en => { if (en.isIntersecting) { setTimeout(() => { react(guard, "wiggle"); say(guard, "Isto fica entre vocês 🔒", 2200); }, 200); o.disconnect(); } }), { threshold: .6 }).observe(guard);
+
+  // Final: os dois saltam juntos.
+  const her2 = $pet(document, "her2"), him2 = $pet(document, "him2");
+  new IntersectionObserver((es, o) => es.forEach(en => { if (en.isIntersecting) { setTimeout(() => { react(her2, "happy"); setTimeout(() => { react(him2, "happy"); hearts(him2, 8); }, 180); }, 400); o.disconnect(); } }), { threshold: .6 }).observe(her2);
+
+  // Ondinha e festa no "Criar".
+  document.addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest(".btn"); if (!btn || reduced) return;
+    const r = btn.getBoundingClientRect(); const s = Math.max(r.width, r.height) / 2;
+    const span = document.createElement("span"); span.className = "ripple";
+    span.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+    btn.appendChild(span); setTimeout(() => span.remove(), 650);
+  });
+  document.querySelectorAll('[data-act="start"]').forEach(b => b.addEventListener("click", () => { react(him, "spin"); hearts(him, 10); say(him, visitor ? `Vamos a isso, ${visitor}! ✨` : "Vamos a isso! ✨"); }));
+</script>
+</body>
+</html>

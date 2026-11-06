@@ -1,0 +1,404 @@
+<meta charset="utf-8">
+<title>Home unificada</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root { --bg: #F4F2EF; --ink: #0B1324; --muted: #6B7280; --line: #ECE8E3; --sub: #3A4150; color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; margin: 0;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 60px; }
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 26px; }
+  header h1 { font-size: 26px; letter-spacing: -0.02em; margin: 0 0 6px; text-wrap: balance; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; max-width: 66ch; line-height: 1.55; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 28px; align-items: start; }
+  .cap { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+  .phone { background: #fff; border: 1px solid var(--line); border-radius: 32px; padding: 18px 16px 24px; max-width: 400px; box-shadow: 0 24px 60px -34px rgba(11,19,36,.4); display: grid; gap: 12px; }
+  .card { border: 1px solid var(--line); border-radius: 22px; background: #fff; box-shadow: 0 1px 2px rgba(11,19,36,.04), 0 10px 28px -14px rgba(11,19,36,.16); }
+  .hd { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 6px; }
+  .hd .mid { text-align: center; } .hd b { font-size: 19px; letter-spacing: -.02em; display: block; } .hd small { color: var(--muted); font-size: 12.5px; }
+  .tag { text-align: center; color: #E5466D; font-size: 13.5px; font-weight: 500; margin-top: -4px; }
+  .av { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 18px; position: relative; box-shadow: 0 0 0 2.5px #fff, 0 0 0 4.5px var(--ring); }
+  .av i { position: absolute; right: -2px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; background: var(--dot); }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .title { font-size: 15.5px; font-weight: 600; letter-spacing: -.01em; }
+  .muted { color: var(--muted); font-size: 12.5px; }
+  .tt { padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .tt .nums { display: flex; gap: 10px; align-items: baseline; margin-left: auto; }
+  .tt .nums span { display: grid; justify-items: center; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tt .nums small { font-size: 9px; color: var(--muted); letter-spacing: .08em; font-weight: 600; }
+  .tt .nums .d { color: #E5466D; font-size: 22px; }
+  .ch { padding: 16px; }
+  .big { font-size: 46px; font-weight: 800; letter-spacing: -.04em; line-height: 1; color: #E5466D; }
+  .pres { display: flex; gap: 12px; font-size: 13px; font-weight: 600; color: var(--sub); }
+  .pres span { display: inline-flex; align-items: center; gap: 4px; }
+  .stages { display: flex; align-items: center; margin: 16px 2px 8px; }
+  .stages i { width: 8px; height: 8px; border-radius: 50%; background: #E4E0DA; flex: none; }
+  .stages i.done { background: #FF8A6B; } .stages i.now { width: 20px; height: 20px; background: radial-gradient(circle at 35% 30%, #FFB08F, #F2553C); box-shadow: 0 0 0 5px rgba(242,85,60,.15); }
+  .stages b { flex: 1; height: 2px; background: #EAE6E0; } .stages b.done { background: #FFB8A3; }
+  .foot { border-top: 1px solid var(--line); margin: 12px -16px -16px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .miss { display: flex; gap: 6px; }
+  .cy { padding: 14px 16px; }
+  .stages.calm i.done { background: #9AA0AA; } .stages.calm b.done { background: #C9CDD4; }
+  .stages.calm i.now { width: 14px; height: 14px; background: var(--ink); box-shadow: 0 0 0 4px rgba(11,19,36,.08); }
+  .bar { height: 6px; border-radius: 9px; background: #F1EEEA; margin: 10px 0 8px; overflow: hidden; } .bar i { display: block; height: 100%; width: 11%; border-radius: 9px; background: linear-gradient(90deg, #FF8FA9, #F2385E); }
+  .map { height: 110px; border-radius: 22px 22px 0 0; background: #EFEBE5; position: relative; overflow: hidden; }
+  .map:before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 32%, #fff 32%, #fff 34%, transparent 34%), linear-gradient(0deg, transparent 46%, #fff 46%, #fff 52%, transparent 52%); }
+  .pin { position: absolute; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 14px; border: 3px solid #fff; box-shadow: 0 6px 14px -6px rgba(0,0,0,.45); }
+  .loc { padding: 12px 16px 14px; display: flex; gap: 12px; align-items: center; }
+  .live { color: #0E9F6E; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; } .live:before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #10B981; }
+  .sec { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin: 10px 4px 2px; }
+  .tools { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
+  .tool { display: grid; justify-items: center; gap: 6px; font-size: 11.5px; font-weight: 500; color: var(--sub); }
+  .notes { display: grid; gap: 10px; }
+  .note { display: flex; gap: 12px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.45; }
+  .note b { display: block; font-size: 13.5px; }
+  svg { display: block; flex: none; overflow: visible; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Home com um só estilo</h1>
+    <p>Versão calma: a Home fica como está, sem quadrados novos nem mais cor. Só os ícones de linha fina passam a pequenos desenhos do novo estilo, e o rosa sai dos números e textos para o design ficar limpo e coerente.</p>
+  </header>
+
+  <div class="cols">
+    <section>
+      <p class="cap">Home completa</p>
+      <div class="phone" id="phone"></div>
+    </section>
+    <section>
+      <p class="cap">O que muda</p>
+      <div class="notes" id="notes"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+// Arte do Humor: a Faísca a sentir cada humor, as luas do sono e os quadradinhos das atividades.
+// Gerado a partir de docs/mockups/humor-proposta.html (maqueta aprovada). Devolve SVG em texto.
+
+// ponta, núcleo, corpo, borda, traços
+const PAL = {
+  feliz: ["#FFF6C2", "#FFE485", "#FFB830", "#EE760E", "#4A1F05"],
+  tranquilo: ["#E4FFF5", "#AEF2DA", "#46CFA4", "#138C6A", "#0B3B2E"],
+  apaixonado: ["#FFE9F0", "#FFC6D6", "#FF7FA3", "#DF3A6B", "#4E0B21"],
+  ansioso: ["#F4F0FF", "#D9D0FF", "#A796FF", "#6A50E6", "#25186A"],
+  triste: ["#EAF2FF", "#BDD5FF", "#6F9DFF", "#2D57D8", "#122560"],
+  cansado: ["#F6F3FF", "#E0DBF0", "#B4AECB", "#716A8F", "#2A2540"],
+  irritado: ["#FFE4CC", "#FFB580", "#FF6A3A", "#CF2B0E", "#4E1004"],
+  grato: ["#FFF3E0", "#FFDBB2", "#FFAD68", "#E2722B", "#4E220A"],
+};
+// Silhuetas da chama (viewBox 64): viva, serena, eriçada, caída
+const SHAPE = {
+  viva: "M32 3.5C34.6 11.5 40.6 13 41.8 19.6 43.6 15.6 46.6 14.2 47.8 11.2 51.4 19.6 53.4 27.2 52.2 37A20.2 20.2 0 0 1 11.8 38.4C11 30.2 13.8 23.8 18 19.6 19.2 23.6 21.2 25.6 23.2 25.8 22 17.6 25.8 9.6 32 3.5Z",
+  serena: "M32.6 7.5C36.4 13.6 43.6 15.6 46 21.6 49.8 25.8 52.2 31 52.2 37.2A20.2 20.2 0 0 1 11.8 37.6C11.6 30.6 14.8 25.4 19 22 20.8 24.8 22.6 25.8 24 25.2 23.6 18.4 27.2 12 32.6 7.5Z",
+  ericada: "M33 1.5C35 9.6 38.8 12 40.8 16.8 42.8 12.8 45.8 9.6 49.2 6.6 50.4 15.6 54.2 24 52.4 36.4A20.2 20.2 0 0 1 11.8 38.4C10.8 30.2 12.8 21.8 15.8 14.8 17.8 19.8 19.8 21.8 22.8 22.8 22.6 14.8 26.8 7.6 33 1.5Z",
+  sono: "M33.4 13.5C36.6 18 42.4 19.6 45.4 24 49.8 27.6 52.2 32 52.2 37.4A20.2 20.2 0 0 1 11.8 37.6C11.8 31.6 14.6 27.4 18.6 24.6 20.4 26.6 22.4 27.2 23.8 26.6 24.6 20.6 28.4 16.4 33.4 13.5Z",
+  caida: "M47 11.5C42.6 14.4 35.6 14.6 33.4 20 39.2 20.4 46.4 24.4 50.2 30.2 52 33 52.4 35.4 52.2 38.2A20.2 20.2 0 0 1 11.8 38.4C11.8 31.4 15.8 26 21.8 22.2 26 19.4 32.4 16.4 37 14.4 40.6 13 44 12.4 47 11.5Z",
+};
+
+/** @param {string} key @param {number} size @param {string} u prefixo único dos ids */
+function moodFaceSvg(key, size, u) {
+  if (!PAL[key]) key = "tranquilo";
+  const [tip, core, body, edge, F] = PAL[key];
+  const shape = { feliz: "viva", apaixonado: "viva", tranquilo: "serena", grato: "serena", ansioso: "viva", irritado: "ericada", triste: "caida", cansado: "sono" }[key];
+  // olho da Faísca: grande, escuro, íris colorida e dois brilhos
+  const eye = (x, y, rx = 4.3, ry = 5.2, look = 0) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#${u}e)"/>
+    <ellipse cx="${x}" cy="${y + ry * .45}" rx="${rx * .72}" ry="${ry * .38}" fill="${edge}" opacity=".55"/>
+    <circle cx="${x - rx * .3 + look}" cy="${y - ry * .38}" r="${rx * .42}" fill="#fff"/>
+    <circle cx="${x + rx * .38 + look}" cy="${y + ry * .3}" r="${rx * .18}" fill="#fff" opacity=".9"/>`;
+  // traços afilados (preenchidos, não linhas de espessura igual)
+  const arcUp = (x, y, w = 9, h = 6.2, t = 2.6) => `<path d="M${x - w / 2} ${y}Q${x} ${y - h} ${x + w / 2} ${y}Q${x} ${y - h + t * 1.6} ${x - w / 2} ${y}Z" fill="${F}"/>`;
+  const arcDown = (x, y, w = 9, h = 5, t = 2.4) => `<path d="M${x - w / 2} ${y}Q${x} ${y + h} ${x + w / 2} ${y}Q${x} ${y + h - t * 1.6} ${x - w / 2} ${y}Z" fill="${F}"/>`;
+  const brow = (x1, y1, x2, y2, bend = 1.4) => {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - bend;
+    return `<path d="M${x1} ${y1}Q${mx} ${my - 1.6} ${x2} ${y2}Q${mx} ${my + 0.4} ${x1} ${y1}Z" fill="${F}" stroke="${F}" stroke-width=".6" stroke-linejoin="round"/>`;
+  };
+  const smile = (x, y, w, h) => `<path d="M${x - w / 2} ${y}Q${x} ${y + h} ${x + w / 2} ${y}Q${x} ${y + h * .55} ${x - w / 2} ${y}Z" fill="${F}"/>`;
+  const frown = (x, y, w, h) => `<path d="M${x - w / 2} ${y}Q${x} ${y - h} ${x + w / 2} ${y}Q${x} ${y - h * .55} ${x - w / 2} ${y}Z" fill="${F}"/>`;
+  const openMouth = (x, y, w, h) => `<path d="M${x - w / 2} ${y}Q${x} ${y - 1} ${x + w / 2} ${y}Q${x + w * .42} ${y + h} ${x} ${y + h}Q${x - w * .42} ${y + h} ${x - w / 2} ${y}Z" fill="url(#${u}m)"/>
+    <ellipse cx="${x}" cy="${y + h * .72}" rx="${w * .26}" ry="${h * .26}" fill="#FF8BA0"/>`;
+  const blush = `<ellipse cx="20.5" cy="46" rx="4.4" ry="2.6" fill="#FF5A86" opacity=".38" filter="url(#${u}b)"/><ellipse cx="43.5" cy="46" rx="4.4" ry="2.6" fill="#FF5A86" opacity=".38" filter="url(#${u}b)"/>`;
+  const heart = (x, y, s, fill = `url(#${u}h)`) => `<g transform="translate(${x - 12 * s} ${y - 11 * s}) scale(${s})"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="${fill}"/><ellipse cx="7.6" cy="7.4" rx="2.6" ry="1.7" fill="#fff" opacity=".8" transform="rotate(-30 7.6 7.4)"/></g>`;
+  const drop = (x, y, s = 1) => `<path d="M${x} ${y}q${-3.4 * s} ${5 * s} 0 ${7.4 * s} ${3.4 * s} ${-2.4 * s} 0 ${-7.4 * s}Z" fill="url(#${u}t)"/><ellipse cx="${x - .8 * s}" cy="${y + 4.2 * s}" rx="${.7 * s}" ry="${1.3 * s}" fill="#fff" opacity=".85"/>`;
+  const FEAT = {
+    feliz: () => blush + arcUp(24.5, 41) + arcUp(39.5, 41) + openMouth(32, 45.5, 10, 6.2),
+    tranquilo: () => blush + arcDown(24.5, 39.5) + arcDown(39.5, 39.5) + smile(32, 46, 6.5, 3.2),
+    apaixonado: () => blush + heart(24.5, 40.5, .5) + heart(39.5, 40.5, .5) + openMouth(32, 46.5, 7.5, 4.6) + heart(32, -1, .36),
+    ansioso: () => brow(19.5, 32, 27, 30.4, -1.2) + brow(44.5, 32, 37, 30.4, -1.2) + eye(24.5, 39.5, 3.9, 5, -.5) + eye(39.5, 39.5, 3.9, 5, -.5)
+      + `<path d="M26.5 48.2q1.4-1.8 2.8 0t2.8 0t2.8 0t2.8 0" fill="none" stroke="${F}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>` + drop(49, 22, .9),
+    triste: () => brow(19.5, 33.4, 27.5, 31.2, 1.4) + brow(44.5, 33.4, 36.5, 31.2, 1.4) + eye(24.5, 40.5, 4.3, 5.2) + eye(39.5, 40.5, 4.3, 5.2) + frown(32, 50, 7, 3.4) + drop(19.5, 45, .9),
+    cansado: () => `<g>${eye(24.5, 41, 4.1, 4.6)}<path d="M19.9 41.4Q24.5 34.6 29.1 41.4Z" fill="${body}"/><path d="M19.9 41.2Q24.5 39.6 29.1 41.2" fill="none" stroke="${F}" stroke-width="1.7" stroke-linecap="round"/></g>
+      <g>${eye(39.5, 41, 4.1, 4.6)}<path d="M34.9 41.4Q39.5 34.6 44.1 41.4Z" fill="${body}"/><path d="M34.9 41.2Q39.5 39.6 44.1 41.2" fill="none" stroke="${F}" stroke-width="1.7" stroke-linecap="round"/></g>
+      <ellipse cx="32" cy="49" rx="2.4" ry="2.9" fill="url(#${u}m)"/>
+      <path d="M44.5 13.5h5.4l-5.4 5.4h5.4" fill="none" stroke="${edge}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M52 7.5h3.6l-3.6 3.6h3.6" fill="none" stroke="${edge}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`,
+    irritado: () => brow(18.5, 31.2, 28, 35, 0) + brow(45.5, 31.2, 36, 35, 0) + eye(24.5, 41.5, 3.9, 4.4) + eye(39.5, 41.5, 3.9, 4.4) + frown(32, 50.5, 9, 3.4)
+      + `<g fill="#fff" opacity=".85"><circle cx="9" cy="30" r="2.2"/><circle cx="6.4" cy="27" r="1.6"/><circle cx="55" cy="30" r="2.2"/><circle cx="57.6" cy="27" r="1.6"/></g>`,
+    grato: () => blush + arcUp(24.5, 41, 8.6, 5.4) + arcUp(39.5, 41, 8.6, 5.4) + smile(32, 46, 8, 4)
+      + `<path d="M53 5l1.4 3.6 3.6 1.4-3.6 1.4L53 15l-1.4-3.6L48 10l3.6-1.4Z" fill="url(#${u}s)"/><path d="M10 16l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9Z" fill="url(#${u}s)"/>`,
+  };
+  const P = SHAPE[shape];
+  return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" style="overflow:visible">
+    <defs>
+      <radialGradient id="${u}g" cx=".5" cy=".7" r=".66"><stop offset="0" stop-color="${core}"/><stop offset=".5" stop-color="${body}"/><stop offset="1" stop-color="${edge}"/></radialGradient>
+      <linearGradient id="${u}p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${tip}" stop-opacity=".95"/><stop offset=".42" stop-color="${tip}" stop-opacity="0"/></linearGradient>
+      <radialGradient id="${u}c" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="${core}" stop-opacity="0"/></radialGradient>
+      <radialGradient id="${u}l" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <radialGradient id="${u}e" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#3a2030"/><stop offset="1" stop-color="#12060c"/></radialGradient>
+      <linearGradient id="${u}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${F}"/><stop offset="1" stop-color="#14060a"/></linearGradient>
+      <linearGradient id="${u}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6A88"/><stop offset="1" stop-color="#C80E3E"/></linearGradient>
+      <linearGradient id="${u}t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D2EAFF"/><stop offset="1" stop-color="#3F8CFF"/></linearGradient>
+      <linearGradient id="${u}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF6C4"/><stop offset="1" stop-color="#FFB000"/></linearGradient>
+      <filter id="${u}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>
+      <filter id="${u}d" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6"/></filter>
+      <clipPath id="${u}x"><path d="${P}"/></clipPath>
+    </defs>
+    <ellipse cx="32" cy="60.5" rx="16" ry="2.6" fill="${body}" opacity=".55" filter="url(#${u}d)"/>
+    <path d="${P}" fill="url(#${u}g)"/>
+    <g clip-path="url(#${u}x)">
+      <rect x="0" y="0" width="64" height="64" fill="url(#${u}p)"/>
+      <ellipse cx="32" cy="47" rx="15" ry="11" fill="url(#${u}c)"/>
+      <ellipse cx="20" cy="31" rx="6" ry="3.4" fill="url(#${u}l)" opacity=".75" transform="rotate(-38 20 31)"/>
+      <path d="${P}" fill="none" stroke="${edge}" stroke-opacity=".5" stroke-width="2.2"/>
+    </g>
+    ${FEAT[key]()}
+  </svg>`;
+}
+
+
+const MOOD_TINT = Object.fromEntries(Object.entries(PAL).map(([k, v]) => [k, v[2]]));
+
+const SQ = "M21.7 1h20.6C53.7 1 63 10.3 63 21.7v20.6C63 53.7 53.7 63 42.3 63H21.7C10.3 63 1 53.7 1 42.3V21.7C1 10.3 10.3 1 21.7 1Z";
+const HEART = "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+const heartAt = (x, y, s, fill) => `<path transform="translate(${x - 12 * s} ${y - 11.5 * s}) scale(${s})" d="${HEART}" fill="${fill}"/>`;
+const star4 = (x, y, r, fill) => `<path d="M${x} ${y - r}C${x + r * .18} ${y - r * .18} ${x + r * .18} ${y - r * .18} ${x + r} ${y}C${x + r * .18} ${y + r * .18} ${x + r * .18} ${y + r * .18} ${x} ${y + r}C${x - r * .18} ${y + r * .18} ${x - r * .18} ${y + r * .18} ${x - r} ${y}C${x - r * .18} ${y - r * .18} ${x - r * .18} ${y - r * .18} ${x} ${y - r}Z" fill="${fill}"/>`;
+
+// fundo branco; o desenho a cores, com gradientes, luz e detalhe (mesmo acabamento da Faísca)
+const lg = (id, a, b, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const shine = (id) => `<radialGradient id="${id}" cx=".3" cy=".2" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`;
+const soft = (id) => `<filter id="${id}" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="1.6" stdDeviation="1.5" flood-color="#0B1324" flood-opacity=".18"/></filter>`;
+const ICONS = {
+  chat: { glyph: (u) => `<defs>${lg(u + "a", "#FF8FAB", "#FF3D6E")}${lg(u + "b", "#FFE1E9", "#FFC2D2")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M30 17.5c0-5.5 5.6-9.5 12.5-9.5S55 12 55 17.5c0 3.4-2 6.3-5.2 8.1l.9 4.2c.2.7-.6 1.2-1.2.8l-4.6-3.3c-.8.1-1.6.2-2.4.2-6.9 0-12.5-4-12.5-9.5Z" fill="url(#${u}b)"/>
+        <path d="M9 32.5C9 24.5 16.6 18.5 26 18.5S43 24.5 43 32.5 35.4 46.5 26 46.5c-1.7 0-3.3-.2-4.9-.6l-7.4 4.6c-.8.5-1.7-.2-1.5-1.1l1.4-5.9C10.8 41 9 36.9 9 32.5Z" fill="url(#${u}a)"/>
+        <path d="M9 32.5C9 24.5 16.6 18.5 26 18.5S43 24.5 43 32.5Z" fill="url(#${u}s)" opacity=".5"/>
+        ${heartAt(26, 33, .62, "#fff")}
+        <circle cx="38" cy="17.6" r="1.5" fill="#FF6B8E"/><circle cx="42.6" cy="17.6" r="1.5" fill="#FF6B8E"/><circle cx="47.2" cy="17.6" r="1.5" fill="#FF6B8E"/>
+      </g>` },
+  agenda: { calendar: true },
+  humor: { humor: true },
+  espiritual: { glyph: (u) => `<defs>${lg(u + "a", "#8E8CFF", "#5148D6")}${lg(u + "p", "#FFFFFF", "#ECEBFF")}${lg(u + "q", "#F4F3FF", "#DCDAFF")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M32 21.5c-6-4.5-13.5-5.6-21-4.2-1 .2-1.7 1-1.7 2v25.6c0 1.3 1.2 2.2 2.4 2 7.2-1.2 14 .2 20.3 4.6 6.3-4.4 13.1-5.8 20.3-4.6 1.2.2 2.4-.7 2.4-2V19.3c0-1-.7-1.8-1.7-2-7.5-1.4-15-.3-21 4.2Z" fill="url(#${u}a)"/>
+        <path d="M31 22.8c-5.3-3.7-11.6-4.6-18-3.6v24.6c6.3-.9 12.4.3 18 3.8Z" fill="url(#${u}p)"/>
+        <path d="M33 22.8c5.3-3.7 11.6-4.6 18-3.6v24.6c-6.3-.9-12.4.3-18 3.8Z" fill="url(#${u}q)"/>
+        <g stroke="#B9B6F5" stroke-width="1.3" stroke-linecap="round"><path d="M16.5 26c3.4-.4 6.8.2 10 1.8M16.5 31c3.4-.4 6.8.2 10 1.8M16.5 36c3.4-.4 6.8.2 10 1.8M37.5 27.8c3.2-1.6 6.6-2.2 10-1.8M37.5 32.8c3.2-1.6 6.6-2.2 10-1.8"/></g>
+        <path d="M40 19.6v13l2.6-2 2.6 2V18.7c-1.8.1-3.5.4-5.2.9Z" fill="#FF5A7E"/>
+        ${star4(32, 11.5, 4.2, "#FFC93C")}
+      </g>` },
+  conflitos: { glyph: (u) => `<defs>${lg(u + "a", "#FF8A80", "#E8283B")}${lg(u + "b", "#FFF3E8", "#FFD9BF")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        ${heartAt(32, 34.5, 1.72, `url(#${u}a)`)}
+        <ellipse cx="22.5" cy="21.5" rx="5.5" ry="3.4" fill="url(#${u}s)" transform="rotate(-30 22.5 21.5)"/>
+        <g transform="rotate(-40 32 31)">
+          <rect x="15" y="25.5" width="34" height="11" rx="5.5" fill="url(#${u}b)"/>
+          <rect x="26.5" y="25.5" width="11" height="11" fill="#F6C4A3"/>
+          <g fill="#E7A27E"><circle cx="29.5" cy="28.8" r=".95"/><circle cx="34.5" cy="28.8" r=".95"/><circle cx="29.5" cy="33.2" r=".95"/><circle cx="34.5" cy="33.2" r=".95"/><circle cx="32" cy="31" r=".95"/></g>
+        </g>
+      </g>` },
+  historia: { glyph: (u) => `<defs>${lg(u + "a", "#FF8DB0", "#D9346A")}${lg(u + "e", "#FFFFFF", "#F1E8EC", 1, 0)}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M21 13h22.5c2.5 0 4.5 2 4.5 4.5v26H21Z" fill="url(#${u}e)"/>
+        <g stroke="#E6D6DD" stroke-width=".8"><path d="M46.2 16v26.5M44.6 16v26.5"/></g>
+        <path d="M18.5 12h22c2.2 0 4 1.8 4 4v28.5c0 2.2-1.8 4-4 4h-22c-1.9 0-3.5-1.6-3.5-3.5V15.5c0-1.9 1.6-3.5 3.5-3.5Z" fill="url(#${u}a)"/>
+        <path d="M15 44.5c0-1.9 1.6-3.5 3.5-3.5H48v6.5c0 1.4-1.1 2.5-2.5 2.5H18.5c-1.9 0-3.5-1.6-3.5-3.5Z" fill="url(#${u}e)"/>
+        <path d="M20 12v29" stroke="#fff" stroke-opacity=".28" stroke-width="1.6"/>
+        <path d="M15 15.5c0-1.9 1.6-3.5 3.5-3.5h22c2.2 0 4 1.8 4 4v6H15Z" fill="url(#${u}s)" opacity=".55"/>
+        ${heartAt(30.5, 27, .78, "#fff")}
+        <path d="M36 41v12l2.5-2 2.5 2V41Z" fill="#FFC93C"/>
+      </g>` },
+  capsula: { glyph: (u) => `<defs>${lg(u + "w", "#C79BFF", "#7E3FE0")}${lg(u + "g", "#F7EEFF", "#E6D3FF")}${lg(u + "s", "#FFD86B", "#F5A524")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M21.5 15h21c0 7.6-4.4 11.6-8 15.6l-.6.7c-.5.5-.5 1.3 0 1.8l.6.7c3.6 4 8 8 8 15.6h-21c0-7.6 4.4-11.6 8-15.6l.6-.7c.5-.5.5-1.3 0-1.8l-.6-.7c-3.6-4-8-8-8-15.6Z" fill="url(#${u}g)"/>
+        <path d="M26.5 20h11c-1.1 3-3.3 5.2-5.5 7.6-2.2-2.4-4.4-4.6-5.5-7.6Z" fill="url(#${u}s)"/>
+        <path d="M24.8 47c1.6-4.4 4.2-6.6 7.2-6.6s5.6 2.2 7.2 6.6Z" fill="url(#${u}s)"/>
+        <path d="M32 31.5v8" stroke="#F5A524" stroke-width="1.4" stroke-linecap="round" stroke-dasharray=".1 2.6"/>
+        <path d="M24.5 17.5c.3 3.6 1.8 6.2 3.6 8.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".9"/>
+        <rect x="17" y="10" width="30" height="6" rx="3" fill="url(#${u}w)"/>
+        <rect x="17" y="47.5" width="30" height="6" rx="3" fill="url(#${u}w)"/>
+        <rect x="19" y="11" width="16" height="1.6" rx=".8" fill="#fff" opacity=".45"/>
+      </g>` },
+  desafios: { glyph: (u) => `<defs>${lg(u + "a", "#FFE27A", "#F0A20F")}${lg(u + "b", "#5BE38F", "#18A85C")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M21 16.5h-4.4c0 6.6 3 10.4 8 11.4M43 16.5h4.4c0 6.6-3 10.4-8 11.4" fill="none" stroke="#F0A20F" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M20.5 12h23v13c0 6.4-5.1 11.5-11.5 11.5S20.5 31.4 20.5 25Z" fill="url(#${u}a)"/>
+        <path d="M20.5 12h23v6h-23Z" fill="url(#${u}s)" opacity=".6"/>
+        <path d="M25 14.5v10.5c0 2.6 1.4 4.9 3.6 6.1" stroke="#fff" stroke-opacity=".6" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        ${star4(32, 23.5, 4.6, "#fff")}
+        <path d="M29 36h6l.9 6h-7.8Z" fill="#E8961A"/>
+        <rect x="21" y="42" width="22" height="9.5" rx="3" fill="url(#${u}b)"/>
+        <rect x="25.5" y="45" width="13" height="3.4" rx="1.7" fill="#fff" opacity=".85"/>
+      </g>` },
+  wrapped: { glyph: (u) => `<defs>${lg(u + "a", "#FFC157", "#FF8A00")}${lg(u + "c", "#3A3F55", "#1B1F2E")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M12 23.5h40v20c0 3.6-2.9 6.5-6.5 6.5h-27c-3.6 0-6.5-2.9-6.5-6.5Z" fill="url(#${u}a)"/>
+        <path d="M12 23.5h40v6H12Z" fill="url(#${u}s)" opacity=".55"/>
+        <path d="M27.8 30.8v11.4c0 .9 1 1.4 1.7.9l8.6-5.7c.7-.4.7-1.4 0-1.8l-8.6-5.7c-.7-.5-1.7 0-1.7.9Z" fill="#fff"/>
+        <g transform="rotate(-11 12 21)">
+          <rect x="12" y="13" width="40" height="8.5" rx="2.4" fill="url(#${u}c)"/>
+          <path d="M17 13h5l-3.6 8.5h-5ZM27 13h5l-3.6 8.5h-5ZM37 13h5l-3.6 8.5h-5ZM47 13h5l-3.6 8.5h-5Z" fill="#fff" opacity=".92"/>
+        </g>
+        <rect x="12" y="21.5" width="40" height="3.2" fill="url(#${u}c)"/>
+      </g>` },
+};
+const DAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+
+/**
+ * @param {string} kind chat | humor | agenda | espiritual | conflitos | historia | capsula | desafios | wrapped
+ * @param {number} size
+ * @param {string} u prefixo único dos ids
+ * @param {{ mood?: string | null, date?: Date }} [opts]
+ */
+function featureIconSvg(kind, size, u, opts = {}) {
+  const def = ICONS[kind];
+  if (!def) return "";
+  const frame = (bgFill, inner, shadow) => `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" style="filter:drop-shadow(0 ${size * .1}px ${size * .14}px rgba(11,19,36,.10))">
+    <defs>
+      <linearGradient id="${u}g" x1="0" y1="0" x2="0" y2="1">${bgFill}</linearGradient>
+      <radialGradient id="${u}h" cx=".3" cy="0" r="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${u}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".86"/></linearGradient>
+      <filter id="${u}s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.6" stdDeviation="1.4" flood-color="#000" flood-opacity=".22"/></filter>
+      <clipPath id="${u}c"><path d="${SQ}"/></clipPath>
+    </defs>
+    <path d="${SQ}" style="fill:var(--fi-bg,#fff)"/>
+    ${inner}
+    <path d="${SQ}" fill="none" style="stroke:var(--fi-line,#ECE8E3)" stroke-width="1.4"/>
+  </svg>`;
+  if (def.calendar) {
+    const d = opts.date || new Date();
+    return frame(`<stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFFFFF"/>`, `
+      <text x="32" y="20.5" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" letter-spacing=".6" fill="#F0365F">${DAYS[d.getDay()]}</text>
+      <text x="32" y="50" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="29" font-weight="600" letter-spacing="-1.2" style="fill:var(--fi-ink,#0B1324)">${d.getDate()}</text>`, "rgba(11,19,36,.16)");
+  }
+  if (def.humor) {
+    const m = opts.mood;
+    const tint = m ? MOOD_TINT[m] : "#B8C0CE";
+    const face = moodFaceSvg(m || "tranquilo", 48, u + "f").replace('<svg ', `<svg x="8" y="7" opacity="${m ? 1 : .45}" `);
+    return frame(`<stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFFFFF"/>`, face
+      + (m ? "" : `<circle cx="49" cy="49" r="7" fill="#0B1324"/><path d="M49 45.8v6.4M45.8 49h6.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`), `${tint}55`);
+  }
+  return frame(`<stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFFFFF"/>`,
+    `<g transform="translate(32 32) scale(.84) translate(-32 -32)">${def.glyph(u + "x")}</g>`, "");
+}
+
+let k = 0;
+const uid = () => "h" + (k++);
+const T = (kind, size, opts) => featureIconSvg(kind, size, uid(), opts);
+
+// Novos desenhos, no mesmo acabamento
+Object.assign(ICONS, {
+  tempo: { glyph: (u) => `<defs>${lg(u + "a", "#FF9AB5", "#E83E6C")}${lg(u + "b", "#FFE38A", "#F2A516")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <circle cx="25.5" cy="35" r="11.5" fill="none" stroke="url(#${u}a)" stroke-width="5.2"/>
+        <circle cx="38.5" cy="35" r="11.5" fill="none" stroke="url(#${u}b)" stroke-width="5.2"/>
+        <path d="M33.8 25.6a11.5 11.5 0 0 1 1.6 3.4" fill="none" stroke="url(#${u}a)" stroke-width="5.2"/>
+        <path d="M21 26.5c1.4-1 3-1.6 4.6-1.8" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>
+        ${star4(44, 14.5, 4.4, "#FFC93C")}
+      </g>` },
+  chama: { glyph: (u) => `<defs>${lg(u + "a", "#FFB15C", "#F0412F")}${lg(u + "c", "#FFF3B8", "#FFC23A")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M32 8c3.4 7.6 12.4 11.8 14.6 21 2.6 10.6-4.6 21-14.6 21S14.8 39.6 17.4 29c1.2-4.8 4.4-7.6 6.6-10.4.8 3.4 2.4 5.6 4.6 6.6C27.6 19 28.8 13 32 8Z" fill="url(#${u}a)"/>
+        <path d="M32.2 27c2.4 4.2 7.4 6.6 7.4 12.2 0 4.8-3.4 8.2-7.6 8.2s-7.6-3.4-7.6-8.2c0-3.6 2.4-5.6 4.2-7.6.4 1.8 1.4 2.8 2.4 3.2-.2-2.6.2-5.4 1.2-7.8Z" fill="url(#${u}c)"/>
+        <ellipse cx="22.5" cy="28" rx="3.4" ry="6" fill="url(#${u}s)" transform="rotate(20 22.5 28)"/>
+      </g>` },
+  ciclo: { glyph: (u) => `<defs>${lg(u + "a", "#FF9BB2", "#E8284F")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <path d="M32 9c5.6 8.4 14.5 16.4 14.5 26.4C46.5 43.6 40 50 32 50s-14.5-6.4-14.5-14.6C17.5 25.4 26.4 17.4 32 9Z" fill="url(#${u}a)"/>
+        <ellipse cx="25.6" cy="34" rx="3.2" ry="6.4" fill="url(#${u}s)" transform="rotate(18 25.6 34)"/>
+        <circle cx="45.5" cy="16" r="4" fill="#FFB3C4"/>
+      </g>` },
+  local: { glyph: (u) => `<defs>${lg(u + "a", "#7DA6FF", "#2F5BE0")}${shine(u + "s")}${soft(u + "f")}</defs>
+      <g filter="url(#${u}f)">
+        <ellipse cx="32" cy="51" rx="9" ry="2.6" fill="#2F5BE0" opacity=".18"/>
+        <path d="M32 8c9.4 0 16 6.9 16 15.6 0 10.4-11.4 21.6-14.6 24.5a2.1 2.1 0 0 1-2.8 0C27.4 45.2 16 34 16 23.6 16 14.9 22.6 8 32 8Z" fill="url(#${u}a)"/>
+        <circle cx="32" cy="23.5" r="8.6" fill="#fff"/>
+        ${heartAt(32, 24.2, .5, "#FF3D6E")}
+        <ellipse cx="22.5" cy="16.5" rx="3.6" ry="2.2" fill="url(#${u}s)" transform="rotate(-35 22.5 16.5)"/>
+      </g>` },
+});
+
+// pequenos símbolos de dentro dos cartões (sem quadrado)
+const mini = (inner, size = 20) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${inner}</svg>`;
+const presHeart = (on) => { const u = uid(); return mini(on
+  ? `<defs>${lg(u + "a", "#FF7896", "#E11D48")}</defs><path d="${HEART}" fill="url(#${u}a)"/><ellipse cx="7.2" cy="7.6" rx="2.4" ry="1.5" fill="#fff" opacity=".75" transform="rotate(-32 7.2 7.6)"/>`
+  : `<path d="${HEART}" fill="#F1EEEA" stroke="#D9D4CD" stroke-width="1.4"/>`, 19); };
+const shield = (on) => { const u = uid(); return mini(on
+  ? `<defs>${lg(u + "a", "#8DB4FF", "#3866E6")}</defs><path d="M12 2.5l7.5 2.8v6.1c0 4.7-3.1 8.6-7.5 10.1-4.4-1.5-7.5-5.4-7.5-10.1V5.3Z" fill="url(#${u}a)"/><path d="M8.6 11.8l2.3 2.3 4.4-4.6" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>`
+  : `<path d="M12 2.5l7.5 2.8v6.1c0 4.7-3.1 8.6-7.5 10.1-4.4-1.5-7.5-5.4-7.5-10.1V5.3Z" fill="#F1EEEA" stroke="#D9D4CD" stroke-width="1.4"/>`, 18); };
+
+// gestos do dia: o ícone da funcionalidade em pequeno; por fazer fica esbatido
+const MISS = [["chat", "Chat", false], ["presenca", "Presença", true], ["humor", "Sentimento", true], ["espiritual", "Oração", false]];
+ICONS.presenca = { glyph: (u) => `<defs>${lg(u + "a", "#FFD45C", "#FF8A00")}${soft(u + "f")}</defs><g filter="url(#${u}f)"><path d="M35.5 8 18 35h12.5L27 56l19-29H33.5Z" fill="url(#${u}a)" stroke="#E8780A" stroke-width="1.2" stroke-linejoin="round"/></g>` };
+const missIcon = ([kind, , done]) => `<span title="${kind}" style="opacity:${done ? 1 : .38};filter:${done ? "none" : "grayscale(1)"}">${T(kind, 32, { mood: "feliz" })}</span>`;
+
+// só o desenho, sem quadrado, pequeno (substitui os ícones de traço)
+const G = (kind, size = 20, dim = false) => { const u = uid(); return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" style="${dim ? "opacity:.35;filter:grayscale(1)" : ""}">${ICONS[kind].glyph(u)}</svg>`; };
+
+const P = document.getElementById("phone");
+P.innerHTML = `
+  <div class="hd">
+    <span class="av" style="background:#0F5C4D;--ring:#ECE8E3;--dot:#10B981">A<i></i></span>
+    <span class="mid"><b>LoveNest</b><small>sexta-feira, 23 de outubro</small></span>
+    <span class="av" style="background:#0E8C9A;--ring:#ECE8E3;--dot:#C9CDD4">D<i></i></span>
+  </div>
+  <div class="tag" style="color:var(--muted)">O vosso ninho é o vosso lugar seguro</div>
+
+  <div class="card" style="padding:14px 16px;text-align:center">
+    <div class="row" style="justify-content:center;gap:6px;font-size:11px;letter-spacing:.12em;font-weight:600;color:var(--muted)">TEMPO JUNTOS</div>
+    <div class="muted" style="margin-top:2px">Desde 1 out 2026 · 1 ano em 343 dias</div>
+    <div class="row" style="justify-content:center;gap:14px;margin-top:8px">
+      ${[["22", "DIAS"], ["09", "HRS"], ["12", "MIN"], ["56", "SEG"]].map(([v, l], i) => `<span style="display:grid;justify-items:center"><b style="font-size:${i ? 19 : 24}px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:${i === 3 ? "#9AA0AA" : "var(--ink)"}">${v}</b><small style="font-size:9.5px;letter-spacing:.08em;color:var(--muted);font-weight:600">${l}</small></span>`).join("")}
+    </div>
+  </div>
+
+  <div class="card ch">
+    <div class="row">${G("chama", 20)}<div style="flex:1"><div class="title">A vossa chama</div><div class="muted">Brasa · nível 2</div></div>
+      <img alt="" style="width:44px;height:44px;object-fit:contain" src="data:image/png;base64,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"></div>
+    <div class="row" style="margin-top:12px;align-items:flex-end">
+      <div style="flex:1"><div style="font-size:42px;font-weight:700;letter-spacing:-.04em;line-height:1">3</div><div class="muted" style="margin-top:4px">dias de presença</div></div>
+      <div style="display:grid;gap:9px;justify-items:end">
+        <div class="pres"><span>${presHeart(true)}Tu</span><span>${presHeart(true)}Par</span></div>
+        <div class="pres" style="align-items:center;gap:4px">${shield(true)}${shield(true)}${shield(false)}<span style="font-size:11px;letter-spacing:.08em;color:var(--muted);margin-left:4px">PROTEÇÃO</span></div>
+      </div>
+    </div>
+    <div class="stages calm"><i class="done"></i><b class="done"></b><i class="now"></i><b></b><i></i><b></b><i></i><b></b><i></i><b></b><i></i></div>
+    <div class="row muted" style="justify-content:space-between"><b style="color:var(--ink);font-size:13px;font-weight:600">Brasa</b><span>Próximo: <b style="color:var(--ink);font-weight:600">Chama</b> · faltam 4 dias</span></div>
+    <div class="foot"><span style="font-size:13px;color:var(--muted)"><b style="color:var(--ink)">100</b> pts · <b style="color:var(--ink)">2</b> gestos</span>
+      <span class="miss" style="gap:12px">${G("chat", 20, true)}${G("presenca", 20)}${moodFaceSvg("feliz", 20, uid())}${G("espiritual", 20, true)}</span></div>
+  </div>
+
+  <div class="card cy">
+    <div class="row">${G("ciclo", 18)}<div class="title" style="flex:1">O teu ciclo</div><span class="muted" style="font-size:18px">›</span></div>
+    <div class="row" style="margin-top:8px"><b style="font-size:17px;font-weight:600;letter-spacing:-.01em">Menstruação</b><span class="muted">Dia 3</span><span class="muted" style="margin-left:auto">3/28 dias</span></div>
+    <div class="bar" style="height:4px"><i style="background:#E8284F;opacity:.75"></i></div>
+    <div class="muted">Menstruação · dia 3 do ciclo</div>
+  </div>
+
+  <div class="card">
+    <div class="map"><span class="pin" style="left:20%;top:52%;background:#E5466D">A</span><span class="pin" style="left:66%;top:16%;background:#4D7CFE">P</span></div>
+    <div class="loc"><div style="flex:1;min-width:0"><div class="title">Onde estamos</div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Princesa em Av. Salvador Allende, Cidade…</div><div class="live">Partilha ativa · há 12 horas</div></div><span style="width:40px;height:40px;border-radius:50%;background:#F4F2EF;display:grid;place-items:center;font-size:18px">›</span></div>
+  </div>
+
+  <div class="sec">O vosso dia a dia</div>
+  <div class="tools">${[["chat", "Chat"], ["humor", "Humor"], ["agenda", "Agenda"], ["espiritual", "Espiritual"], ["conflitos", "Conflitos"]].map(([k, l]) => `<div class="tool">${T(k, 56, { mood: "feliz" })}${l}</div>`).join("")}</div>
+  <div class="row" style="padding:0 4px;font-size:13px;color:var(--sub)">${moodFaceSvg("tranquilo", 26, uid())}<span><b>Princesa</b> está tranquila</span></div>
+`;
+
+document.getElementById("notes").innerHTML = [
+  ["Estrutura igual", "Os cartões ficam onde estão e com o mesmo conteúdo; só mudam os pormenores abaixo."],
+  ["Menos rosa", "Números (dias, pontos, gestos) e a frase do topo passam a tinta/cinza. O rosa fica só nos corações de presença e no pin."],
+  ["Ícones pequenos e coerentes", "Os ícones de linha fina (chama, ciclo, gestos) passam a pequenos desenhos do mesmo estilo dos de baixo, sem quadrados extra."],
+  ["Menos jogo", "Etapas da chama com pontos discretos em cinza e tinta; gestos por fazer em cinza claro, sem destaque."],
+].map(([t, d]) => `<div class="note"><span><b>${t}</b>${d}</span></div>`).join("");
+</script>

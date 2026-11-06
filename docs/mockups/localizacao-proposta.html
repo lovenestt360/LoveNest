@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cartão Onde estamos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0B1324; --text:#3A4150; --muted:#636978; --edge:#ECE8E3; --ease:cubic-bezier(.22,1,.36,1); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; flex-wrap: wrap; gap: 40px 24px; padding: 48px 24px; justify-content: center; }
+  .col { width: 390px; }
+  .cap { font-size: 12px; font-weight: 600; color: #565A63; margin: 0 0 10px 4px; }
+  .home { background: #fff; border-radius: 30px; padding: 16px; }
+
+  .card { border: 1px solid var(--edge); border-radius: 24px; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(11,19,36,.04), 0 10px 28px -14px rgba(11,19,36,.16); }
+  .scene { position: relative; height: 138px; background: linear-gradient(120deg, #EAF1FF 0%, #F7F3FF 48%, #FFEFF3 100%); overflow: hidden; }
+  .scene svg.topo { position: absolute; inset: 0; }
+  .who { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 6px; transform: translateX(-50%); }
+  .face { width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 17px; box-shadow: 0 10px 20px -10px rgba(11,19,36,.55); position: relative; }
+  .face.par { background: linear-gradient(160deg, #7AA2FF, #3B6FF5); }
+  .face.me { background: linear-gradient(160deg, #FF9DB5, #E8456B); }
+  .face.par::before { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid #3B6FF5; animation: ping 2.6s var(--ease) infinite; }
+  @keyframes ping { 0% { transform: scale(1); opacity: .6 } 80%, 100% { transform: scale(1.7); opacity: 0 } }
+  .place { height: 22px; padding: 0 9px; border-radius: 999px; background: rgba(255,255,255,.85); backdrop-filter: blur(4px); font-size: 11px; font-weight: 600; color: var(--text); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 2px 8px -4px rgba(11,19,36,.25); }
+  .mid { position: absolute; left: 50%; top: 30px; transform: translateX(-50%); height: 28px; padding: 0 11px; border-radius: 999px; background: #fff; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 6px 16px -8px rgba(11,19,36,.45); }
+  .mid svg { animation: beat 1.8s ease-in-out infinite; }
+  @keyframes beat { 0%, 100% { transform: scale(1) } 15% { transform: scale(1.22) } 30% { transform: scale(1) } }
+  .pair { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .pair .faces { display: flex; position: relative; }
+  .pair .faces .face + .face { margin-left: -14px; }
+  .pair .heart { position: absolute; left: 50%; top: -16px; transform: translateX(-50%); }
+  .spark { position: absolute; animation: tw 2.4s ease-in-out infinite; }
+  @keyframes tw { 0%, 100% { opacity: .2; transform: scale(.7) } 50% { opacity: 1; transform: scale(1) } }
+
+  .body { padding: 12px 14px 14px; display: flex; align-items: center; gap: 12px; }
+  .body .t { flex: 1; min-width: 0; }
+  .title { font-size: 15px; font-weight: 650; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+  .live { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 999px; background: #EEF8F1; color: #23733F; font-size: 11px; font-weight: 700; }
+  .live i { width: 6px; height: 6px; border-radius: 50%; background: #23A15A; box-shadow: 0 0 0 3px rgba(35,161,90,.18); }
+  .line { font-size: 13px; color: var(--text); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .line b { color: var(--ink); font-weight: 600; }
+  .meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .go { width: 36px; height: 36px; border-radius: 50%; background: #F4F1EC; display: grid; place-items: center; flex-shrink: 0; }
+  .off .scene { background: linear-gradient(120deg, #F4F2EF, #F7F5F2); }
+  .off .face { filter: grayscale(1); opacity: .55; }
+  .off .face.par::before { display: none; }
+  .btn { height: 36px; padding: 0 14px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; flex-shrink: 0; }
+
+  .notes { width: 100%; max-width: 1220px; background: #fff; border-radius: 24px; padding: 22px 26px; font-size: 14px; line-height: 1.55; color: var(--text); }
+  .notes h2 { font-size: 18px; color: var(--ink); margin-bottom: 8px; }
+  .notes ul { padding-left: 18px; display: grid; gap: 6px; }
+  .notes b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<template id="topo">
+  <svg class="topo" viewBox="0 0 358 138" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#0B1324" stroke-opacity=".06" stroke-width="1.2">
+      <path d="M-20 30c60-22 110 10 170-6s100-30 230-8"/>
+      <path d="M-20 58c70-20 120 14 180-2s110-32 220-6"/>
+      <path d="M-20 88c60-14 130 18 190 2s120-26 210 0"/>
+      <path d="M-20 118c80-18 130 12 200 0s110-20 200 4"/>
+      <circle cx="300" cy="22" r="18"/><circle cx="300" cy="22" r="32"/><circle cx="52" cy="122" r="22"/><circle cx="52" cy="122" r="38"/>
+    </g>
+  </svg>
+</template>
+
+<!-- 1 · Longe -->
+<div class="col"><div class="cap">Partilha ativa · cada um no seu sítio</div>
+<div class="home"><div class="card">
+  <div class="scene" data-topo>
+    <svg style="position:absolute;inset:0" viewBox="0 0 358 138" aria-hidden="true">
+      <path d="M88 64 Q 179 4 270 64" fill="none" stroke="#0B1324" stroke-opacity=".35" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round"/>
+    </svg>
+    <div class="mid"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B"/></svg>1,9 km</div>
+    <div class="who" style="left:88px;top:42px"><div class="face par">P</div><span class="place">Av. Salvador Allende</span></div>
+    <div class="who" style="left:270px;top:42px"><div class="face me">D</div><span class="place">Polana</span></div>
+  </div>
+  <div class="body">
+    <div class="t">
+      <div class="title">Onde estamos <span class="live"><i></i>Ao vivo</span></div>
+      <div class="line"><b>Princesa</b> está a 1,9 km de ti</div>
+      <div class="meta">Atualizado há 1 hora
+        <span style="display:inline-flex;align-items:center;gap:3px">· <svg width="18" height="10" viewBox="0 0 22 12"><rect x=".75" y=".75" width="18" height="10.5" rx="3" fill="none" stroke="#7A7F8C" stroke-width="1.5"/><rect x="20" y="4" width="1.6" height="4" rx=".8" fill="#7A7F8C"/><rect x="2.5" y="2.5" width="12.5" height="7" rx="1.6" fill="#23A15A"/></svg>78%</span></div>
+    </div>
+    <div class="go"><svg width="16" height="16" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" stroke="#0B1324" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </div>
+</div></div></div>
+
+<!-- 2 · Juntos -->
+<div class="col"><div class="cap">Partilha ativa · estão juntos</div>
+<div class="home"><div class="card">
+  <div class="scene" data-topo style="background:linear-gradient(120deg,#FFF0F4 0%,#FDF4FF 55%,#FFEFE8 100%)">
+    <svg class="spark" style="left:110px;top:30px" width="12" height="12" viewBox="0 0 12 12"><path d="M6 0C6.6 5.4 6.6 5.4 12 6 6.6 6.6 6.6 6.6 6 12 5.4 6.6 5.4 6.6 0 6 5.4 5.4 5.4 5.4 6 0Z" fill="#F2A91F"/></svg>
+    <svg class="spark" style="left:238px;top:52px;animation-delay:.8s" width="10" height="10" viewBox="0 0 12 12"><path d="M6 0C6.6 5.4 6.6 5.4 12 6 6.6 6.6 6.6 6.6 6 12 5.4 6.6 5.4 6.6 0 6 5.4 5.4 5.4 5.4 6 0Z" fill="#E8456B"/></svg>
+    <svg class="spark" style="left:130px;top:96px;animation-delay:1.4s" width="9" height="9" viewBox="0 0 12 12"><path d="M6 0C6.6 5.4 6.6 5.4 12 6 6.6 6.6 6.6 6.6 6 12 5.4 6.6 5.4 6.6 0 6 5.4 5.4 5.4 5.4 6 0Z" fill="#8B6CF0"/></svg>
+    <div class="pair">
+      <div class="faces">
+        <svg class="heart mid-heart" width="20" height="20" viewBox="0 0 24 24" style="animation:beat 1.8s ease-in-out infinite"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B" stroke="#fff" stroke-width="2"/></svg>
+        <div class="face par">P</div><div class="face me">D</div>
+      </div>
+      <span class="place">Polana</span>
+    </div>
+  </div>
+  <div class="body">
+    <div class="t">
+      <div class="title">Onde estamos <span class="live"><i></i>Ao vivo</span></div>
+      <div class="line"><b>Estão juntos</b> agora</div>
+      <div class="meta">Atualizado há 5 min</div>
+    </div>
+    <div class="go"><svg width="16" height="16" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" stroke="#0B1324" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </div>
+</div></div></div>
+
+<!-- 3 · Desligada -->
+<div class="col"><div class="cap">Partilha desligada</div>
+<div class="home"><div class="card off">
+  <div class="scene" data-topo>
+    <svg style="position:absolute;inset:0" viewBox="0 0 358 138" aria-hidden="true">
+      <path d="M88 64 Q 179 4 270 64" fill="none" stroke="#0B1324" stroke-opacity=".18" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round"/>
+    </svg>
+    <div class="mid" style="color:#636978">?</div>
+    <div class="who" style="left:88px;top:42px"><div class="face par">P</div></div>
+    <div class="who" style="left:270px;top:42px"><div class="face me">D</div></div>
+  </div>
+  <div class="body">
+    <div class="t">
+      <div class="title">Onde estamos</div>
+      <div class="line">Saibam onde está o outro e quando estão juntos.</div>
+    </div>
+    <div class="btn">Ativar</div>
+  </div>
+</div></div></div>
+
+<div class="notes">
+  <h2>O que muda no cartão "Onde estamos" (versão 2, sem mapa)</h2>
+  <ul>
+    <li><b>Uma cena desenhada, não um mapa:</b> fundo suave azul, lilás e rosa, com linhas de relevo muito leves, como um mapa topográfico abstrato. Fica bonito na Home e nos screenshots, e não mostra ruas nem a posição exata.</li>
+    <li><b>Os dois:</b> cada um num círculo grande com a inicial (ou a foto de perfil). O do par pulsa enquanto partilha. Por baixo de cada um aparece o sítio, só a zona ("Polana").</li>
+    <li><b>A distância ao centro:</b> um arco pontilhado liga os dois, com um coração a bater e a distância ("1,9 km").</li>
+    <li><b>Juntos:</b> os dois círculos encostam-se, com um coração em cima e pequenas estrelas. O texto diz "Estão juntos agora".</li>
+    <li><b>Texto curto:</b> "Ao vivo" ao lado do título, depois "Princesa está a 1,9 km de ti" e por baixo há quanto tempo foi atualizado e a bateria dela.</li>
+    <li><b>Desligada:</b> a mesma cena a cinzento, com um "?" no meio e o botão "Ativar".</li>
+  </ul>
+</div>
+
+<script>
+const topo = document.getElementById("topo").innerHTML;
+document.querySelectorAll("[data-topo]").forEach(s => s.insertAdjacentHTML("afterbegin", topo));
+</script>
+</body>
+</html>

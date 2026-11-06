@@ -1,0 +1,267 @@
+<title>Chama e ciclo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: uma coluna estreita como o ecrã da Home, cada proposta com um controlo por baixo. */
+  :root {
+    --page: #F4F2EF; --card: #FFFFFF; --line: #ECE8E3; --ink: #0B1324; --sub: #3A4150; --mut: #7C828D; --track: #EEEAE5;
+    --font: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--page); color: var(--ink); font-family: var(--font); padding-block: 22px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  main { max-width: 390px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+  h1 { font-size: 19px; letter-spacing: -.02em; margin: 0; }
+  .lead { font-size: 13px; line-height: 1.5; color: var(--mut); margin: 2px 0 6px; }
+  h2 { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--mut); margin: 18px 0 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 1px 2px rgba(11,19,36,.04), 0 10px 28px -14px rgba(11,19,36,.16); }
+  .ctl { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ctl button { font: 600 12px var(--font); height: 30px; padding: 0 11px; border-radius: 99px; border: 1px solid var(--line); background: var(--card); color: var(--sub); cursor: pointer; }
+  .ctl button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .ctl button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* ── Chama ── */
+  .ch { padding: 12px 16px; position: relative; overflow: hidden; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .t { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--sub); }
+  .lvl { font-size: 12px; color: var(--mut); margin-top: 4px; }
+  .pet { width: 42px; height: 42px; object-fit: contain; transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
+  .big { font-size: 34px; font-weight: 800; letter-spacing: -.035em; line-height: .95; font-variant-numeric: tabular-nums; }
+  .hearts { font-size: 10px; font-weight: 600; color: var(--mut); display: flex; gap: 10px; }
+  .hearts i { font-style: normal; color: #F0567A; }
+
+  .bar { position: relative; margin-top: 16px; height: 26px; }
+  .bar .rail { position: absolute; left: 0; right: 0; top: 10px; height: 6px; border-radius: 6px; background: var(--track); }
+  .bar .fill { position: absolute; left: 0; top: 10px; height: 6px; border-radius: 6px; background: var(--c); box-shadow: 0 0 10px var(--c); transition: width .9s cubic-bezier(.22,1,.36,1), background .5s, box-shadow .5s; }
+  .bar canvas { position: absolute; left: 0; top: 0; height: 26px; pointer-events: none; }
+  /* Marcas de estágio: um pequeno corte na barra, não uma bolinha. */
+  .bar .cut { position: absolute; top: 9px; width: 3px; height: 8px; margin-left: -1.5px; background: var(--card); border-radius: 2px; }
+  .bar .tip { position: absolute; top: 13px; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px var(--c), 0 0 14px 3px var(--c); transition: left .9s cubic-bezier(.22,1,.36,1), box-shadow .5s; }
+  .stages { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10px; color: #A3A8B0; font-weight: 600; }
+  .stages span.on { color: var(--c); }
+  .labels { margin-top: 4px; display: flex; justify-content: space-between; font-size: 12px; color: var(--mut); }
+  .labels b { color: #2F6BFF; }
+  .labels b.cur { color: var(--ink); }
+  .foot { margin: 10px -16px 0; padding: 8px 16px 0; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--mut); }
+  .foot b { color: var(--ink); }
+  .burst { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at var(--x, 50%) 70%, color-mix(in srgb, var(--c) 30%, transparent), transparent 60%); opacity: 0; }
+  .burst.go { animation: burst 1s ease-out; }
+  @keyframes burst { 0% { opacity: 0 } 15% { opacity: 1 } 100% { opacity: 0 } }
+  .pet.pop { transform: scale(1.25) rotate(-6deg); }
+
+  /* ── Ciclo ── */
+  .cy { position: relative; overflow: hidden; isolation: isolate; padding: 16px 16px 14px; display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; font: inherit; color: inherit; cursor: pointer; border-color: var(--edge); background: linear-gradient(140deg, var(--g1), var(--g2)); transition: background .6s, border-color .6s, transform .15s; }
+  .cy:active { transform: scale(.99); }
+  .cy .halo { position: absolute; z-index: -1; right: -50px; top: -60px; width: 210px; height: 210px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.85), transparent 66%); }
+  .cy .art { position: absolute; z-index: -1; right: -14px; top: -12px; width: 112px; height: 112px; animation: float 6s ease-in-out infinite; filter: drop-shadow(0 10px 18px var(--shadow)); }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(-8deg) } 50% { transform: translateY(-6px) rotate(-3deg) } }
+  .cy .spark { position: absolute; z-index: -1; width: 8px; height: 8px; color: var(--c); opacity: 0; animation: rise 5s linear infinite; }
+  @keyframes rise { 0% { transform: translateY(0) scale(.6); opacity: 0 } 20% { opacity: .8 } 100% { transform: translateY(-70px) scale(1); opacity: 0 } }
+  .flower { position: relative; flex: none; width: 96px; height: 96px; }
+  .flower svg { width: 96px; height: 96px; overflow: visible; }
+  .flower .core { position: absolute; inset: 22px; border-radius: 50%; background: #fff; box-shadow: 0 6px 16px -6px var(--shadow); display: grid; place-content: center; text-align: center; }
+  .flower .core b { font-size: 24px; font-weight: 800; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
+  .flower .core span { font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--c); margin-top: 2px; }
+  .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; }
+  @keyframes pulse { from { transform: scale(1); opacity: .55 } to { transform: scale(2.4); opacity: 0 } }
+  .cy .txt { min-width: 0; flex: 1; padding-right: 30px; }
+  .tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 7px; border-radius: 99px; background: rgba(255,255,255,.75); font-size: 11px; font-weight: 700; color: var(--deep); }
+  .tag svg { width: 10px; height: 12px; }
+  .phase { font-size: 22px; font-weight: 800; letter-spacing: -.03em; margin-top: 7px; color: var(--ink); text-wrap: balance; line-height: 1.05; }
+  .hint { font-size: 12.5px; color: #4A5060; margin-top: 4px; line-height: 1.35; }
+  .next { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; height: 26px; padding: 0 10px; border-radius: 99px; background: rgba(255,255,255,.7); font-size: 11.5px; font-weight: 600; color: var(--sub); }
+  .next i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+  @media (prefers-reduced-motion: reduce) { .bar canvas { display: none } .bar .fill, .bar .tip { transition: none } .cy .art, .cy .spark, .pulse { animation: none } }
+</style>
+
+<main>
+  <h1>Chama e ciclo · proposta 3</h1>
+  <p class="lead">Toca nos botões para ver as fases. Na chama só muda a barra; o resto do cartão fica como está. O ciclo tem um cartão novo, com a cor e o desenho de cada fase.</p>
+
+  <h2>A vossa chama</h2>
+  <div class="card ch" id="chama">
+    <div class="burst" id="burst"></div>
+    <div class="row">
+      <div><div class="t">🔥 A vossa chama</div><div class="lvl" id="lvl"></div></div>
+      <img class="pet" id="pet" alt="">
+    </div>
+    <div class="row" style="margin-top:4px;align-items:flex-end">
+      <div><div class="big" id="days"></div><div class="lvl" style="font-size:11px">dias de presença</div></div>
+      <div class="hearts"><span><i>♥</i> Tu</span><span><i>♥</i> Par</span></div>
+    </div>
+    <div class="bar" id="bar"><div class="rail"></div><div class="fill" id="fill"></div><canvas id="cv"></canvas><div class="tip" id="tip"></div></div>
+        <div class="labels"><b class="cur" id="curName"></b><span id="next"></span></div>
+    <div class="foot"><b>165</b> pts · <b>1</b> gesto</div>
+  </div>
+  <div class="ctl" id="dayCtl"></div>
+  <div class="ctl"><button type="button" id="levelUp">Ver subida de nível ⚡</button></div>
+
+  <h2>O teu ciclo</h2>
+  <button type="button" class="card cy" id="cy">
+    <span class="halo"></span>
+    <svg class="art" id="art" viewBox="0 0 100 100"></svg>
+    <span id="sparks"></span>
+    <div class="flower"><svg id="ring" viewBox="0 0 96 96"></svg><div class="core"><b id="cday"></b><span>DIA</span></div></div>
+    <div class="txt">
+      <span class="tag"><svg viewBox="0 0 10 12"><path d="M5 0C5 0 0 5.6 0 8a5 4.6 0 0 0 10 0C10 5.6 5 0 5 0Z" fill="currentColor"/></svg><span id="who">O teu ciclo</span></span>
+      <div class="phase" id="pname"></div>
+      <div class="hint" id="phint"></div>
+      <span class="next"><i></i><span id="pnext"></span></span>
+    </div>
+  </button>
+  <div class="ctl" id="phCtl"></div>
+  <div class="ctl" id="whoCtl"></div>
+</main>
+
+<script>
+const G = __GUARDIANS__;
+const STAGES = [
+  { name: "Faísca",    min: 0,  c: "#FF5C93", img: G.faisca },
+  { name: "Brasa",     min: 3,  c: "#FF8B3D", img: G.brasa },
+  { name: "Chama",     min: 7,  c: "#14B8A6", img: G.chama },
+  { name: "Guardião",  min: 14, c: "#3B82E5", img: G.guardiao },
+  { name: "Sentinela", min: 30, c: "#9B5DE5", img: G.sentinela },
+  { name: "Eterno",    min: 90, c: "#E0A915", img: G.eterno },
+];
+const SPANS = STAGES.length - 1;
+const $ = (id) => document.getElementById(id);
+let days = 2, pos = 0;
+
+function stageOf(d) { let i = 0; STAGES.forEach((s, k) => { if (d >= s.min) i = k; }); return i; }
+// Cada estágio ocupa a mesma largura; dentro dele a barra avança dia a dia.
+function posOf(d) {
+  const i = stageOf(d), s = STAGES[i], n = STAGES[i + 1];
+  return n ? (i + (d - s.min) / (n.min - s.min)) / SPANS : 1;
+}
+
+const bar = $("bar");
+for (let k = 1; k < SPANS; k++) bar.insertAdjacentHTML("beforeend", `<div class="cut" style="left:${(k / SPANS) * 100}%"></div>`);
+
+function renderChama() {
+  const i = stageOf(days), s = STAGES[i], n = STAGES[i + 1];
+  const card = $("chama");
+  card.style.setProperty("--c", s.c);
+  $("lvl").textContent = `${s.name} · nível ${i + 1}`;
+  $("pet").src = s.img;
+  $("days").textContent = days;
+  pos = posOf(days);
+  $("fill").style.width = `${pos * 100}%`;
+  $("tip").style.left = `${pos * 100}%`;
+  $("curName").textContent = s.name;
+  const left = n ? n.min - days : 0;
+  $("next").innerHTML = n ? `Próximo: <b>${n.name}</b> · ${left === 1 ? "falta 1 dia" : `faltam ${left} dias`}` : "Chegaram ao fim da jornada";
+  [...$("dayCtl").children].forEach((b) => b.setAttribute("aria-pressed", +b.dataset.d === days));
+}
+
+[[2, "Faísca · dia 2"], [9, "Chama · dia 9"], [20, "Guardião · dia 20"], [41, "Sentinela · dia 41"]].forEach(([d, l]) => {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = l; b.dataset.d = d;
+  b.onclick = () => { days = d; renderChama(); }; $("dayCtl").append(b);
+});
+
+$("levelUp").onclick = () => {
+  const i = stageOf(days), n = STAGES[i + 1]; if (!n) return;
+  days = n.min - 1; renderChama();
+  setTimeout(() => {
+    days = n.min; storm = 1; renderChama();
+    const burst = $("burst"); burst.style.setProperty("--x", `${pos * 100}%`);
+    burst.classList.remove("go"); void burst.offsetWidth; burst.classList.add("go");
+    $("pet").classList.add("pop"); setTimeout(() => $("pet").classList.remove("pop"), 600);
+    try { navigator.vibrate?.([12, 40, 12]); } catch {}
+  }, 1000);
+};
+
+// ── Raio: vários fios em ziguezague, uns sobre os outros, sempre na mesma cor ──
+const cv = $("cv"), ctx = cv.getContext("2d");
+let storm = 0, shown = 0;
+function bolt(w, amp, step) {
+  const pts = [[0, 13]];
+  for (let x = step; x < w; x += step * (0.6 + Math.random() * 0.8)) pts.push([x, 13 + (Math.random() * 2 - 1) * amp]);
+  pts.push([w, 13]); return pts;
+}
+function stroke(pts, width, color, blur, glow) {
+  ctx.beginPath(); pts.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  ctx.lineWidth = width; ctx.strokeStyle = color; ctx.shadowBlur = blur; ctx.shadowColor = glow; ctx.lineJoin = "round"; ctx.stroke();
+}
+let last = 0;
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (t - last < 75) return; last = t;
+  const W = bar.clientWidth, dpr = devicePixelRatio || 1;
+  shown += (pos - shown) * 0.35;
+  const w = Math.max(0, W * shown);
+  cv.width = W * dpr; cv.height = 26 * dpr; cv.style.width = W + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, 26);
+  if (w < 4) return;
+  const c = getComputedStyle($("chama")).getPropertyValue("--c").trim();
+  const boost = 1 + storm * 1.6;
+  const n = 4 + Math.round(storm * 3);
+  for (let k = 0; k < n; k++) stroke(bolt(w, (3 + k * 1.6) * boost, 7 + k * 2), 1.6, c, 8, c);
+  stroke(bolt(w, 2.5 * boost, 6), 1.1, "#fff", 6, c);
+  // pequenas faíscas a saltar da ponta
+  for (let k = 0; k < 2 + storm * 6; k++) {
+    const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * (6 + storm * 10);
+    stroke([[w, 13], [w + Math.cos(a) * r * .5 + (Math.random() - .5) * 3, 13 + Math.sin(a) * r * .5], [w + Math.cos(a) * r, 13 + Math.sin(a) * r]], 1, k % 2 ? "#fff" : c, 6, c);
+  }
+  storm = Math.max(0, storm - 0.06);
+}
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) requestAnimationFrame(frame);
+renderChama();
+
+// ── Ciclo ──
+const L = 28;
+const KIND = (d) => d <= 5 ? "#E8456B" : d === 14 ? "#F2A91F" : d >= 10 && d <= 15 ? "#6DBDF0" : d >= 24 ? "#A890F5" : "#FFFFFF";
+const ART = {
+  drop: `<path d="M50 6C50 6 18 44 18 64a32 32 0 0 0 64 0C82 44 50 6 50 6Z" fill="url(#ag)"/><path d="M34 62a16 16 0 0 0 10 16" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".7"/>`,
+  leaf: `<path d="M50 92V48" stroke="url(#ag)" stroke-width="6" stroke-linecap="round"/><path d="M50 56C50 30 70 14 92 12 92 38 76 56 50 56Z" fill="url(#ag)"/><path d="M50 66C50 46 34 32 12 30 12 52 28 66 50 66Z" fill="url(#ag)" opacity=".8"/>`,
+  heart: `<path d="M50 88S10 62 10 36a20 20 0 0 1 40-6 20 20 0 0 1 40 6C90 62 50 88 50 88Z" fill="url(#ag)"/><path d="M28 34a9 9 0 0 1 10-8" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".7"/>`,
+  sun: `<circle cx="50" cy="50" r="22" fill="url(#ag)"/>${Array.from({ length: 8 }, (_, k) => `<rect x="47" y="6" width="6" height="16" rx="3" fill="url(#ag)" transform="rotate(${k * 45} 50 50)"/>`).join("")}`,
+  moon: `<path d="M64 8A42 42 0 1 0 92 66 34 34 0 0 1 64 8Z" fill="url(#ag)"/><circle cx="74" cy="26" r="3" fill="#fff" opacity=".8"/>`,
+};
+const PHASES = {
+  menstrual: { name: "Menstruação", day: 5, c: "#E8456B", deep: "#B8264C", g1: "#FFF3F6", g2: "#FFDCE5", edge: "#FBD3DE", shadow: "rgba(232,69,107,.35)", art: "drop",
+    her: "Dia de abrandar e mimar-te um pouco.", him: "Ela pode precisar de mais mimo hoje.", next: "Fértil a partir de 10 nov" },
+  folicular: { name: "Folicular", day: 8, c: "#3E9BD8", deep: "#1F74AD", g1: "#F2FAFF", g2: "#D9EEFF", edge: "#CFE6F8", shadow: "rgba(62,155,216,.35)", art: "leaf",
+    her: "A tua energia está a voltar.", him: "A energia dela está a voltar.", next: "Fértil a partir de 10 nov" },
+  fertil: { name: "Janela fértil", day: 12, c: "#2C9BE0", deep: "#16699E", g1: "#F1F9FF", g2: "#DCEBFF", edge: "#CDE2F7", shadow: "rgba(44,155,224,.35)", art: "heart",
+    her: "Gravidez mais provável nestes dias.", him: "Gravidez mais provável nestes dias.", next: "Ovulação · 14 nov" },
+  ovulacao: { name: "Ovulação", day: 14, c: "#E89B0C", deep: "#A86A00", g1: "#FFFAEC", g2: "#FFE8B8", edge: "#F8E0A8", shadow: "rgba(232,155,12,.38)", art: "sun",
+    her: "Hoje é o teu dia mais fértil.", him: "Hoje é o dia mais fértil dela.", next: "Período · 23 nov" },
+  tpm: { name: "TPM", day: 25, c: "#8B6FF0", deep: "#5B3FC4", g1: "#F7F3FF", g2: "#E6DEFF", edge: "#DDD2FA", shadow: "rgba(139,111,240,.35)", art: "moon",
+    her: "Sê gentil contigo, o período vem aí.", him: "Paciência e carinho fazem diferença.", next: "Período em 4 dias" },
+};
+let ph = "menstrual", male = false;
+function renderRing(p) {
+  let h = "";
+  for (let d = 1; d <= L; d++) {
+    const a = ((d - 1) / L) * 2 * Math.PI - Math.PI / 2, x = 48 + 40 * Math.cos(a), y = 48 + 40 * Math.sin(a);
+    const col = KIND(d), past = d < p.day;
+    h += `<rect x="${x - 2}" y="${y - 5}" width="4" height="10" rx="2" fill="${col}" opacity="${past ? .45 : 1}" ${col === "#FFFFFF" ? `stroke="${p.edge}" stroke-width=".8"` : ""} transform="rotate(${((d - 1) / L) * 360} ${x} ${y})"/>`;
+  }
+  const a = ((p.day - 1) / L) * 2 * Math.PI - Math.PI / 2, x = 48 + 40 * Math.cos(a), y = 48 + 40 * Math.sin(a);
+  h += `<circle class="pulse" cx="${x}" cy="${y}" r="6" fill="${p.c}"/><circle cx="${x}" cy="${y}" r="7" fill="#fff" stroke="${p.c}" stroke-width="2.5"/><circle cx="${x}" cy="${y}" r="2.6" fill="${p.c}"/>`;
+  $("ring").innerHTML = h;
+}
+function renderCiclo() {
+  const p = PHASES[ph], el = $("cy");
+  for (const k of ["c", "deep", "g1", "g2", "edge", "shadow"]) el.style.setProperty("--" + k, p[k]);
+  $("art").innerHTML = `<defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".55" stop-color="${p.c}" stop-opacity=".55"/><stop offset="1" stop-color="${p.c}" stop-opacity=".9"/></linearGradient></defs>${ART[p.art]}`;
+  renderRing(p);
+  $("cday").textContent = p.day;
+  $("pname").textContent = p.name;
+  $("phint").textContent = male ? p.him : p.her;
+  $("pnext").textContent = p.next;
+  $("who").textContent = male ? "Ciclo dela" : "O teu ciclo";
+  [...$("phCtl").children].forEach((b) => b.setAttribute("aria-pressed", b.dataset.k === ph));
+  [...$("whoCtl").children].forEach((b) => b.setAttribute("aria-pressed", (b.dataset.m === "1") === male));
+}
+$("sparks").innerHTML = [[62, 70, 0], [78, 80, 1.6], [70, 60, 3.2], [88, 55, 2.4]].map(([l, t, d]) =>
+  `<svg class="spark" style="left:${l}%;top:${t}%;animation-delay:${d}s" viewBox="0 0 10 10"><path d="M5 0L6.2 3.8 10 5 6.2 6.2 5 10 3.8 6.2 0 5 3.8 3.8Z" fill="currentColor"/></svg>`).join("");
+Object.entries(PHASES).forEach(([k, p]) => {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = p.name; b.dataset.k = k;
+  b.onclick = () => { ph = k; renderCiclo(); }; $("phCtl").append(b);
+});
+[["0", "Vista dela"], ["1", "Vista dele"]].forEach(([m, l]) => {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = l; b.dataset.m = m;
+  b.onclick = () => { male = m === "1"; renderCiclo(); }; $("whoCtl").append(b);
+});
+renderCiclo();
+</script>

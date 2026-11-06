@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Centro de Conhecimento</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#0B1324; --text:#3A4150; --muted:#636978; --faint:#77736C; --edge:#ECE8E3; --field:#F7F5F2; --sand:#F4F1EC;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; flex-wrap: wrap; gap: 48px 26px; padding: 52px 28px 28px; justify-content: center; }
+  .wrap { position: relative; }
+  .cap { position: absolute; top: -28px; left: 4px; font-size: 12px; font-weight: 600; color: #565A63; }
+  .phone { width: 360px; height: 780px; background: #fff; border-radius: 38px; overflow: hidden; display: flex; flex-direction: column; padding: 50px 18px 0; box-shadow: 0 30px 60px -32px rgba(11,19,36,.45); position: relative; }
+  .scroll { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .round { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; background: #fff; flex: none; font-size: 18px; color: var(--ink); }
+  h1 { font-size: 26px; letter-spacing: -0.035em; font-weight: 700; line-height: 1.12; }
+  .sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .search { height: 46px; border-radius: 16px; background: var(--field); border: 1px solid var(--edge); display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 14px; color: var(--faint); }
+  .seg { display: flex; background: var(--sand); border-radius: 14px; padding: 4px; gap: 4px; }
+  .seg span { flex: 1; text-align: center; height: 34px; line-height: 34px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(11,19,36,.06), 0 4px 12px -6px rgba(11,19,36,.2); }
+  .label { font-size: 12.5px; font-weight: 650; color: var(--muted); }
+  .card { border: 1px solid var(--edge); border-radius: 24px; background: #fff; padding: 16px; }
+  .feature { border-radius: 24px; padding: 16px; background: #F1EDFE; display: flex; gap: 14px; align-items: center; }
+  .feature .t { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.25; }
+  .feature .m { font-size: 12.5px; color: #5B4BAF; margin-top: 4px; }
+  .pill { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 650; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .topic { border: 1px solid var(--edge); border-radius: 20px; padding: 12px; display: flex; gap: 10px; align-items: center; }
+  .topic b { display: block; font-size: 13.5px; letter-spacing: -0.01em; line-height: 1.2; }
+  .topic small { font-size: 12px; color: var(--muted); }
+  .tile { width: 40px; height: 40px; border-radius: 13px; background: var(--field); display: flex; align-items: center; justify-content: center; flex: none; }
+  .art { display: flex; gap: 12px; align-items: center; padding: 12px 0; }
+  .art + .art { border-top: 1px solid var(--edge); }
+  .art b { display: block; font-size: 14.5px; letter-spacing: -0.01em; line-height: 1.25; }
+  .art small { font-size: 12px; color: var(--muted); }
+  .done { color: #23733F; font-weight: 600; }
+  /* artigo */
+  .bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--ink); border-radius: 0 3px 3px 0; }
+  .atitle { font-size: 27px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.12; }
+  .lead { font-size: 16px; line-height: 1.55; color: var(--text); }
+  .p { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .h { font-size: 17px; font-weight: 650; letter-spacing: -0.02em; }
+  .quote { border-left: 3px solid var(--ink); padding: 2px 0 2px 14px; }
+  .quote b { font-size: 15px; letter-spacing: -0.01em; }
+  .quote p { font-size: 14.5px; line-height: 1.55; color: var(--text); margin-top: 3px; }
+  .box { border-radius: 20px; padding: 14px; }
+  .box .bh { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 650; margin-bottom: 8px; }
+  .box ul { list-style: none; display: grid; gap: 7px; }
+  .box li { font-size: 14px; line-height: 1.45; color: var(--text); display: flex; gap: 9px; }
+  .box li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .45; margin-top: 8px; flex: none; }
+  .box p { font-size: 14px; line-height: 1.5; color: var(--text); }
+  .tip { background: #EEF8F1; } .tip .bh { color: #23733F; }
+  .warn { background: #FDECEF; } .warn .bh { color: #B0244A; }
+  .cur { background: #E9F5FC; } .cur .bh { color: #176796; }
+  .couple { background: #F3F7FE; border: 1px solid #E1EAF9; } .couple .bh { color: #1D4FA8; }
+  .ul { list-style: none; display: grid; gap: 8px; }
+  .ul li { font-size: 14.5px; line-height: 1.5; color: var(--text); display: flex; gap: 10px; }
+  .ul li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #B9A6F7; margin-top: 9px; flex: none; }
+  .next { border: 1px solid var(--edge); border-radius: 22px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+  .btn { height: 52px; border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .aa { position: absolute; top: 98px; right: 18px; width: 210px; background: #fff; border: 1px solid var(--edge); border-radius: 20px; padding: 12px; box-shadow: 0 18px 40px -18px rgba(11,19,36,.35); }
+  .aa .sz { display: flex; gap: 6px; } .aa .sz span { flex: 1; height: 38px; border-radius: 12px; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+  .aa .sz span.on { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(11,19,36,.07); }
+  .note { max-width: 1180px; width: 100%; background: #fff; border-radius: 24px; padding: 22px 26px; font-size: 14px; line-height: 1.6; color: var(--text); }
+  .note h2 { font-size: 18px; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 8px; }
+  .note ul { padding-left: 18px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · Centro -->
+<div class="wrap"><div class="cap">1 · Centro de Conhecimento</div>
+<div class="phone"><div class="scroll">
+  <div class="row">
+    <div class="round">‹</div>
+    <div style="flex:1"></div>
+  </div>
+  <div><h1>Aprende sobre o teu ciclo</h1><p class="sub">16 artigos curtos, escritos com carinho.</p></div>
+  <div class="search"><i class="ic" data-ic="lupa" data-s="18"></i>Pesquisar: TPM, cólicas, ovulação…</div>
+  <div class="seg"><span class="on">Todos</span><span>Guardados · 2</span></div>
+  <p class="label">Para ti agora</p>
+  <div class="feature">
+    <i class="ic" data-ic="lutea" data-s="44"></i>
+    <div style="flex:1">
+      <span class="pill" style="background:#fff;color:#6B4FD8">Estás na fase lútea</span>
+      <div class="t" style="margin-top:7px">TPM: o que é e porque acontece</div>
+      <div class="m">6 min de leitura</div>
+    </div>
+  </div>
+  <p class="label">Temas</p>
+  <div class="grid">
+    <div class="topic"><div class="tile"><i class="ic" data-ic="ciclo" data-s="28"></i></div><div><b>O ciclo</b><small>1 artigo</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="menstrual" data-s="26"></i></div><div><b>Menstruação</b><small>2 artigos</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="folicular" data-s="26"></i></div><div><b>Folicular</b><small>1 artigo</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="ovulacao" data-s="26"></i></div><div><b>Ovulação</b><small>2 artigos</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="lutea" data-s="26"></i></div><div><b>Lútea e TPM</b><small>2 artigos</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="fertil" data-s="28"></i></div><div><b>Fertilidade</b><small>1 artigo</small></div></div>
+  </div>
+</div></div></div>
+
+<!-- 2 · Tema -->
+<div class="wrap"><div class="cap">2 · Um tema aberto (ao descer, os outros 4 temas)</div>
+<div class="phone"><div class="scroll">
+  <div class="row"><div class="round">‹</div></div>
+  <div class="row" style="justify-content:flex-start;gap:14px">
+    <div class="tile" style="width:56px;height:56px;border-radius:18px;background:#F1EDFE"><i class="ic" data-ic="lutea" data-s="34"></i></div>
+    <div><h1 style="font-size:24px">Lútea e TPM</h1><p class="sub">Sensibilidade, progesterona e o que acontece antes do período.</p></div>
+  </div>
+  <div class="card" style="padding:4px 16px">
+    <div class="art"><div style="flex:1"><b>A Fase Lútea</b><small>5 min · <span class="done">Lido</span></small></div><i class="ic" data-ic="guardar" data-s="20"></i></div>
+    <div class="art"><div style="flex:1"><b>TPM: o que é e porque acontece</b><small>6 min</small></div><i class="ic" data-ic="guardado" data-s="20"></i></div>
+  </div>
+  <p class="label">Também te pode interessar</p>
+  <div class="card" style="padding:4px 16px">
+    <div class="art"><div class="tile"><i class="ic" data-ic="emocoes" data-s="26"></i></div><div style="flex:1"><b>Hormonas e emoções: a ligação</b><small>Emoções e humor · 5 min</small></div></div>
+    <div class="art"><div class="tile"><i class="ic" data-ic="menstrual" data-s="24"></i></div><div style="flex:1"><b>Cólicas: causas e como aliviar</b><small>Menstruação · 4 min</small></div></div>
+  </div>
+  <p class="label">Mais temas</p>
+  <div class="grid">
+    <div class="topic"><div class="tile"><i class="ic" data-ic="intima" data-s="28"></i></div><div><b>Saúde íntima</b><small>2 artigos</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="emocoes" data-s="28"></i></div><div><b>Emoções e humor</b><small>1 artigo</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="gravidez" data-s="28"></i></div><div><b>Gravidez</b><small>1 artigo</small></div></div>
+    <div class="topic"><div class="tile"><i class="ic" data-ic="pergunta" data-s="28"></i></div><div><b>Perguntas</b><small>1 artigo</small></div></div>
+  </div>
+</div></div></div>
+
+<!-- 3 · Artigo (início) -->
+<div class="wrap"><div class="cap">3 · Artigo — início, com o tamanho da letra aberto</div>
+<div class="phone"><div class="bar" style="width:18%"></div><div class="scroll" style="gap:16px">
+  <div class="row"><div class="round">‹</div><div style="display:flex;gap:8px"><div class="round" style="font-weight:700;font-size:14px">Aa</div><div class="round"><i class="ic" data-ic="guardado" data-s="20"></i></div></div></div>
+  <div>
+    <span class="pill" style="background:#F1EDFE;color:#6B4FD8">Lútea e TPM · 6 min</span>
+    <div class="atitle" style="margin-top:10px">TPM: o que é e porque acontece</div>
+    <p class="sub" style="font-size:14px;margin-top:6px">A ciência por detrás da tensão pré-menstrual</p>
+  </div>
+  <p class="lead">A TPM afeta entre 75 e 80% das mulheres em idade reprodutiva. Não é fraqueza, não é exagero e não é "coisa da cabeça". É uma condição real, com causas conhecidas, e que pode ser gerida.</p>
+  <div class="quote"><b>O teu ciclo é único</b><p>O que importa é perceberes o teu padrão ao longo do tempo. O LoveNest ajuda-te a vê-lo no Histórico.</p></div>
+  <div><div class="h">Porque acontece?</div><p class="p" style="margin-top:6px">Está ligada às subidas e descidas do estrogénio e da progesterona na segunda metade do ciclo, que mexem com a serotonina, a hormona do humor, do sono e do apetite.</p></div>
+</div>
+  <div class="aa">
+    <p class="label" style="margin-bottom:8px">Tamanho da letra</p>
+    <div class="sz"><span style="font-size:13px">A</span><span class="on" style="font-size:16px">A</span><span style="font-size:19px">A</span></div>
+  </div>
+</div></div>
+
+<!-- 4 · Artigo (fim) -->
+<div class="wrap"><div class="cap">4 · Artigo — caixas, nota para o casal e o seguinte</div>
+<div class="phone"><div class="bar" style="width:92%"></div><div class="scroll" style="gap:12px">
+  <div class="box tip"><div class="bh"><i class="ic" data-ic="lampada" data-s="22"></i>O que realmente ajuda</div>
+    <ul><li>Exercício regular ao longo do mês</li><li>Menos sal, açúcar e álcool na semana antes</li><li>Sono de qualidade e momentos de calma</li></ul></div>
+  <div class="box warn"><div class="bh"><i class="ic" data-ic="alerta" data-s="22"></i>Quando falar com um médico</div>
+    <p>Se a tristeza ou a ansiedade forem muito fortes todos os meses, pode ser PMDD, que tem tratamento.</p></div>
+  <div class="box cur"><div class="bh"><i class="ic" data-ic="estrela" data-s="22"></i>Curiosidade</div>
+    <p>A TPM só foi reconhecida pela medicina em 1931.</p></div>
+  <div class="box couple"><div class="bh"><i class="ic" data-ic="casal" data-s="22"></i>Para vocês, como casal</div>
+    <p>Nestes dias, paciência e pequenos gestos valem muito. Falem sobre o que ajuda cada um.</p></div>
+  <div class="next"><div class="tile"><i class="ic" data-ic="emocoes" data-s="26"></i></div><div style="flex:1"><small style="font-size:12px;color:var(--muted)">A seguir</small><b style="display:block;font-size:14.5px;letter-spacing:-0.01em">Hormonas e emoções: a ligação</b></div><span style="font-size:18px">›</span></div>
+  <p style="font-size:12px;color:var(--muted);text-align:center;line-height:1.4">Informação educativa. Não substitui aconselhamento médico.</p>
+</div></div></div>
+
+<div class="note">
+  <h2>O que muda</h2>
+  <ul>
+    <li><b>Visual do Ciclo:</b> fundo branco, sem caixas rosa nem gradientes. A cor fica só nos desenhos das fases e nas caixas com significado: verde para dica, rosa para atenção, azul para curiosidade e para a nota do casal.</li>
+    <li><b>Para ti agora:</b> um só destaque, o artigo da fase em que estás, com a fase escrita.</li>
+    <li><b>Temas em grelha compacta:</b> desenhos próprios em vez de bolas coloridas. Os artigos aparecem ao abrir o tema, e não numa lista enorme.</li>
+    <li><b>Leitura mais confortável:</b> letra maior e linhas mais espaçadas, uma barra fina de progresso, o "Aa" para o tamanho da letra e o botão para guardar. No fim, o artigo seguinte e o aviso "Não substitui aconselhamento médico".</li>
+    <li><b>Lido:</b> os artigos já lidos ficam marcados, para saberes onde ficaste.</li>
+    <li><b>Para ele:</b> o mesmo centro com o título "Entende o ciclo dela". A nota "Para vocês, como casal" é a parte mais útil para ele.</li>
+  </ul>
+</div>
+
+<script>
+const lg = (id, a, b) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const rg = (id, a, b) => `<radialGradient id="${id}" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient>`;
+const shine = (id) => `<radialGradient id="${id}" cx=".3" cy=".2" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`;
+const soft = (id) => `<filter id="${id}" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="1.6" stdDeviation="1.5" flood-color="#0B1324" flood-opacity=".16"/></filter>`;
+const HEART = "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+const heartAt = (x, y, s, fill) => `<path transform="translate(${x - 12 * s} ${y - 11.5 * s}) scale(${s})" d="${HEART}" fill="${fill}"/>`;
+const drop = (x, y, s, fill) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0-22c5 7.5 13 14.7 13 23.7C13 9 7.2 14.7 0 14.7S-13 9-13 1.7C-13-7.3-5-14.5 0-22Z" fill="${fill}"/>`;
+const ICONS = {
+  menstrual: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}${shine(u+"s")}</defs><path d="M32 7c6 9 15.5 17.6 15.5 28.4C47.5 44.2 40.6 51 32 51s-15.5-6.8-15.5-15.6C16.5 24.6 26 16 32 7Z" fill="url(#${u}a)"/><ellipse cx="25.2" cy="34" rx="3.4" ry="6.8" fill="url(#${u}s)" transform="rotate(18 25.2 34)"/>`,
+  folicular: u => `<defs>${lg(u+"a","#9BE3FF","#0EA5E9")}${lg(u+"b","#7DD3FC","#0284C7")}</defs><path d="M32 54V30" stroke="#0EA5E9" stroke-width="4" stroke-linecap="round"/><path d="M32 32C31 20 22 12 9 12c0 13 9 21 23 20Z" fill="url(#${u}a)"/><path d="M32 38c1-10 8.6-16.6 19.6-16.6 0 11-7.6 17.6-19.6 16.6Z" fill="url(#${u}b)"/>`,
+  ovulacao: u => `<defs>${rg(u+"a","#FFF3B0","#F59E0B")}</defs><g stroke="#F5B323" stroke-width="4" stroke-linecap="round"><path d="M32 5v6M32 53v6M5 32h6M53 32h6M12.9 12.9l4.3 4.3M46.8 46.8l4.3 4.3M12.9 51.1l4.3-4.3M46.8 17.2l4.3-4.3"/></g><circle cx="32" cy="32" r="14" fill="url(#${u}a)"/>`,
+  lutea: u => `<defs>${lg(u+"a","#D6C8FF","#7C3AED")}</defs><path d="M40 8A24 24 0 1 0 56 41 19.5 19.5 0 0 1 40 8Z" fill="url(#${u}a)"/><path d="M48.5 12l1.2 3 3 1.2-3 1.2-1.2 3-1.2-3-3-1.2 3-1.2Z" fill="#C4B5FD"/>`,
+  ciclo: u => { let s = ""; const c = ["#E8456B","#E8456B","#E8456B","#8CCCF2","#8CCCF2","#F2A91F","#B9A6F7","#B9A6F7","#EAE6E0","#EAE6E0","#B9A6F7","#E8456B"]; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 - Math.PI / 2; s += `<circle cx="${32 + 22 * Math.cos(a)}" cy="${32 + 22 * Math.sin(a)}" r="4.6" fill="${c[i]}"/>`; } return s + `<circle cx="32" cy="32" r="7" fill="#0B1324"/>`; },
+  fertil: u => `<defs>${lg(u+"a","#B6F0D2","#2FB67A")}${lg(u+"b","#FF9BB2","#E8284F")}${soft(u+"f")}</defs><g filter="url(#${u}f)"><path d="M32 56V34" stroke="#2FB67A" stroke-width="4" stroke-linecap="round"/><path d="M32 36C31 25 23 18 12 18c0 11 8 18 20 18Z" fill="url(#${u}a)"/><path d="M32 40c1-9 7.6-14.6 17.6-14.6 0 10-6.6 15.6-17.6 14.6Z" fill="url(#${u}a)"/></g>${heartAt(32, 12, .55, `url(#${u}b)`)}`,
+  intima: u => `<defs>${lg(u+"a","#FFC6D3","#F0678A")}${soft(u+"f")}</defs><g filter="url(#${u}f)"><path d="M32 6l20 7.5v16c0 12.6-8.3 23-20 27-11.7-4-20-14.4-20-27v-16Z" fill="url(#${u}a)"/></g>${heartAt(32, 32, .95, "#fff")}`,
+  emocoes: u => `<defs>${lg(u+"a","#BFE4FF","#4BA3EE")}${shine(u+"s")}${soft(u+"f")}</defs><g filter="url(#${u}f)">${drop(32, 34, 1.15, `url(#${u}a)`)}</g><ellipse cx="26" cy="35" rx="3.4" ry="6.4" fill="url(#${u}s)" transform="rotate(18 26 35)"/>${heartAt(35, 38, .42, "#fff")}`,
+  gravidez: u => `<defs>${lg(u+"a","#FFFFFF","#E9E5DF")}${soft(u+"f")}</defs><g filter="url(#${u}f)" transform="rotate(-35 32 32)"><rect x="25" y="4" width="14" height="56" rx="7" fill="url(#${u}a)" stroke="#CFCAC3" stroke-width="1.5"/><rect x="28" y="24" width="8" height="14" rx="2.5" fill="#F7F5F2" stroke="#CFCAC3"/><path d="M30.5 27v8M33.5 27v8" stroke="#E8456B" stroke-width="2" stroke-linecap="round"/><rect x="25" y="44" width="14" height="16" rx="7" fill="#8CCCF2"/></g>`,
+  pergunta: u => `<defs>${lg(u+"a","#E6ECF5","#A9B7CC")}${soft(u+"f")}</defs><g filter="url(#${u}f)"><path d="M12 14c0-4 3-7 7-7h26c4 0 7 3 7 7v20c0 4-3 7-7 7H28l-9 8v-8c-4 0-7-3-7-7Z" fill="url(#${u}a)"/></g><path d="M27 19.5c0-3 2.4-5 5.2-5s5 2 5 4.6c0 3.8-5 4-5 7.6" stroke="#0B1324" stroke-width="3.2" stroke-linecap="round" fill="none"/><circle cx="32.2" cy="32.5" r="2.1" fill="#0B1324"/>`,
+  lampada: u => `<defs>${rg(u+"a","#FFF6C8","#F5B323")}</defs><path d="M32 8c-9.4 0-17 7.3-17 16.4 0 6 3.4 10 6.4 13.2 1.8 1.9 2.6 3.7 2.6 6V46h16v-2.4c0-2.3.8-4.1 2.6-6 3-3.2 6.4-7.2 6.4-13.2C49 15.3 41.4 8 32 8Z" fill="url(#${u}a)"/><rect x="24" y="48" width="16" height="5" rx="2.5" fill="#3A4150"/><rect x="26" y="55" width="12" height="4" rx="2" fill="#3A4150"/>`,
+  alerta: u => `<defs>${lg(u+"a","#FFB4C4","#E8456B")}</defs><path d="M28.5 9.5c1.6-2.7 5.4-2.7 7 0L58 48c1.6 2.7-.3 6-3.5 6h-45C6.3 54 4.4 50.7 6 48Z" fill="url(#${u}a)"/><path d="M32 23v13" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><circle cx="32" cy="44.5" r="2.8" fill="#fff"/>`,
+  estrela: u => `<defs>${lg(u+"a","#A9DCFF","#3BA7E6")}</defs><path d="M32 6l6.7 15 16.3 1.7-12.2 11 3.4 16L32 41.5 17.8 49.7l3.4-16L9 22.7l16.3-1.7Z" fill="url(#${u}a)"/>`,
+  casal: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${lg(u+"b","#A9CCFF","#3B82F6")}</defs>${heartAt(25, 34, 1.4, `url(#${u}a)`)}${heartAt(39, 30, 1.4, `url(#${u}b)`)}`,
+  guardar: () => `<path d="M18 10h28v44L32 44 18 54Z" fill="none" stroke="#636978" stroke-width="4" stroke-linejoin="round"/>`,
+  guardado: () => `<path d="M18 10h28v44L32 44 18 54Z" fill="#0B1324" stroke="#0B1324" stroke-width="4" stroke-linejoin="round"/>`,
+  lupa: () => `<circle cx="28" cy="28" r="15" fill="none" stroke="#77736C" stroke-width="5"/><path d="M39 39l13 13" stroke="#77736C" stroke-width="5" stroke-linecap="round"/>`,
+};
+let n = 0;
+document.querySelectorAll(".ic").forEach(el => {
+  const s = +el.dataset.s || 32, u = "i" + (n++);
+  el.innerHTML = `<svg width="${s}" height="${s}" viewBox="0 0 64 64">${ICONS[el.dataset.ic](u)}</svg>`;
+  el.style.cssText = `width:${s}px;height:${s}px;display:inline-block;flex:none`;
+});
+</script>
+</body>
+</html>
