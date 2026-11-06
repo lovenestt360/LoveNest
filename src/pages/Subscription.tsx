@@ -169,7 +169,11 @@ export default function Subscription() {
         leaveReturn();
     }, [leaveReturn, toast]);
 
-    const handleReturnDone = useCallback(() => writePending(null), []);
+    const handleReturnDone = useCallback(() => {
+        writePending(null);
+        // Sem isto, o ProtectedRoute continua com a casa de antes do pagamento e volta a oferecer o teste.
+        window.dispatchEvent(new Event("ln:house-changed"));
+    }, []);
 
     const handlePay = async () => {
         if (!selectedPlan) return;

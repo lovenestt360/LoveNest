@@ -250,11 +250,11 @@ export function PaymentReturn({ paymentId, onFailed, onLeave, onDone, onHome, on
   const tries = useRef(0);
   const finished = useRef(false);
 
-  const check = useCallback(async () => {
+  const check = useCallback(async (byUser = false) => {
     if (finished.current) return;
-    setChecking(true);
+    if (byUser) setChecking(true);
     const { data, error } = await supabase.functions.invoke("epay", { body: { action: "check", payment_id: paymentId } });
-    setChecking(false);
+    if (byUser) setChecking(false);
     if (finished.current || error) return;
 
     if (data?.status === "approved") {
@@ -354,7 +354,7 @@ export function PaymentReturn({ paymentId, onFailed, onLeave, onDone, onHome, on
           ? "Ainda não recebemos a confirmação. Se já pagaste, o plano ativa sozinho assim que ela chegar."
           : "Costuma demorar poucos segundos. Podes sair daqui: o plano ativa sozinho."}
       </p>
-      <button type="button" disabled={checking} onClick={check} className="mt-3 h-11 rounded-[14px] bg-[#F2F0ED] px-5 text-[14px] font-semibold disabled:opacity-60 dark:bg-muted">
+      <button type="button" disabled={checking} onClick={() => check(true)} className="mt-3 h-11 rounded-[14px] bg-[#F2F0ED] px-5 text-[14px] font-semibold disabled:opacity-60 dark:bg-muted">
         {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verificar outra vez"}
       </button>
       <button type="button" onClick={onLeave} className="text-[12.5px] font-semibold text-muted-foreground underline underline-offset-2">Voltar aos planos</button>
