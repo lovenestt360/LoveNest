@@ -453,11 +453,9 @@ export default function Jornada() {
   const partnerHere = !isSolo && activeCount - (myCheckedIn ? 1 : 0) > 0;
   const myName = profile?.display_name?.split(" ")[0] || "Tu";
   const partnerName = partner?.display_name?.split(" ")[0] || "O teu par";
-  const urgent = !bothActive && !shieldUsedToday && hoursLeft <= 3 && !isZero;
+  const urgent = !bothActive && hoursLeft <= 3 && !isZero;
 
-  const todayNote = shieldUsedToday
-    ? "O escudo guardou a sequência hoje."
-    : bothActive
+  const todayNote = bothActive
     ? (isSolo ? "Apareceste hoje. A chama está acesa 🔥" : "Os dois apareceram. A chama de hoje está acesa 🔥")
     : myCheckedIn
     ? `O teu gesto está guardado. Faltam ${hoursLeft}h para ${partnerName} aparecer.`
@@ -465,6 +463,8 @@ export default function Jornada() {
     ? `${partnerName} já apareceu. Falta só tu para a chama contar hoje.`
     : isZero
     ? (isSolo ? "Hoje é um bom dia para começar." : "Hoje é um bom dia para começarem.")
+    : shieldUsedToday
+    ? `Um escudo guardou a chama. Hoje faltam ${hoursLeft}h para a manter.`
     : `Faltam ${hoursLeft}h para proteger ${currentStreak} ${currentStreak === 1 ? "dia" : "dias"} de amor.`;
 
   const renewDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
@@ -546,8 +546,8 @@ export default function Jornada() {
       <section className={CARD}>
         <div className="flex items-baseline justify-between">
           <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-foreground">Hoje</h2>
-          <span className={cn("text-[12.5px] tabular-nums", shieldUsedToday ? "text-[#4D7CFE]" : urgent ? "font-semibold text-red-600" : "text-muted-foreground")}>
-            {shieldUsedToday ? "Protegida" : `${hoursLeft}h restantes`}
+          <span className={cn("text-[12.5px] tabular-nums", urgent ? "font-semibold text-red-600" : "text-muted-foreground")}>
+            {`${hoursLeft}h restantes`}
           </span>
         </div>
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
