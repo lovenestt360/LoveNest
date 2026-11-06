@@ -131,6 +131,9 @@ Deno.serve(async (req) => {
       const amount = amountOf(plan?.price);
       if (!plan || amount < 1) return json({ error: "Plano indisponível" }, 422);
 
+      const { data: house } = await sb.from("couple_spaces").select("is_suspended, suspension_reason").eq("id", spaceId).maybeSingle();
+      if (house?.is_suspended && house.suspension_reason === "irregular") return json({ error: "Casa suspensa" }, 403);
+
       // Quem voltou atrás no checkout continua o mesmo pagamento, em vez de criar outro.
       const { data: open } = await sb.from("payments").select("*")
         .eq("couple_space_id", spaceId).eq("provider", "epay").eq("status", "pending").eq("plan_id", plan.id)

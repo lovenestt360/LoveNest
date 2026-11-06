@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useFreeMode } from "@/hooks/useFreeMode";
-import { LogoIcon } from "@/components/Logo";
 import { hasActivePaidSubscription } from "@/lib/subscriptionAccess";
 import { TrialOffer } from "@/features/subscription/TrialOffer";
+import { SubscriptionEnded, SuspendedForPayment, SuspendedIrregular, TrialEnded } from "@/features/subscription/BlockedScreen";
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -183,23 +183,13 @@ export function ProtectedRoute() {
     );
   }
 
+  // Suspensão por irregularidade bloqueia tudo: pagar não a resolve.
+  if (isSuspended && houseData?.suspension_reason === "irregular") {
+    return <SuspendedIrregular note={houseData.suspension_note} />;
+  }
+
   if (isSuspended && location.pathname !== '/subscricao') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md rounded-lg border border-destructive bg-destructive/10 p-6 text-center space-y-4 shadow-sm animate-in zoom-in-95">
-          <div className="w-16 h-16 bg-destructive/20 text-destructive rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
-          </div>
-          <h1 className="text-xl font-bold text-destructive">Conta Suspensa</h1>
-          <p className="text-sm text-foreground/80">
-            O acesso à sua LoveNest foi temporariamente suspenso. Por favor, regularize a sua subscrição ou contacte o suporte para mais informações.
-          </p>
-          <Button variant="default" className="w-full mt-4" onClick={() => window.location.assign("/subscricao")}>
-            Ver Subscrição
-          </Button>
-        </div>
-      </div>
-    );
+    return <SuspendedForPayment />;
   }
 
   if (hasCoupleSpace === false) {
@@ -221,29 +211,7 @@ export function ProtectedRoute() {
     !hasActivePaidSubscription(houseData);
 
   if (paidSubscriptionExpired && location.pathname !== "/subscricao") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-5">
-        <div className="w-full max-w-sm text-center space-y-7 animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex flex-col items-center gap-3">
-            <LogoIcon size={72} />
-          </div>
-          <div className="space-y-3">
-            <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">
-              A vossa subscrição<br />terminou
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Renovem o plano para continuarem a usar as funcionalidades Premium do LoveNest.
-            </p>
-          </div>
-          <button
-            className="w-full h-14 rounded-2xl font-bold text-base bg-primary text-primary-foreground shadow-md active:scale-95 transition-transform"
-            onClick={() => window.location.assign("/subscricao")}
-          >
-            Renovar subscrição
-          </button>
-        </div>
-      </div>
-    );
+    return <SubscriptionEnded />;
   }
 
   // Trial já foi usado, terminou (trial_ends_at no passado) e ainda não há
@@ -256,33 +224,7 @@ export function ProtectedRoute() {
     new Date(houseData.trial_ends_at) < new Date();
 
   if (trialExpired && location.pathname !== '/subscricao') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-5">
-        <div className="w-full max-w-sm text-center space-y-7 animate-in fade-in slide-in-from-bottom-4">
-
-          <div className="flex flex-col items-center gap-3">
-            <LogoIcon size={72} />
-          </div>
-
-          <div className="space-y-3">
-            <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">
-              O vosso período grátis<br />terminou
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Os 15 dias gratuitos já passaram. Escolham um plano para continuarem a usar o LoveNest juntos.
-            </p>
-          </div>
-
-          <button
-            className="w-full h-14 rounded-2xl font-bold text-base bg-primary text-primary-foreground shadow-md active:scale-95 transition-transform"
-            onClick={() => window.location.assign("/subscricao")}
-          >
-            Ver planos e preços
-          </button>
-
-        </div>
-      </div>
-    );
+    return <TrialEnded />;
   }
 
   return <Outlet />;
