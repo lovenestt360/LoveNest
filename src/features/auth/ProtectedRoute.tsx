@@ -100,6 +100,20 @@ export function ProtectedRoute() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verifiedUser]);
 
+  // A casa muda sem recarregar a app: depois de um pagamento, ou quando o par paga ou ativa
+  // o teste noutro telemóvel. Sem isto, ficava a oferecer o teste a uma casa que já tem plano.
+  useEffect(() => {
+    if (!verifiedUser) return;
+    const refresh = () => { if (document.visibilityState === "visible") runCheck(); };
+    window.addEventListener("ln:house-changed", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("ln:house-changed", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verifiedUser]);
+
   const handleActivateTrial = async () => {
     if (!houseData?.id) return;
     try {
@@ -119,6 +133,8 @@ export function ProtectedRoute() {
       await runCheck();
     } catch (e) {
       console.error("Failed to activate trial", e);
+      // O par pode já ter ativado o teste ou pago: atualiza para sair deste ecrã.
+      await runCheck();
     } finally {
       setSavingTrial(false);
     }
