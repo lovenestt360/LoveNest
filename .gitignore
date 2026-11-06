@@ -33,3 +33,6 @@ scratch/
 .omc/
 .impeccable/
 skills-lock.json
+
+# Revisão técnica local: descreve falhas de segurança e o repositório é público.
+docs/REVISAO_TECNICA_*.md

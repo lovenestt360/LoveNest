@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Entrada LoveNest</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#0B1324; --text:#3A4150; --muted:#7A7F8C; --faint:#77736C; --edge:#ECE8E3; --field:#F7F5F2;
+    --rose:#E5466D; --sand:#F1EBE3;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; flex-wrap: wrap; gap: 44px 26px; padding: 48px 28px 28px; justify-content: center; }
+  .wrap { position: relative; }
+  .cap { position: absolute; top: -26px; left: 4px; font-size: 12px; font-weight: 600; color: #6b6f78; display: flex; gap: 10px; }
+  .cap button { all: unset; cursor: pointer; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .phone { width: 360px; height: 780px; background: #fff; border-radius: 38px; overflow: hidden; display: flex; flex-direction: column; padding: 54px 22px 28px; box-shadow: 0 30px 60px -32px rgba(11,19,36,.45); position: relative; }
+
+  /* ── Entrada em sequência ── */
+  .in { opacity: 0; transform: translateY(14px); animation: rise .7s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .word { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+  .word i { font-style: normal; color: var(--rose); }
+  .link { font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; position: relative; }
+  .link::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 1.5px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .25s var(--ease); }
+  .link:hover::after { transform: scaleX(1); }
+  .back { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--ink); cursor: pointer; transition: background .2s, transform .2s var(--ease); }
+  .back:hover { background: var(--field); } .back:active { transform: scale(.92); }
+
+  h1 { font-size: 30px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 700; }
+  .sub { margin-top: 10px; font-size: 15px; line-height: 1.45; color: var(--muted); }
+
+  /* ── Botões ── */
+  .btn { height: 54px; border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15.5px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 14px 28px -16px rgba(11,19,36,.65); transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .2s; position: relative; overflow: hidden; user-select: none; }
+  .btn .arrow { display: inline-block; transition: transform .3s var(--ease); }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 18px 32px -16px rgba(11,19,36,.7); }
+  .btn:hover .arrow { transform: translateX(4px); }
+  .btn:active { transform: scale(.98); box-shadow: 0 8px 18px -12px rgba(11,19,36,.6); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; }
+  .btn.ghost:hover { background: var(--field); box-shadow: none; }
+  .btn.off { background: #C9C6C0; box-shadow: none; pointer-events: none; }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.35); transform: scale(0); animation: ripple .6s ease-out forwards; pointer-events: none; }
+  .ghost .ripple { background: rgba(11,19,36,.08); }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  /* ── Campos ── */
+  .label { font-size: 13px; font-weight: 600; margin-bottom: 7px; color: var(--ink); }
+  .field { width: 100%; height: 52px; border-radius: 16px; background: var(--field); border: 1px solid var(--edge); padding: 0 16px; font: inherit; font-size: 15px; color: var(--ink); outline: none; transition: background .2s, border-color .2s, box-shadow .25s var(--ease); }
+  .field::placeholder { color: var(--faint); }
+  .field:hover { border-color: #DCD7CF; }
+  .field:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 4px rgba(11,19,36,.06); }
+  .stack { display: grid; gap: 14px; }
+  .or { display: flex; align-items: center; gap: 12px; color: var(--faint); font-size: 12.5px; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--edge); }
+  .small { font-size: 13px; color: var(--muted); text-align: center; }
+  .small b { color: var(--ink); font-weight: 600; cursor: pointer; }
+  .small b:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .spacer { flex: 1; }
+  .invite { margin-top: 14px; font-size: 13.5px; color: var(--text); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; transition: color .2s; }
+  .invite:hover { color: var(--ink); }
+  .invite span { display: inline-block; transition: transform .3s var(--ease); }
+  .invite:hover span { transform: rotate(90deg); }
+
+  /* ── Introdução: cartões da app a flutuar ── */
+  .preview { position: relative; height: 350px; margin-top: 18px; }
+  .card { position: absolute; left: 0; right: 0; background: #fff; border: 1px solid var(--edge); border-radius: 22px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(11,19,36,.04), 0 18px 36px -22px rgba(11,19,36,.32); opacity: 0; animation: cardIn .8s var(--ease) forwards, float 6s ease-in-out infinite; }
+  .c1 { top: 0; left: 10px; right: 26px; --r: -2.5deg; animation-delay: .2s, 1s; }
+  .c2 { top: 116px; left: 24px; right: 6px; --r: 1.8deg; animation-delay: .45s, 1.6s; }
+  .c3 { top: 262px; left: 6px; right: 30px; --r: -1deg; animation-delay: .7s, 2.2s; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(18px) rotate(var(--r)); } to { opacity: 1; transform: rotate(var(--r)); } }
+  @keyframes float { 0%, 100% { transform: rotate(var(--r)) translateY(0); } 50% { transform: rotate(var(--r)) translateY(-5px); } }
+  .k { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .big { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .big small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+  .duo { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .av { width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .av.a { background: linear-gradient(135deg,#F27A97,#D9466B); } .av.b { background: linear-gradient(135deg,#7D9DFF,#3F68E6); margin-left: -16px; border: 2px solid #fff; }
+  .heart { color: var(--rose); display: inline-block; animation: beat 1.6s ease-in-out infinite 2.4s; }
+  @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.25); } 30% { transform: scale(1); } }
+
+  /* ── Conversa (a app a falar) ── */
+  .chat { display: flex; flex-direction: column; gap: 8px; }
+  .bub { max-width: 86%; padding: 10px 14px; border-radius: 18px; font-size: 14.5px; line-height: 1.4; opacity: 0; transform: translateY(8px) scale(.98); transform-origin: bottom left; animation: pop .45s var(--ease) forwards; }
+  .bub.app { background: #fff; border: 1px solid var(--edge); border-bottom-left-radius: 6px; align-self: flex-start; color: var(--ink); }
+  .bub.me { background: var(--sand); border-bottom-right-radius: 6px; align-self: flex-end; transform-origin: bottom right; }
+  .bub.big-q { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; border: none; padding: 0; background: none; max-width: 100%; }
+  @keyframes pop { to { opacity: 1; transform: none; } }
+  .typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 18px; border-bottom-left-radius: 6px; background: #fff; border: 1px solid var(--edge); opacity: 0; animation: pop .3s var(--ease) forwards; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #B9B4AC; animation: dot 1s ease-in-out infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-3px); opacity: 1; } }
+  .from { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+  .from .logo-dot { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  /* ── Passos ── */
+  .prog { flex: 1; display: flex; gap: 5px; margin: 0 14px; }
+  .prog span { flex: 1; height: 4px; border-radius: 9px; background: #EEEBE6; overflow: hidden; position: relative; }
+  .prog span::after { content: ""; position: absolute; inset: 0; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .6s var(--ease); }
+  .prog span.on::after { transform: scaleX(1); }
+  .skip { font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; transition: color .2s; }
+  .skip:hover { color: var(--ink); }
+  .opt { border: 1px solid var(--edge); border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; cursor: pointer; background: #fff; transition: border-color .2s, background .2s, transform .25s var(--ease), box-shadow .25s var(--ease); opacity: 0; transform: translateY(10px); animation: rise .5s var(--ease) forwards; }
+  .opt:hover { border-color: #D5D1CB; box-shadow: 0 10px 24px -18px rgba(11,19,36,.4); }
+  .opt:active { transform: scale(.985); }
+  .opt.sel { border-color: var(--ink); background: #FBFAF8; box-shadow: 0 0 0 1px var(--ink); }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #D5D1CB; margin-left: auto; flex-shrink: 0; position: relative; transition: border-color .2s; }
+  .dot::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--ink); transform: scale(0); transition: transform .3s var(--ease); }
+  .opt.sel .dot { border-color: var(--ink); }
+  .opt.sel .dot::after { transform: scale(1); }
+  .opt small { display: block; font-size: 13px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  .eyebrow { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+  .list { margin-top: 18px; border: 1px solid var(--edge); border-radius: 20px; overflow: hidden; }
+  .li { display: flex; gap: 12px; align-items: center; padding: 13px 16px; font-size: 14.5px; opacity: 0; transform: translateX(-8px); animation: slide .5s var(--ease) forwards; transition: background .2s; }
+  .li:hover { background: var(--field); }
+  .li + .li { border-top: 1px solid var(--edge); }
+  @keyframes slide { to { opacity: 1; transform: none; } }
+  .n { width: 26px; height: 26px; border-radius: 50%; background: #F4F2EF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .li span:last-child { margin-left: auto; color: var(--faint); font-size: 12.5px; }
+
+  /* ── Guardiões (mascotes) ── */
+  .pet { position: relative; display: block; pointer-events: none; }
+  .pet img { width: 100%; height: auto; display: block; animation: bob 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+  .pet::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,19,36,.16), transparent); animation: shadow 3.6s ease-in-out infinite; z-index: -1; }
+  .pet.glow-rose::before, .pet.glow-blue::before { content: ""; position: absolute; inset: 12% 14% 18%; border-radius: 50%; filter: blur(26px); z-index: -1; animation: glow 3.6s ease-in-out infinite; }
+  .pet.glow-rose::before { background: rgba(244,114,182,.28); }
+  .pet.glow-blue::before { background: rgba(77,124,254,.26); }
+  @keyframes bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.01); } }
+  @keyframes shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(.82); opacity: .6; } }
+  @keyframes glow { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .pet-in { opacity: 0; transform: translateY(16px) scale(.92); animation: petIn .9s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+  @keyframes petIn { to { opacity: 1; transform: none; } }
+  .pet.talking img { animation: talk .5s ease-in-out infinite alternate; }
+  @keyframes talk { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-2px) scaleY(1.03); } }
+  .pet.happy img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  @keyframes hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-18px) scale(1.06, .96); } 60% { transform: translateY(0) scale(.97, 1.03); } 100% { transform: translateY(0) scale(1); } }
+  .speaker { display: flex; align-items: flex-end; gap: 10px; }
+  .speaker .pet { width: 64px; flex-shrink: 0; margin-bottom: -6px; }
+  .speaker .chat { flex: 1; min-width: 0; }
+  .speaker .bub { max-width: 100%; }
+  .speaker .bub:first-child { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+  .float-heart { position: absolute; color: var(--rose); font-size: 14px; opacity: 0; animation: heartUp 2.8s ease-out infinite; }
+  @keyframes heartUp { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+
+  /* ── Guardiões: interações ── */
+  .pet-body { display: block; position: relative; pointer-events: auto; cursor: pointer; transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)); transition: transform .45s var(--ease), filter .3s; }
+  .pet.shy .pet-body { transform: scaleX(-1) rotate(-4deg) translateY(4px); filter: saturate(.85); }
+  .pet.nod .pet-body img { animation: nod .4s var(--ease) 1, bob 3.6s ease-in-out infinite .4s; }
+  @keyframes nod { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(4deg); } }
+  .pet.wiggle .pet-body img { animation: wiggle .6s ease-in-out 1, bob 3.6s ease-in-out infinite .6s; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+  .pet.shake .pet-body img { animation: shake .5s ease-in-out 1, bob 3.6s ease-in-out infinite .5s; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px) rotate(-3deg); } 40%, 80% { transform: translateX(6px) rotate(3deg); } }
+  .pet.spin .pet-body img { animation: spin .9s var(--ease) 1, bob 3.6s ease-in-out infinite .9s; }
+  @keyframes spin { 0% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16px) rotate(180deg) scale(1.05); } 100% { transform: translateY(0) rotate(360deg); } }
+  .pet.happy .pet-body img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  .pet-say { position: absolute; bottom: 92%; right: 38%; white-space: nowrap; background: #fff; border: 1px solid var(--edge); border-radius: 14px; border-bottom-right-radius: 4px; padding: 7px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink); box-shadow: 0 10px 22px -14px rgba(11,19,36,.45); opacity: 0; transform: translateY(6px) scale(.9); transform-origin: bottom right; transition: opacity .25s, transform .35s var(--ease); pointer-events: none; z-index: 5; }
+  .pet-say.show { opacity: 1; transform: none; }
+  .pet.say-right .pet-say { right: auto; left: 38%; border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; transform-origin: bottom left; }
+  .pet.say-top .pet-say { bottom: auto; top: -18px; right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); transform-origin: bottom center; border-bottom-right-radius: 14px; }
+  .pet.say-top .pet-say.show { transform: translate(-50%, 0); }
+  .burst { position: absolute; left: 50%; top: 30%; color: var(--rose); font-size: 14px; pointer-events: none; animation: burst 1.1s ease-out forwards; z-index: 4; }
+  @keyframes burst { 0% { opacity: 0; transform: translate(-50%, 0) scale(.4); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1) rotate(var(--r)); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 1. Introdução -->
+  <div class="wrap"><div class="cap">1 · Introdução <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="row in" style="--d:0"><span class="word">Love<i>N</i>est</span><span class="link">Entrar</span></div>
+    <div class="preview">
+      <div class="card c1" style="right:150px"><div class="k">Tempo juntos</div><div class="big"><span data-count="271">0</span> <small>dias</small></div></div>
+      <div class="pet glow-rose pet-in" data-pet="intro" data-x="say-top" style="--d:3;position:absolute;width:170px;left:50%;margin-left:-28px;top:24px">
+        <img src="/src/assets/flame/flame_01_faisca_full.png" alt="" />
+        <span class="float-heart" style="left:46%;top:2%;animation-delay:2s">♥</span>
+        <span class="float-heart" style="left:60%;top:6%;animation-delay:3.4s">♥</span>
+      </div>
+      <div class="card c2" style="top:196px;left:0;right:70px">
+        <div class="k">Hoje</div>
+        <div class="chat" style="margin-top:8px" data-script='[["app","Já saíste do trabalho?"],["me","Quase, 20 minutos"]]' data-start="1400"></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <h1 class="in" style="--d:6">O amor também vive nos dias comuns.</h1>
+    <p class="sub in" style="--d:7">Um espaço só para os dois. Cria o vosso em menos de um minuto.</p>
+    <div class="btn in" style="--d:8;margin-top:24px">Criar o nosso espaço <span class="arrow">→</span></div>
+    <p class="small in" style="--d:9;margin-top:14px">Grátis · privado · sem publicidade</p>
+  </div></div>
+
+  <!-- 2. Criar conta -->
+  <div class="wrap"><div class="cap">2 · Criar conta <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="back in" style="--d:0">‹</div>
+    <div class="row" style="margin-top:14px;align-items:flex-end">
+      <h1 class="in" style="--d:1;max-width:220px">Criar o vosso espaço</h1>
+      <div class="pet glow-rose pet-in" data-pet="signup" style="--d:2;width:78px;margin-right:-4px"><img src="/src/assets/flame/flame_01_faisca_full.png" alt="" /></div>
+    </div>
+    <p class="sub in" style="--d:2">Começa por ti. O teu par junta-se depois com um código.</p>
+    <div class="stack" style="margin-top:18px;gap:12px">
+      <div class="in" style="--d:3"><div class="label">Nome</div><input class="field" data-role="name" placeholder="Como te chamas" value="" /></div>
+      <div class="in" style="--d:4"><div class="label">Email</div><input class="field" data-role="email" placeholder="nome@email.com" /></div>
+      <div class="in" style="--d:5"><div class="label">Senha</div><input class="field" data-role="password" type="password" placeholder="Mínimo 8 caracteres" /></div>
+    </div>
+    <div class="invite in" style="--d:6"><span>+</span> Tenho um código do meu par</div>
+    <div class="spacer"></div>
+    <div class="btn in" data-act="signup" style="--d:7">Continuar <span class="arrow">→</span></div>
+    <div class="or in" style="--d:8;margin:16px 0">ou</div>
+    <div class="btn ghost in" style="--d:9"><span style="font-weight:700;color:#4285F4">G</span> Continuar com Google</div>
+    <p class="small in" style="--d:10;margin-top:16px">Já tens conta? <b>Entrar</b></p>
+  </div></div>
+
+  <!-- 3. Entrar -->
+  <div class="wrap"><div class="cap">3 · Entrar <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="back in" style="--d:0">‹</div>
+    <div class="row" style="margin-top:14px;align-items:flex-end">
+      <h1 class="in" style="--d:1;max-width:210px">Bem-vindo de volta</h1>
+      <div class="pet glow-blue pet-in" data-pet="login" style="--d:2;width:100px;margin-right:-6px"><img src="/src/assets/flame/flame_04_guardiao_full.png" alt="" /></div>
+    </div>
+    <p class="sub in" style="--d:2">O vosso espaço está à espera.</p>
+    <div class="stack" style="margin-top:26px">
+      <div class="in" style="--d:3"><div class="label">Email</div><input class="field" value="ana@email.com" /></div>
+      <div class="in" style="--d:4"><div class="label">Senha</div><input class="field" data-role="password" type="password" value="" placeholder="A tua senha" /></div>
+    </div>
+    <p class="link in" style="--d:5;margin-top:12px;font-size:13.5px;align-self:flex-end">Esqueci a senha</p>
+    <div class="spacer"></div>
+    <div class="btn in" data-act="login" style="--d:6">Entrar <span class="arrow">→</span></div>
+    <div class="or in" style="--d:7;margin:16px 0">ou</div>
+    <div class="btn ghost in" style="--d:8"><span style="font-weight:700;color:#4285F4">G</span> Continuar com Google</div>
+    <p class="small in" style="--d:9;margin-top:16px">Ainda não tens conta? <b>Criar espaço</b></p>
+  </div></div>
+
+  <!-- 4. Boas-vindas: a app fala -->
+  <div class="wrap"><div class="cap">4 · Boas-vindas <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="pet glow-blue pet-in talker say-right" data-pet="welcome" style="--d:0;width:150px;margin:6px auto 4px"><img src="/src/assets/flame/flame_04_guardiao_full.png" alt="" /></div>
+    <p class="from in" style="--d:1;justify-content:center">O teu Guardião</p>
+    <div class="chat" style="margin-top:8px" data-script='[["app","Olá, Ana 👋"],["app","Que bom ter-te aqui. Falta pouco para o vosso espaço ficar pronto."],["app","Vou fazer-te quatro perguntas rápidas, para me ajustar a vocês."]]' data-start="500"></div>
+    <div class="list" data-after="4200">
+      <div class="li" style="animation-delay:4.4s"><span class="n">1</span>Onde estás<span>país</span></div>
+      <div class="li" style="animation-delay:4.3s"><span class="n">2</span>Como te identificas<span>opcional</span></div>
+      <div class="li" style="animation-delay:4.4s"><span class="n">3</span>A tua fé<span>opcional</span></div>
+      <div class="li" style="animation-delay:4.5s"><span class="n">4</span>Como vais usar<span>a dois ou solo</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn in" data-act="welcome" style="--d:50">Começar <span class="arrow">→</span></div>
+    <p class="small in" style="--d:52;margin-top:14px">Saltar por agora</p>
+  </div></div>
+
+  <!-- 5. Uma pergunta: a app pergunta -->
+  <div class="wrap"><div class="cap">5 · Uma pergunta <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="row in" style="--d:0"><div class="back">‹</div><div class="prog"><span class="on"></span><span class="on"></span><span class="on"></span><span class="step4"></span></div><span class="skip">Saltar</span></div>
+    <p class="eyebrow in" style="--d:1;margin-top:30px">4 de 4</p>
+    <div class="speaker" style="margin-top:10px">
+      <div class="pet glow-blue pet-in talker say-right" data-pet="ask" style="--d:1"><img src="/src/assets/flame/flame_04_guardiao_thumb.png" alt="" /></div>
+      <div class="chat" data-script='[["app","Como vais usar o LoveNest?"],["app","Podes mudar depois nas definições."]]' data-start="500"></div>
+    </div>
+    <div class="stack opts" style="margin-top:22px;gap:10px">
+      <div class="opt" style="animation-delay:2.2s" onclick="pick(this)"><div>A dois<small>Ligado ao teu par, no mesmo espaço</small></div><span class="dot"></span></div>
+      <div class="opt" style="animation-delay:2.32s" onclick="pick(this)"><div>A solo<small>Um espaço só teu</small></div><span class="dot"></span></div>
+    </div>
+    <div class="reply chat" style="margin-top:14px;padding-left:74px"></div>
+    <div class="spacer"></div>
+    <div class="btn off in conclude" data-act="finish" style="--d:24">Concluir <span class="arrow">→</span></div>
+  </div></div>
+
+<script>
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = (ms) => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+
+  // A app "escreve": mostra os pontinhos e depois a mensagem.
+  async function play(chat) {
+    const script = JSON.parse(chat.dataset.script || "[]");
+    const pet = chat.closest(".phone").querySelector(".talker");
+    chat.innerHTML = "";
+    await sleep(Number(chat.dataset.start || 0));
+    for (const [who, text] of script) {
+      if (who !== "me") {
+        pet?.classList.add("talking");
+        const t = document.createElement("div");
+        t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
+        chat.appendChild(t);
+        await sleep(Math.min(1100, 380 + text.length * 14));
+        t.remove();
+        pet?.classList.remove("talking");
+      } else {
+        await sleep(500);
+      }
+      const b = document.createElement("div");
+      b.className = "bub " + (who === "q" ? "app big-q" : who);
+      b.textContent = text;
+      chat.appendChild(b);
+      await sleep(260);
+    }
+  }
+
+  function countUp(el) {
+    const to = Number(el.dataset.count); const t0 = performance.now(); const dur = reduced ? 0 : 1400;
+    const tick = (now) => {
+      const p = dur ? Math.min(1, (now - t0) / dur) : 1;
+      el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    setTimeout(() => requestAnimationFrame(tick), reduced ? 0 : 500);
+  }
+
+  function start(phone) {
+    phone.querySelectorAll(".chat[data-script]").forEach(play);
+    phone.querySelectorAll("[data-count]").forEach(countUp);
+  }
+
+  // Ondinha ao tocar nos botões.
+  document.addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest(".btn"); if (!btn || reduced) return;
+    const r = btn.getBoundingClientRect(); const s = Math.max(r.width, r.height) / 2;
+    const span = document.createElement("span");
+    span.className = "ripple";
+    span.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+    btn.appendChild(span); setTimeout(() => span.remove(), 650);
+  });
+
+  // Escolher uma opção: a app responde e o passo fica completo.
+  function pick(opt) {
+    const phone = opt.closest(".phone");
+    phone.querySelectorAll(".opt").forEach(o => o.classList.toggle("sel", o === opt));
+    phone.querySelector(".step4").classList.add("on");
+    phone.querySelector(".conclude").classList.remove("off");
+    const reply = phone.querySelector(".reply");
+    const solo = opt.textContent.includes("solo");
+    reply.dataset.script = JSON.stringify([["me", solo ? "A solo" : "A dois"], ["app", solo ? "Perfeito, este espaço é só teu." : "Lindo. Depois convidas o teu par com um código."]]);
+    reply.dataset.start = "100";
+    const pet = phone.querySelector(".talker");
+    if (solo) react(pet, "nod");
+    else { react(pet, "happy"); hearts(pet, 10); }
+    play(reply);
+  }
+
+  // Repetir a animação de um ecrã.
+  function replay(btn) {
+    const wrap = btn.closest(".wrap"); const phone = wrap.querySelector(".phone");
+    const clone = phone.cloneNode(true);
+    clone.querySelectorAll(".sel").forEach(o => o.classList.remove("sel"));
+    clone.querySelectorAll(".reply").forEach(r => { r.innerHTML = ""; delete r.dataset.script; });
+    clone.querySelectorAll(".step4").forEach(s => s.classList.remove("on"));
+    clone.querySelectorAll(".conclude").forEach(c => c.classList.add("off"));
+    phone.replaceWith(clone); start(clone); wirePets(clone);
+  }
+
+  // ── Guardiões que reagem ─────────────────────────────────────────────────
+  const $pet = (root, name) => root.querySelector(`[data-pet="${name}"]`);
+
+  function react(pet, cls) {
+    if (!pet) return;
+    ["nod", "wiggle", "shake", "spin", "happy"].forEach(c => pet.classList.remove(c));
+    void pet.offsetWidth;
+    pet.classList.add(cls);
+  }
+
+  function say(pet, text, ms = 2200) {
+    if (!pet) return;
+    let b = pet.querySelector(".pet-say");
+    if (!b) { b = document.createElement("div"); b.className = "pet-say"; pet.appendChild(b); }
+    b.textContent = text;
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+    clearTimeout(b._t);
+    if (ms) b._t = setTimeout(() => b.classList.remove("show"), ms);
+  }
+
+  function hearts(pet, n = 7) {
+    if (!pet || reduced) return;
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement("span");
+      h.className = "burst"; h.textContent = "♥";
+      const a = (Math.PI * 2 * i) / n + Math.random() * .6;
+      h.style.setProperty("--dx", `${Math.cos(a) * (40 + Math.random() * 30)}px`);
+      h.style.setProperty("--dy", `${-30 - Math.random() * 50}px`);
+      h.style.setProperty("--r", `${(Math.random() - .5) * 60}deg`);
+      h.style.fontSize = `${10 + Math.random() * 8}px`;
+      h.style.animationDelay = `${i * 30}ms`;
+      pet.appendChild(h); setTimeout(() => h.remove(), 1300);
+    }
+  }
+
+  function wirePets(phone) {
+    phone.querySelectorAll("[data-x]").forEach(el => el.classList.add(el.dataset.x));
+    phone.querySelectorAll(".pet").forEach(pet => {
+      const img = pet.querySelector("img");
+      if (img && !img.parentElement.classList.contains("pet-body")) {
+        const body = document.createElement("span"); body.className = "pet-body";
+        img.replaceWith(body); body.appendChild(img);
+      }
+      const body = pet.querySelector(".pet-body");
+      // Tocar: pulo e corações. Passar por cima: abana e diz olá.
+      body.addEventListener("click", () => { react(pet, "happy"); hearts(pet); say(pet, ["Olá! 💕", "Aqui estou!", "Hehe 😊"][Math.floor(Math.random() * 3)]); });
+      body.addEventListener("mouseenter", () => { if (!pet.classList.contains("shy")) react(pet, "wiggle"); });
+    });
+
+    // Seguir o dedo / rato: inclinam-se para onde estás.
+    phone.addEventListener("pointermove", (e) => {
+      if (reduced) return;
+      phone.querySelectorAll(".pet-body").forEach(body => {
+        if (body.closest(".pet").classList.contains("shy")) return;
+        const r = body.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) / phone.clientWidth;
+        const dy = (e.clientY - (r.top + r.height / 2)) / phone.clientHeight;
+        body.style.setProperty("--rot", `${Math.max(-10, Math.min(10, dx * 26))}deg`);
+        body.style.setProperty("--tx", `${Math.max(-6, Math.min(6, dx * 18))}px`);
+        body.style.setProperty("--ty", `${Math.max(-4, Math.min(4, dy * 10))}px`);
+      });
+    });
+    phone.addEventListener("pointerleave", () => phone.querySelectorAll(".pet-body").forEach(b => { b.style.setProperty("--rot", "0deg"); b.style.setProperty("--tx", "0px"); b.style.setProperty("--ty", "0px"); }));
+
+    // Criar conta
+    const signup = $pet(phone, "signup");
+    if (signup) {
+      const name = phone.querySelector('[data-role="name"]');
+      const email = phone.querySelector('[data-role="email"]');
+      const pass = phone.querySelector('[data-role="password"]');
+      name?.addEventListener("focus", () => say(signup, "Como te chamas? 😊"));
+      name?.addEventListener("input", () => { react(signup, "nod"); const v = name.value.trim().split(" ")[0]; say(signup, v ? `Olá, ${v}! 👋` : "Como te chamas? 😊", 0); });
+      email?.addEventListener("input", () => react(signup, "nod"));
+      email?.addEventListener("blur", () => {
+        if (!email.value) return;
+        if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value)) { react(signup, "happy"); say(signup, "Perfeito ✓"); }
+        else { react(signup, "shake"); say(signup, "Hmm, falta o @?"); }
+      });
+      pass?.addEventListener("focus", () => { signup.classList.add("shy"); say(signup, "Não estou a espreitar 🙈", 0); });
+      pass?.addEventListener("blur", () => { signup.classList.remove("shy"); say(signup, pass.value.length >= 8 ? "Senha segura 💪" : "Mais umas letrinhas?"); });
+      pass?.addEventListener("input", () => { if (pass.value.length === 8) say(signup, "Agora sim, segura 🔒", 0); });
+    }
+
+    // Entrar
+    const login = $pet(phone, "login");
+    if (login) {
+      setTimeout(() => { react(login, "wiggle"); say(login, "Bom ver-te, Ana 💙"); }, reduced ? 0 : 1100);
+      const pass = phone.querySelector('[data-role="password"]');
+      pass?.addEventListener("focus", () => { login.classList.add("shy"); say(login, "Prometo não ver 🙈", 0); });
+      pass?.addEventListener("blur", () => { login.classList.remove("shy"); say(login, "Pronto, já podes 😄"); });
+    }
+
+    // Introdução: de vez em quando diz alguma coisa
+    const intro = $pet(phone, "intro");
+    if (intro && !reduced) {
+      const lines = ["Olá! 👋", "Sou a Faísca", "Cuido da vossa chama 🔥", "Toca-me 💕"];
+      let k = 0;
+      clearInterval(phone._idle);
+      setTimeout(() => say(intro, lines[0]), 1800);
+      phone._idle = setInterval(() => { k = (k + 1) % lines.length; react(intro, "wiggle"); say(intro, lines[k]); }, 5200);
+    }
+  }
+
+  // Botões que contam para o Guardião
+  document.addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]"); if (!act) return;
+    const phone = act.closest(".phone");
+    const map = {
+      signup: () => { const p = $pet(phone, "signup"); react(p, "happy"); hearts(p); say(p, "Vamos lá! ✨"); },
+      login: () => { const p = $pet(phone, "login"); p?.classList.remove("shy"); react(p, "spin"); say(p, "A abrir o vosso espaço…", 2600); },
+      welcome: () => { const p = $pet(phone, "welcome"); react(p, "happy"); hearts(p, 9); say(p, "Boa! Começamos 💙"); },
+      finish: () => {
+        if (act.classList.contains("off")) return;
+        const p = $pet(phone, "ask"); react(p, "spin"); hearts(p, 12);
+        const reply = phone.querySelector(".reply");
+        const more = document.createElement("div"); more.className = "chat"; more.style.cssText = reply.style.cssText + ";margin-top:6px";
+        more.dataset.script = JSON.stringify([["app", "Tudo pronto. Bem-vindos a casa 🏡"]]); more.dataset.start = "200";
+        phone.querySelector(".fin-chat")?.remove(); more.classList.add("fin-chat");
+        reply.after(more); play(more);
+      },
+    };
+    map[act.dataset.act]?.();
+  });
+
+  document.querySelectorAll(".phone").forEach(p => { start(p); wirePets(p); });
+</script>
+</body>
+</html>

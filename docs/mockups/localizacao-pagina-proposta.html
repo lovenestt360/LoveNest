@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Página Onde estamos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0B1324; --text:#3A4150; --muted:#636978; --edge:#ECE8E3; --sand:#F4F1EC; --ease:cubic-bezier(.22,1,.36,1); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; flex-wrap: wrap; gap: 48px 26px; padding: 52px 28px 28px; justify-content: center; }
+  .wrap { position: relative; }
+  .cap { position: absolute; top: -28px; left: 4px; font-size: 12px; font-weight: 600; color: #565A63; }
+  .phone { width: 360px; height: 780px; border-radius: 38px; overflow: hidden; position: relative; background: #EEE center/cover no-repeat; box-shadow: 0 30px 60px -32px rgba(11,19,36,.45); }
+  .phone::before { content: ""; position: absolute; inset: 0; background: rgba(255,255,255,.18); }
+
+  /* topo */
+  .top { position: absolute; left: 16px; right: 16px; top: 46px; display: flex; gap: 8px; align-items: center; z-index: 5; }
+  .rb { width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid var(--edge); display: grid; place-items: center; box-shadow: 0 8px 18px -10px rgba(11,19,36,.45); flex-shrink: 0; }
+  .rb.ink { background: var(--ink); border-color: var(--ink); }
+  .status { flex: 1; height: 42px; border-radius: 999px; background: #fff; border: 1px solid var(--edge); display: flex; align-items: center; gap: 8px; padding: 0 14px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 18px -10px rgba(11,19,36,.45); white-space: nowrap; overflow: hidden; }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: #23A15A; box-shadow: 0 0 0 4px rgba(35,161,90,.18); flex-shrink: 0; }
+  .status .sub { color: var(--muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+
+  /* marcadores */
+  .pin { position: absolute; transform: translate(-50%, -50%); z-index: 3; }
+  .face { width: 50px; height: 50px; border-radius: 50%; border: 3px solid #fff; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 18px; box-shadow: 0 10px 22px -10px rgba(11,19,36,.6); position: relative; }
+  .face.par { background: linear-gradient(160deg, #7AA2FF, #3B6FF5); }
+  .face.me { background: linear-gradient(160deg, #FF9DB5, #E8456B); width: 44px; height: 44px; font-size: 16px; }
+  .face.par::before, .face.par::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #3B6FF5; animation: ping 2.4s var(--ease) infinite; }
+  .face.par::after { animation-delay: 1.2s; }
+  @keyframes ping { 0% { transform: scale(1); opacity: .6 } 80%, 100% { transform: scale(1.8); opacity: 0 } }
+  .callout { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: #fff; border-radius: 14px; padding: 7px 11px; white-space: nowrap; box-shadow: 0 10px 22px -12px rgba(11,19,36,.5); font-size: 12.5px; font-weight: 650; color: #0B1324; text-align: left; }
+  .callout small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+  .dpill { position: absolute; transform: translate(-50%, -50%); z-index: 4; height: 28px; padding: 0 11px; border-radius: 999px; background: #fff; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; box-shadow: 0 6px 16px -8px rgba(11,19,36,.5); }
+  .fav { position: absolute; transform: translate(-50%, -100%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .fav .b { width: 30px; height: 30px; border-radius: 10px; background: #fff; display: grid; place-items: center; box-shadow: 0 4px 10px -4px rgba(11,19,36,.4); }
+  .fav span { font-size: 10px; font-weight: 700; background: #fff; border-radius: 6px; padding: 1px 6px; box-shadow: 0 2px 6px -3px rgba(11,19,36,.35); }
+  .side { position: absolute; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+
+  /* folha */
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 28px 28px 0 0; box-shadow: 0 -16px 40px -18px rgba(11,19,36,.35); padding: 10px 18px 26px; z-index: 6; }
+  .grab { width: 38px; height: 4px; border-radius: 3px; background: #DDD8D1; margin: 0 auto 14px; }
+  .prow { display: flex; align-items: center; gap: 12px; }
+  .prow .face { width: 52px; height: 52px; }
+  .prow .face::before, .prow .face::after { display: none; }
+  .pname { font-size: 17px; font-weight: 700; letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; }
+  .live { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 999px; background: #EEF8F1; color: #23733F; font-size: 11px; font-weight: 700; }
+  .live i { width: 6px; height: 6px; border-radius: 50%; background: #23A15A; }
+  .psub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .psub b { color: var(--ink); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .chip { height: 30px; padding: 0 11px; border-radius: 999px; background: #F7F5F2; font-size: 12px; font-weight: 600; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid var(--edge); margin-top: 14px; }
+  .row .ic { width: 38px; height: 38px; border-radius: 13px; background: #F7F5F2; display: grid; place-items: center; flex-shrink: 0; }
+  .row b { font-size: 14px; font-weight: 600; display: block; }
+  .row small { font-size: 12px; color: var(--muted); }
+  .together { margin-top: 14px; border-radius: 20px; background: linear-gradient(120deg, #FFF0F4, #FDF4FF); padding: 14px; }
+  .together p { font-size: 14px; font-weight: 700; color: #B0244A; display: flex; align-items: center; gap: 7px; }
+  .together .acts { display: flex; gap: 8px; margin-top: 11px; }
+  .together .acts div { flex: 1; height: 40px; border-radius: 13px; background: #fff; border: 1px solid #F8D5DE; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+  /* boas-vindas */
+  .dim { position: absolute; inset: 0; background: rgba(11,19,36,.38); backdrop-filter: blur(3px); z-index: 7; }
+  .welcome { position: absolute; left: 12px; right: 12px; bottom: 12px; background: #fff; border-radius: 30px; padding: 0 20px 20px; z-index: 8; text-align: center; }
+  .welcome img { width: 104px; height: 104px; margin: -48px auto 0; display: block; filter: drop-shadow(0 12px 18px rgba(59,130,246,.25)); }
+  .welcome h2 { font-size: 22px; font-weight: 700; letter-spacing: -.03em; margin-top: 4px; }
+  .welcome .lead { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+  .pts { text-align: left; display: grid; gap: 12px; margin-top: 18px; }
+  .pt { display: flex; gap: 12px; align-items: flex-start; }
+  .pt .ti { width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0; }
+  .pt b { font-size: 14px; font-weight: 650; display: block; }
+  .pt span { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+  .btn { height: 50px; border-radius: 17px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; margin-top: 18px; }
+  .ghost { font-size: 13.5px; font-weight: 600; color: var(--muted); margin-top: 12px; }
+
+  .notes { width: 100%; max-width: 1180px; background: #fff; border-radius: 24px; padding: 22px 26px; font-size: 14px; line-height: 1.55; color: var(--text); }
+  .notes h2 { font-size: 18px; color: var(--ink); margin-bottom: 8px; }
+  .notes ul { padding-left: 18px; display: grid; gap: 6px; }
+  .notes b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- 1 · Boas-vindas -->
+<div class="wrap"><div class="cap">Primeira vez: boas-vindas</div>
+<div class="phone" style="background-image:url(loc-fundo.png)">
+  <div class="dim"></div>
+  <div class="welcome">
+    <img src="../../src/features/entry/assets/guardiao.webp" alt="" />
+    <h2>Onde estamos</h2>
+    <p class="lead">Perto um do outro, mesmo quando estão longe.</p>
+    <div class="pts">
+      <div class="pt"><div class="ti" style="background:#EAF1FF"><svg width="22" height="22" viewBox="0 0 24 24"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7AA2FF"/><stop offset="1" stop-color="#3B6FF5"/></linearGradient></defs><path d="M12 22s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12Z" fill="url(#g1)"/><circle cx="12" cy="10" r="2.8" fill="#fff"/></svg></div><div><b>Vejam-se no mapa</b><span>Cada um vê onde o outro está, em tempo real.</span></div></div>
+      <div class="pt"><div class="ti" style="background:#FFEFF3"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B"/></svg></div><div><b>Só vocês os dois</b><span>Mais ninguém vê. E só vês o teu par se ele também partilhar.</span></div></div>
+      <div class="pt"><div class="ti" style="background:#EEF8F1"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="5" y="4" width="4.5" height="16" rx="2" fill="#23A15A"/><rect x="14.5" y="4" width="4.5" height="16" rx="2" fill="#23A15A"/></svg></div><div><b>Tu decides</b><span>Pausa por uma hora, até amanhã, ou desliga quando quiseres.</span></div></div>
+    </div>
+    <div class="btn">Ativar a partilha</div>
+    <div class="ghost">Agora não</div>
+  </div>
+</div></div>
+
+<!-- 2 · Longe -->
+<div class="wrap"><div class="cap">Ao vivo · cada um no seu sítio</div>
+<div class="phone" style="background-image:url(loc-fundo.png)">
+  <div class="top">
+    <div class="rb"><svg width="18" height="18" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" stroke="#0B1324" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="status"><span class="dot"></span>Ao vivo <span class="sub">· estão a 1,8 km</span></div>
+    <div class="rb ink"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 22s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12Z" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="#fff"/></svg></div>
+  </div>
+  <svg style="position:absolute;inset:0;z-index:2" viewBox="0 0 360 780"><path d="M118 296 Q 220 300 290 430" fill="none" stroke="#0B1324" stroke-opacity=".6" stroke-width="2.5" stroke-dasharray="1 7" stroke-linecap="round"/></svg>
+  <div class="dpill" style="left:222px;top:340px"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B"/></svg>1,8 km</div>
+  <div class="pin" style="left:118px;top:296px"><div class="face par">P<div class="callout">Princesa<small>Av. Salvador Allende · há 1 h</small></div></div></div>
+  <div class="pin" style="left:296px;top:436px"><div class="face me">D</div></div>
+  <div class="fav" style="left:250px;top:250px"><div class="b"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9H3Z" fill="none" stroke="#0B1324" stroke-width="2" stroke-linejoin="round"/></svg></div><span>Casa</span></div>
+  <div class="side" style="bottom:338px">
+    <div class="rb"><svg width="18" height="18" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Zm-9 9 9 5 9-5m-18 4 9 5 9-5" fill="none" stroke="#0B1324" stroke-width="1.9" stroke-linejoin="round"/></svg></div>
+    <div class="rb"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M3 11 22 2l-9 19-2-8Z" fill="none" stroke="#0B1324" stroke-width="1.9" stroke-linejoin="round"/></svg></div>
+  </div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="prow">
+      <div class="face par">P</div>
+      <div style="flex:1;min-width:0">
+        <div class="pname">Princesa <span class="live"><i></i>Ao vivo</span></div>
+        <div class="psub">Está a <b>1,8 km</b> de ti · Av. Salvador Allende</div>
+      </div>
+    </div>
+    <div class="chips">
+      <span class="chip"><svg width="18" height="10" viewBox="0 0 22 12"><rect x=".75" y=".75" width="18" height="10.5" rx="3" fill="none" stroke="#7A7F8C" stroke-width="1.5"/><rect x="20" y="4" width="1.6" height="4" rx=".8" fill="#7A7F8C"/><rect x="2.5" y="2.5" width="11" height="7" rx="1.6" fill="#23A15A"/></svg>78%</span>
+      <span class="chip">Wi-Fi</span>
+      <span class="chip">Saiu 2× hoje</span>
+      <span class="chip">3 h fora de casa</span>
+    </div>
+    <div class="row">
+      <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#0B1324" stroke-width="1.9"/><path d="M12 7.5V12l3 2" stroke="#0B1324" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg></div>
+      <div style="flex:1"><b>Histórico</b><small>4 eventos hoje · encontros, chegadas e saídas</small></div>
+      <svg width="16" height="16" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" stroke="#B8B3AC" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+</div></div>
+
+<!-- 3 · Juntos -->
+<div class="wrap"><div class="cap">Ao vivo · estão juntos</div>
+<div class="phone" style="background-image:url(loc-fundo-juntos.png)">
+  <div class="top">
+    <div class="rb"><svg width="18" height="18" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" stroke="#0B1324" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="status"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B"/></svg>Juntos <span class="sub">· Polana</span></div>
+    <div class="rb ink"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 22s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12Z" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="#fff"/></svg></div>
+  </div>
+  <div class="pin" style="left:180px;top:330px;display:flex">
+    <svg style="position:absolute;left:50%;top:-18px;transform:translateX(-50%);z-index:2" width="22" height="22" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B" stroke="#fff" stroke-width="2"/></svg>
+    <div class="face par" style="margin-right:-14px">P</div><div class="face me" style="width:50px;height:50px">D</div>
+  </div>
+  <div class="side" style="bottom:316px">
+    <div class="rb"><svg width="18" height="18" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Zm-9 9 9 5 9-5m-18 4 9 5 9-5" fill="none" stroke="#0B1324" stroke-width="1.9" stroke-linejoin="round"/></svg></div>
+    <div class="rb"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M3 11 22 2l-9 19-2-8Z" fill="none" stroke="#0B1324" stroke-width="1.9" stroke-linejoin="round"/></svg></div>
+  </div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="prow">
+      <div class="face par">P</div>
+      <div style="flex:1;min-width:0">
+        <div class="pname">Princesa <span class="live"><i></i>Ao vivo</span></div>
+        <div class="psub">Contigo · Polana, Maputo</div>
+      </div>
+    </div>
+    <div class="together">
+      <p><svg width="16" height="16" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#E8456B"/></svg>Estão juntos agora</p>
+      <div class="acts"><div>Criar memória</div><div>Nossa história</div></div>
+    </div>
+    <div class="row">
+      <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#0B1324" stroke-width="1.9"/><path d="M12 7.5V12l3 2" stroke="#0B1324" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg></div>
+      <div style="flex:1"><b>Histórico</b><small>Encontros, chegadas e saídas</small></div>
+      <svg width="16" height="16" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" stroke="#B8B3AC" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+</div></div>
+
+<div class="notes">
+  <h2>O que muda na página "Onde estamos"</h2>
+  <ul>
+    <li><b>Boas-vindas novas:</b> sai a folha rosa antiga e entra o Guardião, com três pontos curtos e ícones a cores. O botão escuro "Ativar a partilha" liga logo a partilha; "Agora não" fecha a folha.</li>
+    <li><b>Topo calmo:</b> sai a barra vermelha "JUNTOS". Fica uma barra branca com um ponto verde e "Ao vivo · estão a 1,8 km", ou um coração e "Juntos · Polana". Em pausa o ponto é âmbar e, desligada, cinzento.</li>
+    <li><b>No mapa, os mesmos do cartão da Home:</b> círculos com gradiente (azul ela, rosa tu). O círculo do par pulsa. A distância aparece num balão branco com coração. Quando estão juntos, os dois círculos encostam-se com um coração.</li>
+    <li><b>Folha de baixo mais simples:</b> sai o número gigante. Fica o nome com "Ao vivo", "Está a 1,8 km de ti" e a rua, e depois pequenas etiquetas: bateria, rede, quantas vezes saiu e quanto tempo esteve fora de casa. Juntos, aparece o cartão rosa com "Criar memória" e "Nossa história".</li>
+    <li><b>O que fica igual:</b> o mapa (satélite, mapa e escuro), o histórico, a pausa, os locais favoritos e os avisos. Só muda o aspeto.</li>
+  </ul>
+</div>
+</body>
+</html>

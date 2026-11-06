@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anel do Ciclo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#0B1324; --text:#3A4150; --muted:#636978; --faint:#77736C; --edge:#ECE8E3; --field:#F7F5F2; --sand:#F4F1EC;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; flex-wrap: wrap; gap: 48px 26px; padding: 52px 28px 28px; justify-content: center; }
+  .wrap { position: relative; }
+  .cap { position: absolute; top: -28px; left: 4px; font-size: 12px; font-weight: 600; color: #565A63; }
+  .phone { width: 360px; height: 780px; background: #fff; border-radius: 38px; overflow: hidden; display: flex; flex-direction: column; padding: 50px 18px 0; box-shadow: 0 30px 60px -32px rgba(11,19,36,.45); position: relative; }
+  .scroll { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  h1 { font-size: 28px; letter-spacing: -0.035em; font-weight: 700; }
+  .hsub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .round { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; background: #fff; }
+  .card { border: 1px solid var(--edge); border-radius: 24px; background: #fff; padding: 16px; }
+  .ctitle { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+  .cnote { font-size: 12px; color: var(--muted); }
+  .btn { height: 52px; border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; user-select: none; transition: transform .2s var(--ease); }
+  .btn:active { transform: scale(.98); }
+  .btn.sm { height: 40px; border-radius: 14px; font-size: 13.5px; padding: 0 14px; }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--edge); }
+  .ic { display: inline-block; }
+
+  /* ── Anel ── */
+  .hero { display: flex; flex-direction: column; align-items: center; }
+  .hero .ring { margin: 10px 0 12px; }
+  .ring { position: relative; touch-action: none; cursor: pointer; user-select: none; }
+  .ring > svg { position: absolute; inset: 0; overflow: visible; }
+  .ring .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+  .ring .when { font-size: 12.5px; font-weight: 600; color: var(--muted); height: 16px; }
+  .ring .day { white-space: nowrap; font-size: 44px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .ring .day small { font-size: 15px; color: var(--faint); font-weight: 600; letter-spacing: 0; }
+  .ring .chip { margin-top: 8px; font-size: 12.5px; font-weight: 650; padding: 4px 11px; border-radius: 999px; transition: background .25s, color .25s; }
+  .ring .tip { font-size: 11.5px; color: var(--muted); margin-top: 6px; max-width: 140px; line-height: 1.3; min-height: 15px; }
+  .dot { opacity: var(--o); transform-box: view-box; transform-origin: 0 0; transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s; }
+  .dot.in { animation: dotIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes dotIn { from { opacity: 0 } to { opacity: var(--o) } }
+  .ring.focus .dot:not(.hi) { opacity: .15; }
+  .ring.focus .dot.hi { opacity: 1; }
+  .pick { transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .2s; }
+  .halo { transform-box: fill-box; transform-origin: center; animation: pulse 2.6s var(--ease) infinite; }
+  @keyframes pulse { 0% { transform: scale(1); opacity: .7 } 80% { transform: scale(1.8); opacity: 0 } 100% { opacity: 0 } }
+  .ring .top { height: 28px; display: flex; align-items: flex-end; justify-content: center; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .swap { animation: swap .3s var(--ease); }
+  @keyframes swap { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+  @media (prefers-reduced-motion: reduce) { .halo, .dot.in, .swap { animation: none } .pick, .dot { transition: none } }
+  .pred { text-align: center; margin-top: 4px; }
+  .pred b { font-size: 17px; letter-spacing: -0.02em; }
+  .pred p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .legend { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .lg { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--edge); font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer; background: #fff; transition: border-color .2s, box-shadow .2s; }
+  .lg i { width: 9px; height: 9px; border-radius: 50%; }
+  .lg.on { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(11,19,36,.07); color: var(--ink); }
+  .back { height: 30px; transition: opacity .2s; padding: 0 12px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 600; display: none; align-items: center; margin-top: 10px; cursor: pointer; }
+  .back.show { display: inline-flex; }
+  .hint { font-size: 11.5px; color: var(--faint); margin-top: 8px; }
+
+  /* ── Sintomas ── */
+  .tile { width: 50px; height: 50px; border-radius: 17px; background: #fff; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; transition: transform .25s var(--ease), border-color .2s, box-shadow .25s; }
+  .tile.dash { border-style: dashed; }
+  .sym { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 550; color: var(--text); cursor: pointer; user-select: none; text-align: center; line-height: 1.15; }
+  .sym.on .tile { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(11,19,36,.07); transform: translateY(-2px); }
+  .sym.on span { color: var(--ink); font-weight: 650; }
+  .grid5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 2px; }
+  .group { font-size: 12px; font-weight: 650; color: var(--muted); margin: 14px 0 10px; }
+
+  /* ── Carinho ── */
+  .gift { border-radius: 24px; padding: 14px; background: linear-gradient(180deg, #FFF1F4, #FDE7EC); border: 1px solid #F8D5DE; }
+  .gift .who { display: flex; align-items: center; gap: 10px; }
+  .gift .who .t { width: 44px; height: 44px; border-radius: 15px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .gift .name { font-size: 12.5px; font-weight: 650; color: #B0244A; }
+  .gift .msg { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; margin-top: 1px; }
+  .gift .note { font-size: 13px; color: var(--text); margin-top: 8px; line-height: 1.4; }
+  .gift .acts { display: flex; gap: 8px; margin-top: 12px; }
+  .gift .acts .btn { flex: 1; }
+  .gift .acts .ghost { background: rgba(255,255,255,.75); border-color: #F3CCD6; }
+  .care { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .opt { border: 1px solid var(--edge); border-radius: 18px; padding: 10px 4px 9px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--text); cursor: pointer; text-align: center; line-height: 1.15; transition: border-color .2s, box-shadow .25s, transform .2s var(--ease); }
+  .opt.on { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(11,19,36,.07); color: var(--ink); transform: translateY(-1px); }
+  .preview { margin-top: 10px; border-radius: 16px; background: var(--field); padding: 11px 12px; font-size: 13px; color: var(--text); line-height: 1.4; }
+  .preview b { color: var(--ink); }
+  .field { margin-top: 8px; height: 42px; border-radius: 14px; border: 1px solid var(--edge); padding: 0 12px; display: flex; align-items: center; font-size: 13px; color: var(--faint); }
+  .sig { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px; background: var(--field); font-size: 12.5px; font-weight: 600; color: var(--text); }
+
+  /* ── Folha ── */
+  .dim { position: absolute; inset: 0; background: rgba(11,19,36,.32); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 30px 30px 38px 38px; padding: 12px 18px 22px; }
+  .grab { width: 40px; height: 5px; border-radius: 3px; background: #E2DED8; margin: 0 auto 12px; }
+  .stitle { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; }
+  .ssub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .new { font-size: 10px; font-weight: 700; color: #23733F; background: #EEF8F1; border-radius: 999px; padding: 2px 7px; margin-left: 6px; }
+
+  .notes { width: 100%; max-width: 1180px; background: #fff; border-radius: 24px; padding: 22px 26px; font-size: 14px; line-height: 1.55; color: var(--text); }
+  .notes h2 { font-size: 18px; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 8px; }
+  .notes ul { padding-left: 18px; display: grid; gap: 6px; }
+  .notes b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- 1 · Ela: Hoje -->
+<div class="wrap"><div class="cap">Ela · Hoje, com um carinho recebido</div>
+<div class="phone"><div class="scroll">
+  <div class="row">
+    <div><h1>Ciclo</h1><div class="hsub">Só tu vês os detalhes.</div></div>
+    <div style="display:flex;gap:8px"><div class="round"><i class="ic" data-ic="partilha" data-s="22"></i></div><div class="round"><i class="ic" data-ic="calendario" data-s="22"></i></div></div>
+  </div>
+  <div class="gift">
+    <div class="who">
+      <div class="t"><i class="ic" data-ic="cha" data-s="32"></i></div>
+      <div><div class="name">Carinho do Dilson · há 5 min</div><div class="msg">Vou preparar-te um chá quente.</div></div>
+    </div>
+    <div class="note">“Fica no sofá, eu já vou.”</div>
+    <div class="acts"><div class="btn sm">Obrigada, amor</div><div class="btn sm ghost">Responder</div></div>
+  </div>
+  <div class="hero">
+    <div class="ring" data-ring data-size="236" data-legend="lg1"></div>
+    <div class="pred"><b>Menstruação daqui a 10 dias</b><p>Prevista para dom, 8 nov · aprendida com 4 ciclos</p></div>
+    <div class="legend" id="lg1"></div>
+  </div>
+</div></div></div>
+
+<!-- 2 · Ela: tocar no anel -->
+<div class="wrap"><div class="cap">Ela · Toca ou arrasta no anel: vês qualquer dia</div>
+<div class="phone"><div class="scroll">
+  <div class="row">
+    <div><h1>Ciclo</h1><div class="hsub">Só tu vês os detalhes.</div></div>
+    <div style="display:flex;gap:8px"><div class="round"><i class="ic" data-ic="partilha" data-s="22"></i></div><div class="round"><i class="ic" data-ic="calendario" data-s="22"></i></div></div>
+  </div>
+  <div class="hero">
+    <div class="ring" data-ring data-size="236" data-sel="2" data-legend="lg2"></div>
+    <div class="legend" id="lg2"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="margin-bottom:12px"><div class="ctitle">Como estás hoje?</div><div class="cnote">Toca no que sentes</div></div>
+    <div class="grid5 tap" data-syms="inchaco:Inchaço,desejos:Desejos,cabeca:Cabeça,sensivel:Sensível,cansaco:Cansaço,peito:Peito,altos:Altos e baixos,pele:Pele,sono:Dormi mal" data-more="Mais · 2" data-on="desejos,sensivel"></div>
+  </div>
+</div></div></div>
+
+<!-- 3 · Ela: todos os sintomas -->
+<div class="wrap"><div class="cap">Ela · "Mais": 26 sintomas, em 4 grupos</div>
+<div class="phone"><div class="scroll">
+  <div class="row"><div><h1>Ciclo</h1><div class="hsub">Só tu vês os detalhes.</div></div></div>
+</div>
+<div class="dim"></div>
+<div class="sheet">
+  <div class="grab"></div>
+  <div class="stitle">O que sentes hoje</div>
+  <div class="ssub">Tudo opcional. Guarda sozinho.</div>
+  <div class="group">Corpo</div>
+  <div class="grid5 tap" data-syms="colicas:Cólicas,cabeca:Cabeça,lombar:Lombar,peito:Peito,inchaco:Inchaço,cansaco:Cansaço,nausea:Náusea,pele:Pele,pernas:Pernas*,tontura:Tonturas*,fraqueza:Fraqueza*" data-on="cansaco"></div>
+  <div class="group">Barriga</div>
+  <div class="grid5 tap" data-syms="gases:Gases*,diarreia:Diarreia*,prisao:Prisão de ventre*,fome:Mais fome*"></div>
+  <div class="group">Emoções</div>
+  <div class="grid5 tap" data-syms="sensivel:Sensível,ansiedade:Ansiosa,irritada:Irritada,triste:Triste*,choro:Vontade de chorar*,altos:Altos e baixos*,radiante:Radiante" data-on="sensivel"></div>
+  <div class="group">Também</div>
+  <div class="grid5 tap" data-syms="sono:Dormi mal,desejos:Desejos,desejo:Libido,intimidade:Intimidade" data-on="desejos"></div>
+</div>
+</div></div>
+
+<!-- 4 · Ele -->
+<div class="wrap"><div class="cap">Ele · O ciclo dela e o carinho</div>
+<div class="phone"><div class="scroll">
+  <div><h1>Ciclo da Ana</h1><div class="hsub">A Ana partilha isto contigo.</div></div>
+  <div class="hero">
+    <div class="ring" data-ring data-size="220" data-him="1"></div>
+    <div class="pred"><b>Período daqui a 10 dias</b><p>Previsto para dom, 8 nov</p></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <span class="sig"><i class="ic" data-ic="cansaco" data-s="24"></i>Cansada</span>
+    <span class="sig"><i class="ic" data-ic="sensivel" data-s="24"></i>Sensível</span>
+  </div>
+  <div class="card">
+    <div class="ctitle">Mandar um carinho</div>
+    <div class="cnote" style="margin:2px 0 12px">A Ana recebe no Ciclo e no Chat.</div>
+    <div class="care tap1">
+      <div class="opt on" data-msg="Vou preparar-te um chá quente."><i class="ic" data-ic="cha" data-s="30"></i>Chá quente</div>
+      <div class="opt" data-msg="Um abraço apertado para ti."><i class="ic" data-ic="abraco" data-s="30"></i>Um abraço</div>
+      <div class="opt" data-msg="Tenho um chocolate guardado para ti."><i class="ic" data-ic="desejos" data-s="30"></i>Chocolate</div>
+      <div class="opt" data-msg="Hoje eu trato do jantar. Descansa."><i class="ic" data-ic="jantar" data-s="30"></i>Eu faço o jantar</div>
+      <div class="opt" data-msg="Uma flor para alegrar o teu dia."><i class="ic" data-ic="flor" data-s="30"></i>Uma flor</div>
+      <div class="opt" data-msg="Estou aqui contigo. Se precisares de alguma coisa, é só dizeres."><i class="ic" data-ic="casal" data-s="30"></i>Estou aqui</div>
+    </div>
+    <div class="preview">Ela vai receber: <b id="msg">Vou preparar-te um chá quente.</b></div>
+    <div class="field">Juntar uma frase tua (opcional)</div>
+  </div>
+  <div class="btn">Enviar carinho</div>
+</div></div></div>
+
+<!-- 5 · Ele: enviado -->
+<div class="wrap"><div class="cap">Ele · Enviado, e a resposta dela</div>
+<div class="phone"><div class="scroll">
+  <div><h1>Ciclo da Ana</h1><div class="hsub">A Ana partilha isto contigo.</div></div>
+  <div class="card" style="text-align:center;padding:22px 16px">
+    <i class="ic" data-ic="abraco" data-s="56"></i>
+    <div class="ctitle" style="font-size:18px;margin-top:8px">Carinho enviado</div>
+    <div class="cnote" style="font-size:13px;margin-top:4px;line-height:1.4">“Vou preparar-te um chá quente.”<br/>A Ana já recebeu um aviso.</div>
+  </div>
+  <div class="card" style="display:flex;gap:12px;align-items:center">
+    <div style="width:44px;height:44px;border-radius:15px;background:#FDECEF;display:flex;align-items:center;justify-content:center"><i class="ic" data-ic="desejo" data-s="28"></i></div>
+    <div><div class="cnote">A Ana respondeu · agora</div><div class="ctitle">Obrigada, amor</div></div>
+  </div>
+  <div class="btn ghost">Ir para o Chat</div>
+  <div class="cnote" style="text-align:center">Podes mandar outro carinho amanhã, ou escrever-lhe no Chat.</div>
+</div></div></div>
+
+<div class="notes">
+  <h2>O que muda (versão 4)</h2>
+  <ul>
+    <li><b>O anel de agora, mais moderno:</b> continua a haver um ponto por dia, agora em forma de pequena cápsula e na cor da fase. Os dias que já passaram ficam mais claros. Uma linha fina por dentro mostra quanto do ciclo já passou. Fora do anel há três símbolos pequenos: uma gota no período, uma estrela na ovulação e uma lua na TPM.</li>
+    <li><b>Hoje em destaque:</b> o dia de hoje fica num círculo branco com a cor da fase e pulsa devagar. Ao abrir, as cápsulas aparecem em sequência.</li>
+    <li><b>Arrastar com lupa:</b> ao passar o dedo à volta, o dia tocado e os vizinhos crescem, e o telemóvel dá um toque leve. O centro mostra a data e a fase. Num dia passado aparece o que registaste. O anel volta sozinho para hoje.</li>
+    <li><b>Etiquetas:</b> tocar em Período, Fértil, Ovulação ou TPM acende essa fase e mostra as datas.</li>
+    <li><b>Para ele:</b> o mesmo anel, também tocável.</li>
+    <li><b>Mais sintomas:</b> 9 no ecrã e 26 em "Mais", 10 deles novos.</li>
+    <li><b>Carinho:</b> ele escolhe um de 6 gestos e pode juntar uma frase. Ela recebe-o no Ciclo e pode responder "Obrigada, amor" num toque.</li>
+    <li><b>Sai:</b> "Ver como o meu par vê".</li>
+  </ul>
+</div>
+
+<script>
+// ── Ícones desenhados (mesmo acabamento dos ícones da Home: gradiente, brilho, sombra suave)
+const lg = (id, a, b) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const rg = (id, a, b) => `<radialGradient id="${id}" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient>`;
+const shine = (id) => `<radialGradient id="${id}" cx=".3" cy=".2" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`;
+const soft = (id) => `<filter id="${id}" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="1.6" stdDeviation="1.5" flood-color="#0B1324" flood-opacity=".16"/></filter>`;
+const HEART = "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+const heartAt = (x, y, s, fill) => `<path transform="translate(${x - 12 * s} ${y - 11.5 * s}) scale(${s})" d="${HEART}" fill="${fill}"/>`;
+const drop = (x, y, s, fill) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0-22c5 7.5 13 14.7 13 23.7C13 9 7.2 14.7 0 14.7S-13 9-13 1.7C-13-7.3-5-14.5 0-22Z" fill="${fill}"/>`;
+const star4 = (x, y, r, fill) => `<path d="M${x} ${y - r}C${x + r * .18} ${y - r * .18} ${x + r * .18} ${y - r * .18} ${x + r} ${y}C${x + r * .18} ${y + r * .18} ${x + r * .18} ${y + r * .18} ${x} ${y + r}C${x - r * .18} ${y + r * .18} ${x - r * .18} ${y + r * .18} ${x - r} ${y}C${x - r * .18} ${y - r * .18} ${x - r * .18} ${y - r * .18} ${x} ${y - r}Z" fill="${fill}"/>`;
+
+const ICONS = {
+  // fases (iguais às da Home)
+  menstrual: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}${shine(u+"s")}</defs>
+    <path d="M32 7c6 9 15.5 17.6 15.5 28.4C47.5 44.2 40.6 51 32 51s-15.5-6.8-15.5-15.6C16.5 24.6 26 16 32 7Z" fill="url(#${u}a)"/>
+    <ellipse cx="25.2" cy="34" rx="3.4" ry="6.8" fill="url(#${u}s)" transform="rotate(18 25.2 34)"/>`,
+  lutea: u => `<defs>${lg(u+"a","#D6C8FF","#7C3AED")}</defs>
+    <path d="M40 8A24 24 0 1 0 56 41 19.5 19.5 0 0 1 40 8Z" fill="url(#${u}a)"/>
+    <path d="M48.5 12l1.2 3 3 1.2-3 1.2-1.2 3-1.2-3-3-1.2 3-1.2Z" fill="#C4B5FD"/>`,
+  calendario: u => `<defs>${lg(u+"a","#FF9BB2","#E8456B")}</defs>
+    <rect x="10" y="14" width="44" height="40" rx="10" fill="#fff" stroke="#0B1324" stroke-width="3.4"/>
+    <path d="M10 26h44" stroke="#0B1324" stroke-width="3.4"/><path d="M22 9v9M42 9v9" stroke="#0B1324" stroke-width="3.4" stroke-linecap="round"/>
+    ${drop(32, 41, .42, `url(#${u}a)`)}`,
+  // saco de água quente: cólicas
+  colicas: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">
+      <rect x="27" y="7" width="10" height="9" rx="2.5" fill="#C7365B"/>
+      <path d="M24 15h16c7 0 12 5.6 12 12.6v15.2C52 51 46 57 38 57H26c-8 0-14-6-14-14.2V27.6C12 20.6 17 15 24 15Z" fill="url(#${u}a)"/>
+      <path d="M24 15h16c7 0 12 5.6 12 12.6v4H12v-4C12 20.6 17 15 24 15Z" fill="url(#${u}s)" opacity=".6"/>
+      <path d="M21 36c3.6-2.6 7.4 2.6 11 0s7.4 2.6 11 0M21 44c3.6-2.6 7.4 2.6 11 0s7.4 2.6 11 0" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none" opacity=".85"/>
+    </g>`,
+  // cabeça: rosto com ondas de dor
+  cabeca: u => `<defs>${rg(u+"a","#FFE3D0","#F4B48E")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">
+      <circle cx="32" cy="36" r="17" fill="url(#${u}a)"/>
+      <path d="M25.5 37.5q2-2 4 0M34.5 37.5q2-2 4 0" stroke="#8A4B2C" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M28.5 45q3.5-2 7 0" stroke="#8A4B2C" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    </g>
+    <path d="M18 14l4 3-1 4 4 2M46 14l-4 3 1 4-4 2M32 7v5" stroke="#9D7BF5" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  // inchaço: balão
+  inchaco: u => `<defs>${rg(u+"a","#BEE6FF","#3BA7E6")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">
+      <ellipse cx="32" cy="28" rx="18" ry="20" fill="url(#${u}a)"/>
+      <ellipse cx="25" cy="21" rx="5" ry="7.5" fill="url(#${u}s)" transform="rotate(-20 25 21)"/>
+      <path d="M29.5 47.5h5l-2.5 4Z" fill="#2A8FD0"/>
+    </g>
+    <path d="M32 51c-3 3 3 5 0 8" stroke="#A3A09A" stroke-width="1.8" stroke-linecap="round" fill="none"/>`,
+  // desejos: chocolate
+  desejos: u => `<defs>${lg(u+"a","#9A5A3C","#5C2E1B")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">
+      <path d="M14 18c0-3.3 2.7-6 6-6h24c3.3 0 6 2.7 6 6v28c0 3.3-2.7 6-6 6H20c-3.3 0-6-2.7-6-6Z" fill="url(#${u}a)"/>
+      <path d="M50 16a6 6 0 0 1-8.5 3.5A6 6 0 0 1 36 12h8a6 6 0 0 1 6 4Z" fill="#fff"/>
+      <g stroke="#3F1D10" stroke-width="1.6" opacity=".55"><path d="M14 26h36M14 36h36M26 12v40M38 18v34"/></g>
+      <g fill="#fff" opacity=".18"><rect x="16" y="28" width="8" height="6" rx="1.5"/><rect x="28" y="28" width="8" height="6" rx="1.5"/></g>
+    </g>`,
+  // lombar: coluna
+  lombar: u => `<defs>${lg(u+"a","#FFD9B8","#F29A6B")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)" fill="url(#${u}a)">
+      <rect x="25" y="8" width="14" height="8" rx="4"/><rect x="24" y="19" width="15" height="8" rx="4"/>
+      <rect x="23" y="30" width="16" height="8" rx="4"/><rect x="24" y="41" width="16" height="8" rx="4"/>
+    </g>
+    <path d="M46 33c3 0 5 2 5 5M48 27c5 0 9 4 9 9" stroke="#EC4C72" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <circle cx="32" cy="55" r="2.6" fill="#F29A6B"/>`,
+  // cansaço: bateria fraca
+  cansaco: u => `<defs>${lg(u+"a","#FFB199","#F2664A")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">
+      <rect x="9" y="20" width="40" height="25" rx="7" fill="#fff" stroke="#3A4150" stroke-width="3.2"/>
+      <rect x="51" y="27" width="5" height="11" rx="2.5" fill="#3A4150"/>
+      <rect x="14" y="25" width="10" height="15" rx="3.5" fill="url(#${u}a)"/>
+    </g>
+    <path d="M44 9h7l-7 7h7" stroke="#9D7BF5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  peito: u => `<defs>${lg(u+"a","#FFC6D3","#F0678A")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">${heartAt(32, 33, 1.9, `url(#${u}a)`)}</g>
+    <ellipse cx="22.5" cy="24" rx="4" ry="5.5" fill="url(#${u}s)" transform="rotate(-25 22.5 24)"/>
+    <path d="M51 13c2 3 2 6 0 9M55.5 10.5c3 4.5 3 9.5 0 14" stroke="#F0678A" stroke-width="2.4" stroke-linecap="round" fill="none"/>`,
+  nausea: u => `<defs>${rg(u+"a","#D2F5E3","#5CC995")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><circle cx="32" cy="33" r="19" fill="url(#${u}a)"/></g>
+    <path d="M32 33m-9 0a9 9 0 1 1 9 9 5 5 0 1 1 5-5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>`,
+  pele: u => `<defs>${rg(u+"a","#FFE7D6","#F5BE98")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><circle cx="32" cy="32" r="20" fill="url(#${u}a)"/></g>
+    <ellipse cx="25" cy="24" rx="6" ry="8" fill="url(#${u}s)" transform="rotate(-25 25 24)"/>
+    <circle cx="36" cy="30" r="3" fill="#F08A8A"/><circle cx="28" cy="40" r="2.2" fill="#F08A8A"/><circle cx="40" cy="41" r="1.8" fill="#F08A8A"/>`,
+  sensivel: u => `<defs>${lg(u+"a","#BFE4FF","#4BA3EE")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">${drop(32, 34, 1.15, `url(#${u}a)`)}</g>
+    <ellipse cx="26" cy="35" rx="3.4" ry="6.4" fill="url(#${u}s)" transform="rotate(18 26 35)"/>
+    ${heartAt(35, 38, .42, "#fff")}`,
+  ansiedade: u => `<defs>${lg(u+"a","#E6ECF5","#A9B7CC")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M18 42a10 10 0 0 1 .8-20A14 14 0 0 1 45.5 20 11 11 0 0 1 46 42Z" fill="url(#${u}a)"/></g>
+    <path d="M20 49c3-2 6 2 9 0s6 2 9 0 6 2 9 0M24 55c3-2 6 2 9 0s6 2 9 0" stroke="#8B9AB3" stroke-width="2.4" stroke-linecap="round" fill="none"/>`,
+  irritada: u => `<defs>${lg(u+"a","#FFD27A","#F2841F")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M36 6 16 36h13l-4 22 23-32H34Z" fill="url(#${u}a)" stroke-linejoin="round"/></g>`,
+  radiante: u => `<defs>${rg(u+"a","#FFF3B0","#F59E0B")}</defs>
+    <g stroke="#F5B323" stroke-width="4" stroke-linecap="round"><path d="M32 5v6M32 53v6M5 32h6M53 32h6M12.9 12.9l4.3 4.3M46.8 46.8l4.3 4.3M12.9 51.1l4.3-4.3M46.8 17.2l4.3-4.3"/></g>
+    <circle cx="32" cy="32" r="14" fill="url(#${u}a)"/>
+    <path d="M26.5 34q5.5 5 11 0" stroke="#B4740A" stroke-width="2.4" stroke-linecap="round" fill="none"/>`,
+  sono: u => `<defs>${lg(u+"a","#C9D3FF","#5B6BE8")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M36 12A22 22 0 1 0 54 42 18 18 0 0 1 36 12Z" fill="url(#${u}a)"/></g>
+    <path d="M44 8h8l-8 9h8" stroke="#9D7BF5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  desejo: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">${heartAt(30, 36, 1.75, `url(#${u}a)`)}</g>
+    <ellipse cx="21" cy="28" rx="4" ry="5.5" fill="url(#${u}s)" transform="rotate(-25 21 28)"/>
+    ${star4(49, 15, 7, "#F5B323")}${star4(55, 29, 4, "#FFD27A")}`,
+  intimidade: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${lg(u+"b","#C9B8FF","#8B6CF0")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">${heartAt(25, 34, 1.4, `url(#${u}b)`)}${heartAt(39, 30, 1.4, `url(#${u}a)`)}</g>`,
+  // fluxo
+  manchas: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}</defs><circle cx="24" cy="30" r="4.5" fill="url(#${u}a)"/><circle cx="38" cy="26" r="3" fill="url(#${u}a)"/><circle cx="35" cy="40" r="3.6" fill="url(#${u}a)"/>`,
+  fluxo1: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}</defs>${drop(32, 36, .9, `url(#${u}a)`)}`,
+  fluxo2: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}</defs>${drop(23, 38, .75, `url(#${u}a)`)}${drop(41, 34, .75, `url(#${u}a)`)}`,
+  fluxo3: u => `<defs>${lg(u+"a","#FF9BB2","#E8284F")}</defs>${drop(18, 40, .6, `url(#${u}a)`)}${drop(32, 32, .7, `url(#${u}a)`)}${drop(46, 40, .6, `url(#${u}a)`)}`,
+  partilha: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${lg(u+"b","#A9CCFF","#3B82F6")}</defs>
+    <circle cx="23" cy="24" r="9" fill="url(#${u}a)"/><circle cx="43" cy="24" r="9" fill="url(#${u}b)"/>
+    <path d="M8 52c0-9 6.7-15 15-15s15 6 15 15Z" fill="url(#${u}a)"/><path d="M28 52c0-9 6.7-15 15-15s15 6 15 15Z" fill="url(#${u}b)" opacity=".9"/>`,
+  olho: u => `<defs>${rg(u+"a","#A9CCFF","#3B82F6")}</defs>
+    <path d="M6 32C13 20 22 14 32 14s19 6 26 18c-7 12-16 18-26 18S13 44 6 32Z" fill="#fff" stroke="#0B1324" stroke-width="3.2"/>
+    <circle cx="32" cy="32" r="10" fill="url(#${u}a)"/><circle cx="32" cy="32" r="4" fill="#0B1324"/><circle cx="35" cy="28.5" r="2" fill="#fff"/>`,
+  cha: u => `<defs>${lg(u+"a","#FFD9B8","#F29A6B")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M12 28h34v10c0 9.4-7.6 17-17 17s-17-7.6-17-17Z" fill="url(#${u}a)"/>
+    <path d="M46 32h3a7 7 0 0 1 0 14h-4" stroke="#F29A6B" stroke-width="3.4" fill="none"/></g>
+    <path d="M22 9c-3 3 3 6 0 10M30 7c-3 3 3 6 0 10M38 9c-3 3 3 6 0 10" stroke="#C4B5FD" stroke-width="2.6" stroke-linecap="round" fill="none"/>`,
+  mais: () => `<path d="M32 18v28M18 32h28" stroke="#7A7F8C" stroke-width="4" stroke-linecap="round"/>`,
+};
+
+// ── Ícones novos (mesmo acabamento)
+const HG = (id, a, b) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const face = (u, a, b) => `<defs>${rg(u + "a", a, b)}${soft(u + "f")}</defs><g filter="url(#${u}f)"><circle cx="32" cy="34" r="19" fill="url(#${u}a)"/></g>`;
+Object.assign(ICONS, {
+  pernas: u => `<defs>${lg(u+"a","#FFD9B8","#F29A6B")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M23 6h15v21c0 3.6 1 6.8 2.8 10l3.6 6.6c1.8 3.2 4.6 4.8 8.4 5.8 2.8.8 3.4 3.2 2.4 5.6H35c-2.6 0-4.2-1.2-5.2-3.6L24.4 44C23.4 41.4 23 38.8 23 36Z" fill="url(#${u}a)"/></g>
+    <path d="M7 22l4.5 2-2 4 4.5 2M45 12l4.5 2-2 4 4.5 2" stroke="#9D7BF5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  tontura: u => `${face(u, "#FFE3D0", "#F4B48E")}
+    <circle cx="25" cy="33" r="3.6" fill="none" stroke="#8A4B2C" stroke-width="2"/><circle cx="25" cy="33" r="1.1" fill="#8A4B2C"/>
+    <circle cx="39" cy="33" r="3.6" fill="none" stroke="#8A4B2C" stroke-width="2"/><circle cx="39" cy="33" r="1.1" fill="#8A4B2C"/>
+    <path d="M25 43.5q2.3-2 4.6 0t4.6 0t4.6 0" stroke="#8A4B2C" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <ellipse cx="32" cy="12" rx="15" ry="4.2" fill="none" stroke="#F2A91F" stroke-width="2.2"/>${star4(17.5, 12, 3.6, "#F2A91F")}${star4(46, 10.5, 3, "#9D7BF5")}`,
+  fraqueza: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <path d="M22 57V36c0-11 7-18 17-18 4 0 7 1.4 8.6 3.6" stroke="#2FB67A" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+    <path d="M22 46c-7 0-11-4.4-11-10 6.6 0 11 4.4 11 10Z" fill="#2FB67A"/>
+    <g filter="url(#${u}f)"><path d="M47.5 22c6 0 9.5 5 9.5 11 0 5-3 9.6-9.5 14-6.5-4.4-9.5-9-9.5-14 0-6 3.5-11 9.5-11Z" fill="url(#${u}a)"/></g>
+    <ellipse cx="44.5" cy="30" rx="2.4" ry="4.2" fill="url(#${u}s)"/>`,
+  gases: u => `<defs>${rg(u+"a","#D2F5E3","#5CC995")}${shine(u+"s")}</defs>
+    <circle cx="25" cy="39" r="14" fill="url(#${u}a)"/><ellipse cx="20" cy="33" rx="4" ry="5.5" fill="url(#${u}s)" transform="rotate(-25 20 33)"/>
+    <circle cx="43" cy="21" r="9" fill="url(#${u}a)"/><ellipse cx="40" cy="17.5" rx="2.6" ry="3.6" fill="url(#${u}s)" transform="rotate(-25 40 17.5)"/>
+    <circle cx="47" cy="44" r="5.5" fill="url(#${u}a)"/>`,
+  diarreia: u => `<defs>${lg(u+"a","#FFFFFF","#E3DED7")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M14 17v27c0 3 6 5.4 13.5 5.4S41 47 41 44V17Z" fill="url(#${u}a)" stroke="#D9D3CB" stroke-width="1.6"/>
+    <ellipse cx="27.5" cy="17" rx="13.5" ry="5" fill="#fff" stroke="#D9D3CB" stroke-width="1.6"/><ellipse cx="27.5" cy="17" rx="4" ry="1.7" fill="#B9B2A8"/>
+    <path d="M41 26h11v26H41Z" fill="#fff" stroke="#D9D3CB" stroke-width="1.6"/></g>
+    <path d="M42.5 35h8M42.5 44h8" stroke="#D9D3CB" stroke-width="1.6" stroke-dasharray="2 2"/>`,
+  prisao: u => `<defs>${lg(u+"a","#FFC6D3","#F0678A")}${shine(u+"s")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><path d="M25 7v8c0 4.4-7.5 6.4-9.6 14-2.8 10.4 3.6 22 15.6 23.6 10.4 1.4 19-4.6 19-14.2 0-7-5-10.4-9.4-10.4-3.4 0-5 2-6.2.2C33 25.8 35 22 35 18V7Z" fill="url(#${u}a)"/>
+    <ellipse cx="22" cy="31" rx="3.4" ry="6" fill="url(#${u}s)" transform="rotate(20 22 31)"/></g>
+    <path d="M27 41.5c-2.6-4 3.6-7 6-3.4s-3.6 6.4-6.4 2.6M33 38.5c2-1 5 0 6.5 2" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/>`,
+  fome: u => `<defs>${lg(u+"a","#FFD27A","#F2841F")}${soft(u+"f")}</defs>
+    <path d="M24 8c-3 4 3 6 0 10M32 6c-3 4 3 6 0 10M40 8c-3 4 3 6 0 10" stroke="#C9C2B8" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <g filter="url(#${u}f)"><path d="M8 29h48c0 13.6-10.4 23-24 23S8 42.6 8 29Z" fill="url(#${u}a)"/><rect x="6" y="25.5" width="52" height="6" rx="3" fill="#E36A12"/></g>`,
+  triste: u => `${face(u, "#CFE8FF", "#6FB2F0")}
+    <circle cx="25" cy="31" r="2.4" fill="#1E4E86"/><circle cx="39" cy="31" r="2.4" fill="#1E4E86"/>
+    <path d="M25 44.5q7-6 14 0" stroke="#1E4E86" stroke-width="2.6" stroke-linecap="round" fill="none"/>`,
+  choro: u => `${face(u, "#CFE8FF", "#6FB2F0")}
+    <path d="M21.5 30.5q3.5 2.6 7 0M35.5 30.5q3.5 2.6 7 0" stroke="#1E4E86" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <path d="M26 44q6-4.4 12 0" stroke="#1E4E86" stroke-width="2.6" stroke-linecap="round" fill="none"/>${drop(22, 41, .3, "#2F8FE0")}`,
+  altos: u => `<defs>${HG(u+"a", "#FF8FAA", "#8B6CF0")}</defs>
+    <path d="M7 38c6 0 7.5-20 14.5-20S30 46 37 46s8-24 14-24 6 8 6 8" stroke="url(#${u}a)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  abraco: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${lg(u+"b","#A9CCFF","#3B82F6")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)">${heartAt(32, 30, 1.75, `url(#${u}a)`)}</g>
+    <path d="M9 27c0 13.4 10 25 23 25M55 27c0 13.4-10 25-23 25" stroke="url(#${u}b)" stroke-width="5.4" stroke-linecap="round" fill="none"/>`,
+  jantar: u => `<defs>${lg(u+"a","#FFFFFF","#ECE7E0")}${soft(u+"f")}</defs>
+    <g filter="url(#${u}f)"><circle cx="32" cy="34" r="17" fill="url(#${u}a)" stroke="#D9D3CB" stroke-width="1.8"/><circle cx="32" cy="34" r="10" fill="none" stroke="#E4DED6" stroke-width="2"/></g>
+    <path d="M8 14v11c0 2.4 1.4 3.6 3 3.6V54M11 14v10M14 14v11c0 2.4-1.4 3.6-3 3.6" stroke="#7A7F8C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M55 54V14c-4.4 2.2-5.6 9-5.6 16H55" stroke="#7A7F8C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  flor: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${rg(u+"c","#FFF3B0","#F59E0B")}${soft(u+"f")}</defs>
+    <path d="M32 34v22" stroke="#2FB67A" stroke-width="3.4" stroke-linecap="round"/><path d="M32 50c-7-.6-11-5-11-10.6 6.6 0 11 4.4 11 10.6Z" fill="#2FB67A"/>
+    <g filter="url(#${u}f)">${[0, 72, 144, 216, 288].map(a => `<circle cx="${32 + 10 * Math.cos((a - 90) * Math.PI / 180)}" cy="${23 + 10 * Math.sin((a - 90) * Math.PI / 180)}" r="8" fill="url(#${u}a)"/>`).join("")}</g>
+    <circle cx="32" cy="23" r="6" fill="url(#${u}c)"/>`,
+  casal: u => `<defs>${lg(u+"a","#FFB4C4","#EC4C72")}${lg(u+"b","#A9CCFF","#3B82F6")}</defs>${heartAt(25, 34, 1.4, `url(#${u}a)`)}${heartAt(39, 30, 1.4, `url(#${u}b)`)}`,
+});
+
+// ── Grelhas de sintomas
+document.querySelectorAll("[data-syms]").forEach(g => {
+  const on = (g.dataset.on || "").split(",");
+  let h = g.dataset.syms.split(",").map(p => {
+    let [k, l] = p.split(":"); const isNew = l.endsWith("*"); l = l.replace("*", "");
+    return `<div class="sym${on.includes(k) ? " on" : ""}"><div class="tile"><i class="ic" data-ic="${k}" data-s="32"></i></div><span>${l}${isNew ? ' <b style="color:#2FB67A">•</b>' : ""}</span></div>`;
+  }).join("");
+  if (g.dataset.more) h += `<div class="sym"><div class="tile dash"><i class="ic" data-ic="mais" data-s="24"></i></div><span>${g.dataset.more}</span></div>`;
+  g.innerHTML = h;
+});
+
+let n = 0;
+document.querySelectorAll(".ic").forEach(el => {
+  const s = +el.dataset.s || 32, u = "i" + (n++);
+  el.innerHTML = `<svg width="${s}" height="${s}" viewBox="0 0 64 64">${ICONS[el.dataset.ic](u)}</svg>`;
+  el.style.width = el.style.height = s + "px";
+});
+
+// ── O anel (como o atual: um ponto por dia), um pouco mais vivo e tocável.
+// Ciclo de 29 dias que começou a 10 out; hoje é 29 out (dia 20).
+const LEN = 29, TODAY = 20, START = new Date(2026, 9, 10);
+const WD = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"], MO = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const dateOf = d => { const x = new Date(START); x.setDate(x.getDate() + d - 1); return x; };
+const fmt = x => `${WD[x.getDay()]}, ${x.getDate()} ${MO[x.getMonth()]}`;
+const PH = [
+  { id: "per", from: 1, to: 5,   c: "#E8456B", chip: ["#FDECEF", "#C92D52"], name: "Período",       tip: "Dias de período" },
+  { id: "fol", from: 6, to: 10,  c: "#E7E2DB", chip: ["#E9F5FC", "#176796"], name: "Fase folicular", tip: "A energia costuma subir" },
+  { id: "fer", from: 11, to: 14, c: "#6DBDF0", chip: ["#E9F5FC", "#176796"], name: "Janela fértil", tip: "Gravidez mais provável" },
+  { id: "ovu", from: 15, to: 15, c: "#F2A91F", chip: ["#FFF4DA", "#8A5A06"], name: "Ovulação",      tip: "O dia mais fértil" },
+  { id: "lut", from: 16, to: 23, c: "#E7E2DB", chip: ["#F1EDFE", "#6B4FD8"], name: "Fase lútea",    tip: "Energia mais calma" },
+  { id: "pms", from: 24, to: 29, c: "#A890F5", chip: ["#F1EDFE", "#6B4FD8"], name: "TPM",           tip: "Pode haver mais sensibilidade" },
+];
+const GLOW = { per: "#E8456B", fol: "#6DBDF0", fer: "#6DBDF0", ovu: "#F2A91F", lut: "#A890F5", pms: "#A890F5" };
+const LOG = { 1: ["Cólicas", "Cansaço"], 2: ["Cólicas", "Lombar"], 3: ["Cansaço"], 9: ["Radiante"], 14: ["Libido"], 18: ["Inchaço"], 19: ["Desejos", "Sensível"] };
+const phaseOf = d => PH.find(p => d >= p.from && d <= p.to);
+const LEG = [["per", "Período"], ["fer", "Fértil"], ["ovu", "Ovulação"], ["pms", "TPM"]];
+const buzz = () => { try { navigator.vibrate && navigator.vibrate(5); } catch (e) {} };
+
+document.querySelectorAll("[data-ring]").forEach((el, ri) => {
+  const S = +el.dataset.size, C = 118, R = 104, him = !!el.dataset.him;
+  el.style.width = el.style.height = S + "px";
+  const pos = d => { const a = ((d - 1) / LEN) * Math.PI * 2 - Math.PI / 2; return [C + R * Math.cos(a), C + R * Math.sin(a)]; };
+  let svg = `<svg viewBox="0 0 236 236" width="${S}" height="${S}"><defs>
+    <radialGradient id="gl${ri}"><stop offset="0" class="glc" stop-color="#A890F5" stop-opacity=".16"/><stop offset="1" class="glc2" stop-color="#A890F5" stop-opacity="0"/></radialGradient>
+    <filter id="ks${ri}" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#0B1324" flood-opacity=".2"/></filter></defs>
+    <circle cx="${C}" cy="${C}" r="84" fill="url(#gl${ri})"/>`;
+  const deg = d => ((d - 1) / LEN) * 360;
+  const arcTo = (d, rr) => { const a = ((d - 1) / LEN) * Math.PI * 2 - Math.PI / 2; return [C + rr * Math.cos(a), C + rr * Math.sin(a)]; };
+  // trilho fino por dentro e o progresso até hoje
+  const [p0x, p0y] = arcTo(1, 88), [p1x, p1y] = arcTo(TODAY, 88);
+  svg += `<circle cx="${C}" cy="${C}" r="88" fill="none" stroke="#0B1324" stroke-opacity=".045" stroke-width="2.5"/>
+    <path class="prog" d="M${p0x} ${p0y}A88 88 0 ${(TODAY - 1) / LEN > .5 ? 1 : 0} 1 ${p1x} ${p1y}" fill="none" stroke="#0B1324" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round"/>`;
+  for (let d = 1; d <= LEN; d++) {
+    const [x, y] = pos(d), p = phaseOf(d), big = d === 15;
+    svg += `<rect class="dot in" data-d="${d}" data-ph="${p.id}" x="${big ? -5 : -4}" y="${big ? -8 : -7}" width="${big ? 10 : 8}" height="${big ? 16 : 14}" rx="${big ? 5 : 4}" fill="${p.c}"
+      data-x="${x}" data-y="${y}" data-a="${deg(d)}" style="--o:${d < TODAY ? .45 : 1};animation-delay:${d * 22}ms;transform:translate(${x}px,${y}px) rotate(${deg(d)}deg)"/>`;
+  }
+  // símbolos fora do anel: gota no período, estrela na ovulação, lua na TPM
+  const mark = (d, html) => { const [x, y] = arcTo(d, 124); svg += `<g class="mk" transform="translate(${x} ${y})">${html}</g>`; };
+  mark(3, `<path transform="scale(.3)" d="M0-22c5 7.5 13 14.7 13 23.7C13 9 7.2 14.7 0 14.7S-13 9-13 1.7C-13-7.3-5-14.5 0-22Z" fill="#E8456B"/>`);
+  mark(15, star4(0, 0, 6, "#F2A91F"));
+  mark(26.5, `<path transform="translate(-6 -6) scale(.2)" d="M40 8A24 24 0 1 0 56 41 19.5 19.5 0 0 1 40 8Z" fill="#A890F5"/>`);
+  const [tx, ty] = pos(TODAY), tp = phaseOf(TODAY);
+  svg += `<circle class="halo" cx="${tx}" cy="${ty}" r="13" fill="none" stroke="${GLOW[tp.id]}" stroke-width="2"/>
+    <g class="today" filter="url(#ks${ri})"><circle cx="${tx}" cy="${ty}" r="12.5" fill="#fff"/></g><circle cx="${tx}" cy="${ty}" r="12.5" fill="none" stroke="#0B1324" stroke-width="2.6"/><circle cx="${tx}" cy="${ty}" r="5.5" fill="${GLOW[tp.id]}"/>
+    <g class="pick" style="opacity:0"><g filter="url(#ks${ri})"><circle r="12" fill="#fff"/></g><circle class="pc" r="7" fill="#0B1324"/></g></svg>`;
+  el.innerHTML = svg + `<div class="mid"><div class="top"></div><div class="day"></div><div class="chip"></div><div class="tip"></div></div>`;
+
+  const q = s => el.querySelector(s);
+  const legend = document.getElementById(el.dataset.legend || "");
+  const back = document.createElement("div"); back.className = "back"; back.textContent = "Voltar a hoje";
+  if (!him) el.after(back);
+  let cur = 0, timer = 0;
+  const show = (d, focus, quiet) => {
+    const p = phaseOf(d), isToday = d === TODAY;
+    if (d !== cur && !quiet) buzz();
+    el.querySelectorAll(".dot").forEach(c => {
+      const cd = +c.dataset.d, k = Math.min(Math.abs(cd - d), LEN - Math.abs(cd - d));
+      const s = isToday || focus ? 1 : k === 0 ? 0 : k === 1 ? 1.35 : k === 2 ? 1.15 : 1;
+      c.style.transform = `translate(${c.dataset.x}px,${c.dataset.y}px) rotate(${c.dataset.a}deg) scale(${cd === TODAY ? 0 : s})`;
+      c.classList.toggle("hi", c.dataset.ph === focus);
+    });
+    el.classList.toggle("focus", !!focus);
+    const pick = q(".pick");
+    if (isToday || focus) pick.style.opacity = 0;
+    else { const [x, y] = pos(d); pick.style.opacity = 1; pick.style.transform = `translate(${x}px,${y}px)`; q(".pc").setAttribute("fill", p.c === "#E7E2DB" ? "#0B1324" : p.c); }
+    const mid = q(".mid"); mid.classList.remove("swap"); void mid.offsetWidth; mid.classList.add("swap");
+    q(".top").innerHTML = isToday ? `<i class="ic" data-g="lutea"></i>` : fmt(dateOf(d));
+    if (isToday) { const g = q("[data-g]"); g.innerHTML = `<svg width="28" height="28" viewBox="0 0 64 64">${ICONS.lutea("t" + ri)}</svg>`; }
+    q(".day").textContent = `Dia ${d}`;
+    q(".chip").textContent = p.name; q(".chip").style.background = p.chip[0]; q(".chip").style.color = p.chip[1];
+    const logged = LOG[d];
+    q(".tip").textContent = isToday ? "" : logged && d < TODAY && !him ? `Registaste: ${logged.join(", ")}` : d > TODAY ? `Previsão · ${p.tip.toLowerCase()}` : p.tip;
+    el.querySelectorAll(".glc,.glc2").forEach(s => s.setAttribute("stop-color", GLOW[p.id]));
+    back.classList.toggle("show", !isToday || !!focus);
+    legend?.querySelectorAll(".lg").forEach(b => b.classList.toggle("on", b.dataset.ph === focus));
+    cur = d;
+  };
+  const dayAt = e => {
+    const r = el.getBoundingClientRect(), x = e.clientX - r.left - S / 2, y = e.clientY - r.top - S / 2;
+    let a = Math.atan2(y, x) + Math.PI / 2 + Math.PI / LEN; if (a < 0) a += Math.PI * 2;
+    return (Math.floor(a / (Math.PI * 2) * LEN) % LEN) + 1;
+  };
+  let drag = false;
+  el.addEventListener("pointerdown", e => { drag = true; clearTimeout(timer); el.setPointerCapture(e.pointerId); show(dayAt(e)); });
+  el.addEventListener("pointermove", e => { if (drag) { const d = dayAt(e); if (d !== cur) show(d); } });
+  el.addEventListener("pointerup", () => { drag = false; clearTimeout(timer); timer = setTimeout(() => show(TODAY), 4000); });
+  back.addEventListener("click", () => { clearTimeout(timer); show(TODAY); });
+  if (legend) {
+    legend.innerHTML = LEG.map(([id, l]) => { const p = PH.find(x => x.id === id); return `<span class="lg" data-ph="${id}"><i style="background:${p.c}"></i>${l}</span>`; }).join("");
+    legend.querySelectorAll(".lg").forEach(b => b.addEventListener("click", () => {
+      clearTimeout(timer);
+      const p = PH.find(x => x.id === b.dataset.ph);
+      if (b.classList.contains("on")) return show(TODAY);
+      show(p.from, p.id); buzz();
+      q(".top").textContent = p.from === p.to ? fmt(dateOf(p.from)) : `${dateOf(p.from).getDate()} – ${dateOf(p.to).getDate()} ${MO[dateOf(p.to).getMonth()]}`;
+      q(".day").textContent = p.from === p.to ? `Dia ${p.from}` : `${p.to - p.from + 1} dias`;
+      q(".tip").textContent = p.tip;
+    }));
+  }
+  show(+el.dataset.sel || TODAY, null, true);
+});
+
+// ── Toques
+document.querySelectorAll(".tap .sym").forEach(s => s.addEventListener("click", () => s.classList.toggle("on")));
+document.querySelectorAll(".tap1 .opt").forEach(o => o.addEventListener("click", () => {
+  o.parentElement.querySelectorAll(".opt").forEach(x => x.classList.remove("on")); o.classList.add("on");
+  document.getElementById("msg").textContent = o.dataset.msg;
+}));
+</script>
+</body>
+</html>

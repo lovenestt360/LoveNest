@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Acesso LoveNest</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#0B1324; --text:#3A4150; --muted:#7A7F8C; --faint:#77736C; --edge:#ECE8E3; --field:#F7F5F2;
+    --rose:#E5466D; --sand:#F1EBE3;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #E7E5E1; color: var(--ink); display: flex; flex-wrap: wrap; gap: 44px 26px; padding: 48px 28px 28px; justify-content: center; }
+  .wrap { position: relative; }
+  .cap { position: absolute; top: -26px; left: 4px; font-size: 12px; font-weight: 600; color: #6b6f78; display: flex; gap: 10px; }
+  .cap button { all: unset; cursor: pointer; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .phone { width: 360px; height: 780px; background: #fff; border-radius: 38px; overflow: hidden; display: flex; flex-direction: column; padding: 54px 22px 28px; box-shadow: 0 30px 60px -32px rgba(11,19,36,.45); position: relative; }
+
+  /* ── Entrada em sequência ── */
+  .in { opacity: 0; transform: translateY(14px); animation: rise .7s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .word { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+  .word i { font-style: normal; color: var(--rose); }
+  .link { font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; position: relative; }
+  .link::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 1.5px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .25s var(--ease); }
+  .link:hover::after { transform: scaleX(1); }
+  .back { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--ink); cursor: pointer; transition: background .2s, transform .2s var(--ease); }
+  .back:hover { background: var(--field); } .back:active { transform: scale(.92); }
+
+  h1 { font-size: 30px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 700; }
+  .sub { margin-top: 10px; font-size: 15px; line-height: 1.45; color: var(--muted); }
+
+  /* ── Botões ── */
+  .btn { height: 54px; border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; font-size: 15.5px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 14px 28px -16px rgba(11,19,36,.65); transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .2s; position: relative; overflow: hidden; user-select: none; }
+  .btn .arrow { display: inline-block; transition: transform .3s var(--ease); }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 18px 32px -16px rgba(11,19,36,.7); }
+  .btn:hover .arrow { transform: translateX(4px); }
+  .btn:active { transform: scale(.98); box-shadow: 0 8px 18px -12px rgba(11,19,36,.6); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--edge); box-shadow: none; }
+  .btn.ghost:hover { background: var(--field); box-shadow: none; }
+  .btn.off { background: #C9C6C0; box-shadow: none; pointer-events: none; }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.35); transform: scale(0); animation: ripple .6s ease-out forwards; pointer-events: none; }
+  .ghost .ripple { background: rgba(11,19,36,.08); }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  /* ── Campos ── */
+  .label { font-size: 13px; font-weight: 600; margin-bottom: 7px; color: var(--ink); }
+  .field { width: 100%; height: 52px; border-radius: 16px; background: var(--field); border: 1px solid var(--edge); padding: 0 16px; font: inherit; font-size: 15px; color: var(--ink); outline: none; transition: background .2s, border-color .2s, box-shadow .25s var(--ease); }
+  .field::placeholder { color: var(--faint); }
+  .field:hover { border-color: #DCD7CF; }
+  .field:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 4px rgba(11,19,36,.06); }
+  .stack { display: grid; gap: 14px; }
+  .or { display: flex; align-items: center; gap: 12px; color: var(--faint); font-size: 12.5px; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--edge); }
+  .small { font-size: 13px; color: var(--muted); text-align: center; }
+  .small b { color: var(--ink); font-weight: 600; cursor: pointer; }
+  .small b:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .spacer { flex: 1; }
+  .invite { margin-top: 14px; font-size: 13.5px; color: var(--text); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; transition: color .2s; }
+  .invite:hover { color: var(--ink); }
+  .invite span { display: inline-block; transition: transform .3s var(--ease); }
+  .invite:hover span { transform: rotate(90deg); }
+
+  /* ── Introdução: cartões da app a flutuar ── */
+  .preview { position: relative; height: 350px; margin-top: 18px; }
+  .card { position: absolute; left: 0; right: 0; background: #fff; border: 1px solid var(--edge); border-radius: 22px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(11,19,36,.04), 0 18px 36px -22px rgba(11,19,36,.32); opacity: 0; animation: cardIn .8s var(--ease) forwards, float 6s ease-in-out infinite; }
+  .c1 { top: 0; left: 10px; right: 26px; --r: -2.5deg; animation-delay: .2s, 1s; }
+  .c2 { top: 116px; left: 24px; right: 6px; --r: 1.8deg; animation-delay: .45s, 1.6s; }
+  .c3 { top: 262px; left: 6px; right: 30px; --r: -1deg; animation-delay: .7s, 2.2s; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(18px) rotate(var(--r)); } to { opacity: 1; transform: rotate(var(--r)); } }
+  @keyframes float { 0%, 100% { transform: rotate(var(--r)) translateY(0); } 50% { transform: rotate(var(--r)) translateY(-5px); } }
+  .k { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .big { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .big small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+  .duo { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .av { width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .av.a { background: linear-gradient(135deg,#F27A97,#D9466B); } .av.b { background: linear-gradient(135deg,#7D9DFF,#3F68E6); margin-left: -16px; border: 2px solid #fff; }
+  .heart { color: var(--rose); display: inline-block; animation: beat 1.6s ease-in-out infinite 2.4s; }
+  @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.25); } 30% { transform: scale(1); } }
+
+  /* ── Conversa (a app a falar) ── */
+  .chat { display: flex; flex-direction: column; gap: 8px; }
+  .bub { max-width: 86%; padding: 10px 14px; border-radius: 18px; font-size: 14.5px; line-height: 1.4; opacity: 0; transform: translateY(8px) scale(.98); transform-origin: bottom left; animation: pop .45s var(--ease) forwards; }
+  .bub.app { background: #fff; border: 1px solid var(--edge); border-bottom-left-radius: 6px; align-self: flex-start; color: var(--ink); }
+  .bub.me { background: var(--sand); border-bottom-right-radius: 6px; align-self: flex-end; transform-origin: bottom right; }
+  .bub.big-q { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; border: none; padding: 0; background: none; max-width: 100%; }
+  @keyframes pop { to { opacity: 1; transform: none; } }
+  .typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 18px; border-bottom-left-radius: 6px; background: #fff; border: 1px solid var(--edge); opacity: 0; animation: pop .3s var(--ease) forwards; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #B9B4AC; animation: dot 1s ease-in-out infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-3px); opacity: 1; } }
+  .from { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+  .from .logo-dot { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  /* ── Passos ── */
+  .prog { flex: 1; display: flex; gap: 5px; margin: 0 14px; }
+  .prog span { flex: 1; height: 4px; border-radius: 9px; background: #EEEBE6; overflow: hidden; position: relative; }
+  .prog span::after { content: ""; position: absolute; inset: 0; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .6s var(--ease); }
+  .prog span.on::after { transform: scaleX(1); }
+  .skip { font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; transition: color .2s; }
+  .skip:hover { color: var(--ink); }
+  .opt { border: 1px solid var(--edge); border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; cursor: pointer; background: #fff; transition: border-color .2s, background .2s, transform .25s var(--ease), box-shadow .25s var(--ease); opacity: 0; transform: translateY(10px); animation: rise .5s var(--ease) forwards; }
+  .opt:hover { border-color: #D5D1CB; box-shadow: 0 10px 24px -18px rgba(11,19,36,.4); }
+  .opt:active { transform: scale(.985); }
+  .opt.sel { border-color: var(--ink); background: #FBFAF8; box-shadow: 0 0 0 1px var(--ink); }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #D5D1CB; margin-left: auto; flex-shrink: 0; position: relative; transition: border-color .2s; }
+  .dot::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--ink); transform: scale(0); transition: transform .3s var(--ease); }
+  .opt.sel .dot { border-color: var(--ink); }
+  .opt.sel .dot::after { transform: scale(1); }
+  .opt small { display: block; font-size: 13px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  .eyebrow { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+  .list { margin-top: 18px; border: 1px solid var(--edge); border-radius: 20px; overflow: hidden; }
+  .li { display: flex; gap: 12px; align-items: center; padding: 13px 16px; font-size: 14.5px; opacity: 0; transform: translateX(-8px); animation: slide .5s var(--ease) forwards; transition: background .2s; }
+  .li:hover { background: var(--field); }
+  .li + .li { border-top: 1px solid var(--edge); }
+  @keyframes slide { to { opacity: 1; transform: none; } }
+  .n { width: 26px; height: 26px; border-radius: 50%; background: #F4F2EF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .li span:last-child { margin-left: auto; color: var(--faint); font-size: 12.5px; }
+
+  /* ── Guardiões (mascotes) ── */
+  .pet { position: relative; display: block; pointer-events: none; }
+  .pet img { width: 100%; height: auto; display: block; animation: bob 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+  .pet::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,19,36,.16), transparent); animation: shadow 3.6s ease-in-out infinite; z-index: -1; }
+  .pet.glow-rose::before, .pet.glow-blue::before { content: ""; position: absolute; inset: 12% 14% 18%; border-radius: 50%; filter: blur(26px); z-index: -1; animation: glow 3.6s ease-in-out infinite; }
+  .pet.glow-rose::before { background: rgba(244,114,182,.28); }
+  .pet.glow-blue::before { background: rgba(77,124,254,.26); }
+  @keyframes bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.01); } }
+  @keyframes shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(.82); opacity: .6; } }
+  @keyframes glow { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .pet-in { opacity: 0; transform: translateY(16px) scale(.92); animation: petIn .9s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 90ms + 150ms); }
+  @keyframes petIn { to { opacity: 1; transform: none; } }
+  .pet.talking img { animation: talk .5s ease-in-out infinite alternate; }
+  @keyframes talk { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-2px) scaleY(1.03); } }
+  .pet.happy img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  @keyframes hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-18px) scale(1.06, .96); } 60% { transform: translateY(0) scale(.97, 1.03); } 100% { transform: translateY(0) scale(1); } }
+  .speaker { display: flex; align-items: flex-end; gap: 10px; }
+  .speaker .pet { width: 64px; flex-shrink: 0; margin-bottom: -6px; }
+  .speaker .chat { flex: 1; min-width: 0; }
+  .speaker .bub { max-width: 100%; }
+  .speaker .bub:first-child { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+  .float-heart { position: absolute; color: var(--rose); font-size: 14px; opacity: 0; animation: heartUp 2.8s ease-out infinite; }
+  @keyframes heartUp { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+
+  /* ── Guardiões: interações ── */
+  .pet-body { display: block; position: relative; pointer-events: auto; cursor: pointer; transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)); transition: transform .45s var(--ease), filter .3s; }
+  .pet.shy .pet-body { transform: scaleX(-1) rotate(-4deg) translateY(4px); filter: saturate(.85); }
+  .pet.nod .pet-body img { animation: nod .4s var(--ease) 1, bob 3.6s ease-in-out infinite .4s; }
+  @keyframes nod { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(4deg); } }
+  .pet.wiggle .pet-body img { animation: wiggle .6s ease-in-out 1, bob 3.6s ease-in-out infinite .6s; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+  .pet.shake .pet-body img { animation: shake .5s ease-in-out 1, bob 3.6s ease-in-out infinite .5s; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px) rotate(-3deg); } 40%, 80% { transform: translateX(6px) rotate(3deg); } }
+  .pet.spin .pet-body img { animation: spin .9s var(--ease) 1, bob 3.6s ease-in-out infinite .9s; }
+  @keyframes spin { 0% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16px) rotate(180deg) scale(1.05); } 100% { transform: translateY(0) rotate(360deg); } }
+  .pet.happy .pet-body img { animation: hop .7s var(--ease) 1, bob 3.6s ease-in-out infinite .7s; }
+  .pet-say { position: absolute; bottom: 92%; right: 38%; white-space: nowrap; background: #fff; border: 1px solid var(--edge); border-radius: 14px; border-bottom-right-radius: 4px; padding: 7px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink); box-shadow: 0 10px 22px -14px rgba(11,19,36,.45); opacity: 0; transform: translateY(6px) scale(.9); transform-origin: bottom right; transition: opacity .25s, transform .35s var(--ease); pointer-events: none; z-index: 5; }
+  .pet-say.show { opacity: 1; transform: none; }
+  .pet.say-right .pet-say { right: auto; left: 38%; border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; transform-origin: bottom left; }
+  .pet.say-top .pet-say { bottom: auto; top: -18px; right: auto; left: 50%; transform: translate(-50%, 6px) scale(.9); transform-origin: bottom center; border-bottom-right-radius: 14px; }
+  .pet.say-top .pet-say.show { transform: translate(-50%, 0); }
+  .burst { position: absolute; left: 50%; top: 30%; color: var(--rose); font-size: 14px; pointer-events: none; animation: burst 1.1s ease-out forwards; z-index: 4; }
+  @keyframes burst { 0% { opacity: 0; transform: translate(-50%, 0) scale(.4); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1) rotate(var(--r)); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ── Acesso ── */
+  .note { margin-top: 18px; border: 1px solid var(--edge); border-radius: 20px; padding: 16px; display: grid; gap: 12px; }
+  .note-row { display: flex; gap: 12px; align-items: center; font-size: 14.5px; opacity: 0; transform: translateX(-8px); animation: slide .5s var(--ease) forwards; }
+  .note-row .n { flex-shrink: 0; }
+  .note-row.done .n { background: var(--ink); color: #fff; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 8px 12px 8px 10px; border-radius: 999px; background: var(--field); border: 1px solid var(--edge); font-size: 14px; font-weight: 600; align-self: flex-start; }
+  .chip i { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-style: normal; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .resend { margin-top: 14px; text-align: center; font-size: 13.5px; color: var(--muted); }
+  .resend b { color: var(--ink); font-weight: 600; cursor: pointer; }
+  .resend b.wait { color: var(--faint); font-weight: 500; cursor: default; font-variant-numeric: tabular-nums; }
+  .hint { margin-top: 10px; font-size: 12.5px; color: var(--faint); text-align: center; line-height: 1.5; }
+
+  .stage { position: relative; height: 230px; margin-top: 8px; display: flex; align-items: flex-end; justify-content: center; }
+  .stage .pet { width: 160px; }
+  .env { position: absolute; left: 50%; top: 96px; margin-left: -20px; z-index: 6; opacity: 0; pointer-events: none; }
+  .env.fly { animation: envFly 1.6s var(--ease) forwards; }
+  @keyframes envFly {
+    0% { opacity: 0; transform: translate(0, 30px) scale(.5) rotate(0); }
+    15% { opacity: 1; transform: translate(0, 0) scale(1) rotate(-6deg); }
+    55% { opacity: 1; transform: translate(70px, -70px) scale(.9) rotate(10deg); }
+    100% { opacity: 0; transform: translate(150px, -150px) scale(.5) rotate(18deg); }
+  }
+  .env.wait { opacity: 1; animation: envBob 2.4s ease-in-out infinite; }
+  @keyframes envBob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
+  .env-mini { position: absolute; z-index: 6; opacity: 0; pointer-events: none; }
+
+  .meter { display: flex; gap: 5px; margin-top: 10px; }
+  .meter span { flex: 1; height: 4px; border-radius: 9px; background: #EEEBE6; position: relative; overflow: hidden; }
+  .meter span::after { content: ""; position: absolute; inset: 0; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease); }
+  .meter span.on::after { transform: scaleX(1); }
+  .meter-label { margin-top: 7px; font-size: 12.5px; color: var(--muted); min-height: 16px; }
+  .match { margin-top: 8px; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; min-height: 16px; }
+  .match.ok { color: var(--ink); }
+  .match .tick { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #D5D1CB; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; transition: background .25s, border-color .25s, color .25s; color: transparent; }
+  .match.ok .tick { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .redirect { margin-top: 18px; height: 4px; border-radius: 9px; background: #EEEBE6; overflow: hidden; }
+  .redirect span { display: block; height: 100%; background: var(--ink); transform-origin: left; transform: scaleX(0); animation: fill 3.2s linear forwards 1.2s; }
+  @keyframes fill { to { transform: scaleX(1); } }
+  .center { text-align: center; }
+  .field-wrap { position: relative; }
+  .field-wrap .field { padding-right: 50px; }
+  .eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--muted); cursor: pointer; font-size: 15px; }
+
+  .small b.quiet { color: var(--muted); font-weight: 500; }
+  .small b.quiet:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+  <div class="wrap"><div class="cap">1 · Entrar com link <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="back in" style="--d:0">‹</div>
+    <div class="row" style="margin-top:14px;align-items:flex-end">
+      <h1 class="in" style="--d:1;max-width:200px">Entrar sem senha</h1>
+      <div class="pet glow-blue pet-in" data-pet="magic" style="--d:2;width:100px;margin-right:-6px"><img src="/src/features/entry/assets/guardiao.webp" alt="" /><span class="env-mini"><svg viewBox="0 0 40 30" width="40" height="30" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="27" rx="5" fill="#fff" stroke="#0B1324" stroke-width="2"/><path d="M3 4.5 20 17 37 4.5" fill="none" stroke="#0B1324" stroke-width="2" stroke-linejoin="round"/><circle cx="31" cy="22" r="3.2" fill="#E5466D"/></svg></span></div>
+    </div>
+    <p class="sub in" style="--d:2">Escreve o teu email e eu levo-te um link para entrares com um toque.</p>
+    <div class="stack" style="margin-top:26px">
+      <div class="in" style="--d:3"><div class="label">Email</div><input class="field" data-role="email" placeholder="nome@email.com" /></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn in" data-act="send-magic" style="--d:5">Enviar link <span class="arrow">→</span></div>
+    <p class="small in" style="--d:6;margin-top:16px"><b class="quiet">Entrar com senha</b></p>
+  </div></div>
+  <div class="wrap"><div class="cap">2 · Link enviado <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="back in" style="--d:0">‹</div>
+    <div class="stage">
+      <div class="pet glow-blue pet-in say-right" data-pet="sent" style="--d:1"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+      <span class="env" data-env="fly"><svg viewBox="0 0 40 30" width="40" height="30" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="27" rx="5" fill="#fff" stroke="#0B1324" stroke-width="2"/><path d="M3 4.5 20 17 37 4.5" fill="none" stroke="#0B1324" stroke-width="2" stroke-linejoin="round"/><circle cx="31" cy="22" r="3.2" fill="#E5466D"/></svg></span>
+    </div>
+    <h1 class="in center" style="--d:3;margin-top:10px">Vê o teu email</h1>
+    <p class="sub in center" style="--d:4">Deixei um link na tua caixa de entrada. Toca nele e entras logo.</p>
+    <div class="chip in" style="--d:5;align-self:center"><i>A</i>ana@gmail.com</div>
+    <div class="spacer"></div>
+    <div class="btn in" style="--d:6">Abrir o Gmail <span class="arrow">→</span></div>
+    <p class="resend in" style="--d:7">Não chegou? <b class="wait" data-countdown="30">Reenviar em 0:30</b></p>
+    <p class="small in" style="--d:8;margin-top:10px"><b class="quiet">Usar outro email</b></p>
+  </div></div>
+  <div class="wrap"><div class="cap">3 · Esqueci a senha <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="back in" style="--d:0">‹</div>
+    <div class="row" style="margin-top:14px;align-items:flex-end">
+      <h1 class="in" style="--d:1;max-width:200px">Esqueceste a senha?</h1>
+      <div class="pet glow-blue pet-in" data-pet="forgot" style="--d:2;width:100px;margin-right:-6px"><img src="/src/features/entry/assets/guardiao.webp" alt="" /><span class="env-mini"><svg viewBox="0 0 40 30" width="40" height="30" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="27" rx="5" fill="#fff" stroke="#0B1324" stroke-width="2"/><path d="M3 4.5 20 17 37 4.5" fill="none" stroke="#0B1324" stroke-width="2" stroke-linejoin="round"/><circle cx="31" cy="22" r="3.2" fill="#E5466D"/></svg></span></div>
+    </div>
+    <p class="sub in" style="--d:2">Acontece a todos. Diz-me o email da conta e mando-te um link para criares uma nova.</p>
+    <div class="stack" style="margin-top:26px">
+      <div class="in" style="--d:3"><div class="label">Email da conta</div><input class="field" data-role="email" placeholder="nome@email.com" /></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn in" data-act="send-forgot" style="--d:5">Enviar link <span class="arrow">→</span></div>
+    <p class="small in" style="--d:6;margin-top:16px">Lembraste-te? <b>Entrar</b></p>
+  </div></div>
+  <div class="wrap"><div class="cap">4 · Link de recuperação <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="back in" style="--d:0">‹</div>
+    <div class="row" style="margin-top:14px;align-items:flex-end">
+      <h1 class="in" style="--d:1;max-width:210px">Está a caminho</h1>
+      <div class="pet glow-blue pet-in" data-pet="recover" style="--d:2;width:100px;margin-right:-6px"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+    </div>
+    <p class="sub in" style="--d:2">Enviei o link para <b style="color:var(--ink);font-weight:600">ana@gmail.com</b>.</p>
+    <div class="note">
+      <div class="note-row done" style="animation-delay:.5s"><span class="n">✓</span>Link enviado</div>
+      <div class="note-row" style="animation-delay:.65s"><span class="n">2</span>Abre o email e toca no link</div>
+      <div class="note-row" style="animation-delay:.8s"><span class="n">3</span>Cria uma senha nova</div>
+    </div>
+    <p class="hint in" style="--d:5">Não está lá? Espreita o spam ou as promoções.</p>
+    <div class="spacer"></div>
+    <div class="btn in" style="--d:6">Abrir o Gmail <span class="arrow">→</span></div>
+    <p class="resend in" style="--d:7">Não chegou? <b class="wait" data-countdown="30">Reenviar em 0:30</b></p>
+  </div></div>
+  <div class="wrap"><div class="cap">5 · Nova senha <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="row" style="margin-top:6px;align-items:flex-end">
+      <h1 class="in" style="--d:1;max-width:200px">Cria uma senha nova</h1>
+      <div class="pet glow-blue pet-in" data-pet="newpass" style="--d:2;width:100px;margin-right:-6px"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+    </div>
+    <p class="sub in" style="--d:2">Escolhe uma que só tu saibas. Eu prometo não ver.</p>
+    <div class="stack" style="margin-top:22px">
+      <div class="in" style="--d:3">
+        <div class="label">Nova senha</div>
+        <div class="field-wrap"><input class="field" data-role="newpass" type="password" placeholder="Mínimo 8 caracteres" /><span class="eye" data-eye>👁</span></div>
+        <div class="meter"><span></span><span></span><span></span><span></span></div>
+        <div class="meter-label" data-meter-label></div>
+      </div>
+      <div class="in" style="--d:4">
+        <div class="label">Confirmar</div>
+        <input class="field" data-role="confirm" type="password" placeholder="Repete a senha" />
+        <div class="match" data-match><span class="tick">✓</span><span>As duas senhas têm de ser iguais</span></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn off in" data-act="save-pass" style="--d:6">Guardar senha <span class="arrow">→</span></div>
+  </div></div>
+  <div class="wrap"><div class="cap">6 · Senha alterada <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="stage" style="height:270px;margin-top:40px">
+      <div class="pet glow-blue pet-in say-right" data-pet="done" style="--d:0;width:180px"><img src="/src/features/entry/assets/guardiao.webp" alt="" /></div>
+    </div>
+    <h1 class="in center" style="--d:3;margin-top:14px">Senha nova guardada</h1>
+    <p class="sub in center" style="--d:4">A tua conta está segura. Vou levar-te de volta para entrares.</p>
+    <div class="redirect in" style="--d:5"><span></span></div>
+    <div class="spacer"></div>
+    <div class="btn in" style="--d:6">Entrar agora <span class="arrow">→</span></div>
+  </div></div>
+  <div class="wrap"><div class="cap">7 · Confirmar email <button onclick="replay(this)">repetir</button></div><div class="phone">
+    <div class="stage" style="margin-top:20px">
+      <div class="pet glow-rose pet-in say-right" data-pet="confirm" style="--d:1;width:150px"><img src="/src/features/entry/assets/faisca.webp" alt="" /></div>
+      <span class="env wait" style="top:40px;margin-left:44px"><svg viewBox="0 0 40 30" width="40" height="30" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="27" rx="5" fill="#fff" stroke="#0B1324" stroke-width="2"/><path d="M3 4.5 20 17 37 4.5" fill="none" stroke="#0B1324" stroke-width="2" stroke-linejoin="round"/><circle cx="31" cy="22" r="3.2" fill="#E5466D"/></svg></span>
+    </div>
+    <h1 class="in center" style="--d:3;margin-top:10px">Só falta confirmar</h1>
+    <p class="sub in center" style="--d:4">Enviei um email para confirmares a tua conta. Toca no link e o vosso espaço abre.</p>
+    <div class="chip in" style="--d:5;align-self:center"><i>A</i>ana@gmail.com</div>
+    <div class="spacer"></div>
+    <div class="btn in" style="--d:6">Abrir o Gmail <span class="arrow">→</span></div>
+    <p class="resend in" style="--d:7">Não chegou? <b class="wait" data-countdown="45">Reenviar em 0:45</b></p>
+    <p class="small in" style="--d:8;margin-top:10px">Já confirmaste? <b>Entrar</b></p>
+  </div></div>
+
+<script>
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = (ms) => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+
+  // A app "escreve": mostra os pontinhos e depois a mensagem.
+  async function play(chat) {
+    const script = JSON.parse(chat.dataset.script || "[]");
+    const pet = chat.closest(".phone").querySelector(".talker");
+    chat.innerHTML = "";
+    await sleep(Number(chat.dataset.start || 0));
+    for (const [who, text] of script) {
+      if (who !== "me") {
+        pet?.classList.add("talking");
+        const t = document.createElement("div");
+        t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
+        chat.appendChild(t);
+        await sleep(Math.min(1100, 380 + text.length * 14));
+        t.remove();
+        pet?.classList.remove("talking");
+      } else {
+        await sleep(500);
+      }
+      const b = document.createElement("div");
+      b.className = "bub " + (who === "q" ? "app big-q" : who);
+      b.textContent = text;
+      chat.appendChild(b);
+      await sleep(260);
+    }
+  }
+
+  function countUp(el) {
+    const to = Number(el.dataset.count); const t0 = performance.now(); const dur = reduced ? 0 : 1400;
+    const tick = (now) => {
+      const p = dur ? Math.min(1, (now - t0) / dur) : 1;
+      el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    setTimeout(() => requestAnimationFrame(tick), reduced ? 0 : 500);
+  }
+
+  var start = function (phone) {
+    phone.querySelectorAll(".chat[data-script]").forEach(play);
+    phone.querySelectorAll("[data-count]").forEach(countUp);
+  }
+
+  // Ondinha ao tocar nos botões.
+  document.addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest(".btn"); if (!btn || reduced) return;
+    const r = btn.getBoundingClientRect(); const s = Math.max(r.width, r.height) / 2;
+    const span = document.createElement("span");
+    span.className = "ripple";
+    span.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+    btn.appendChild(span); setTimeout(() => span.remove(), 650);
+  });
+
+  // Escolher uma opção: a app responde e o passo fica completo.
+  function pick(opt) {
+    const phone = opt.closest(".phone");
+    phone.querySelectorAll(".opt").forEach(o => o.classList.toggle("sel", o === opt));
+    phone.querySelector(".step4").classList.add("on");
+    phone.querySelector(".conclude").classList.remove("off");
+    const reply = phone.querySelector(".reply");
+    const solo = opt.textContent.includes("solo");
+    reply.dataset.script = JSON.stringify([["me", solo ? "A solo" : "A dois"], ["app", solo ? "Perfeito, este espaço é só teu." : "Lindo. Depois convidas o teu par com um código."]]);
+    reply.dataset.start = "100";
+    const pet = phone.querySelector(".talker");
+    if (solo) react(pet, "nod");
+    else { react(pet, "happy"); hearts(pet, 10); }
+    play(reply);
+  }
+
+  // Repetir a animação de um ecrã.
+  function replay(btn) {
+    const wrap = btn.closest(".wrap"); const phone = wrap.querySelector(".phone");
+    const clone = phone.cloneNode(true);
+    clone.querySelectorAll(".sel").forEach(o => o.classList.remove("sel"));
+    clone.querySelectorAll(".reply").forEach(r => { r.innerHTML = ""; delete r.dataset.script; });
+    clone.querySelectorAll(".step4").forEach(s => s.classList.remove("on"));
+    clone.querySelectorAll(".conclude").forEach(c => c.classList.add("off"));
+    phone.replaceWith(clone); start(clone); wirePets(clone);
+  }
+
+  // ── Guardiões que reagem ─────────────────────────────────────────────────
+  const $pet = (root, name) => root.querySelector(`[data-pet="${name}"]`);
+
+  function react(pet, cls) {
+    if (!pet) return;
+    ["nod", "wiggle", "shake", "spin", "happy"].forEach(c => pet.classList.remove(c));
+    void pet.offsetWidth;
+    pet.classList.add(cls);
+  }
+
+  function say(pet, text, ms = 2200) {
+    if (!pet) return;
+    let b = pet.querySelector(".pet-say");
+    if (!b) { b = document.createElement("div"); b.className = "pet-say"; pet.appendChild(b); }
+    b.textContent = text;
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+    clearTimeout(b._t);
+    if (ms) b._t = setTimeout(() => b.classList.remove("show"), ms);
+  }
+
+  function hearts(pet, n = 7) {
+    if (!pet || reduced) return;
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement("span");
+      h.className = "burst"; h.textContent = "♥";
+      const a = (Math.PI * 2 * i) / n + Math.random() * .6;
+      h.style.setProperty("--dx", `${Math.cos(a) * (40 + Math.random() * 30)}px`);
+      h.style.setProperty("--dy", `${-30 - Math.random() * 50}px`);
+      h.style.setProperty("--r", `${(Math.random() - .5) * 60}deg`);
+      h.style.fontSize = `${10 + Math.random() * 8}px`;
+      h.style.animationDelay = `${i * 30}ms`;
+      pet.appendChild(h); setTimeout(() => h.remove(), 1300);
+    }
+  }
+
+  function wirePets(phone) {
+    phone.querySelectorAll("[data-x]").forEach(el => el.classList.add(el.dataset.x));
+    phone.querySelectorAll(".pet").forEach(pet => {
+      const img = pet.querySelector("img");
+      if (img && !img.parentElement.classList.contains("pet-body")) {
+        const body = document.createElement("span"); body.className = "pet-body";
+        img.replaceWith(body); body.appendChild(img);
+      }
+      const body = pet.querySelector(".pet-body");
+      // Tocar: pulo e corações. Passar por cima: abana e diz olá.
+      body.addEventListener("click", () => { react(pet, "happy"); hearts(pet); say(pet, ["Olá! 💕", "Aqui estou!", "Hehe 😊"][Math.floor(Math.random() * 3)]); });
+      body.addEventListener("mouseenter", () => { if (!pet.classList.contains("shy")) react(pet, "wiggle"); });
+    });
+
+    // Seguir o dedo / rato: inclinam-se para onde estás.
+    phone.addEventListener("pointermove", (e) => {
+      if (reduced) return;
+      phone.querySelectorAll(".pet-body").forEach(body => {
+        if (body.closest(".pet").classList.contains("shy")) return;
+        const r = body.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) / phone.clientWidth;
+        const dy = (e.clientY - (r.top + r.height / 2)) / phone.clientHeight;
+        body.style.setProperty("--rot", `${Math.max(-10, Math.min(10, dx * 26))}deg`);
+        body.style.setProperty("--tx", `${Math.max(-6, Math.min(6, dx * 18))}px`);
+        body.style.setProperty("--ty", `${Math.max(-4, Math.min(4, dy * 10))}px`);
+      });
+    });
+    phone.addEventListener("pointerleave", () => phone.querySelectorAll(".pet-body").forEach(b => { b.style.setProperty("--rot", "0deg"); b.style.setProperty("--tx", "0px"); b.style.setProperty("--ty", "0px"); }));
+
+    // Criar conta
+    const signup = $pet(phone, "signup");
+    if (signup) {
+      const name = phone.querySelector('[data-role="name"]');
+      const email = phone.querySelector('[data-role="email"]');
+      const pass = phone.querySelector('[data-role="password"]');
+      name?.addEventListener("focus", () => say(signup, "Como te chamas? 😊"));
+      name?.addEventListener("input", () => { react(signup, "nod"); const v = name.value.trim().split(" ")[0]; say(signup, v ? `Olá, ${v}! 👋` : "Como te chamas? 😊", 0); });
+      email?.addEventListener("input", () => react(signup, "nod"));
+      email?.addEventListener("blur", () => {
+        if (!email.value) return;
+        if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value)) { react(signup, "happy"); say(signup, "Perfeito ✓"); }
+        else { react(signup, "shake"); say(signup, "Hmm, falta o @?"); }
+      });
+      pass?.addEventListener("focus", () => { signup.classList.add("shy"); say(signup, "Não estou a espreitar 🙈", 0); });
+      pass?.addEventListener("blur", () => { signup.classList.remove("shy"); say(signup, pass.value.length >= 8 ? "Senha segura 💪" : "Mais umas letrinhas?"); });
+      pass?.addEventListener("input", () => { if (pass.value.length === 8) say(signup, "Agora sim, segura 🔒", 0); });
+    }
+
+    // Entrar
+    const login = $pet(phone, "login");
+    if (login) {
+      setTimeout(() => { react(login, "wiggle"); say(login, "Bom ver-te, Ana 💙"); }, reduced ? 0 : 1100);
+      const pass = phone.querySelector('[data-role="password"]');
+      pass?.addEventListener("focus", () => { login.classList.add("shy"); say(login, "Prometo não ver 🙈", 0); });
+      pass?.addEventListener("blur", () => { login.classList.remove("shy"); say(login, "Pronto, já podes 😄"); });
+    }
+
+    // Introdução: de vez em quando diz alguma coisa
+    const intro = $pet(phone, "intro");
+    if (intro && !reduced) {
+      const lines = ["Olá! 👋", "Sou a Faísca", "Cuido da vossa chama 🔥", "Toca-me 💕"];
+      let k = 0;
+      clearInterval(phone._idle);
+      setTimeout(() => say(intro, lines[0]), 1800);
+      phone._idle = setInterval(() => { k = (k + 1) % lines.length; react(intro, "wiggle"); say(intro, lines[k]); }, 5200);
+    }
+  }
+
+
+  // ── Acesso ───────────────────────────────────────────────────────────────
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  function countdown(el) {
+    let s = Number(el.dataset.countdown);
+    clearInterval(el._t);
+    el.classList.add("wait"); el.textContent = `Reenviar em ${fmt(s)}`;
+    el._t = setInterval(() => {
+      s -= 1;
+      if (s <= 0) { clearInterval(el._t); el.classList.remove("wait"); el.textContent = "Reenviar"; return; }
+      el.textContent = `Reenviar em ${fmt(s)}`;
+    }, 1000);
+    el.onclick = () => {
+      if (el.classList.contains("wait")) return;
+      const p = el.closest(".phone").querySelector(".pet");
+      react(p, "happy"); say(p, "Enviei outra vez 💌"); fly(el.closest(".phone"));
+      countdown(el);
+    };
+  }
+
+  function fly(phone) {
+    const env = phone.querySelector('[data-env="fly"]');
+    if (!env || reduced) return;
+    env.classList.remove("fly"); void env.offsetWidth; env.classList.add("fly");
+  }
+
+  // Envelope sai do Guardião quando se toca em "Enviar link".
+  function flyMini(pet) {
+    const env = pet?.querySelector(".env-mini"); if (!env || reduced) return;
+    env.style.cssText = "left:30%;top:30%";
+    env.classList.remove("fly"); void env.offsetWidth; env.classList.add("env", "fly");
+    setTimeout(() => env.classList.remove("env", "fly"), 1700);
+  }
+
+  function strength(v) {
+    let n = 0;
+    if (v.length >= 8) n++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) n++;
+    if (/\d/.test(v)) n++;
+    if (/[^A-Za-z0-9]/.test(v) || v.length >= 12) n++;
+    return v ? Math.max(1, n) : 0;
+  }
+
+  function wireAccess(phone) {
+    phone.querySelectorAll("[data-countdown]").forEach(countdown);
+
+    // Ecrãs com email: o Guardião acena enquanto escreves e confirma no fim.
+    phone.querySelectorAll('[data-role="email"]').forEach(email => {
+      const p = phone.querySelector(".pet");
+      email.addEventListener("input", () => react(p, "nod"));
+      email.addEventListener("blur", () => {
+        if (!email.value) return;
+        if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value)) { react(p, "happy"); say(p, "Perfeito ✓"); }
+        else { react(p, "shake"); say(p, email.value.includes("@") ? "Hmm, falta alguma coisa?" : "Hmm, falta o @?"); }
+      });
+    });
+
+    // Link enviado: o envelope voa e o Guardião confirma.
+    const sent = $pet(phone, "sent");
+    if (sent) setTimeout(() => { fly(phone); react(sent, "happy"); say(sent, "Já está na tua caixa 💌", 2600); }, reduced ? 0 : 900);
+
+    const recover = $pet(phone, "recover");
+    if (recover) setTimeout(() => { react(recover, "wiggle"); say(recover, "Vai lá ver 💌"); }, reduced ? 0 : 1000);
+
+    const confirm = $pet(phone, "confirm");
+    if (confirm) setTimeout(() => { react(confirm, "wiggle"); say(confirm, "Estou à espera de ti ✨", 2600); }, reduced ? 0 : 1000);
+
+    const done = $pet(phone, "done");
+    if (done) setTimeout(() => { react(done, "spin"); hearts(done, 12); say(done, "Tudo seguro 🔒", 2800); }, reduced ? 0 : 700);
+
+    // Nova senha: medidor, confirmação e o Guardião de costas.
+    const np = $pet(phone, "newpass");
+    if (np) {
+      const pass = phone.querySelector('[data-role="newpass"]');
+      const conf = phone.querySelector('[data-role="confirm"]');
+      const bars = phone.querySelectorAll(".meter span");
+      const label = phone.querySelector("[data-meter-label]");
+      const match = phone.querySelector("[data-match]");
+      const save = phone.querySelector('[data-act="save-pass"]');
+      const words = ["", "Fraca", "Razoável", "Boa", "Forte"];
+      let last = 0;
+      const update = () => {
+        const s = strength(pass.value);
+        bars.forEach((b, i) => b.classList.toggle("on", i < s));
+        label.textContent = words[s];
+        if (s > last && s === 4) { say(np, "Essa é forte 💪", 0); }
+        last = s;
+        const ok = pass.value.length >= 8 && pass.value === conf.value;
+        const was = match.classList.contains("ok");
+        match.classList.toggle("ok", ok);
+        match.lastElementChild.textContent = ok ? "As senhas coincidem" : "As duas senhas têm de ser iguais";
+        if (ok && !was) { react(np, "happy"); hearts(np, 5); }
+        save.classList.toggle("off", !ok);
+      };
+      [pass, conf].forEach(f => {
+        f.addEventListener("focus", () => { np.classList.add("shy"); say(np, "Não estou a ver 🙈", 0); });
+        f.addEventListener("blur", () => { np.classList.remove("shy"); say(np, match.classList.contains("ok") ? "Perfeito ✓" : "Pronto, já podes 😄"); });
+        f.addEventListener("input", update);
+      });
+      phone.querySelector("[data-eye]").addEventListener("click", () => {
+        const show = pass.type === "password";
+        pass.type = conf.type = show ? "text" : "password";
+        np.classList.remove("shy");
+        say(np, show ? "Ups, agora vejo 👀" : "Já não vejo 🙈");
+      });
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]"); if (!act) return;
+    const phone = act.closest(".phone");
+    const p = phone.querySelector(".pet");
+    if (act.dataset.act === "send-magic" || act.dataset.act === "send-forgot") {
+      react(p, "spin"); flyMini(p); say(p, "A caminho! 💌");
+    }
+    if (act.dataset.act === "save-pass" && !act.classList.contains("off")) {
+      react(p, "spin"); hearts(p, 10); say(p, "Guardada 🔒");
+    }
+  });
+
+  // replay() do ficheiro base chama start() e wirePets(); ligamos o resto também.
+  const _start = start;
+  start = (phone) => { _start(phone); setTimeout(() => wireAccess(phone), 0); };
+  document.querySelectorAll(".phone").forEach(p => { start(p); wirePets(p); });
+</script>
+</body>
+</html>
