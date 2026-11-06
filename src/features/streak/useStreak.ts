@@ -24,6 +24,7 @@ export interface StreakState {
   shieldsRemaining: number;
   shieldUsedToday: boolean;
   shieldsPurchasedThisMonth: number;
+  recovery: { days: number; deadline: string; cost: number } | null;
 }
 
 const EMPTY: StreakState = {
@@ -42,6 +43,7 @@ const EMPTY: StreakState = {
   shieldsRemaining: 0,
   shieldUsedToday: false,
   shieldsPurchasedThisMonth: 0,
+  recovery: null,
 };
 
 // ─────────────────────────────────────────────
@@ -112,6 +114,7 @@ function buildState(
     shieldsRemaining:         raw.shields_remaining ?? 0,
     shieldUsedToday:          raw.shield_used_today ?? false,
     shieldsPurchasedThisMonth: raw.shields_purchased_this_month ?? 0,
+    recovery: raw.recovery ?? null,
   };
 }
 
