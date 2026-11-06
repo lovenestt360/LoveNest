@@ -7,6 +7,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Tipo de aviso → interruptor nas Definições. Os outros tipos não têm interruptor.
+const PREF_FOR_TYPE: Record<string, string> = {
+  chat: "chat",
+  humor: "humor",
+  tarefas: "tarefas",
+  plano: "tarefas",
+  agenda: "agenda",
+  routine: "agenda",
+  memorias: "memorias",
+  oracao: "oracao",
+  conflitos: "conflitos",
+  ciclo_par: "ciclo_par",
+};
+
 // ── Edge Function ────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -180,8 +194,25 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: subs, error: subsError } = await query;
+    const { data: allSubs, error: subsError } = await query;
     if (subsError) throw subsError;
+
+    // Respeita os interruptores de quem recebe. Se a leitura falhar, envia na mesma.
+    let subs = allSubs;
+    const prefKey = typeof type === "string" ? PREF_FOR_TYPE[type] : undefined;
+    if (prefKey && !is_test && !broadcast && !audience && subs && subs.length > 0) {
+      const { data: muted, error: mutedError } = await adminClient
+        .from("push_preferences")
+        .select("user_id")
+        .in("user_id", [...new Set(subs.map((s: any) => s.user_id))])
+        .contains("muted", [prefKey]);
+      if (mutedError) {
+        await logInternal("PREFS_READ_FAILED", { message: mutedError.message });
+      } else {
+        const mutedUsers = new Set((muted ?? []).map((m: any) => m.user_id));
+        subs = subs.filter((s: any) => !mutedUsers.has(s.user_id));
+      }
+    }
 
     await logInternal("SUBS_FOUND", { count: subs?.length ?? 0 });
 

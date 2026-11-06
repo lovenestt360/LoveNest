@@ -7,32 +7,10 @@ import { useLocation } from "react-router-dom";
 import { getFirebaseMessaging, getToken, onMessage } from "@/lib/firebase";
 import { savePushToken } from "@/lib/pushToken";
 import { CARE_EVENT, isCareDone, isCareSeen, parseCare, pendingCare } from "@/features/cycle/cycleCare";
+import { readNotifPrefs as getNotifPrefs, syncNotifPrefs } from "@/lib/notificationPrefs";
 
 async function upsertFcmToken(fcmToken: string, userId: string, spaceId: string) {
   await savePushToken(fcmToken, userId, spaceId);
-}
-
-const NOTIF_KEY = "lovenest_notif_prefs";
-const defaultPrefs = {
-  chat: true,
-  humor: true,
-  tarefas: true,
-  agenda: true,
-  memorias: true,
-  oracao: true,
-  conflitos: true,
-  ciclo_lembrete: false,
-  ciclo_menstruacao: false,
-  ciclo_fertil: false,
-  ciclo_par: false,
-};
-
-function getNotifPrefs() {
-  try {
-    const raw = localStorage.getItem(NOTIF_KEY);
-    if (raw) return { ...defaultPrefs, ...JSON.parse(raw) };
-  } catch { }
-  return { ...defaultPrefs };
 }
 
 /**
@@ -56,6 +34,10 @@ export function useAppNotifications() {
   const locationRef = useRef(location.pathname);
   // Incrementar força o useEffect do canal a recriar a subscrição Realtime
   const [channelKey, setChannelKey] = useState(0);
+
+  useEffect(() => {
+    if (user?.id) syncNotifPrefs(user.id);
+  }, [user?.id]);
 
   useEffect(() => {
     locationRef.current = location.pathname;

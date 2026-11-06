@@ -48,6 +48,7 @@ import { savePushToken } from "@/lib/pushToken";
 import { usePartnerProfile } from "@/hooks/usePartnerProfile";
 import type { Tables } from "@/integrations/supabase/types";
 import { toJpegIfHeic } from "@/lib/heic";
+import { PUSH_PREF_KEYS, readNotifPrefs, saveNotifPrefs, syncNotifPrefs, writeNotifPrefs } from "@/lib/notificationPrefs";
 
 interface Profile {
   display_name: string | null;
@@ -73,31 +74,6 @@ const PRIMARY_GOAL_OPTIONS = [
   { value: "growth", label: "Crescimento pessoal" },
   { value: "explore", label: "Explorar a aplicação" },
 ];
-
-const NOTIF_KEY = "lovenest_notif_prefs";
-const defaultPrefs = {
-  chat: true,
-  humor: true,
-  tarefas: true,
-  agenda: true,
-  memorias: true,
-  oracao: true,
-  conflitos: true,
-  ciclo_lembrete: false,
-  ciclo_menstruacao: false,
-  ciclo_fertil: false,
-  ciclo_par: false,
-};
-
-function loadPrefs(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(NOTIF_KEY);
-    return raw ? { ...defaultPrefs, ...JSON.parse(raw) } : { ...defaultPrefs };
-  } catch {
-    return { ...defaultPrefs };
-  }
-}
-
 
 // Sub-componente isolado — só montado quando a secção de notificações está visível.
 // Mantém o hook useLocationSharing fora do ciclo de vida da Settings completa.
@@ -152,7 +128,12 @@ export default function Settings() {
   const [referralCode, setReferralCode] = useState("");
   const [houseInviteCode, setHouseInviteCode] = useState("");
 
-  const [notifPrefs, setNotifPrefs] = useState(loadPrefs);
+  const [notifPrefs, setNotifPrefs] = useState(readNotifPrefs);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    syncNotifPrefs(user.id).then((prefs) => { if (prefs) setNotifPrefs(prefs); });
+  }, [user?.id]);
 
   // Personalização (Onboarding V2)
   const [countryCode, setCountryCode] = useState<string | null>(null);
@@ -504,23 +485,33 @@ export default function Settings() {
   const CICLO_NOTIF_KEYS = ["ciclo_lembrete", "ciclo_menstruacao", "ciclo_fertil"];
 
   const toggleNotif = (key: string) => {
-    setNotifPrefs((prev) => {
-      const newEnabled = !prev[key];
-      const next = { ...prev, [key]: newEnabled };
-      localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
-      // Sincroniza prefs de ciclo com Supabase para o backend poder ler
-      if (CICLO_NOTIF_KEYS.includes(key) && user) {
-        supabase.from("notification_settings" as any).upsert({
-          user_id: user.id,
-          category: key,
-          enabled: newEnabled,
-          preferred_hour: preferredHour,
-        }, { onConflict: "user_id,category" }).then(({ error }: any) => {
-          if (error) console.error("ciclo notif sync:", error);
-        });
-      }
-      return next;
-    });
+    const wasEnabled = notifPrefs[key];
+    const next = { ...notifPrefs, [key]: !wasEnabled };
+    setNotifPrefs(next);
+    writeNotifPrefs(next);
+    if (!user) return;
+
+    // Sincroniza prefs de ciclo com Supabase para o backend poder ler
+    if (CICLO_NOTIF_KEYS.includes(key)) {
+      supabase.from("notification_settings" as any).upsert({
+        user_id: user.id,
+        category: key,
+        enabled: !wasEnabled,
+        preferred_hour: preferredHour,
+      }, { onConflict: "user_id,category" }).then(({ error }: any) => {
+        if (error) console.error("ciclo notif sync:", error);
+      });
+    }
+
+    if (PUSH_PREF_KEYS.includes(key)) {
+      saveNotifPrefs(user.id, next).then((saved) => {
+        if (saved) return;
+        const back = { ...readNotifPrefs(), [key]: wasEnabled };
+        setNotifPrefs(back);
+        writeNotifPrefs(back);
+        toast({ title: "Não foi possível guardar", description: "Tenta outra vez.", variant: "destructive" });
+      });
+    }
   };
 
   const handleEnablePush = async () => {
