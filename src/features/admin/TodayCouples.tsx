@@ -144,7 +144,7 @@ export function TodayView({ data, adminName, onOpenReceipt, onApprove, onReview,
 /* ═══════════════ Casais ═══════════════ */
 
 type Filter = "all" | "paid" | "trial" | "none" | "solo";
-type Action = "change" | "renew" | "extend" | "remove" | "suspend" | "removeTrial" | null;
+type Action = "change" | "renew" | "extend" | "remove" | "suspend" | "removeTrial" | "giveTrial" | null;
 type SuspendReason = "subscription" | "irregular";
 
 export function CouplesView({ data, initialId, onChanged }: { data: AdminData; initialId?: string | null; onChanged: () => void }) {
@@ -281,6 +281,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
               <button className={GHOST} onClick={() => open("renew")}>Renovar</button>
               {status === "paid" && endsAt && <button className={GHOST} onClick={() => open("extend")}>Prolongar</button>}
               {status === "paid" && <button className={GHOST} onClick={() => open("remove")}>Remover plano</button>}
+              {status !== "paid" && <button className={GHOST} onClick={() => open("giveTrial")}>{status === "trial" ? "Prolongar experiência" : "Dar experiência"}</button>}
               {status === "trial" && <button className={GHOST} onClick={() => open("removeTrial")}>Remover experiência</button>}
               {h.is_suspended ? (
                 <button className={GHOST} disabled={busy}
@@ -302,7 +303,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[18px] font-bold tracking-[-0.02em]">
-                  {action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar sem pagamento" : action === "suspend" ? "Suspender casa" : action === "removeTrial" ? "Remover a experiência?" : "Remover o plano?"}
+                  {action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar sem pagamento" : action === "suspend" ? "Suspender casa" : action === "removeTrial" ? "Remover a experiência?" : action === "giveTrial" ? (status === "trial" ? "Prolongar a experiência" : "Dar experiência") : "Remover o plano?"}
                 </p>
                 <p className="mt-0.5 text-[12.5px] text-[#7A7F8C]">
                   {action === "renew" ? "Para quando o casal pagou por fora (ex.: pelo WhatsApp)" : action === "extend" ? "Uma oferta: compensar uma falha, agradecer, promoção" : `${coupleName(h)} · ${subtitle(h)}`}
@@ -335,7 +336,7 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
                 </div>
               </>
             )}
-            {action === "extend" && (
+            {(action === "extend" || action === "giveTrial") && (
               <>
                 <p className="mb-2 mt-4 text-[12.5px] font-semibold text-[#7A7F8C]">Mais quanto tempo</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -381,7 +382,12 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
             )}
 
             {/* Resumo */}
-            {action !== "remove" && action !== "suspend" && action !== "removeTrial" && (
+            {action === "giveTrial" && (
+              <div className="mt-4 rounded-[14px] bg-[#F7F5F2] px-3.5 py-3 text-[13.5px] leading-relaxed dark:bg-muted">
+                Todas as funções abertas até <b>{format(addDays(h.trial_ends_at && new Date(h.trial_ends_at).getTime() > Date.now() ? new Date(h.trial_ends_at) : new Date(), days), "d 'de' MMMM yyyy", { locale: pt })}</b>. Sem pagamento e sem entrar nas contas de pagamentos.
+              </div>
+            )}
+            {action !== "remove" && action !== "suspend" && action !== "removeTrial" && action !== "giveTrial" && (
               <div className="mt-4 rounded-[14px] bg-[#F7F5F2] px-3.5 py-3 text-[13.5px] leading-relaxed dark:bg-muted">
                 {action === "extend" ? (
                   <>Passa de {endsAt ? d(h.subscription_ends_at, "d 'de' MMMM") : "hoje"} para <b>{format(addDays(endsAt && endsAt.getTime() > Date.now() ? endsAt : new Date(), days), "d 'de' MMMM yyyy", { locale: pt })}</b>. Não entra nas contas de pagamentos.</>
@@ -402,10 +408,11 @@ export function CouplesView({ data, initialId, onChanged }: { data: AdminData; i
                   if (action === "renew" && chosen) return run(() => supabase.rpc("admin_renew_subscription" as any, { p_couple_space_id: h.id, p_plan_id: chosen.id, p_method: method }) as any, "Renovado");
                   if (action === "extend") return run(() => supabase.rpc("admin_extend_subscription" as any, { p_couple_space_id: h.id, p_days: days }) as any, "Prolongado");
                   if (action === "suspend") return run(() => supabase.rpc("admin_set_suspended" as any, { p_couple_space_id: h.id, p_suspended: true, p_reason: reason, p_note: reason === "irregular" ? note : null }) as any, "Casa suspensa");
+                  if (action === "giveTrial") return run(() => supabase.rpc("admin_grant_trial" as any, { p_couple_space_id: h.id, p_days: days }) as any, "Experiência ativada");
                   if (action === "removeTrial") return run(() => supabase.rpc("admin_remove_trial" as any, { p_couple_space_id: h.id }) as any, "Experiência removida");
                   if (action === "remove") return run(() => supabase.rpc("admin_remove_plan" as any, { p_couple_space_id: h.id }) as any, "Plano removido");
                 }}>
-                {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar" : action === "suspend" ? "Suspender" : action === "removeTrial" ? "Remover experiência" : "Remover plano"}
+                {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : action === "change" ? "Mudar plano" : action === "renew" ? "Renovar" : action === "extend" ? "Prolongar" : action === "suspend" ? "Suspender" : action === "removeTrial" ? "Remover experiência" : action === "giveTrial" ? "Ativar" : "Remover plano"}
               </button>
             </div>
           </div>
