@@ -3869,10 +3869,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_lifetime_points: {
-        Args: { p_couple_space_id: string }
-        Returns: number
-      }
       get_my_couple_space_id: { Args: never; Returns: string }
       get_ranking: { Args: { p_type?: string }; Returns: Json }
       get_reading_stats: {

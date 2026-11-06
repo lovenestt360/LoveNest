@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 // emocional) — por isso não passa por aqui, é despachado direto via
 // dispatchCeremony(). Os outros 4 tipos não têm dedupe próprio e usam
 // ceremonies_log (ver migration 20260629000003).
-export type CeremonyType = "streak_milestone" | "level_up" | "livro_concluido" | "aniversario" | "capsula";
+export type CeremonyType = "streak_milestone" | "livro_concluido" | "aniversario" | "capsula";
 
 export interface CeremonyContent {
   type: CeremonyType;

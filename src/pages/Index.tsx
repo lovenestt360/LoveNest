@@ -31,7 +31,6 @@ import {
   getMilestoneCeremonyContent,
 } from "@/components/MilestoneModal";
 import { useRelationshipEvents } from "@/features/relationship-events/useRelationshipEvents";
-import { getJourneyLevel } from "@/features/streak/journeyLevels";
 import { triggerCeremony, dispatchCeremony } from "@/lib/ceremonies";
 import { capsuleSeenKey } from "@/features/capsule/CapsuleRealtimeWatcher";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
@@ -350,45 +349,6 @@ const Index = () => {
     if (content) dispatchCeremony(content);
     confirmMilestone();
   }, [pendingMilestone, confirmMilestone]);
-
-  const [lifetimePoints, setLifetimePoints] = useState(0);
-
-  useEffect(() => {
-    if (!spaceId) return;
-
-    const fetchPoints = () => {
-      supabase
-        .rpc("get_lifetime_points" as any, { p_couple_space_id: spaceId })
-        .then(({ data }) => {
-          if (typeof data === "number") setLifetimePoints(data);
-        });
-    };
-
-    fetchPoints();
-    window.addEventListener("streak-updated", fetchPoints);
-    window.addEventListener("home-visible", fetchPoints);
-
-    return () => {
-      window.removeEventListener("streak-updated", fetchPoints);
-      window.removeEventListener("home-visible", fetchPoints);
-    };
-  }, [spaceId]);
-
-  useEffect(() => {
-    if (!spaceId || lifetimePoints <= 0) return;
-
-    const journey = getJourneyLevel(lifetimePoints);
-    if (journey.level <= 1) return;
-
-    triggerCeremony(spaceId, "level_up", String(journey.level), {
-      type: "level_up",
-      eyebrow: "Novo nível da Jornada",
-      title: `Nível ${journey.level} — ${journey.name}`,
-      subtitle: isSolo
-        ? "O teu cuidado contigo próprio fez-te crescer."
-        : "O vosso cuidado diário fez-vos crescer.",
-    });
-  }, [spaceId, lifetimePoints, isSolo]);
 
   useEffect(() => {
     if (!spaceId || !nextSpecialDate || nextSpecialDate.daysUntil !== 0) return;
