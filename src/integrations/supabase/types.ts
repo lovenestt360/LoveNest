@@ -3822,7 +3822,7 @@ export type Database = {
         Returns: undefined
       }
       fn_buy_loveshield: {
-        Args: { p_cost?: number; p_couple_space_id: string }
+        Args: { p_couple_space_id: string }
         Returns: Json
       }
       fn_count_active_members: {
