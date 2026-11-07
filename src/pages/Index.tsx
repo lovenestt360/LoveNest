@@ -356,11 +356,11 @@ const Index = () => {
     const year = new Date().getFullYear();
     triggerCeremony(spaceId, "aniversario", `${nextSpecialDate.id}_${year}`, {
       type: "aniversario",
-      eyebrow: "Aniversário",
       title: nextSpecialDate.title,
-      subtitle: isSolo ? "Mais um ano da tua história." : "Mais um ano a escolherem-se.",
+      value: nextSpecialDate.years,
+      date: nextSpecialDate.since,
     });
-  }, [spaceId, nextSpecialDate, isSolo]);
+  }, [spaceId, nextSpecialDate]);
 
   useEffect(() => {
     if (!spaceId || !user) return;
@@ -379,7 +379,7 @@ const Index = () => {
 
       const { data } = await (supabase as any)
         .from("time_capsule_messages")
-        .select("id")
+        .select("id, unlock_date")
         .eq("couple_space_id", spaceId)
         .neq("creator_id", user.id)
         .gte("created_at", since.toISOString())
@@ -388,7 +388,7 @@ const Index = () => {
 
       if (!data?.length) return;
 
-      const unseen = (data as { id: string }[]).filter((capsule) => !seenIds.includes(capsule.id));
+      const unseen = (data as { id: string; unlock_date?: string }[]).filter((capsule) => !seenIds.includes(capsule.id));
       if (!unseen.length) return;
 
       localStorage.setItem(
@@ -398,9 +398,7 @@ const Index = () => {
 
       dispatchCeremony({
         type: "capsula",
-        eyebrow: "Cápsula do Tempo",
-        title: "O teu par enterrou uma cápsula",
-        subtitle: "Uma memória foi guardada para o futuro do vosso ninho.",
+        date: unseen[0].unlock_date,
       });
     };
 

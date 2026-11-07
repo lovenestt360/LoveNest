@@ -22,7 +22,7 @@ const MILESTONE_DATA: Record<number, {
     microMemory: "Duas semanas a aparecerem um para o outro.",
   },
   30: {
-    title: "Um mês a escolherem-se",
+    title: "Um mês inteiro. Nem um dia sozinhos.",
     description: "O vosso espaço está a ganhar raízes.",
     microMemory: "Um mês de amor construído.",
   },
@@ -52,8 +52,8 @@ export function getMilestoneCeremonyContent(value: number): CeremonyContent | nu
   if (!data) return null;
   return {
     type: "streak_milestone",
-    eyebrow: `${value} ${value === 1 ? "dia" : "dias"} de chama`,
     title: data.title,
     subtitle: data.description,
+    value,
   };
 }

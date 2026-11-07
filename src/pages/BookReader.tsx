@@ -90,9 +90,7 @@ export default function BookReader() {
             }).catch(() => {});
             triggerCeremony(spaceId, "livro_concluido", book.id, {
                 type: "livro_concluido",
-                eyebrow: "Livro terminado",
                 title: book.title,
-                subtitle: "Mais uma história que passa a fazer parte da Jornada.",
             });
         }
 

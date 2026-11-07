@@ -12,9 +12,12 @@ export type CeremonyType = "streak_milestone" | "livro_concluido" | "aniversario
 
 export interface CeremonyContent {
   type: CeremonyType;
-  eyebrow: string;
-  title: string;
-  subtitle: string;
+  title?: string;
+  subtitle?: string;
+  /** Marco: dias seguidos. Aniversário: anos. */
+  value?: number;
+  /** Aniversário: data de início. Cápsula: data em que abre. */
+  date?: string;
 }
 
 export function dispatchCeremony(content: CeremonyContent): void {

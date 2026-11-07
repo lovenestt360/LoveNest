@@ -12,7 +12,7 @@ import AdminBiblioteca from "./admin/AdminBiblioteca";
 import FeaturesControl from "./admin/Features";
 import { TodayView, CouplesView } from "@/features/admin/TodayCouples";
 import { PaymentsView, type PaymentsTab } from "@/features/admin/Payments";
-import { AnnouncementsTab, WrappedTab, PwaTab } from "@/features/admin/Content";
+import { AnnouncementsTab, MomentsPreview, WrappedTab, PwaTab } from "@/features/admin/Content";
 import { VerificationsView } from "@/features/admin/Verifications";
 import { useAuth } from "@/features/auth/AuthContext";
 
@@ -363,7 +363,7 @@ export default function Admin() {
                     <CouplesView key={coupleFocus ?? "all"} data={{ houses, users, payments, verifications, plans }} initialId={coupleFocus} onChanged={fetchAllData} />
                 )}
 
-                {tab === "announcements" && <div className="mx-auto max-w-5xl"><AnnouncementsTab /></div>}
+                {tab === "announcements" && <div className="mx-auto max-w-5xl"><AnnouncementsTab /><MomentsPreview /></div>}
                 {tab === "wrapped" && <div className="mx-auto max-w-5xl"><WrappedTab /></div>}
                 {tab === "pwa" && <div className="mx-auto max-w-5xl"><PwaTab /></div>}
 

@@ -5,10 +5,35 @@ import { Bell, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { dispatchCeremony, type CeremonyContent } from "@/lib/ceremonies";
 import { BTN, CARD, Chips, Confirm, GHOST, INPUT, LABEL, MUTED, ROW, Spinner, TEXTAREA, Toggle } from "./ui";
 
 /* Painel admin (parte 4): Conteúdo — Avisos, LoveWrapped, Tutorial PWA. */
 
+
+/* ═══════════════ Momentos ═══════════════ */
+
+// Só mostra o momento neste aparelho: não grava nada nem avisa ninguém.
+const MOMENT_SAMPLES: { label: string; content: CeremonyContent }[] = [
+  { label: "Marco da chama", content: { type: "streak_milestone", title: "Um mês inteiro. Nem um dia sozinhos.", subtitle: "O vosso espaço está a ganhar raízes.", value: 30 } },
+  { label: "Livro terminado", content: { type: "livro_concluido", title: "Comunicar com Amor" } },
+  { label: "Aniversário", content: { type: "aniversario", title: "O início de nós", value: 3, date: "2023-11-14" } },
+  { label: "Cápsula", content: { type: "capsula", date: "2027-02-14" } },
+];
+
+export function MomentsPreview() {
+  return (
+    <section className={cn(CARD, "mt-4 p-4")}>
+      <h3 className="text-[15px] font-semibold text-foreground">Ver os momentos</h3>
+      <p className={cn(MUTED, "mt-1")}>Só aparecem neste aparelho, com exemplos. Não grava nada nem avisa ninguém.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {MOMENT_SAMPLES.map((m) => (
+          <button key={m.label} type="button" className={GHOST} onClick={() => dispatchCeremony(m.content)}>{m.label}</button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /* ═══════════════ Avisos ═══════════════ */
 
