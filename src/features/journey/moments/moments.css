@@ -1,0 +1,116 @@
+/* Momentos do casal. Tudo o que se mexe usa só transform e opacity. */
+.mo-screen {
+  --mo-soft: cubic-bezier(0.37, 0, 0.63, 1);
+  --mo-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  position: fixed; inset: 0; z-index: 200; overflow: hidden; color: #fff; isolation: isolate;
+  font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  animation: mo-in 320ms ease both;
+}
+.mo-leaving { animation: mo-out 260ms ease both; }
+@keyframes mo-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mo-out { from { opacity: 1; } to { opacity: 0; } }
+.mo-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.mo-frame { position: absolute; left: 50%; top: 50%; z-index: 1; display: flex; flex-direction: column; width: 330px; height: 640px; margin: -320px 0 0 -165px; }
+.mo-brand { position: relative; z-index: 3; padding-top: 18px; text-align: center; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; opacity: 0.75; }
+.mo-close { position: absolute; z-index: 5; top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: inherit; opacity: 0.72; cursor: pointer; }
+.mo-stage { position: relative; z-index: 2; flex: 1; min-height: 0; }
+.mo-words { position: relative; z-index: 3; padding: 0 22px; text-align: center; transition: opacity 560ms ease, transform 760ms var(--mo-settle); }
+.mo-pre .mo-words { opacity: 0; transform: translate3d(0, 14px, 0); }
+.mo-words h2 { margin: 0; font-size: 31px; font-weight: 900; line-height: 1.03; letter-spacing: -0.045em; text-wrap: balance; }
+.mo-words p { margin: 8px auto 0; max-width: 27ch; font-size: 14.5px; line-height: 1.4; font-weight: 500; opacity: 0.86; }
+.mo-stat { display: inline-block; margin-top: 11px; padding: 6px 12px; border-radius: 99px; background: rgba(255, 255, 255, 0.16); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mo-actions { position: relative; z-index: 3; padding: 15px 18px 12px; }
+.mo-cta { width: 100%; height: 52px; border: 0; border-radius: 17px; background: #fff; color: #0B1324; font-size: 15px; font-weight: 700; cursor: pointer; }
+.mo-share { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; height: 40px; border: 0; background: none; color: inherit; font-size: 13px; font-weight: 600; opacity: 0.82; cursor: pointer; }
+.mo-share:disabled { opacity: 0.45; }
+.mo-cta:focus-visible, .mo-share:focus-visible, .mo-close:focus-visible, .mo-mascot:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+/* A mascote */
+.mo-mascot { position: absolute; z-index: 2; display: block; border: 0; padding: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mo-jump, .mo-breath { position: absolute; inset: 0; transform-origin: 50% 81.5%; }
+.mo-jump { will-change: transform; }
+.mo-breath { animation: mo-breathe 3.6s var(--mo-soft) infinite; }
+.mo-layer { position: absolute; display: block; max-width: none; }
+.mo-cape img { display: block; width: 100%; height: 100%; max-width: none; }
+.mo-tip { transform-origin: 50% 100%; will-change: transform; animation: mo-tipwave 3.2s var(--mo-soft) infinite; }
+.mo-cape { transform-origin: 2% 6%; will-change: transform; animation: mo-capewave 4.2s var(--mo-soft) infinite; }
+.mo-glow { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0)); animation: mo-heartbeat 1.9s var(--mo-soft) infinite; }
+.mo-face { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; transition: opacity 110ms ease; }
+.mo-swap { opacity: 0; }
+.mo-eye { transition: transform 75ms ease-in-out; }
+.mo-shut { transform: scaleY(0.07); }
+.mo-jump.mo-hop { animation: mo-hop 700ms var(--mo-soft); }
+.mo-jump.mo-hop2 { animation: mo-hop 760ms var(--mo-soft) 2; }
+.mo-reading { animation: mo-read 1.5s var(--mo-soft) infinite; }
+.mo-lovebeat { transform-box: fill-box; transform-origin: center; animation: mo-lovebeat 1.3s var(--mo-soft) infinite; }
+.mo-tear { animation: mo-tear 2.4s ease-in infinite; }
+.mo-shadow { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(5, 8, 30, 0.42), rgba(5, 8, 30, 0)); }
+@keyframes mo-breathe { 0%, 100% { transform: scale3d(1, 1, 1); } 50% { transform: scale3d(1.01, 0.988, 1); } }
+@keyframes mo-tipwave { 0%, 100% { transform: skewX(-1.4deg); } 50% { transform: skewX(1.8deg); } }
+@keyframes mo-capewave { 0%, 100% { transform: rotate(-1.1deg); } 50% { transform: rotate(1.7deg); } }
+@keyframes mo-heartbeat { 0%, 100% { transform: scale3d(0.92, 0.92, 1); opacity: 0.7; } 45% { transform: scale3d(1.08, 1.08, 1); opacity: 1; } }
+@keyframes mo-lovebeat { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.07); } }
+@keyframes mo-hop {
+  0%, 100% { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); }
+  14% { transform: translate3d(0, 0, 0) scale3d(1.06, 0.92, 1); }
+  46% { transform: translate3d(0, -11%, 0) scale3d(0.97, 1.04, 1); }
+  80% { transform: translate3d(0, 0, 0) scale3d(1.04, 0.95, 1); }
+}
+@keyframes mo-read { 0%, 100% { transform: translateX(-10px); } 50% { transform: translateX(10px); } }
+@keyframes mo-tear { 0% { transform: translateY(0); opacity: 0; } 18% { opacity: 1; } 100% { transform: translateY(62px); opacity: 0; } }
+
+/* Marco da chama */
+.mo-marco { background: linear-gradient(180deg, #17104A 0%, #4B1A7E 36%, #E0467A 74%, #FFB26B 100%); }
+.mo-num { position: absolute; left: 0; right: 0; top: 0; z-index: 3; text-align: center; font-size: 78px; font-weight: 900; line-height: 1; letter-spacing: -0.07em; font-variant-numeric: tabular-nums; }
+.mo-num small { display: block; margin-top: 2px; font-size: 13px; font-weight: 700; letter-spacing: 0; opacity: 0.88; }
+.mo-rays { position: absolute; left: 50%; top: 238px; width: 620px; height: 620px; margin: -310px 0 0 -310px; max-width: none; opacity: 0; transition: opacity 700ms ease; will-change: transform; animation: mo-spin 40s linear infinite; }
+.mo-lit .mo-rays { opacity: 1; }
+.mo-ring { position: absolute; left: 50%; top: 238px; width: 248px; height: 248px; margin: -124px 0 0 -124px; }
+.mo-dot { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: radial-gradient(closest-side, #FFF3C9 0 44%, rgba(255, 196, 94, 0.55) 52%, rgba(255, 196, 94, 0)); opacity: 0.16; transition: opacity 180ms ease; }
+.mo-dot.mo-on { opacity: 1; }
+.mo-ember { position: absolute; bottom: -10px; width: var(--s); height: var(--s); border-radius: 50%; background: radial-gradient(closest-side, #FFF0C4, rgba(255, 177, 77, 0)); opacity: 0; }
+.mo-lit .mo-ember { will-change: transform; animation: mo-ember var(--d) linear var(--w) infinite; }
+@keyframes mo-ember { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 14% { opacity: 1; } 100% { transform: translate3d(var(--x), -105vh, 0); opacity: 0; } }
+@keyframes mo-spin { to { transform: rotate(360deg); } }
+
+/* Livro terminado */
+.mo-livro { background: radial-gradient(90% 46% at 50% 36%, #FFD79C 0%, #D9783F 34%, #57264F 68%, #1B1233 100%); }
+.mo-word { position: absolute; left: 50%; top: 220px; z-index: 3; font-size: 15px; font-weight: 700; opacity: 0; white-space: nowrap; color: #FFF3D6; }
+.mo-say .mo-word { animation: mo-word 2.4s var(--mo-settle) var(--w) both; }
+@keyframes mo-word { 0% { transform: translate3d(-50%, 40px, 0) scale(0.8); opacity: 0; } 25%, 72% { opacity: 1; } 100% { transform: translate3d(calc(-50% + var(--x)), var(--y), 0); opacity: 0; } }
+.mo-flip { transform-box: view-box; transform-origin: 490px 720px; animation: mo-flip 900ms var(--mo-soft) infinite; }
+@keyframes mo-flip { 0% { transform: scaleX(1); } 100% { transform: scaleX(-1); } }
+
+/* Aniversário */
+.mo-aniv { background: linear-gradient(180deg, #FFE3CF 0%, #FFB1A8 42%, #F2618B 76%, #C8346F 100%); }
+.mo-aniv .mo-brand { color: #7A1B3F; }
+.mo-aniv .mo-close { color: #7A1B3F; }
+.mo-huge { position: absolute; left: 0; right: 0; top: -38px; text-align: center; font-size: 300px; font-weight: 900; line-height: 1; letter-spacing: -0.08em; color: rgba(255, 255, 255, 0.72); }
+.mo-bigheart { position: absolute; left: 50%; top: 42px; z-index: 3; width: 70px; height: 70px; margin-left: -35px; color: #FF2F68; opacity: 0; transform: scale3d(0.3, 0.3, 1); transition: opacity 320ms ease, transform 760ms cubic-bezier(0.2, 1.45, 0.4, 1); }
+.mo-joined .mo-bigheart { opacity: 1; transform: scale3d(1, 1, 1); }
+.mo-bigheart span { display: block; width: 100%; height: 100%; will-change: transform; animation: mo-bigbeat 1.5s var(--mo-soft) infinite; }
+.mo-bigheart svg { display: block; width: 100%; height: 100%; }
+@keyframes mo-bigbeat { 0%, 100% { transform: scale3d(1, 1, 1); } 40% { transform: scale3d(1.11, 1.11, 1); } }
+.mo-pair { transition: transform 1.25s var(--mo-settle); will-change: transform; }
+.mo-petal { position: absolute; top: -18px; width: var(--s); height: var(--s); color: #fff; opacity: 0.78; will-change: transform; animation: mo-petal var(--d) linear var(--w) infinite; }
+.mo-petal svg { display: block; width: 100%; height: 100%; }
+@keyframes mo-petal { 0% { transform: translate3d(0, 0, 0) rotate(0); } 100% { transform: translate3d(var(--x), 106vh, 0) rotate(240deg); } }
+
+/* Cápsula */
+.mo-capsula { background: linear-gradient(180deg, #070A26 0%, #131258 48%, #43208A 82%, #7A3AAE 100%); }
+.mo-star { position: absolute; width: var(--s); height: var(--s); border-radius: 50%; background: #fff; opacity: var(--o); }
+.mo-star.mo-tw { animation: mo-twinkle var(--d) var(--mo-soft) var(--w) infinite; }
+@keyframes mo-twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+.mo-orb { position: absolute; left: 50%; top: 230px; z-index: 4; width: 96px; height: 96px; margin-left: -48px; will-change: transform; transition: transform 1.6s cubic-bezier(0.45, 0, 0.15, 1); }
+.mo-orb svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.mo-up .mo-orb { transform: translate3d(0, -230px, 0) scale3d(0.74, 0.74, 1); }
+.mo-halo { position: absolute; inset: -30px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 224, 150, 0.8), rgba(255, 224, 150, 0)); will-change: transform; animation: mo-halo 2.8s var(--mo-soft) infinite; }
+@keyframes mo-halo { 0%, 100% { transform: scale3d(0.88, 0.88, 1); opacity: 0.72; } 50% { transform: scale3d(1.08, 1.08, 1); opacity: 1; } }
+.mo-seal { transform-box: fill-box; transform-origin: center; opacity: 0; transform: scale(2); transition: opacity 260ms ease, transform 480ms cubic-bezier(0.2, 1.45, 0.4, 1); }
+.mo-sealed .mo-seal { opacity: 1; transform: scale(1); }
+.mo-trail { position: absolute; left: 50%; top: 70px; z-index: 1; width: 2px; height: 70px; margin-left: -1px; transform: scaleY(0); transform-origin: 50% 0; background: repeating-linear-gradient(180deg, rgba(255, 230, 170, 0.9) 0 5px, rgba(255, 230, 170, 0) 5px 12px); transition: transform 1.6s cubic-bezier(0.45, 0, 0.15, 1); }
+.mo-up .mo-trail { transform: scaleY(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mo-screen, .mo-breath, .mo-tip, .mo-cape, .mo-glow, .mo-jump.mo-hop, .mo-jump.mo-hop2, .mo-reading, .mo-lovebeat, .mo-tear, .mo-rays, .mo-ember, .mo-petal, .mo-star.mo-tw, .mo-halo, .mo-flip, .mo-word, .mo-bigheart span { animation: none !important; }
+}

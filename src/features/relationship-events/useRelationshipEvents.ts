@@ -18,6 +18,9 @@ export interface NextSpecialDate {
   id: string;
   title: string;
   daysUntil: number;
+  /** Anos que se cumprem nessa data (0 no próprio ano do evento). */
+  years: number;
+  since: string;
 }
 
 export interface CreateRelationshipEventInput {
@@ -120,8 +123,15 @@ export function useRelationshipEvents(coupleSpaceId: string | null) {
       // Uma surpresa por abrir não pode aparecer na Home (revelava o título).
       .filter((e) => !(e.is_surprise && !e.opened_at))
       .map((e) => {
-        const next = nextOccurrence(parseDateOnly(e.event_date), today);
-        return { id: e.id, title: e.title, daysUntil: differenceInDays(next, today) };
+        const start = parseDateOnly(e.event_date);
+        const next = nextOccurrence(start, today);
+        return {
+          id: e.id,
+          title: e.title,
+          daysUntil: differenceInDays(next, today),
+          years: next.getFullYear() - start.getFullYear(),
+          since: e.event_date,
+        };
       })
       .sort((a, b) => a.daysUntil - b.daysUntil);
     nextSpecialDate = upcoming[0] ?? null;
