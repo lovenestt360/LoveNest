@@ -251,16 +251,22 @@ export function useCycleData() {
     if (!targetUserId || !spaceId) return;
 
     setLoading(true);
+    // Os registos de intimidade são só da própria pessoa: nunca se pedem na vista do par.
+    const isOwn = targetUserId === user?.id;
     const [profileRes, periodsRes, symptomsRes, intimacyTodayRes, intimacyLogsRes] = await Promise.all([
       supabase.from("cycle_profiles").select("*").eq("user_id", targetUserId).maybeSingle(),
       supabase.from("period_entries").select("*").eq("user_id", targetUserId)
         .order("start_date", { ascending: false }).limit(50),
       supabase.from("daily_symptoms").select("*").eq("user_id", targetUserId)
         .eq("day_key", today).maybeSingle(),
-      (supabase.from("intimacy_logs" as any).select("*").eq("user_id", targetUserId)
-        .eq("day_key", today).maybeSingle() as any),
-      (supabase.from("intimacy_logs" as any).select("*").eq("user_id", targetUserId)
-        .order("day_key", { ascending: false }).limit(60) as any),
+      isOwn
+        ? (supabase.from("intimacy_logs" as any).select("*").eq("user_id", targetUserId)
+            .eq("day_key", today).maybeSingle() as any)
+        : Promise.resolve({ data: null }),
+      isOwn
+        ? (supabase.from("intimacy_logs" as any).select("*").eq("user_id", targetUserId)
+            .order("day_key", { ascending: false }).limit(60) as any)
+        : Promise.resolve({ data: [] }),
     ]);
 
     setProfile((profileRes.data as CycleProfile | null) ?? null);
@@ -269,7 +275,7 @@ export function useCycleData() {
     setTodayIntimacy((intimacyTodayRes.data as IntimacyLog | null) ?? null);
     setIntimacyLogs((intimacyLogsRes.data as IntimacyLog[]) ?? []);
     setLoading(false);
-  }, [targetUserId, spaceId, today]);
+  }, [targetUserId, spaceId, today, user?.id]);
 
   useEffect(() => {
     if (!loadingTarget) {
