@@ -23,7 +23,7 @@ const MOMENT_SAMPLES: { label: string; content: CeremonyContent }[] = [
 
 export function MomentsPreview() {
   return (
-    <section className={cn(CARD, "mt-4")}>
+    <section className={cn(CARD, "mt-4 p-4")}>
       <h3 className="text-[15px] font-semibold text-foreground">Ver os momentos</h3>
       <p className={cn(MUTED, "mt-1")}>Só aparecem neste aparelho, com exemplos. Não grava nada nem avisa ninguém.</p>
       <div className="mt-3 flex flex-wrap gap-2">
